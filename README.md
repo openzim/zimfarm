@@ -4,7 +4,7 @@ A farm operated by bots to grow and harvest new zim files.
 - Python 3.6
 - flask (Web APIs)
 - Celery (task Queue)
-- RabbitMQ (boker)
+- RabbitMQ (broker)
 - SQLite (task info & logs)
 
 Config:

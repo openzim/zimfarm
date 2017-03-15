@@ -16,7 +16,7 @@ class SQLiteDB:
             );
             CREATE TABLE IF NOT EXISTS Log(
                 ID text PRIMARY KEY,
-                OccuredTime datetime,
+                OccurredTime datetime,
                 TaskName text NOT NULL,
                 Message text,
 
