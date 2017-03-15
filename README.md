@@ -7,6 +7,9 @@ A farm operated by bots to grow and harvest new zim files.
 - RabbitMQ (boker)
 - SQLite (task info & logs)
 
+Config:
+`pip3 install flask, flask_restful, Celery`
+
 ## Stage 1:
 Goal: Create a queueing system that execute tasks when receiving request from a WebAPI. Specifically:
 
