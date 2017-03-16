@@ -8,7 +8,12 @@ A farm operated by bots to grow and harvest new zim files.
 - SQLite (task info & logs)
 
 Config:
-`pip3 install flask, flask_restful, Celery`
+Ubuntu 16.04
+`sudo apt-get install python3-pip python3-dev nginx git`
+`sudo pip install virtualenv`
+`git clone https://github.com/kiwix/zimfarm.git`
+`virtualenv venv`
+`pip3 install uwsgi flask Celery`
 
 ## Stage 1:
 Goal: Create a queueing system that execute tasks when receiving request from a WebAPI. Specifically:
