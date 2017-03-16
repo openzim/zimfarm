@@ -1,22 +1,24 @@
 from flask import Flask
-import flask_restful
 from celery import Celery
 
 
-def configure() -> (Flask, flask_restful.Api):
+def configure() -> (Flask):
     flask = Flask(__name__)
     flask.config['CELERY_BROKER_URL'] = 'pyamqp://celery:celery@localhost/celeryvhost'
     flask.config['CELERY_RESULT_BACKEND'] = 'rpc://'
 
-    api = flask_restful.Api(flask)
+    # celery = Celery(flask.name, broker=flask.config['CELERY_BROKER_URL'],
+    #                 backend=flask.config['CELERY_RESULT_BACKEND'])
+    # celery.conf.update(flask.config)
 
-    celery = Celery(flask.name, broker=flask.config['CELERY_BROKER_URL'],
-                    backend=flask.config['CELERY_RESULT_BACKEND'])
-    celery.conf.update(flask.config)
+    return flask
 
-    return flask, api
+application = configure()
 
-flask, api = configure()
+
+@application.route("/")
+def hello():
+    return "<h1 style='color:blue'>Hello There!</h1>"
 
 if __name__ == "__main__":
-    flask.run()
+    application.run(host='0.0.0.0')
