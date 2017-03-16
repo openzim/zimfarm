@@ -6,5 +6,5 @@ Type=forking
 User=chrisli
 Group=www-data
 Environment=PATH=/home/chrisli/Developer/zimfarm/venv/bin
-WorkingDirectory /home/chrisli/Developer/zimfarm
+WorkingDirectory=/home/chrisli/Developer/zimfarm
 ExecStart=uwsgi --ini zimfarm.ini
