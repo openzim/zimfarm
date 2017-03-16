@@ -13,14 +13,14 @@ def configure() -> (Flask):
 
     return flask
 
-application = configure()
+app = configure()
 
 
-@application.route("/")
+@app.route("/")
 def hello():
-    return "<h1 style='color:blue'>Hello There!</h1>"
+    return "<h1 style='color:blue'>Hello There!!!</h1>"
 
 if __name__ == "__main__":
-    application.run(host='0.0.0.0')
+    app.run()
 
     

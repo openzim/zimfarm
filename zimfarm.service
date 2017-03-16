@@ -2,9 +2,14 @@
 Description=uWSGI server instance configured to serve zimfarm
 
 [Service]
-Type=forking
+Type=simple
 User=chrisli
 Group=www-data
 Environment=PATH=/home/chrisli/Developer/zimfarm/venv/bin
 WorkingDirectory=/home/chrisli/Developer/zimfarm
 ExecStart=/home/chrisli/Developer/zimfarm/venv/bin/uwsgi --ini zimfarm.ini
+TimeoutStartSec=infinity
+
+
+[Install]
+WantedBy=multi-user.target
