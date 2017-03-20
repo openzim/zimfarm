@@ -1,6 +1,7 @@
 import json
-
+from .database import SQLiteDB
 
 def get_tasks():
-    tasks = [{'id': 'test'}]
+    db = SQLiteDB()
+    tasks = db.get_tasks()
     return json.dumps(tasks)

@@ -1,6 +1,8 @@
 from flask import Flask
 from celery import Celery
 
+from . import task
+
 
 def configure() -> (Flask):
     flask = Flask(__name__)
@@ -20,7 +22,8 @@ app = configure()
 def hello():
     return "<h1 style='color:blue'>Hello There!!!</h1>"
 
+app.route('/task')(task.get_tasks)
+
+
 if __name__ == "__main__":
     app.run()
-
-    
