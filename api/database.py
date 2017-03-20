@@ -47,7 +47,7 @@ class SQLiteDB:
         with self.conn:
             self.conn.row_factory = sqlite3.Row
             tasks = []
-            for row in self.conn.execute('SELECT, ID, Name, Type, Activated, Command FROM Template'):
+            for row in self.conn.execute('SELECT ID, Name, Type, Activated, Command FROM Template'):
                 tasks.append({
                     'id': row['ID'],
                     'name': row['Name'],
@@ -61,3 +61,5 @@ class SQLiteDB:
         with self.conn:
             self.conn.executemany(
                 'INSERT INTO Template (ID, Name, Type, Activated, Command) values (?, ?, ?, ?, ?)', templates)
+
+
