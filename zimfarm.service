@@ -7,7 +7,7 @@ User=chrisli
 Group=www-data
 Environment=PATH=/home/chrisli/Developer/zimfarm/venv/bin
 WorkingDirectory=/home/chrisli/Developer/zimfarm
-ExecStart=/home/chrisli/Developer/zimfarm/venv/bin/uwsgi --ini zimfarm.ini
+ExecStart=/home/chrisli/Developer/zimfarm/venv/bin/uwsgi --ini Config/zimfarm.ini
 TimeoutStartSec=infinity
 
 
