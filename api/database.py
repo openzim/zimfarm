@@ -1,6 +1,8 @@
 import sqlite3
 from uuid import uuid4
 
+from .status import TaskStatus
+
 
 class SQLiteDB:
     def __init__(self, path: str = None):
@@ -38,9 +40,9 @@ class SQLiteDB:
 
     def populate_test_data(self):
         self.add_templates([
-            (uuid4(), 'WikiTask', 'Test', True, 'sleep10'),
-            (uuid4(), 'Voyage', 'Test', True, 'sleep20'),
-            (uuid4(), 'Wikimed', 'Test', True, 'sleep40')
+            (str(uuid4()), 'WikiTask', 'Test', True, 'sleep10'),
+            (str(uuid4()), 'Voyage', 'Test', True, 'sleep20'),
+            (str(uuid4()), 'Wikimed', 'Test', True, 'sleep40')
         ])
 
     def get_templates(self):
@@ -62,4 +64,27 @@ class SQLiteDB:
             self.conn.executemany(
                 'INSERT INTO Template (ID, Name, Type, Activated, Command) values (?, ?, ?, ?, ?)', templates)
 
+    def add_task(self, task):
+        with self.conn:
+            self.conn.execute(
+                'INSERT INTO Task (ID, StatusCode, StartTime) values (?, ?, ?)', task)
 
+    def set_task_status(self, task_id: str, status: TaskStatus):
+        with self.conn:
+            self.conn.execute(
+                'UPDATE Task SET StatusCode = ? WHERE ID = ?', (status.value, task_id))
+
+    def get_task(self, task_id: str):
+        with self.conn:
+            self.conn.row_factory = sqlite3.Row
+            row: sqlite3.Row = self.conn.execute(
+                'SELECT ID, StatusCode, StartTime, EndTime FROM Task WHERE ID = ?', task_id).fetchone()
+            if row is not None:
+                return {
+                    'id': row['ID'],
+                    'status': TaskStatus(row['StatusCode']),
+                    'startTime': row['StartTime'],
+                    'endTime': row['EndTime']
+                }
+            else:
+                return None
