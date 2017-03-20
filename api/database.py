@@ -1,4 +1,5 @@
 import sqlite3
+from uuid import uuid4
 
 
 class SQLiteDB:
@@ -14,7 +15,8 @@ class SQLiteDB:
         with self.conn:
             self.conn.executescript('''
             CREATE TABLE IF NOT EXISTS Template (
-                Name text PRIMARY KEY,
+                ID text PRIMARY KEY,
+                Name text,
                 Type text,
                 Activated boolean,
                 Command text
@@ -36,27 +38,26 @@ class SQLiteDB:
 
     def populate_test_data(self):
         self.add_templates([
-            ('WikiTask', 'Test', True, 'sleep10'),
-            ('Voyage', 'Test', True, 'sleep20'),
-            ('Wikimed', 'Test', True, 'sleep40')
+            (uuid4(), 'WikiTask', 'Test', True, 'sleep10'),
+            (uuid4(), 'Voyage', 'Test', True, 'sleep20'),
+            (uuid4(), 'Wikimed', 'Test', True, 'sleep40')
         ])
 
     def get_templates(self):
         with self.conn:
             self.conn.row_factory = sqlite3.Row
             tasks = []
-            for row in self.conn.execute('SELECT Name, Type, Activated, Command FROM Template'):
+            for row in self.conn.execute('SELECT, ID, Name, Type, Activated, Command FROM Template'):
                 tasks.append({
-                    'Name': row['Name'],
-                    'Type': row['Type'],
-                    'Activated': bool(row['Activated']),
-                    'Command': row['Command'],
+                    'id': row['ID'],
+                    'name': row['Name'],
+                    'type': row['Type'],
+                    'activated': bool(row['Activated']),
+                    'command': row['Command'],
                 })
             return tasks
 
     def add_templates(self, templates):
         with self.conn:
             self.conn.executemany(
-                'INSERT INTO Template (Name, Type, Activated, Command) values (?, ?, ?, ?)', templates)
-
-db = SQLiteDB()
+                'INSERT INTO Template (ID, Name, Type, Activated, Command) values (?, ?, ?, ?, ?)', templates)
