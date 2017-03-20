@@ -14,8 +14,8 @@ A farm operated by bots to grow and harvest new zim files.
 Goal: Create a queueing system that execute tasks when receiving request from a WebAPI. Specifically:
 
 - [x] A SQLite database table to store all task info (name, type, shell command)
-- [x] WebAPI: List All Tasks
-- [ ] WebAPI: Add Tasks to the task table
+- [x] WebAPI: List All Templates
+- [ ] WebAPI: Enqueue a task using template
 - [ ] WebAPI to add all tasks to the queue and execute them
 - [ ] WebAPI to add all tasks to the queue and execute them
 - [ ] WebAPI to query current task queue progress, including:
