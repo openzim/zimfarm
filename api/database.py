@@ -24,7 +24,7 @@ class SQLiteDB:
                 StatusCode integer,
                 StartTime datetime,
                 EndTime datetime
-            )
+            );
             CREATE TABLE IF NOT EXISTS Log (
                 TaskID text PRIMARY KEY,
                 StdInput text,
@@ -58,3 +58,5 @@ class SQLiteDB:
         with self.conn:
             self.conn.executemany(
                 'INSERT INTO Template (Name, Type, Activated, Command) values (?, ?, ?, ?)', templates)
+
+db = SQLiteDB()
