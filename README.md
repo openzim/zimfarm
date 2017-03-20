@@ -7,10 +7,13 @@ A farm operated by bots to grow and harvest new zim files.
 - RabbitMQ (broker)
 - SQLite (task info & logs)
 
+[Configuration Guide](https://github.com/kiwix/zimfarm/wiki/Configuration-Guide)
+
 ## Stage 1:
 
 Goal: Create a queueing system that execute tasks when receiving request from a WebAPI. Specifically:
 
+- [ ] List All Tasks
 - A SQLite database table to store all task info (name, type, shell command)
 - A WebAPI to add all tasks to the queue and execute them
 - A WebAPI to query current task queue progress, including:
