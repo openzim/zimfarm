@@ -1,7 +1,7 @@
 from flask import Flask
 from celery import Celery
 
-from . import task
+from .template import template
 
 
 def configure() -> (Flask):
@@ -16,13 +16,7 @@ def configure() -> (Flask):
     return flask
 
 app = configure()
-
-
-@app.route("/")
-def hello():
-    return "<h1 style='color:blue'>Hello There!!!</h1>"
-
-app.route('/task')(task.get_tasks)
+app.route('/template', methods=['GET'])(template)
 
 
 if __name__ == "__main__":
