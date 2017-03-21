@@ -4,7 +4,6 @@ from .response import JSONResponse
 
 
 def list():
-    if request.method != 'GET': return None
     db = SQLiteDB()
     templates = db.get_templates()
     return JSONResponse(templates)

@@ -5,13 +5,13 @@ from .status import TaskStatus
 
 
 class SQLiteDB:
-    def __init__(self, path: str = None):
+    def __init__(self, path: str = '/Volumes/Data/zimfarm_test.sqlite'):
         if path is None:
             self.conn = sqlite3.connect(':memory:')
         else:
             self.conn = sqlite3.connect(path)
-        self.create_tables()
-        self.populate_test_data()
+        # self.create_tables()
+        # self.populate_test_data()
 
     def create_tables(self):
         with self.conn:
@@ -45,19 +45,29 @@ class SQLiteDB:
             (str(uuid4()), 'Wikimed', 'Test', True, 'sleep40')
         ])
 
-    def get_templates(self):
+    def get_templates(self, template_ids: [str] = None):
         with self.conn:
             self.conn.row_factory = sqlite3.Row
-            tasks = []
-            for row in self.conn.execute('SELECT ID, Name, Type, Activated, Command FROM Template'):
-                tasks.append({
+            sql = 'SELECT ID, Name, Type, Activated, Command FROM Template'
+            if template_ids is None or len(template_ids) == 0:
+                rows = self.conn.execute(sql)
+            else:
+                sql += ' WHERE ID IN ({})'.format(','.join(['?'] * len(template_ids)))
+                rows = self.conn.execute(sql, tuple(template_ids))
+            templates = []
+            for row in rows:
+                templates.append({
                     'id': row['ID'],
                     'name': row['Name'],
                     'type': row['Type'],
                     'activated': bool(row['Activated']),
                     'command': row['Command'],
                 })
-            return tasks
+            return templates
+
+    def get_template(self, template_id: str):
+        templates = self.get_templates([template_id])
+        return templates[0] if len(templates) > 0 else None
 
     def add_templates(self, templates):
         with self.conn:

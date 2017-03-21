@@ -9,3 +9,9 @@ class JSONResponse(Response):
         if isinstance(response, dict) or isinstance(response, list):
             response = json.dumps(response)
         super().__init__(response, **kwargs)
+
+
+class MissingURLParameterResponse(JSONResponse):
+    def __init__(self, param_name: str):
+        response = {'error': 'Required parameter {} not provided'.format(param_name)}
+        super().__init__(response, status=400)
