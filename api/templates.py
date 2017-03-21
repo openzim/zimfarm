@@ -1,16 +1,22 @@
-import json
 from flask import request
 from .database import SQLiteDB
+from .response import JSONResponse
 
 
 def list():
     if request.method != 'GET': return None
     db = SQLiteDB()
     templates = db.get_templates()
-    return json.dumps(templates)
+    return JSONResponse(templates)
+
 
 def create():
-    return '{"message": "under construction"}'
+    return JSONResponse({
+        "message": "under construction"
+    })
+
 
 def update():
-    return '{"message": "under construction"}'
+    return JSONResponse({
+        "message": "under construction"
+    })
