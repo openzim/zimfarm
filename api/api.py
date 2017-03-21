@@ -1,7 +1,7 @@
 from flask import Flask
 from celery import Celery
 
-from .template import template
+from . import templates, tasks
 
 
 def configure() -> (Flask):
@@ -16,7 +16,10 @@ def configure() -> (Flask):
     return flask
 
 app = configure()
-app.route('/template', methods=['GET'])(template)
+app.route('/templates/list', methods=['GET'])(templates.list)
+app.route('/templates/create', methods=['POST'])(templates.create)
+app.route('/templates/update', methods=['POST'])(templates.update)
+app.route('/tasks/enqueue', methods=['POST'])(tasks.enqueue)
 
 
 if __name__ == "__main__":
