@@ -1,8 +1,10 @@
 from flask import request
 from .database import SQLiteDB
 from .response import JSONResponse, MissingURLParameterResponse
+from . import app
 
 
+@app.route('/task/enqueue', methods=['POST'])
 def enqueue():
     template_id = request.args.get('template_id')
     if template_id is None:
@@ -20,6 +22,7 @@ def enqueue():
             })
 
 
+@app.route('/task/status', methods=['POST'])
 def status():
     return JSONResponse({
         "message": "under construction"
