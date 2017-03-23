@@ -1,3 +1,4 @@
+import subprocess
 from flask import request
 from .database import SQLiteDB
 from .response import JSONResponse, MissingURLParameterResponse
@@ -17,8 +18,10 @@ def enqueue():
                 'error': 'Task is not enqueued, because template with id {} does not exist.'.format(template_id)
             }, status=400)
         else:
+            output = subprocess.run(["sleep", "10"], stdout=subprocess.PIPE)
             return JSONResponse({
-                "template": template,
+                'output': str(output.stdout),
+                'template': template,
             })
 
 
