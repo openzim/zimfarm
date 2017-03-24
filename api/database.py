@@ -1,14 +1,12 @@
 import os
 import sqlite3
 from uuid import uuid4
-from flask import current_app
 
 from .status import TaskStatus
 
 
 class SQLiteDB:
     def __init__(self, path: str = None):
-        if path is None: path = current_app.config['SQLITE_PATH'] if 'SQLITE_PATH' in current_app.config else path
         if path is None:
             self.conn = sqlite3.connect(':memory:')
             self.create_tables()
@@ -18,6 +16,9 @@ class SQLiteDB:
             if not os.path.exists(path):
                 self.create_tables()
                 self.populate_test_data()
+
+    def close(self):
+        self.conn.close()
 
     def create_tables(self):
         with self.conn:

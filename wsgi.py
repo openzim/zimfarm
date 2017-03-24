@@ -1,4 +1,4 @@
-from api import app
+from api import flask
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    flask.run(debug=True)

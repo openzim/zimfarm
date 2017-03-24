@@ -1,31 +1,35 @@
 import subprocess
 from flask import request
-from .database import SQLiteDB
+from . import flask, celery, get_db
 from .response import JSONResponse, MissingURLParameterResponse
-from . import app
 
 
-@app.route('/task/enqueue', methods=['POST'])
+@flask.route('/task/enqueue', methods=['POST'])
 def enqueue():
     template_id = request.args.get('template_id')
     if template_id is None:
         return MissingURLParameterResponse('template_id')
     else:
-        db = SQLiteDB()
+        db = get_db()
         template = db.get_template(template_id)
         if template is None:
             return JSONResponse({
                 'error': 'Task is not enqueued, because template with id {} does not exist.'.format(template_id)
             }, status=400)
         else:
-            output = subprocess.run(["sleep", "10"], stdout=subprocess.PIPE)
+            task = execute.apply_async(args=[])
             return JSONResponse({
-                'output': str(output.stdout),
+                'task': task.id,
                 'template': template,
             })
 
 
-@app.route('/task/status', methods=['POST'])
+@celery.task(bind=True)
+def execute(self):
+    subprocess.run(["sleep", "10"], stdout=subprocess.PIPE)
+
+
+@flask.route('/task/status', methods=['POST'])
 def status():
     return JSONResponse({
         "message": "under construction"
