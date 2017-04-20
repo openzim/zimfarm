@@ -1,7 +1,18 @@
 import subprocess
 from flask import request
+from celery import Task
 from . import flask, celery, get_db
 from .response import JSONResponse, MissingURLParameterResponse
+
+
+class ShellScriptExecTask(Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        pass
+
+
+@celery.task(bind=True, base=ShellScriptExecTask, track_started=True)
+def execute(self):
+    subprocess.run(["sleep", "20"], stdout=subprocess.PIPE)
 
 
 @flask.route('/task/enqueue', methods=['POST'])
@@ -19,18 +30,24 @@ def enqueue():
         else:
             task = execute.apply_async(args=[])
             return JSONResponse({
-                'task': task.id,
+                'task': {
+                    'id': task.id,
+                    'status': task.status
+                },
                 'template': template,
             })
 
 
-@celery.task(bind=True)
-def execute(self):
-    subprocess.run(["sleep", "10"], stdout=subprocess.PIPE)
-
-
-@flask.route('/task/status', methods=['POST'])
+@flask.route('/task/status', methods=['GET'])
 def status():
-    return JSONResponse({
-        "message": "under construction"
-    })
+    task_id = request.args.get('task_id')
+    if task_id is None:
+        return MissingURLParameterResponse('task_id')
+    else:
+        task = execute.AsyncResult(task_id)
+        return JSONResponse({
+            'task': {
+                'id': task.id,
+                'status': task.status
+            }
+        })
