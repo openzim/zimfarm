@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'tasks',
-  template: 'this is tasks'
+    selector: 'tasks',
+    templateUrl: 'app/tasks/tasks.component.html'
 })
 export class TasksComponent {
 	
