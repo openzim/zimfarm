@@ -17,5 +17,5 @@ services:
             - .:/app
         links:
             - rabbit
-        depedends_on:
+        depends_on:
             - rabbit
