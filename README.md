@@ -23,5 +23,5 @@ Goal: Create a queueing system that execute tasks when receiving request from a 
 - [ ] Each task simply run shell scripts like `sleep(20)`
 
 ## Useful commands
-remove all containers: `docker rm $(docker ps -a -q)`
-remova all untagged images `docker rmi $(docker images -a | grep "^<none>" | awk "{print $3}")`
+- remove all containers: `docker rm $(docker ps -a -q)`
+- remova all untagged images `docker rmi $(docker images -a | grep "^<none>" | awk "{print $3}")`

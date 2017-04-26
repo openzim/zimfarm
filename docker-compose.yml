@@ -10,7 +10,14 @@ services:
             - "5672:5672"
         logging:
             driver: none
-    
+    dispatcher:
+        build:
+            context: ./dispatcher
+            dockerfile: Dockerfile
+        ports:
+            - "80:80"
+        depends_on:
+            - rabbit
     worker:
         build:
             context: ./worker
@@ -19,13 +26,5 @@ services:
             - .:/app
         links:
             - rabbit
-        depends_on:
-            - rabbit
-    dispatcher:
-        build:
-            context: ./dispatcher
-            dockerfile: Dockerfile
-        ports:
-            - "80:80"
         depends_on:
             - rabbit
