@@ -10,7 +10,7 @@ def hello():
 
 @flask_app.route("/test")
 def test():
-    task = celery_app.send_task('test.add', args=[4, 7])
+    task = celery_app.send_task('delayed_add', args=[4, 7])
     response = {
         'task_id': task.id
     }
