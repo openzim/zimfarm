@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 # start worker
 COPY ./app /celery_worker
 WORKDIR /celery_worker
-ENTRYPOINT celery worker -A tasks --loglevel=info
+ENTRYPOINT celery -A tasks worker --loglevel=info
