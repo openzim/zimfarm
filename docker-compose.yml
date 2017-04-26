@@ -8,6 +8,8 @@ services:
             - RABBITMQ_DEFAULT_PASS=mypass
         ports:
             - "5672:5672"
+        logging:
+            driver: none
     
     worker:
         build:
@@ -17,5 +19,13 @@ services:
             - .:/app
         links:
             - rabbit
+        depends_on:
+            - rabbit
+    dispatcher:
+        build:
+            context: ./dispatcher
+            dockerfile: Dockerfile
+        ports:
+            - "80:80"
         depends_on:
             - rabbit
