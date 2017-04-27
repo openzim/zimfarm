@@ -10,6 +10,7 @@ celery_app = celery.Celery('worker', broker='amqp://admin:mypass@rabbit:5672', b
 def hello():
    return "Hello World from zim farm using Python 3.5"
 
+
 @flask_app.route("/task/delayed_add", methods=['POST'])
 def task_delayed_add():
     request_json = request.get_json()
@@ -25,6 +26,7 @@ def task_delayed_add():
         },
     }
     return jsonify(response)
+
 
 @flask_app.route("/task/status/<string:id>")
 def task_status(id):
