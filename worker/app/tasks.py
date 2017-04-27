@@ -2,7 +2,7 @@ from celery import Celery
 import time
 
 
-app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='rpc://')
+app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
 
 
 @app.task(name='delayed_add', track_started=True)

@@ -10,6 +10,11 @@ services:
             - "5672:5672"
         logging:
             driver: none
+    redis:
+        hostname: redis
+        image: redis:3.0
+        ports:
+            - "6379:6379"
     dispatcher:
         build:
             context: ./dispatcher
@@ -20,6 +25,7 @@ services:
             - "80:80"
         depends_on:
             - rabbit
+            - redis
     worker:
         build:
             context: ./worker
@@ -30,3 +36,4 @@ services:
             - rabbit
         depends_on:
             - rabbit
+            - redis

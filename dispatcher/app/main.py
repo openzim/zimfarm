@@ -3,7 +3,7 @@ import celery
 
 
 flask_app = Flask(__name__)
-celery_app = celery.Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='rpc://')
+celery_app = celery.Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
 
 
 @flask_app.route("/")
