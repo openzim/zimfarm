@@ -77,6 +77,9 @@ If you are not able to see `SUCCESS`, please give it a few more try. This is a k
 
 The task query API does not always return the correct result. I am not totally sure why, but I think this is due to the rpc result backend has the restriction of [one queue per client](http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.rpc.html#module-celery.backends.rpc). But in our case, we have 4 queues (4 uWSGI processes). If the uWSGI process handled the status query request is not the same that started the task, celery will not be able to determine the task's status, hence return `PENDING`.
 
+#### How to solve it?
+ We could try to use another result backend like SQLite
+
 ## Note: Useful commands
 - remove all containers: `docker rm $(docker ps -a -q)`
 - remova all untagged images `docker rmi $(docker images -a | grep "^<none>" | awk "{print $3}")`
