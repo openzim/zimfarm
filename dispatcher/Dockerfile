@@ -6,3 +6,6 @@ RUN pip install -r /requirements.txt
 
 # copy flask app
 COPY ./app /app
+
+# debug
+ENTRYPOINT python /app/main.py

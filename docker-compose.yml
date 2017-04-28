@@ -21,6 +21,8 @@ services:
             dockerfile: Dockerfile
         links:
             - rabbit
+        volumes:
+            - /Volumes/Data/Developer/zimfarm/dispatcher/app:/app
         ports:
             - "80:80"
         depends_on:

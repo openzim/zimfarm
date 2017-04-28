@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import celery
+from flower.utils.tasks import iter_tasks
 
 
 flask_app = Flask(__name__)
@@ -38,6 +39,20 @@ def task_status(id):
     }
     if status == celery.states.SUCCESS:
         response['result'] = res.result
+    return jsonify(response)
+
+
+@flask_app.route("/tasks")
+def get_tasks():
+    events = celery_app.events
+    t = iter_tasks(events)
+    response = {
+        "tasks": [2, 3, 4],
+        "debug": print(type(t))
+    }
+
+    # for task_id, task in iter_tasks(events):
+    #     tasks.append(task_id)
     return jsonify(response)
 
 if __name__ == "__main__":
