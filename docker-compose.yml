@@ -39,3 +39,14 @@ services:
         depends_on:
             - rabbit
             - redis
+    flower:
+        build:
+            context: ./flower
+            dockerfile: Dockerfile
+        links:
+            - rabbit
+        ports:
+            - "5555:5555"
+        depends_on:
+            - rabbit
+            - redis
