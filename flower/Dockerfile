@@ -5,6 +5,6 @@ COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 # start worker
-COPY ./app /celery_worker
-WORKDIR /celery_worker
-ENTRYPOINT celery -A tasks worker --loglevel=info
+COPY ./app /flower
+WORKDIR /flower
+ENTRYPOINT flower -A tasks --port=5555
