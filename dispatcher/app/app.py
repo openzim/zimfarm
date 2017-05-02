@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from celery import Celery
-import threading
 
 flask = Flask(__name__)
 flask.config.update({
@@ -11,4 +10,3 @@ flask.config.update({
 db = SQLAlchemy(flask)
 celery = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
 # celery = Celery()
-print(threading.current_thread())

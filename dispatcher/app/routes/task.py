@@ -4,7 +4,7 @@ import database.task
 
 
 def hello():
-   return "Hello World from zim farm using Python 3.5"
+    return "Hello World from zim farm using Python 3.5"
 
 
 def delayed_add():
@@ -27,18 +27,21 @@ def delayed_add():
 
 
 def status(id):
-    result = celery.AsyncResult(id)
-    status = result.status
-    response = {
-        'id': id,
-        'status': status,
-    }
-    if status == 'SUCCESS':
-        response['result'] = result.result
-    return jsonify(response)
+    if request.method == 'POST':
+        pass
+    else:
+        result = celery.AsyncResult(id)
+        status = result.status
+        response = {
+            'id': id,
+            'status': status,
+        }
+        if status == 'SUCCESS':
+            response['result'] = result.result
+        return jsonify(response)
 
 
-def tasks():
+def get_tasks():
     tasks = [*map(lambda x: {
         'id': x.id,
         'name': x.name,

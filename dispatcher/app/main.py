@@ -4,8 +4,8 @@ from routes import task
 
 app.flask.route("/")(task.hello)
 app.flask.route("/task/delayed_add", methods=['POST'])(task.delayed_add)
-app.flask.route("/task/status/<string:id>", methods=['GET'])(task.status)
-app.flask.route("/tasks", methods=['GET'])(task.tasks)
+app.flask.route("/task/status/<string:id>", methods=['GET', 'POST'])(task.status)
+app.flask.route("/tasks", methods=['GET'])(task.get_tasks)
 
 
 if __name__ == "__main__":
