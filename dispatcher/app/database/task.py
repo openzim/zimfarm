@@ -6,9 +6,11 @@ class Task(db.Model):
     id = db.Column(db.String, primary_key=True)
     name = db.Column(db.String)
     status = db.Column(db.String)
+
     created_time = db.Column(db.DateTime)
-    start_time = db.Column(db.DateTime)
-    finish_time = db.Column(db.DateTime)
+    started_time = db.Column(db.DateTime)
+    finished_time = db.Column(db.DateTime)
+
     args = db.Column(db.String)
     kwargs = db.Column(db.String)
     stdout = db.Column(db.String)
@@ -24,21 +26,21 @@ class Task(db.Model):
 db.create_all()
 
 
-def add(id: str, name: str, start: datetime) -> Task:
-    task = Task(id=id, name=name, start=start)
+def add(id: str, name: str) -> Task:
+    task = Task(id=id, name=name, created_time=datetime.now())
     db.session.add(task)
     db.session.commit()
     return task
 
 
-def update(id: str, status: str, stdout: str, start: datetime, finish: datetime) -> Task:
+def update(id: str, status: str, stdout: str) -> Task:
     task = Task.query.filter_by(id=id).first()
     task.status = status
     task.stdout = stdout
     if status == 'STARTED':
-        task.start_time = start
-    elif start == 'FINISHED':
-        task.finish_time = finish
+        task.started_time = datetime.now()
+    elif status == 'FINISHED':
+        task.finished_time = datetime.now()
     db.session.commit()
     return task
 

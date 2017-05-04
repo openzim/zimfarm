@@ -10,11 +10,18 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                 'id': o.id,
                 'name': o.name,
                 'status': o.status,
-                'start': self.encode_datetime(o.start),
-                'finish': self.encode_datetime(o.finished),
-                'args': o.args,
-                'kwargs': o.kwargs,
-                'stdout': o.stdout,
+                'time': {
+                    'created': self.encode_datetime(o.created_time),
+                    'started': self.encode_datetime(o.started_time),
+                    'finished': self.encode_datetime(o.finished_time)
+                },
+                'arguments': {
+                    'positional': o.args,
+                    'keyword': o.kwargs
+                },
+                'result': {
+                    'stdout': o.stdout
+                },
             }
             return json
         else:

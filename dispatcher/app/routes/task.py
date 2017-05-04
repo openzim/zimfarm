@@ -1,4 +1,3 @@
-from datetime import datetime
 from flask import request, jsonify
 from app import celery
 import database.task
@@ -15,7 +14,7 @@ def delayed_add():
 
     task_name = 'delayed_add'
     celery_task = celery.send_task(task_name, args=[x, y])
-    database_task = database.task.add(celery_task.id, task_name, datetime.now())
+    database_task = database.task.add(celery_task.id, task_name)
     return jsonify({'task': database_task})
 
 
@@ -26,7 +25,7 @@ def subprocess():
 
     task_name = 'subprocess'
     celery_task = celery.send_task(task_name)
-    database_task = database.task.add(celery_task.id, task_name, datetime.now())
+    database_task = database.task.add(celery_task.id, task_name)
     return jsonify({'task': database_task})
 
 

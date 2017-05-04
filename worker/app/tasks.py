@@ -29,7 +29,6 @@ def subprocess_run(self):
                               headers={'content-type': 'application/json'},
                               data=json.dumps(payload).encode('utf-8'))
         response = request.urlopen(req)
-        print(response.info())
 
     update_status('STARTED', None)
     time.sleep(5)
