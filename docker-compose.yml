@@ -50,3 +50,5 @@ services:
         depends_on:
             - rabbit
             - redis
+        logging:
+            driver: none
