@@ -19,12 +19,23 @@ def delayed_add():
     return jsonify({'task': database_task})
 
 
+def subprocess():
+    request_data = request.get_json()
+    x = request_data['x']
+    y = request_data['y']
+
+    task_name = 'subprocess'
+    celery_task = celery.send_task(task_name)
+    database_task = database.task.add(celery_task.id, task_name, datetime.now())
+    return jsonify({'task': database_task})
+
+
 def task(id):
     if request.method == 'POST':
         request_data = request.get_json()
         status = request_data.get('status')
         stdout = request_data.get('stdout')
-        task = database.task.update(id, status)
+        task = database.task.update(id, status, stdout)
         response = {
             'success': True,
             'task': task

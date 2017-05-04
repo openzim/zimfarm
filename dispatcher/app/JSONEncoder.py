@@ -21,4 +21,4 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
             JSONEncoder.default(self, o)
 
     def encode_datetime(self, d: datetime):
-        return d.isoformat() + 'Z'
+        return d.isoformat() + 'Z' if isinstance(d, datetime) else None

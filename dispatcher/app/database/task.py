@@ -6,8 +6,9 @@ class Task(db.Model):
     id = db.Column(db.String, primary_key=True)
     name = db.Column(db.String)
     status = db.Column(db.String)
-    start = db.Column(db.DateTime)
-    finished = db.Column(db.DateTime)
+    created_time = db.Column(db.DateTime)
+    start_time = db.Column(db.DateTime)
+    finish_time = db.Column(db.DateTime)
     args = db.Column(db.String)
     kwargs = db.Column(db.String)
     stdout = db.Column(db.String)
@@ -30,9 +31,14 @@ def add(id: str, name: str, start: datetime) -> Task:
     return task
 
 
-def update(id: str, status: str) -> Task:
+def update(id: str, status: str, stdout: str, start: datetime, finish: datetime) -> Task:
     task = Task.query.filter_by(id=id).first()
     task.status = status
+    task.stdout = stdout
+    if status == 'STARTED':
+        task.start_time = start
+    elif start == 'FINISHED':
+        task.finish_time = finish
     db.session.commit()
     return task
 
