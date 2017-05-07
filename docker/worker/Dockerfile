@@ -1,0 +1,1 @@
+FROM openzim/mwoffliner:latest
