@@ -15,19 +15,41 @@ services:
         image: redis:3.0
         ports:
             - "6379:6379"
-    dispatcher:
+        logging:
+            driver: none
+    
+    proxy:
         build:
-            context: ./dispatcher
+            context: ./proxy
+            dockerfile: Dockerfile
+        ports:
+            - "8080:80"
+        links:
+            - dispatcher_backend
+            - dispatcher_frontend
+        depends_on:
+            - dispatcher_backend
+            - dispatcher_frontend
+    dispatcher_frontend:
+        build:
+            context: ./dispatcher_frontend
+            dockerfile: Dockerfile
+        ports:
+            - "8081:80"
+    dispatcher_backend:
+        build:
+            context: ./dispatcher_backend
             dockerfile: Dockerfile
         links:
             - rabbit
         volumes:
-            - /Volumes/Data/Developer/zimfarm/dispatcher/app:/app
+            - /Volumes/Data/Developer/zimfarm/dispatcher_backend/app:/app
         ports:
-            - "80:80"
+            - "8082:80"
         depends_on:
             - rabbit
             - redis
+    
     worker:
         build:
             context: ./worker
@@ -36,19 +58,22 @@ services:
             - .:/app
         links:
             - rabbit
+            - redis
         depends_on:
             - rabbit
             - redis
-    flower:
-        build:
-            context: ./flower
-            dockerfile: Dockerfile
-        links:
-            - rabbit
-        ports:
-            - "5555:5555"
-        depends_on:
-            - rabbit
-            - redis
-        logging:
-            driver: none
+    # flower:
+    #     build:
+    #         context: ./flower
+    #         dockerfile: Dockerfile
+    #     links:
+    #         - rabbit
+    #     ports:
+    #         - "5555:5555"
+    #     depends_on:
+    #         - rabbit
+    #         - redis
+    #     logging:
+    #         driver: none
+    
+    
