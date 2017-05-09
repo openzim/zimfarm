@@ -20,7 +20,7 @@ def delayed_add(x, y):
 @app.task(bind=True, name='subprocess', track_started=True)
 def subprocess_run(self):
     def update_status(status, stdout):
-        url = 'http://dispatcher:80/task/' + self.request.id
+        url = 'http://proxy/api/task/' + self.request.id
         payload = {
             'status': status,
             'stdout': stdout
@@ -32,7 +32,7 @@ def subprocess_run(self):
             code = response.getcode()
             charset = response.headers.get_content_charset('utf-8')
             body = json.loads(response.read().decode(charset))
-            print('{}, {}'.format(code, body))
+            # print('{}, {}'.format(code, body))
 
 
 
