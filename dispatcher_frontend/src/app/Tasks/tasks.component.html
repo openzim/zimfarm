@@ -8,19 +8,21 @@
 			<thead>
 				<tr>
 					<th>ID</th>
-					<th>Template</th>
+					<th>Name</th>
 					<th>Status</th>
-					<th>Start Time</th>
-					<th>Actions</th>
+					<th>Created Time</th>
+					<th>Started Time</th>
+					<th>Finished Time</th>
 				</tr>
 			</thead>
 			<tbody>
-				<!--<tr>
-				<th scope="row">1</th>
-				<td>Mark</td>
-				<td>Otto</td>
-				<td>@mdo</td>
-				</tr>-->
+				<tr *ngFor="let task of tasks">
+					<th>{{task.id | slice:-12}}</th>
+					<td>{{task.name}}</td>
+					<td>{{task.status}}</td>
+					<td>{{task.time.created}}</td>
+					<td>{{task.time.started}}</td>
+					<td>{{task.time.finished}}</td>
 			</tbody>
 		</table>
 	</div>

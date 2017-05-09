@@ -14,7 +14,7 @@ export class TaskService {
         const url = 'api/task';
         return this.http.get(url)
                .toPromise()
-               .then(response => response.json())
+               .then(response => response.json() as Task[])
                .catch(this.handleError);
 	}
 

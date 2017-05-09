@@ -11,12 +11,18 @@ export class TasksComponent {
     constructor(
         private taskService: TaskService
     ) {}
+
+    private tasks: Task[]
+
+    ngOnInit() {
+        this.refresh()
+    }
+
 	enqueue(): void {
         console.log('enqueued');
     }
 
     refresh(): void {
-        console.log('refresh');
-        this.taskService.getTasks().then((tasks) => console.log(tasks));
+        this.taskService.getTasks().then((tasks) => this.tasks = tasks);
     }
 }

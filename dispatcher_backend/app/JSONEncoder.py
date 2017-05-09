@@ -15,7 +15,7 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                     'started': self.encode_datetime(o.started_time),
                     'finished': self.encode_datetime(o.finished_time)
                 },
-                'arguments': {
+                'argument': {
                     'positional': o.args,
                     'keyword': o.kwargs
                 },
