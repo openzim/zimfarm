@@ -1,7 +1,7 @@
 {
-  "name": "Zimfarm",
+  "name": "zimfarm",
   "version": "1.0.0",
-  "description": "QuickStart package.json from the documentation, supplemented with testing support",
+  "description": "package description for zimfarm",
   "scripts": {
     "build": "tsc -p src/",
     "build:watch": "tsc -p src/ -w",
