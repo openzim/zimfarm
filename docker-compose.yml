@@ -59,6 +59,7 @@ services:
         volumes:
             - .:/app
         links:
+            - proxy
             - rabbit
             - redis
         depends_on:

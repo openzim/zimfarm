@@ -8,14 +8,13 @@ import { Task } from './task';
 @Injectable()
 export class TaskService {
     private headers = new Headers({'Content-Type': 'application/json'});
-    private url = 'api/task';
-
 	constructor(private http: Http) { }
 
 	getTasks(): Promise<Task[]> {
-        return this.http.get(this.url)
+        const url = 'api/task';
+        return this.http.get(url)
                .toPromise()
-               .then(response => response.json().data)
+               .then(response => response.json())
                .catch(this.handleError);
 	}
 
