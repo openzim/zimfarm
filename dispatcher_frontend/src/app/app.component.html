@@ -1,0 +1,15 @@
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Zimfarm</a>
+    </div>
+    <div>
+      <ul class="nav navbar-nav">
+        <li *ngFor="let tab of tabs" routerLinkActive="active">
+          <a routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
+        <li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<router-outlet></router-outlet>
