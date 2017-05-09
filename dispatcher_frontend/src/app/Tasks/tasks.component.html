@@ -17,7 +17,7 @@
 			</thead>
 			<tbody>
 				<tr *ngFor="let task of tasks">
-					<th>{{task.id | slice:-12}}</th>
+					<th><a [routerLink]="['detail', task.id]">{{task.id | slice:-12}}</a></th>
 					<td>{{task.name}}</td>
 					<td>{{task.status}}</td>
 					<td>{{task.time.created}}</td>

@@ -8,17 +8,26 @@ import { Task } from './task';
 @Injectable()
 export class TaskService {
     private headers = new Headers({'Content-Type': 'application/json'});
-	constructor(private http: Http) { }
+    constructor(private http: Http) { }
 
-	getTasks(): Promise<Task[]> {
+    getTasks(): Promise<Task[]> {
         const url = 'api/task';
         return this.http.get(url)
                .toPromise()
                .then(response => response.json() as Task[])
                .catch(this.handleError);
-	}
+    }
 
-	private handleError(error: any): Promise<any> {
+    getTask(id: string): Promise<Task> {
+        const url = 'api/task/'+id;
+        console.log(id);
+        return this.http.get(url)
+               .toPromise()
+               .then(response => response.json() as Task)
+               .catch(this.handleError);
+    }
+
+    private handleError(error: any): Promise<any> {
         console.error('An error occurred', error);
         return Promise.reject(error.message || error);
     }
