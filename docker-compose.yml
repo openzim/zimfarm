@@ -34,6 +34,8 @@ services:
         build:
             context: ./dispatcher_frontend
             dockerfile: Dockerfile
+        volumes:
+            - /Volumes/Data/Developer/zimfarm/dispatcher_frontend:/app
         ports:
             - "8081:80"
     dispatcher_backend:
