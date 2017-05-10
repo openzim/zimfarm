@@ -3,53 +3,50 @@
 		<button type="button" class="btn btn-primary" (click)="goBack()">Go Back</button>
 		<button type="button" class="btn btn-success" (click)="refresh()" *ngIf="task">Refresh</button>
 	</div>
-	<div *ngIf="task">
-		<div style="width: 60%;">
-			<div class="panel" [ngClass]="{'panel-default': task.status=='PENDING',
+	<div *ngIf="task" style="width: 60%; margin: auto;">
+		<div class="panel" [ngClass]="{'panel-default': task.status=='PENDING',
 										   'panel-info': task.status=='STARTED' || task.status=='UPLOADING',
 										   'panel-danger': task.status=='FINISHED' && task.result.stderr!='',
 										   'panel-success': task.status=='FINISHED' && task.result.stderr==''}">
-				<div class="panel-heading">
-					<h3 class="panel-title">Status: {{task.status}}</h3>
-				</div>
-				<div class="panel-body">
-					<div *ngIf="task.result.stdout">
-						<label>stdout:</label>
-						<pre>{{task.result.stdout}}</pre>
-					</div>
-					<div *ngIf="task.result.stderr">
-						<label>stderr:</label>
-						<pre>{{task.result.stderr}}</pre>
-					</div>
-				</div>
-				<table class="table table-bordered">
-					<tr>
-						<td>ID</td>
-						<td>{{task.id}}</td>
-					</tr>
-					<tr>
-						<td>Name</td>
-						<td>{{task.name}}</td>
-					</tr>
-					<tr>
-						<td>Command</td>
-						<td>{{task.command}}</td>
-					</tr>
-					<tr>
-						<td>Created Time</td>
-						<td>{{task.time.created}}</td>
-					</tr>
-					<tr>
-						<td>Started Time</td>
-						<td>{{task.time.started}}</td>
-					</tr>
-					<tr>
-						<td>Finished Time</td>
-						<td>{{task.time.finished}}</td>
-					</tr>
-				</table>
+			<div class="panel-heading">
+				<h3 class="panel-title">Status: {{task.status}}</h3>
 			</div>
-
+			<div class="panel-body">
+				<div *ngIf="task.result.stdout">
+					<label>stdout:</label>
+					<pre>{{task.result.stdout}}</pre>
+				</div>
+				<div *ngIf="task.result.stderr">
+					<label>stderr:</label>
+					<pre>{{task.result.stderr}}</pre>
+				</div>
+			</div>
+			<table class="table table-bordered">
+				<tr>
+					<td>ID</td>
+					<td>{{task.id}}</td>
+				</tr>
+				<tr>
+					<td>Name</td>
+					<td>{{task.name}}</td>
+				</tr>
+				<tr>
+					<td>Command</td>
+					<td>{{task.command}}</td>
+				</tr>
+				<tr>
+					<td>Created Time</td>
+					<td>{{task.time.created}}</td>
+				</tr>
+				<tr>
+					<td>Started Time</td>
+					<td>{{task.time.started}}</td>
+				</tr>
+				<tr>
+					<td>Finished Time</td>
+					<td>{{task.time.finished}}</td>
+				</tr>
+			</table>
 		</div>
 	</div>
 	<div *ngIf="!task">
