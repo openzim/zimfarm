@@ -14,7 +14,7 @@ def subprocess():
     task_name = 'subprocess'
     celery_task = celery.send_task(task_name, kwargs={'command': command})
     database_task = database.task.add(celery_task.id, task_name, 'PENDING', command)
-    return jsonify({'task': database_task})
+    return jsonify(database_task)
 
 
 def task(id):

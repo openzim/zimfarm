@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 import { Task } from '../model/task';
 import { TaskService } from '../model/task.service';
@@ -15,18 +15,27 @@ export class TasksComponent {
     ) {}
 
     private tasks: Task[]
+    command: string
+    private modal: NgbModalRef
 
     ngOnInit() {
         this.refresh()
     }
 
-	addTask(content: any): void {
-        console.log('addTask');
-        this.modalService.open(content).result.then((result) => {
-            console.log(result);
+	showAddTaskModal(content: any): void {
+        this.modal = this.modalService.open(content);
+        this.modal.result.then((result) => {
+            // closed
         }, (reason) => {
-            console.log(reason);
+            //dismissed
         });
+    }
+
+    addTask(): void {
+        this.taskService.addTask(this.command);
+        this.refresh();
+        console.log(this.command);
+        this.modal.dismiss();
     }
 
     refresh(): void {

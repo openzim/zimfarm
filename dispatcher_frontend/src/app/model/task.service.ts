@@ -1,5 +1,5 @@
 import { Injectable }    from '@angular/core';
-import { Headers, Http } from '@angular/http';
+import { Http, Headers, RequestOptions } from '@angular/http';
 
 import 'rxjs/add/operator/toPromise';
 
@@ -21,6 +21,21 @@ export class TaskService {
     getTask(id: string): Promise<Task> {
         const url = 'api/task/'+id;
         return this.http.get(url)
+               .toPromise()
+               .then(response => response.json() as Task)
+               .catch(this.handleError);
+    }
+
+    addTask(command: string): Promise<Task> {
+        const url = 'api/task/enqueue/subprocess';
+        let body = JSON.stringify({
+            'command': command
+        });
+        let options = new RequestOptions ({
+            headers: this.headers
+        })
+        console.log(body);
+        return this.http.post(url, body, options)
                .toPromise()
                .then(response => response.json() as Task)
                .catch(this.handleError);
