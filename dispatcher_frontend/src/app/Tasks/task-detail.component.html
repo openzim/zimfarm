@@ -5,12 +5,22 @@
 	</div>
 	<div *ngIf="task">
 		<div style="width: 60%;">
-			<div class="panel" [ngClass]="{'panel-success': task.status=='FINISHED'}">
+			<div class="panel" [ngClass]="{'panel-default': task.status=='PENDING',
+										   'panel-info': task.status=='STARTED' || task.status=='UPLOADING',
+										   'panel-danger': task.status=='FINISHED' && task.result.stderr!='',
+										   'panel-success': task.status=='FINISHED' && task.result.stderr==''}">
 				<div class="panel-heading">
 					<h3 class="panel-title">Status: {{task.status}}</h3>
 				</div>
 				<div class="panel-body">
-					<pre>{{task.result.stdout}}</pre>
+					<div *ngIf="task.result.stdout">
+						<label>stdout:</label>
+						<pre>{{task.result.stdout}}</pre>
+					</div>
+					<div *ngIf="task.result.stderr">
+						<label>stderr:</label>
+						<pre>{{task.result.stderr}}</pre>
+					</div>
 				</div>
 				<table class="table table-bordered">
 					<tr>
@@ -20,6 +30,10 @@
 					<tr>
 						<td>Name</td>
 						<td>{{task.name}}</td>
+					</tr>
+					<tr>
+						<td>Command</td>
+						<td>{{task.command}}</td>
 					</tr>
 					<tr>
 						<td>Created Time</td>

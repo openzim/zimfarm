@@ -1,6 +1,6 @@
 <div style="width: 100%; padding: 0px 10px">
 	<div style="margin: 10px 0px;">
-		<button type="button" class="btn btn-primary" (click)="enqueue()">Enqueue</button>
+		<button type="button" class="btn btn-primary" (click)="addTask()">Add</button>
 		<button type="button" class="btn btn-success" (click)="refresh()">Refresh</button>
 	</div>
 	<div>
@@ -10,6 +10,7 @@
 					<th>ID</th>
 					<th>Name</th>
 					<th>Status</th>
+					<th>Command</th>
 					<th>Created Time</th>
 					<th>Started Time</th>
 					<th>Finished Time</th>
@@ -20,6 +21,7 @@
 					<th><a [routerLink]="['detail', task.id]">{{task.id | slice:-12}}</a></th>
 					<td>{{task.name}}</td>
 					<td>{{task.status}}</td>
+					<td>{{task.command}}</td>
 					<td>{{task.time.created}}</td>
 					<td>{{task.time.started}}</td>
 					<td>{{task.time.finished}}</td>

@@ -18,8 +18,8 @@ export class TasksComponent {
         this.refresh()
     }
 
-	enqueue(): void {
-        console.log('enqueued');
+	addTask(): void {
+        console.log('addTask');
     }
 
     refresh(): void {

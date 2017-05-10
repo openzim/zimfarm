@@ -30,7 +30,7 @@ def subprocess_run(self, command: str):
 
     update_status('STARTED', None, None)
     time.sleep(5)
-    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
     update_status('UPLOADING', process.stdout, process.stderr)
     time.sleep(5)
     update_status('FINISHED', process.stdout, process.stderr)
