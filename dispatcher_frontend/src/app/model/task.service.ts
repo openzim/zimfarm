@@ -20,7 +20,6 @@ export class TaskService {
 
     getTask(id: string): Promise<Task> {
         const url = 'api/task/'+id;
-        console.log(id);
         return this.http.get(url)
                .toPromise()
                .then(response => response.json() as Task)

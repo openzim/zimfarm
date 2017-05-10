@@ -1,6 +1,6 @@
 <div style="width: 100%; padding: 0px 10px">
 	<div style="margin: 10px 0px;">
-		<button type="button" class="btn btn-primary" (click)="addTask()">Add</button>
+		<button type="button" class="btn btn-primary" (click)="addTask(content)">Add</button>
 		<button type="button" class="btn btn-success" (click)="refresh()">Refresh</button>
 	</div>
 	<div>
@@ -28,4 +28,10 @@
 			</tbody>
 		</table>
 	</div>
+
+	<ng-template #content let-c="close" let-d="dismiss">
+		<div class="modal-header">
+			<h4 class="modal-title">Modal title</h4>
+		</div>
+	</ng-template>
 </div>

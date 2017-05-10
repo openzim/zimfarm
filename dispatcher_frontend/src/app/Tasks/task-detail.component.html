@@ -4,24 +4,29 @@
 		<button type="button" class="btn btn-success" (click)="refresh()" *ngIf="task">Refresh</button>
 	</div>
 	<div *ngIf="task" style="width: 60%; margin: auto;">
-		<div class="panel" [ngClass]="{'panel-default': task.status=='PENDING',
-										   'panel-info': task.status=='STARTED' || task.status=='UPLOADING',
-										   'panel-danger': task.status=='FINISHED' && task.result.stderr!='',
-										   'panel-success': task.status=='FINISHED' && task.result.stderr==''}">
-			<div class="panel-heading">
-				<h3 class="panel-title">Status: {{task.status}}</h3>
-			</div>
-			<div class="panel-body">
+		<div class="card">
+			<h5 class="card-header">Status: 
+				<span class="align-top badge" [ngClass]="{'badge-default': task.status=='PENDING',
+								   	  					  'badge-info': task.status=='STARTED' || task.status=='UPLOADING',
+								   	  					  'badge-danger': task.status=='FINISHED' && task.result.stderr!='',
+								   	  					  'badge-success': task.status=='FINISHED' && task.result.stderr==''}">{{task.status}}
+				</span>
+			</h5>
+			<div class="card-block">
 				<div *ngIf="task.result.stdout">
-					<label>stdout:</label>
-					<pre>{{task.result.stdout}}</pre>
+					<div>stdout:</div>
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem;">
+						<pre><samp>{{task.result.stdout}}</samp></pre>
+					</div>
 				</div>
 				<div *ngIf="task.result.stderr">
 					<label>stderr:</label>
-					<pre>{{task.result.stderr}}</pre>
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem;">
+						<pre><samp>{{task.result.stderr}}</samp></pre>
+					</div>
 				</div>
 			</div>
-			<table class="table table-bordered">
+			<table class="table table-bordered" style="margin-bottom: 0rem;">
 				<tr>
 					<td>ID</td>
 					<td>{{task.id}}</td>

@@ -1,16 +1,15 @@
-<nav class="navbar navbar-default navbar-fixed-top">
-	<div class="container-fluid" style="width: 70%;">
-		<div class="navbar-header">
-			<a class="navbar-brand" href="#">Zimfarm</a>
-		</div>
-		<div>
-			<ul class="nav navbar-nav">
+<nav class="navbar navbar-toggleable-md fixed-top navbar-light bg-faded">
+	<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+		<span class="navbar-toggler-icon"></span>
+	</button>
+	<a class="navbar-brand" href="#">Zimfarm</a>
+	<div class="collapse navbar-collapse" id="navbarSupportedContent">
+		<ul class="navbar-nav mr-auto">
 			<li *ngFor="let tab of tabs" routerLinkActive="active">
-				<a routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
-			<li>
-			</ul>
-		</div>
+				<a class="nav-link" routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
+			</li>
+		</ul>
 	</div>
 </nav>
-<div style="width: 70%; margin: auto;"><router-outlet></router-outlet></div>
+<div><router-outlet></router-outlet></div>
 
