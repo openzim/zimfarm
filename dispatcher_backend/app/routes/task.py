@@ -12,7 +12,7 @@ def subprocess():
     command = request_data['command']
     
     task_name = 'subprocess'
-    celery_task = celery.send_task(task_name, args=[command], kwargs={'kwarg1': 'command'})
+    celery_task = celery.send_task(task_name, kwargs={'command': command})
     database_task = database.task.add(celery_task.id, task_name)
     return jsonify({'task': database_task})
 
@@ -35,3 +35,6 @@ def task(id):
 
 def tasks():
     return jsonify(database.task.get_all())
+
+def on_raw_message(body):
+    print(body)

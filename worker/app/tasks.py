@@ -8,14 +8,15 @@ from celery import Celery, Task
 app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
 
 
-@app.task(bind=True, name='subprocess', track_started=True)
+@app.task(bind=True, name='subprocess')
 def subprocess_run(self, command: str):
-    def update_status(status, stdout):
+    def update_status(status:str, stdout: str, stderr: str):
         url = 'http://proxy/api/task/' + self.request.id
         payload = {
             'status': status,
             'command': command,
-            'stdout': stdout
+            'stdout': stdout, 
+            'stderr': stderr
         }
         req = request.Request(url,
                               headers={'content-type': 'application/json'},
@@ -25,8 +26,11 @@ def subprocess_run(self, command: str):
             charset = response.headers.get_content_charset('utf-8')
             body = json.loads(response.read().decode(charset))
             # print('{}, {}'.format(code, body))
+            # TODO: retry if a POST failed (code != 200)
 
-    update_status('STARTED', None)
+    update_status('STARTED', None, None)
     time.sleep(5)
     process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
-    update_status('FINISHED', process.stdout)
+    update_status('UPLOADING', process.stdout, process.stderr)
+    time.sleep(5)
+    update_status('FINISHED', process.stdout, process.stderr)
