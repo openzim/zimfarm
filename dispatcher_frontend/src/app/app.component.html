@@ -1,15 +1,16 @@
 <nav class="navbar navbar-default">
-	<div class="container-fluid">
-	<div class="navbar-header">
-		<a class="navbar-brand" href="#">Zimfarm</a>
-	</div>
-	<div>
-		<ul class="nav navbar-nav">
-		<li *ngFor="let tab of tabs" routerLinkActive="active">
-			<a routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
-		<li>
-		</ul>
-	</div>
+	<div class="container-fluid" style="width: 70%;">
+		<div class="navbar-header">
+			<a class="navbar-brand" href="#">Zimfarm</a>
+		</div>
+		<div>
+			<ul class="nav navbar-nav">
+			<li *ngFor="let tab of tabs" routerLinkActive="active">
+				<a routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
+			<li>
+			</ul>
+		</div>
 	</div>
 </nav>
-<router-outlet></router-outlet>
+<div style="width: 70%; margin: auto;"><router-outlet></router-outlet></div>
+

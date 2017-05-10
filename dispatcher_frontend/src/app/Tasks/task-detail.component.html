@@ -1,7 +1,7 @@
 <div style="width: 100%; padding: 0px 10px">
 	<div style="margin: 10px 0px;">
 		<button type="button" class="btn btn-primary" (click)="goBack()">Go Back</button>
-		<button type="button" class="btn btn-success" (click)="refresh()">Refresh</button>
+		<button type="button" class="btn btn-success" (click)="refresh()" *ngIf="task">Refresh</button>
 	</div>
 	<div *ngIf="task">
 		<div style="width: 60%;">
@@ -39,6 +39,6 @@
 		</div>
 	</div>
 	<div *ngIf="!task">
-		<label>The task you want does not exist.</label>
+		<div class="alert alert-danger" role="alert">The task you want does not exist.</div>
 	</div>
 </div>
