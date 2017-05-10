@@ -1,6 +1,6 @@
 <div style="width: 100%; padding: 0px 10px">
 	<div style="margin: 10px 0px;">
-		<button type="button" class="btn btn-primary" (click)="enqueue()">Enqueue</button>
+		<button type="button" class="btn btn-primary" (click)="showAddTaskModal(addTaskModal)">Add</button>
 		<button type="button" class="btn btn-success" (click)="refresh()">Refresh</button>
 	</div>
 	<div>
@@ -10,6 +10,7 @@
 					<th>ID</th>
 					<th>Name</th>
 					<th>Status</th>
+					<th>Command</th>
 					<th>Created Time</th>
 					<th>Started Time</th>
 					<th>Finished Time</th>
@@ -17,13 +18,35 @@
 			</thead>
 			<tbody>
 				<tr *ngFor="let task of tasks">
-					<th>{{task.id | slice:-12}}</th>
+					<th><a [routerLink]="['detail', task.id]">{{task.id | slice:-12}}</a></th>
 					<td>{{task.name}}</td>
 					<td>{{task.status}}</td>
+					<td>{{task.command}}</td>
 					<td>{{task.time.created}}</td>
 					<td>{{task.time.started}}</td>
 					<td>{{task.time.finished}}</td>
 			</tbody>
 		</table>
 	</div>
+	<ng-template #addTaskModal let-c="close" let-d="dismiss">
+		<div class="modal-header">
+			<h4 class="modal-title">Add a new task</h4>
+			<button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		</div>
+		<div class="modal-body">
+			<form>
+				<div class="form-group">
+					<label for="commandInput">Command</label>
+					<input type="text" class="form-control" id="commandInput" [(ngModel)]="command" name="command" #name="ngModel" 
+						   autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
+				</div>
+			</form>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-primary" (click)="addTask()">Submit</button>
+			<button type="button" class="btn btn-secondary" (click)="c('Close click')">Close</button>
+		</div>
+	</ng-template>
 </div>

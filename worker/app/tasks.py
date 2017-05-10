@@ -8,22 +8,15 @@ from celery import Celery, Task
 app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
 
 
-@app.task(name='delayed_add', track_started=True)
-def delayed_add(x, y):
-    print('delayed add begins: {} + {} = ??'.format(x, y))
-    time.sleep(5)
-    result = x + y
-    print('delayed add finished: {} + {} = {}'.format(x, y, result))
-    return result
-
-
-@app.task(bind=True, name='subprocess', track_started=True)
-def subprocess_run(self):
-    def update_status(status, stdout):
+@app.task(bind=True, name='subprocess')
+def subprocess_run(self, command: str):
+    def update_status(status:str, stdout: str, stderr: str):
         url = 'http://proxy/api/task/' + self.request.id
         payload = {
             'status': status,
-            'stdout': stdout
+            'command': command,
+            'stdout': stdout, 
+            'stderr': stderr
         }
         req = request.Request(url,
                               headers={'content-type': 'application/json'},
@@ -33,10 +26,14 @@ def subprocess_run(self):
             charset = response.headers.get_content_charset('utf-8')
             body = json.loads(response.read().decode(charset))
             # print('{}, {}'.format(code, body))
+            # TODO: retry if a POST failed (code != 200)
 
-
-
-    update_status('STARTED', None)
+    update_status('STARTED', None, None)
     time.sleep(5)
-    process = subprocess.run(["ls", "-l", "/"], stdout=subprocess.PIPE, encoding='utf-8')
-    update_status('FINISHED', process.stdout)
+    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+    update_status('UPLOADING', process.stdout, process.stderr)
+    time.sleep(5)
+    if process.stderr == '':
+        update_status('FINISHED', process.stdout, process.stderr)
+    else:
+        update_status('ERROR', process.stdout, process.stderr)

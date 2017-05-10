@@ -1,0 +1,60 @@
+<div style="width: 100%; padding: 0px 10px">
+	<div style="margin: 10px 0px;">
+		<button type="button" class="btn btn-primary" (click)="goBack()">Go Back</button>
+		<button type="button" class="btn btn-success" (click)="refresh()" *ngIf="task">Refresh</button>
+	</div>
+	<div *ngIf="task" style="width: 60%; margin: auto;">
+		<div class="card">
+			<h5 class="card-header">Status: 
+				<span class="align-top badge" [ngClass]="{'badge-default': task.status=='PENDING',
+								   	  					  'badge-info': task.status=='STARTED' || task.status=='UPLOADING',
+								   	  					  'badge-danger': task.status=='ERROR',
+								   	  					  'badge-success': task.status=='FINISHED'}">{{task.status}}
+				</span>
+			</h5>
+			<div class="card-block">
+				<div *ngIf="task.result.stdout">
+					<div>stdout:</div>
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem;">
+						<pre><samp>{{task.result.stdout}}</samp></pre>
+					</div>
+				</div>
+				<div *ngIf="task.result.stderr">
+					<label>stderr:</label>
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem;">
+						<pre><samp>{{task.result.stderr}}</samp></pre>
+					</div>
+				</div>
+			</div>
+			<table class="table table-bordered" style="margin-bottom: 0rem;">
+				<tr>
+					<td>ID</td>
+					<td>{{task.id}}</td>
+				</tr>
+				<tr>
+					<td>Name</td>
+					<td>{{task.name}}</td>
+				</tr>
+				<tr>
+					<td>Command</td>
+					<td>{{task.command}}</td>
+				</tr>
+				<tr>
+					<td>Created Time</td>
+					<td>{{task.time.created}}</td>
+				</tr>
+				<tr>
+					<td>Started Time</td>
+					<td>{{task.time.started}}</td>
+				</tr>
+				<tr>
+					<td>Finished Time</td>
+					<td>{{task.time.finished}}</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div *ngIf="!task">
+		<div class="alert alert-danger" role="alert">The task you want does not exist.</div>
+	</div>
+</div>

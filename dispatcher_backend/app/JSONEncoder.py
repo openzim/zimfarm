@@ -15,12 +15,10 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                     'started': self.encode_datetime(o.started_time),
                     'finished': self.encode_datetime(o.finished_time)
                 },
-                'argument': {
-                    'positional': o.args,
-                    'keyword': o.kwargs
-                },
+                'command': o.command,
                 'result': {
-                    'stdout': o.stdout
+                    'stdout': o.stdout,
+                    'stderr': o.stderr
                 },
             }
             return json
