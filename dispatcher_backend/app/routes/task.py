@@ -7,24 +7,12 @@ def hello():
     return "Hello World from zim farm using Python 3.5"
 
 
-def delayed_add():
-    request_data = request.get_json()
-    x = request_data['x']
-    y = request_data['y']
-
-    task_name = 'delayed_add'
-    celery_task = celery.send_task(task_name, args=[x, y])
-    database_task = database.task.add(celery_task.id, task_name)
-    return jsonify({'task': database_task})
-
-
 def subprocess():
     request_data = request.get_json()
-    x = request_data['x']
-    y = request_data['y']
-
+    command = request_data['command']
+    
     task_name = 'subprocess'
-    celery_task = celery.send_task(task_name)
+    celery_task = celery.send_task(task_name, args=[command], kwargs={'kwarg1': 'command'})
     database_task = database.task.add(celery_task.id, task_name)
     return jsonify({'task': database_task})
 

@@ -8,21 +8,13 @@ from celery import Celery, Task
 app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
 
 
-@app.task(name='delayed_add', track_started=True)
-def delayed_add(x, y):
-    print('delayed add begins: {} + {} = ??'.format(x, y))
-    time.sleep(5)
-    result = x + y
-    print('delayed add finished: {} + {} = {}'.format(x, y, result))
-    return result
-
-
 @app.task(bind=True, name='subprocess', track_started=True)
-def subprocess_run(self):
+def subprocess_run(self, command: str):
     def update_status(status, stdout):
         url = 'http://proxy/api/task/' + self.request.id
         payload = {
             'status': status,
+            'command': command,
             'stdout': stdout
         }
         req = request.Request(url,
@@ -34,9 +26,7 @@ def subprocess_run(self):
             body = json.loads(response.read().decode(charset))
             # print('{}, {}'.format(code, body))
 
-
-
     update_status('STARTED', None)
     time.sleep(5)
-    process = subprocess.run(["ls", "-l", "/"], stdout=subprocess.PIPE, encoding='utf-8')
+    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
     update_status('FINISHED', process.stdout)
