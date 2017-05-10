@@ -8,8 +8,8 @@
 			<h5 class="card-header">Status: 
 				<span class="align-top badge" [ngClass]="{'badge-default': task.status=='PENDING',
 								   	  					  'badge-info': task.status=='STARTED' || task.status=='UPLOADING',
-								   	  					  'badge-danger': task.status=='FINISHED' && task.result.stderr!='',
-								   	  					  'badge-success': task.status=='FINISHED' && task.result.stderr==''}">{{task.status}}
+								   	  					  'badge-danger': task.status=='ERROR',
+								   	  					  'badge-success': task.status=='FINISHED'}">{{task.status}}
 				</span>
 			</h5>
 			<div class="card-block">

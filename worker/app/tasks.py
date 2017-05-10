@@ -33,4 +33,7 @@ def subprocess_run(self, command: str):
     process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
     update_status('UPLOADING', process.stdout, process.stderr)
     time.sleep(5)
-    update_status('FINISHED', process.stdout, process.stderr)
+    if process.stderr == '':
+        update_status('FINISHED', process.stdout, process.stderr)
+    else:
+        update_status('ERROR', process.stdout, process.stderr)
