@@ -13,7 +13,7 @@ def subprocess():
     
     task_name = 'subprocess'
     celery_task = celery.send_task(task_name, kwargs={'command': command})
-    database_task = database.task.add(celery_task.id, task_name)
+    database_task = database.task.add(celery_task.id, task_name, 'PENDING', command)
     return jsonify({'task': database_task})
 
 
@@ -22,7 +22,8 @@ def task(id):
         request_data = request.get_json()
         status = request_data.get('status')
         stdout = request_data.get('stdout')
-        task = database.task.update(id, status, stdout)
+        stderr = request_data.get('stderr')
+        task = database.task.update(id, status, stdout, stderr)
         response = {
             'success': True,
             'task': task
