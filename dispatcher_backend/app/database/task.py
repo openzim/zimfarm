@@ -40,7 +40,7 @@ def update(id: str, status: str, stdout: str, stderr: str) -> Task:
     task.stderr = stderr
     if status == 'STARTED':
         task.started_time = datetime.now()
-    elif status == 'FINISHED':
+    elif status == 'FINISHED' or status == 'ERROR':
         task.finished_time = datetime.now()
     db.session.commit()
     return task
