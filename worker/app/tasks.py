@@ -27,13 +27,21 @@ def subprocess_run(self, command: str):
             body = json.loads(response.read().decode(charset))
             # print('{}, {}'.format(code, body))
             # TODO: retry if a POST failed (code != 200)
+    
+    def decode_bin_stream(bin) -> str:
+        return bin.decode('utf-8') if bin is not None else None
 
     update_status('STARTED', None, None)
     time.sleep(5)
-    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-    update_status('UPLOADING', process.stdout, process.stderr)
+
+    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = decode_bin_stream(process.stdout)
+    stderr = decode_bin_stream(process.stderr)
+    
+    update_status('UPLOADING', stdout, stderr)
     time.sleep(5)
-    if process.stderr == '':
-        update_status('FINISHED', process.stdout, process.stderr)
+
+    if stderr == '':
+        update_status('FINISHED', stdout, stderr)
     else:
-        update_status('ERROR', process.stdout, process.stderr)
+        update_status('ERROR', stdout, stderr)
