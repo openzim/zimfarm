@@ -56,15 +56,11 @@ services:
         build:
             context: ./worker
             dockerfile: Dockerfile
-        volumes:
-            - .:/app
         links:
             - proxy
             - rabbit
-            - redis
         depends_on:
             - rabbit
-            - redis
     # flower:
     #     build:
     #         context: ./flower

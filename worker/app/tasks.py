@@ -3,7 +3,7 @@ from urllib import request, response, parse
 from celery import Celery, Task
 
 
-app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
+app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672')
 
 
 @app.task(bind=True, name='subprocess')
@@ -68,6 +68,7 @@ def mwoffliner(self, config: dict):
         return bin.decode('utf-8') if bin is not None else None
 
     whitelist = ['mwUrl', 'adminEmail']
+    command_str = None
     # t = `mwoffliner  --mwUrl=https://bm.wikipedia.org/ --adminEmail=kelson@kiwix.org --verbose`
     try:
         update_status('STARTED')
@@ -92,10 +93,10 @@ def mwoffliner(self, config: dict):
     except MWOfflinerConfigKeyError as error:
         update_status('Config ERROR', error=error.message)
     except MWOfflinerExecutionError as error:
-        update_status('Execution ERROR', error=error.stderr)
+        update_status('Execution ERROR', command=command_str, error=error.stderr)
     except:
         message = "Unexpected error: {}".format(sys.exc_info()[0])
-        update_status('ERROR', error=message)
+        update_status('ERROR', command=command_str, error=message)
     
 
 class MWOfflinerConfigKeyError(Exception):

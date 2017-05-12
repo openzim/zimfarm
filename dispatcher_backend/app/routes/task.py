@@ -49,6 +49,3 @@ def task(id):
 
 def tasks():
     return jsonify(database.task.get_all())
-
-def on_raw_message(body):
-    print(body)
