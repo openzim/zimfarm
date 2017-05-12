@@ -12,7 +12,9 @@ class Task(db.Model):
     finished_time = db.Column(db.DateTime)
 
     command = db.Column(db.String)
+    returncode = db.Column(db.Integer)
     stdout = db.Column(db.String)
+    stderr = db.Column(db.String)
     error = db.Column(db.String)
 
     def __repr__(self):
@@ -33,12 +35,14 @@ def add(id: str, name: str, status: str, command: str) -> Task:
     return task
 
 
-def update(id: str, status: str, command: str=None, stdout: str=None, error: str=None) -> Task:
+def update(id: str, status: str, command: str=None, returncode: int=None,  stdout: str=None, stderr: str=None, error: str=None) -> Task:
     task = Task.query.filter_by(id=id).first()
 
     task.status = status
     if command is not None: task.command = command
+    if returncode is not None: task.returncode = returncode
     if stdout is not None: task.stdout = stdout
+    if stderr is not None: task.stderr = stderr
     if error is not None: task.error = error
 
     if status == 'STARTED':

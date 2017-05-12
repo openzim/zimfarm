@@ -33,10 +33,12 @@ def task(id):
 
         status = request_data.get('status')
         command = request_data.get('command')
+        returncode = request_data.get('returncode')
         stdout = request_data.get('stdout')
+        stderr = request_data.get('stderr')
         error = request_data.get('error')
 
-        task = database.task.update(id, status, command, stdout, error)
+        task = database.task.update(id, status, command, returncode, stdout, stderr, error)
         response = {
             'success': True,
             'task': task
