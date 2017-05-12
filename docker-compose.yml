@@ -30,6 +30,8 @@ services:
         depends_on:
             - dispatcher_backend
             - dispatcher_frontend
+        logging:
+            driver: none
     dispatcher_frontend:
         build:
             context: ./dispatcher_frontend
