@@ -17,13 +17,26 @@ def subprocess():
     return jsonify(database_task)
 
 
+def mwoffliner():
+    request_data = request.get_json()
+    config = request_data.get('config')
+    
+    task_name = 'mwoffliner'
+    celery_task = celery.send_task(task_name, kwargs={'config': config if config is not None else {}})
+    database_task = database.task.add(celery_task.id, task_name, 'PENDING', None)
+    return jsonify(database_task)
+
+
 def task(id):
     if request.method == 'POST':
         request_data = request.get_json()
+
         status = request_data.get('status')
+        command = request_data.get('command')
         stdout = request_data.get('stdout')
-        stderr = request_data.get('stderr')
-        task = database.task.update(id, status, stdout, stderr)
+        error = request_data.get('error')
+
+        task = database.task.update(id, status, command, stdout, error)
         response = {
             'success': True,
             'task': task

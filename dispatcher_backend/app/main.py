@@ -4,6 +4,7 @@ from routes import task
 
 app.flask.route("/")(task.hello)
 app.flask.route("/task/enqueue/subprocess", methods=['POST'])(task.subprocess)
+app.flask.route("/task/enqueue/mwoffliner", methods=['POST'])(task.mwoffliner)
 app.flask.route("/task/<string:id>", methods=['GET', 'POST'])(task.task)
 app.flask.route("/task", methods=['GET'])(task.tasks)
 

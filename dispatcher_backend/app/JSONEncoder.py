@@ -18,7 +18,7 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                 'command': o.command,
                 'result': {
                     'stdout': o.stdout,
-                    'stderr': o.stderr
+                    'error': o.error
                 },
             }
             return json
