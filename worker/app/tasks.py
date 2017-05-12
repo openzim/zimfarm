@@ -46,12 +46,14 @@ def subprocess_run(self, command: str):
 
 @app.task(bind=True, name='mwoffliner')
 def mwoffliner(self, config: dict):
-    def update_status(status:str, command: str=None, stdout: str=None, error: str=None):
+    def update_status(status:str, command: str=None, returncode: int=None, stdout: str=None, stderr: str=None, error: str=None):
         url = 'http://proxy/api/task/' + self.request.id
         payload = {
             'status': status,
             'command': command,
-            'stdout': stdout, 
+            'returncode': returncode,
+            'stdout': stdout,
+            'stderr': stderr,
             'error': error
         }
         req = request.Request(url,
@@ -67,46 +69,48 @@ def mwoffliner(self, config: dict):
     def decode_bin_stream(bin) -> str:
         return bin.decode('utf-8') if bin is not None else None
 
-    whitelist = ['mwUrl', 'adminEmail']
-    command_str = None
-    # t = `mwoffliner  --mwUrl=https://bm.wikipedia.org/ --adminEmail=kelson@kiwix.org --verbose`
-    try:
-        update_status('STARTED')
-
+    def assemble_command(config: dict) -> [str]:
+        whitelist = ['mwUrl', 'adminEmail', 'verbose']
         command = ['mwoffliner']
         for key, value in config.items():
             if key not in whitelist:
                 raise MWOfflinerConfigKeyError(key)
             command.append("--{}={}".format(key, value))
+        return command
+
+    command_str = None
+    returncode = None
+
+    try:
+        update_status(status='STARTED')
+
+        command = assemble_command(config)
         command_str = ' '.join(command)
 
         process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        returncode = process.returncode
         stdout = decode_bin_stream(process.stdout)
         stderr = decode_bin_stream(process.stderr)
 
-        if stderr == '' or stderr is None:
-            update_status('UPLOADING', command_str, stdout, stderr)
-            time.sleep(5)
-            update_status('FINISHED', command_str, stdout, stderr)
-        else:
-            raise MWOfflinerExecutionError(stderr)
+        process.check_returncode()
+        update_status(status='UPLOADING', command=command_str, returncode=returncode, stdout=stdout, stderr=stderr)
+        time.sleep(5)
+        update_status(status='SUCCESS', command=command_str, returncode=returncode, stdout=stdout, stderr=stderr)
+
     except MWOfflinerConfigKeyError as error:
-        update_status('Config ERROR', error=error.message)
-    except MWOfflinerExecutionError as error:
-        update_status('Execution ERROR', command=command_str, error=error.stderr)
+        update_status(status='ERROR', error=error.message)
+    except subprocess.CalledProcessError as error:
+        update_status(status='ERROR', command=command_str, returncode=error.returncode,
+                      stdout=decode_bin_stream(error.stdout),
+                      stderr=decode_bin_stream(error.stderr))
     except:
         message = "Unexpected error: {}".format(sys.exc_info()[0])
-        update_status('ERROR', command=command_str, error=message)
+        update_status(status='ERROR', command=command_str, returncode=returncode, error=message)
     
 
 class MWOfflinerConfigKeyError(Exception):
     def __init__(self, key: str):
         self.message = 'The flag "{}" for mwoffliner is not supported.'.format(key)
-
-
-class MWOfflinerExecutionError(Exception):
-    def __init__(self, stderr: str):
-        self.stderr = stderr
 
 
 class MWOfflinerUploadError(Exception):
