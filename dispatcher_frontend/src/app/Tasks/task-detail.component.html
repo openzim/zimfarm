@@ -45,6 +45,10 @@
 					<td>Command</td>
 					<td>{{task.command}}</td>
 				</tr>
+				<tr *ngIf="task.returncode">
+					<td>Return code</td>
+					<td>{{task.returncode}}</td>
+				</tr>
 				<tr>
 					<td>Created Time</td>
 					<td>{{task.time.created}}</td>

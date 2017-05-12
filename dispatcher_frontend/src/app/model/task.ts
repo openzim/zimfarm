@@ -1,10 +1,11 @@
 export class Task {
+	command: string;
 	id: string;
 	name: string;
+	returncode: number;
 	status: string;
-	time: TaskTimeStamp;
-	argument: TaskArgument;
 	result: TaskResult;
+	time: TaskTimeStamp;
 }
 
 export class TaskTimeStamp {
@@ -13,12 +14,8 @@ export class TaskTimeStamp {
 	finished: Date;
 }
 
-export class TaskArgument {
-	keyword: string;
-	positional: string;
-}
-
 export class TaskResult {
 	stdout: string;
 	stderr: string;
+	error: string;
 }
