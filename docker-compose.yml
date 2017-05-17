@@ -6,15 +6,11 @@ services:
         environment:
             - RABBITMQ_DEFAULT_USER=admin
             - RABBITMQ_DEFAULT_PASS=mypass
-        ports:
-            - "5672:5672"
         logging:
             driver: none
     redis:
         hostname: redis
         image: redis:3.0
-        ports:
-            - "6379:6379"
         logging:
             driver: none
     
@@ -38,8 +34,6 @@ services:
             dockerfile: Dockerfile
         volumes:
             - /Volumes/Data/Developer/zimfarm/dispatcher_frontend:/app
-        ports:
-            - "8081:80"
     dispatcher_backend:
         build:
             context: ./dispatcher_backend
@@ -48,8 +42,6 @@ services:
             - rabbit
         volumes:
             - /Volumes/Data/Developer/zimfarm/dispatcher_backend/app:/app
-        ports:
-            - "8082:80"
         depends_on:
             - rabbit
             - redis
