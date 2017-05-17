@@ -1,5 +1,0 @@
-Build a Docker image:
-$docker build -t zimfarm-worker ./worker
-
-Run a Docker image (create a Docker container):
-$docker run -ti zimfarm-worker
