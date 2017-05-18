@@ -23,7 +23,7 @@ def mwoffliner():
     
     task_name = 'mwoffliner'
     celery_task = celery.send_task(task_name, kwargs={'config': config if config is not None else {}})
-    database_task = database.task.add(celery_task.id, task_name, 'PENDING', None)
+    database_task = database.task.add(celery_task.id, task_name, 'PENDING')
     return jsonify(database_task)
 
 
