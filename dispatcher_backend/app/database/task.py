@@ -1,46 +1,28 @@
 from datetime import datetime
 from app import db
+from .models import Task
 
 
-class Task(db.Model):
-    id = db.Column(db.String, primary_key=True)
-    name = db.Column(db.String)
-    status = db.Column(db.String)
-
-    created_time = db.Column(db.DateTime)
-    started_time = db.Column(db.DateTime)
-    finished_time = db.Column(db.DateTime)
-
-    command = db.Column(db.String)
-    stdout = db.Column(db.String)
-    stderr = db.Column(db.String)
-
-    def __repr__(self):
-        return "<Task(id='{id}', name={name}, args={args}, kwargs={kwargs})>".format(
-            id=self.id,
-            name=self.name,
-            args=self.args,
-            kwargs=self.kwargs
-        )
-
-db.create_all()
-
-
-def add(id: str, name: str, status: str, command: str) -> Task:
-    task = Task(id=id, name=name, status=status, command=command, created_time=datetime.now())
+def add(id: str, name: str, status: str) -> Task:
+    task = Task(id=id, name=name, status=status, created_time=datetime.now())
     db.session.add(task)
     db.session.commit()
     return task
 
 
-def update(id: str, status: str, stdout: str, stderr: str) -> Task:
+def update(id: str, status: str, command: str=None, returncode: int=None,  stdout: str=None, stderr: str=None, error: str=None) -> Task:
     task = Task.query.filter_by(id=id).first()
+
     task.status = status
-    task.stdout = stdout
-    task.stderr = stderr
+    if command is not None: task.command = command
+    if returncode is not None: task.returncode = returncode
+    if stdout is not None: task.stdout = stdout
+    if stderr is not None: task.stderr = stderr
+    if error is not None: task.error = error
+
     if status == 'STARTED':
         task.started_time = datetime.now()
-    elif status == 'FINISHED' or status == 'ERROR':
+    elif status == 'SUCCESS' or 'ERROR' in status:
         task.finished_time = datetime.now()
     db.session.commit()
     return task

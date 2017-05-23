@@ -9,20 +9,26 @@
 				<span class="align-top badge" [ngClass]="{'badge-default': task.status=='PENDING',
 								   	  					  'badge-info': task.status=='STARTED' || task.status=='UPLOADING',
 								   	  					  'badge-danger': task.status=='ERROR',
-								   	  					  'badge-success': task.status=='FINISHED'}">{{task.status}}
+								   	  					  'badge-success': task.status=='SUCCESS'}">{{task.status}}
 				</span>
 			</h5>
 			<div class="card-block">
 				<div *ngIf="task.result.stdout">
-					<div>stdout:</div>
-					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem;">
+					<label>stdout:</label>
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem; max-height:35rem; overflow-y: scroll;">
 						<pre><samp>{{task.result.stdout}}</samp></pre>
 					</div>
 				</div>
 				<div *ngIf="task.result.stderr">
 					<label>stderr:</label>
-					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem;">
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem; max-height:35rem; overflow-y: scroll;">
 						<pre><samp>{{task.result.stderr}}</samp></pre>
+					</div>
+				</div>
+				<div *ngIf="task.result.error">
+					<label>Error:</label>
+					<div style="background-color: #f7f7f9; padding:1rem; border-radius:.25rem; max-height:35rem; overflow-y: scroll;">
+						<pre><samp>{{task.result.error}}</samp></pre>
 					</div>
 				</div>
 			</div>
@@ -35,9 +41,13 @@
 					<td>Name</td>
 					<td>{{task.name}}</td>
 				</tr>
-				<tr>
+				<tr *ngIf="task.command!=null">
 					<td>Command</td>
 					<td>{{task.command}}</td>
+				</tr>
+				<tr *ngIf="task.returncode!=null">
+					<td>Return code</td>
+					<td>{{task.returncode}}</td>
 				</tr>
 				<tr>
 					<td>Created Time</td>

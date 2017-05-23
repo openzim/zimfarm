@@ -2,3 +2,4 @@ celery==4.0.2
 redis==2.10.5
 sqlalchemy==1.1.0
 flask-sqlalchemy==2.2
+PyJWT==1.5.0

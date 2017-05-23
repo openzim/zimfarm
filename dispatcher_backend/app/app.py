@@ -10,7 +10,6 @@ flask.config.update({
 })
 db = SQLAlchemy(flask)
 celery = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
-# celery = Celery()
 
 
 from JSONEncoder import ZimfarmDispatcherJSONEncoder
