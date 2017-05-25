@@ -1,19 +1,14 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { DashboardComponent } from './Dashboard/dashboard.component';
 import { TasksComponent } from './Tasks/tasks.component';
 import { TaskDetailComponent } from './Tasks/task-detail.component';
-import { TemplatesComponent } from './Templates/templates.component';
-import { NodesComponent } from './Nodes/nodes.component';
 
 const routes: Routes = [
-    { path: '', redirectTo: '/tasks', pathMatch: 'full' },
-    { path: 'dashboard', component: DashboardComponent },
+    { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+    { path: 'dashboard', loadChildren: 'app/dashboard/dashboard.module#DashboardModule' },
     { path: 'tasks', component: TasksComponent},
-    { path: 'tasks/detail/:id', component: TaskDetailComponent},
-    { path: 'templates', component: TemplatesComponent},
-    { path: 'nodes', component: NodesComponent}
+    { path: 'tasks/detail/:id', component: TaskDetailComponent}
 ];
 
 

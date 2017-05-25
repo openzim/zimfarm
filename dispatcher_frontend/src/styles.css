@@ -1,5 +1,11 @@
-h1 {
-  color: #369;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 250%;
+.content {
+  width: calc(100%- 1rem);
+  margin:  1rem 0.5rem;
+  /*background-color: yellow;*/
+}
+
+.dashboard-card {
+  width: calc((100% - 4rem)/4);
+  float: left;
+  margin:  0.5rem 0.5rem;
 }
