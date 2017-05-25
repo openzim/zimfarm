@@ -38,9 +38,11 @@ export class TaskProgressComponent implements OnInit {
                 }]
         };
         let options = {
+            responsive: true,
+            maintainAspectRatio: false,
             cutoutPercentage: 75,
             legend: {
-                position: 'right',
+                position: 'bottom',
                 labels: {
                     boxWidth: 12
                 }
