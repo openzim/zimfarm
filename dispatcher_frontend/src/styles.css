@@ -1,5 +1,41 @@
-h1 {
-  color: #369;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 250%;
+.content {
+  width: calc(100%- 1rem);
+  margin:  1rem 0.5rem;
+  /*background-color: yellow;*/
 }
+
+.dashboard-card {
+  float: left;
+  margin:  0.5rem 0.5rem;
+}
+
+/* Extra Small. Above 0em (544px) */
+@media screen and (min-width: 0em) {
+  /*.content {background-color: gold;}*/
+  .dashboard-card {width: calc((100% - 1rem)/1);}
+}
+
+/* Small. Above 34em (544px) */
+@media screen and (min-width: 34em) {
+  /*.content {background-color: yellow;}*/
+  .dashboard-card {width: calc((100% - 2rem)/2);}
+}
+
+/* Medium. Above 48em (768px) */
+@media screen and (min-width: 48em) {
+  /*.content {background-color: green;}*/
+  .dashboard-card {width: calc((100% - 3rem)/3);}
+}
+
+/* Large. Above 62em (992px) */
+@media screen and (min-width: 62em) {
+  /*.content {background-color: red;}*/
+  .dashboard-card {width: calc((100% - 4rem)/4);}
+}
+
+/* Extra large. Above 75em (1200px) */
+@media screen and (min-width: 75em) {
+  /*.content {background-color: blue;}*/
+  .dashboard-card {width: calc((100% - 5rem)/5);}
+}
+

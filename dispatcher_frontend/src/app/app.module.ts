@@ -6,11 +6,11 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { DashboardComponent } from './Dashboard/dashboard.component';
+
+import { DashboardModule } from './dashboard/dashboard.module';
 import { TasksComponent } from './Tasks/tasks.component';
 import { TaskDetailComponent } from './Tasks/task-detail.component';
-import { TemplatesComponent } from './Templates/templates.component';
-import { NodesComponent } from './Nodes/nodes.component';
+import { NodesComponent } from './nodes/nodes.component';
 import { TaskService } from './model/task.service';
 
 
@@ -20,14 +20,13 @@ import { TaskService } from './model/task.service';
         AppRoutingModule,
         HttpModule,
         FormsModule,
-        NgbModule.forRoot()
+        NgbModule.forRoot(),
+        DashboardModule
     ],
     declarations: [ 
         AppComponent, 
-        DashboardComponent, 
         TasksComponent, 
         TaskDetailComponent,
-        TemplatesComponent,
         NodesComponent
     ],
     providers: [ TaskService ],
