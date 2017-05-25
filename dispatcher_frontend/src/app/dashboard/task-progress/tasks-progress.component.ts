@@ -38,8 +38,14 @@ export class TaskProgressComponent implements OnInit {
                 }]
         };
         let options = {
-
+            cutoutPercentage: 75,
+            legend: {
+                position: 'right',
+                labels: {
+                    boxWidth: 12
+                }
+            }
         }
-        this.chart = new Chart(context, {type: 'doughnut', data: data});
+        this.chart = new Chart(context, {type: 'doughnut', data: data, options: options});
     }
 }
