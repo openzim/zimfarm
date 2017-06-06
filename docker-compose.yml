@@ -33,7 +33,7 @@ services:
             context: ./dispatcher_frontend
             dockerfile: Dockerfile
         volumes:
-            - /Volumes/Data/Developer/zimfarm/dispatcher_frontend:/app
+            - /Users/chrisli/Developer/zimfarm/dispatcher_frontend:/app
     dispatcher_backend:
         build:
             context: ./dispatcher_backend
@@ -41,7 +41,7 @@ services:
         links:
             - rabbit
         volumes:
-            - /Volumes/Data/Developer/zimfarm/dispatcher_backend/app:/app
+            - /Users/chrisli/Developer/zimfarm/dispatcher_backend/app:/app
         depends_on:
             - rabbit
             - redis
