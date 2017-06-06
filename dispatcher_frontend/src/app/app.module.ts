@@ -9,6 +9,7 @@ import { AppRoutingModule } from './app-routing.module';
 
 import { AuthGuard } from './guard/auth.guard';
 
+import { LoginComponent } from './login/login.component';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TasksComponent } from './Tasks/tasks.component';
 import { TaskDetailComponent } from './Tasks/task-detail.component';
@@ -27,13 +28,14 @@ import { TaskService } from './model/task.service';
     ],
     declarations: [ 
         AppComponent, 
+        LoginComponent,
         TasksComponent, 
         TaskDetailComponent,
         NodesComponent
     ],
     providers: [
-        TaskService,
-        AuthGuard
+        AuthGuard,
+        TaskService
     ],
     bootstrap: [ AppComponent ]
 })

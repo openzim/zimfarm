@@ -3,11 +3,14 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AuthGuard } from './guard/auth.guard';
 
+import { LoginComponent } from './login/login.component';
+
 import { TasksComponent } from './Tasks/tasks.component';
 import { TaskDetailComponent } from './Tasks/task-detail.component';
 
 const routes: Routes = [
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+    { path: 'login', component: LoginComponent},
     { path: 'dashboard', loadChildren: 'app/dashboard/dashboard.module#DashboardModule', canActivate: [AuthGuard] },
     { path: 'tasks', component: TasksComponent},
     { path: 'tasks/detail/:id', component: TaskDetailComponent}
