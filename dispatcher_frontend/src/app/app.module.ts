@@ -7,6 +7,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
+import { AuthGuard } from './guard/auth.guard';
+
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TasksComponent } from './Tasks/tasks.component';
 import { TaskDetailComponent } from './Tasks/task-detail.component';
@@ -29,7 +31,10 @@ import { TaskService } from './model/task.service';
         TaskDetailComponent,
         NodesComponent
     ],
-    providers: [ TaskService ],
+    providers: [
+        TaskService,
+        AuthGuard
+    ],
     bootstrap: [ AppComponent ]
 })
 export class AppModule { }
