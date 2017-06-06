@@ -20,10 +20,11 @@
         height: calc(100vh - 54px);
         display: flex;
         flex-direction: column;
+        padding-bottom: 12rem;
     }
 
     .login {
-        width: 50%;
+        width: 40rem;
         margin: auto; 
         border-radius: .25rem;
         border: 1px solid rgba(0, 0, 0, .125);
