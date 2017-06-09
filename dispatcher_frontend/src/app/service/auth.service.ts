@@ -14,7 +14,6 @@ export class AuthService {
         let options = new RequestOptions ({
             headers: new Headers({'Content-Type': 'application/json'});
         })
-        console.log(body);
         return this.http.post('api/auth/login', body, options)
             .toPromise()
             .then(response => {

@@ -32,7 +32,6 @@ export class LoginComponent implements OnInit {
                 this.loading = false;
                 if (success) {
                     this.authFailed = false;
-                    console.log(this.returnUrl);
                     this.router.navigate([this.returnUrl]);
                 } else {
                     this.authFailed = true;
