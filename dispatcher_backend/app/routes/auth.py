@@ -41,5 +41,6 @@ def new_token(time_stamp):
         'iss': 'dispatcher-backend',
         'exp': time_stamp + 60 * 30,
         'iat': time_stamp,
-        'jti': str(uuid4())
+        'jti': str(uuid4()),
+        'scope': ['dashboard', 'tasks']
     })
