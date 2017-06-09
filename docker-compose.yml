@@ -32,8 +32,8 @@ services:
         build:
             context: ./dispatcher_frontend
             dockerfile: Dockerfile
-        # volumes:
-        #     - ./dispatcher_frontend/src:/app/src
+        volumes:
+            - ./dispatcher_frontend/src:/app/src
     dispatcher_backend:
         build:
             context: ./dispatcher_backend

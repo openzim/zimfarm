@@ -11,8 +11,8 @@ import { AuthGuard } from './guard/auth.guard';
 
 import { LoginComponent } from './login/login.component';
 import { DashboardModule } from './dashboard/dashboard.module';
-import { TasksComponent } from './Tasks/tasks.component';
-import { TaskDetailComponent } from './Tasks/task-detail.component';
+import { TasksComponent } from './tasks/tasks.component';
+import { TaskDetailComponent } from './tasks/task-detail.component';
 import { NodesComponent } from './nodes/nodes.component';
 import { TaskService } from './model/task.service';
 

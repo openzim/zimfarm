@@ -5,8 +5,8 @@ import { AuthGuard } from './guard/auth.guard';
 
 import { LoginComponent } from './login/login.component';
 
-import { TasksComponent } from './Tasks/tasks.component';
-import { TaskDetailComponent } from './Tasks/task-detail.component';
+import { TasksComponent } from './tasks/tasks.component';
+import { TaskDetailComponent } from './tasks/task-detail.component';
 
 const routes: Routes = [
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
