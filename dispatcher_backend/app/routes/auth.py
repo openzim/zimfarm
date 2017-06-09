@@ -20,7 +20,7 @@ def login():
         if username is not None and password is not None:
             if database.user.is_valid(username, password):
                 timestamp_now = utils.utc_timestamp()
-                return jsonify({'token': new_token(timestamp_now)})
+                return jsonify({'success': True, 'token': new_token(timestamp_now)})
             else:
                 raise AuthFailed()
         elif old_token is not None:
@@ -28,13 +28,13 @@ def login():
             timestamp_now = utils.utc_timestamp()
             if payload['exp'] < timestamp_now:
                 raise AuthFailed()
-            return jsonify({'token': new_token(timestamp_now)})
+            return jsonify({'success': True, 'token': new_token(timestamp_now)})
         else:
             raise InvalidRequest()
     except InvalidRequest:
         return Response(status=400)
     except (jwt.DecodeError, AuthFailed):
-        return Response(status=401)
+        return jsonify({'success': False})
 
 def new_token(time_stamp):
     return utils.jwt_encode({

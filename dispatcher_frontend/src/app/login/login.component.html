@@ -15,6 +15,7 @@
                 <div *ngIf="f.submitted && !username.valid && password.valid" class="form-control-feedback">Username is required</div>
                 <div *ngIf="f.submitted && username.valid && !password.valid" class="form-control-feedback">Password is required</div>
                 <div *ngIf="f.submitted && !username.valid && !password.valid" class="form-control-feedback">Username and password are required</div>
+                <div *ngIf="f.submitted && authFailed" class="form-control-feedback">Username or password is invalid</div>
             </div>
             
             <div class="form-group" style="margin-bottom: 0;">

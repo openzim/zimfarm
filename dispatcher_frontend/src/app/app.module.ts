@@ -16,6 +16,8 @@ import { TaskDetailComponent } from './tasks/task-detail.component';
 import { NodesComponent } from './nodes/nodes.component';
 import { TaskService } from './model/task.service';
 
+import { AuthService } from './service/auth.service';
+
 
 @NgModule({
     imports: [ 
@@ -34,6 +36,7 @@ import { TaskService } from './model/task.service';
         NodesComponent
     ],
     providers: [
+        AuthService,
         AuthGuard,
         TaskService
     ],
