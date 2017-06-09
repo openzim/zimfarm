@@ -10,6 +10,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AuthGuard } from './guard/auth.guard';
 
 import { LoginComponent } from './login/login.component';
+import { NavigationBarComponent } from './navigation-bar/navigation-bar.component'
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TasksComponent } from './tasks/tasks.component';
 import { TaskDetailComponent } from './tasks/task-detail.component';
@@ -31,6 +32,7 @@ import { AuthService } from './service/auth.service';
     declarations: [ 
         AppComponent, 
         LoginComponent,
+        NavigationBarComponent,
         TasksComponent, 
         TaskDetailComponent,
         NodesComponent
