@@ -37,7 +37,8 @@ export class LoginComponent implements OnInit {
                 } else {
                     this.authFailed = true;
                 }
-            });
+            }
+        );
     }
 	
 }
