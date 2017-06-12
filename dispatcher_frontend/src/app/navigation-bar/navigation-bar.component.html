@@ -7,11 +7,18 @@
 			</li>
 		</ul>
 	</div>
-	<div style="flex: 1; display: flex; flex-direction: row-reverse;">
+	<div *ngIf="authService.isLoggedIn" style="flex: 1; display: flex; flex-direction: row-reverse;">
 		<div ngbDropdown>
-			<button class="btn btn-secondary" ngbDropdownToggle><span class="navbar-toggler-icon"></span></button>
+			<button class="btn btn-secondary btn-sm" ngbDropdownToggle><span class="navbar-toggler-icon"></span></button>
 			<div class="dropdown-menu dropdown-menu-right">
-				<button class="dropdown-item" *ngFor="let tab of tabs" routerLinkActive="active" routerLink="/{{tab.routerLink}}">{{tab.name}}</button>
+				<div class="dropdown-show-when-collapsed">
+					<button class="dropdown-item" *ngFor="let tab of tabs" routerLinkActive="active" routerLink="/{{tab.routerLink}}">{{tab.name}}</button>
+				</div>
+				<div class="dropdown-divider dropdown-show-when-collapsed"></div>
+				<div>
+					<button class="dropdown-item" disabled>Chris</button>
+					<button class="dropdown-item" routerLink="/login">Log out</button>
+				</div>
 			</div>
 		</div>
 	</div>

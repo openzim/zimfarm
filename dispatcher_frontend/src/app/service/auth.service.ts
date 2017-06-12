@@ -11,6 +11,10 @@ export class AuthService {
     scope: string[] = [];
     scopeChange: Subject<string[]> = new Subject<string[]>();
 
+    get isLoggedIn():boolean {
+        return this.getToken() != null;
+    }
+
     constructor(private http: Http) {
         let token = this.getToken();
         this.decodeScope(token);

@@ -1,0 +1,5 @@
+@media screen and (min-width: 34em) {
+  .dropdown-show-when-collapsed {
+      display: none
+  }
+}

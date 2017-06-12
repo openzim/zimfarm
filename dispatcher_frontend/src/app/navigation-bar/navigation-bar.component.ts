@@ -7,7 +7,8 @@ import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
     selector: 'navigation-bar',
-    templateUrl: './navigation-bar.component.html'
+    templateUrl: './navigation-bar.component.html',
+    styleUrls: ['./navigation-bar.component.css']
 })
 export class NavigationBarComponent {
     private scopeSubscription: Subscription;
