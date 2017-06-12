@@ -11,8 +11,12 @@ export class AuthService {
     scope: string[] = [];
     scopeChange: Subject<string[]> = new Subject<string[]>();
 
-    get isLoggedIn():boolean {
+    get isLoggedIn(): boolean {
         return this.getToken() != null;
+    }
+
+    get username(): string {
+        return this.decodeToken().username;
     }
 
     constructor(private http: Http) {
@@ -42,6 +46,11 @@ export class AuthService {
     private handleError(error: any): Promise<any> {
         console.error('An error occurred', error);
         return Promise.reject(error.message || error);
+    }
+
+    private decodeToken() {
+        let token = this.getToken();
+        return token != null ? this.jwt.decodeToken(token) : null;
     }
 
     private decodeScope(token?: string) {
