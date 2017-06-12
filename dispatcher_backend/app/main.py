@@ -5,8 +5,8 @@ from routes import auth, task
 from database.models import User
 from werkzeug.security import generate_password_hash
 if User.query.filter_by(username='chris').first() is None:
-    user = User(username='chris', password_hash=generate_password_hash('password'))
-    app.db.session.add(user)
+    app.db.session.add(User(username='chris', password_hash=generate_password_hash('password')))
+    app.db.session.add(User(username='kelson42', password_hash=generate_password_hash('password')))
     app.db.session.commit()
 
 
