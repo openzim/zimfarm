@@ -3,9 +3,11 @@ import { Subscription }   from 'rxjs/Subscription';
 
 import { AuthService } from '../service/auth.service';
 
+import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
+
 @Component({
     selector: 'navigation-bar',
-    templateUrl: 'app/navigation-bar/navigation-bar.component.html'
+    templateUrl: './navigation-bar.component.html'
 })
 export class NavigationBarComponent {
     private scopeSubscription: Subscription;

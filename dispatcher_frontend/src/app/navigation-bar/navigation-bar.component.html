@@ -1,7 +1,4 @@
-<nav class="navbar navbar-toggleable-md fixed-top navbar-light bg-faded">
-	<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-		<span class="navbar-toggler-icon"></span>
-	</button>
+<nav class="navbar navbar-toggleable fixed-top navbar-light bg-faded" style="flex-direction: row">
 	<a class="navbar-brand" href="#">Zimfarm</a>
 	<div class="collapse navbar-collapse">
 		<ul class="navbar-nav mr-auto">
@@ -9,5 +6,13 @@
 				<a class="nav-link" routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
 			</li>
 		</ul>
+	</div>
+	<div style="flex: 1; display: flex; flex-direction: row-reverse;">
+		<div ngbDropdown>
+			<button class="btn btn-secondary" ngbDropdownToggle><span class="navbar-toggler-icon"></span></button>
+			<div class="dropdown-menu dropdown-menu-right">
+				<button class="dropdown-item" *ngFor="let tab of tabs" routerLinkActive="active" routerLink="/{{tab.routerLink}}">{{tab.name}}</button>
+			</div>
+		</div>
 	</div>
 </nav>
