@@ -1,0 +1,25 @@
+<nav class="navbar navbar-toggleable fixed-top navbar-light bg-faded" style="flex-direction: row; height: 54px;">
+	<a class="navbar-brand" href="#">Zimfarm</a>
+	<div class="navbar-display-expanded">
+		<ul class="navbar-nav mr-auto">
+			<li *ngFor="let tab of tabs" routerLinkActive="active">
+				<a class="nav-link" routerLink="/{{tab.routerLink}}">{{tab.name}}</a>
+			</li>
+		</ul>
+	</div>
+	<div *ngIf="authService.isLoggedIn" style="flex: 1; display: flex; flex-direction: row-reverse; align-items: center; height: 100%;">
+		<div ngbDropdown>
+			<button class="btn btn-secondary btn-sm" ngbDropdownToggle><span class="navbar-toggler-icon"></span></button>
+			<div class="dropdown-menu dropdown-menu-right">
+				<div class="navbar-display-collpased">
+					<button class="dropdown-item" *ngFor="let tab of tabs" routerLinkActive="active" routerLink="/{{tab.routerLink}}">{{tab.name}}</button>
+				</div>
+				<div class="dropdown-divider navbar-display-collpased"></div>
+				<div>
+					<button class="dropdown-item">Logged in as <b>{{authService.username}}</b></button>
+					<button class="dropdown-item" routerLink="/login">Log out</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</nav>

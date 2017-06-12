@@ -1,3 +1,8 @@
+body {
+  height: 100%;
+  padding-top: 54px;
+}
+
 .content {
   width: calc(100%- 1rem);
   margin:  1rem 0.5rem;

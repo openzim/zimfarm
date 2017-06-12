@@ -1,0 +1,32 @@
+.login-container {
+    width: 100%;
+}
+.login {
+    background-color: white; 
+    flex: 0 1 auto; 
+    padding: 2rem;
+    box-shadow: 10px;
+}
+
+@media screen and (min-width: 0em) {
+    .login-container {
+        background-color: yellow;
+    }
+}
+
+@media screen and (min-width: 48em) {
+    .login-container {
+        background-color: #F7F7F7; 
+        height: calc(100vh - 54px);
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 10%;
+    }
+
+    .login {
+        width: 40rem;
+        margin: auto; 
+        border-radius: .25rem;
+        border: 1px solid rgba(0, 0, 0, .125);
+    }
+}

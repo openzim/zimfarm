@@ -4,10 +4,4 @@ import { Component } from '@angular/core';
     selector: 'zimfarm',
     templateUrl: 'app/app.component.html'
 })
-export class AppComponent {
-    tabs = [
-        {name: "Dashboard", routerLink: "dashboard"},
-        {name: "Tasks", routerLink: "tasks"},
-        {name: "Nodes", routerLink: "nodes"}
-    ]
-}
+export class AppComponent {}
