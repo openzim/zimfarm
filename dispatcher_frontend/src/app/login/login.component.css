@@ -8,12 +8,6 @@
     box-shadow: 10px;
 }
 
-@media screen and (min-width: 0em) {
-    .login-container {
-        background-color: yellow;
-    }
-}
-
 @media screen and (min-width: 48em) {
     .login-container {
         background-color: #F7F7F7; 
