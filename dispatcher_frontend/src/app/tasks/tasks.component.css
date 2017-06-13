@@ -1,0 +1,6 @@
+.tasks-container {
+    width: 100%;
+    height: calc(100vh - 54px);
+    display: flex;
+    padding: 0.25rem;
+}

@@ -6,7 +6,8 @@ import { TaskService } from '../model/task.service';
 
 @Component({
     selector: 'tasks',
-    templateUrl: 'app/tasks/tasks.component.html'
+    templateUrl: './tasks.component.html',
+    styleUrls: ['./tasks.component.css']
 })
 export class TasksComponent {
     constructor(
