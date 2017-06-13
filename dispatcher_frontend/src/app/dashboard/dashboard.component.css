@@ -2,6 +2,21 @@
     width: 100%;
     height: calc(100vh - 54px);
     display: flex;
+    padding: 0.25rem;
+}
+
+.dashboard-widget {
+    margin: 0.25rem;
+}
+
+.dashboard-left {
+    flex-direction: column;
+    display: flex;
+}
+
+.dashboard-right {
+    flex-direction: column;
+    display: flex;
 }
 
 /*smaller than 48rem*/
@@ -17,14 +32,12 @@
     }
 
     .dashboard-left {
-        background-color: burlywood;
         width: 70%;
         height: 100%;
         float: left;
     }
 
     .dashboard-right {
-        background-color: forestgreen;
         width: 30%;
         height: 100%;
         float: left;
