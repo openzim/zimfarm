@@ -1,0 +1,32 @@
+.dashboard-container {
+    width: 100%;
+    height: calc(100vh - 54px);
+    display: flex;
+}
+
+/*smaller than 48rem*/
+@media screen and (max-width: 48rem) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+}
+/*larger than 48rem*/
+@media screen and (min-width: 48rem) {
+    .dashboard-container {
+        flex-direction: row;
+    }
+
+    .dashboard-left {
+        background-color: burlywood;
+        width: 70%;
+        height: 100%;
+        float: left;
+    }
+
+    .dashboard-right {
+        background-color: forestgreen;
+        width: 30%;
+        height: 100%;
+        float: left;
+    }
+}
