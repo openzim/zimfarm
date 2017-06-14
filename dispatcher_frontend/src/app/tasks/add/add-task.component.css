@@ -1,0 +1,24 @@
+.add-task-card {
+    max-width: 50rem;
+    margin: 1rem auto;
+}
+
+.add-task-card-block {
+    padding: 1rem 1.25rem;
+}
+
+.add-task-card-block-divider {
+    height: 1px; 
+    background-color: #eceeef; 
+    margin: 0rem 0.5rem;
+    /*overflow: hidden;*/
+}
+
+.add-task-button-block {
+    display: flex;
+    flex-direction: row-reverse;
+}
+
+.add-task-button {
+    margin: 0rem 0.5rem;
+}
