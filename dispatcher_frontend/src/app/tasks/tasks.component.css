@@ -2,5 +2,6 @@
     width: 100%;
     height: calc(100vh - 54px);
     display: flex;
+    flex-direction: column;
     padding: 0.25rem;
 }

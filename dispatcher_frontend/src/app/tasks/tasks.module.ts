@@ -4,9 +4,8 @@ import { CommonModule } from '@angular/common';
 import { TasksComponent } from './tasks.component';
 import { TasksRoutingModule } from './tasks-routing.module';
 
-// import { TaskProgressComponent } from './task-progress/tasks-progress.component';
-// import { RecentEventsComponent } from './recent-events/recent-events.component';
-// import { TaskCountComponent } from './task-count/task-count.component';
+import { ListTasksComponent } from './list/list-tasks.component';
+import { AddTaskComponent } from './add/add-task.component';
 
 @NgModule({
     imports: [
@@ -14,7 +13,9 @@ import { TasksRoutingModule } from './tasks-routing.module';
         TasksRoutingModule
     ],
     declarations: [
-        TasksComponent
+        TasksComponent,
+        ListTasksComponent,
+        AddTaskComponent
     ]
 })
 export class TasksModule { }
