@@ -7,6 +7,7 @@ import { Component, OnInit } from '@angular/core';
 })
 export class AddTaskComponent implements OnInit {
     taskAddingMode: string
+    scriptText: string
 
     ngOnInit() {
         this.taskAddingMode = "script";
@@ -14,6 +15,10 @@ export class AddTaskComponent implements OnInit {
 
     didSelectModeTab(mode: string) {
         this.taskAddingMode = mode;
+    }
+
+    addTaskByScript() {
+        console.log('script form submitted');
     }
 
 }

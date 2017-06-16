@@ -14,15 +14,17 @@
     </div>
 </div>
 <div class="add-task-content" *ngIf="taskAddingMode=='script'">
-    <div class="card-block add-task-card-block">
-        <label for="scriptToUpload">Paste the script you want to be executed here...</label>
-        <textarea class="form-control" id="scriptToUpload" rows=20></textarea>
-    </div>
-    <div class="add-task-card-block-divider"></div>
-    <div class="card-block add-task-button-block">
-        <button type="button" class="btn btn-success add-task-button">Execute</button>
-        <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
-    </div>
+    <form (ngSubmit)="addTaskForm.form.valid && addTaskByScript()" #addTaskForm="ngForm" novalidate>
+        <div class="card-block add-task-card-block">
+            <label for="scriptToUpload">Enter the script you want to execute here:</label>
+            <textarea class="form-control" rows=20 id="scriptToUpload" name="scriptToUpload" [(ngModel)]="scriptText" required></textarea>
+        </div>
+        <div class="add-task-card-block-divider"></div>
+        <div class="card-block add-task-button-block">
+            <button type="submit" class="btn btn-success add-task-button" [disabled]="!addTaskForm.form.valid">Execute</button>
+            <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
+        </div>
+    </form>
 </div>
 <div class="add-task-content" *ngIf="taskAddingMode=='mwoffliner'">
     <div class="card-block add-task-card-block">
