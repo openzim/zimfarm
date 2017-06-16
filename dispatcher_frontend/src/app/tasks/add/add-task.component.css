@@ -1,6 +1,19 @@
-.add-task-card {
+.add-task-nav-placeholder {
+    border-bottom-color: rgb(221, 221, 221);
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    flex: 1
+}
+
+.add-task-title {
     max-width: 50rem;
-    margin: 1rem auto;
+    margin: auto;
+    padding: 1rem 0.5rem;
+}
+
+.add-task-content {
+    max-width: 50rem;
+    margin: auto;
 }
 
 .add-task-card-block {

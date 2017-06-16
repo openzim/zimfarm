@@ -1,8 +1,32 @@
-<div class="card add-task-card">
-    <div class="card-block">
-        <h4 class="card-title" style="margin: 0rem;">Add Task</h4>
+<div style="background-color: #FbFbFb;">
+    <h4 class="add-task-title">Add Task</h4>
+    <div style="display: flex;">
+        <div class="add-task-nav-placeholder"></div>
+        <ul class="nav nav-tabs" style="width: 50rem;">
+            <li class="nav-item">
+                <a class="nav-link" [class.active]="taskAddingMode=='script'" (click)="didSelectModeTab('script')">Script</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" [class.active]="taskAddingMode=='mwoffliner'" (click)="didSelectModeTab('mwoffliner')">mwoffliner</a>
+            </li>
+        </ul>
+        <div class="add-task-nav-placeholder"></div>
     </div>
-    <div class="add-task-card-block-divider"></div>
+</div>
+<div class="add-task-content" *ngIf="taskAddingMode=='script'">
+    <form (ngSubmit)="addTaskForm.form.valid && addTaskByScript()" #addTaskForm="ngForm" novalidate>
+        <div class="card-block add-task-card-block">
+            <label for="scriptToUpload">Enter the script you want to execute here:</label>
+            <textarea class="form-control" rows=20 id="scriptToUpload" name="scriptToUpload" [(ngModel)]="scriptText" required></textarea>
+        </div>
+        <div class="add-task-card-block-divider"></div>
+        <div class="card-block add-task-button-block">
+            <button type="submit" class="btn btn-success add-task-button" [disabled]="!addTaskForm.form.valid">Execute</button>
+            <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
+        </div>
+    </form>
+</div>
+<div class="add-task-content" *ngIf="taskAddingMode=='mwoffliner'">
     <div class="card-block add-task-card-block">
         <div class="form-group">
             <label for="mwURL">Mediawiki API URL</label>
