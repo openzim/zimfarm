@@ -15,12 +15,12 @@
 </div>
 <div class="add-task-content" *ngIf="taskAddingMode=='script'">
     <div class="card-block add-task-card-block">
-        <label for="scriptToUpload">Script file</label>
-        <input type="file" name="scriptToUpload" id="scriptToUpload" style="width: 100%">
+        <label for="scriptToUpload">Paste the script you want to be executed here...</label>
+        <textarea class="form-control" id="scriptToUpload" rows=20></textarea>
     </div>
     <div class="add-task-card-block-divider"></div>
     <div class="card-block add-task-button-block">
-        <button type="button" class="btn btn-success add-task-button">Add</button>
+        <button type="button" class="btn btn-success add-task-button">Execute</button>
         <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
     </div>
 </div>

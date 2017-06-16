@@ -16,14 +16,6 @@
     margin: auto;
 }
 
-.custom-file-control:lang(en)::after {
-  content: "Choose file...";
-}
-
-.custom-file-control:lang(en)::before {
-  content: "Browse";
-}
-
 .add-task-card-block {
     padding: 1rem 1.25rem;
 }
