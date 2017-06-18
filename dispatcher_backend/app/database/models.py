@@ -11,7 +11,7 @@ class Task(db.Model):
     finished_time = db.Column(db.DateTime)
 
     command = db.Column(db.String)
-    returncode = db.Column(db.Integer)
+    return_code = db.Column(db.Integer)
     stdout = db.Column(db.String)
     stderr = db.Column(db.String)
     error = db.Column(db.String)

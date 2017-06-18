@@ -1,10 +1,8 @@
 from uuid import uuid4
 from flask import request, Response, jsonify
 import database.user
-import utils
+import jwt, utils
 from .exceptions import InvalidRequest, AuthFailed
-
-import jwt
 
 
 def login():

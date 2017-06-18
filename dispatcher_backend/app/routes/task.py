@@ -1,6 +1,8 @@
 from flask import request, jsonify
+import jwt, utils
 from app import celery
 import database.task
+from .exceptions import InvalidRequest, AuthFailed
 
 
 def hello():
@@ -8,14 +10,24 @@ def hello():
 
 
 def subprocess():
-    request_data = request.get_json()
-    command = request_data['command']
-    
-    task_name = 'subprocess'
-    celery_task = celery.send_task(task_name, kwargs={'command': command})
-    database_task = database.task.add(celery_task.id, task_name, 'PENDING', command)
-    return jsonify(database_task)
+    try:
+        request_data = request.get_json()
+        token = request_data.get('token')
+        script = request_data.get('script')
 
+        if token is None or script is None:
+            raise InvalidRequest()
+            
+        utils.jwt_decode(token)
+        
+        task_name = 'subprocess'
+        celery_task = celery.send_task(task_name, kwargs={'script': script})
+        database_task = database.task.add(celery_task.id, task_name, 'PENDING')
+        return jsonify(database_task)
+    except InvalidRequest:
+        pass
+    except (jwt.DecodeError, jwt.ExpiredSignatureError):
+        return jsonify({'success': False, 'message': 'token is not valid'}), 401
 
 def mwoffliner():
     request_data = request.get_json()
@@ -33,12 +45,12 @@ def task(id):
 
         status = request_data.get('status')
         command = request_data.get('command')
-        returncode = request_data.get('returncode')
+        return_code = request_data.get('return_code')
         stdout = request_data.get('stdout')
         stderr = request_data.get('stderr')
         error = request_data.get('error')
 
-        task = database.task.update(id, status, command, returncode, stdout, stderr, error)
+        task = database.task.update(id, status, command, return_code, stdout, stderr, error)
         response = {
             'success': True,
             'task': task

@@ -16,7 +16,7 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                     'finished': self.encode_datetime(o.finished_time)
                 },
                 'command': o.command,
-                'returncode': o.returncode,
+                'return_code': o.return_code,
                 'result': {
                     'stdout': o.stdout,
                     'stderr': o.stderr,
