@@ -9,7 +9,7 @@ flask.config.update({
     'SQLALCHEMY_TRACK_MODIFICATIONS': False
 })
 db = SQLAlchemy(flask)
-celery = Celery('worker', broker='amqp://admin:mypass@rabbit:5672', backend='redis://redis:6379/0')
+celery = Celery('worker', broker='amqp://admin:mypass@rabbit:5672')
 
 
 from JSONEncoder import ZimfarmDispatcherJSONEncoder
