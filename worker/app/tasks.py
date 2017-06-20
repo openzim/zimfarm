@@ -26,7 +26,8 @@ def zimfarm_generic(self, image_name: str, script: str):
         return process.stdout, process.stderr, process.returncode
 
     def execute_script_sync(task_id: str, name: str, script: str) -> (str, str, int):
-        process = subprocess.run(["docker", "run", "--name", task_id, name, script], encoding='utf-8', check=True,
+        parts = ["docker", "run", "--name", task_id, name] + script.split(' ')
+        process = subprocess.run(parts, encoding='utf-8', check=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return process.stdout, process.stderr, process.returncode
 
