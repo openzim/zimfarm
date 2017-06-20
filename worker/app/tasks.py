@@ -1,5 +1,5 @@
 from enum import Enum
-import json, subprocess, urllib.request
+import subprocess, shlex, json, urllib.request
 from celery import Celery
 
 
@@ -25,9 +25,10 @@ def zimfarm_generic(self, image_name: str, script: str):
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return process.stdout, process.stderr, process.returncode
 
-    def execute_script_sync(task_id: str, name: str, script: str) -> (str, str, int):
-        parts = ["docker", "run", "--name", task_id, name] + script.split(' ')
-        process = subprocess.run(parts, encoding='utf-8', check=True,
+    def execute_script_sync(task_id: str, image_name: str, script: str) -> (str, str, int):
+        command = "docker run --name {container_name} {image_name} /bin/bash -c {script}"\
+            .format(container_name=task_id, image_name=image_name, script=shlex.quote(script))
+        process = subprocess.run(command, encoding='utf-8', check=True, shell=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return process.stdout, process.stderr, process.returncode
 
