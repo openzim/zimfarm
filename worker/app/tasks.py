@@ -4,8 +4,8 @@ from celery import Celery
 
 
 app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672')
-# url_root = 'http://proxy/api/task/'
-url_root = 'http://dispatcher_backend/task/'
+url_root = 'http://proxy/api/task/'
+# url_root = 'http://dispatcher_backend/task/'
 
 
 class ZimfarmGenericTaskStatus(Enum):
