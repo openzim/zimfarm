@@ -1,118 +1,85 @@
-import time, json, subprocess, sys
-from urllib import request, response, parse
-from celery import Celery, Task
+from enum import Enum
+import subprocess, shlex, json, urllib.request
+from celery import Celery
 
 
 app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672')
+url_root = 'http://proxy/api/task/'
+# url_root = 'http://dispatcher_backend/task/'
 
 
-@app.task(bind=True, name='subprocess')
-def subprocess_run(self, command: str):
-    def update_status(status:str, stdout: str, stderr: str):
-        url = 'http://proxy/api/task/' + self.request.id
-        payload = {
-            'status': status,
-            'command': command,
-            'stdout': stdout, 
-            'stderr': stderr
-        }
-        req = request.Request(url,
-                              headers={'content-type': 'application/json'},
-                              data=json.dumps(payload).encode('utf-8'))
-        with request.urlopen(req) as response:
-            code = response.getcode()
-            charset = response.headers.get_content_charset('utf-8')
-            body = json.loads(response.read().decode(charset))
-            # print('{}, {}'.format(code, body))
-            # TODO: retry if a POST failed (code != 200)
-    
-    def decode_bin_stream(bin) -> str:
-        return bin.decode('utf-8') if bin is not None else None
+class ZimfarmGenericTaskStatus(Enum):
+    PENDING = 0
+    UPDATING_CONTAINER = 1
+    EXECUTING_SCRIPT = 2
+    UPLOADING_FILES = 3
+    CLEANING_UP = 4
+    FINISHED = 5
+    ERROR = 100
 
-    update_status('STARTED', None, None)
-    time.sleep(5)
 
-    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout = decode_bin_stream(process.stdout)
-    stderr = decode_bin_stream(process.stderr)
-    
-    update_status('UPLOADING', stdout, stderr)
-    time.sleep(5)
+@app.task(bind=True, name='zimfarm_generic')
+def zimfarm_generic(self, image_name: str, script: str):
+    def update_container(name: str) -> (str, str, int):
+        process = subprocess.run(["docker", "pull", name], encoding='utf-8', check=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return process.stdout, process.stderr, process.returncode
 
-    if stderr == '':
-        update_status('FINISHED', stdout, stderr)
-    else:
-        update_status('ERROR', stdout, stderr)
+    def execute_script_sync(task_id: str, image_name: str, script: str) -> (str, str, int):
+        parts = ['docker', 'run', '--name', task_id, image_name, '/bin/bash', '-c', script]
+        process = subprocess.run(parts, encoding='utf-8', check=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return process.stdout, process.stderr, process.returncode
 
-@app.task(bind=True, name='mwoffliner')
-def mwoffliner(self, config: dict):
-    def update_status(status:str, command: str=None, returncode: int=None, stdout: str=None, stderr: str=None, error: str=None):
-        url = 'http://proxy/api/task/' + self.request.id
-        payload = {
-            'status': status,
-            'command': command,
-            'returncode': returncode,
-            'stdout': stdout,
-            'stderr': stderr,
-            'error': error
-        }
-        req = request.Request(url,
-                              headers={'content-type': 'application/json'},
-                              data=json.dumps(payload).encode('utf-8'))
-        with request.urlopen(req) as response:
-            code = response.getcode()
-            charset = response.headers.get_content_charset('utf-8')
-            body = json.loads(response.read().decode(charset))
-            # print('{}, {}'.format(code, body))
-            # TODO: retry if a POST failed (code != 200)
-    
-    def decode_bin_stream(bin) -> str:
-        return bin.decode('utf-8') if bin is not None else None
+    def clean_up(task_id: str):
+        container_id = subprocess.run(["docker", "ps", "--filter", "name={}".format(task_id), "-a", "-q"],
+                                      encoding='utf-8', stdout=subprocess.PIPE).stdout.rstrip()
+        subprocess.run(["docker", "stop", container_id])
+        subprocess.run(["docker", "rm", container_id])
 
-    def assemble_command(config: dict) -> [str]:
-        whitelist = ['mwUrl', 'adminEmail', 'verbose']
-        command = ['mwoffliner']
-        for key, value in config.items():
-            if key not in whitelist:
-                raise MWOfflinerConfigKeyError(key)
-            command.append("--{}={}".format(key, value))
-        return command
+    def update_status(status: ZimfarmGenericTaskStatus, stdout=None, stderr=None, return_code=None):
+        url = url_root + self.request.id
+        task = {'status': status.name}
+        if stdout is not None: task['stdout'] = stdout
+        if stderr is not None: task['stderr'] = stderr
+        if return_code is not None: task['return_code'] = return_code
+        payload = {'token': '', 'task': task}
 
-    command_str = None
-    returncode = None
+        req = urllib.request.Request(url, headers={'content-type': 'application/json'},
+                                     data=json.dumps(payload).encode('utf-8'))
+        urllib.request.urlopen(req)
+
+    def upload_files():
+        pass
+
+    def update_stream(new_result):
+        nonlocal stdout, stderr, return_code
+        stdout += new_result[0]
+        stderr += new_result[1]
+        return_code = new_result[2]
+
+    stdout, stderr, return_code = '', '', 0
 
     try:
-        update_status(status='STARTED')
+        update_status(ZimfarmGenericTaskStatus.UPDATING_CONTAINER)
+        result = update_container(image_name)
+        update_stream(result)
 
-        command = assemble_command(config)
-        command_str = ' '.join(command)
+        update_status(ZimfarmGenericTaskStatus.EXECUTING_SCRIPT)
+        result = execute_script_sync(self.request.id, image_name, script)
+        update_stream(result)
 
-        process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        returncode = process.returncode
-        stdout = decode_bin_stream(process.stdout)
-        stderr = decode_bin_stream(process.stderr)
+        update_status(ZimfarmGenericTaskStatus.UPLOADING_FILES, stdout, stderr, return_code)
+        upload_files()
 
-        process.check_returncode()
-        update_status(status='UPLOADING', command=command_str, returncode=returncode, stdout=stdout, stderr=stderr)
-        time.sleep(5)
-        update_status(status='SUCCESS', command=command_str, returncode=returncode, stdout=stdout, stderr=stderr)
+        update_status(ZimfarmGenericTaskStatus.CLEANING_UP, stdout, stderr, return_code)
+        clean_up(self.request.id)
 
-    except MWOfflinerConfigKeyError as error:
-        update_status(status='ERROR', error=error.message)
+        update_status(ZimfarmGenericTaskStatus.FINISHED, stdout, stderr, return_code)
     except subprocess.CalledProcessError as error:
-        update_status(status='ERROR', command=command_str, returncode=error.returncode,
-                      stdout=decode_bin_stream(error.stdout),
-                      stderr=decode_bin_stream(error.stderr))
-    except:
-        message = "Unexpected error: {}".format(sys.exc_info()[0])
-        update_status(status='ERROR', command=command_str, returncode=returncode, error=message)
-    
+        update_stream((error.stdout, error.stderr, error.returncode))
 
-class MWOfflinerConfigKeyError(Exception):
-    def __init__(self, key: str):
-        self.message = 'The flag "{}" for mwoffliner is not supported.'.format(key)
+        update_status(ZimfarmGenericTaskStatus.CLEANING_UP, stdout, stderr, return_code)
+        clean_up(self.request.id)
 
-
-class MWOfflinerUploadError(Exception):
-    def __init__(self):
-        pass
+        update_status(ZimfarmGenericTaskStatus.ERROR, stdout, stderr, error.returncode)

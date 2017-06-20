@@ -38,6 +38,8 @@ services:
         build:
             context: ./dispatcher_backend
             dockerfile: Dockerfile
+        ports:
+            - "8088:80"
         links:
             - rabbit
         volumes:
@@ -51,8 +53,10 @@ services:
             context: ./worker
             dockerfile: Dockerfile
         links:
-            - proxy
+            - dispatcher_backend
             - rabbit
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
         depends_on:
             - rabbit
     # flower:

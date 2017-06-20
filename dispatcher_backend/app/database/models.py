@@ -10,11 +10,10 @@ class Task(db.Model):
     started_time = db.Column(db.DateTime)
     finished_time = db.Column(db.DateTime)
 
-    command = db.Column(db.String)
-    returncode = db.Column(db.Integer)
+    script = db.Column(db.String)
+    return_code = db.Column(db.Integer)
     stdout = db.Column(db.String)
     stderr = db.Column(db.String)
-    error = db.Column(db.String)
 
     def __repr__(self):
         return "<Task(id='{id}', name={name}, args={args}, kwargs={kwargs})>".format(

@@ -1,10 +1,8 @@
 from uuid import uuid4
 from flask import request, Response, jsonify
 import database.user
-import utils
+import jwt, utils
 from .exceptions import InvalidRequest, AuthFailed
-
-import jwt
 
 
 def login():
@@ -20,7 +18,7 @@ def login():
         if username is not None and password is not None:
             if database.user.is_valid(username, password):
                 timestamp_now = utils.utc_timestamp()
-                return jsonify({'success': True, 'token': new_token(username, timestamp_now)})
+                return jsonify({'success': True, 'token': new_user_token(username, timestamp_now)})
             else:
                 raise AuthFailed()
         elif old_token is not None:
@@ -28,7 +26,7 @@ def login():
             timestamp_now = utils.utc_timestamp()
             if payload['exp'] < timestamp_now:
                 raise AuthFailed()
-            return jsonify({'success': True, 'token': new_token(payload['username'], timestamp_now)})
+            return jsonify({'success': True, 'token': new_user_token(payload['username'], timestamp_now)})
         else:
             raise InvalidRequest()
     except InvalidRequest:
@@ -36,7 +34,8 @@ def login():
     except (jwt.DecodeError, AuthFailed):
         return jsonify({'success': False})
 
-def new_token(username: str, time_stamp: int):
+
+def new_user_token(username: str, time_stamp: int):
     return utils.jwt_encode({
         'iss': 'dispatcher-backend',
         'exp': time_stamp + 60 * 30,
