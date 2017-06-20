@@ -13,14 +13,28 @@ class ZimfarmGenericTaskStatus(Enum):
     UPDATING_CONTAINER = 1
     EXECUTING_SCRIPT = 2
     UPLOADING_FILES = 3
-    FINISHED = 4
+    CLEANING_UP = 4
+    FINISHED = 5
     ERROR = 100
 
 
 @app.task(bind=True, name='zimfarm_generic')
 def zimfarm_generic(self, image_name: str, script: str):
-    def update_container(name: str):
-        pass
+    def update_container(name: str) -> (str, str, int):
+        process = subprocess.run(["docker", "pull", name], encoding='utf-8', check=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return process.stdout, process.stderr, process.returncode
+
+    def execute_script_sync(task_id: str, name: str, script: str) -> (str, str, int):
+        process = subprocess.run(["docker", "run", "--name", task_id, name, script], encoding='utf-8', check=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return process.stdout, process.stderr, process.returncode
+
+    def clean_up(task_id: str):
+        container_id = subprocess.run(["docker", "ps", "--filter", "name={}".format(task_id), "-a", "-q"],
+                                      encoding='utf-8', stdout=subprocess.PIPE).stdout.rstrip()
+        subprocess.run(["docker", "stop", container_id])
+        subprocess.run(["docker", "rm", container_id])
 
     def update_status(status: ZimfarmGenericTaskStatus, stdout=None, stderr=None, return_code=None):
         url = url_root + self.request.id
@@ -32,21 +46,39 @@ def zimfarm_generic(self, image_name: str, script: str):
 
         req = urllib.request.Request(url, headers={'content-type': 'application/json'},
                                      data=json.dumps(payload).encode('utf-8'))
-        with urllib.request.urlopen(req) as response:
-            pass
-
-    def execute_script_sync(script: str):
-        process = subprocess.run(["ls", "-l"], check=True, encoding='utf-8',
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return process.stdout, process.stderr, process.returncode
+        urllib.request.urlopen(req)
 
     def upload_files():
         pass
 
-    update_status(ZimfarmGenericTaskStatus.UPDATING_CONTAINER)
-    update_container(image_name)
-    update_status(ZimfarmGenericTaskStatus.EXECUTING_SCRIPT)
-    stdout, stderr, return_code = execute_script_sync(script)
-    update_status(ZimfarmGenericTaskStatus.UPLOADING_FILES, stdout, stderr, return_code)
-    upload_files()
-    update_status(ZimfarmGenericTaskStatus.FINISHED, stdout, stderr, return_code)
+    def update_stream(new_result):
+        nonlocal stdout, stderr, return_code
+        stdout += new_result[0]
+        stderr += new_result[1]
+        return_code = new_result[2]
+
+    stdout, stderr, return_code = '', '', 0
+
+    try:
+        update_status(ZimfarmGenericTaskStatus.UPDATING_CONTAINER)
+        result = update_container(image_name)
+        update_stream(result)
+
+        update_status(ZimfarmGenericTaskStatus.EXECUTING_SCRIPT)
+        result = execute_script_sync(self.request.id, image_name, script)
+        update_stream(result)
+
+        update_status(ZimfarmGenericTaskStatus.UPLOADING_FILES, stdout, stderr, return_code)
+        upload_files()
+
+        update_status(ZimfarmGenericTaskStatus.CLEANING_UP, stdout, stderr, return_code)
+        clean_up(self.request.id)
+
+        update_status(ZimfarmGenericTaskStatus.FINISHED, stdout, stderr, return_code)
+    except subprocess.CalledProcessError as error:
+        update_stream((error.stdout, error.stderr, error.returncode))
+
+        update_status(ZimfarmGenericTaskStatus.CLEANING_UP, stdout, stderr, return_code)
+        clean_up(self.request.id)
+
+        update_status(ZimfarmGenericTaskStatus.ERROR, stdout, stderr, error.returncode)

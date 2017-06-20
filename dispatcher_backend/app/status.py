@@ -6,5 +6,6 @@ class ZimfarmGenericTaskStatus(Enum):
     UPDATING_CONTAINER = 1
     EXECUTING_SCRIPT = 2
     UPLOADING_FILES = 3
-    FINISHED = 4
+    CLEANING_UP = 4
+    FINISHED = 5
     ERROR = 100
