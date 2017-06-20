@@ -1,19 +1,29 @@
+.add-task-container {
+    width: 100%;
+    height: calc(100vh - 54px);
+    display: flex;
+    flex-direction: column;
+}
+
 .add-task-nav-placeholder {
     border-bottom-color: rgb(221, 221, 221);
     border-bottom-style: solid;
     border-bottom-width: 1px;
-    flex: 1
+    min-width: 0.5rem;
+    flex: 1;
 }
 
 .add-task-title {
     max-width: 50rem;
     margin: auto;
-    padding: 1rem 0.5rem;
+    padding: 1rem;
 }
 
 .add-task-content {
     max-width: 50rem;
-    margin: auto;
+    margin: 0rem auto;
+    flex: 1;
+    overflow-y: auto
 }
 
 .add-task-card-block {
@@ -24,7 +34,6 @@
     height: 1px; 
     background-color: #eceeef; 
     margin: 0rem 0.5rem;
-    /*overflow: hidden;*/
 }
 
 .add-task-button-block {

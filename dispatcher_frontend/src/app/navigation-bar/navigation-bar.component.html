@@ -8,8 +8,8 @@
 		</ul>
 	</div>
 	<div *ngIf="authService.isLoggedIn" style="flex: 1; display: flex; flex-direction: row-reverse; align-items: center; height: 100%;">
-		<div ngbDropdown>
-			<button class="btn btn-secondary btn-sm" ngbDropdownToggle><span class="navbar-toggler-icon"></span></button>
+		<div ngbDropdown style="margin: 0rem 0.25rem;">
+			<button class="btn btn-secondary btn-sm" style="height:2rem;" ngbDropdownToggle><span class="navbar-toggler-icon"></span></button>
 			<div class="dropdown-menu dropdown-menu-right">
 				<div class="navbar-display-collpased">
 					<button class="dropdown-item" *ngFor="let tab of tabs" routerLinkActive="active" routerLink="/{{tab.routerLink}}">{{tab.name}}</button>
@@ -19,6 +19,13 @@
 					<button class="dropdown-item">Logged in as <b>{{authService.username}}</b></button>
 					<button class="dropdown-item" routerLink="/login">Log out</button>
 				</div>
+			</div>
+		</div>
+		<div ngbDropdown style="margin: 0rem 0.25rem;">
+			<button class="btn btn-outline-success btn-sm" style="height:2rem;" ngbDropdownToggle>Live</button>
+			<div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownBasic1">
+				<button class="dropdown-item">Pause Live Update</button>
+				<button class="dropdown-item">Refresh Now</button>
 			</div>
 		</div>
 	</div>

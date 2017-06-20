@@ -1,6 +1,4 @@
-from calendar import timegm
-from datetime import datetime
-
+import time
 import jwt
 
 secret = 'secret'
@@ -15,4 +13,4 @@ def jwt_decode(encoded: str):
 
 
 def utc_timestamp():
-    return timegm(datetime.utcnow().utctimetuple())
+    return int(time.time())

@@ -11,9 +11,9 @@ if User.query.filter_by(username='chris').first() is None:
 
 
 app.flask.route("/auth/login", methods=['POST'])(auth.login)
-app.flask.route("/task/enqueue/zimfarm_generic", methods=['POST'])(task.zimfarm_generic)
-app.flask.route("/task/<string:id>", methods=['GET', 'POST'])(task.task)
-app.flask.route("/task", methods=['GET'])(task.tasks)
+app.flask.route("/task/enqueue/zimfarm_generic", methods=['POST'])(task.enqueue_zimfarm_generic)
+app.flask.route("/task/<string:id>", methods=['GET', 'POST'])(task.task_detail)
+app.flask.route("/task/list", methods=['GET'])(task.list_tasks)
 
 
 if __name__ == "__main__":

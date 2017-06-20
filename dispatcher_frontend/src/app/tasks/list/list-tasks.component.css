@@ -1,0 +1,10 @@
+.list-tasks-content-empty {
+    background-color: #f9f9f9; 
+    flex: 1; 
+    overflow: hidden;
+    padding: 5rem 0rem;
+}
+
+.list-tasks-table {
+    margin: 0;
+}

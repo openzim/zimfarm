@@ -1,0 +1,10 @@
+.task-detail-code-container {
+    background-color: #f7f7f9; 
+    padding: 1rem; 
+    border-radius: .25rem; 
+    overflow-y: scroll;
+}
+
+.task-detail-code-pre {
+    margin: 0;
+}

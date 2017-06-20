@@ -1,23 +1,25 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule }   from '@angular/forms';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
-import { TasksComponent } from './tasks.component';
 import { TasksRoutingModule } from './tasks-routing.module';
 
 import { ListTasksComponent } from './list/list-tasks.component';
 import { AddTaskComponent } from './add/add-task.component';
+import { TaskDetailComponent } from './detail/task-detail.component';
 
 @NgModule({
     imports: [
         CommonModule,
         FormsModule,
+        NgbModule,
         TasksRoutingModule
     ],
     declarations: [
-        TasksComponent,
         ListTasksComponent,
-        AddTaskComponent
+        AddTaskComponent,
+        TaskDetailComponent
     ]
 })
 export class TasksModule { }

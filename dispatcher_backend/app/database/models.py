@@ -10,6 +10,7 @@ class Task(db.Model):
     started_time = db.Column(db.DateTime)
     finished_time = db.Column(db.DateTime)
 
+    image_name = db.Column(db.String)
     script = db.Column(db.String)
     return_code = db.Column(db.Integer)
     stdout = db.Column(db.String)

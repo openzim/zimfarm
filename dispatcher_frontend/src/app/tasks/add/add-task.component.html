@@ -1,108 +1,131 @@
-<div style="background-color: #FbFbFb;">
-    <h4 class="add-task-title">Add Task</h4>
-    <div style="display: flex;">
-        <div class="add-task-nav-placeholder"></div>
-        <ul class="nav nav-tabs" style="width: 50rem;">
-            <li class="nav-item">
-                <a class="nav-link" [class.active]="taskAddingMode=='script'" (click)="didSelectModeTab('script')">Script</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" [class.active]="taskAddingMode=='mwoffliner'" (click)="didSelectModeTab('mwoffliner')">mwoffliner</a>
-            </li>
-        </ul>
-        <div class="add-task-nav-placeholder"></div>
+<div class="add-task-container">
+    <div style="background-color: #FbFbFb;">
+        <h4 class="add-task-title">Add Task</h4>
+        <div style="display: flex;">
+            <div class="add-task-nav-placeholder"></div>
+            <ul class="nav nav-tabs" style="width: 49rem;">
+                <li class="nav-item">
+                    <a class="nav-link" [class.active]="taskAddingMode=='script'" (click)="didSelectModeTab('script')">Script</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" [class.active]="taskAddingMode=='mwoffliner'" (click)="didSelectModeTab('mwoffliner')">mwoffliner</a>
+                </li>
+            </ul>
+            <div class="add-task-nav-placeholder"></div>
+        </div>
     </div>
-</div>
-<div class="add-task-content" *ngIf="taskAddingMode=='script'">
-    <form (ngSubmit)="addTaskForm.form.valid && addTaskByScript()" #addTaskForm="ngForm" novalidate>
+    <div class="add-task-content" *ngIf="taskAddingMode=='script'">
+        <form (ngSubmit)="addTaskForm.form.valid && addTaskByScript()" #addTaskForm="ngForm" novalidate>
+            <div class="card-block add-task-card-block">
+                <label for="containerToRun">Name of the container to run:</label>
+                <div class="input-group">
+                    <input class="form-control" id="containerToRun" name="containerToRun" [(ngModel)]="zimfarmGenericTask.containerName" required>
+                    <!--<span class="input-group-addon" style="padding: 0;">
+                        <div ngbDropdown class="d-inline-block">
+                            <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>preset</button>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownBasic1">
+                                <button class="dropdown-item">mwoffliner</button>
+                                <button class="dropdown-item">Another container</button>
+                                <button class="dropdown-item">Something else is here</button>
+                            </div>
+                        </div>
+                    </span>-->
+                </div>
+            </div>
+            <div class="card-block add-task-card-block">
+                <label for="scriptToUpload">Script to execute in the container:</label>
+                <textarea class="form-control" rows=20 id="scriptToUpload" name="scriptToUpload" [(ngModel)]="zimfarmGenericTask.script" required></textarea>
+            </div>
+            <div class="add-task-card-block-divider"></div>
+            <div class="card-block" style="padding-bottom: 0;" *ngIf="!zimfarmGenericTask.enqueueSuccess">
+                <div class="alert alert-danger" role="alert" style="margin-bottom: 0;">
+                    Enqueue task failed, response status {{zimfarmGenericTask.responseCode}}, please try again later
+                </div>
+            </div>
+            <div class="card-block add-task-button-block">
+                <button type="submit" class="btn btn-success add-task-button" [disabled]="!addTaskForm.form.valid">Execute</button>
+                <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
+            </div>
+        </form>
+    </div>
+    <div class="add-task-content" *ngIf="taskAddingMode=='mwoffliner'">
         <div class="card-block add-task-card-block">
-            <label for="scriptToUpload">Enter the script you want to execute here:</label>
-            <textarea class="form-control" rows=20 id="scriptToUpload" name="scriptToUpload" [(ngModel)]="scriptText" required></textarea>
+            <div class="form-group">
+                <label for="mwURL">Mediawiki API URL</label>
+                <input type="text" id="mwURL" class="form-control" value="en.wikipedia.org">
+            </div>
+            <div class="form-group">
+                <label for="adminEmail">Admin Email</label>
+                <input type="text" id="adminEmail" class="form-control" value="user@kiwix.org">
+            </div>
+        </div>
+        <div class="add-task-card-block-divider"></div>
+        <div class="card-block add-task-card-block">
+            <div class="form-group">
+                <label for="language">Language</label>
+                <input type="text" id="language" class="form-control" value="">
+            </div>
+            <div class="form-group">
+                <label for="languageInverter">Language Inverter</label>
+                <input type="text" id="languageInverter" class="form-control" value="">
+            </div>
+            <div class="form-group">
+                <label for="languageTrigger">Language Trigger</label>
+                <input type="text" id="languageTrigger" class="form-control" value="">
+            </div>
+        </div>
+        <div class="add-task-card-block-divider"></div>
+        <div class="card-block add-task-card-block">
+            <div class="form-group">
+                <label for="outputDirectory">Output Directory</label>
+                <input type="text" id="outputDirectory" class="form-control" value="">
+            </div>
+            <div class="form-group">
+                <label for="parsoidUrl">Parsoid URL</label>
+                <input type="text" id="parsoidUrl" class="form-control" value="">
+            </div>
+            <div class="form-group">
+                <label for="tmpDirectory">Temp Directory</label>
+                <input type="text" id="tmpDirectory" class="form-control" value="">
+            </div>
+        </div>
+        <div class="add-task-card-block-divider"></div>
+        <div class="card-block add-task-card-block">
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" value="">
+                    Verbose
+                </label>
+            </div>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" value="">
+                    Resume
+                </label>
+            </div>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" value="">
+                    Skip Cache Cleaning
+                </label>
+            </div>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" value="">
+                    With Zim Full Text Index
+                </label>
+            </div>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" value="">
+                    Mobile Layout
+                </label>
+            </div>
         </div>
         <div class="add-task-card-block-divider"></div>
         <div class="card-block add-task-button-block">
-            <button type="submit" class="btn btn-success add-task-button" [disabled]="!addTaskForm.form.valid">Execute</button>
+            <button type="button" class="btn btn-success add-task-button">Add</button>
             <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
         </div>
-    </form>
-</div>
-<div class="add-task-content" *ngIf="taskAddingMode=='mwoffliner'">
-    <div class="card-block add-task-card-block">
-        <div class="form-group">
-            <label for="mwURL">Mediawiki API URL</label>
-            <input type="text" id="mwURL" class="form-control" value="en.wikipedia.org">
-        </div>
-        <div class="form-group">
-            <label for="adminEmail">Admin Email</label>
-            <input type="text" id="adminEmail" class="form-control" value="user@kiwix.org">
-        </div>
-    </div>
-    <div class="add-task-card-block-divider"></div>
-    <div class="card-block add-task-card-block">
-        <div class="form-group">
-            <label for="language">Language</label>
-            <input type="text" id="language" class="form-control" value="">
-        </div>
-        <div class="form-group">
-            <label for="languageInverter">Language Inverter</label>
-            <input type="text" id="languageInverter" class="form-control" value="">
-        </div>
-        <div class="form-group">
-            <label for="languageTrigger">Language Trigger</label>
-            <input type="text" id="languageTrigger" class="form-control" value="">
-        </div>
-    </div>
-    <div class="add-task-card-block-divider"></div>
-    <div class="card-block add-task-card-block">
-        <div class="form-group">
-            <label for="outputDirectory">Output Directory</label>
-            <input type="text" id="outputDirectory" class="form-control" value="">
-        </div>
-        <div class="form-group">
-            <label for="parsoidUrl">Parsoid URL</label>
-            <input type="text" id="parsoidUrl" class="form-control" value="">
-        </div>
-        <div class="form-group">
-            <label for="tmpDirectory">Temp Directory</label>
-            <input type="text" id="tmpDirectory" class="form-control" value="">
-        </div>
-    </div>
-    <div class="add-task-card-block-divider"></div>
-    <div class="card-block add-task-card-block">
-        <div class="form-check">
-            <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" value="">
-                Verbose
-            </label>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" value="">
-                Resume
-            </label>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" value="">
-                Skip Cache Cleaning
-            </label>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" value="">
-                With Zim Full Text Index
-            </label>
-        </div>
-        <div class="form-check">
-            <label class="form-check-label">
-                <input class="form-check-input" type="checkbox" value="">
-                Mobile Layout
-            </label>
-        </div>
-    </div>
-    <div class="add-task-card-block-divider"></div>
-    <div class="card-block add-task-button-block">
-        <button type="button" class="btn btn-success add-task-button">Add</button>
-        <button type="button" class="btn btn-secondary add-task-button" routerLink="..">Cancel</button>
     </div>
 </div>

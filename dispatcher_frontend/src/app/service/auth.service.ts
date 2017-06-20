@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Http, Headers, RequestOptions, Response } from '@angular/http';
 import { Subject }    from 'rxjs/Subject';
+import { Observable } from 'rxjs/Rx';
 import { JwtHelper } from 'angular2-jwt';
 
-import 'rxjs/add/operator/toPromise';
+import 'rxjs/add/operator/map';
+
 
 @Injectable()
 export class AuthService {
@@ -11,63 +13,72 @@ export class AuthService {
     scope: string[] = [];
     scopeChange: Subject<string[]> = new Subject<string[]>();
 
-    get isLoggedIn(): boolean {
-        return this.getToken() != null;
+    constructor(private http: Http) {
+        this.decodeScope();
     }
+
+    get isLoggedIn(): boolean {
+        let token = this.getToken();
+        return token != null && !this.jwt.isTokenExpired(token);
+    }
+
+    get shouldRenewToken(): boolean {return true;}
 
     get username(): string {
-        return this.decodeToken().username;
+        let decoded = this.decodeToken()
+        return decoded != null ? decoded.username : null;
     }
 
-    constructor(private http: Http) {
-        let token = this.getToken();
-        this.decodeScope(token);
+    // http
+
+    login(username: string, password: string): Observable<boolean> {
+        return this.auth({username: username, password: password});
     }
 
-    login(username: string, password: string) {
-        const url = 'api/auth/login';
-        let body = JSON.stringify({username: username, password: password});
+    renew(old_token: string=null): Observable<boolean> {
+        if (old_token == null) {old_token = this.getToken()}
+        return this.auth({token: old_token})
+    }
+
+    private auth(header: {}): Observable<boolean> {
+        let url = 'api/auth/login';
         let options = new RequestOptions ({
-            headers: new Headers({'Content-Type': 'application/json'})
-        })
-        return this.http.post('api/auth/login', body, options)
-            .toPromise()
-            .then(response => {
-                let json  = response.json();
-                if (json.success) {
-                    this.setToken(json.token);
-                    this.decodeScope(json.token);
-                }
+            headers: new Headers(header)
+        });
+        return this.http.post('api/auth/login', null, options)
+            .map(response => {
+                let json = response.json()
+                this.setToken(json.token)
                 return json.success
-            })
-            .catch(this.handleError);
+            });
     }
 
-    private handleError(error: any): Promise<any> {
-        console.error('An error occurred', error);
-        return Promise.reject(error.message || error);
-    }
+    // token decode
 
     private decodeToken() {
         let token = this.getToken();
         return token != null ? this.jwt.decodeToken(token) : null;
     }
 
-    private decodeScope(token?: string) {
-        this.scope = token == null ? [] : this.scope = this.jwt.decodeToken(token).scope;
+    private decodeScope() {
+        let decoded_token = this.decodeToken();
+        this.scope = decoded_token == null ? [] : decoded_token.scope;
         this.scopeChange.next(this.scope);
     }
 
-    private getToken(): string {
-        return localStorage.getItem('token');
-    }
+    // token persistence
 
     private setToken(token: string) {
-        localStorage.setItem('token', token);
+        localStorage.setItem('zimfarm_token', token);
+        this.decodeScope();
     }
 
-    logout() {
-        localStorage.removeItem('token');
-        this.decodeScope(null);
+    getToken(): string {
+        return localStorage.getItem('zimfarm_token');
+    }
+
+    removeToken() {
+        localStorage.removeItem('zimfarm_token');
+        this.decodeScope();
     }
 }

@@ -22,13 +22,13 @@ export class LoginComponent implements OnInit {
 
     ngOnInit() {
         this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-        this.authService.logout();
+        this.authService.removeToken();
     }
 
     login(): void {
         this.loading = true;
         this.authService.login(this.model.username, this.model.password)
-            .then((success) => {
+            .subscribe(success => {
                 this.loading = false;
                 if (success) {
                     this.authFailed = false;
@@ -37,7 +37,6 @@ export class LoginComponent implements OnInit {
                     this.authFailed = true;
                 }
             }
-        );
+        )
     }
-	
 }
