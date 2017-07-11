@@ -1,17 +1,19 @@
 # ZIM Farm
-A farm operated by bots to grow and harvest new zim files. User can submit a new zim file generate task through the website and a registered worker will run the task and upload the file back to the dispatcher. There are three main components:
+A farm operated by bots to grow and harvest new zim files. User can submit a new zim file generation task through a web interface and a registered worker will run the task and transfer the file back to the dispatcher. 
 
-### Dispatcher
+Zim file gneration could be a time consuming process and the kiwix project gnerate over 3000 of them per month. The goal of this project is to create a distributed system, called zim farm, to simplify and automate zim file generation process. The distributed system has one dispatcher, whose role is to manage tasks and coordinate between workers. A user, presumably with enough privilege, add one or more tasks to the system through the dispatcher. Workers will then come and pick up those tasks, process them and transfer the result (zim files) back to the dispatcher.
+
+### what is used?
+
+Dispatcher:
 - proxy: nginx
   - frontend: angular 2, Node.js
   - backend: flask, celery, sqlite, python
-- message queue: RabbitMQ
-- result backend: Redis (may no longer need)
+- messaging queue: RabbitMQ
 
-### Worker
-- node.js + python
-  - mwoffliner
-  - celery
+Worker:
+- python
+- docker
 
 ### Steps to run
 
@@ -24,6 +26,6 @@ A farm operated by bots to grow and harvest new zim files. User can submit a new
 7. go to `http://localhost:8080`
 
 
-## Note: Useful commands
+### Note: Useful commands
 - remove all containers: `docker rm $(docker ps -a -q)`
 - remova all untagged images `docker rmi $(docker images -a | grep "^<none>" | awk "{print $3}")`
