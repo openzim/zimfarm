@@ -3,7 +3,7 @@ A farm operated by bots to grow and harvest new zim files. User can submit a new
 
 Zim file gneration could be a time consuming process and the kiwix project gnerate over 3000 of them per month. The goal of this project is to create a distributed system, called zim farm, to simplify and automate zim file generation process. The distributed system has one dispatcher, whose role is to manage tasks and coordinate between workers. A user, presumably with enough privilege, add one or more tasks to the system through the dispatcher. Workers will then come and pick up those tasks, process them and transfer the result (zim files) back to the dispatcher.
 
-### what is used?
+### What is used?
 
 Dispatcher:
 - proxy: nginx
