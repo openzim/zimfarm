@@ -1,9 +1,49 @@
 # ZIM Farm
-A farm operated by bots to grow and harvest new zim files. User can submit a new zim file generation task through a web interface and a registered worker will run the task and transfer the file back to the dispatcher. 
 
-Zim file gneration could be a time consuming process and the kiwix project gnerate over 3000 of them per month. The goal of this project is to create a distributed system, called zim farm, to simplify and automate zim file generation process. The distributed system has one dispatcher, whose role is to manage tasks and coordinate between workers. A user, presumably with enough privilege, add one or more tasks to the system through the dispatcher. Workers will then come and pick up those tasks, process them and transfer the result (zim files) back to the dispatcher.
+The ZIM farm (zimfarm) is a half-decentralised software solution to
+build ZIM files (http://www.openzim.org/) efficiently. This means scrapping Web contents,
+packaging them into a ZIM file and uploading the result to an online
+ZIM files repository.
 
-### What is used?
+## Principle
+
+The whole zimfarm system works as a task scheduler and is made of two components:
+
+* The **dispatcher**, the central node, which takes and dispatches zim file generation
+  tasks. It is managed by the openZIM project admin and
+  hosted somewhere on the Internet.
+
+* The **workers**, task executers, which are hosted by
+  openZIM volunteers in different places around the world through Internet.
+
+To get a new ZIM file the typical workflow is:
+
+1. User submits a new task (to get a specific ZIM file made).
+2. Dispatcher enqueues the task.
+3. A worker pulls the task.
+4. Worker generates the ZIM file and upload it.
+
+## Run the system as a whole
+
+1. Make sure docker and docker-compose are installed on your system
+2. Clone this repo
+3. Make sure you are in master branch
+4. Open a terminal session change directory to root of this repo
+5. Run `docker-compose up --build`
+6. Wait for docker to do its job
+7. Go to `http://localhost:8080` with your Web browser
+
+## Architecture
+
+The whole system is build by reusing the best of free software
+libraries components. The whole ZIM farm solutioon itself is made
+available using Docker images.
+
+Actually, we use even more Docker images, as the ZIM file are produced
+in dedicated custom Docker images the worker has to "invoke" depending
+of the properties of the task he has to accomplish.
+
+### Softwares
 
 Dispatcher:
 - proxy: nginx
@@ -14,18 +54,3 @@ Dispatcher:
 Worker:
 - python
 - docker
-
-### Steps to run
-
-1. make sure docker and docker-compose are installed on your system
-2. clone this repo
-3. make sure you are in master branch
-4. open a terminal session change directory to root of this repo
-5. `docker-compose up --build`
-6. wait for docker to do its job
-7. go to `http://localhost:8080`
-
-
-### Note: Useful commands
-- remove all containers: `docker rm $(docker ps -a -q)`
-- remova all untagged images `docker rmi $(docker images -a | grep "^<none>" | awk "{print $3}")`
