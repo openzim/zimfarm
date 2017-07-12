@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ZimfarmGenericTaskStatus(Enum):
+class GenericTaskStatus(Enum):
     PENDING = 0
     UPDATING_CONTAINER = 1
     EXECUTING_SCRIPT = 2

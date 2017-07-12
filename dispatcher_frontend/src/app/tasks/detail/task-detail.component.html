@@ -1,4 +1,66 @@
-<div style="width: 100%; padding: 0px 10px">
+<div class="tasks-common-container">
+	<div class="tasks-common-toolbar">
+		<div class="tasks-common-toolbar-item">
+			<button type="button" class="btn btn-primary" (click)="goBack()">Go Back</button>
+		</div>
+		<div class="tasks-common-toolbar-placeholder"></div>
+		<div class="tasks-common-toolbar-item">
+			<button type="button" class="btn btn-success" (click)="refresh()">Refresh</button>
+		</div>
+	</div>
+	<div *ngIf="task" class="card tasks-common-content">
+		<div style="height: 3.5rem;">
+			<div class="card-header" style="display: flex; align-items:center;">
+				<div>Task: {{task.id}}</div>
+				<div class="badge" style="margin-left: 1rem;" 
+					[ngClass]="{'badge-default': task.status=='PENDING',
+								'badge-info': task.status=='STARTED' || task.status=='UPLOADING',
+								'badge-danger': task.status=='ERROR',
+								'badge-success': task.status=='FINISHED'}">{{task.status}}</div>
+			</div>
+		</div>
+		<div style="overflow: auto;">
+			<div *ngIf="task.image_name" class="card-block">
+				<label>container name:</label>
+				<div class="task-detail-code-container">
+					<pre class="task-detail-code-pre"><samp>{{task.image_name}}</samp></pre>
+				</div>
+			</div>
+			<div *ngIf="task.time" class="card-block">
+				<label>time stamps:</label>
+				<ul class="list-group">
+					<li class="list-group-item">Created: {{task.time.created | date:'MMM d, y  H:m:s'}}</li>
+					<li class="list-group-item">Started: {{task.time.started | date:'MMM d, y  H:m:s'}}</li>
+					<li class="list-group-item">Finished: {{task.time.finished | date:'MMM d, y  H:m:s'}}</li>
+				</ul>
+			</div>
+			<div *ngIf="task.script" class="card-block">
+				<label>script:</label>
+				<div class="task-detail-code-container">
+					<pre class="task-detail-code-pre"><samp>{{task.script}}</samp></pre>
+				</div>
+			</div>
+			<div *ngIf="task.result" class="card-block">
+				<div *ngIf="task.result.stdout">
+					<label>stdout:</label>
+					<div class="task-detail-code-container">
+						<pre class="task-detail-code-pre"><samp>{{task.result.stdout}}</samp></pre>
+					</div>
+				</div>
+				<div *ngIf="task.result.stderr">
+					<label>stderr:</label>
+					<div class="task-detail-code-container">
+						<pre class="task-detail-code-pre"><samp>{{task.result.stderr}}</samp></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div *ngIf="!task" class="tasks-common-content">
+		<div class="alert alert-danger" role="alert">The task does not exist.</div>
+	</div>
+</div>
+<!-- <div style="width: 100%; padding: 0px 10px">
 	<div style="margin: 10px 0px;">
 		<button type="button" class="btn btn-primary" (click)="goBack()">Go Back</button>
 		<button type="button" class="btn btn-success" (click)="refresh()" *ngIf="task">Refresh</button>
@@ -64,7 +126,5 @@
 			</table>
 		</div>
 	</div>
-	<div *ngIf="!task">
-		<div class="alert alert-danger" role="alert">The task you want does not exist.</div>
-	</div>
-</div>
+	
+</div>  -->

@@ -7,35 +7,33 @@ from .exceptions import InvalidRequest, AuthFailed
 
 def login():
     try:
-        request_data = request.get_json()
-        if request_data is None:
-            raise InvalidRequest()
+        username = request.headers.get('username')
+        password = request.headers.get('password')
+        old_token = request.headers.get('token')
 
-        username = request_data.get('username')
-        password = request_data.get('password')
-        old_token = request_data.get('token')
+        if (username is None or password is None) and (old_token is None):
+            raise InvalidRequest()
 
         if username is not None and password is not None:
             if database.user.is_valid(username, password):
-                timestamp_now = utils.utc_timestamp()
-                return jsonify({'success': True, 'token': new_user_token(username, timestamp_now)})
+                return jsonify({'success': True, 'token': new_user_token(username)})
             else:
                 raise AuthFailed()
         elif old_token is not None:
-            payload = utils.jwt_decode(old_token)
-            timestamp_now = utils.utc_timestamp()
-            if payload['exp'] < timestamp_now:
-                raise AuthFailed()
-            return jsonify({'success': True, 'token': new_user_token(payload['username'], timestamp_now)})
+            utils.jwt_decode(old_token)
+            return jsonify({'success': True, 'token': new_user_token(username)})
         else:
             raise InvalidRequest()
     except InvalidRequest:
         return Response(status=400)
-    except (jwt.DecodeError, AuthFailed):
-        return jsonify({'success': False})
+    except AuthFailed:
+        return jsonify({'error': 'Username or password invalid'}), 401
+    except (jwt.DecodeError, jwt.ExpiredSignatureError):
+        return jsonify({'error': 'token invalid or expired'}), 401
 
 
-def new_user_token(username: str, time_stamp: int):
+def new_user_token(username: str):
+    time_stamp = utils.utc_timestamp()
     return utils.jwt_encode({
         'iss': 'dispatcher-backend',
         'exp': time_stamp + 60 * 30,

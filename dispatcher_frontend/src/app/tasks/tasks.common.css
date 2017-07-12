@@ -1,0 +1,27 @@
+.tasks-common-container {
+    max-width: 75rem;
+    margin: auto;
+    height: calc(100vh - 54px);
+    display: flex;
+    flex-direction: column;
+}
+
+.tasks-common-toolbar {
+    margin: 0.25rem;
+    margin-top: 0.5rem;
+    min-height: 46px;
+    display: flex;
+}
+
+.tasks-common-toolbar-item {
+    margin: 0.25rem;
+    max-width: 25rem;
+}
+
+.tasks-common-toolbar-placeholder {
+    flex: 1;
+}
+
+.tasks-common-content {
+    margin: 0rem 0.5rem 0.5rem 0.5rem;
+}

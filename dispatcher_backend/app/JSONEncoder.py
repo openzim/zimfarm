@@ -10,6 +10,7 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                 'id': o.id,
                 'name': o.name,
                 'status': o.status,
+                'image_name': o.image_name,
                 'script': o.script,
                 'time': {
                     'created': self.encode_datetime(o.created_time),

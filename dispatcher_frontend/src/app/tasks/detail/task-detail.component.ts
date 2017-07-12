@@ -1,36 +1,53 @@
-import 'rxjs/add/operator/switchMap';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Params } from '@angular/router';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 import { Location } from '@angular/common';
 
-import { Task } from '../../model/task';
-import { TaskService } from '../../model/task.service';
+import { TaskService } from '../../service/task.service';
+
 
 @Component({
     selector: 'task-detail',
-    templateUrl: 'app/tasks/task-detail.component.html'
+    templateUrl: './task-detail.component.html',
+    styleUrls: ['./../tasks.common.css', './task-detail.component.css']
 })
 
-export class TaskDetailComponent {
-    task: Task;    
+export class TaskDetailComponent implements OnInit {
+    task: {}
     
     constructor(
-        private taskService: TaskService,
         private route: ActivatedRoute,
-        private location: Location
+        private router: Router,
+        private location: Location,
+        private taskService: TaskService
     ) {}
 
     ngOnInit(): void {
-        this.refresh();
+        this.route.params.subscribe(params => {
+            this.getTaskDetail(params['id'])
+        })
     }
 
-    refresh():void {
-        this.route.params
-            .switchMap((params: Params) => this.taskService.getTask(params['id']))
-            .subscribe(task => this.task = task);
+    refresh() {
+        let id = this.task["id"];
+        if (id != null) {
+            this.getTaskDetail(id);
+        }
+    }
+
+    getTaskDetail(id: string) {
+        this.taskService.task_detail(id)
+            .subscribe(task => {
+                this.task = task;
+            }, error => {
+                if (error.status == 401) {
+                    this.router.navigateByUrl('/login');
+                } else {
+                }
+            }
+        )
     }
 
     goBack(): void {
-        this.location.back();
+        this.router.navigate(['../', {relativeTo: this.route}]);
     } 
 }

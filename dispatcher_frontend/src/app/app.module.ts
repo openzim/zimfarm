@@ -9,32 +9,29 @@ import { AppRoutingModule } from './app-routing.module';
 
 import { AuthGuard } from './guard/auth.guard';
 
+import { AuthService } from './service/auth.service';
+import { TaskService } from './service/task.service';
+
 import { LoginComponent } from './login/login.component';
 import { NavigationBarComponent } from './navigation-bar/navigation-bar.component'
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TasksModule } from './tasks/tasks.module';
 
-import { NodesComponent } from './nodes/nodes.component';
-import { TaskService } from './model/task.service';
-
-import { AuthService } from './service/auth.service';
-
 
 @NgModule({
     imports: [ 
         BrowserModule, 
-        AppRoutingModule,
         HttpModule,
         FormsModule,
         NgbModule.forRoot(),
         DashboardModule,
-        TasksModule
+        TasksModule,
+        AppRoutingModule,
     ],
     declarations: [ 
         AppComponent, 
         LoginComponent,
-        NavigationBarComponent,
-        NodesComponent
+        NavigationBarComponent
     ],
     providers: [
         AuthService,
