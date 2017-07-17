@@ -95,3 +95,4 @@ web/node_modules/
 \.vscode/
 
 dispatcher_frontend/node_modules/
+dispatcher/docker_data/
