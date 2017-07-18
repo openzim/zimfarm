@@ -28,3 +28,7 @@ class Task(db.Model):
 class User(db.Model):
     username = db.Column(db.String, primary_key=True)
     password_hash = db.Column(db.String)
+
+class Worker(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    username = db.Column(db.String)

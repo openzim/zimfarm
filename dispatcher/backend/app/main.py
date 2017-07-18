@@ -1,3 +1,4 @@
+import os
 import app
 from routes import auth, task
 
@@ -17,4 +18,5 @@ app.flask.route("/task/list", methods=['GET'])(task.list_tasks)
 
 
 if __name__ == "__main__":
-    app.flask.run(host='0.0.0.0', debug=True, port=80)
+    isDebug = os.getenv('DEBUG', False)
+    app.flask.run(host='0.0.0.0', debug=isDebug, port=80)
