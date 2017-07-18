@@ -7,6 +7,7 @@ services:
         hostname: zimfarm
         environment:
             - ADMIN_PASSWORD=admin_pass
+            - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
         ports:
             # debugging only, for using management plugin
@@ -14,7 +15,7 @@ services:
         volumes:
             - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
         logging:
-            driver: "json-file"
+            driver: "none"
     proxy:
         build:
             context: ./proxy
@@ -28,7 +29,26 @@ services:
             - backend
             - frontend
         logging:
-            driver: json-file
+            driver: "none"
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        environment:
+            - DISPATCHER_USERNAME=dispatcher
+            - DISPATCHER_PASSWORD=dispatcher_pass
+            - DEBUG=True
+        ports:
+            # debug only
+            - "8088:80"
+        links:
+            - rabbit
+        volumes:
+            # development only
+            - ./backend/app:/app
+            - ./docker_data/backend:/dispatcher_data
+        depends_on:
+            - rabbit
     frontend:
         build:
             context: ./frontend
@@ -36,17 +56,3 @@ services:
         volumes:
             # development only
             - ./frontend/src:/app/src
-    backend:
-        build:
-            context: ./backend
-            dockerfile: Dockerfile
-        ports:
-            - "8088:80"
-        links:
-            # debug only
-            - rabbit
-        volumes:
-            # development only
-            - ./backend/app:/app
-        depends_on:
-            - rabbit
