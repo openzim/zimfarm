@@ -9,8 +9,8 @@
     rabbitmqctl set_user_tags admin administrator; \
     rabbitmqctl set_permissions -p zimfarm admin ".*" ".*" ".*"; \
 
-    rabbitmqctl add_user dispatcher $DISPATCHER_PASSWORD; \
-    rabbitmqctl set_user_tags dispatcher administrator; \
-    rabbitmqctl set_permissions -p zimfarm dispatcher ".*" ".*" "";
+    rabbitmqctl add_user $DISPATCHER_USERNAME $DISPATCHER_PASSWORD; \
+    rabbitmqctl set_user_tags $DISPATCHER_USERNAME administrator; \
+    rabbitmqctl set_permissions -p zimfarm $DISPATCHER_USERNAME ".*" ".*" ".*"; \
 
 ) & rabbitmq-server $@
