@@ -1,10 +1,13 @@
 from datetime import datetime
 from flask.json import JSONEncoder
-from database.task import Task
+from database.models import Task, User
 
 
 class ZimfarmDispatcherJSONEncoder(JSONEncoder):
     def default(self, o):
+        def encode_datetime(d: datetime):
+            return d.isoformat() + 'Z' if isinstance(d, datetime) else None
+
         if isinstance(o, Task):
             json = {
                 'id': o.id,
@@ -13,9 +16,9 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                 'image_name': o.image_name,
                 'script': o.script,
                 'time': {
-                    'created': self.encode_datetime(o.created_time),
-                    'started': self.encode_datetime(o.started_time),
-                    'finished': self.encode_datetime(o.finished_time)
+                    'created': encode_datetime(o.created_time),
+                    'started': encode_datetime(o.started_time),
+                    'finished': encode_datetime(o.finished_time)
                 },
                 'result': {
                     'return_code': o.return_code,
@@ -24,8 +27,10 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                 },
             }
             return json
+        elif isinstance(o, User):
+            return {
+                'username': o.username,
+                'scope': o.scope,
+            }
         else:
             JSONEncoder.default(self, o)
-
-    def encode_datetime(self, d: datetime):
-        return d.isoformat() + 'Z' if isinstance(d, datetime) else None
