@@ -1,12 +1,12 @@
 import os
+
+from celery import Celery
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from celery import Celery
-
 
 flask = Flask(__name__)
 flask.config.update({
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:////dispatcher_data/zimfarm.sqlite',
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:////data/zimfarm.sqlite',
     'SQLALCHEMY_TRACK_MODIFICATIONS': False
 })
 
@@ -17,5 +17,5 @@ broker_url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(
 celery = Celery(main='dispatcher', broker=broker_url)
 
 
-from JSONEncoder import ZimfarmDispatcherJSONEncoder
+from utils.json_encoder import ZimfarmDispatcherJSONEncoder
 flask.json_encoder = ZimfarmDispatcherJSONEncoder

@@ -1,7 +1,8 @@
 from datetime import datetime
+
 from app import db
+from utils.status import GenericTaskStatus
 from .models import Task
-from status import GenericTaskStatus
 
 
 def add(id: str, name: str, status: GenericTaskStatus, image_name: str, script: str) -> Task:
