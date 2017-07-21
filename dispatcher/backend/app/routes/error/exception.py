@@ -20,6 +20,9 @@ class AuthFailed(Exception):
 class UserDoesNotExist(Exception):
     pass
 
+class TaskDoesNotExist(Exception):
+    pass
+
 # 409 Conflict
 class UserAlreadyExists(Exception):
     pass

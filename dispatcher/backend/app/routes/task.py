@@ -1,68 +1,68 @@
-import jwt
-import jwt_util
-from flask import request, jsonify
+from flask import Blueprint, request, jsonify
 
 import database.task
+from utils.token import JWT
 from app import celery
-from routes.error.exception import InvalidRequest
+from .error import exception
 from utils.status import GenericTaskStatus
 
 
-def validate_token(token):
-    if token is None:
-        raise InvalidRequest()
-    jwt_util.decode(token)
+blueprint = Blueprint('task', __name__, url_prefix='/task')
 
 
+@blueprint.route("/enqueue/zimfarm/generic", methods=["POST"])
 def enqueue_zimfarm_generic():
-    try:
-        validate_token(request.headers.get('token'))
+    token = JWT.from_request_header(request)
 
-        request_json = request.get_json()
-        image_name = request_json.get('image_name')
-        script = request_json.get('script')
+    if not token.is_admin:
+        raise exception.NotEnoughPrivilege()
 
-        if image_name is None or script is None:
-            raise InvalidRequest()
+    json = request.get_json()
+    image_name = json.get('image_name')
+    script = json.get('script')
 
-        task_name = 'zimfarm_generic'
-        kwargs = {
-            'image_name': image_name,
-            'script': script
-        }
-        celery_task = celery.send_task(task_name, kwargs=kwargs)
-        database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING,
-                                          image_name, script)
-        return jsonify(database_task), 202
-    except (jwt.DecodeError, jwt.ExpiredSignatureError):
-        return jsonify({'error': 'token invalid or expired'}), 401
+    if image_name is None or script is None:
+        raise exception.InvalidRequest()
 
-
-def task_detail(id):
-    if request.method == 'POST':
-        request_data = request.get_json()
-
-        task_data = request_data.get('task')
-        status = GenericTaskStatus[task_data.get('status')]
-        stdout = task_data.get('stdout')
-        stderr = task_data.get('stderr')
-        return_code = task_data.get('return_code')
-
-        database.task.update(id, status, stdout, stderr, return_code)
-        return jsonify()
-    else:
-        try:
-            validate_token(request.headers.get('token'))
-            task_data = database.task.get(id)
-            return jsonify(task_data) if task_data is not None else ('', 404)
-        except (jwt.DecodeError, jwt.ExpiredSignatureError):
-            return jsonify({'error': 'token invalid or expired'}), 401
+    task_name = 'zimfarm.generic'
+    kwargs = {
+        'image_name': image_name,
+        'script': script
+    }
+    celery_task = celery.send_task(task_name, kwargs=kwargs)
+    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING,
+                                      image_name, script)
+    return jsonify(database_task), 202
 
 
+@blueprint.route("/list", methods=["GET"])
 def list_tasks():
-    try:
-        validate_token(request.headers.get('token'))
-        return jsonify(database.task.get_all())
-    except (jwt.DecodeError, jwt.ExpiredSignatureError):
-        return jsonify({'error': 'token invalid or expired'}), 401
+    token = JWT.from_request_header(request)
 
+    limit = request.args.get('limit', 10)
+    offset = request.args.get('limit', 0)
+
+    tasks = database.task.get_all(limit, offset)
+    return jsonify({
+        'limit': limit,
+        'offset': offset,
+        'tasks': tasks
+    })
+
+
+@blueprint.route("/<string:id>", methods=["GET", "PUT"])
+def task_detail(id):
+    if request.method == 'GET':
+        _ = JWT.from_request_header(request)
+        task = database.task.get(id)
+        if task is None:
+            raise exception.TaskDoesNotExist()
+        return jsonify(task)
+    elif request.method == 'PUT':
+        task = request.get_json()
+        status = GenericTaskStatus[task.get('status')]
+        stdout = task.get('stdout')
+        stderr = task.get('stderr')
+        return_code = task.get('return_code')
+        database.task.update(id, status, stdout, stderr, return_code)
+        return jsonify(), 204
