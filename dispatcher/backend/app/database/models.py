@@ -22,6 +22,7 @@ class Task(db.Model):
 
     image_name = db.Column(db.String)
     script = db.Column(db.String)
+
     return_code = db.Column(db.Integer)
     stdout = db.Column(db.String)
     stderr = db.Column(db.String)

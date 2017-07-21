@@ -43,6 +43,11 @@ def user_does_not_exist(_):
     response.status_code = 404
     return response
 
+def task_does_not_exist(_):
+    response = jsonify({'error': 'task does not exist'})
+    response.status_code = 404
+    return response
+
 # 409
 def user_already_exists(_):
     response = jsonify({'error': 'user already exists'})
