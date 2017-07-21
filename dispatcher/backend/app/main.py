@@ -3,12 +3,13 @@ import jwt
 from werkzeug.security import generate_password_hash
 
 import app
-from routes import auth, user
+from routes import auth, user, task
 from routes.error import exception, handler
 
 
 app.flask.register_blueprint(auth.blueprint)
 app.flask.register_blueprint(user.blueprint)
+app.flask.register_blueprint(task.blueprint)
 
 
 # error handler
@@ -20,6 +21,7 @@ app.flask.errorhandler(jwt.ExpiredSignatureError)(handler.jwt_expired)
 app.flask.errorhandler(exception.NotEnoughPrivilege)(handler.not_enough_privilege)
 app.flask.errorhandler(exception.AuthFailed)(handler.auth_failed)
 app.flask.errorhandler(exception.UserDoesNotExist)(handler.user_does_not_exist)
+app.flask.errorhandler(exception.TaskDoesNotExist)(handler.task_does_not_exist)
 app.flask.errorhandler(exception.UserAlreadyExists)(handler.user_already_exists)
 app.flask.errorhandler(exception.RabbitMQError)(handler.rabbitmq_error)
 app.flask.errorhandler(exception.RabbitMQPutUserFailed)(handler.rabbitmq_put_user_failed)

@@ -18,7 +18,7 @@ def update(id: str, new_status: GenericTaskStatus, stdout: str=None, stderr: str
 
     old_status = GenericTaskStatus[task.status]
     if old_status.value > new_status.value:
-        return
+        return task
 
     task.status = new_status.name
     task.stdout = stdout
@@ -39,5 +39,5 @@ def get(id: str) -> Task:
     return Task.query.filter_by(id=id).first()
 
 
-def get_all() -> [Task]:
-    return Task.query.all()
+def get_all(limit: int, offset: int) -> [Task]:
+    return Task.query.limit(limit).offset(offset).all()
