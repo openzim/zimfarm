@@ -17,6 +17,7 @@ services:
             - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
         logging:
             driver: "json-file"
+
     proxy:
         build:
             context: ./proxy
@@ -24,13 +25,22 @@ services:
         ports:
             - "8080:80"
         links:
+            # - frontend
             - backend
-            - frontend
         depends_on:
+            # - frontend
             - backend
-            - frontend
         logging:
-            driver: "none"
+            driver: "json-file"
+
+#    frontend:
+#        build:
+#            context: ./frontend
+#            dockerfile: Dockerfile
+#        volumes:
+            # debug only
+            # - ./frontend/src:/app/src
+
     backend:
         build:
             context: ./backend
@@ -41,21 +51,12 @@ services:
             - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
             - DEBUG=True
-        ports:
-            # debug only
-            - "8088:80"
+        # ports:
+            # - "8088:80"
         links:
             - rabbit
         volumes:
-            # debug only
-            - ./backend/app:/app
+            # - ./backend/app:/app
             - ./docker_data/backend:/data
         depends_on:
             - rabbit
-    frontend:
-        build:
-            context: ./frontend
-            dockerfile: Dockerfile
-        volumes:
-            # debug only
-            - ./frontend/src:/app/src
