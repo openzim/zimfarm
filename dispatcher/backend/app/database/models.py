@@ -1,4 +1,14 @@
+from werkzeug.security import check_password_hash
 from app import db
+
+
+class User(db.Model):
+    username = db.Column(db.String, primary_key=True)
+    password_hash = db.Column(db.String)
+    scope = db.Column(db.String)
+
+    def is_password_valid(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
 
 
 class Task(db.Model):
@@ -24,10 +34,6 @@ class Task(db.Model):
             kwargs=self.kwargs
         )
 
-
-class User(db.Model):
-    username = db.Column(db.String, primary_key=True)
-    password_hash = db.Column(db.String)
 
 class Worker(db.Model):
     id = db.Column(db.String, primary_key=True)

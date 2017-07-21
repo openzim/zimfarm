@@ -1,16 +1,17 @@
-from flask import request, jsonify
 import jwt
-from app import celery
-import utils
+import jwt_util
+from flask import request, jsonify
+
 import database.task
-from .exceptions import InvalidRequest
-from status import GenericTaskStatus
+from app import celery
+from routes.error.exception import InvalidRequest
+from utils.status import GenericTaskStatus
 
 
 def validate_token(token):
     if token is None:
         raise InvalidRequest()
-    utils.jwt_decode(token)
+    jwt_util.decode(token)
 
 
 def enqueue_zimfarm_generic():
