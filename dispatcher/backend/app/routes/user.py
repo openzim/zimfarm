@@ -96,7 +96,8 @@ def detail(username):
 
 def update_rabbitmq_user(username: str, password: str):
     try:
-        status_code = rabbitmq.put_user(username, password, 'worker')
+        scope = 'administrator' if username == 'admin' else 'worker'
+        status_code = rabbitmq.put_user(username, password, scope)
         if status_code != 201 and status_code != 204:
             raise exception.RabbitMQPutUserFailed(status_code)
         status_code = rabbitmq.put_permission('zimfarm', username, write='')
