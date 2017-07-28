@@ -27,11 +27,34 @@ def enqueue_zimfarm_generic():
     task_name = 'zimfarm.generic'
     kwargs = {
         'image_name': image_name,
-        'script': script
+        'script': script,
     }
     celery_task = celery.send_task(task_name, kwargs=kwargs)
-    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING,
-                                      image_name, script)
+    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING, image_name, script)
+    return jsonify(database_task), 202
+
+
+@blueprint.route("/enqueue/zimfarm/mwoffliner", methods=["POST"])
+def enqueue_mwoffliner():
+    token = JWT.from_request_header(request)
+
+    if not token.is_admin:
+        raise exception.NotEnoughPrivilege()
+
+    json = request.get_json()
+    mw_url = json.get('mw_url')
+    admin_email = json.get('admin_email')
+
+    if mw_url is None or admin_email is None:
+        raise exception.InvalidRequest()
+
+    task_name = 'zimfarm.mwoffliner'
+    kwargs = {
+        'mw_url': mw_url,
+        'admin_email': admin_email,
+    }
+    celery_task = celery.send_task(task_name, kwargs=kwargs)
+    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
     return jsonify(database_task), 202
 
 
