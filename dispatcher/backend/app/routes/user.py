@@ -86,6 +86,7 @@ def detail(username):
         if new_scope is not None:
             if not JWT.scope_is_valid(new_scope):
                 raise exception.ScopeNotValid()
+            # TODO: = currently it is not possible to change scope of rabbitmq without providing a new set of password
             user = database.user.change_scope(username, new_scope)
             return jsonify(user)
     elif request.method == "DELETE":
@@ -96,10 +97,15 @@ def detail(username):
 
 def update_rabbitmq_user(username: str, password: str):
     try:
-        status_code = rabbitmq.put_user(username, password, 'worker')
+        scope = 'administrator' if username == 'admin' else 'worker'
+        status_code = rabbitmq.put_user(username, password, scope)
         if status_code != 201 and status_code != 204:
             raise exception.RabbitMQPutUserFailed(status_code)
-        status_code = rabbitmq.put_permission('zimfarm', username, write='')
+
+        if scope == 'administrator':
+            status_code = rabbitmq.put_permission('zimfarm', username)
+        else:
+            status_code = rabbitmq.put_permission('zimfarm', username, write='')
         if status_code != 201 and status_code != 204:
             raise exception.RabbitMQPutPermissionFailed(status_code)
     except urllib.error.HTTPError as error:

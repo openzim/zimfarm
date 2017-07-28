@@ -13,6 +13,8 @@ services:
         ports:
             # debug only, for using management plugin
             - 8081:15672
+            # change external port(7285) to something else
+            - 7285:5672
         volumes:
             - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
         logging:
