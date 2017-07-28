@@ -54,8 +54,8 @@ def enqueue_mwoffliner():
         'admin_email': admin_email,
     }
     celery_task = celery.send_task(task_name, kwargs=kwargs)
-    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
-    return jsonify(database_task), 202
+    # database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
+    return jsonify(kwargs), 202
 
 
 @blueprint.route("/list", methods=["GET"])
