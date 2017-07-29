@@ -1,17 +1,20 @@
 ================
  Authentication
 ================
-
-Login and get a token using username and password.
 ::
 
-  POST /api/auth/login
+    POST /api/auth/login
+
+Login and get a token using username and password.
 
 Request:
     Header:
-
-    - username
-    - password
+        - username
+        - password
 
 Response:
+    ::
 
+        {
+            "token": JWT_TOKEN
+        }
