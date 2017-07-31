@@ -29,7 +29,7 @@ class Generic(Task):
 class MWOffliner(Task):
     name = 'zimfarm.mwoffliner'
 
-    def run(self, **kwargs):
+    def run(self, mw_url: str, admin_email: str, **kwargs):
         redis_container_name = 'zimfarm-worker-redis'
 
         def run_redis():
@@ -42,8 +42,7 @@ class MWOffliner(Task):
 
             run_redis()
             logger.info('MWOffliner: redis started')
-            logger.info(kwargs)
-            # logger.info(token)
+            logger.info(mw_url)
 
             # command = ['mwoffliner', '--redis="redis://redis"',
             #            '--mwUrl={}'.format(mw_url), '--adminEmail={}'.format(admin_email)]
