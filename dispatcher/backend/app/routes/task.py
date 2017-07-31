@@ -54,6 +54,7 @@ def enqueue_mwoffliner():
         'admin_email': admin_email,
     }
     task_token = MWOfflinerTaskJWT.new(params)
+    print(task_token)
     celery_task = celery.send_task(task_name, token=task_token)
     # database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
     return jsonify(params), 202
