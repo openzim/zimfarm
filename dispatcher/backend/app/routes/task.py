@@ -42,8 +42,8 @@ def enqueue_mwoffliner():
         raise exception.NotEnoughPrivilege()
 
     json = request.get_json()
-    mw_url = json.get('mw_url')
-    admin_email = json.get('admin_email')
+    mw_url = json.get('mwUrl')
+    admin_email = json.get('adminEmail')
 
     if mw_url is None or admin_email is None:
         raise exception.InvalidRequest()

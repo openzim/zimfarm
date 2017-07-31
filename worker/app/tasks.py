@@ -30,8 +30,7 @@ class Generic(Task):
 class MWOffliner(Task):
     name = 'zimfarm.mwoffliner'
 
-    def run(self, token: str, params: {}, **kwargs):
-        print(kwargs)
+    def run(self, token: str, params: {}):
         redis_container_name = 'zimfarm-worker-redis'
 
         def run_redis():
@@ -63,10 +62,8 @@ class MWOffliner(Task):
             # 3/4 generate zim file
             logger.info('Step {step}/{total} -- generating zim file'.format(id=id_prefix, step=3, total=4))
             params['redis'] = 'redis://redis'
-            params['mwUrl'] = 'https://bm.wikipedia.org/'
-            params['adminEmail'] = 'chris@kiwix.org'
-            params['verbose'] = True
             command = assemble_command(params)
+            logger.info(command)
             log = client.containers.run('openzim/mwoffliner', command, name=self.request.id, remove=True,
                                         links={redis_container_name: 'redis'})
             logger.info(command)
