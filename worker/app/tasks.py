@@ -29,7 +29,7 @@ class Generic(Task):
 class MWOffliner(Task):
     name = 'zimfarm.mwoffliner'
 
-    def run(self, mw_url: str, admin_email: str, **kwargs):
+    def run(self, **kwargs):
         redis_container_name = 'zimfarm-worker-redis'
 
         def run_redis():
@@ -42,12 +42,14 @@ class MWOffliner(Task):
 
             run_redis()
             logger.info('MWOffliner: redis started')
+            logger.info(kwargs)
+            # logger.info(token)
 
-            command = ['mwoffliner', '--redis="redis://redis"',
-                       '--mwUrl={}'.format(mw_url), '--adminEmail={}'.format(admin_email)]
-            log = client.containers.run('openzim/mwoffliner', command, name=self.request.id,
-                                        links={redis_container_name: 'redis'})
-            logger.info('MWOffliner: {}'.format(log.decode()))
+            # command = ['mwoffliner', '--redis="redis://redis"',
+            #            '--mwUrl={}'.format(mw_url), '--adminEmail={}'.format(admin_email)]
+            # log = client.containers.run('openzim/mwoffliner', command, name=self.request.id,
+            #                             links={redis_container_name: 'redis'})
+            # logger.info('MWOffliner: {}'.format(log.decode()))
 
         except docker.errors.ContainerError as e:
             logger.error('DOCKER: ContainerError({})'.format(e.stderr))
