@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 
 import database.task
-from utils.token import JWT
+from utils.token import UserJWT, MWOfflinerTaskJWT
 from app import celery
 from .error import exception
 from utils.status import GenericTaskStatus
@@ -12,7 +12,7 @@ blueprint = Blueprint('task', __name__, url_prefix='/task')
 
 @blueprint.route("/enqueue/zimfarm/generic", methods=["POST"])
 def enqueue_zimfarm_generic():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     if not token.is_admin:
         raise exception.NotEnoughPrivilege()
@@ -36,7 +36,7 @@ def enqueue_zimfarm_generic():
 
 @blueprint.route("/enqueue/zimfarm/mwoffliner", methods=["POST"])
 def enqueue_mwoffliner():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     if not token.is_admin:
         raise exception.NotEnoughPrivilege()
@@ -49,18 +49,19 @@ def enqueue_mwoffliner():
         raise exception.InvalidRequest()
 
     task_name = 'zimfarm.mwoffliner'
-    kwargs = {
+    params = {
         'mw_url': mw_url,
         'admin_email': admin_email,
     }
-    celery_task = celery.send_task(task_name, kwargs=kwargs)
+    task_token = MWOfflinerTaskJWT.new(params)
+    celery_task = celery.send_task(task_name, token=task_token)
     # database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
-    return jsonify(kwargs), 202
+    return jsonify(params), 202
 
 
 @blueprint.route("/list", methods=["GET"])
 def list_tasks():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     limit = request.args.get('limit', 10)
     offset = request.args.get('limit', 0)
@@ -76,7 +77,7 @@ def list_tasks():
 @blueprint.route("/<string:id>", methods=["GET", "PUT"])
 def task_detail(id):
     if request.method == 'GET':
-        _ = JWT.from_request_header(request)
+        _ = UserJWT.from_request_header(request)
         task = database.task.get(id)
         if task is None:
             raise exception.TaskDoesNotExist()
