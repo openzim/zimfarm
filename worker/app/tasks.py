@@ -1,5 +1,6 @@
 from celery import Task
 from celery.utils.log import get_task_logger
+import jwt
 import docker
 import docker.errors
 
@@ -29,7 +30,7 @@ class Generic(Task):
 class MWOffliner(Task):
     name = 'zimfarm.mwoffliner'
 
-    def run(self, mw_url: str, admin_email: str, **kwargs):
+    def run(self, token: str, params: {}):
         redis_container_name = 'zimfarm-worker-redis'
 
         def run_redis():
@@ -37,18 +38,41 @@ class MWOffliner(Task):
             if len(containers) == 0:
                 client.containers.run('redis', detach=True, name=redis_container_name)
 
+        def assemble_command(params: {}):
+            parts: [str] = []
+            for key, value in params.items():
+                if isinstance(value, bool):
+                    parts.append('--{name}'.format(name=key))
+                else:
+                    parts.append('--{name}={value}'.format(name=key, value=value))
+            return 'mwoffliner {}'.format(' '.join(parts))
+
         try:
+            id_prefix = self.request.id.split('-')[0]
             client = docker.from_env()
 
+            # 1/4 run redis
+            logger.info('Step {step}/{total} -- start redis'.format(id=id_prefix, step=1, total=4))
             run_redis()
-            logger.info('MWOffliner: redis started')
-            logger.info(mw_url)
 
-            # command = ['mwoffliner', '--redis="redis://redis"',
-            #            '--mwUrl={}'.format(mw_url), '--adminEmail={}'.format(admin_email)]
-            # log = client.containers.run('openzim/mwoffliner', command, name=self.request.id,
-            #                             links={redis_container_name: 'redis'})
-            # logger.info('MWOffliner: {}'.format(log.decode()))
+            # 2/4 pull latest image
+            logger.info('Step {step}/{total} -- pull openzim/mwoffliner'.format(id=id_prefix, step=2, total=4))
+            client.images.pull('openzim/mwoffliner', tag='latest')
+
+            # 3/4 generate zim file
+            logger.info('Step {step}/{total} -- generating zim file'.format(id=id_prefix, step=3, total=4))
+            params['redis'] = 'redis://redis'
+            params['mwUrl'] = 'https://bm.wikipedia.org/'
+            params['adminEmail'] = 'chris@kiwix.org'
+            params['verbose'] = True
+            command = assemble_command(params)
+            log = client.containers.run('openzim/mwoffliner', command, name=self.request.id, remove=True,
+                                        links={redis_container_name: 'redis'})
+            logger.info(command)
+            log = log.decode()
+
+            # 4/4 upload zim file
+            logger.info('Step {step}/{total} -- uploading zim file'.format(id=id_prefix, step=4, total=4))
 
         except docker.errors.ContainerError as e:
             logger.error('DOCKER: ContainerError({})'.format(e.stderr))
