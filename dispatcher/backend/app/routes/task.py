@@ -49,7 +49,10 @@ def enqueue_mwoffliner():
         raise exception.InvalidRequest()
 
     task_name = 'zimfarm.mwoffliner'
-    celery_task = celery.send_task(task_name, token=MWOfflinerTaskJWT.new(), params=json)
+    celery_task = celery.send_task(task_name, kwargs={
+        'token': MWOfflinerTaskJWT.new(),
+        'params': json
+    })
     # database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
     return jsonify(), 202
 
