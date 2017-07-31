@@ -30,7 +30,8 @@ class Generic(Task):
 class MWOffliner(Task):
     name = 'zimfarm.mwoffliner'
 
-    def run(self, token: str, params: {}):
+    def run(self, token: str, params: {}, **kwargs):
+        print(kwargs)
         redis_container_name = 'zimfarm-worker-redis'
 
         def run_redis():
