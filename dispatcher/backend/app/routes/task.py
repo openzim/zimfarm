@@ -49,16 +49,12 @@ def enqueue_mwoffliner():
         raise exception.InvalidRequest()
 
     task_name = 'zimfarm.mwoffliner'
-    params = {
-        'mw_url': mw_url,
-        'admin_email': admin_email,
-    }
-    task_token = MWOfflinerTaskJWT.new(params)
-    params['token'] = task_token
-    celery_task = celery.send_task(task_name, kwargs=params)
-    # celery_task = celery.send_task(task_name, kwargs={'token': task_token})
+    celery_task = celery.send_task(task_name, kwargs={
+        'token': MWOfflinerTaskJWT.new(),
+        'params': json
+    })
     # database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
-    return jsonify(params), 202
+    return jsonify(), 202
 
 
 @blueprint.route("/list", methods=["GET"])

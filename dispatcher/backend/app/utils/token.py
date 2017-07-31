@@ -72,7 +72,7 @@ class UserJWT(JWT):
 
 class MWOfflinerTaskJWT(JWT):
     @classmethod
-    def new(cls, params: {}):
+    def new(cls):
         time_stamp = int(time.time())
         return cls.encode({
             'iss': 'dispatcher-backend',
@@ -80,7 +80,6 @@ class MWOfflinerTaskJWT(JWT):
             'iat': time_stamp,
             'jti': str(uuid.uuid4()),
             'task_name': 'zimfarm.mwoffliner',
-            'params': params
         })
 
     @property
