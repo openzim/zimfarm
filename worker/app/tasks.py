@@ -1,85 +1,87 @@
-from enum import Enum
-import subprocess, shlex, json, urllib.request
-from celery import Celery
+import subprocess
+from celery import Task
+from celery.utils.log import get_task_logger
+import docker
+import docker.errors
 
 
-app = Celery('worker', broker='amqp://admin:mypass@rabbit:5672')
-url_root = 'http://proxy/api/task/'
-# url_root = 'http://dispatcher_backend/task/'
+logger = get_task_logger(__name__)
 
 
-class ZimfarmGenericTaskStatus(Enum):
-    PENDING = 0
-    UPDATING_CONTAINER = 1
-    EXECUTING_SCRIPT = 2
-    UPLOADING_FILES = 3
-    CLEANING_UP = 4
-    FINISHED = 5
-    ERROR = 100
+class Generic(Task):
+    name = 'generic'
+    logger = get_task_logger(__name__)
+
+    def run(self, image_name: str, script: str):
+        try:
+            client = docker.from_env()
+            logger.info('DOCKER: running {}'.format(image_name))
+            logger.info('DOCKER: command {}'.format(script))
+            log = client.containers.run(image_name, script, name=self.request.id)
+            logger.info(log.decode())
+        except docker.errors.ContainerError as e:
+            logger.error('DOCKER: ContainerError({})'.format(e.stderr.decode()))
+        except docker.errors.ImageNotFound as e:
+            logger.error('DOCKER: ImageNotFound({})'.format(e.explanation))
+        except docker.errors.APIError as e:
+            logger.error('DOCKER: APIError({})'.format(e.explanation))
 
 
-@app.task(bind=True, name='zimfarm_generic')
-def zimfarm_generic(self, image_name: str, script: str):
-    def update_container(name: str) -> (str, str, int):
-        process = subprocess.run(["docker", "pull", name], encoding='utf-8', check=True,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return process.stdout, process.stderr, process.returncode
+class MWOffliner(Task):
+    name = 'mwoffliner'
 
-    def execute_script_sync(task_id: str, image_name: str, script: str) -> (str, str, int):
-        parts = ['docker', 'run', '--name', task_id, image_name, '/bin/bash', '-c', script]
-        process = subprocess.run(parts, encoding='utf-8', check=True,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return process.stdout, process.stderr, process.returncode
+    def run(self, token: str, params: {}):
+        redis_container_name = 'zimfarm-worker-redis'
+        mwoffliner_output_path = '/output/'
 
-    def clean_up(task_id: str):
-        container_id = subprocess.run(["docker", "ps", "--filter", "name={}".format(task_id), "-a", "-q"],
-                                      encoding='utf-8', stdout=subprocess.PIPE).stdout.rstrip()
-        subprocess.run(["docker", "stop", container_id])
-        subprocess.run(["docker", "rm", container_id])
+        def run_redis():
+            containers = client.containers.list(filters={'name': redis_container_name})
+            if len(containers) == 0:
+                client.containers.run('redis', detach=True, name=redis_container_name)
 
-    def update_status(status: ZimfarmGenericTaskStatus, stdout=None, stderr=None, return_code=None):
-        url = url_root + self.request.id
-        task = {'status': status.name}
-        if stdout is not None: task['stdout'] = stdout
-        if stderr is not None: task['stderr'] = stderr
-        if return_code is not None: task['return_code'] = return_code
-        payload = {'token': '', 'task': task}
+        def assemble_command(params: {}):
+            parts: [str] = []
+            for key, value in params.items():
+                if isinstance(value, bool):
+                    parts.append('--{name}'.format(name=key))
+                else:
+                    parts.append('--{name}={value}'.format(name=key, value=value))
+            return 'mwoffliner {}'.format(' '.join(parts))
 
-        req = urllib.request.Request(url, headers={'content-type': 'application/json'},
-                                     data=json.dumps(payload).encode('utf-8'))
-        urllib.request.urlopen(req)
+        def transfer_files(output_dir: str):
+            # TODO: don't know how we should implement this as of now
+            pass
 
-    def upload_files():
-        pass
+        try:
+            id_prefix = self.request.id.split('-')[0]
+            client = docker.from_env()
 
-    def update_stream(new_result):
-        nonlocal stdout, stderr, return_code
-        stdout += new_result[0]
-        stderr += new_result[1]
-        return_code = new_result[2]
+            # 1/4 run redis
+            logger.info('Step {step}/{total} -- start redis'.format(id=id_prefix, step=1, total=4))
+            run_redis()
 
-    stdout, stderr, return_code = '', '', 0
+            # 2/4 pull latest image
+            logger.info('Step {step}/{total} -- pull openzim/mwoffliner'.format(id=id_prefix, step=2, total=4))
+            client.images.pull('openzim/mwoffliner', tag='latest')
 
-    try:
-        update_status(ZimfarmGenericTaskStatus.UPDATING_CONTAINER)
-        result = update_container(image_name)
-        update_stream(result)
+            # 3/4 generate zim file
+            logger.info('Step {step}/{total} -- generating zim file'.format(id=id_prefix, step=3, total=4))
+            params['redis'] = 'redis://redis'
+            params['outputDirectory'] = mwoffliner_output_path
+            command = assemble_command(params)
+            logger.info(command)
+            log = client.containers.run('openzim/mwoffliner', command, name=self.request.id, remove=True,
+                                        links={redis_container_name: 'redis'})
+            logger.info(command)
+            log = log.decode()
 
-        update_status(ZimfarmGenericTaskStatus.EXECUTING_SCRIPT)
-        result = execute_script_sync(self.request.id, image_name, script)
-        update_stream(result)
+            # 4/4 upload zim file
+            logger.info('Step {step}/{total} -- uploading zim file (placeholder)'.format(id=id_prefix, step=4, total=4))
+            transfer_files(mwoffliner_output_path)
 
-        update_status(ZimfarmGenericTaskStatus.UPLOADING_FILES, stdout, stderr, return_code)
-        upload_files()
-
-        update_status(ZimfarmGenericTaskStatus.CLEANING_UP, stdout, stderr, return_code)
-        clean_up(self.request.id)
-
-        update_status(ZimfarmGenericTaskStatus.FINISHED, stdout, stderr, return_code)
-    except subprocess.CalledProcessError as error:
-        update_stream((error.stdout, error.stderr, error.returncode))
-
-        update_status(ZimfarmGenericTaskStatus.CLEANING_UP, stdout, stderr, return_code)
-        clean_up(self.request.id)
-
-        update_status(ZimfarmGenericTaskStatus.ERROR, stdout, stderr, error.returncode)
+        except docker.errors.ContainerError as e:
+            logger.error('DOCKER: ContainerError({})'.format(e.stderr))
+        except docker.errors.ImageNotFound as e:
+            logger.info('DOCKER: ImageNotFound({})'.format(e.explanation))
+        except docker.errors.APIError as e:
+            logger.info('DOCKER: APIError({})'.format(e.explanation))

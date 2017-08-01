@@ -1,13 +1,11 @@
-FROM docker:17.06.0
+FROM python:latest
 
+WORKDIR /usr/src
+COPY . .
 
-RUN apk add --update python3 python3-dev py3-pip  build-base
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# install requirements
-COPY ./requirements.txt /requirements.txt
-RUN pip3 install -r /requirements.txt
+RUN useradd zimfarm_worker
+RUN usermod -a -G staff zimfarm_worker
 
-# start worker
-COPY ./app /celery_worker
-WORKDIR /celery_worker
-ENTRYPOINT celery -A tasks worker --loglevel=info
+ENTRYPOINT ["python3", "app/main.py"]

@@ -3,7 +3,7 @@ import sqlalchemy.exc
 from flask import Blueprint, request, jsonify
 
 import database.user
-from utils.token import JWT
+from utils.token import UserJWT
 from utils import rabbitmq
 from .error import exception
 
@@ -13,7 +13,7 @@ blueprint = Blueprint('user', __name__, url_prefix='/user')
 
 @blueprint.route("/add", methods=["POST"])
 def add():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     if not token.is_admin:
         raise exception.NotEnoughPrivilege()
@@ -29,7 +29,7 @@ def add():
     if '/' in username:
         raise exception.UsernameNotValid()
 
-    if not JWT.scope_is_valid(scope):
+    if not UserJWT.scope_is_valid(scope):
         raise exception.ScopeNotValid()
 
     try:
@@ -42,7 +42,7 @@ def add():
 
 @blueprint.route("/list", methods=["GET"])
 def list_all():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     if not token.is_admin:
         raise exception.NotEnoughPrivilege()
@@ -60,7 +60,7 @@ def list_all():
 
 @blueprint.route("/<string:username>", methods=["GET", "PUT", "DELETE"])
 def detail(username):
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
     username = token.username if username is None else username
 
     if not token.is_admin and username != token.username:
@@ -84,7 +84,7 @@ def detail(username):
             user = database.user.change_password(username, new_password)
             return jsonify(user)
         if new_scope is not None:
-            if not JWT.scope_is_valid(new_scope):
+            if not UserJWT.scope_is_valid(new_scope):
                 raise exception.ScopeNotValid()
             # TODO: = currently it is not possible to change scope of rabbitmq without providing a new set of password
             user = database.user.change_scope(username, new_scope)
@@ -111,6 +111,7 @@ def update_rabbitmq_user(username: str, password: str):
     except urllib.error.HTTPError as error:
         code = error.getcode()
         raise exception.RabbitMQError(code)
+
 
 def delete_rabbitmq_user(username: str):
     try:
