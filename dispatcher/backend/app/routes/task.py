@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 
 import database.task
-from utils.token import JWT
+from utils.token import UserJWT, MWOfflinerTaskJWT
 from app import celery
 from .error import exception
 from utils.status import GenericTaskStatus
@@ -12,7 +12,7 @@ blueprint = Blueprint('task', __name__, url_prefix='/task')
 
 @blueprint.route("/enqueue/zimfarm/generic", methods=["POST"])
 def enqueue_zimfarm_generic():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     if not token.is_admin:
         raise exception.NotEnoughPrivilege()
@@ -24,20 +24,42 @@ def enqueue_zimfarm_generic():
     if image_name is None or script is None:
         raise exception.InvalidRequest()
 
-    task_name = 'zimfarm.generic'
+    task_name = 'generic'
     kwargs = {
         'image_name': image_name,
-        'script': script
+        'script': script,
     }
     celery_task = celery.send_task(task_name, kwargs=kwargs)
-    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING,
-                                      image_name, script)
+    database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING, image_name, script)
     return jsonify(database_task), 202
+
+
+@blueprint.route("/enqueue/zimfarm/mwoffliner", methods=["POST"])
+def enqueue_mwoffliner():
+    token = UserJWT.from_request_header(request)
+
+    if not token.is_admin:
+        raise exception.NotEnoughPrivilege()
+
+    json = request.get_json()
+    mw_url = json.get('mwUrl')
+    admin_email = json.get('adminEmail')
+
+    if mw_url is None or admin_email is None:
+        raise exception.InvalidRequest()
+
+    task_name = 'mwoffliner'
+    celery_task = celery.send_task(task_name, kwargs={
+        'token': MWOfflinerTaskJWT.new(),
+        'params': json
+    })
+    # database_task = database.task.add(celery_task.id, task_name, GenericTaskStatus.PENDING)
+    return jsonify(), 202
 
 
 @blueprint.route("/list", methods=["GET"])
 def list_tasks():
-    token = JWT.from_request_header(request)
+    token = UserJWT.from_request_header(request)
 
     limit = request.args.get('limit', 10)
     offset = request.args.get('limit', 0)
@@ -53,7 +75,7 @@ def list_tasks():
 @blueprint.route("/<string:id>", methods=["GET", "PUT"])
 def task_detail(id):
     if request.method == 'GET':
-        _ = JWT.from_request_header(request)
+        _ = UserJWT.from_request_header(request)
         task = database.task.get(id)
         if task is None:
             raise exception.TaskDoesNotExist()

@@ -10,30 +10,32 @@ services:
             - ADMIN_PASSWORD=admin_pass
             - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
+        volumes:
+            - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
         ports:
             # debug only, for using management plugin
             - 8081:15672
-            # change external port(7285) to something else
+            # change external port(7285) to something else if needed
             - 7285:5672
-        volumes:
-            - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
-        logging:
-            driver: "json-file"
+        restart: always
+        labels:
+            - com.chrisshwli.zimfarm.name="rabbit"
 
     proxy:
         build:
             context: ./proxy
             dockerfile: Dockerfile
-        ports:
-            - "8080:80"
         links:
             # - frontend
             - backend
         depends_on:
             # - frontend
             - backend
-        logging:
-            driver: "json-file"
+        ports:
+            - "8080:80"
+        restart: always
+        labels:
+            - com.chrisshwli.zimfarm.name="proxy"
 
 #    frontend:
 #        build:
@@ -53,8 +55,6 @@ services:
             - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
             - DEBUG=True
-        # ports:
-            # - "8088:80"
         links:
             - rabbit
         volumes:
@@ -62,3 +62,6 @@ services:
             - ./docker_data/backend:/data
         depends_on:
             - rabbit
+        restart: always
+        labels:
+            - com.chrisshwli.zimfarm.name="backend"

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 
 import database.user
-from utils.token import JWT
+from utils.token import UserJWT
 from .error.exception import InvalidRequest, AuthFailed
 
 
@@ -24,10 +24,10 @@ def login():
     if not is_valid:
         raise AuthFailed()
 
-    return jsonify({'token': JWT.new(username, user.scope)})
+    return jsonify({'token': UserJWT.new(username, user.scope)})
 
 
 @blueprint.route("/renew", methods=["POST"])
 def renew():
-    old_jwt = JWT.from_request_header(request)
-    return jsonify({'token': JWT.new(old_jwt.username, old_jwt.scope)})
+    old_jwt = UserJWT.from_request_header(request)
+    return jsonify({'token': UserJWT.new(old_jwt.username, old_jwt.scope)})
