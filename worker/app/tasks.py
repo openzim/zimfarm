@@ -1,6 +1,6 @@
+import subprocess
 from celery import Task
 from celery.utils.log import get_task_logger
-import jwt
 import docker
 import docker.errors
 
@@ -32,6 +32,7 @@ class MWOffliner(Task):
 
     def run(self, token: str, params: {}):
         redis_container_name = 'zimfarm-worker-redis'
+        mwoffliner_output_path = '/output/'
 
         def run_redis():
             containers = client.containers.list(filters={'name': redis_container_name})
@@ -46,6 +47,10 @@ class MWOffliner(Task):
                 else:
                     parts.append('--{name}={value}'.format(name=key, value=value))
             return 'mwoffliner {}'.format(' '.join(parts))
+
+        def transfer_files(output_dir: str):
+            # subprocess.run(['rsync'])
+            pass
 
         try:
             id_prefix = self.request.id.split('-')[0]
@@ -62,6 +67,7 @@ class MWOffliner(Task):
             # 3/4 generate zim file
             logger.info('Step {step}/{total} -- generating zim file'.format(id=id_prefix, step=3, total=4))
             params['redis'] = 'redis://redis'
+            params['outputDirectory'] = mwoffliner_output_path
             command = assemble_command(params)
             logger.info(command)
             log = client.containers.run('openzim/mwoffliner', command, name=self.request.id, remove=True,
@@ -71,6 +77,7 @@ class MWOffliner(Task):
 
             # 4/4 upload zim file
             logger.info('Step {step}/{total} -- uploading zim file'.format(id=id_prefix, step=4, total=4))
+            transfer_files(mwoffliner_output_path)
 
         except docker.errors.ContainerError as e:
             logger.error('DOCKER: ContainerError({})'.format(e.stderr))
