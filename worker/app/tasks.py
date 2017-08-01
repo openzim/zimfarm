@@ -9,7 +9,7 @@ logger = get_task_logger(__name__)
 
 
 class Generic(Task):
-    name = 'zimfarm.generic'
+    name = 'generic'
     logger = get_task_logger(__name__)
 
     def run(self, image_name: str, script: str):
@@ -28,7 +28,7 @@ class Generic(Task):
 
 
 class MWOffliner(Task):
-    name = 'zimfarm.mwoffliner'
+    name = 'mwoffliner'
 
     def run(self, token: str, params: {}):
         redis_container_name = 'zimfarm-worker-redis'
@@ -49,7 +49,7 @@ class MWOffliner(Task):
             return 'mwoffliner {}'.format(' '.join(parts))
 
         def transfer_files(output_dir: str):
-            # subprocess.run(['rsync'])
+            # TODO: don't know how we should implement this as of now
             pass
 
         try:
@@ -76,7 +76,7 @@ class MWOffliner(Task):
             log = log.decode()
 
             # 4/4 upload zim file
-            logger.info('Step {step}/{total} -- uploading zim file'.format(id=id_prefix, step=4, total=4))
+            logger.info('Step {step}/{total} -- uploading zim file (placeholder)'.format(id=id_prefix, step=4, total=4))
             transfer_files(mwoffliner_output_path)
 
         except docker.errors.ContainerError as e:

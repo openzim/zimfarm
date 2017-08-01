@@ -24,7 +24,7 @@ def enqueue_zimfarm_generic():
     if image_name is None or script is None:
         raise exception.InvalidRequest()
 
-    task_name = 'zimfarm.generic'
+    task_name = 'generic'
     kwargs = {
         'image_name': image_name,
         'script': script,
@@ -48,7 +48,7 @@ def enqueue_mwoffliner():
     if mw_url is None or admin_email is None:
         raise exception.InvalidRequest()
 
-    task_name = 'zimfarm.mwoffliner'
+    task_name = 'mwoffliner'
     celery_task = celery.send_task(task_name, kwargs={
         'token': MWOfflinerTaskJWT.new(),
         'params': json
