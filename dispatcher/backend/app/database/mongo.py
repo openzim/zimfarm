@@ -47,5 +47,6 @@ class TasksCollection(Collection):
     #     for _, value in self.index_information().items():
     #         index_keys = [key[0] for key in value['key']]
     #         if 'celery_task_name' not in index_keys:
+    #             self.create_index([('celery_task_name', TEXT)])
     #         if 'status' not in index_keys:
     #             self.create_index([('status', TEXT)])
