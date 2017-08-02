@@ -32,5 +32,7 @@ class ZimfarmDispatcherJSONEncoder(JSONEncoder):
                 'username': o.username,
                 'scope': o.scope,
             }
+        elif isinstance(o, datetime):
+            return o.isoformat() + 'Z'
         else:
             JSONEncoder.default(self, o)

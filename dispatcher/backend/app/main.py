@@ -40,6 +40,10 @@ def initialize():
         app.db.session.commit()
 
 
+    # mongo
+    from database import mongo
+    mongo.ZimfarmDatabase().initialize()
+
 if __name__ == "__main__":
     isDebug = os.getenv('DEBUG', False)
     initialize()

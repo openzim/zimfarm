@@ -11,7 +11,7 @@ services:
             - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
         volumes:
-            - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
+            - ./docker_data/rabbitmq:/var/lib/rabbitmq
         ports:
             # debug only, for using management plugin
             - 8081:15672
@@ -20,6 +20,13 @@ services:
         restart: always
         labels:
             - com.chrisshwli.zimfarm.name="rabbit"
+    mongo:
+        image: mongo:latest
+        volumes:
+            - ./docker_data/mongo:/data/db
+        restart: always
+        labels:
+            - com.chrisshwli.zimfarm.name="mongo"
 
     proxy:
         build:
@@ -57,11 +64,13 @@ services:
             - DEBUG=True
         links:
             - rabbit
+            - mongo
         volumes:
-            # - ./backend/app:/app
+            - ./backend/app:/app
             - ./docker_data/backend:/data
         depends_on:
             - rabbit
+            - mongo
         restart: always
         labels:
             - com.chrisshwli.zimfarm.name="backend"
