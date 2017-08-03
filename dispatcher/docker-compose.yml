@@ -6,8 +6,8 @@ services:
             dockerfile: Dockerfile
         hostname: zimfarm
         environment:
-            - ADMIN_USERNAME=admin
-            - ADMIN_PASSWORD=admin_pass
+            - INIT_USERNAME=admin
+            - INIT_PASSWORD=admin_pass
             - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
         volumes:
@@ -57,8 +57,8 @@ services:
             context: ./backend
             dockerfile: Dockerfile
         environment:
-            - ADMIN_USERNAME=admin
-            - ADMIN_PASSWORD=admin_pass
+            - INIT_USERNAME=admin
+            - INIT_PASSWORD=admin_pass
             - DISPATCHER_USERNAME=dispatcher
             - DISPATCHER_PASSWORD=dispatcher_pass
             - DEBUG=True

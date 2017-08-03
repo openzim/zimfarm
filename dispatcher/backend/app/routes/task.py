@@ -1,13 +1,12 @@
 from datetime import datetime
-from flask import Blueprint, request, jsonify, Response
+
 import pymongo
+from flask import Blueprint, request, jsonify, Response
 
 from app import celery
-from database.mongo import TasksCollection
-from .error import exception
+from mongo import TasksCollection
 from utils.token import UserJWT, MWOfflinerTaskJWT
-from utils.status import GenericTaskStatus
-
+from .error import exception
 
 blueprint = Blueprint('task', __name__, url_prefix='/task')
 

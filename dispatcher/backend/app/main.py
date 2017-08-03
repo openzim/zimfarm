@@ -1,18 +1,15 @@
-import os
+from os import getenv
 import jwt
-from werkzeug.security import generate_password_hash
 
 import app
 from routes import auth, user, task
 from routes.error import exception, handler
 
-
 app.flask.register_blueprint(auth.blueprint)
-app.flask.register_blueprint(user.blueprint)
-app.flask.register_blueprint(task.blueprint)
+# app.flask.register_blueprint(user.blueprint)
+# app.flask.register_blueprint(task.blueprint)
 
 
-# error handler
 app.flask.errorhandler(exception.InvalidRequest)(handler.invalid_request)
 app.flask.errorhandler(exception.UsernameNotValid)(handler.username_not_valid)
 app.flask.errorhandler(exception.ScopeNotValid)(handler.scope_not_valid)
@@ -29,22 +26,18 @@ app.flask.errorhandler(exception.RabbitMQDeleteUserFailed)(handler.rabbitmq_dele
 
 
 def initialize():
-    from database.models import User
+    from werkzeug.security import generate_password_hash
+    import mongo
 
-    admin_username = os.getenv('ADMIN_USERNAME', 'admin')
-    admin_password = os.getenv('ADMIN_PASSWORD', 'admin_pass')
-    if User.query.filter_by(username=admin_username).first() is None:
-        app.db.session.add(User(username=admin_username,
-                                password_hash=generate_password_hash(admin_password),
-                                scope='administrator'))
-        app.db.session.commit()
-
-
-    # mongo
-    from database import mongo
     mongo.ZimfarmDatabase().initialize()
+    users = mongo.UsersCollection()
+    if users.find_one() is None:
+        users.insert_one({
+            'username': getenv('INIT_USERNAME', 'admin'),
+            'password_hash': generate_password_hash(getenv('INIT_PASSWORD', 'admin_pass'))
+        })
 
 if __name__ == "__main__":
-    isDebug = os.getenv('DEBUG', False)
+    isDebug = getenv('DEBUG', False)
     initialize()
     app.flask.run(host='0.0.0.0', debug=isDebug, port=80)

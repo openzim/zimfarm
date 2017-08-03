@@ -42,7 +42,7 @@ class JWT:
 
 class UserJWT(JWT):
     @classmethod
-    def new(cls, username: str, scope: str):
+    def new(cls, username: str, scope: str=None):
         time_stamp = int(time.time())
         return cls.encode({
             'iss': 'dispatcher-backend',
