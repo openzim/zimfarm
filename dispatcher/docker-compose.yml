@@ -1,41 +1,60 @@
-version: '3'
+version: '2'
 services:
     rabbit:
-        build:
-            context: ./rabbitmq
-            dockerfile: Dockerfile
-        hostname: zimfarm
-        environment:
-            - ADMIN_USERNAME=admin
-            - ADMIN_PASSWORD=admin_pass
-            - DISPATCHER_USERNAME=dispatcher
-            - DISPATCHER_PASSWORD=dispatcher_pass
-        volumes:
-            - ./docker_data/rabbitmq/data:/var/lib/rabbitmq
-        ports:
-            # debug only, for using management plugin
-            - 8081:15672
-            # change external port(7285) to something else if needed
-            - 7285:5672
-        restart: always
-        labels:
-            - com.chrisshwli.zimfarm.name="rabbit"
+      build:
+        context: ./rabbitmq
+        dockerfile: Dockerfile
+      extends:
+        file: config.yml
+        service: base
+      hostname: zimfarm
+      restart: always
+      volumes:
+        - ./docker_data/rabbitmq:/var/lib/rabbitmq
+      ports:
+        # debug only, for using management plugin
+        - 8081:15672
+        # change external port(7285) to something else if needed
+        - 7285:5672
+      labels:
+        - com.chrisshwli.zimfarm.name="rabbit"
+    mongo:
+      image: mongo:latest
+      volumes:
+        - ./docker_data/mongo:/data/db
+      restart: always
+      labels:
+        - com.chrisshwli.zimfarm.name="mongo"
+    warehouse:
+      build:
+        context: ./warehouse
+        dockerfile: Dockerfile
+      extends:
+        file: config.yml
+        service: base
+      volumes:
+        - ./docker_data/warehouse:/data
+      restart: always
+      ports:
+        - "972:22"
+      labels:
+        - com.chrisshwli.zimfarm.name="warehouse"
 
     proxy:
-        build:
-            context: ./proxy
-            dockerfile: Dockerfile
-        links:
-            # - frontend
-            - backend
-        depends_on:
-            # - frontend
-            - backend
-        ports:
-            - "8080:80"
-        restart: always
-        labels:
-            - com.chrisshwli.zimfarm.name="proxy"
+      build:
+        context: ./proxy
+        dockerfile: Dockerfile
+      links:
+        # - frontend
+        - backend
+      depends_on:
+        # - frontend
+        - backend
+      ports:
+        - "8080:80"
+      restart: always
+      labels:
+        - com.chrisshwli.zimfarm.name="proxy"
 
 #    frontend:
 #        build:
@@ -46,22 +65,20 @@ services:
             # - ./frontend/src:/app/src
 
     backend:
-        build:
-            context: ./backend
-            dockerfile: Dockerfile
-        environment:
-            - ADMIN_USERNAME=admin
-            - ADMIN_PASSWORD=admin_pass
-            - DISPATCHER_USERNAME=dispatcher
-            - DISPATCHER_PASSWORD=dispatcher_pass
-            - DEBUG=True
-        links:
-            - rabbit
-        volumes:
-            # - ./backend/app:/app
-            - ./docker_data/backend:/data
-        depends_on:
-            - rabbit
-        restart: always
-        labels:
-            - com.chrisshwli.zimfarm.name="backend"
+      build:
+        context: ./backend
+        dockerfile: Dockerfile
+      environment:
+        - DEBUG=True
+      links:
+        - rabbit
+        - mongo
+      volumes:
+        - ./backend/app:/app
+      depends_on:
+        - rabbit
+        - mongo
+        - warehouse
+      restart: always
+      labels:
+        - com.chrisshwli.zimfarm.name="backend"

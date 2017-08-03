@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
+from werkzeug.security import check_password_hash
 
-import database.user
+from mongo import UsersCollection
 from utils.token import UserJWT
 from .error.exception import InvalidRequest, AuthFailed
 
@@ -16,18 +17,23 @@ def login():
     if username is None or password is None:
         raise InvalidRequest()
 
-    user = database.user.get(username)
+    user = UsersCollection().find_one({'username': username})
     if user is None:
         raise AuthFailed()
 
-    is_valid = user.is_password_valid(password)
+    is_valid = check_password_hash(user['password_hash'], password)
     if not is_valid:
         raise AuthFailed()
 
-    return jsonify({'token': UserJWT.new(username, user.scope)})
+    return jsonify({'token': UserJWT.new(username, user['scope'])})
 
 
 @blueprint.route("/renew", methods=["POST"])
 def renew():
-    old_jwt = UserJWT.from_request_header(request)
-    return jsonify({'token': UserJWT.new(old_jwt.username, old_jwt.scope)})
+    old = UserJWT.from_request_header(request)
+
+    user = UsersCollection().find_one({'username': old.username})
+    if user is None:
+        raise AuthFailed()
+
+    return jsonify({'token': UserJWT.new(old.username, user['scope'])})

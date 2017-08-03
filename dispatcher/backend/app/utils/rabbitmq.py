@@ -1,10 +1,12 @@
-import os, base64, json
-import urllib.request, urllib.response
+import os
+import base64
+import json
+import urllib.request
+import urllib.response
 
 
-def get_request(path: str, method: str, payload: {}=None):
-    username = os.getenv('DISPATCHER_USERNAME')
-    password = os.getenv('DISPATCHER_PASSWORD')
+def get_request(path: str, method: str, payload: {}=None,
+                username=os.getenv('DISPATCHER_USERNAME'), password=os.getenv('DISPATCHER_PASSWORD')):
     encoded = base64.b64encode(bytes('{}:{}'.format(username, password), 'utf-8')).decode()
 
     headers = {'Authorization': 'Basic {}'.format(encoded)}
@@ -15,6 +17,12 @@ def get_request(path: str, method: str, payload: {}=None):
         headers['content-type'] = 'application/json'
         data = json.dumps(payload).encode('utf-8')
     return urllib.request.Request('http://rabbit:15672/api' + path, data=data, headers=headers, method=method)
+
+
+def auth_user(username: str, password: str):
+    request = get_request('/whoami', 'GET', username=username, password=password)
+    with urllib.request.urlopen(request) as response:
+        return response.getcode(), json.loads(response.read().decode())
 
 
 def put_user(username: str, password: str, tag: str) -> int:
