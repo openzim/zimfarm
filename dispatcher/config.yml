@@ -1,0 +1,10 @@
+version: '2'
+services:
+  base:
+    environment:
+      - INIT_USERNAME=admin
+      - INIT_PASSWORD=admin_pass
+      - DISPATCHER_USERNAME=dispatcher
+      - DISPATCHER_PASSWORD=dispatcher_pass
+      - RSYNC_USERNAME=upload
+      - RSYNC_PASSWORD=sync_er

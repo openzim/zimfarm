@@ -42,7 +42,7 @@ class JWT:
 
 class UserJWT(JWT):
     @classmethod
-    def new(cls, username: str, scope: str):
+    def new(cls, username: str, scope: {}):
         time_stamp = int(time.time())
         return cls.encode({
             'iss': 'dispatcher-backend',
@@ -54,20 +54,24 @@ class UserJWT(JWT):
         })
 
     @staticmethod
-    def scope_is_valid(scope):
-        return scope == 'administrator' or scope == 'worker'
+    def validate_scope(scope: {}):
+        if not isinstance(scope, dict):
+            scope = {}
+        return {
+            'admin': scope.get('admin', False)
+        }
 
     @property
     def username(self) -> str:
         return self.payload['username']
 
     @property
-    def scope(self) -> str:
+    def scope(self) -> {}:
         return self.payload['scope']
 
     @property
     def is_admin(self) -> bool:
-        return self.scope == 'administrator'
+        return self.scope.get('admin', False)
 
 
 class MWOfflinerTaskJWT(JWT):
@@ -79,7 +83,7 @@ class MWOfflinerTaskJWT(JWT):
             'exp': time_stamp + 60 * 60 * 24 * 7,
             'iat': time_stamp,
             'jti': str(uuid.uuid4()),
-            'task_name': 'zimfarm.mwoffliner',
+            'task_name': 'mwoffliner',
         })
 
     @property
