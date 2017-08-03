@@ -103,10 +103,10 @@ def upsert_user(username: str, password: str=None, scope: dict=None):
 def update_rabbitmq_user(username: str, password: str):
     try:
         status_code = rabbitmq.put_user(username, password, 'worker')
-        if status_code != 201 and status_code != 204:
+        if status_code >= 300:
             raise exception.RabbitMQPutUserFailed(status_code)
         status_code = rabbitmq.put_permission('zimfarm', username, write='')
-        if status_code != 201 and status_code != 204:
+        if status_code >= 300:
             raise exception.RabbitMQPutPermissionFailed(status_code)
     except urllib.error.HTTPError as error:
         code = error.getcode()
@@ -116,7 +116,7 @@ def update_rabbitmq_user(username: str, password: str):
 def delete_rabbitmq_user(username: str):
     try:
         status_code = rabbitmq.delete_user(username)
-        if status_code != 204:
+        if status_code >= 300:
             raise exception.RabbitMQDeleteUserFailed(status_code)
     except urllib.error.HTTPError as error:
         code = error.getcode()
