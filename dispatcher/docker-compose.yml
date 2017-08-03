@@ -67,7 +67,6 @@ services:
             - mongo
         volumes:
             - ./backend/app:/app
-            - ./docker_data/backend:/data
         depends_on:
             - rabbit
             - mongo

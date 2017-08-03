@@ -83,7 +83,7 @@ class MWOfflinerTaskJWT(JWT):
             'exp': time_stamp + 60 * 60 * 24 * 7,
             'iat': time_stamp,
             'jti': str(uuid.uuid4()),
-            'task_name': 'zimfarm.mwoffliner',
+            'task_name': 'mwoffliner',
         })
 
     @property

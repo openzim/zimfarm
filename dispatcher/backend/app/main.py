@@ -7,7 +7,7 @@ from routes.error import exception, handler
 
 app.flask.register_blueprint(auth.blueprint)
 app.flask.register_blueprint(user.blueprint)
-# app.flask.register_blueprint(task.blueprint)
+app.flask.register_blueprint(task.blueprint)
 
 
 app.flask.errorhandler(exception.InvalidRequest)(handler.invalid_request)
