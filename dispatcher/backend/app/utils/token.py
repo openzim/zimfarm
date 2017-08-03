@@ -42,7 +42,7 @@ class JWT:
 
 class UserJWT(JWT):
     @classmethod
-    def new(cls, username: str, scope: str=None):
+    def new(cls, username: str, scope: {}):
         time_stamp = int(time.time())
         return cls.encode({
             'iss': 'dispatcher-backend',
@@ -62,12 +62,15 @@ class UserJWT(JWT):
         return self.payload['username']
 
     @property
-    def scope(self) -> str:
+    def scope(self) -> {}:
         return self.payload['scope']
 
     @property
     def is_admin(self) -> bool:
-        return self.scope == 'administrator'
+        if 'admin' in self.scope:
+            return self.scope['admin'] if self.scope['admin'] is not None else False
+        else:
+            return False
 
 
 class MWOfflinerTaskJWT(JWT):

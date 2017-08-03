@@ -25,10 +25,15 @@ def login():
     if not is_valid:
         raise AuthFailed()
 
-    return jsonify({'token': UserJWT.new(username)})
+    return jsonify({'token': UserJWT.new(username, user['scope'])})
 
 
 @blueprint.route("/renew", methods=["POST"])
 def renew():
-    old_jwt = UserJWT.from_request_header(request)
-    return jsonify({'token': UserJWT.new(old_jwt.username, old_jwt.scope)})
+    old = UserJWT.from_request_header(request)
+
+    user = UsersCollection().find_one({'username': old.username})
+    if user is None:
+        raise AuthFailed()
+
+    return jsonify({'token': UserJWT.new(old.username, user['scope'])})

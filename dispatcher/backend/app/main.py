@@ -34,7 +34,8 @@ def initialize():
     if users.find_one() is None:
         users.insert_one({
             'username': getenv('INIT_USERNAME', 'admin'),
-            'password_hash': generate_password_hash(getenv('INIT_PASSWORD', 'admin_pass'))
+            'password_hash': generate_password_hash(getenv('INIT_PASSWORD', 'admin_pass')),
+            'scope': {'admin': True}
         })
 
 if __name__ == "__main__":
