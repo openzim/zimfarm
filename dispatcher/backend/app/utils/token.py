@@ -54,8 +54,12 @@ class UserJWT(JWT):
         })
 
     @staticmethod
-    def scope_is_valid(scope):
-        return scope == 'administrator' or scope == 'worker'
+    def validate_scope(scope: {}):
+        if not isinstance(scope, dict):
+            scope = {}
+        return {
+            'admin': scope.get('admin', False)
+        }
 
     @property
     def username(self) -> str:
@@ -67,10 +71,7 @@ class UserJWT(JWT):
 
     @property
     def is_admin(self) -> bool:
-        if 'admin' in self.scope:
-            return self.scope['admin'] if self.scope['admin'] is not None else False
-        else:
-            return False
+        return self.scope.get('admin', False)
 
 
 class MWOfflinerTaskJWT(JWT):

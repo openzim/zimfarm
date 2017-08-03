@@ -1,8 +1,10 @@
+from os import getenv
 import urllib.error
-import sqlalchemy.exc
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, Response, jsonify
+from pymongo import ReturnDocument
+from werkzeug.security import generate_password_hash
 
-import database.user
+from mongo import UsersCollection
 from utils.token import UserJWT
 from utils import rabbitmq
 from .error import exception
@@ -11,46 +13,20 @@ from .error import exception
 blueprint = Blueprint('user', __name__, url_prefix='/user')
 
 
-@blueprint.route("/add", methods=["POST"])
-def add():
+@blueprint.route("/", methods=["GET"])
+def list():
     token = UserJWT.from_request_header(request)
 
-    if not token.is_admin:
-        raise exception.NotEnoughPrivilege()
-
-    json = request.get_json()
-    username = json.get('username')
-    password = json.get('password')
-    scope = json.get('scope')
-
-    if username is None or password is None or scope is None:
-        raise exception.InvalidRequest()
-
-    if '/' in username:
-        raise exception.UsernameNotValid()
-
-    if not UserJWT.scope_is_valid(scope):
-        raise exception.ScopeNotValid()
-
-    try:
-        update_rabbitmq_user(username, password)
-        user = database.user.add(username, password, scope)
-        return jsonify(user)
-    except sqlalchemy.exc.IntegrityError:
-        raise exception.UserAlreadyExists()
-
-
-@blueprint.route("/list", methods=["GET"])
-def list_all():
-    token = UserJWT.from_request_header(request)
-
+    # non admin users cannot list users
     if not token.is_admin:
         raise exception.NotEnoughPrivilege()
 
     limit = request.args.get('limit', 10)
     offset = request.args.get('limit', 0)
 
-    users = database.user.get_all(limit, offset)
+    cursor = UsersCollection().find(skip=offset, limit=limit, projection={'_id': False, 'password_hash': False})
+    users = [user for user in cursor]
+
     return jsonify({
         'limit': limit,
         'offset': offset,
@@ -58,54 +34,78 @@ def list_all():
     })
 
 
-@blueprint.route("/<string:username>", methods=["GET", "PUT", "DELETE"])
-def detail(username):
+@blueprint.route("/<string:username>", methods=["PUT", "GET", "DELETE"])
+def user(username):
     token = UserJWT.from_request_header(request)
-    username = token.username if username is None else username
 
-    if not token.is_admin and username != token.username:
-        raise exception.NotEnoughPrivilege()
+    if request.method == 'PUT':
+        json = request.get_json()
+        password = json.get('password')
+        scope = json.get('scope')
 
-    user = database.user.get(username)
-    if user is None:
-        raise exception.UserDoesNotExist()
-
-    if request.method == "GET":
-        return jsonify(user)
-    elif request.method == "PUT":
-        new_password = request.get_json().get('password')
-        new_scope = request.get_json().get('scope')
-
-        if new_password is None and new_scope is None:
+        if password is None and scope is None:
             raise exception.InvalidRequest()
 
-        if new_password is not None:
-            update_rabbitmq_user(username, new_password)
-            user = database.user.change_password(username, new_password)
-            return jsonify(user)
-        if new_scope is not None:
-            if not UserJWT.scope_is_valid(new_scope):
-                raise exception.ScopeNotValid()
-            # TODO: = currently it is not possible to change scope of rabbitmq without providing a new set of password
-            user = database.user.change_scope(username, new_scope)
-            return jsonify(user)
-    elif request.method == "DELETE":
-        delete_rabbitmq_user(username)
-        database.user.delete_user(username)
-        return jsonify(), 204
+        if username == token.username:
+            # everyone could PUT self
+            if password is not None:
+                update_rabbitmq_user(username, password)
+            user = upsert_user(username, password, scope)
+        else:
+            # non admin users cannot PUT other users
+            if not token.is_admin:
+                raise exception.NotEnoughPrivilege()
+
+            # check username is valid
+            if username == getenv('DISPATCHER_USERNAME'):
+                raise exception.UsernameNotValid()
+
+            user_exists = UsersCollection().find_one({'username': username}) is not None
+
+            # when creating a new user, have to provide password
+            if not user_exists and password is None:
+                raise exception.UserDoesNotExist()
+
+            # when creating a new user, use default scope if non provided
+            if not user_exists and scope is None:
+                scope = {}
+
+            if password is not None:
+                update_rabbitmq_user(username, password)
+            user = upsert_user(username, password, scope)
+
+        return jsonify(user)
+    elif request.method == 'GET':
+        user = UsersCollection().find_one({'username': username}, projection={'_id': False, 'password_hash': False})
+        return jsonify(user)
+    elif request.method == 'DELETE':
+        result = UsersCollection().delete_one({'username': username})
+        if result.deleted_count == 1:
+            delete_rabbitmq_user(username)
+            return Response(status=204)
+        else:
+            return Response(status=404)
+
+
+def upsert_user(username: str, password: str=None, scope: dict=None):
+    filter = {'username': username}
+
+    set = {}
+    if password is not None:
+        set['password_hash'] = generate_password_hash(password)
+    if scope is not None:
+        set['scope'] = UserJWT.validate_scope(scope)
+
+    return UsersCollection().find_one_and_update(filter, {'$set': set}, {'_id': False, 'password_hash': False},
+                                                 return_document=ReturnDocument.AFTER, upsert=True)
 
 
 def update_rabbitmq_user(username: str, password: str):
     try:
-        scope = 'administrator' if username == 'admin' else 'worker'
-        status_code = rabbitmq.put_user(username, password, scope)
+        status_code = rabbitmq.put_user(username, password, 'worker')
         if status_code != 201 and status_code != 204:
             raise exception.RabbitMQPutUserFailed(status_code)
-
-        if scope == 'administrator':
-            status_code = rabbitmq.put_permission('zimfarm', username)
-        else:
-            status_code = rabbitmq.put_permission('zimfarm', username, write='')
+        status_code = rabbitmq.put_permission('zimfarm', username, write='')
         if status_code != 201 and status_code != 204:
             raise exception.RabbitMQPutPermissionFailed(status_code)
     except urllib.error.HTTPError as error:

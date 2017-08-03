@@ -6,7 +6,7 @@ from routes import auth, user, task
 from routes.error import exception, handler
 
 app.flask.register_blueprint(auth.blueprint)
-# app.flask.register_blueprint(user.blueprint)
+app.flask.register_blueprint(user.blueprint)
 # app.flask.register_blueprint(task.blueprint)
 
 
