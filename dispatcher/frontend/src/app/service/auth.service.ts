@@ -1,20 +1,34 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { Http, Headers, RequestOptions, Response } from '@angular/http';
-import { Subject }    from 'rxjs/Subject';
-import { Observable } from 'rxjs/Rx';
+import { Observable, Subscription } from 'rxjs/Rx';
+import { Subject } from 'rxjs/Subject';
+import 'rxjs/add/operator/map';
 import { JwtHelper } from 'angular2-jwt';
 
-import 'rxjs/add/operator/map';
+import { User } from '../model/user';
 
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnDestroy {
+    private urlRoot = 'https://zimfarm.chrisshwli.com/api'
+    // private urlRoot = 'api'
+    
     private jwt: JwtHelper = new JwtHelper();
-    scope: string[] = [];
-    scopeChange: Subject<string[]> = new Subject<string[]>();
+    private timer: Observable<number>;
+    private timerSubscription: Subscription;
+
+    user: User;
+    userChanged = new Subject<User>();
 
     constructor(private http: Http) {
-        this.decodeScope();
+        let token = this.getToken()
+        if (token != null) {
+            this.decode(token)
+        }
+    }
+
+    ngOnDestroy(){
+        this.timerSubscription.unsubscribe();
     }
 
     get isLoggedIn(): boolean {
@@ -22,63 +36,76 @@ export class AuthService {
         return token != null && !this.jwt.isTokenExpired(token);
     }
 
-    get shouldRenewToken(): boolean {return true;}
-
-    get username(): string {
-        let decoded = this.decodeToken()
-        return decoded != null ? decoded.username : null;
-    }
-
-    // http
-
     login(username: string, password: string): Observable<boolean> {
-        return this.auth({username: username, password: password});
-    }
-
-    renew(old_token: string=null): Observable<boolean> {
-        if (old_token == null) {old_token = this.getToken()}
-        return this.auth({token: old_token})
-    }
-
-    private auth(header: {}): Observable<boolean> {
-        let url = 'api/auth/login';
-        let options = new RequestOptions ({
-            headers: new Headers(header)
-        });
-        return this.http.post('api/auth/login', null, options)
+        let url = this.urlRoot + '/auth/login'
+        let headers = new Headers({'username': username, 'password': password})
+        let options = new RequestOptions ({headers: headers})
+        return this.http.post(url, null, options)
             .map(response => {
-                let json = response.json()
-                this.setToken(json.token)
-                return json.success
+                let token = response.json()['token']
+                if (token) {
+                    this.setToken(token)
+                    this.decode(token)
+                    return true
+                } else {
+                    return false;
+                }
             });
+    }
+
+    renew(token: string): Observable<boolean> {
+        let url = this.urlRoot + '/auth/renew'
+        let headers = new Headers({'token': token})
+        let options = new RequestOptions ({headers: headers})
+        return this.http.post(url, null, options)
+            .map(response => {
+                let token = response.json()['token']
+                if (token) {
+                    this.setToken(token)
+                    this.decode(token)
+                    return true
+                } else {
+                    return false;
+                }
+            });
+    }
+
+    logout() {
+        this.removeToken()
+        this.user = null
+        this.userChanged.next(this.user)
     }
 
     // token decode
 
-    private decodeToken() {
-        let token = this.getToken();
-        return token != null ? this.jwt.decodeToken(token) : null;
+    private decode(token: string) {
+        let decoded = this.jwt.decodeToken(token)
+        let expiresIn = this.jwt.getTokenExpirationDate(token).getTime() - (new Date()).getTime()
+        this.timer = Observable.timer(expiresIn - 1000 * 60 * 10)
+        this.timerSubscription = this.timer.subscribe(_ => {
+            this.renew(this.getToken()).subscribe(renewed => {
+                console.log('token renewed' + renewed);
+            })
+        })
+
+        let username = String(decoded.username)
+        let isAdmin = Boolean(decoded.scope.isAdmin)
+
+        this.user = new User(username, isAdmin)
+        this.userChanged.next(this.user)
     }
 
-    private decodeScope() {
-        let decoded_token = this.decodeToken();
-        this.scope = decoded_token == null ? [] : decoded_token.scope;
-        this.scopeChange.next(this.scope);
-    }
-
-    // token persistence
+    // token management
 
     private setToken(token: string) {
-        localStorage.setItem('zimfarm_token', token);
-        this.decodeScope();
+        localStorage.setItem('zimfarm_token', token)
     }
 
     getToken(): string {
-        return localStorage.getItem('zimfarm_token');
+        return localStorage.getItem('zimfarm_token')
     }
 
-    removeToken() {
-        localStorage.removeItem('zimfarm_token');
-        this.decodeScope();
+    private removeToken() {
+        localStorage.removeItem('zimfarm_token')
     }
 }

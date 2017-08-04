@@ -9,7 +9,8 @@ import { TaskService } from '../../service/task.service';
     styleUrls: ['./add-task.component.css']
 })
 export class AddTaskComponent implements OnInit {
-    taskAddingMode: string
+    tabNames = ['mwoffliner', 'sotoki', 'youtube', 'gutenberg', 'phet', 'wikihow', 'ted'];
+    activaTabName: string
 
     zimfarmGenericTask = new ZimfarmGenericTask();
 
@@ -20,11 +21,11 @@ export class AddTaskComponent implements OnInit {
     ){}
 
     ngOnInit() {
-        this.taskAddingMode = "script";
+        this.activaTabName = this.tabNames[0];
     }
 
-    didSelectModeTab(mode: string) {
-        this.taskAddingMode = mode;
+    didSelectTab(name: string) {
+        this.activaTabName = name;
     }
 
     addTaskByScript() {

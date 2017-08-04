@@ -1,0 +1,9 @@
+.task-config-block {
+    padding: 1rem 1.25rem;
+}
+
+.task-config-block-divider {
+    height: 1px; 
+    background-color: #eceeef; 
+    margin: 0rem 0.5rem;
+}

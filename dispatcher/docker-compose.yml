@@ -1,84 +1,78 @@
 version: '2'
 services:
-    rabbit:
-      build:
-        context: ./rabbitmq
-        dockerfile: Dockerfile
-      extends:
-        file: config.yml
-        service: base
-      hostname: zimfarm
-      restart: always
-      volumes:
-        - ./docker_data/rabbitmq:/var/lib/rabbitmq
-      ports:
-        # debug only, for using management plugin
-        - 8081:15672
-        # change external port(7285) to something else if needed
-        - 7285:5672
-      labels:
-        - com.chrisshwli.zimfarm.name="rabbit"
-    mongo:
-      image: mongo:latest
-      volumes:
-        - ./docker_data/mongo:/data/db
-      restart: always
-      labels:
-        - com.chrisshwli.zimfarm.name="mongo"
-    warehouse:
-      build:
-        context: ./warehouse
-        dockerfile: Dockerfile
-      extends:
-        file: config.yml
-        service: base
-      volumes:
-        - ./docker_data/warehouse:/data
-      restart: always
-      ports:
-        - "972:22"
-      labels:
-        - com.chrisshwli.zimfarm.name="warehouse"
+  rabbit:
+    image: rabbitmq:3-management
+    extends:
+      file: config.yml
+      service: base
+    hostname: zimfarm
+    restart: always
+    logging:
+      driver: none
+    volumes:
+      - ./docker_data/rabbitmq:/var/lib/rabbitmq
+    ports:
+      # communication with celery on workers
+      - 28001:5672
+  mongo:
+    image: mongo:latest
+    volumes:
+      - ./docker_data/mongo:/data/db
+    restart: always
+    logging:
+      driver: none
+#  warehouse:
+#    build:
+#      context: ./warehouse
+#      dockerfile: Dockerfile
+#    extends:
+#      file: config.yml
+#      service: base
+#    volumes:
+#      - ZimFiles:/zimfiles
+#    restart: always
+#    ports:
+#      # used by rsync to sync files back from workers
+#      - 28002:27972
 
-    proxy:
-      build:
-        context: ./proxy
-        dockerfile: Dockerfile
-      links:
-        # - frontend
-        - backend
-      depends_on:
-        # - frontend
-        - backend
-      ports:
-        - "8080:80"
-      restart: always
-      labels:
-        - com.chrisshwli.zimfarm.name="proxy"
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    extends:
+      file: config.yml
+      service: base
+    environment:
+      - DEBUG=True
+    links:
+      - rabbit
+      - mongo
+    volumes:
+      - ./backend/app:/app
+      - /zimfarm:/mnt/zimfarm_output
+    depends_on:
+      - rabbit
+      - mongo
+    restart: always
 
-#    frontend:
-#        build:
-#            context: ./frontend
-#            dockerfile: Dockerfile
-#        volumes:
-            # debug only
-            # - ./frontend/src:/app/src
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    links:
+      - frontend
+      - backend
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - 28000:80
+    restart: always
 
-    backend:
-      build:
-        context: ./backend
-        dockerfile: Dockerfile
-      environment:
-        - DEBUG=True
-      links:
-        - rabbit
-        - mongo
-      volumes:
-        - ./backend/app:/app
-      depends_on:
-        - rabbit
-        - mongo
-        - warehouse
-      restart: always
-      labels:
-        - com.chrisshwli.zimfarm.name="backend"
+volumes:
+  ZimFiles:

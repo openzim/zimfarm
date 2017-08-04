@@ -6,7 +6,7 @@ import urllib.response
 
 
 def get_request(path: str, method: str, payload: {}=None,
-                username=os.getenv('DISPATCHER_USERNAME'), password=os.getenv('DISPATCHER_PASSWORD')):
+                username=os.getenv('RABBITMQ_DEFAULT_USER'), password=os.getenv('RABBITMQ_DEFAULT_PASS')):
     encoded = base64.b64encode(bytes('{}:{}'.format(username, password), 'utf-8')).decode()
 
     headers = {'Authorization': 'Basic {}'.format(encoded)}

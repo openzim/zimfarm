@@ -5,8 +5,8 @@ import { AuthService } from '../service/auth.service';
 
 @Component({
     selector: 'login',
-    templateUrl: 'app/login/login.component.html',
-    styleUrls: ['app/login/login.component.css']
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
     model: any = {};
@@ -22,7 +22,7 @@ export class LoginComponent implements OnInit {
 
     ngOnInit() {
         this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-        this.authService.removeToken();
+        this.authService.logout();
     }
 
     login(): void {
@@ -30,13 +30,12 @@ export class LoginComponent implements OnInit {
         this.authService.login(this.model.username, this.model.password)
             .subscribe(success => {
                 this.loading = false;
-                if (success) {
-                    this.authFailed = false;
-                    this.router.navigate([this.returnUrl]);
-                } else {
-                    this.authFailed = true;
-                }
-            }
+                this.authFailed = false;
+                this.router.navigate([this.returnUrl]);
+            }, error => {
+                this.loading = false;
+                this.authFailed = true;
+            }    
         )
     }
 }

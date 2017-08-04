@@ -5,12 +5,8 @@
     flex-direction: column;
 }
 
-.add-task-nav-placeholder {
-    border-bottom-color: rgb(221, 221, 221);
-    border-bottom-style: solid;
-    border-bottom-width: 1px;
-    min-width: 0.5rem;
-    flex: 1;
+.add-task-header {
+    background-color: #FbFbFb;
 }
 
 .add-task-title {
@@ -19,24 +15,34 @@
     padding: 1rem;
 }
 
-.add-task-content {
-    max-width: 50rem;
-    margin: 0rem auto;
+.add-task-nav-placeholder {
+    border-bottom-color: rgb(221, 221, 221);
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    min-width: 0.5rem;
     flex: 1;
-    overflow-y: auto
 }
 
-.add-task-card-block {
-    padding: 1rem 1.25rem;
+.add-task-body {
+    width: 100%; 
+    flex: 1;
+    overflow: auto;
 }
 
-.add-task-card-block-divider {
+.add-task-content {
+    min-width: 20rem;
+    max-width: 50rem; 
+    margin: 0rem auto;
+}
+
+.add-task-divider {
     height: 1px; 
-    background-color: #eceeef; 
+    background-color: #bcbebf;
     margin: 0rem 0.5rem;
 }
 
 .add-task-button-block {
+    padding: 1rem 1.25rem;
     display: flex;
     flex-direction: row-reverse;
 }

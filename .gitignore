@@ -11,7 +11,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -75,9 +74,6 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
-# dotenv
-.env
-
 # virtualenv
 venv/
 ENV/
@@ -88,11 +84,43 @@ ENV/
 # Rope project settings
 .ropeproject
 
-\.idea/
+# dependencies
+/node_modules
 
-web/node_modules/
+# IDEs and editors
+/.idea
+/.vscode
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-\.vscode/
+# compiled output
+/dist
+/tmp
+/out-tsc
 
-dispatcher_frontend/node_modules/
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+testem.log
+/typings
+yarn-error.log
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+# System Files
+.DS_Store
+Thumbs.db
+
 dispatcher/docker_data/
+dispatcher/frontend/node_modules/
+id_rsa
+

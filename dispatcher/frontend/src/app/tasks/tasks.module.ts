@@ -9,6 +9,8 @@ import { ListTasksComponent } from './list/list-tasks.component';
 import { AddTaskComponent } from './add/add-task.component';
 import { TaskDetailComponent } from './detail/task-detail.component';
 
+import { MWOfflinerComponent } from './view/mwoffliner/mwoffliner.component';
+
 @NgModule({
     imports: [
         CommonModule,
@@ -19,7 +21,8 @@ import { TaskDetailComponent } from './detail/task-detail.component';
     declarations: [
         ListTasksComponent,
         AddTaskComponent,
-        TaskDetailComponent
+        TaskDetailComponent,
+        MWOfflinerComponent
     ]
 })
 export class TasksModule { }

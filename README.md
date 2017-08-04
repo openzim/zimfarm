@@ -1,7 +1,7 @@
 # ZIM Farm
 
 The ZIM farm (zimfarm) is a half-decentralised software solution to
-build ZIM files (http://www.openzim.org/) efficiently. This means scrapping Web contents,
+build [ZIM files](http://www.openzim.org/) efficiently. This means scrapping Web contents,
 packaging them into a ZIM file and uploading the result to an online
 ZIM files repository.
 
@@ -23,19 +23,26 @@ To get a new ZIM file the typical workflow is:
 3. A worker pulls the task.
 4. Worker generates the ZIM file and upload it.
 
-## Run the system as a whole
+## Run the dispatcher
 
 1. Make sure docker and docker-compose are installed on your system
 2. Clone this repo
 3. Make sure you are in master branch
-4. Open a terminal session change directory to root of this repo
+4. Open a terminal session change directory to root of dispatcher folder
 5. Run `docker-compose up --build`
 6. Wait for docker to do its job
 7. Go to `http://localhost:8080` with your Web browser
 
+## Run worker
+
+1. Clone this repo
+2. Make sure you are in master branch
+4. Open a terminal session change directory to root of worker folder
+5. Run `docker build -t worker . && docker run -v /var/run/docker.sock:/var/run/docker.sock worker`
+
 ## Architecture
 
-The whole system is build by reusing the best of free software
+The whole system is built by reusing the best of free software
 libraries components. The whole ZIM farm solutioon itself is made
 available using Docker images.
 

@@ -16,17 +16,17 @@
 				</div>
 				<div class="dropdown-divider navbar-display-collpased"></div>
 				<div>
-					<button class="dropdown-item">Logged in as <b>{{authService.username}}</b></button>
+					<button class="dropdown-item">Logged in as <b>{{authService.user.username}}</b></button>
 					<button class="dropdown-item" routerLink="/login">Log out</button>
 				</div>
 			</div>
 		</div>
-		<div ngbDropdown style="margin: 0rem 0.25rem;">
+		<!-- <div ngbDropdown style="margin: 0rem 0.25rem;">
 			<button class="btn btn-outline-success btn-sm" style="height:2rem;" ngbDropdownToggle>Live</button>
 			<div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownBasic1">
 				<button class="dropdown-item">Pause Live Update</button>
 				<button class="dropdown-item">Refresh Now</button>
 			</div>
-		</div>
+		</div> -->
 	</div>
 </nav>

@@ -1,6 +1,6 @@
-FROM node:7.10
+FROM nginx:latest 
 
-COPY . /app
-WORKDIR /app
-RUN npm install
-ENTRYPOINT npm start
+COPY ./dist /var/www/html
+
+RUN rm -v /etc/nginx/nginx.conf
+ADD nginx.conf /etc/nginx/

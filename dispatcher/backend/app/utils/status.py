@@ -1,11 +1,10 @@
 from enum import Enum
 
 
-class GenericTaskStatus(Enum):
+class TaskStatus(Enum):
     PENDING = 0
-    UPDATING_CONTAINER = 1
-    EXECUTING_SCRIPT = 2
-    UPLOADING_FILES = 3
-    CLEANING_UP = 4
-    FINISHED = 5
+    PREPARING = 1
+    GENERATING = 2
+    UPLOADING = 3
+    FINISHED = 4
     ERROR = 100

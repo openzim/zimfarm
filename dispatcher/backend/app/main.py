@@ -1,13 +1,16 @@
 from os import getenv
+from time import sleep
+import urllib.error
 import jwt
 
 import app
-from routes import auth, user, task
+from routes import auth, user, task, file
 from routes.error import exception, handler
 
 app.flask.register_blueprint(auth.blueprint)
 app.flask.register_blueprint(user.blueprint)
 app.flask.register_blueprint(task.blueprint)
+app.flask.register_blueprint(file.blueprint)
 
 
 app.flask.errorhandler(exception.InvalidRequest)(handler.invalid_request)
@@ -29,14 +32,30 @@ def initialize():
     from werkzeug.security import generate_password_hash
     import mongo
 
+    def create_rabbit_init_user(username, password):
+        number_of_tries = 100
+        while number_of_tries:
+            try:
+                number_of_tries -= 1
+                user.update_rabbitmq_user(username, password)
+                break
+            except urllib.error.URLError:
+                sleep(5)
+        else:
+            raise Exception()
+
     mongo.ZimfarmDatabase().initialize()
     users = mongo.UsersCollection()
     if users.find_one() is None:
+        username = getenv('INIT_USERNAME', 'admin')
+        password = getenv('INIT_PASSWORD', 'admin_pass')
         users.insert_one({
-            'username': getenv('INIT_USERNAME', 'admin'),
-            'password_hash': generate_password_hash(getenv('INIT_PASSWORD', 'admin_pass')),
+            'username': username,
+            'password_hash': generate_password_hash(password),
             'scope': {'admin': True}
         })
+        create_rabbit_init_user(username, password)
+
 
 if __name__ == "__main__":
     isDebug = getenv('DEBUG', False)

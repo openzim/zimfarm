@@ -7,10 +7,12 @@ import { AuthService } from './auth.service';
 
 @Injectable()
 export class TaskService {
+    private urlRoot = 'https://zimfarm.chrisshwli.com/api'
+    // private urlRoot = 'api'
     constructor(private http: Http, private authService: AuthService) { }
 
     enqueue_zimfarm_generic(image_name: string, script: string) {
-        let url = 'api/task/enqueue/zimfarm_generic'
+        let url = this.urlRoot + '/task/zimfarm_generic'
         let body = JSON.stringify({
             image_name: image_name,
             script: script
@@ -21,7 +23,7 @@ export class TaskService {
     }
 
     list_tasks(limit: number, offset: number) {
-        let url = 'api/task/list'
+        let url = this.urlRoot + '/task'
         let headers = new Headers({
             'Content-Type': 'application/json', 
             'token': this.authService.getToken(),
@@ -29,11 +31,11 @@ export class TaskService {
             offset: offset
         })
         let options = new RequestOptions ({headers: headers})
-        return this.http.get(url, options).map(response => response.json() || []);
+        return this.http.get(url, options).map(response => response.json());
     }
 
     task_detail(task_id: string) {
-        let url = 'api/task/' + task_id
+        let url = this.urlRoot + '/task/' + task_id
         let headers = new Headers({'Content-Type': 'application/json', 'token': this.authService.getToken()})
         let options = new RequestOptions ({headers: headers})
         return this.http.get(url, options).map(response => response.json() || {});
