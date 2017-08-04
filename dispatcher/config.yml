@@ -4,7 +4,8 @@ services:
     environment:
       - INIT_USERNAME=admin
       - INIT_PASSWORD=admin_pass
-      - DISPATCHER_USERNAME=dispatcher
-      - DISPATCHER_PASSWORD=dispatcher_pass
-      - RSYNC_USERNAME=upload
-      - RSYNC_PASSWORD=sync_er
+      - RABBITMQ_DEFAULT_USER=dispatcher
+      - RABBITMQ_DEFAULT_PASS=dispatcher_pass
+      - RABBITMQ_DEFAULT_VHOST=zimfarm
+#      - RSYNC_USERNAME=upload
+#      - RSYNC_PASSWORD=sync_er

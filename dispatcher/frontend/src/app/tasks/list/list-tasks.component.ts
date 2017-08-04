@@ -24,9 +24,9 @@ export class ListTasksComponent implements OnInit {
 
     refreshTasks(): void {
         this.taskService.list_tasks(10,0)
-            .subscribe(tasks => {
-                this.tasks = tasks;
-                console.log(tasks);
+            .subscribe(results => {
+                this.tasks = results.tasks;
+                console.log(results.tasks);
             }, error => {
                 if (error.status == 401) {
                     this.router.navigateByUrl('/login');

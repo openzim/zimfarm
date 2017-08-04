@@ -14,7 +14,6 @@ import { TaskService } from './service/task.service';
 
 import { LoginComponent } from './login/login.component';
 import { NavigationBarComponent } from './navigation-bar/navigation-bar.component'
-import { DashboardModule } from './dashboard/dashboard.module';
 import { TasksModule } from './tasks/tasks.module';
 
 
@@ -24,7 +23,6 @@ import { TasksModule } from './tasks/tasks.module';
         HttpModule,
         FormsModule,
         NgbModule.forRoot(),
-        DashboardModule,
         TasksModule,
         AppRoutingModule,
     ],

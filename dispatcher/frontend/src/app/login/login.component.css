@@ -1,11 +1,22 @@
 .login-container {
     width: 100%;
 }
+
 .login {
     background-color: white; 
     flex: 0 1 auto; 
     padding: 2rem;
     box-shadow: 10px;
+}
+
+.head {
+    flex: 1;
+    min-height: 0;
+}
+
+.foot {
+    flex: 2;
+    min-height: 0;
 }
 
 @media screen and (min-width: 48em) {
@@ -14,7 +25,7 @@
         height: calc(100vh - 54px);
         display: flex;
         flex-direction: column;
-        padding-bottom: 10%;
+        overflow-y: auto;
     }
 
     .login {

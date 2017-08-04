@@ -105,7 +105,7 @@ def update_rabbitmq_user(username: str, password: str):
         status_code = rabbitmq.put_user(username, password, 'worker')
         if status_code >= 300:
             raise exception.RabbitMQPutUserFailed(status_code)
-        status_code = rabbitmq.put_permission('zimfarm', username, write='')
+        status_code = rabbitmq.put_permission('zimfarm', username)
         if status_code >= 300:
             raise exception.RabbitMQPutPermissionFailed(status_code)
     except urllib.error.HTTPError as error:

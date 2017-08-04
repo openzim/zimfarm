@@ -1,42 +1,48 @@
-<div class="tasks-common-container">
-    <div class="tasks-common-toolbar">
-		<div class="input-group tasks-common-toolbar-item">
-			<input type="text" class="form-control" placeholder="Search" aria-describedby="basic-addon1">
-		</div>
-		<div class="tasks-common-toolbar-placeholder"></div>
-		<div class="tasks-common-toolbar-item">
-			<button type="button" class="btn btn-success" (click)="refreshTasks">Refresh</button>
-		</div>
-		<div class="tasks-common-toolbar-item">
-			<button type="button" class="btn btn-primary" routerLink="add">Add</button>
-		</div>
-    </div>
-    <div *ngIf="tasks.length>=0" class="tasks-common-content" style="overflow: auto;">
-        <table class="table table-bordered list-tasks-table">
-			<thead>
-				<tr>
-					<th>ID</th>
-					<th>Container</th>
-					<th>Status</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr *ngFor="let task of tasks">
-					<th><a [routerLink]="['detail', task.id]">{{task.id | slice:0:8}}</a></th>
-					<td>{{task.image_name}}</td>
-					<td>{{task.status}}</td>
-				</tr>
-			</tbody>
-		</table>
-    </div>
-	<div *ngIf="tasks.length==0" class="card tasks-common-content list-tasks-content-empty">
-		<div style="margin: auto; text-align: center;">
-			<div style="margin: 2rem;">
-				<img src="images/list-task-empty.png" style="width:128px;height:128px;">
+<div class="list-task-container">
+	<!-- <div>Left Panel</div> -->
+	<div class="list-task-right-container">
+		<div class="list-task-toolbar">
+			<div class="input-group list-task-toolbar-item">
+				<input type="text" class="form-control" placeholder="Search" aria-describedby="basic-addon1">
 			</div>
-			<h2><b>Wow, such empty!</b></h2>
-			<a routerLink="add">Add a task</a>
-			<div style="height: 10rem;"></div>
+			<div class="list-task-toolbar-placeholder"></div>
+			<div class="list-task-toolbar-item">
+				<button type="button" class="btn btn-success" (click)="refreshTasks">Refresh</button>
+			</div>
+			<div class="list-task-toolbar-item">
+				<button type="button" class="btn btn-primary" routerLink="add">Add</button>
+			</div>
+		</div>
+		<div class="list-task-table-container">
+			 <table class="table table-bordered list-tasks-table">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Type</th>
+						<th>Source</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					 <tr *ngFor="let task of tasks">
+						<th><a [routerLink]="['detail', task.id]">{{task.id | slice:0:8}}</a></th>
+						<td>{{task.type}}</td>
+						<th>{{task.source}}</th>
+						<td>{{task.status}}</td>
+					</tr> 
+				</tbody>
+			</table>
+			<div *ngIf="tasks.length==0" class="list-tasks-table-empty">
+				<div style="flex: 1;"></div>
+				<div style="margin: auto; text-align: center;">
+					<div style="margin: 2rem;">
+						<img src="assets/list-task-empty.png" style="width:128px;height:128px;">
+					</div>
+					<h2><b>Wow, such empty!</b></h2>
+					<a routerLink="add">Add a task</a>
+				</div>
+				<div style="flex: 2;"></div>
+			</div>
 		</div>
 	</div>
 </div>

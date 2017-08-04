@@ -28,11 +28,11 @@ class ZimfarmDatabase(Database):
                         {'time_stamp.ended': {'$exists': True}},
                     ]},
                     {'$or': [
-                        {'options.mwoffliner': {'$exists': True}}
+                        {'options': {'$exists': True}}
                     ]},
                     {'$or': [
-                        {'stages': {'$elemMatch': {'name': {'$type': 'string'}, 'success': {'$type': 'bool'}}}},
-                        {'stages': {'$size': 0}}
+                        {'steps': {'$elemMatch': {'name': {'$type': 'string'}}}},
+                        {'steps': {'$size': 0}}
                     ]}
                 ]
             })
