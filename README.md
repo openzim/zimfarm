@@ -28,14 +28,14 @@ To get a new ZIM file the typical workflow is:
 1. Make sure docker and docker-compose are installed on your system
 2. Clone this repo
 3. Make sure you are in master branch
-4. Open a terminal session change directory to root of this repo
+4. Open a terminal session change directory to root of dispatcher folder
 5. Run `docker-compose up --build`
 6. Wait for docker to do its job
 7. Go to `http://localhost:8080` with your Web browser
 
 ## Architecture
 
-The whole system is build by reusing the best of free software
+The whole system is built by reusing the best of free software
 libraries components. The whole ZIM farm solutioon itself is made
 available using Docker images.
 
