@@ -54,3 +54,15 @@ Dispatcher:
 Worker:
 - python
 - docker
+
+### Example of API request
+
+Login and get a token:
+```
+$ curl -i -X POST -H "username: foo" -H "password: bar" "https://farm.openzim.org/api/auth/login"
+```
+
+Request a creation of ZIM file::
+```
+curl -i -X POST -H "Content-Type: application/json; charset=utf-8" -H "token: eyJ0eXAiOiJK..." --data "[{ \"mwUrl\": \"https://bm.wikipedia.org/\", \"adminEmail\": \"kelson@kiwix.org\", \"verbose\": true }]" "https://farm.openzim.org/api/task/mwoffliner"
+```
