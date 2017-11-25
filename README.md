@@ -64,5 +64,5 @@ $ curl -i -X POST -H "username: foo" -H "password: bar" "https://farm.openzim.or
 
 Request a creation of ZIM file::
 ```
-curl -i -X POST -H "Content-Type: application/json; charset=utf-8" -H "token: eyJ0eXAiOiJK..." --data "[{ \"mwUrl\": \"https://bm.wikipedia.org/\", \"adminEmail\": \"kelson@kiwix.org\", \"verbose\": true }]" "https://farm.openzim.org/api/task/mwoffliner"
+curl -i -X POST -H "Content-Type: application/json; charset=utf-8" -H "token: eyJ0eXAiOiJK..." --data "[{ \"mwUrl\": \"https://bm.wikipedia.org/\", \"adminEmail\": \"foo@bar.org\", \"verbose\": true }]" "https://farm.openzim.org/api/task/mwoffliner"
 ```
