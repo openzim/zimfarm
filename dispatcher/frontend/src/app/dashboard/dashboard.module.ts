@@ -1,23 +1,20 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+import { RoutingModule } from './routing.module';
 import { DashboardComponent } from './dashboard.component';
-import { DashboardRoutingModule } from './dashboard-routing.module';
 
-import { TaskProgressComponent } from './task-progress/tasks-progress.component';
-import { RecentEventsComponent } from './recent-events/recent-events.component';
-import { TaskCountComponent } from './task-count/task-count.component';
+import { TaskService } from '../service/task.service';
+
 
 @NgModule({
     imports: [
         CommonModule,
-        DashboardRoutingModule
+        RoutingModule
     ],
     declarations: [
-        DashboardComponent,
-        TaskProgressComponent,
-        RecentEventsComponent,
-        TaskCountComponent
-    ]
+        DashboardComponent
+    ],
+    providers: [TaskService]
 })
 export class DashboardModule { }

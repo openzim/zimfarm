@@ -12,7 +12,7 @@ services:
     volumes:
       - ./docker_data/rabbitmq:/var/lib/rabbitmq
     ports:
-      # communication with celery on workers
+      # communication with worker celery instance
       - 28001:5672
   mongo:
     image: mongo:latest
@@ -21,25 +21,6 @@ services:
     restart: always
     logging:
       driver: none
-#  warehouse:
-#    build:
-#      context: ./warehouse
-#      dockerfile: Dockerfile
-#    extends:
-#      file: config.yml
-#      service: base
-#    volumes:
-#      - ZimFiles:/zimfiles
-#    restart: always
-#    ports:
-#      # used by rsync to sync files back from workers
-#      - 28002:27972
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: always
   backend:
     build:
       context: ./backend
@@ -49,30 +30,14 @@ services:
       service: base
     environment:
       - DEBUG=True
-    links:
-      - rabbit
-      - mongo
     volumes:
-      - ./backend/app:/app
-      - /zimfarm:/mnt/zimfarm_output
+      - ./backend/:/app
+    links:
+      - rabbit
+      - mongo
     depends_on:
       - rabbit
       - mongo
-    restart: always
-
-  proxy:
-    build:
-      context: ./proxy
-      dockerfile: Dockerfile
-    links:
-      - frontend
-      - backend
-    depends_on:
-      - frontend
-      - backend
     ports:
       - 28000:80
     restart: always
-
-volumes:
-  ZimFiles:

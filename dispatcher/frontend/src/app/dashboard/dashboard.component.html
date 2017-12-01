@@ -1,9 +1,16 @@
-<div class="dashboard-container">
-    <div class="dashboard-left">
-        <div class="dashboard-widget"><task-progress></task-progress></div>
-    </div>
-    <div class="dashboard-right">
-        <div class="dashboard-widget"><task-count></task-count></div>
-        <div class="dashboard-widget"><recent-events></recent-events></div>
+<div class="container">
+    <div class="card">
+        <div class="cell" *ngFor="let task of tasks">
+            <div class="row">
+                <div class="item offliner_name">{{task.offliner.name}}</div>
+                <div class="item status {{task.status}}"><div>{{task.status}}</div></div>
+            </div>
+            <div class="row">
+                <div class="item url">{{task.offliner.config.mwUrl}}</div>
+                <div class="item task_id">{{task.id | slice:-6}}</div>
+            </div>
+            
+            <!-- <div>Created: {{task.created |  date:'MM/dd/yy HH:mm'}}</div> -->
+        </div>
     </div>
 </div>

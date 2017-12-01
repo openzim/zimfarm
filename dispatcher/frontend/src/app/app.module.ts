@@ -1,41 +1,25 @@
-import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpModule } from '@angular/http';
-import { FormsModule }   from '@angular/forms';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgModule } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
-import { AppComponent } from './app.component';
-import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './root/app.component';
+import { NavigationComponent } from './navigation/navigation.component';
 
-import { AuthGuard } from './guard/auth.guard';
-
-import { AuthService } from './service/auth.service';
-import { TaskService } from './service/task.service';
-
-import { LoginComponent } from './login/login.component';
-import { NavigationBarComponent } from './navigation-bar/navigation-bar.component'
-import { TasksModule } from './tasks/tasks.module';
+import { RoutingModule } from './routing.module';
 
 
 @NgModule({
-    imports: [ 
-        BrowserModule, 
-        HttpModule,
-        FormsModule,
-        NgbModule.forRoot(),
-        TasksModule,
-        AppRoutingModule,
+    declarations: [
+        AppComponent,
+        NavigationComponent
     ],
-    declarations: [ 
-        AppComponent, 
-        LoginComponent,
-        NavigationBarComponent
+    imports: [
+        BrowserModule,
+        HttpClientModule,
+        RoutingModule
     ],
-    providers: [
-        AuthService,
-        AuthGuard,
-        TaskService
-    ],
-    bootstrap: [ AppComponent ]
+    providers: [],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }
