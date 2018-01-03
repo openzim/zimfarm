@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { TaskService } from '../service/task.service';
+import { Task } from '../class/task';
+
 
 @Component({
     selector: 'dashboard',
@@ -6,17 +9,19 @@ import { Component, OnInit } from '@angular/core';
     styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent {
-    cards: Card[] = [];
-    
-    ngOnInit() {
-        for (var i = 0; i < 5; i++) {
-            let card = new Card();
-            card.title = 'Task' + i;
-            this.cards.push(card);
-        }
-    }
-}
+    tasks: Task[] = []
 
-export class Card {
-    title: string;
+    constructor(private taskService: TaskService) {}
+
+    ngOnInit() {
+        this.taskService.listTasks().subscribe(response => {
+            this.tasks = response.items
+        })
+    }
+
+    getTaskStatusColor() {
+        return 'ff0000'
+    }
+
+    color = 'ff0000'
 }

@@ -1,10 +1,11 @@
 FROM tiangolo/uwsgi-nginx-flask:python3.6
 
-# install requirements
-COPY ./requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+WORKDIR /app
 
 # copy flask app
-COPY ./app /app
+COPY . .
 
-ENTRYPOINT python /app/main.py
+# install requirements
+RUN pip install -r ./requirements.txt
+
+ENTRYPOINT python ./main.py
