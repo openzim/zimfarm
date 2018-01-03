@@ -1,9 +1,0 @@
-version: '2'
-services:
-  base:
-    environment:
-      - INIT_USERNAME=admin
-      - INIT_PASSWORD=admin_pass
-      - RABBITMQ_DEFAULT_USER=dispatcher
-      - RABBITMQ_DEFAULT_PASS=dispatcher_pass
-      - RABBITMQ_DEFAULT_VHOST=zimfarm

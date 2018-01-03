@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-from pymongo import ASCENDING
 from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
 
@@ -12,13 +11,6 @@ class Client(MongoClient):
 class Database(BaseDatabase):
     def __init__(self):
         super().__init__(Client(), 'Zimfarm')
-
-    def initialize(self):
-        Users().create_index([('username', ASCENDING)], name='username', unique=True)
-        Tasks().create_index([('status', ASCENDING)], name='status', unique=False)
-        Tasks().create_index([('created', ASCENDING)], name='created', unique=False)
-        Tasks().create_index([('started', ASCENDING)], name='started', unique=False)
-        Tasks().create_index([('finished', ASCENDING)], name='finished', unique=False)
 
 
 class Users(BaseCollection):
