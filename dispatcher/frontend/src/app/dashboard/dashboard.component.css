@@ -1,45 +1,91 @@
-.dashboard-container {
+div.container {
+    height: 100%;
     width: 100%;
-    height: calc(100vh - 54px);
+    overflow: auto;
+}
+
+div.card {
+    margin: 1rem;
+    width: 30rem;
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-radius: .25rem;
+}
+
+div.cell {
     display: flex;
-    padding: 0.25rem;
-}
-
-.dashboard-widget {
-    margin: 0.25rem;
-}
-
-.dashboard-left {
     flex-direction: column;
+    padding: .75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, .125)
+}
+
+div.cell:last-child {
+    border-bottom: none;
+}
+
+div.row {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.dashboard-right {
-    flex-direction: column;
+div.group {
     display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
-/*smaller than 48rem*/
-@media screen and (max-width: 48rem) {
-    .dashboard-container {
-        flex-direction: column;
-    }
+div.item {
+    margin: 0rem 0.25rem;
 }
-/*larger than 48rem*/
-@media screen and (min-width: 48rem) {
-    .dashboard-container {
-        flex-direction: row;
-    }
 
-    .dashboard-left {
-        width: 70%;
-        height: 100%;
-        float: left;
-    }
+div.status {
+    height: 1rem;
+    padding: 0rem 0.25rem;
+    -webkit-border-radius: 0.25rem;
+    -moz-border-radius: 0.25rem;
+    border-radius: 0.25rem;
+    vertical-align: middle;
+    font-size: 0.5rem;
+    color: white;
+    display: flex;
+    align-items: center;
+}
 
-    .dashboard-right {
-        width: 30%;
-        height: 100%;
-        float: left;
-    }
+div.status.PENDING {
+    background: gray;
+}
+
+div.status.PREPARING {
+    background: rgb(255, 174, 0);
+}
+
+div.status.GENERATING {
+    background: rgb(255, 174, 0);
+}
+
+div.status.UPLOADING {
+    background: yellowgreen;
+}
+
+div.status.FINISHED {
+    background: green;
+}
+
+div.status.ERROR {
+    background: red;
+}
+
+div.task_id {
+    color: #929292;
+    font-size: 0.75rem;
+}
+
+div.offliner_name {
+    font-weight: bold;
+}
+
+div.url {
+    color: #747373;
+    font-size: 0.75rem;
 }
