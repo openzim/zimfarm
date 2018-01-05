@@ -1,8 +1,11 @@
 import os
-from flask import send_from_directory
+from flask import send_file
 
 
-def serve_static(path):
-    if not os.path.exists('static/{}'.format(path)):
-        path = 'index.html'
-    return send_from_directory('static', path)
+def angular(path):
+    file_path = os.path.join('static', path)
+    if os.path.isfile(file_path):
+        return send_file(file_path)
+    else:
+        index_path = os.path.join('static', 'index.html')
+        return send_file(index_path)
