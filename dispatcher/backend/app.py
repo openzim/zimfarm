@@ -1,8 +1,9 @@
-import os
+import random
+import string
 from celery import Celery
 
-broker_url = 'amqp://{username}:{password}@rabbit:5672/{vhost}'.format(
-        username=os.getenv('RABBITMQ_DEFAULT_USER'),
-        password=os.getenv('RABBITMQ_DEFAULT_PASS'),
-        vhost=os.getenv('RABBITMQ_DEFAULT_VHOST'))
-celery = Celery(main='dispatcher', broker=broker_url)
+dispatcher_username = 'dispatcher'
+dispatcher_password = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)])
+
+celery = Celery(broker='amqp://{username}:{password}@rabbit:5672/{vhost}'.format(
+        username=dispatcher_username, password=dispatcher_password, vhost='zimfarm'))
