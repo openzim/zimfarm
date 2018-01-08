@@ -22,8 +22,8 @@ class MWOffliner(ZimfarmTask):
         self.host_working_dir = os.getenv('HOST_WORKING_DIR')
         self.container_working_dir = os.getenv('CONTAINER_WORKING_DIR')
 
-    def run(self, token: str, config: {}):
-        self.token = token
+    def run(self, config: {}):
+        self.get_token()
         client = docker.from_env()
 
         self.start_time = datetime.utcnow()

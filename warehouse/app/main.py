@@ -25,7 +25,7 @@ class Authorizer(DummyAuthorizer):
         """
 
         headers = {'token': token}
-        request = urllib.request.Request(self.token_validation_url, headers=headers, method='GET')
+        request = urllib.request.Request(self.token_validation_url, headers=headers, method='POST')
         try:
             with urllib.request.urlopen(request) as response:
                 if response.code == 200:

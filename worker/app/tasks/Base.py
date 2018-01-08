@@ -21,6 +21,7 @@ class ZimfarmTask(Task):
         super().__init__()
         self.logger = get_task_logger(__name__)
 
+        self.token: str = None
         self.status: Status = Status['PENDING']
         self.total_steps = 0
         self.steps = []
@@ -58,6 +59,30 @@ class ZimfarmTask(Task):
         if kwargs is not None:
             for key, value in kwargs.items():
                 self.steps[current][key] = value
+
+    def get_token(self):
+        username = os.getenv('USERNAME')
+        password = os.getenv('PASSWORD')
+        host = os.getenv('DISPATCHER_HOST')
+
+        url = 'https://{host}/api/auth/authorize'.format(host=host)
+        headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+        payload = 'username={username}&password={password}'.format(username=username, password = password)
+        request = urllib.request.Request(url, payload, headers, method='POST')
+
+        retries = 3
+        while retries > 0:
+            try:
+                with urllib.request.urlopen(request) as response:
+                    if response.code == 200:
+                        self.token = response.read()
+                        break
+                    else:
+                        retries -= 1
+            except HTTPError:
+                retries -= 1
+        else:
+            pass
 
     def put_status(self):
         host = os.getenv('DISPATCHER_HOST')
