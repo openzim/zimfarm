@@ -1,6 +1,8 @@
 export class Task {
     _id: string
-    created: Date
+    created: string
+    finished: string
+    elapsed: number
 }
 
 export class Offliner {

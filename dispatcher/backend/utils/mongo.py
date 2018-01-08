@@ -14,25 +14,33 @@ class Database(BaseDatabase):
 
 
 class Users(BaseCollection):
-    def __init__(self):
-        super().__init__(Database(), 'users')
+    username = 'username'
+    email = 'email'
+    password_hash = 'password_hash'
+    is_admin = 'is_admin'
 
     schema = {
-        'username': {
+        username: {
             'type': 'string',
-            'minlength': 1,
-            'maxlength': 75,
+            'regex': '^[a-zA-Z0-9_.+-]+$',
             'required': True
         },
-        'password_hash': {
+        email: {
+            'type': 'string',
+            'regex': '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+        },
+        password_hash: {
             'type': 'string',
             'required': True
         },
-        'is_admin': {
+        is_admin: {
             'type': 'boolean',
             'required': True
         }
     }
+
+    def __init__(self):
+        super().__init__(Database(), 'users')
 
 
 class Tasks(BaseCollection):

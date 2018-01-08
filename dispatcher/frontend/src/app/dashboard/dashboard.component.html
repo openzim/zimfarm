@@ -1,16 +1,16 @@
 <div class="container">
-    <div class="card">
+    <div class="card" *ngIf="tasks.length > 0">
         <div class="cell" *ngFor="let task of tasks">
-            <div class="row">
+            <div class="content">
                 <div class="item offliner_name">{{task.offliner.name}}</div>
+                <div class="item informative">mwUrl: <a href="{{task.offliner.config.mwUrl}}">{{task.offliner.config.mwUrl | slice:8:-1}}</a></div>
+                <div class="item informative">Created: {{task.created |  date:'MM/dd/yy HH:mm'}}</div>
+                <div class="item informative" *ngIf="task.elapsed>0">Elapsed: {{task.elapsed}}s</div>
+            </div>
+            <div class="content reversed">
                 <div class="item status {{task.status}}"><div>{{task.status}}</div></div>
+                <div class="item informative">{{task._id | slice:-6}}</div>
             </div>
-            <div class="row">
-                <div class="item url">{{task.offliner.config.mwUrl}}</div>
-                <div class="item task_id">{{task.id | slice:-6}}</div>
-            </div>
-            
-            <!-- <div>Created: {{task.created |  date:'MM/dd/yy HH:mm'}}</div> -->
         </div>
     </div>
 </div>

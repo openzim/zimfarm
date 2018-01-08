@@ -14,6 +14,7 @@ flask.route('/<path:path>', methods=['GET'])(angular)
 
 flask.register_blueprint(auth.blueprint)
 flask.register_blueprint(task.blueprint)
+flask.register_blueprint(user.blueprint)
 
 errors.register_handlers(flask)
 
