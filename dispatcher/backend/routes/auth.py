@@ -5,7 +5,6 @@ from werkzeug.security import check_password_hash
 from app import dispatcher_username, dispatcher_password
 from utils.mongo import Users
 from utils.token import JWT
-from utils.token import Type as TokenType
 from .errors import BadRequest, Unauthorized
 
 
@@ -16,10 +15,11 @@ blueprint = Blueprint('auth', __name__, url_prefix='/api/auth')
 def authorize():
     """
     Authorize a user with username and password
+
     :return: token
     """
-    username = request.headers.get('username')
-    password = request.headers.get('password')
+    username = request.form.get('username')
+    password = request.form.get('password')
 
     if username is None or password is None:
         raise BadRequest()
@@ -32,7 +32,7 @@ def authorize():
     if not is_valid:
         raise Unauthorized()
 
-    jwt = JWT(username, TokenType.USER, user['is_admin'], time())
+    jwt = JWT(user['_id'], user[Users.username], user['is_admin'])
     return jwt.encoded()
 
 
@@ -45,9 +45,8 @@ def token():
     Header token: the token to validate
 
     :return: new token if validation success
-    :raises InvalidRequest: if token is not set in Header
-    :raises AuthFailed: if username embedded in token does not exist
-    :raise jwt.exceptions.ExpiredSignatureError: if token expired
+    :raises BadRequest: if token is not set in Header
+    :raises Unauthorized: if username embedded in token does not exist
     """
     jwt = JWT.decode(request.headers.get('token'))
     if jwt is None:
@@ -56,13 +55,12 @@ def token():
     user = Users().find_one({'username': jwt.username})
     if user is None:
         raise Unauthorized()
-    jwt.is_admin = user['is_admin']
-    jwt.issue_time = time()
 
+    jwt.is_admin = user['is_admin']
     return jwt.encoded()
 
 
-@blueprint.route("/validate", methods=["GET"])
+@blueprint.route("/validate", methods=["POST"])
 def validate():
     """
     Validate a token
@@ -71,9 +69,8 @@ def validate():
     Header token: the token to validate
 
     :return: a flask response with code 200 if validation success
-    :raises InvalidRequest: if token is not set in Header
-    :raises AuthFailed: if username embedded in token does not exist
-    :raise jwt.exceptions.ExpiredSignatureError: if token expired
+    :raises BadRequest: if token is not set in Header
+    :raises Unauthorized: if username embedded in token does not exist
     """
     jwt = JWT.decode(request.headers.get('token'))
     if jwt is None:

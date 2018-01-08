@@ -47,6 +47,25 @@ class Unauthorized(Exception):
             return Response(status=401)
 
 
+class NotEnoughPrivilege(Unauthorized):
+    def __init__(self):
+        super().__init__('you are not authorized to perform this operation')
+
+
+class NotFound(Exception):
+    def __init__(self, message: str=None):
+        self.message = message
+
+    @staticmethod
+    def handler(e):
+        if isinstance(e, NotFound) and e.message is not None:
+            response = jsonify({'error': e.message})
+            response.status_code = 404
+            return response
+        else:
+            return Response(status=404)
+
+
 class OfflinerConfigNotValid(Exception):
     def __init__(self, errors):
         self.errors = errors
@@ -58,9 +77,7 @@ class OfflinerConfigNotValid(Exception):
         return response
 
 
-class NotEnoughPrivilege(Unauthorized):
-    def __init__(self):
-        super().__init__('you are not authorized to perform this operation')
+
 
 
 # 500 Internal Server Error

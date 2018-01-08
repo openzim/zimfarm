@@ -1,5 +1,6 @@
 import os, sys, pathlib, subprocess
 from celery import Celery
+import amqp
 import tasks
 
 

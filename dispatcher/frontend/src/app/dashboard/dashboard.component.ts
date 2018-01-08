@@ -15,13 +15,12 @@ export class DashboardComponent {
 
     ngOnInit() {
         this.taskService.listTasks().subscribe(response => {
+            response.items.forEach(item => {
+                if (item.finished != null) {
+                    item.elapsed = (Date.parse(item.finished) - Date.parse(item.created)) / 1000
+                }
+            })
             this.tasks = response.items
         })
     }
-
-    getTaskStatusColor() {
-        return 'ff0000'
-    }
-
-    color = 'ff0000'
 }
