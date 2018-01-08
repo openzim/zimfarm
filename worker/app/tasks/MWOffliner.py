@@ -39,7 +39,7 @@ class MWOffliner(ZimfarmTask):
 
         self.status = Status.UPLOADING
         self.put_status()
-        self.upload_file(token)
+        self.upload_file()
         self.status = Status.FINISHED
         self.ended_time = datetime.utcnow()
         self.put_status()
@@ -137,11 +137,10 @@ class MWOffliner(ZimfarmTask):
         elapsed_seconds = (datetime.utcnow() - start_time).seconds
         self.step_finished(current=2, success=True, stdout=result, elapsed_seconds=elapsed_seconds)
 
-    def upload_file(self, token: str):
+    def upload_file(self):
         """
         Step 4 of 4: upload zim file(s)
 
-        :param token:
         :return:
         :raises ConnectionRefusedError: if cannot connect to warehouse after certain amount of retries
         """
@@ -156,7 +155,7 @@ class MWOffliner(ZimfarmTask):
         retries = 3
         while retries > 0:
             try:
-                with ftplib.FTP(warehouse_host, username, token) as ftp:
+                with ftplib.FTP(warehouse_host, username, self.token) as ftp:
                     output = Path('{}/{}'.format(self.container_working_dir, self.request.id))
                     for child in output.iterdir():
                         if child.is_file():

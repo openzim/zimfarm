@@ -68,21 +68,15 @@ class ZimfarmTask(Task):
         url = 'https://{host}/api/auth/authorize'.format(host=host)
         headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
         payload = 'username={username}&password={password}'.format(username=username, password = password)
-        request = urllib.request.Request(url, payload, headers, method='POST')
+        request = urllib.request.Request(url, payload.encode('utf-8'), headers, method='POST')
 
-        retries = 3
-        while retries > 0:
-            try:
-                with urllib.request.urlopen(request) as response:
-                    if response.code == 200:
-                        self.token = response.read()
-                        break
-                    else:
-                        retries -= 1
-            except HTTPError:
-                retries -= 1
-        else:
-            pass
+        def callback(response, error):
+            if error is None:
+                self.token = response.read().decode('utf-8')
+            else:
+                self.logger.error(error)
+
+        self._send_request(request, callback)
 
     def put_status(self):
         host = os.getenv('DISPATCHER_HOST')
@@ -96,10 +90,28 @@ class ZimfarmTask(Task):
             delta = self.ended_time - self.start_time
             if delta >= timedelta(seconds=0):
                 payload['elapsed_second'] = delta.seconds
-        request = urllib.request.Request(url, json.dumps(payload, cls=JSONEncoder).encode('utf-8'),
-                                         headers, method='PUT')
-        try:
-            with urllib.request.urlopen(request) as response:
-                code = response.code
-        except HTTPError as error:
-            code = error.code
+        request = urllib.request.Request(url, json.dumps(payload, cls=JSONEncoder).encode('utf-8'), headers, method='PUT')
+
+        def callback(_, error):
+            if error is not None:
+                self.logger.error(error)
+        self._send_request(request, callback)
+
+    def _send_request(self, request: urllib.request.Request, callback=None):
+        retries = 3
+        error = None
+        while retries > 0:
+            try:
+                with urllib.request.urlopen(request) as response:
+                    if response.code == 200:
+                        if callback is not None:
+                            callback(response, None)
+                        break
+                    else:
+                        retries -= 1
+            except HTTPError as e:
+                error = e
+                retries -= 1
+        else:
+            if callback is not None:
+                callback(None, error)
