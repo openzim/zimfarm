@@ -11,7 +11,8 @@ from utils import mongo
 class Initializer:
     @staticmethod
     def create_database_indexes():
-        mongo.Users().create_index([('username', ASCENDING)], name='username', unique=True)
+        mongo.Users().create_index([(mongo.Users.username, ASCENDING)], name='username', unique=True)
+        mongo.Users().create_index([(mongo.Users.email, ASCENDING)], name='email', unique=True)
         mongo.Tasks().create_index([('status', ASCENDING)], name='status', unique=False)
         mongo.Tasks().create_index([('created', ASCENDING)], name='created', unique=False)
         mongo.Tasks().create_index([('started', ASCENDING)], name='started', unique=False)

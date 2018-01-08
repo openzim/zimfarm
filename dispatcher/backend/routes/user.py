@@ -1,5 +1,7 @@
 import urllib.error
+from bson import ObjectId
 from flask import Blueprint, request, Response, jsonify
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from utils.mongo import Users
 from utils.token import JWT
@@ -40,7 +42,7 @@ def users():
     })
 
 
-@blueprint.route("/<string:user_id>", methods=["GET"])
+@blueprint.route("/<string:user_id>", methods=["GET", "PATCH"])
 def user(user_id):
     """
 
@@ -52,15 +54,26 @@ def user(user_id):
     if jwt is None:
         raise errors.BadRequest()
 
+    # get user from database
+    user = Users().find_one({'_id': ObjectId(user_id)}, projection={'password_hash': False})
+    if user is None:
+        raise errors.NotFound()
+
     if request.method == 'GET':
-        user = Users().find_one({'_id': user_id}, projection={'password_hash': False})
         return jsonify(user)
+    elif request.method == 'PATCH':
+        password_old = request.form.get('password_old')
+        password_new = request.form.get('password_new')
+
+        is_valid = check_password_hash(user['password_hash'], password_old)
+        if not is_valid:
+            raise errors.Unauthorized()
+
+        Users().update_one({'_id': ObjectId(user_id)},
+                           {'$set': {'password_hash': generate_password_hash(password_new)}})
 
 
 
-
-
-#
 # @blueprint.route("/<string:username>", methods=["PUT", "GET", "DELETE"])
 # def user(username):
 #     token = UserJWT.from_request_header(request)
@@ -124,26 +137,3 @@ def user(user_id):
 #
 #     return Users().find_one_and_update(filter, {'$set': set}, {'_id': False, 'password_hash': False},
 #                                                  return_document=ReturnDocument.AFTER, upsert=True)
-
-
-def update_rabbitmq_user(username: str, password: str):
-    try:
-        status_code = rabbitmq.put_user(username, password, 'worker')
-        if status_code >= 300:
-            raise errors.RabbitMQPutUserFailed(status_code)
-        status_code = rabbitmq.put_permission('zimfarm', username)
-        if status_code >= 300:
-            raise errors.RabbitMQPutPermissionFailed(status_code)
-    except urllib.error.HTTPError as error:
-        code = error.getcode()
-        raise errors.RabbitMQError(code)
-
-
-def delete_rabbitmq_user(username: str):
-    try:
-        status_code = rabbitmq.delete_user(username)
-        if status_code >= 300:
-            raise errors.RabbitMQDeleteUserFailed(status_code)
-    except urllib.error.HTTPError as error:
-        code = error.getcode()
-        raise errors.RabbitMQError(code)
