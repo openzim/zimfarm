@@ -20,8 +20,6 @@ def tasks():
 
     if token is None:
         projection = {
-            'id': '$_id',
-            '_id': False,
             'status': True,
             'created': True,
             'started': True,
@@ -32,8 +30,6 @@ def tasks():
     else:
         _ = JWT.decode(token)
         projection = {
-            'id': '$_id',
-            '_id': False,
             'status': True,
             'created': True,
             'started': True,
