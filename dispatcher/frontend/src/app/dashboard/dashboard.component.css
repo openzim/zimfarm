@@ -5,8 +5,8 @@ div.container {
 }
 
 div.card {
-    margin: 1rem;
-    width: 30rem;
+    margin: 1rem auto;
+    max-width: 30rem;
     box-sizing: border-box;
     border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;
@@ -14,13 +14,23 @@ div.card {
 
 div.cell {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     padding: .75rem 1rem;
     border-bottom: 1px solid rgba(0, 0, 0, .125)
 }
 
 div.cell:last-child {
     border-bottom: none;
+}
+
+div.cell > div.content {
+    display: flex;
+    flex-direction: column;
+}
+
+div.cell > div.content.reversed {
+    justify-content: space-between;
+    align-items: flex-end;
 }
 
 div.row {
@@ -36,17 +46,17 @@ div.group {
 }
 
 div.item {
-    margin: 0rem 0.25rem;
+    margin: 0.1rem 0.25rem;
 }
 
 div.status {
     height: 1rem;
     padding: 0rem 0.25rem;
+    margin: 0.25rem 0;
     -webkit-border-radius: 0.25rem;
     -moz-border-radius: 0.25rem;
     border-radius: 0.25rem;
-    vertical-align: middle;
-    font-size: 0.5rem;
+    font-size: 0.75rem;
     color: white;
     display: flex;
     align-items: center;
@@ -76,16 +86,12 @@ div.status.ERROR {
     background: red;
 }
 
-div.task_id {
-    color: #929292;
-    font-size: 0.75rem;
-}
-
 div.offliner_name {
     font-weight: bold;
+    font-size: 1.25rem;
 }
 
-div.url {
+div.informative {
     color: #747373;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
 }
