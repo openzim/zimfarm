@@ -1,38 +1,65 @@
-from os import getenv
 import urllib.error
 from flask import Blueprint, request, Response, jsonify
-from pymongo import ReturnDocument
-from werkzeug.security import generate_password_hash
 
 from utils.mongo import Users
 from utils.token import JWT
-from utils import rabbitmq
 from . import errors
 
 
-blueprint = Blueprint('user', __name__, url_prefix='/user')
+blueprint = Blueprint('user', __name__, url_prefix='/api/user')
 
 
 @blueprint.route("/", methods=["GET"])
-def list():
-    token = JWT.from_request_header(request)
+def users():
+    """
+    List all users
+    Only admins can access this api
+    """
 
-    # non admin users cannot list users
-    if not token.is_admin:
-        raise exception.NotEnoughPrivilege()
+    # check token exist and is valid
+    jwt = JWT.decode(request.headers.get('token'))
+    if jwt is None:
+        raise errors.BadRequest()
+
+    # only admins can enqueue task
+    if not jwt.is_admin:
+        raise errors.NotEnoughPrivilege()
 
     limit = request.args.get('limit', 10)
     offset = request.args.get('limit', 0)
 
-    cursor = Users().find(skip=offset, limit=limit, projection={'_id': False, 'password_hash': False})
+    cursor = Users().find(skip=offset, limit=limit, projection={'password_hash': False})
     users = [user for user in cursor]
 
     return jsonify({
-        'limit': limit,
-        'offset': offset,
-        'users': users
+        'meta': {
+            'limit': limit,
+            'offset': offset
+        },
+        'items': users
     })
-#
+
+
+@blueprint.route("/<string:user_id>", methods=["GET"])
+def user(user_id):
+    """
+
+    :return:
+    """
+
+    # check token exist and is valid
+    jwt = JWT.decode(request.headers.get('token'))
+    if jwt is None:
+        raise errors.BadRequest()
+
+    if request.method == 'GET':
+        user = Users().find_one({'_id': user_id}, projection={'password_hash': False})
+        return jsonify(user)
+
+
+
+
+
 #
 # @blueprint.route("/<string:username>", methods=["PUT", "GET", "DELETE"])
 # def user(username):
@@ -76,8 +103,7 @@ def list():
 #
 #         return jsonify(user)
 #     elif request.method == 'GET':
-#         user = Users().find_one({'username': username}, projection={'_id': False, 'password_hash': False})
-#         return jsonify(user)
+
 #     elif request.method == 'DELETE':
 #         result = Users().delete_one({'username': username})
 #         if result.deleted_count == 1:
