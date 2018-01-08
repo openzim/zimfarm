@@ -1,4 +1,3 @@
-import urllib.error
 from bson import ObjectId
 from flask import Blueprint, request, Response, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -15,7 +14,11 @@ blueprint = Blueprint('user', __name__, url_prefix='/api/user')
 def users():
     """
     List all users
-    Only admins can access this api
+    Only admins can access this API
+
+    :raises BadRequest: if token is not set in Header
+    :raises Unauthorized: if token expired
+    :raises NotEnoughPrivilege: if user is not admin
     """
 
     # check token exist and is valid
@@ -34,10 +37,7 @@ def users():
     users = [user for user in cursor]
 
     return jsonify({
-        'meta': {
-            'limit': limit,
-            'offset': offset
-        },
+        'meta': {'limit': limit, 'offset': offset},
         'items': users
     })
 
@@ -45,8 +45,15 @@ def users():
 @blueprint.route("/<string:user_id>", methods=["GET", "PATCH"])
 def user(user_id):
     """
+    Single user API, you can:
+    - Get detail
+    - Change password
+    - TODO: Change username
+    - TODO: Change email
 
-    :return:
+    :raises BadRequest: if token is not set in Header
+    :raises Unauthorized: if token expired
+    :raises NotFound: if user does not exist
     """
 
     # check token exist and is valid
@@ -54,14 +61,21 @@ def user(user_id):
     if jwt is None:
         raise errors.BadRequest()
 
-    # get user from database
-    user = Users().find_one({'_id': ObjectId(user_id)}, projection={'password_hash': False})
-    if user is None:
-        raise errors.NotFound()
-
     if request.method == 'GET':
-        return jsonify(user)
+        user = Users().find_one({'_id': ObjectId(user_id)}, projection={'password_hash': False})
+        if user is None:
+            raise errors.NotFound()
+        else:
+            return jsonify(user)
     elif request.method == 'PATCH':
+        # only admins can perform PATCH operation on another user
+        if jwt.user_id != user_id and not jwt.is_admin:
+            raise errors.NotEnoughPrivilege()
+
+        user = Users().find_one({'_id': ObjectId(user_id)})
+        if user is None:
+            raise errors.NotFound()
+
         password_old = request.form.get('password_old')
         password_new = request.form.get('password_new')
 

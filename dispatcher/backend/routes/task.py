@@ -1,4 +1,3 @@
-from time import time
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify, Response
@@ -8,7 +7,6 @@ from cerberus import Validator
 from app import celery
 from utils.mongo import Tasks
 from utils.token import JWT
-from utils.token import Type as TokenType
 from utils.status import Task as TaskStatus
 from . import errors
 
@@ -100,10 +98,7 @@ def enqueue_mwoffliner():
         result = Tasks().insert_one(document)
         task_id = result.inserted_id
 
-        celery.send_task('mwoffliner', task_id=str(task_id), kwargs={
-            'token': JWT(jwt.username, TokenType.UPLOAD, jwt.is_admin, time()).encoded(),
-            'config': config
-        })
+        celery.send_task('mwoffliner', task_id=str(task_id), kwargs={'config': config})
 
     # check token exist and is valid
     jwt = JWT.decode(request.headers.get('token'))
