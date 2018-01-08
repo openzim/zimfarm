@@ -3,6 +3,8 @@ import uuid
 from time import time
 import jwt
 
+from utils.json import Encoder
+
 
 class JWT:
     secret = os.getenv('JWT_SECRET', 'secret')
@@ -25,7 +27,7 @@ class JWT:
             'username': self.username,
             'is_admin': self.is_admin
         }
-        return jwt.encode(payload, JWT.secret, algorithm='HS256').decode()
+        return jwt.encode(payload, JWT.secret, algorithm='HS256', json_encoder=Encoder).decode()
 
     @classmethod
     def decode(cls, token: str):
