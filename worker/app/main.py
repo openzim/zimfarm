@@ -1,6 +1,5 @@
 import os, sys, pathlib, subprocess
 from celery import Celery
-import amqp
 import tasks
 
 
@@ -64,6 +63,7 @@ if __name__ == "__main__":
 
         # start celery worker
         app.start(argv=['celery', 'worker',
+                        '--task-events',
                         '--uid', 'zimfarm_worker',
                         '-l', 'info',
                         '--concurrency', os.getenv('CONCURRENCY', '2')])
