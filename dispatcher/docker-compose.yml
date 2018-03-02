@@ -6,24 +6,38 @@ services:
       dockerfile: Dockerfile
     restart: always
     volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
       - ./docker_data/rabbitmq:/var/lib/rabbitmq
     ports:
-      - 28001:5672
+      - 5671:5671
     hostname: rabbit
   mongo:
     image: mongo:latest
     restart: always
+    ports:
+      - 127.0.0.1:27017:27017
     volumes:
       - ./docker_data/mongo:/data/db
     logging:
       driver: none
+  monitor:
+    build:
+      context: ./monitor
+      dockerfile: Dockerfile
+    restart: always
+    links:
+      - rabbit
+      - mongo
+    depends_on:
+      - rabbit
+      - mongo
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
     ports:
-      - 28000:80
+      - 127.0.0.1:28000:80
     links:
       - rabbit
       - mongo

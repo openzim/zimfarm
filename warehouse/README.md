@@ -24,7 +24,7 @@ Example:
 ```
 docker build -t warehouse . &&
 docker run -p 21:21 -p 28011-28090:28011-28090 \
-           -v /files:/files \
+           -v /var/www/staging.download.kiwix.org:/files \
            -e FTP_COMMAND_PORT=21 \
            -e FTP_DATA_PORT_RANGE=28011-28090 \
            -e TOKEN_VALIDATION_URL=https://farm.openzim.org/api/auth/validate \
