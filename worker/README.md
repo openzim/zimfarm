@@ -1,59 +1,52 @@
-# Zimfarm Worker
+# Worker
 
-The celery worker produces zim files with the following workflow:
+Worker is a celery node that produce zim files per dispatcher instructions.
 
-1. receive zim file generation instruction from dispatcher
-2. generate zim file
-3. upload zim file to the warehouse
+After worker successfully established a secure connection with dispatcher, it will start to receive and execute tasks. Each task contains roughly three stages:
 
-**Important**: It is required to bind host's docker socket to worker container,
-since worker will generate zim files using offliner containers (like mwoffliner).
-Thus, it is essential not to quit any container on your host system started by worker.
+- prepare: run helper docker containers, pull images, etc
+- generate: generate zim files using a offliner docker container
+- upload: upload the zim files back to zimfarm warehouse
 
-## How to run
+To run containers, zimfarm worker need to take control of a docker socket.
+
+## Requirements:
+
+Any Linux or Unix based system that has docker installed. Windows are not supported.
+
+## How to use:
+
+### Method1: docker
 
 1. clone this repo
-2. change directory to worker: `cd worker`
-3. set username, password and other environment variables in the `.env`
-   file, see guide in section below
-4. build the docker image: `docker build -t zimfarm_worker .`
-5. run the container with the following command:
-```
-docker run -v /var/run/docker.sock:/var/run/docker.sock \
-           -v HOST_WORKING_DIR:CONTAINER_WORKING_DIR \
-           --env-file .env
-           zimfarm_worker
-```
+2. `cd worker`
+3. build image: `docker build . -t zimfarm_worker`
+4. run container:
 
-Example:
 ```
-docker build -t zimfarm_worker . &&
-docker run -v /var/run/docker.sock:/var/run/docker.sock \
-           -v /Volumes/Data/ZimFiles:/ZimFiles \
-           --env-file .env \
-           zimfarm_worker
+docker run \
+    -d \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v HOST_OUTPUT:/files \
+    -e USERNAME=username \
+    -e PASSWORD=password \
+    -e WORKING_DIR=HOST_OUTPUT \
+    zimfarm_worker
 ```
 
-## Environment Variables
+**Important**: HOST_OUTPUT is where you want the output dir to be on your host system. An absolute path is needed. It appears twice in the above command and you have to use exactly the same value in both places.
 
-### Required:
+Other available environmental variables:
 
-| Name                   | Description                                                                |
-|------------------------|----------------------------------------------------------------------------|
-| USERNAME               | your username at Zimfarm                                                   |
-| PASSWORD               | your password at Zimfarm                                                   |
-| DISPATCHER_HOST        | host of Zimfarm dispatcher                                                 |
-| WAREHOUSE_HOST         | host of Zimfarm warehouse                                                  |
-| RABBITMQ_PORT          | port of RabbitMQ port on dispatcher, used for worker coordination          |
-| WAREHOUSE_COMMAND_PORT | command port of warehouse ftp server                                       |
-| HOST_WORKING_DIR       | directory for offliner containers to generate zim files in the host system |
-| CONTAINER_WORKING_DIR  | path where HOST_WORKING_DIR is mapped to inside the container              |
+- DISPATCHER_HOST: default farm.openzim.org
+- WAREHOUSE_HOST: default farm.openzim.org
+- RABBITMQ_PORT: default 5671, port used to communicate with RabbitMQ
+- WAREHOUSE_COMMAND_PORT, default 21, warehouse ftp server command port
+- WORKING_DIR: working directory in host file system
+- REDIS_NAME: default zimfarm_redis, name of redis helper container
 
-### Optional:
+### Method2: pip
 
-- **REDIS_NAME**: name of redis container used by offliners.
-If multiple offliners all require a redis container,
-there will only be one created and all offliners will share it.
-
-- **CONCURRENCY**: number of offliners to run at the same time,
-greater than or equals to one, default 2.
+1. setup virtualenv (optional)
+2. `pip install zimfarm-worker`
+3. run `zimfarm-worker`, enter your credentials and answer some questions
