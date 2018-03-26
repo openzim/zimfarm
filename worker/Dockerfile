@@ -1,12 +1,9 @@
 FROM python:latest
 
 WORKDIR /usr/src
-COPY ./app /usr/src/app
-COPY ./requirements.txt /usr/src/requirements.txt
+COPY zimfarmworker ./zimfarmworker
+COPY requirements.txt ./zimfarmworker/requirements.txt
 
-RUN pip3 install -r ./requirements.txt
+RUN pip3 install -r ./zimfarmworker/requirements.txt
 
-RUN useradd zimfarm_worker
-
-ENTRYPOINT ["python3", "app/main.py"]
-
+ENTRYPOINT ["python", "-m", "zimfarmworker", "--dockerized"]

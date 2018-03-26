@@ -124,3 +124,5 @@ dispatcher/docker_data/
 dispatcher/frontend/node_modules/
 id_rsa
 
+worker/setting.json
+worker/dist/

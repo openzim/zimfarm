@@ -1,6 +1,6 @@
 from docker import DockerClient
 import docker.errors
-from .operation import Operation
+from .operation import Operation, Error
 
 
 class PullContainer(Operation):
@@ -9,9 +9,9 @@ class PullContainer(Operation):
 
     name = 'Pull Container'
 
-    def __init__(self, docker: DockerClient, image_name: str, ):
+    def __init__(self, docker_client: DockerClient, image_name: str):
         super().__init__()
-        self.docker = docker
+        self.docker = docker_client
         self.image_name = image_name
 
     def execute(self):
@@ -20,9 +20,4 @@ class PullContainer(Operation):
             self.success = True
         except docker.errors.APIError as e:
             self.success = False
-            self.error_domain = 'docker.errors.APIError'
-            self.error_code = e.status_code
-            self.error_message = str(e)
-        except Exception as e:
-            self.success = False
-            self.error_message = 'unknown error: {}'.format(e)
+            self.error = Error('docker.errors.APIError', e.status_code, str(e))

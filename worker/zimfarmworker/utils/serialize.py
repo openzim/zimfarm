@@ -1,9 +1,8 @@
 import json
 from datetime import datetime, timedelta
-from utils.status import Status
 
 
-class JSONEncoder(json.JSONEncoder):
+class ResultEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, timedelta):
             return o.microseconds
@@ -11,7 +10,5 @@ class JSONEncoder(json.JSONEncoder):
             return o.isoformat() + 'Z'
         elif isinstance(o, bytes):
             return o.decode('utf-8')
-        elif isinstance(o, Status):
-            return o.name
         else:
             return json.JSONEncoder.default(self, o)

@@ -1,4 +1,3 @@
-from enum import Enum
 from celery.task import Task
 from celery.utils.log import get_task_logger
 
@@ -8,6 +7,7 @@ class Base(Task):
     """
 
     abstract = True
+    resultrepr_maxsize = 1024000
 
     def __init__(self):
         super().__init__()
@@ -18,14 +18,4 @@ class Base(Task):
 
 
 class TaskFailed(Exception):
-    def __init__(self, results):
-        self.results = results
-
-
-class TaskStatus(Enum):
-    PENDING = 0
-    PREPARING = 1
-    GENERATING = 2
-    UPLOADING = 3
-    FINISHED = 4
-    ERROR = 100
+    pass
