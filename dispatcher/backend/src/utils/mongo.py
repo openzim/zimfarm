@@ -17,7 +17,7 @@ class Users(BaseCollection):
     username = 'username'
     email = 'email'
     password_hash = 'password_hash'
-    is_admin = 'is_admin'
+    scope = 'scope'
 
     schema = {
         username: {
@@ -33,9 +33,15 @@ class Users(BaseCollection):
             'type': 'string',
             'required': True
         },
-        is_admin: {
-            'type': 'boolean',
-            'required': True
+        scope: {
+            'type': 'dict',
+            'required': True,
+            'keyschema': {'type': 'string'},
+            'valueschema': {
+                'type': 'dict',
+                'keyschema': {'type': 'string'},
+                'valueschema': {'type': 'boolean'},
+            }
         }
     }
 

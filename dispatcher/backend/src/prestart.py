@@ -28,7 +28,17 @@ class Initializer:
             document = {
                 'username': username,
                 'password_hash': generate_password_hash(password),
-                'is_admin': True
+                'scope': {
+                    'user_management': {
+                        'change_username': True,
+                        'change_email': True,
+                        'change_password': True
+                    },
+                    'task': {
+                        'create': True,
+                        'delete': True,
+                    }
+                }
             }
             validator = Validator(mongo.Users.schema)
             if not validator.validate(document):
