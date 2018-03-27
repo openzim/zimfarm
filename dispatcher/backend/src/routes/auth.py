@@ -1,8 +1,7 @@
-from time import time
 from flask import Blueprint, request, Response
 from werkzeug.security import check_password_hash
 
-from app import dispatcher_username, dispatcher_password
+from app import system_username, system_password
 from utils.mongo import Users
 from utils.token import JWT
 from .errors import BadRequest, Unauthorized
@@ -99,7 +98,7 @@ def rabbitmq_user(intention: str):
 
     if intention == 'user':
         password = request.form.get('password')
-        if username == dispatcher_username and password == dispatcher_password:
+        if username == system_username and password == system_password:
             return Response("allow")
         else:
             user = Users().find_one({'username': username}, {'password_hash': True, '_id': False})
@@ -110,7 +109,7 @@ def rabbitmq_user(intention: str):
     elif intention == 'vhost' or intention == 'resource' or intention == 'topic':
         # print('/rabbitmq_log/{}: {}'.format(intention, request.form), file=sys.stderr)
         vhost = request.form.get('vhost')
-        if username == dispatcher_username and vhost == 'zimfarm':
+        if username == system_username and vhost == 'zimfarm':
             return Response("allow")
         else:
             user = Users().find_one({'username': username}, {'_id': False})

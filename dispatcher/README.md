@@ -1,0 +1,1 @@
+export SYSTEM_PASSWORD=`pwgen -Bs1 12`

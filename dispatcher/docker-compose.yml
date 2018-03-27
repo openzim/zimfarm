@@ -11,15 +11,32 @@ services:
     ports:
       - 5671:5671
     hostname: rabbit
-#  mongo:
-#    image: mongo:latest
-#    restart: always
-#    ports:
-#      - 127.0.0.1:27017:27017
-#    volumes:
-#      - ./docker_data/mongo:/data/db
-#    logging:
-#      driver: none
+  mongo:
+    image: mongo:latest
+    restart: always
+    ports:
+      - 127.0.0.1:27017:27017
+    volumes:
+      - ./docker_data/mongo:/data/db
+    logging:
+      driver: none
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 127.0.0.1:28000:80
+    links:
+      - rabbit
+      - mongo
+    depends_on:
+      - rabbit
+      - mongo
+    environment:
+      - INIT_USERNAME=admin
+      - INIT_PASSWORD=admin_pass
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
 #  monitor:
 #    build:
 #      context: ./monitor
@@ -31,19 +48,3 @@ services:
 #    depends_on:
 #      - rabbit
 #      - mongo
-#  backend:
-#    build:
-#      context: ./backend
-#      dockerfile: Dockerfile
-#    restart: always
-#    ports:
-#      - 127.0.0.1:28000:80
-#    links:
-#      - rabbit
-#      - mongo
-#    depends_on:
-#      - rabbit
-#      - mongo
-#    environment:
-#      - INIT_USERNAME=admin
-#      - INIT_PASSWORD=admin_pass
