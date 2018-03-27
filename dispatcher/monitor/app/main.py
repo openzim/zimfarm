@@ -36,9 +36,8 @@ if __name__ == '__main__':
     try:
         system_username = 'system'
         system_password = os.getenv('SYSTEM_PASSWORD', '')
-        url = 'amqp://{username}:{password}@{host}:{port}/zimfarm'.format(username=system_username,
-                                                                          password=system_password,
-                                                                          host='rabbit', port=5672)
+        url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username,
+                                                                          password=system_password)
         celery = Celery(broker=url)
         with celery.connection() as connection:
             recv = celery.events.Receiver(connection, handlers={'*': process_event})
