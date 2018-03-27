@@ -1,16 +1,13 @@
 import os
 from flask import Flask
 
-from routes import angular, auth, task, user, errors
+from routes import auth, task, user, errors
 from utils.json import Encoder
 from prestart import Initializer
 
 
 flask = Flask(__name__)
 flask.json_encoder = Encoder
-
-flask.route('/', methods=['GET'], defaults={'path': 'index.html'})(angular)
-flask.route('/<path:path>', methods=['GET'])(angular)
 
 flask.register_blueprint(auth.blueprint)
 flask.register_blueprint(task.blueprint)

@@ -2,7 +2,7 @@ from time import time
 from flask import Blueprint, request, Response
 from werkzeug.security import check_password_hash
 
-from zimfarmworker import dispatcher_username, dispatcher_password
+from app import dispatcher_username, dispatcher_password
 from utils.mongo import Users
 from utils.token import JWT
 from .errors import BadRequest, Unauthorized

@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, Response
 from bson import ObjectId
 from cerberus import Validator
 
-from zimfarmworker import celery
+from app import celery
 from utils.mongo import Tasks
 from utils.token import JWT
 from utils.status import Task as TaskStatus
