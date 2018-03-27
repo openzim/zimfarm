@@ -1,5 +1,5 @@
+import os
 import sys
-import json
 
 from celery import Celery
 from bson.objectid import ObjectId
@@ -34,11 +34,12 @@ def process_event(event):
 
 if __name__ == '__main__':
     try:
-        url = 'amqp://{username}:{password}@{host}:{port}/zimfarm'.format(username='admin', password='admin_passes',
-                                                                           host='rabbit', port=5672)
+        system_username = 'system'
+        system_password = os.getenv('SYSTEM_PASSWORD', '')
+        url = 'amqp://{username}:{password}@{host}:{port}/zimfarm'.format(username=system_username,
+                                                                          password=system_password,
+                                                                          host='rabbit', port=5672)
         celery = Celery(broker=url)
-        state = celery.events.State()
-
         with celery.connection() as connection:
             recv = celery.events.Receiver(connection, handlers={'*': process_event})
             recv.capture(limit=None, timeout=None, wakeup=True)
