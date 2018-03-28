@@ -37,9 +37,7 @@ def authorize():
         raise Unauthorized()
 
     # generate token
-    access_token = AccessToken.encode(user_id=str(user['_id']),
-                                      username=user['username'],
-                                      scope=user['scope'])
+    access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
 
     # send response
     response_json = {
