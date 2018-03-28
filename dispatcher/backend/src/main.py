@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 
-from routes import auth, task, user, errors
+from routes import auth, errors
 from utils.json import Encoder
 from prestart import Initializer
 
@@ -10,8 +10,8 @@ flask = Flask(__name__)
 flask.json_encoder = Encoder
 
 flask.register_blueprint(auth.blueprint)
-flask.register_blueprint(task.blueprint)
-flask.register_blueprint(user.blueprint)
+# flask.register_blueprint(task.blueprint)
+# flask.register_blueprint(user.blueprint)
 
 errors.register_handlers(flask)
 
