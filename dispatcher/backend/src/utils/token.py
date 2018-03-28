@@ -16,7 +16,7 @@ class AccessToken:
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, datetime):
-                return o.isoformat() + 'Z'
+                return int(datetime.timestamp())
             elif isinstance(o, ObjectId):
                 return str(o)
             elif isinstance(o, uuid.UUID):
@@ -30,8 +30,8 @@ class AccessToken:
         expire_time = issue_time + timedelta(minutes=15)
         payload = {
             'iss': cls.issuer,
-            'exp': int(expire_time.timestamp()),
-            'iat': int(issue_time.timestamp()),
+            'exp': expire_time,
+            'iat': issue_time,
             'jti': uuid.uuid4(),
             'user_id': user_id,
             'username': username,
