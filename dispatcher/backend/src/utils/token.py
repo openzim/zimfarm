@@ -1,37 +1,53 @@
-import os
+import json
 import uuid
+import string
+import random
+from datetime import datetime
 from time import time
+
 import jwt
+from bson.objectid import ObjectId
 
-from utils.json import Encoder
 
-
-class JWT:
-    secret = os.getenv('JWT_SECRET', 'secret')
+class AccessToken:
+    secret = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)])
     issuer = 'dispatcher'
 
-    def __init__(self, user_id: str, username: str, is_admin: bool):
-        self.user_id = user_id
-        self.username = username
-        self.is_admin = is_admin
+    class JSONEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, datetime):
+                return o.isoformat() + 'Z'
+            elif isinstance(o, ObjectId):
+                return str(o)
+            else:
+                super().default(o)
 
-    def encoded(self) -> str:
+    @classmethod
+    def encode(cls, user_id: str, username: str, scope: dict):
         issue_time = int(time())
-        delta = 60 * 60
+        delta = 60 * 15  # access token expires in 15 minutes
         payload = {
-            'iss': JWT.issuer,
+            'iss': cls.issuer,
             'exp': issue_time + delta,
             'iat': issue_time,
             'jti': str(uuid.uuid4()),
-            'user_id': self.user_id,
-            'username': self.username,
-            'is_admin': self.is_admin
+            'user_id': user_id,
+            'username': username,
+            'scope': scope
         }
-        return jwt.encode(payload, JWT.secret, algorithm='HS256', json_encoder=Encoder).decode()
+        return jwt.encode(payload, key=cls.secret, algorithm='HS256', json_encoder=cls.JSONEncoder)
 
     @classmethod
     def decode(cls, token: str):
         if token is None:
             return None
-        payload = jwt.decode(token, JWT.secret, algorithms=['HS256'])
-        return JWT(payload['user_id'], payload['username'], payload['is_admin'])
+        else:
+            try:
+                payload = jwt.decode(token, cls.secret, algorithms=['HS256'])
+            except jwt.exceptions.InvalidTokenError:
+                return None
+            return payload
+
+
+class RefreshToken:
+    pass
