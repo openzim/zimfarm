@@ -1,9 +1,12 @@
+from uuid import uuid4
+from datetime import datetime, timedelta
+
 from flask import Blueprint, request, Response, jsonify
 from werkzeug.security import check_password_hash
 
 from app import system_username, system_password
-from utils.mongo import Users
-from utils.token import AccessToken, RefreshToken
+from utils.mongo import Users, RefreshTokens
+from utils.token import AccessToken
 from .errors import BadRequest, Unauthorized
 
 
@@ -38,11 +41,19 @@ def authorize():
 
     # generate token
     access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
+    refresh_token = uuid4()
+
+    # store refresh token in database
+    RefreshTokens().insert_one({
+        'token': refresh_token,
+        'user_id': user['_id'],
+        'expires': datetime.now() + timedelta(days=30)
+    })
 
     # send response
     response_json = {
         'access_token': access_token,
-        'refresh_token': ''
+        'refresh_token': refresh_token
     }
     response = jsonify(response_json)
     response.headers['Cache-Control'] = 'no-store'
@@ -58,18 +69,22 @@ def token():
     [Header] refresh_token
     """
 
-    return Response()
+    refresh_token = request.headers.get('refresh_token')
+    if refresh_token is None:
+        raise BadRequest()
 
-    # jwt = JWT.decode(request.headers.get('token'))
-    # if jwt is None:
-    #     raise BadRequest()
-    #
-    # user = Users().find_one({'username': jwt.username})
-    # if user is None:
-    #     raise Unauthorized()
-    #
-    # jwt.is_admin = user['is_admin']
-    # return jwt.encoded()
+    collection = RefreshTokens()
+    token = collection.find_one({'token': refresh_token}, {'expire': 1, 'user_id': 1})
+    # if token is None:
+    #     return None
+    # else:
+    #     expire_time = token['expire']
+    #     if expire_time < datetime.now():
+    #         return None
+    #     else:
+    #         collection.delete_one({'token': token})
+
+    return Response()
 
 
 @blueprint.route("/validate", methods=["POST"])

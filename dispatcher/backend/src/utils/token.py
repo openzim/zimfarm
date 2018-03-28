@@ -2,8 +2,7 @@ import json
 import uuid
 import string
 import random
-from datetime import datetime
-from time import time
+from datetime import datetime, timedelta
 from typing import Optional
 
 import jwt
@@ -27,12 +26,12 @@ class AccessToken:
 
     @classmethod
     def encode(cls, user_id: ObjectId, username: str, scope: dict) -> str:
-        issue_time = int(time())
-        delta = 60 * 15  # access token expires in 15 minutes
+        issue_time = datetime.now()
+        expire_time = issue_time + timedelta(minutes=15)
         payload = {
             'iss': cls.issuer,
-            'exp': issue_time + delta,
-            'iat': issue_time,
+            'exp': int(expire_time.timestamp()),
+            'iat': int(issue_time.timestamp()),
             'jti': uuid.uuid4(),
             'user_id': user_id,
             'username': username,
@@ -50,7 +49,3 @@ class AccessToken:
             except jwt.exceptions.InvalidTokenError:
                 return None
             return payload
-
-
-class RefreshToken:
-    pass
