@@ -47,7 +47,7 @@ def authorize():
     RefreshTokens().insert_one({
         'token': refresh_token,
         'user_id': user['_id'],
-        'expires': datetime.now() + timedelta(days=30)
+        'expire_time': datetime.now() + timedelta(days=30)
     })
 
     # send response
@@ -76,12 +76,12 @@ def token():
 
     # check token exists in database and get expire time and user id
     collection = RefreshTokens()
-    old_token_document = collection.find_one({'token': UUID(old_token)}, {'expire': 1, 'user_id': 1})
+    old_token_document = collection.find_one({'token': UUID(old_token)}, {'expire_time': 1, 'user_id': 1})
     if old_token_document is None:
         raise Unauthorized('1')
 
     # check token is not expired
-    expire_time = old_token_document['expire']
+    expire_time = old_token_document['expire_time']
     if expire_time < datetime.now():
         raise Unauthorized('expired')
 
