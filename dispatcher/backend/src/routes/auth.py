@@ -71,6 +71,7 @@ def token():
 
     # get old refresh token from request header
     old_token = request.headers.get('refresh_token')
+    print(request.headers)
     if old_token is None:
         raise BadRequest()
 
