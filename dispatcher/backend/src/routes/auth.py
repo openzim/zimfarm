@@ -102,7 +102,7 @@ def token():
     })
 
     # delete old refresh token from database
-    collection.delete_one({'token': old_token})
+    collection.delete_one({'token': UUID(old_token)})
 
     # send response
     response_json = {
