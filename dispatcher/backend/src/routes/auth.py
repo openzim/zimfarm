@@ -64,27 +64,55 @@ def authorize():
 @blueprint.route("/token", methods=["POST"])
 def token():
     """
-    Get a new set of access and refresh token after validating an old refresh token
+    Issue a new set of access and refresh token after validating an old refresh token
 
     [Header] refresh_token
     """
 
-    refresh_token = request.headers.get('refresh_token')
-    if refresh_token is None:
+    # get old refresh token from request header
+    old_token = request.headers.get('refresh_token')
+    if old_token is None:
         raise BadRequest()
 
+    # check token exists in database and get expire time and user id
     collection = RefreshTokens()
-    token = collection.find_one({'token': refresh_token}, {'expire': 1, 'user_id': 1})
-    # if token is None:
-    #     return None
-    # else:
-    #     expire_time = token['expire']
-    #     if expire_time < datetime.now():
-    #         return None
-    #     else:
-    #         collection.delete_one({'token': token})
+    old_token_document = collection.find_one({'token': old_token}, {'expire': 1, 'user_id': 1})
+    if old_token_document is None:
+        raise Unauthorized()
 
-    return Response()
+    # check token is not expired
+    expire_time = old_token_document['expire']
+    if expire_time < datetime.now():
+        raise Unauthorized()
+
+    # check user exists
+    user = Users().find_one({'_id': old_token_document['user_id']})
+    if user is None:
+        raise Unauthorized()
+
+    # generate token
+    access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
+    refresh_token = uuid4()
+
+    # store refresh token in database
+    RefreshTokens().insert_one({
+        'token': refresh_token,
+        'user_id': user['_id'],
+        'expires': datetime.now() + timedelta(days=30)
+    })
+
+    # delete old refresh token from database
+    collection.delete_one({'token': old_token})
+
+    # send response
+    response_json = {
+        'access_token': access_token,
+        'refresh_token': refresh_token
+    }
+    response = jsonify(response_json)
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 @blueprint.route("/validate", methods=["POST"])

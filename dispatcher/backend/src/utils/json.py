@@ -4,6 +4,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from flask.json import JSONEncoder
 
+
 class Encoder(JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
