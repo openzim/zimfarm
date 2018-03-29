@@ -70,7 +70,7 @@ def token():
     """
 
     # get old refresh token from request header
-    old_token = request.headers.get('refresh_token')
+    old_token = request.headers.get('refresh-token')
     if old_token is None:
         raise BadRequest()
 
@@ -122,7 +122,7 @@ def validate():
 
     [Header] token: the access token to validate
     """
-    payload = AccessToken.decode(request.headers.get('token'))
+    payload = AccessToken.decode(request.headers.get('access-token'))
     if payload is None:
         raise Unauthorized()
 
@@ -152,18 +152,17 @@ def rabbitmq_user(intention: str):
         if username == system_username and password == system_password:
             return Response("allow")
         else:
-            user = Users().find_one({'username': username}, {'password_hash': True, '_id': False})
+            user = Users().find_one({'username': username}, {'password_hash': 1, '_id': 0})
             if user is not None and check_password_hash(user['password_hash'], password):
                 return Response("allow")
             else:
                 return Response("deny")
     elif intention == 'vhost' or intention == 'resource' or intention == 'topic':
-        # print('/rabbitmq_log/{}: {}'.format(intention, request.form), file=sys.stderr)
         vhost = request.form.get('vhost')
         if username == system_username and vhost == 'zimfarm':
             return Response("allow")
         else:
-            user = Users().find_one({'username': username}, {'_id': False})
+            user = Users().find_one({'username': username}, {'_id': 0})
             if user is not None and vhost == 'zimfarm':
                 return Response("allow")
             else:
