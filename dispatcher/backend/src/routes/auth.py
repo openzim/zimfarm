@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, Response, jsonify
@@ -71,13 +71,12 @@ def token():
 
     # get old refresh token from request header
     old_token = request.headers.get('refresh_token')
-    print(request.headers)
     if old_token is None:
         raise BadRequest()
 
     # check token exists in database and get expire time and user id
     collection = RefreshTokens()
-    old_token_document = collection.find_one({'token': old_token}, {'expire': 1, 'user_id': 1})
+    old_token_document = collection.find_one({'token': UUID(old_token)}, {'expire': 1, 'user_id': 1})
     if old_token_document is None:
         raise Unauthorized('1')
 
