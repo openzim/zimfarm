@@ -79,17 +79,17 @@ def token():
     collection = RefreshTokens()
     old_token_document = collection.find_one({'token': old_token}, {'expire': 1, 'user_id': 1})
     if old_token_document is None:
-        raise Unauthorized()
+        raise Unauthorized('1')
 
     # check token is not expired
     expire_time = old_token_document['expire']
     if expire_time < datetime.now():
-        raise Unauthorized()
+        raise Unauthorized('expired')
 
     # check user exists
     user = Users().find_one({'_id': old_token_document['user_id']})
     if user is None:
-        raise Unauthorized()
+        raise Unauthorized('2')
 
     # generate token
     access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
