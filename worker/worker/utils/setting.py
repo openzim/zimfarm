@@ -17,7 +17,7 @@ class Setting:
     working_dir: Path = None
     redis_name: str = None
 
-    dockerized: bool = False
+    interactive: bool = False
     container_inside_files_dir: Path = Path('/files')
 
     @classmethod

@@ -50,3 +50,12 @@ Other available environmental variables:
 1. setup virtualenv (optional)
 2. `pip install zimfarm-worker`
 3. run `zimfarm-worker`, enter your credentials and answer some questions
+
+docker build . -t zimfarm_worker &&
+docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /Volumes/Data/ZimFiles/output:/files \
+    -e USERNAME=admin \
+    -e PASSWORD=admin_pass \
+    -e WORKING_DIR=/Volumes/Data/ZimFiles/output \
+    zimfarm_worker

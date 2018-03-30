@@ -19,10 +19,10 @@ class MWOffliner(Base):
     name = 'mwoffliner'
 
     def run(self, offliner_config):
-        if Setting.dockerized:
-            zim_files_dir = Setting.container_inside_files_dir.joinpath(self.request.id)
-        else:
+        if Setting.interactive:
             zim_files_dir = Setting.working_dir.joinpath(self.request.id)
+        else:
+            zim_files_dir = Setting.container_inside_files_dir.joinpath(self.request.id)
 
         operations = [
             RunRedis(docker_client=docker.from_env(), container_name=Setting.redis_name),
