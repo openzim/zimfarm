@@ -1,0 +1,35 @@
+Get Tokens with Credentials
+=====================================
+
+Get access token and refresh token with username and password.
+
+Request
+-------------------------------------
+
+Endpoint
+  **POST** /api/auth/authorize
+Header
+  - username: str
+  - password: str
+
+Response
+-------------------------------------
+
+Header
+  Content-Type: application/json
+Body
+  .. code-block:: javascript
+
+    {
+        "access_token": ACCESS_TOKEN,
+        "refresh_token": REFRESH_TOKEN
+    }
+
+Example
+-------------------------------------
+
+.. code-block:: bash
+
+  curl -X "POST" "https://farm.openzim.org/api/auth/authorize" \
+     -H 'username: admin' \
+     -H 'password: admin_pass'
