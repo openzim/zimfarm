@@ -3,7 +3,11 @@ from jwt import exceptions as jwt_exceptions
 
 
 def register_handlers(app: Flask):
-    app.errorhandler(HTTPError)(HTTPError.handler)
+    app.errorhandler(BadRequest)(BadRequest.handler)
+    app.errorhandler(OfflinerConfigNotValid)(OfflinerConfigNotValid.handler)
+    app.errorhandler(Unauthorized)(Unauthorized.handler)
+    app.errorhandler(NotFound)(NotFound.handler)
+    app.errorhandler(InternalError)(InternalError.handler)
 
     @app.errorhandler(jwt_exceptions.DecodeError)
     def handler(_):
@@ -18,14 +22,8 @@ def register_handlers(app: Flask):
         return response
 
 
-class HTTPError(Exception):
-    @staticmethod
-    def handler(e):
-        return Response(status=500)
-
-
 # 400
-class BadRequest(HTTPError):
+class BadRequest(Exception):
     def __init__(self, message: str=None):
         self.message = message
 
@@ -39,7 +37,7 @@ class BadRequest(HTTPError):
             return Response(status=400)
 
 
-class OfflinerConfigNotValid(HTTPError):
+class OfflinerConfigNotValid(Exception):
     def __init__(self):
         self.errors = {}
 
@@ -54,7 +52,7 @@ class OfflinerConfigNotValid(HTTPError):
 
 
 # 401
-class Unauthorized(HTTPError):
+class Unauthorized(Exception):
     def __init__(self, message: str=None):
         self.message = message
 
@@ -74,7 +72,7 @@ class NotEnoughPrivilege(Unauthorized):
 
 
 # 404
-class NotFound(HTTPError):
+class NotFound(Exception):
     def __init__(self, message: str=None):
         self.message = message
 
@@ -89,7 +87,7 @@ class NotFound(HTTPError):
 
 
 # 500
-class InternalError(HTTPError):
+class InternalError(Exception):
     @staticmethod
     def handler(e):
         return Response(status=500)
