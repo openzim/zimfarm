@@ -96,8 +96,9 @@ def enqueue_mwoffliner():
 
         result = Tasks().insert_one(document)
         task_id = result.inserted_id
+        return task_id
 
-        celery.send_task('mwoffliner', task_id=str(task_id), kwargs={'offliner_config': config})
+        # celery.send_task('mwoffliner', task_id=str(task_id), kwargs={'offliner_config': config})
 
     # check token exist and is valid
     token = AccessToken.decode(request.headers.get('access-token'))
@@ -122,7 +123,16 @@ def enqueue_mwoffliner():
     if len(config_error.errors) > 0:
         raise config_error
 
-    return Response(status=202)
+    # add task to database and enqueue task
+    task_ids = []
+    for config in configs:
+        task_id = enqueue_task(config)
+        task_ids.append(task_id)
+
+    # send response
+    response = jsonify(task_ids)
+    response.status_code = 202
+    return response
 
 
 # @blueprint.route("/<string:id>", methods=["GET", "PUT", "DELETE"])
