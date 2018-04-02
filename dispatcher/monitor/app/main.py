@@ -36,14 +36,14 @@ def process_event(event: dict):
         event['uuid'] = ObjectId(event['uuid'])
 
     status = type_parts[1].upper()
-    update = {'status': status}
+    update_set = {'status': status}
 
     if status == 'SUCCEEDED' or status == 'FAILED':
         if 'timestamp' in event:
             termination_time = datetime.fromtimestamp(event['timestamp'])
-            update['termination_time'] = termination_time
+            update_set['termination_time'] = termination_time
 
-    Tasks().update_one({'_id': event['uuid']}, update)
+    Tasks().update_one({'_id': event['uuid']}, {'$set': update_set})
     TaskEvents().insert_one(event)
 
 
