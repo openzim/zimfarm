@@ -27,7 +27,7 @@ class Operation:
             result['error'] = {
                 'domain': self.error.domain,
                 'code': self.error.code,
-                'stderr': self.error.stderr.decode()
+                'stderr': self.error.stderr.decode() if self.error.stderr is not None else None
             }
         return result
 
