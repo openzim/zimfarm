@@ -3,8 +3,7 @@ from jwt import exceptions as jwt_exceptions
 
 
 def register_handlers(app: Flask):
-    app.errorhandler(BadRequest)(BadRequest.handler)
-    app.errorhandler(Unauthorized)(Unauthorized.handler)
+    app.errorhandler(HTTPError)(HTTPError.handler)
 
     @app.errorhandler(jwt_exceptions.DecodeError)
     def handler(_):
@@ -19,7 +18,14 @@ def register_handlers(app: Flask):
         return response
 
 
-class BadRequest(Exception):
+class HTTPError(Exception):
+    @staticmethod
+    def handler(e):
+        return Response(status=500)
+
+
+# 400
+class BadRequest(HTTPError):
     def __init__(self, message: str=None):
         self.message = message
 
@@ -33,7 +39,22 @@ class BadRequest(Exception):
             return Response(status=400)
 
 
-class Unauthorized(Exception):
+class OfflinerConfigNotValid(HTTPError):
+    def __init__(self):
+        self.errors = {}
+
+    @staticmethod
+    def handler(e):
+        if isinstance(e, OfflinerConfigNotValid):
+            response = jsonify(e.errors)
+            response.status_code = 400
+            return response
+        else:
+            return Response(status=400)
+
+
+# 401
+class Unauthorized(HTTPError):
     def __init__(self, message: str=None):
         self.message = message
 
@@ -52,7 +73,8 @@ class NotEnoughPrivilege(Unauthorized):
         super().__init__('you are not authorized to perform this operation')
 
 
-class NotFound(Exception):
+# 404
+class NotFound(HTTPError):
     def __init__(self, message: str=None):
         self.message = message
 
@@ -66,15 +88,11 @@ class NotFound(Exception):
             return Response(status=404)
 
 
-class OfflinerConfigNotValid(Exception):
-    def __init__(self, errors):
-        self.errors = errors
-
+# 500
+class InternalError(HTTPError):
     @staticmethod
     def handler(e):
-        response = jsonify({'error': e.errors})
-        response.status_code = 400
-        return response
+        return Response(status=500)
 
 
 

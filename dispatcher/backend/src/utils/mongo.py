@@ -65,18 +65,8 @@ class Tasks(BaseCollection):
             'maxlength': 25,
             'required': True
         },
-        'created': {
+        'termination_time': {
             'type': 'datetime',
-            'required': True
-        },
-        'started': {
-            'type': 'datetime',
-            'nullable': True,
-            'required': True
-        },
-        'finished': {
-            'type': 'datetime',
-            'nullable': True,
             'required': True
         },
         'offliner': {
@@ -93,7 +83,7 @@ class Tasks(BaseCollection):
                 }
             }
         },
-        'steps': {
+        'logs': {
             'type': 'list'
         }
     }

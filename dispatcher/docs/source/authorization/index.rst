@@ -8,7 +8,7 @@ When access token become invalid, use the refresh token for a new access token a
 Tokens
 -------------------------------------
 
-Zimfarm use a short lived access token and a long lived refresh token.
+Zimfarm uses a short lived access token and a long lived refresh token.
 
 access token
   - a jwt token
