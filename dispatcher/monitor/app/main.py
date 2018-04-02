@@ -35,8 +35,13 @@ def process_event(event: dict):
     if 'uuid' in event:
         event['uuid'] = ObjectId(event['uuid'])
 
+    update_set = {}
+
     status = type_parts[1].upper()
-    update_set = {'status': status}
+    if status == 'LOG':
+        update_set['logs'] = event['logs']
+    else:
+        update_set['status'] = status
 
     if status == 'SUCCEEDED' or status == 'FAILED':
         if 'timestamp' in event:
