@@ -102,7 +102,7 @@ def enqueue_mwoffliner():
     # check token exist and is valid
     token = AccessToken.decode(request.headers.get('access-token'))
     if token is None:
-        raise errors.BadRequest()
+        raise errors.Unauthorized()
 
     # check user can create tasks
     if not token.get('scope', {}).get('task', {}).get('create', False):
