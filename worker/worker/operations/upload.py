@@ -1,3 +1,4 @@
+import json
 import ftplib
 from time import sleep
 from pathlib import Path
@@ -48,7 +49,8 @@ class Upload(Operation):
         request = Request(url, headers=headers, method='POST')
 
         with urlopen(request, timeout=30) as response:
-            self.token = response.read().decode('utf-8')
+            response_json = json.loads(response.read(), encoding='utf-8')
+            self.token = response_json['access_token']
 
     def _upload(self, path: Path):
         with ftplib.FTP() as ftp:
