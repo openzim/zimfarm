@@ -96,9 +96,9 @@ def enqueue_mwoffliner():
 
         result = Tasks().insert_one(document)
         task_id = result.inserted_id
-        return task_id
+        celery.send_task('mwoffliner', task_id=str(task_id), kwargs={'offliner_config': config})
 
-        # celery.send_task('mwoffliner', task_id=str(task_id), kwargs={'offliner_config': config})
+        return task_id
 
     # check token exist and is valid
     token = AccessToken.decode(request.headers.get('access-token'))
