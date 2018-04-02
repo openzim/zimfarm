@@ -51,7 +51,7 @@ class Users(BaseCollection):
 
 class RefreshTokens(BaseCollection):
     def __init__(self):
-        super().__init__(Database(), 'refreshtokens')
+        super().__init__(Database(), 'refresh_tokens')
 
 
 class Tasks(BaseCollection):

@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 from celery import Celery
 from bson.objectid import ObjectId
@@ -16,20 +17,34 @@ class Database(database.Database):
         super().__init__(Client(), 'Zimfarm')
 
 
+class Tasks(collection.Collection):
+    def __init__(self):
+        super().__init__(Database(), 'tasks')
+
+
 class TaskEvents(collection.Collection):
     def __init__(self):
         super().__init__(Database(), 'task_events')
 
 
-def process_event(event):
-    if 'type' in event and 'task' in event['type']:
-        if 'uuid' in event:
-            event['uuid'] = ObjectId(event['uuid'])
-        print(event)
-        # if 'result' in event:
-        #     event['result'] = json.loads(event['result'][1:-1])
-        events = TaskEvents()
-        events.insert_one(event)
+def process_event(event: dict):
+    type_parts = event.get('type', '-').split('-')
+    if type_parts[0] != 'task':
+        return
+
+    if 'uuid' in event:
+        event['uuid'] = ObjectId(event['uuid'])
+
+    status = type_parts[1].upper()
+    update = {'status': status}
+
+    if status == 'SUCCEEDED' or status == 'FAILED':
+        if 'timestamp' in event:
+            termination_time = datetime.fromtimestamp(event['timestamp'])
+            update['termination_time'] = termination_time
+
+    Tasks().update_one({'_id': event['uuid']}, update)
+    TaskEvents().insert_one(event)
 
 
 if __name__ == '__main__':
