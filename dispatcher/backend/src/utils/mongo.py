@@ -67,7 +67,8 @@ class Tasks(BaseCollection):
         },
         'termination_time': {
             'type': 'datetime',
-            'required': True
+            'required': True,
+            'nullable': True,
         },
         'offliner': {
             'type': 'dict',

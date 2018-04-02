@@ -92,7 +92,7 @@ def enqueue_mwoffliner():
         }
         validator = Validator(Tasks.schema)
         if not validator.validate(document):
-            raise errors.TaskDocumentNotValid(validator.errors)
+            raise errors.InternalError()
 
         result = Tasks().insert_one(document)
         task_id = result.inserted_id
