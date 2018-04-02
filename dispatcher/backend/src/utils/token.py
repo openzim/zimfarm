@@ -44,8 +44,4 @@ class AccessToken:
         if token is None:
             return None
         else:
-            try:
-                payload = jwt.decode(token, cls.secret, algorithms=['HS256'])
-            except jwt.exceptions.InvalidTokenError:
-                return None
-            return payload
+            return jwt.decode(token, cls.secret, algorithms=['HS256'])

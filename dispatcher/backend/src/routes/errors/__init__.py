@@ -9,7 +9,7 @@ def register_handlers(app: Flask):
     app.errorhandler(NotFound)(NotFound.handler)
     app.errorhandler(InternalError)(InternalError.handler)
 
-    @app.errorhandler(jwt_exceptions.DecodeError)
+    @app.errorhandler(jwt_exceptions.InvalidTokenError)
     def handler(_):
         response = jsonify({'error': 'token invalid'})
         response.status_code = 401
