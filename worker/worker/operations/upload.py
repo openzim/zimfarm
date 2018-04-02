@@ -43,9 +43,9 @@ class Upload(Operation):
 
     def _get_token(self):
         url = 'https://{host}/api/auth/authorize'.format(host=self.dispatcher_host)
-        headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
-        payload = 'username={username}&password={password}'.format(username=self.username, password=self.password)
-        request = Request(url, payload.encode('utf-8'), headers, method='POST')
+        headers = {'username': self.username,
+                   'password': self.password}
+        request = Request(url, headers=headers, method='POST')
 
         with urlopen(request, timeout=30) as response:
             self.token = response.read().decode('utf-8')
