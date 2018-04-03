@@ -43,7 +43,7 @@ def process_event(event: dict):
     else:
         update_set['status'] = status.upper()
 
-    if status == 'SUCCEEDED' or status == 'FAILED':
+    if status == 'succeeded' or status == 'failed':
         if 'timestamp' in event:
             termination_time = datetime.fromtimestamp(event['timestamp'])
             update_set['termination_time'] = termination_time
