@@ -27,7 +27,7 @@ class AccessToken:
     @classmethod
     def encode(cls, user_id: ObjectId, username: str, scope: dict) -> str:
         issue_time = datetime.now()
-        expire_time = issue_time + timedelta(minutes=15)
+        expire_time = issue_time + timedelta(minutes=60)
         payload = {
             'iss': cls.issuer,
             'exp': expire_time,
