@@ -37,11 +37,11 @@ def process_event(event: dict):
 
     update_set = {}
 
-    status = type_parts[1].upper()
-    if status == 'LOG':
+    status = type_parts[1]
+    if status == 'logs':
         update_set['logs'] = event['logs']
     else:
-        update_set['status'] = status
+        update_set['status'] = status.upper()
 
     if status == 'SUCCEEDED' or status == 'FAILED':
         if 'timestamp' in event:

@@ -45,7 +45,7 @@ class MWOffliner(Base):
             if not operation.success:
                 break
 
-        self.send_event('task-log', logs=logs)
+        self.send_event('task-logs', logs=logs)
 
         if not success:
             raise TaskFailed()
