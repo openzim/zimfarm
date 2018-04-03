@@ -35,7 +35,7 @@ def tasks():
 
     cursor = Tasks().aggregate([
         {'$project': projection},
-        {'$sort': {'_id': sort}},
+        {'$sort': {'timestamp.creation': sort}},
         {'$skip': offset},
         {'$limit': limit},
     ])
