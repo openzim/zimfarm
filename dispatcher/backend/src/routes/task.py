@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta
-
+from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, Response
-from bson import ObjectId
 from cerberus import Validator
 
 from app import celery
@@ -14,48 +12,42 @@ from . import errors
 blueprint = Blueprint('task', __name__, url_prefix='/api/task')
 
 
-# @blueprint.route("/", methods=["GET"])
-# def tasks():
-#     token = request.headers.get('token')
-#
-#     if token is None:
-#         projection = {
-#             'status': True,
-#             'created': True,
-#             'started': True,
-#             'finished': True,
-#             'offliner.name': True,
-#             'offliner.config.mwUrl': True
-#         }
-#     else:
-#         _ = JWT.decode(token)
-#         projection = {
-#             'status': True,
-#             'created': True,
-#             'started': True,
-#             'finished': True,
-#             'offliner': True,
-#         }
-#
-#     limit = int(request.args.get('limit', 10))
-#     offset = int(request.args.get('offset', 0))
-#     sort = 1 if request.args.get('sort', -1) == 1 else -1
-#
-#     cursor = Tasks().aggregate([
-#         {'$project': projection},
-#         {'$sort': {'created': sort}},
-#         {'$skip': offset},
-#         {'$limit': limit},
-#     ])
-#     tasks = [task for task in cursor]
-#
-#     return jsonify({
-#         'meta': {
-#             'limit': limit,
-#             'offset': offset
-#         },
-#         'items': tasks
-#     })
+@blueprint.route("/", methods=["GET"])
+def tasks():
+    access_token = request.headers.get('access-token')
+
+    if access_token is None:
+        projection = {
+            'status': True,
+            'timestamp': True,
+            'offliner.name': True,
+            'offliner.config.mwUrl': True
+        }
+    else:
+        _ = AccessToken.decode(access_token)
+        projection = {
+            'logs': False
+        }
+
+    limit = int(request.args.get('limit', 10))
+    offset = int(request.args.get('offset', 0))
+    sort = 1 if request.args.get('sort', -1) == 1 else -1
+
+    cursor = Tasks().aggregate([
+        {'$project': projection},
+        {'$sort': {'_id': sort}},
+        {'$skip': offset},
+        {'$limit': limit},
+    ])
+    tasks = [task for task in cursor]
+
+    return jsonify({
+        'meta': {
+            'limit': limit,
+            'offset': offset
+        },
+        'items': tasks
+    })
 
 
 @blueprint.route("/mwoffliner", methods=["POST"])
@@ -83,7 +75,10 @@ def enqueue_mwoffliner():
     def enqueue_task(config: dict):
         document = {
             'status': TaskStatus.PENDING.name,
-            'termination_time': None,
+            'timestamp': {
+                'creation': datetime.utcnow(),
+                'termination': None
+            },
             'offliner': {
                 'name': "mwoffliner",
                 'config': config

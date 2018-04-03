@@ -46,7 +46,7 @@ def process_event(event: dict):
     if status == 'succeeded' or status == 'failed':
         if 'timestamp' in event:
             termination_time = datetime.fromtimestamp(event['timestamp'])
-            update_set['termination_time'] = termination_time
+            update_set['timestamp.termination'] = termination_time
 
     Tasks().update_one({'_id': event['uuid']}, {'$set': update_set})
     TaskEvents().insert_one(event)

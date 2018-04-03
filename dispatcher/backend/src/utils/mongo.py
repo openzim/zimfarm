@@ -65,10 +65,20 @@ class Tasks(BaseCollection):
             'maxlength': 25,
             'required': True
         },
-        'termination_time': {
-            'type': 'datetime',
-            'required': True,
-            'nullable': True,
+        'timestamp': {
+            'type': 'dict',
+            'schema': {
+                'creation': {
+                    'type': 'datetime',
+                    'required': True,
+                    'nullable': False,
+                },
+                'termination': {
+                    'type': 'datetime',
+                    'required': True,
+                    'nullable': True,
+                },
+            }
         },
         'offliner': {
             'type': 'dict',
