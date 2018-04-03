@@ -13,10 +13,12 @@ class Initializer:
     def create_database_indexes():
         mongo.Users().create_index([(mongo.Users.username, ASCENDING)], name='username', unique=True)
         mongo.Users().create_index([(mongo.Users.email, ASCENDING)], name='email', unique=True)
+        mongo.RefreshTokens().create_index([('token', ASCENDING)], name='token', unique=True)
+
         mongo.Tasks().create_index([('status', ASCENDING)], name='status', unique=False)
-        mongo.Tasks().create_index([('created', ASCENDING)], name='created', unique=False)
-        mongo.Tasks().create_index([('started', ASCENDING)], name='started', unique=False)
-        mongo.Tasks().create_index([('finished', ASCENDING)], name='finished', unique=False)
+        mongo.Tasks().create_index([('timestamp.creation', ASCENDING)], name='timestamp.creation', unique=False)
+        mongo.Tasks().create_index([('timestamp.termination', ASCENDING)], name='timestamp.termination', unique=False)
+        mongo.Tasks().create_index([('offliner.name', ASCENDING)], name='offliner.name', unique=False)
 
     @staticmethod
     def create_initial_user():
