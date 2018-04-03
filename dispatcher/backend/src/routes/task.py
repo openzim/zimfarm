@@ -1,6 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from flask import Blueprint, request, jsonify, Response
 from cerberus import Validator
+from bson import ObjectId
 
 from app import celery
 from utils.mongo import Tasks
@@ -14,9 +15,16 @@ blueprint = Blueprint('task', __name__, url_prefix='/api/task')
 
 @blueprint.route("/", methods=["GET"])
 def tasks():
-    access_token = request.headers.get('access-token')
+    """
+    List tasks
 
-    if access_token is None:
+    [Header] token: access token
+    [Body] json
+    """
+
+    # check if access token is present
+    token = request.headers.get('token')
+    if token is None:
         projection = {
             'status': True,
             'timestamp': True,
@@ -24,15 +32,17 @@ def tasks():
             'offliner.config.mwUrl': True
         }
     else:
-        _ = AccessToken.decode(access_token)
+        _ = AccessToken.decode(token)
         projection = {
             'logs': False
         }
 
+    # setting default limit, offset and sort
     limit = int(request.args.get('limit', 10))
     offset = int(request.args.get('offset', 0))
     sort = 1 if request.args.get('sort', -1) == 1 else -1
 
+    # get tasks from database
     cursor = Tasks().aggregate([
         {'$project': projection},
         {'$sort': {'timestamp.creation': sort}},
@@ -41,6 +51,7 @@ def tasks():
     ])
     tasks = [task for task in cursor]
 
+    # send the response
     return jsonify({
         'meta': {
             'limit': limit,
@@ -55,10 +66,10 @@ def enqueue_mwoffliner():
     """
     Enqueue mwoffliner tasks
 
-    [Header] token: the access token to validate
-    [Body] json array: mwoffliner task configurations
-    :return:
+    [Header] token: access token
+    [Body] json: array of mwoffliner task configurations
     """
+
     def validate_task(config: dict):
         schema = {
             'mwUrl': {'type': 'string', 'required': True},
@@ -96,7 +107,7 @@ def enqueue_mwoffliner():
         return task_id
 
     # check token exist and is valid
-    token = AccessToken.decode(request.headers.get('access-token'))
+    token = AccessToken.decode(request.headers.get('token'))
     if token is None:
         raise errors.Unauthorized()
 
@@ -130,29 +141,25 @@ def enqueue_mwoffliner():
     return response
 
 
-# @blueprint.route("/<string:id>", methods=["GET", "PUT", "DELETE"])
-# def task(id: str):
-#     """
-#
-#     PUT: update task data
-#     required:
-#     status: the key for task status enum
-#     """
-#     # check token exist and is valid
-#     jwt = JWT.decode(request.headers.get('token'))
-#     if jwt is None:
-#         raise errors.BadRequest()
-#
-#     if id is None or id == '':
-#         raise errors.BadRequest('task id is required')
-#
-#     if request.method == 'GET':
-#         task = Tasks().find_one({'_id': ObjectId(id)})
-#         return jsonify(task)
-#     elif request.method == 'DELETE':
-#         # only admins can delete a task
-#         if not jwt.is_admin:
-#             raise errors.NotEnoughPrivilege()
-#
-#         Tasks().delete_one({'_id': ObjectId(id)})
-#         return Response()
+@blueprint.route("/<string:id>", methods=["GET", "DELETE"])
+def task(id: str):
+    """
+    Show detail / remove a task
+
+    [Header] token: access token
+    """
+
+    # check token exist and is valid
+    token = AccessToken.decode(request.headers.get('token'))
+    if token is None:
+        raise errors.Unauthorized()
+
+    if request.method == 'GET':
+        task = Tasks().find_one({'_id': ObjectId(id)})
+        return jsonify(task)
+    elif request.method == 'DELETE':
+        if token.get('scope', {}).get('task', {}).get('delete', False):
+            Tasks().delete_one({'_id': ObjectId(id)})
+            return Response()
+        else:
+            raise errors.NotEnoughPrivilege()
