@@ -5,13 +5,14 @@ Zimfarm Backend APIs
 
 Zimfarm is a distributed zim file generating system. File generating tasks could be added or scheduled. Workers in the system generate the files asynchronously and upload them to a central location.
 
-API Domains
+Topics
 -------------------------------------
 
 .. toctree::
    :maxdepth: 1
 
    authorization/index
+   task/index
 
 Indices and tables
 ==================

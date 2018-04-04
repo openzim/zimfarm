@@ -14,7 +14,7 @@ access token
   - a jwt token
   - proves identity when interacting with resources
   - can be used multiple times
-  - expires every 15 minutes
+  - expires every 60 minutes
 refresh token
   - a uuid4 token
   - proves identity when access token is lost or expires
