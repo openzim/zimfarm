@@ -96,6 +96,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../task/index.html">Tasks</a></li>
 </ul>
 
             
@@ -165,14 +166,14 @@
 <p>When access token become invalid, use the refresh token for a new access token and refresh token.</p>
 <div class="section" id="tokens">
 <h2>Tokens<a class="headerlink" href="#tokens" title="Permalink to this headline">¶</a></h2>
-<p>Zimfarm use a short lived access token and a long lived refresh token.</p>
+<p>Zimfarm uses a short lived access token and a long lived refresh token.</p>
 <dl class="docutils">
 <dt>access token</dt>
 <dd><ul class="first last simple">
 <li>a jwt token</li>
 <li>proves identity when interacting with resources</li>
 <li>can be used multiple times</li>
-<li>expires every 15 minutes</li>
+<li>expires every 60 minutes</li>
 </ul>
 </dd>
 <dt>refresh token</dt>

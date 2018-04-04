@@ -1,3 +1,8 @@
+from sphinx.highlighting import lexers
+from pygments.lexers.data import JsonLexer
+
+lexers['json'] = JsonLexer()
+
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.

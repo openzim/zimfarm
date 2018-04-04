@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Regain access with Refresh Token &mdash; Zimfarm  documentation</title>
+  <title>List Tasks &mdash; Zimfarm  documentation</title>
   
 
   
@@ -36,9 +36,9 @@
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
     <link rel="top" title="Zimfarm  documentation" href="../index.html"/>
-        <link rel="up" title="Authorization" href="index.html"/>
-        <link rel="next" title="Tasks" href="../task/index.html"/>
-        <link rel="prev" title="Get Tokens with Credentials" href="authorize.html"/> 
+        <link rel="up" title="Tasks" href="index.html"/>
+        <link rel="next" title="Get Task Detail" href="detail.html"/>
+        <link rel="prev" title="Tasks" href="index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -88,16 +88,16 @@
             
             
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">Authorization</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="index.html#tokens">Tokens</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="index.html#workflow">Workflow</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="authorize.html">Get Tokens with Credentials</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Regain access with Refresh Token</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authorization/index.html">Authorization</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tasks</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#topics">Topics</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">List Tasks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detail.html">Get Task Detail</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mwoffliner.html">Schedule MWOffliner Tasks</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../task/index.html">Tasks</a></li>
 </ul>
 
             
@@ -142,15 +142,15 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="index.html">Authorization</a> &raquo;</li>
+          <li><a href="index.html">Tasks</a> &raquo;</li>
         
-      <li>Regain access with Refresh Token</li>
+      <li>List Tasks</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/authorization/token.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/task/list.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -163,18 +163,37 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="regain-access-with-refresh-token">
-<h1>Regain access with Refresh Token<a class="headerlink" href="#regain-access-with-refresh-token" title="Permalink to this headline">¶</a></h1>
-<p>When your access token is expired or lost, you can regain access to the system using a valid refresh token.</p>
-<p>Note: if the refresh token is also expired, you have to re-authenticate with credentials</p>
+  <div class="section" id="list-tasks">
+<h1>List Tasks<a class="headerlink" href="#list-tasks" title="Permalink to this headline">¶</a></h1>
+<p>Get basic overview of tasks. Tasks created later appear first in the list. For each task, the following properties will be returned:</p>
+<ul class="simple">
+<li>_id</li>
+<li>status</li>
+<li>offliner:<ul>
+<li>name</li>
+<li>config</li>
+</ul>
+</li>
+<li>timestamp:<ul>
+<li>creation</li>
+<li>termination</li>
+</ul>
+</li>
+</ul>
 <div class="section" id="request">
 <h2>Request<a class="headerlink" href="#request" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>Endpoint</dt>
-<dd><strong>POST</strong> /api/auth/token</dd>
+<dd><strong>GET</strong> /api/task</dd>
+<dt>URL Parameter</dt>
+<dd><ul class="first last simple">
+<li>limit: int</li>
+<li>offset: int</li>
+</ul>
+</dd>
 <dt>Header</dt>
 <dd><ul class="first last simple">
-<li>refresh-token: REFRESH_TOKEN</li>
+<li>token: str</li>
 </ul>
 </dd>
 </dl>
@@ -185,9 +204,29 @@
 <dt>Header</dt>
 <dd>Content-Type: application/json</dd>
 <dt>Body</dt>
-<dd><div class="first last highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;access_token&quot;</span><span class="o">:</span> <span class="nx">ACCESS_TOKEN</span><span class="p">,</span>
-    <span class="s2">&quot;refresh_token&quot;</span><span class="o">:</span> <span class="nx">REFRESH_TOKEN</span>
+<dd><div class="first last highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&quot;_id&quot;</span><span class="p">:</span> <span class="err">ObjectID</span><span class="p">,</span>
+            <span class="nt">&quot;offliner&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;config&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="nt">&quot;adminEmail&quot;</span><span class="p">:</span> <span class="err">string</span><span class="p">,</span>
+                    <span class="nt">&quot;mwUrl&quot;</span><span class="p">:</span> <span class="err">string</span><span class="p">,</span>
+                    <span class="nt">&quot;verbose&quot;</span><span class="p">:</span> <span class="err">bool</span>
+                <span class="p">},</span>
+                <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="err">string</span>
+            <span class="p">},</span>
+            <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="err">string</span><span class="p">,</span>
+            <span class="nt">&quot;timestamp&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;creation&quot;</span><span class="p">:</span> <span class="err">datetime</span><span class="p">,</span>
+                <span class="nt">&quot;termination&quot;</span><span class="p">:</span> <span class="err">datetime</span>
+            <span class="p">}</span>
+        <span class="p">},</span> <span class="err">...</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;meta&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="err">integer</span><span class="p">,</span>
+        <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="err">integer</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -196,8 +235,8 @@
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl -X <span class="s2">&quot;POST&quot;</span> <span class="s2">&quot;https://farm.openzim.org/api/auth/token&quot;</span> <span class="se">\</span>
-   -H <span class="s1">&#39;refresh-token: REFRESH_TOKEN&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl <span class="s2">&quot;https://farm.openzim.org/api/task/?limit=60&quot;</span> <span class="se">\</span>
+   -H <span class="s1">&#39;token: ACCESS_TOKEN&#39;</span>
 </pre></div>
 </div>
 </div>
@@ -213,10 +252,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../task/index.html" class="btn btn-neutral float-right" title="Tasks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="detail.html" class="btn btn-neutral float-right" title="Get Task Detail" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="authorize.html" class="btn btn-neutral" title="Get Tokens with Credentials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral" title="Tasks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
