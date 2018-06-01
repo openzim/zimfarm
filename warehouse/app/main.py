@@ -24,7 +24,7 @@ class Authorizer(DummyAuthorizer):
         :raises AuthenticationFailed: if token is not valid or cannot contact zimfarm dispatcher
         """
 
-        headers = {'token': token}
+        headers = {'access-token': token}
         request = urllib.request.Request(self.token_validation_url, headers=headers, method='POST')
         try:
             with urllib.request.urlopen(request) as response:

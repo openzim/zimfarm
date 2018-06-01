@@ -1,5 +1,6 @@
+import os
 import sys
-import json
+from datetime import datetime
 
 from celery import Celery
 from bson.objectid import ObjectId
@@ -16,29 +17,48 @@ class Database(database.Database):
         super().__init__(Client(), 'Zimfarm')
 
 
+class Tasks(collection.Collection):
+    def __init__(self):
+        super().__init__(Database(), 'tasks')
+
+
 class TaskEvents(collection.Collection):
     def __init__(self):
         super().__init__(Database(), 'task_events')
 
 
-def process_event(event):
-    if 'type' in event and 'task' in event['type']:
-        if 'uuid' in event:
-            event['uuid'] = ObjectId(event['uuid'])
-        print(event)
-        # if 'result' in event:
-        #     event['result'] = json.loads(event['result'][1:-1])
-        events = TaskEvents()
-        events.insert_one(event)
+def process_event(event: dict):
+    type_parts = event.get('type', '-').split('-')
+    if type_parts[0] != 'task':
+        return
+
+    if 'uuid' in event:
+        event['uuid'] = ObjectId(event['uuid'])
+
+    update_set = {}
+
+    status = type_parts[1]
+    if status == 'logs':
+        update_set['logs'] = event['logs']
+    else:
+        update_set['status'] = status.upper()
+
+    if status == 'succeeded' or status == 'failed':
+        if 'timestamp' in event:
+            termination_time = datetime.fromtimestamp(event['timestamp'])
+            update_set['timestamp.termination'] = termination_time
+
+    Tasks().update_one({'_id': event['uuid']}, {'$set': update_set})
+    TaskEvents().insert_one(event)
 
 
 if __name__ == '__main__':
     try:
-        url = 'amqp://{username}:{password}@{host}:{port}/zimfarm'.format(username='admin', password='admin_passes',
-                                                                           host='rabbit', port=5672)
+        system_username = 'system'
+        system_password = os.getenv('SYSTEM_PASSWORD', '')
+        url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username,
+                                                                          password=system_password)
         celery = Celery(broker=url)
-        state = celery.events.State()
-
         with celery.connection() as connection:
             recv = celery.events.Receiver(connection, handlers={'*': process_event})
             recv.capture(limit=None, timeout=None, wakeup=True)
