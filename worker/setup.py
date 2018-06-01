@@ -24,7 +24,7 @@ setup(
     python_requires='~=3.6',
     entry_points={
         'console_scripts': [
-            'zimfarm-worker=zimfarmworker.__main__:main',
+            'zimfarm-worker=zimfarmworker.main:main',
         ],
     },
 )

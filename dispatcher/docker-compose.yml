@@ -20,17 +20,6 @@ services:
       - ./docker_data/mongo:/data/db
     logging:
       driver: none
-  monitor:
-    build:
-      context: ./monitor
-      dockerfile: Dockerfile
-    restart: always
-    links:
-      - rabbit
-      - mongo
-    depends_on:
-      - rabbit
-      - mongo
   backend:
     build:
       context: ./backend
@@ -47,3 +36,17 @@ services:
     environment:
       - INIT_USERNAME=admin
       - INIT_PASSWORD=admin_pass
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
+  monitor:
+    build:
+      context: ./monitor
+      dockerfile: Dockerfile
+    restart: always
+    links:
+      - rabbit
+      - mongo
+    depends_on:
+      - rabbit
+      - mongo
+    environment:
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}

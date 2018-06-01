@@ -1,9 +1,8 @@
 FROM python:latest
 
-WORKDIR /usr/src
-COPY zimfarmworker ./zimfarmworker
-COPY requirements.txt ./zimfarmworker/requirements.txt
+COPY . /usr/src/worker
+WORKDIR /usr/src/worker
 
-RUN pip3 install -r ./zimfarmworker/requirements.txt
+RUN pip3 install -r ./requirements.txt
 
-ENTRYPOINT ["python", "-m", "zimfarmworker", "--dockerized"]
+ENTRYPOINT ["python", "docker_entry.py"]
