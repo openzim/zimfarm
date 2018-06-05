@@ -1,25 +1,32 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { Routes, RouterModule } from '@angular/router';
 
-import { AppComponent } from './root/app.component';
-import { NavigationComponent } from './navigation/navigation.component';
+import { RootComponent } from './root.component';
+import { AppComponent } from './AppComponent/app.component';
+import { LoginComponent } from './login/login.component';
 
-import { RoutingModule } from './routing.module';
-
+const routes: Routes = [
+    { path: '', component: AppComponent },
+    { path: 'login', component: LoginComponent },
+    { path: '**', redirectTo: '' }
+];
 
 @NgModule({
-    declarations: [
-        AppComponent,
-        NavigationComponent
-    ],
     imports: [
         BrowserModule,
+        FormsModule,
         HttpClientModule,
-        RoutingModule
+        RouterModule.forRoot(routes)
+    ],
+    declarations: [
+        RootComponent,
+        AppComponent,
+        LoginComponent
     ],
     providers: [],
-    bootstrap: [AppComponent]
+    bootstrap: [RootComponent]
 })
 export class AppModule { }
