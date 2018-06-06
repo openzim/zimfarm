@@ -5,12 +5,15 @@ import { HttpClientModule } from '@angular/common/http';
 import { Routes, RouterModule } from '@angular/router';
 
 import { RootComponent } from './root.component';
-import { AppComponent } from './AppComponent/app.component';
 import { LoginComponent } from './login/login.component';
+import { QueueComponent } from './queue/queue.component';
+
+import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
-    { path: '', component: AppComponent },
+    { path: '', redirectTo: 'queue', pathMatch: 'full' },
     { path: 'login', component: LoginComponent },
+    { path: 'queue', component: QueueComponent, canActivate: [AuthGuard] },
     { path: '**', redirectTo: '' }
 ];
 
@@ -23,10 +26,10 @@ const routes: Routes = [
     ],
     declarations: [
         RootComponent,
-        AppComponent,
+        QueueComponent,
         LoginComponent
     ],
-    providers: [],
+    providers: [AuthGuard],
     bootstrap: [RootComponent]
 })
 export class AppModule { }

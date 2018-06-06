@@ -20,6 +20,10 @@ export class AuthService {
             this.http.post<AuthResponseData>(
                 'https://farm.openzim.org/api/auth/authorize', '', {headers: header}
             ).subscribe(data => {
+                this.accessToken = data.access_token
+                this.refreshToken = data.refresh_token
+                this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000);
+
                 observer.next(true);
                 observer.complete();
             }, error => {
@@ -28,6 +32,17 @@ export class AuthService {
             })
         });
     }
+
+    get accessToken(): string {return localStorage.getItem('zimfarm.access_token')}
+    set accessToken(token: string) {localStorage.setItem('zimfarm.access_token', token)}
+
+    get refreshToken(): string {return localStorage.getItem('zimfarm.refresh_token')}
+    set refreshToken(token: string) {localStorage.setItem('zimfarm.refresh_token', token)}
+
+    get refreshTokenExpire(): Date {
+        let data = localStorage.getItem('zimfarm.refresh_token_expire')
+        return data == null ? null : new Date(data)}
+    set refreshTokenExpire(date: Date) {localStorage.setItem('zimfarm.refresh_token_expire', date.toString())}
 }
 
 interface AuthResponseData {
