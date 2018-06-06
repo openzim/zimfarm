@@ -4,9 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { Routes, RouterModule } from '@angular/router';
 
-import { RootComponent } from './root.component';
-import { LoginComponent } from './login/login.component';
-import { QueueComponent } from './queue/queue.component';
+import { RootComponent } from './components/root.component';
+import { LoginComponent } from './components/login/login.component';
+import { QueueComponent } from './components/queue/queue.component';
 
 import { AuthGuard } from './guards/auth.guard';
 
