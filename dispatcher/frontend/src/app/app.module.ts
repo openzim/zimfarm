@@ -6,6 +6,7 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { RootComponent } from './components/root.component';
 import { LoginComponent } from './components/login/login.component';
+import { NavigationBarComponent } from './components/navigation-bar/navigation-bar.component';
 import { QueueComponent } from './components/queue/queue.component';
 
 import { AuthGuard } from './guards/auth.guard';
@@ -26,8 +27,9 @@ const routes: Routes = [
     ],
     declarations: [
         RootComponent,
+        LoginComponent,
+        NavigationBarComponent,
         QueueComponent,
-        LoginComponent
     ],
     providers: [AuthGuard],
     bootstrap: [RootComponent]
