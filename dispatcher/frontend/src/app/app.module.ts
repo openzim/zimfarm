@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { Routes, RouterModule } from '@angular/router';
 
-import { RootComponent } from './components/root.component';
+import { RootComponent, AppComponent } from './components/components';
 import { LoginComponent } from './components/login/login.component';
 import { NavigationBarComponent } from './components/navigation-bar/navigation-bar.component';
 import { QueueComponent } from './components/queue/queue.component';
@@ -12,10 +12,17 @@ import { QueueComponent } from './components/queue/queue.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
-    { path: '', redirectTo: 'queue', pathMatch: 'full' },
+    {
+        path: '',
+        component: AppComponent,
+        canActivate: [AuthGuard],
+        children: [
+            { path: 'queue', component: QueueComponent },
+            { path: '**', redirectTo: 'queue' }
+        ]
+    },
     { path: 'login', component: LoginComponent },
-    { path: 'queue', component: QueueComponent, canActivate: [AuthGuard] },
-    { path: '**', redirectTo: '' }
+    { path: '', redirectTo: 'login', pathMatch: 'full' },
 ];
 
 @NgModule({
@@ -27,6 +34,7 @@ const routes: Routes = [
     ],
     declarations: [
         RootComponent,
+        AppComponent,
         LoginComponent,
         NavigationBarComponent,
         QueueComponent,
