@@ -5,6 +5,8 @@
     top: 0;
     height: 54px;
     width: 100%;
+    box-shadow: 0 0.05rem 0.25rem 0 rgba(0, 0, 0, 0.3);
+    overflow-x: scroll;
     display: flex;
     align-items: stretch;
 }
@@ -27,12 +29,10 @@
     align-items: stretch;
 }
 
-
-
 .navbar a {
     color: gray;
     text-decoration: none;
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 400;
     display: flex;
     align-items: center;
@@ -40,6 +40,11 @@
 }
 
 .navbar a:hover {
+    background: #ddd;
+    color: black;
+}
+
+.navbar a.active {
     background: #ddd;
     color: black;
 }
