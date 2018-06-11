@@ -18,6 +18,12 @@
     align-items: center;
 }
 
+@media (max-width: 560px) {
+    .navbar > .logo {
+        display: none;
+    }
+}
+
 .navbar label {
     font-size: 1.5rem;
     font-weight: 500;

@@ -3,6 +3,8 @@ import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, Htt
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
+import { apiRoot } from './config';
+
 @Injectable({
     providedIn: 'root',
 })
@@ -18,7 +20,7 @@ export class AuthService {
             });
 
             this.http.post<AuthResponseData>(
-                'https://farm.openzim.org/api/auth/authorize', '', {headers: header}
+                apiRoot + '/api/auth/authorize', null, {headers: header}
             ).subscribe(data => {
                 this.accessToken = data.access_token
                 this.refreshToken = data.refresh_token
@@ -31,6 +33,12 @@ export class AuthService {
                 observer.complete();
             })
         });
+    }
+
+    logOut() {
+        localStorage.removeItem('zimfarm.access_token');
+        localStorage.removeItem('zimfarm.refresh_token');
+        localStorage.removeItem('zimfarm.refresh_token_expire');
     }
 
     get accessToken(): string {return localStorage.getItem('zimfarm.access_token')}

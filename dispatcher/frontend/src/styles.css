@@ -5,3 +5,14 @@ body {
         "Ubuntu", "Cantarell", "Fira Sans",
         "Droid Sans", "Helvetica Neue", sans-serif;
 }
+
+button.success {
+    background-color: #28a745;
+    color: white;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    float: right;
+    font-size: 1rem;
+}
