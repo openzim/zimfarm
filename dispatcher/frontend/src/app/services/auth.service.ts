@@ -12,7 +12,7 @@ export class AuthService {
 
     constructor(private http: HttpClient) { }
 
-    authorize(username: string, password: string): Observable<Boolean> {
+    authorize(username: string, password: string): Observable<boolean> {
         return new Observable(observer => {
             let header = new HttpHeaders({
                 'username': username,
@@ -24,13 +24,13 @@ export class AuthService {
             ).subscribe(data => {
                 this.accessToken = data.access_token
                 this.refreshToken = data.refresh_token
-                this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000);
+                this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000)
 
-                observer.next(true);
-                observer.complete();
+                observer.next(true)
+                observer.complete()
             }, error => {
-                observer.next(false);
-                observer.complete();
+                observer.next(false)
+                observer.complete()
             })
         });
     }

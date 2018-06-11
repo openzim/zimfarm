@@ -12,9 +12,11 @@ export class LoginComponent {
 
     username: string;
     password: string;
+    credentialValid: boolean = true;
 
     login(): void {
         this.authService.authorize(this.username, this.password).subscribe(success => {
+            this.credentialValid = success
             if (success) {
                 this.router.navigate([''])
             }

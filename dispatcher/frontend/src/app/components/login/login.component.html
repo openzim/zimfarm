@@ -21,6 +21,9 @@
                     <label [hidden]="loginForm.valid || loginForm.untouched">
                         Please enter valid username and password.
                     </label>
+                    <label [hidden]="credentialValid">
+                        Username or password not correct.
+                    </label>
                 </div>
             </form>
         </div>
