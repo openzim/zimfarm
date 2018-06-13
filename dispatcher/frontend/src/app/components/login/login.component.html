@@ -1,0 +1,34 @@
+<div class="background">
+    <div class="space"></div>
+    <div style="display: flex;">
+        <div class="space"></div>
+        <div class="content">
+            <div class="heading">
+                <img src="assets/favicon.svg" width="35rem" style="margin-right: 1rem;">
+                <span class="title">Zimfarm</span>
+            </div>
+            <form #loginForm="ngForm" (ngSubmit)="login()">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" [(ngModel)]="username" #username_input="ngModel" required> 
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" [(ngModel)]="password" required>
+                </div>
+                <div class="form-group-horizontal">
+                    <input [disabled]="loginForm.invalid" type="submit" value="Login">
+                    <label [hidden]="loginForm.valid || loginForm.untouched">
+                        Please enter valid username and password.
+                    </label>
+                    <label [hidden]="credentialValid">
+                        Username or password not correct.
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="space"></div>
+    </div>
+    <div class="space"></div>
+    <div class="space"></div>
+</div>
