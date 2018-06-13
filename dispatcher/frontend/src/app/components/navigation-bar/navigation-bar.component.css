@@ -6,7 +6,7 @@
     height: 54px;
     width: 100%;
     box-shadow: 0 0.05rem 0.25rem 0 rgba(0, 0, 0, 0.3);
-    overflow-x: scroll;
+    overflow-x: auto;
     display: flex;
     align-items: stretch;
 }
