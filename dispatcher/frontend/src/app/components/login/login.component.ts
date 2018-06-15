@@ -12,15 +12,19 @@ export class LoginComponent {
 
     username: string;
     password: string;
-    credentialValid: boolean = true;
+    hideInvalidCredential: boolean = true;
 
     login(): void {
         this.authService.authorize(this.username, this.password).subscribe(success => {
-            this.credentialValid = success
+            this.hideInvalidCredential = success
             if (success) {
                 this.router.navigate([''])
             }
         });
+    }
+
+    valueChanged() {
+        this.hideInvalidCredential = true
     }
 
 }
