@@ -1,5 +1,5 @@
-from datetime import datetime
 from flask import Blueprint, request, jsonify, Response
+from jsonschema import validate, ValidationError
 from bson import ObjectId
 
 from utils.mongo import Schedules
@@ -11,13 +11,13 @@ blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
 
 
 @blueprint.route("/", methods=["GET", "POST"])
-def schedules():
-    if request.method == "GET":
-        # check token exist and is valid
-        token = AccessToken.decode(request.headers.get('token'))
-        if token is None:
-            raise errors.Unauthorized()
+def collection():
+    # check token exist and is valid
+    token = AccessToken.decode(request.headers.get('token'))
+    if token is None:
+        raise errors.Unauthorized()
 
+    if request.method == "GET":
         # unpack url parameters
         skip = request.args.get('skip', default=0, type=int)
         limit = request.args.get('limit', default=20, type=int)
@@ -31,7 +31,6 @@ def schedules():
         ])
         schedules = [schedule for schedule in cursor]
 
-        # send the response
         return jsonify({
             'meta': {
                 'skip': skip,
@@ -40,4 +39,42 @@ def schedules():
             'items': schedules
         })
     elif request.method == "POST":
-        pass
+        # validate request json
+        try:
+            schema = {
+                "type": "object",
+                "properties": {
+                    "offliner": {"type": "string"},
+                    "config": {"type": "object"},
+                },
+                "required": ["offliner", "config"],
+                "additionalProperties": False
+            }
+            request_json = request.get_json()
+            validate(request_json, schema)
+        except ValidationError as error:
+            raise errors.BadRequest(error.message)
+
+        schedule_id = Schedules().insert_one(request_json).inserted_id
+        return jsonify({'_id': schedule_id})
+
+
+@blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
+def document(schedule_id):
+    # check token exist and is valid
+    token = AccessToken.decode(request.headers.get('token'))
+    if token is None:
+        raise errors.Unauthorized()
+
+    if request.method == "GET":
+        schedule = Schedules().find_one({'_id': ObjectId(schedule_id)})
+        if schedule is None:
+            raise errors.NotFound()
+        return jsonify(schedule)
+    elif request.method == "PATCH":
+        return Response()
+    elif request.method == "DELETE":
+        deleted_count = Schedules().delete_one({'_id': ObjectId(schedule_id)}).deleted_count
+        if deleted_count == 0:
+            raise errors.NotFound()
+        return Response()

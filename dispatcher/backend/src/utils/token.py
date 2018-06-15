@@ -16,7 +16,7 @@ class AccessToken:
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, datetime):
-                return int(datetime.timestamp())
+                return int(o.timestamp())
             elif isinstance(o, ObjectId):
                 return str(o)
             elif isinstance(o, uuid.UUID):
