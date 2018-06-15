@@ -42,7 +42,6 @@
 }
 
 .content form > .form-group-horizontal {
-    margin-top: 1rem;
     display: flex;
     flex-direction: row-reverse;
     justify-content: space-between;
