@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
-from bson import ObjectId
+from bson.objectid import ObjectId, InvalidId
 
 from utils.mongo import Schedules
 from utils.token import AccessToken
@@ -8,6 +8,31 @@ from . import errors
 
 
 blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
+
+mwoffliner_config_schema = {
+    "type": "object",
+    "properties": {
+        "mwUrl": {"type": "string"},
+        "adminEmail": {"type": "string"}
+    },
+    "required": ["mwUrl", "adminEmail"]
+}
+
+schedule_schema = {
+    "type": "object",
+    "properties": {
+        "domain": {"type": "string"},
+        "offliner": {"type": "string", "enum": ["mwoffliner"]},
+        "config": {"anyOf": [
+            {"$ref": "#/definitions/mwoffliner_config"}
+        ]},
+    },
+    "required": ["offliner", "config"],
+    "additionalProperties": False,
+    "definitions": {
+        "mwoffliner_config": mwoffliner_config_schema
+    }
+}
 
 
 @blueprint.route("/", methods=["GET", "POST"])
@@ -41,29 +66,8 @@ def collection():
     elif request.method == "POST":
         # validate request json
         try:
-            schema = {
-                "type": "object",
-                "properties": {
-                    "offliner": {"type": "string", "enum": ["mwoffliner"]},
-                    "config": {"anyOf": [
-                        {"$ref": "#/definitions/mwoffliner_config"}
-                    ]},
-                },
-                "required": ["offliner", "config"],
-                "additionalProperties": False,
-                "definitions": {
-                    "mwoffliner_config": {
-                        "type": "object",
-                        "properties": {
-                            "mwUrl": {"type": "string"},
-                            "adminEmail": {"type": "string"}
-                        },
-                        "required": ["mwUrl", "adminEmail"]
-                    }
-                }
-            }
             request_json = request.get_json()
-            validate(request_json, schema)
+            validate(request_json, schedule_schema)
         except ValidationError as error:
             raise errors.BadRequest(error.message)
 
@@ -78,15 +82,44 @@ def document(schedule_id):
     if token is None:
         raise errors.Unauthorized()
 
+    # check if schedule_id is valid `ObjectID`
+    try:
+        schedule_id = ObjectId(schedule_id)
+    except InvalidId:
+        raise errors.BadRequest(message="Invalid ObjectID")
+
     if request.method == "GET":
         schedule = Schedules().find_one({'_id': ObjectId(schedule_id)})
         if schedule is None:
             raise errors.NotFound()
         return jsonify(schedule)
-    elif request.method == "PATCH":
-        return Response()
     elif request.method == "DELETE":
         deleted_count = Schedules().delete_one({'_id': ObjectId(schedule_id)}).deleted_count
         if deleted_count == 0:
             raise errors.NotFound()
         return Response()
+
+
+@blueprint.route("/<string:schedule_id>/config", methods=["PATCH"])
+def config(schedule_id):
+    # check token exist and is valid
+    token = AccessToken.decode(request.headers.get('token'))
+    if token is None:
+        raise errors.Unauthorized()
+
+    # check if schedule_id is valid `ObjectID`
+    try:
+        schedule_id = ObjectId(schedule_id)
+    except InvalidId:
+        raise errors.BadRequest(message="Invalid ObjectID")
+
+    # validate request json
+    try:
+        request_json = request.get_json()
+        # TODO: add capabilities to validate other offliner config
+        validate(request_json, mwoffliner_config_schema)
+    except ValidationError as error:
+        raise errors.BadRequest(error.message)
+
+    Schedules().update_one({'_id': ObjectId(schedule_id)}, {'$set': {'config': request_json}})
+    return Response()
