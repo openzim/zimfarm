@@ -44,11 +44,23 @@ def collection():
             schema = {
                 "type": "object",
                 "properties": {
-                    "offliner": {"type": "string"},
-                    "config": {"type": "object"},
+                    "offliner": {"type": "string", "enum": ["mwoffliner"]},
+                    "config": {"anyOf": [
+                        {"$ref": "#/definitions/mwoffliner_config"}
+                    ]},
                 },
                 "required": ["offliner", "config"],
-                "additionalProperties": False
+                "additionalProperties": False,
+                "definitions": {
+                    "mwoffliner_config": {
+                        "type": "object",
+                        "properties": {
+                            "mwUrl": {"type": "string"},
+                            "adminEmail": {"type": "string"}
+                        },
+                        "required": ["mwUrl", "adminEmail"]
+                    }
+                }
             }
             request_json = request.get_json()
             validate(request_json, schema)
