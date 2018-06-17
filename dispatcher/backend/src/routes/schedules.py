@@ -100,13 +100,21 @@ def document(schedule_id):
         return Response()
 
 
-@blueprint.route("/<string:schedule_id>/config", methods=["PATCH"])
-def config(schedule_id):
-    # check token exist and is valid
-    token = AccessToken.decode(request.headers.get('token'))
-    if token is None:
-        raise errors.Unauthorized()
+def extract_access_token(f):
+    def wrapper(*args, **kwargs):
+        # check token exist and is valid
+        token = AccessToken.decode(request.headers.get('token'))
+        if token is None:
+            raise errors.Unauthorized()
 
+        return f(access_token=token, *args, **kwargs)
+    return wrapper
+
+
+@blueprint.route("/<string:schedule_id>/config", methods=["PATCH"])
+@extract_access_token
+def config(schedule_id, access_token):
+    print(access_token)
     # check if schedule_id is valid `ObjectID`
     try:
         schedule_id = ObjectId(schedule_id)
