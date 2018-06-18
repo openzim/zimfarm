@@ -1,3 +1,4 @@
+from functools import wraps
 from flask import request
 from jwt import exceptions as jwt_exceptions
 
@@ -6,6 +7,7 @@ from .errors import Unauthorized
 
 
 def access_token_required(f):
+    @wraps(f)
     def wrapper(*args, **kwargs):
         try:
             token = request.headers.get('token', '')
