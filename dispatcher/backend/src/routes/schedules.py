@@ -36,7 +36,7 @@ schedule_schema = {
 
 @blueprint.route("/", methods=["GET", "POST"])
 @access_token_required
-def collection():
+def collection(**kwargs):
     if request.method == "GET":
         # unpack url parameters
         skip = request.args.get('skip', default=0, type=int)
@@ -72,7 +72,7 @@ def collection():
 
 @blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
 @access_token_required
-def document(schedule_id):
+def document(schedule_id, **kwargs):
     # check if schedule_id is valid `ObjectID`
     try:
         schedule_id = ObjectId(schedule_id)
