@@ -11,7 +11,7 @@ blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
 
 class Schema:
     @staticmethod
-    def mwoffliner(check_required: bool=True) -> dict:
+    def mwoffliner_config(check_required: bool=True) -> dict:
         schema = {
             "type": "object",
             "properties": {
@@ -41,7 +41,7 @@ class Schema:
             "properties": {
                 "name": {"type": "string"},
                 "config": {"anyOf": [
-                    Schema.mwoffliner(check_required)
+                    Schema.mwoffliner_config(check_required)
                 ]}
             },
             "required": ["name", "config"]
@@ -54,7 +54,7 @@ class Schema:
                 "task": task_schema,
                 "schedule": Schema.schedule()
             },
-            "required": ["domain", "offliner", "config", "schedule"],
+            "required": ["domain", "offliner", "task", "schedule"],
             "additionalProperties": False
         }
         return schema
@@ -140,7 +140,7 @@ def config(schedule_id, access_token):
     try:
         request_json = request.get_json()
         # TODO: add capabilities to validate other offliner config
-        validate(request_json, Schema.mwoffliner(check_required=False))
+        validate(request_json, Schema.mwoffliner_config(check_required=False))
     except ValidationError as error:
         raise errors.BadRequest(error.message)
 
