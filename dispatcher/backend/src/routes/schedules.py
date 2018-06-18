@@ -3,8 +3,7 @@ from jsonschema import validate, ValidationError
 from bson.objectid import ObjectId, InvalidId
 
 from utils.mongo import Schedules
-from utils.token import AccessToken
-from . import errors
+from . import access_token_required, errors
 
 
 blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
@@ -36,12 +35,8 @@ schedule_schema = {
 
 
 @blueprint.route("/", methods=["GET", "POST"])
+@access_token_required
 def collection():
-    # check token exist and is valid
-    token = AccessToken.decode(request.headers.get('token'))
-    if token is None:
-        raise errors.Unauthorized()
-
     if request.method == "GET":
         # unpack url parameters
         skip = request.args.get('skip', default=0, type=int)
@@ -76,12 +71,8 @@ def collection():
 
 
 @blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
+@access_token_required
 def document(schedule_id):
-    # check token exist and is valid
-    token = AccessToken.decode(request.headers.get('token'))
-    if token is None:
-        raise errors.Unauthorized()
-
     # check if schedule_id is valid `ObjectID`
     try:
         schedule_id = ObjectId(schedule_id)
@@ -100,19 +91,8 @@ def document(schedule_id):
         return Response()
 
 
-def extract_access_token(f):
-    def wrapper(*args, **kwargs):
-        # check token exist and is valid
-        token = AccessToken.decode(request.headers.get('token'))
-        if token is None:
-            raise errors.Unauthorized()
-
-        return f(access_token=token, *args, **kwargs)
-    return wrapper
-
-
 @blueprint.route("/<string:schedule_id>/config", methods=["PATCH"])
-@extract_access_token
+@access_token_required
 def config(schedule_id, access_token):
     print(access_token)
     # check if schedule_id is valid `ObjectID`

@@ -41,7 +41,4 @@ class AccessToken:
 
     @classmethod
     def decode(cls, token: str) -> Optional[dict]:
-        if token is None:
-            return None
-        else:
-            return jwt.decode(token, cls.secret, algorithms=['HS256'])
+        return jwt.decode(token, cls.secret, algorithms=['HS256'])
