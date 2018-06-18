@@ -144,5 +144,5 @@ def config(schedule_id, access_token):
     except ValidationError as error:
         raise errors.BadRequest(error.message)
 
-    Schedules().update_one({'_id': schedule_id}, {'$set': {'config': request_json}})
+    Schedules().update_one({'_id': schedule_id}, {'$set': {'task.config': request_json}})
     return jsonify({'_id': schedule_id})

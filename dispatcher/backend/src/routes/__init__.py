@@ -14,7 +14,8 @@ def access_token_required(f):
             if token == '':
                 raise Unauthorized('token invalid')
             token = AccessToken.decode(token)
-            return f(access_token=token, *args, **kwargs)
+            kwargs['access_token'] = token
+            return f(*args, **kwargs)
         except jwt_exceptions.ExpiredSignatureError:
             raise Unauthorized('token expired')
         except jwt_exceptions.InvalidTokenError:
