@@ -124,6 +124,7 @@ def config(schedule_id, access_token):
     try:
         request_json = request.get_json()
         # TODO: add capabilities to validate other offliner config
+        del mwoffliner_config_schema['required']
         validate(request_json, mwoffliner_config_schema)
     except ValidationError as error:
         raise errors.BadRequest(error.message)
