@@ -8,40 +8,56 @@ from . import access_token_required, errors
 
 blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
 
-mwoffliner_config_schema = {
-    "type": "object",
-    "properties": {
-        "mwUrl": {"type": "string"},
-        "adminEmail": {"type": "string"}
-    },
-    "required": ["mwUrl", "adminEmail"]
-}
 
-schedule_schema = {
-    "type": "object",
-    "properties": {
-        "type": {"type": "string", "enum": ["crontab"]},
-        "config": {"type": "object"}
-    },
-    "required": ["type", "config"],
-}
+class Schema:
+    @staticmethod
+    def mwoffliner(check_required: bool=True) -> dict:
+        schema = {
+            "type": "object",
+            "properties": {
+                "mwUrl": {"type": "string"},
+                "adminEmail": {"type": "string"}
+            }
+        }
+        if check_required:
+            schema["required"] = ["mwUrl", "adminEmail"]
+        return schema
 
-document_schema = {
-    "type": "object",
-    "properties": {
-        "domain": {"type": "string"},
-        "offliner": {"type": "string", "enum": ["mwoffliner"]},
-        "config": {"anyOf": [
-            {"$ref": "#/definitions/mwoffliner_config"}
-        ]},
-        "schedule": schedule_schema
-    },
-    "required": ["domain", "offliner", "config", "schedule"],
-    "additionalProperties": False,
-    "definitions": {
-        "mwoffliner_config": mwoffliner_config_schema
-    }
-}
+    @staticmethod
+    def schedule() -> dict:
+        return {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string", "enum": ["crontab"]},
+                "config": {"type": "object"}
+            },
+            "required": ["type", "config"]
+        }
+
+    @staticmethod
+    def document(check_required: bool=True) -> dict:
+        task_schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "config": {"anyOf": [
+                    Schema.mwoffliner(check_required)
+                ]}
+            },
+            "required": ["name", "config"]
+        }
+        schema = {
+            "type": "object",
+            "properties": {
+                "domain": {"type": "string"},
+                "offliner": {"type": "string", "enum": ["mwoffliner"]},
+                "task": task_schema,
+                "schedule": Schema.schedule()
+            },
+            "required": ["domain", "offliner", "config", "schedule"],
+            "additionalProperties": False
+        }
+        return schema
 
 
 @blueprint.route("/", methods=["GET", "POST"])
@@ -76,7 +92,7 @@ def collection(access_token):
         # validate request json
         try:
             request_json = request.get_json()
-            validate(request_json, document_schema)
+            validate(request_json, Schema.document())
         except ValidationError as error:
             raise errors.BadRequest(error.message)
 
@@ -109,7 +125,7 @@ def document(schedule_id, access_token):
         return Response()
 
 
-@blueprint.route("/<string:schedule_id>/config", methods=["PATCH"])
+@blueprint.route("/<string:schedule_id>/task/config", methods=["PATCH"])
 @access_token_required
 def config(schedule_id, access_token):
     # check if schedule_id is valid `ObjectID`
@@ -124,8 +140,7 @@ def config(schedule_id, access_token):
     try:
         request_json = request.get_json()
         # TODO: add capabilities to validate other offliner config
-        del mwoffliner_config_schema['required']
-        validate(request_json, mwoffliner_config_schema)
+        validate(request_json, Schema.mwoffliner(check_required=False))
     except ValidationError as error:
         raise errors.BadRequest(error.message)
 
