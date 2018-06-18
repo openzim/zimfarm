@@ -3,7 +3,6 @@ import uuid
 import string
 import random
 from datetime import datetime, timedelta
-from typing import Optional
 
 import jwt
 from bson.objectid import ObjectId
@@ -40,5 +39,5 @@ class AccessToken:
         return jwt.encode(payload, key=cls.secret, algorithm='HS256', json_encoder=cls.JSONEncoder).decode('utf-8')
 
     @classmethod
-    def decode(cls, token: str) -> Optional[dict]:
+    def decode(cls, token: str) -> dict:
         return jwt.decode(token, cls.secret, algorithms=['HS256'])

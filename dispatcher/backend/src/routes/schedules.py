@@ -38,6 +38,8 @@ schedule_schema = {
 @access_token_required
 def collection(access_token):
     if request.method == "GET":
+        # TODO: check user permission
+
         # unpack url parameters
         skip = request.args.get('skip', default=0, type=int)
         limit = request.args.get('limit', default=20, type=int)
@@ -59,6 +61,8 @@ def collection(access_token):
             'items': schedules
         })
     elif request.method == "POST":
+        # TODO: check user permission
+
         # validate request json
         try:
             request_json = request.get_json()
@@ -80,12 +84,16 @@ def document(schedule_id, access_token):
         raise errors.BadRequest(message="Invalid ObjectID")
 
     if request.method == "GET":
-        schedule = Schedules().find_one({'_id': ObjectId(schedule_id)})
+        # TODO: check user permission
+
+        schedule = Schedules().find_one({'_id': schedule_id})
         if schedule is None:
             raise errors.NotFound()
         return jsonify(schedule)
     elif request.method == "DELETE":
-        deleted_count = Schedules().delete_one({'_id': ObjectId(schedule_id)}).deleted_count
+        # TODO: check user permission
+
+        deleted_count = Schedules().delete_one({'_id': schedule_id}).deleted_count
         if deleted_count == 0:
             raise errors.NotFound()
         return Response()
@@ -94,12 +102,13 @@ def document(schedule_id, access_token):
 @blueprint.route("/<string:schedule_id>/config", methods=["PATCH"])
 @access_token_required
 def config(schedule_id, access_token):
-    print(access_token)
     # check if schedule_id is valid `ObjectID`
     try:
         schedule_id = ObjectId(schedule_id)
     except InvalidId:
         raise errors.BadRequest(message="Invalid ObjectID")
+
+    # TODO: check user permission
 
     # validate request json
     try:
@@ -109,5 +118,5 @@ def config(schedule_id, access_token):
     except ValidationError as error:
         raise errors.BadRequest(error.message)
 
-    Schedules().update_one({'_id': ObjectId(schedule_id)}, {'$set': {'config': request_json}})
-    return Response()
+    Schedules().update_one({'_id': schedule_id}, {'$set': {'config': request_json}})
+    return jsonify({'_id': schedule_id})
