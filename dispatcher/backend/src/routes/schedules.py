@@ -103,24 +103,14 @@ def collection(access_token):
 @blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
 @access_token_required
 @bson_object_id(['schedule_id'])
-def document(schedule_id, access_token, *args, **kwargs):
-    # check if schedule_id is valid `ObjectID`
-    # try:
-    #     schedule_id = ObjectId(schedule_id)
-    # except InvalidId:
-    #     raise errors.BadRequest(message="Invalid ObjectID")
-
+def document(schedule_id, access_token):
     if request.method == "GET":
         # TODO: check user permission
 
         schedule = Schedules().find_one({'_id': schedule_id})
         if schedule is None:
             raise errors.NotFound()
-        return jsonify({
-            'schedule': schedule,
-            'args': args,
-            'kwargs': kwargs
-        })
+        return jsonify(schedule)
     elif request.method == "DELETE":
         # TODO: check user permission
 
@@ -134,12 +124,6 @@ def document(schedule_id, access_token, *args, **kwargs):
 @access_token_required
 @bson_object_id(['schedule_id'])
 def config(schedule_id, access_token):
-    # check if schedule_id is valid `ObjectID`
-    # try:
-    #     schedule_id = ObjectId(schedule_id)
-    # except InvalidId:
-    #     raise errors.BadRequest(message="Invalid ObjectID")
-
     # TODO: check user permission
 
     # validate request json
