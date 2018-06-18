@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Optional
 from flask import request
 from jwt import exceptions as jwt_exceptions
 
@@ -23,3 +24,12 @@ def access_token_required(f):
         except jwt_exceptions.PyJWTError:
             raise Unauthorized('token invalid')
     return wrapper
+
+
+def bson_object_id(keys: list):
+    def decorate(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        return wrapper
+    return decorate
