@@ -20,13 +20,23 @@ mwoffliner_config_schema = {
 schedule_schema = {
     "type": "object",
     "properties": {
+        "type": {"type": "string", "enum": ["crontab"]},
+        "config": {"type": "object"}
+    },
+    "required": ["type", "config"],
+}
+
+document_schema = {
+    "type": "object",
+    "properties": {
         "domain": {"type": "string"},
         "offliner": {"type": "string", "enum": ["mwoffliner"]},
         "config": {"anyOf": [
             {"$ref": "#/definitions/mwoffliner_config"}
         ]},
+        "schedule": schedule_schema
     },
-    "required": ["offliner", "config"],
+    "required": ["domain", "offliner", "config"],
     "additionalProperties": False,
     "definitions": {
         "mwoffliner_config": mwoffliner_config_schema
@@ -66,7 +76,7 @@ def collection(access_token):
         # validate request json
         try:
             request_json = request.get_json()
-            validate(request_json, schedule_schema)
+            validate(request_json, document_schema)
         except ValidationError as error:
             raise errors.BadRequest(error.message)
 
