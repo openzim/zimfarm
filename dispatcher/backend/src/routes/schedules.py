@@ -36,7 +36,7 @@ document_schema = {
         ]},
         "schedule": schedule_schema
     },
-    "required": ["domain", "offliner", "config"],
+    "required": ["domain", "offliner", "config", "schedule"],
     "additionalProperties": False,
     "definitions": {
         "mwoffliner_config": mwoffliner_config_schema
