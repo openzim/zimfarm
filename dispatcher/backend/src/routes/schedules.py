@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
+from bson import ObjectId
 
 from utils.mongo import Schedules
 from . import authenticate, bson_object_id, errors
@@ -103,7 +104,7 @@ def collection(user: dict):
 @blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
 @authenticate
 @bson_object_id(['schedule_id'])
-def document(schedule_id, user):
+def document(schedule_id: ObjectId, user: dict):
     if request.method == "GET":
         schedule = Schedules().find_one({'_id': schedule_id})
         if schedule is None:
@@ -123,7 +124,7 @@ def document(schedule_id, user):
 @blueprint.route("/<string:schedule_id>/task/config", methods=["PATCH"])
 @authenticate
 @bson_object_id(['schedule_id'])
-def config(schedule_id, user):
+def config(schedule_id: ObjectId, user: dict):
     # check user permission
     if not user.get('scope', {}).get('schedule', {}).get('update_task_config', False):
         raise errors.NotEnoughPrivilege()
