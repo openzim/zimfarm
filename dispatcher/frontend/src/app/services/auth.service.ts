@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 import { apiRoot } from './config';
 
@@ -58,9 +57,17 @@ interface AuthResponseData {
     refresh_token: string;
 }
 
-// export class AuthInterceptor implements HttpInterceptor {
-//     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-//         return next.handle(request);
-//     }
-// }
+@Injectable()
+export class AccessTokenInterceptor implements HttpInterceptor {
+    constructor(private authService: AuthService) {}
 
+    intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+        if (request.url.includes('/auth/authorize')) {
+            return next.handle(request);
+        } else {
+            let duplicatedRequest = request.clone({
+                headers: request.headers.set('token', this.authService.accessToken)})
+            return next.handle(duplicatedRequest);
+        }
+    }
+}
