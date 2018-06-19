@@ -1,5 +1,4 @@
 from functools import wraps
-from typing import Optional
 from flask import request
 from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
@@ -8,7 +7,7 @@ from utils.token import AccessToken
 from .errors import Unauthorized
 
 
-def access_token_required(f):
+def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:

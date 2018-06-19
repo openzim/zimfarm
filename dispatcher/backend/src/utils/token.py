@@ -32,12 +32,14 @@ class AccessToken:
             'exp': expire_time,
             'iat': issue_time,
             'jti': uuid.uuid4(),
-            'user_id': user_id,
-            'username': username,
-            'scope': scope
+            'user': {
+                '_id': user_id,
+                'username': username,
+                'scope': scope
+            }
         }
         return jwt.encode(payload, key=cls.secret, algorithm='HS256', json_encoder=cls.JSONEncoder).decode('utf-8')
 
     @classmethod
     def decode(cls, token: str) -> dict:
-        return jwt.decode(token, cls.secret, algorithms=['HS256'])
+        return jwt.decode(token, cls.secret, algorithms=['HS256']).get('user', {})

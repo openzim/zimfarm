@@ -3,7 +3,7 @@ from jsonschema import validate, ValidationError
 from bson.objectid import ObjectId, InvalidId
 
 from utils.mongo import Schedules
-from . import access_token_required, bson_object_id, errors
+from . import authenticate, bson_object_id, errors
 
 
 blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
@@ -61,7 +61,7 @@ class Schema:
 
 
 @blueprint.route("/", methods=["GET", "POST"])
-@access_token_required
+@authenticate
 def collection(access_token):
     if request.method == "GET":
         # TODO: check user permission
@@ -101,7 +101,7 @@ def collection(access_token):
 
 
 @blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
-@access_token_required
+@authenticate
 @bson_object_id(['schedule_id'])
 def document(schedule_id, access_token):
     if request.method == "GET":
@@ -121,7 +121,7 @@ def document(schedule_id, access_token):
 
 
 @blueprint.route("/<string:schedule_id>/task/config", methods=["PATCH"])
-@access_token_required
+@authenticate
 @bson_object_id(['schedule_id'])
 def config(schedule_id, access_token):
     # TODO: check user permission
