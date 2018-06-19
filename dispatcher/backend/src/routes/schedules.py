@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
-from bson.objectid import ObjectId, InvalidId
 
 from utils.mongo import Schedules
 from . import authenticate, bson_object_id, errors
@@ -49,12 +48,13 @@ class Schema:
         schema = {
             "type": "object",
             "properties": {
-                "domain": {"type": "string"},
+                "category": {"type": "string"},
+                "language": {"type": "string"},
                 "offliner": {"type": "string", "enum": ["mwoffliner"]},
                 "task": task_schema,
                 "schedule": Schema.schedule()
             },
-            "required": ["domain", "offliner", "task", "schedule"],
+            "required": ["category", "language", "offliner", "task", "schedule"],
             "additionalProperties": False
         }
         return schema
@@ -62,10 +62,8 @@ class Schema:
 
 @blueprint.route("/", methods=["GET", "POST"])
 @authenticate
-def collection(access_token):
+def collection(user: dict):
     if request.method == "GET":
-        # TODO: check user permission
-
         # unpack url parameters
         skip = request.args.get('skip', default=0, type=int)
         limit = request.args.get('limit', default=20, type=int)
@@ -87,7 +85,9 @@ def collection(access_token):
             'items': schedules
         })
     elif request.method == "POST":
-        # TODO: check user permission
+        # check user permission
+        if not user.get('scope', {}).get('schedule', {}).get('create', False):
+            raise errors.NotEnoughPrivilege()
 
         # validate request json
         try:
@@ -103,16 +103,16 @@ def collection(access_token):
 @blueprint.route("/<string:schedule_id>", methods=["GET", "PATCH", "DELETE"])
 @authenticate
 @bson_object_id(['schedule_id'])
-def document(schedule_id, access_token):
+def document(schedule_id, user):
     if request.method == "GET":
-        # TODO: check user permission
-
         schedule = Schedules().find_one({'_id': schedule_id})
         if schedule is None:
             raise errors.NotFound()
         return jsonify(schedule)
     elif request.method == "DELETE":
-        # TODO: check user permission
+        # check user permission
+        if not user.get('scope', {}).get('schedule', {}).get('delete', False):
+            raise errors.NotEnoughPrivilege()
 
         deleted_count = Schedules().delete_one({'_id': schedule_id}).deleted_count
         if deleted_count == 0:
@@ -123,8 +123,10 @@ def document(schedule_id, access_token):
 @blueprint.route("/<string:schedule_id>/task/config", methods=["PATCH"])
 @authenticate
 @bson_object_id(['schedule_id'])
-def config(schedule_id, access_token):
-    # TODO: check user permission
+def config(schedule_id, user):
+    # check user permission
+    if not user.get('scope', {}).get('schedule', {}).get('update_task_config', False):
+        raise errors.NotEnoughPrivilege()
 
     # validate request json
     try:

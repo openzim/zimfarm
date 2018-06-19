@@ -42,4 +42,4 @@ class AccessToken:
 
     @classmethod
     def decode(cls, token: str) -> dict:
-        return jwt.decode(token, cls.secret, algorithms=['HS256']).get('user', {})
+        return jwt.decode(token, cls.secret, algorithms=['HS256'])

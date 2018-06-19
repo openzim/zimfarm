@@ -14,8 +14,8 @@ def authenticate(f):
             token = request.headers.get('token', '')
             if token == '':
                 raise Unauthorized('token invalid')
-            token = AccessToken.decode(token)
-            kwargs['access_token'] = token
+            user = AccessToken.decode(token).get('user', {})
+            kwargs['user'] = user
             return f(*args, **kwargs)
         except jwt_exceptions.ExpiredSignatureError:
             raise Unauthorized('token expired')
