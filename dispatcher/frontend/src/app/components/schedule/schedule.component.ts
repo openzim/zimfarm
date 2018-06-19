@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { SchedulesService } from '../../services/schedules.service';
@@ -6,7 +6,7 @@ import { SchedulesService } from '../../services/schedules.service';
 @Component({
     templateUrl: './schedule.component.html',
 })
-export class ScheduleComponent {
+export class ScheduleComponent implements OnInit {
     constructor(private router: Router, private schedulesService: SchedulesService) {}
 
     ngOnInit() {
