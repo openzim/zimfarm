@@ -70,7 +70,8 @@ interface AuthResponseData {
 @Injectable()
 export class AccessTokenInterceptor implements HttpInterceptor {
     constructor(private authService: AuthService, private router: Router) {}
-
+    
+    // https://medium.com/@alexandrubereghici/angular-tutorial-implement-refresh-token-with-httpinterceptor-bfa27b966f57
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         if (request.url.includes('auth')) {
             return next.handle(request);
@@ -79,13 +80,14 @@ export class AccessTokenInterceptor implements HttpInterceptor {
             return next.handle(requestWithToken).pipe(catchError((error, _) => {
                 if (error instanceof HttpErrorResponse) {
                     if (error.status == 401) {
-                        this.authService.refresh(this.authService.refreshToken).pipe(switchMap((data, index) => {
+                        return this.authService.refresh(this.authService.refreshToken).pipe(switchMap((data, index) => {
                             let requestWithToken = request.clone({headers: request.headers.set('token', this.authService.accessToken)})
                             return next.handle(requestWithToken)
                         }))
-                        console.log('error');
+                    } else {
+                        this.router.navigate(['login'])
+                        return Observable.throw(error)
                     }
-                    return Observable.throw(error)
                 } else {
                     return Observable.throw(error)
                 }
