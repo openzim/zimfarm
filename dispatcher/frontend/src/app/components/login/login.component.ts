@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
+import { catchError } from 'rxjs/operators';
 
 @Component({
     templateUrl: './login.component.html',
@@ -19,12 +20,12 @@ export class LoginComponent implements OnInit {
     hideInvalidCredential: boolean = true;
 
     login(): void {
-        this.authService.authorize(this.username, this.password).subscribe(success => {
-            this.hideInvalidCredential = success
-            if (success) {
-                this.router.navigate([''])
-            }
-        });
+        this.authService.authorize(this.username, this.password).subscribe(data => {
+            this.hideInvalidCredential = true
+            this.router.navigate([''])
+        }, error => {
+            this.hideInvalidCredential = false
+        })
     }
 
     valueChanged() {
