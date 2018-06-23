@@ -10,7 +10,7 @@ import { SchedulesService, SchedulesListResponseData, SchedulesListMeta, Schedul
 export class ScheduleComponent implements OnInit {
     constructor(private router: Router, private schedulesService: SchedulesService) {}
 
-    private schedules: Array<Schedule> = []
+    public schedules: Array<Schedule> = []
     private meta: SchedulesListMeta;
 
     ngOnInit() {

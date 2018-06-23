@@ -21,7 +21,6 @@ export class SchedulesService {
                 }
             }
         ).pipe(map(data => {
-            console.log(data.items);
             for (let item of data.items) {
                 item.beat = new Beat(item.beat.type, item.beat.config);
             }
