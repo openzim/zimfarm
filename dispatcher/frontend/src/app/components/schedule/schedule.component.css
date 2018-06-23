@@ -1,0 +1,93 @@
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.content:first-child {
+    margin-top: 0.5rem;
+}
+
+.content:last-child {
+    margin-bottom: 0.5rem;
+}
+
+@media only screen and (max-width: 768px) {
+    .content {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+.toolbar {
+    padding: 0 0.25rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0.25rem;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+    overflow: hidden;
+}
+
+.page-item {
+    border-right: 1px solid #dddddd;
+    display: list-item;
+}
+
+.page-item:hover {
+    background-color: #eeeeee;
+}
+
+.page-item:active {
+    background-color: #e9ecef;
+}
+
+.page-item:last-child {
+    border-right: 0px;
+}
+
+.page-item > button {
+    box-sizing: border-box;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #007bff;
+}
+
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+thead > tr {
+    border-top: 2px solid #dddddd;
+    border-bottom: 2px solid #dddddd;
+}
+
+tbody > tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+td, th {
+    text-align: left;
+    padding: 1rem;
+}
