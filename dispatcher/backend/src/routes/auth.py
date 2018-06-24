@@ -85,7 +85,7 @@ def token():
     # check token is not expired
     expire_time = old_token_document['expire_time']
     if expire_time < datetime.now():
-        raise Unauthorized('expired')
+        raise Unauthorized('token expired')
 
     # check user exists
     user_id = old_token_document['user_id']
@@ -101,7 +101,7 @@ def token():
     RefreshTokens().insert_one({
         'token': refresh_token,
         'user_id': user['_id'],
-        'expires': datetime.now() + timedelta(days=30)
+        'expire_time': datetime.now() + timedelta(days=30)
     })
 
     # delete old refresh token from database
@@ -123,14 +123,12 @@ def token():
 def validate():
     """
     Validate an access token
-
-    [Header] token: the access token to validate
     """
     payload = AccessToken.decode(request.headers.get('access-token'))
     if payload is None:
         raise Unauthorized()
 
-    user = Users().find_one({'username': payload['username']})
+    user = Users().find_one({'username': payload['user']['username']})
     if user is None:
         raise Unauthorized()
 
