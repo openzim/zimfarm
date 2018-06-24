@@ -11,9 +11,7 @@ def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
-            token = request.headers.get('token', '')
-            if token == '':
-                raise Unauthorized('token invalid')
+            token = request.headers.get('token', None)
             user = AccessToken.decode(token).get('user', {})
             kwargs['user'] = user
             return f(*args, **kwargs)
