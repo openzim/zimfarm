@@ -18,9 +18,6 @@ def authorize():
     """
     Authorize a user with username and password
     When success, return json object with access and refresh token
-
-    [Header] username
-    [Header] password
     """
 
     # get username and password from request header
@@ -44,7 +41,8 @@ def authorize():
         raise Unauthorized()
 
     # generate token
-    access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
+    del user['password_hash']
+    access_token = AccessToken.encode(user)
     refresh_token = uuid4()
 
     # store refresh token in database
@@ -69,8 +67,8 @@ def authorize():
 def token():
     """
     Issue a new set of access and refresh token after validating an old refresh token
-
-    [Header] refresh_token
+    Old refresh token can only be used once and hence is removed from database
+    Unused but expired refresh token is also deleted from database
     """
 
     # get old refresh token from request header
@@ -90,12 +88,13 @@ def token():
         raise Unauthorized('expired')
 
     # check user exists
-    user = Users().find_one({'_id': old_token_document['user_id']})
+    user_id = old_token_document['user_id']
+    user = Users().find_one({'_id': user_id}, {'password_hash': -1})
     if user is None:
         raise Unauthorized()
 
     # generate token
-    access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
+    access_token = AccessToken.encode(user)
     refresh_token = uuid4()
 
     # store refresh token in database
@@ -107,6 +106,7 @@ def token():
 
     # delete old refresh token from database
     collection.delete_one({'token': UUID(old_token)})
+    collection.delete_many({'expire_time': {'$lte': datetime.now()}})
 
     # send response
     response_json = {

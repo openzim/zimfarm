@@ -24,7 +24,7 @@ class AccessToken:
                 super().default(o)
 
     @classmethod
-    def encode(cls, user_id: ObjectId, username: str, scope: dict) -> str:
+    def encode(cls, user: dict) -> str:
         issue_time = datetime.now()
         expire_time = issue_time + timedelta(minutes=60)
         payload = {
@@ -32,11 +32,7 @@ class AccessToken:
             'exp': expire_time,
             'iat': issue_time,
             'jti': uuid.uuid4(),
-            'user': {
-                '_id': user_id,
-                'username': username,
-                'scope': scope
-            }
+            'user': user
         }
         return jwt.encode(payload, key=cls.secret, algorithm='HS256', json_encoder=cls.JSONEncoder).decode('utf-8')
 
