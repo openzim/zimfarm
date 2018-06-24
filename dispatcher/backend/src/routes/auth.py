@@ -24,8 +24,12 @@ def authorize():
     """
 
     # get username and password from request header
-    username = request.headers.get('username')
-    password = request.headers.get('password')
+    if 'application/x-www-form-urlencoded' in request.content_type:
+        username = request.form.get('username')
+        password = request.form.get('password')
+    else:
+        username = request.headers.get('username')
+        password = request.headers.get('password')
     if username is None or password is None:
         raise BadRequest()
 
