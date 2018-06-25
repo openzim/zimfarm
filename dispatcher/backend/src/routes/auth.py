@@ -89,7 +89,7 @@ def token():
 
     # check user exists
     user_id = old_token_document['user_id']
-    user = Users().find_one({'_id': user_id}, {'password_hash': -1})
+    user = Users().find_one({'_id': user_id}, {'password_hash': 0})
     if user is None:
         raise Unauthorized()
 
