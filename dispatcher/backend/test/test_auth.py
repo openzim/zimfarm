@@ -10,7 +10,7 @@ class TestAuthorize:
 
     def test_access_token_validation(self, root, access_token):
         response = requests.post(
-            url=root+"/auth/validate",
+            url=root + "/auth/validate",
             headers={"access-token": access_token},
         )
         assert response.status_code == 200
@@ -18,7 +18,7 @@ class TestAuthorize:
     def test_refresh_token(self, root, refresh_token):
         # test refresh token
         response = requests.post(
-            url=root+"/auth/token",
+            url=root + "/auth/token",
             headers={"refresh-token": refresh_token},
         )
 
