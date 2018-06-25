@@ -2,34 +2,26 @@ import requests
 import pytest
 
 
-@pytest.fixture
-def api_root():
-    return 'https://farm.openzim.org/api'
+@pytest.mark.usefixtures('root', 'access_token')
+class TestAuthorize:
+    def test_get_schedule(self, root, access_token):
+        response = requests.get(
+            url=root + "/schedules/",
+            headers={"token": access_token},
+        )
 
+        response_json = response.json()
+        assert response is not None
 
-@pytest.fixture
-def access_token(api_root):
-    print(api_root)
-    response = requests.post(
-        url=api_root+"/auth/authorize",
-        headers={
-            "username": "admin",
-            "password": "admin_pass",
-        },
-    )
-    return response.json()['access_token']
+        items = response_json.get('items', None)
+        assert isinstance(items, list)
 
+        meta = response_json.get('meta', {})
+        limit = meta.get('limit', None)
+        skip = meta.get('skip', None)
+        assert isinstance(limit, int)
+        assert isinstance(skip, int)
 
-def test_get_schedule(api_root, access_token):
-    response = requests.get(
-        url=api_root+"/schedules/",
-        headers={
-            "token": access_token,
-        },
-    )
-
-    response = response.json()
-    assert response is not None
-
-    items = response.get('items')
-    assert isinstance(items, list)
+        assert len(items) == limit
+        for item in items:
+            assert '_id' in item
