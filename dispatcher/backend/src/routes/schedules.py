@@ -24,7 +24,7 @@ class Schema:
         return schema
 
     @staticmethod
-    def schedule() -> dict:
+    def beat() -> dict:
         return {
             "type": "object",
             "properties": {
@@ -49,13 +49,13 @@ class Schema:
         schema = {
             "type": "object",
             "properties": {
-                "category": {"type": "string"},
+                "category": {"type": "string", "enum": ["wikipedia"]},
                 "language": {"type": "string"},
                 "offliner": {"type": "string", "enum": ["mwoffliner"]},
                 "task": task_schema,
-                "schedule": Schema.schedule()
+                "beat": Schema.beat()
             },
-            "required": ["category", "language", "offliner", "task", "schedule"],
+            "required": ["category", "language", "offliner", "task", "beat"],
             "additionalProperties": False
         }
         return schema
