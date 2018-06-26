@@ -46,6 +46,15 @@ class MongoSchedulerEntry(ScheduleEntry):
         else:
             return None
 
+    def __next__(self):
+        Schedules().update_one({'name': self.name},
+                               {
+                                   'last_run': self.app.now(),
+                                   'total_run': self.total_run_count + 1
+                               })
+        document = Schedules().find_one({'name': self.name})
+        return self.__class__.from_document(self.app, document)
+
 
 class MongoScheduler(Scheduler):
     Entry = ScheduleEntry
@@ -65,7 +74,6 @@ class MongoScheduler(Scheduler):
         self.data = entries
 
         self.logger.info('schedule updated, count={}'.format(len(self.data)))
-        self.logger.info(list(self.data.values())[0])
         return self.data
 
 
