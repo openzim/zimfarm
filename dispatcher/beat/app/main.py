@@ -74,15 +74,14 @@ class MongoScheduler(Scheduler):
                      for document in Schedules().find()}
         self.last_update = datetime.now()
 
-        self.logger.info('schedules updated, count={}'.format(len(self.data)))
+        self.logger.debug('Schedules synced, count={}'.format(len(self.data)))
         return self.data
 
 
 if __name__ == '__main__':
     system_username = 'system'
     system_password = os.getenv('SYSTEM_PASSWORD', '')
-    url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username,
-                                                                    password=system_password)
+    url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username, password=system_password)
     app = Celery(main='zimfarm', broker=url)
     app.conf.beat_scheduler = MongoScheduler
     app.conf.beat_max_loop_interval = timedelta(minutes=10).seconds
