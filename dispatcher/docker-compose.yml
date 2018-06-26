@@ -50,3 +50,16 @@ services:
       - mongo
     environment:
       - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
+  beat:
+    build:
+      context: ./beat
+      dockerfile: Dockerfile
+    restart: always
+    links:
+      - rabbit
+      - mongo
+    depends_on:
+      - rabbit
+      - mongo
+    environment:
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
