@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from celery import Celery
 from celery.beat import Scheduler, ScheduleEntry, crontab
 from celery.schedules import BaseSchedule
@@ -58,6 +58,7 @@ class MongoSchedulerEntry(ScheduleEntry):
 
 class MongoScheduler(Scheduler):
     Entry = ScheduleEntry
+    last_update = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,15 +66,15 @@ class MongoScheduler(Scheduler):
 
     @property
     def schedule(self) -> dict:
-        entries = {}
+        if self.last_update is not None and datetime.now() - self.last_update < timedelta(minutes=1):
+            # will use cached data for very frequent access
+            return self.data
 
-        cursor = Schedules().find()
-        for schedule in cursor:
-            entry = MongoSchedulerEntry.from_document(app=self.app, document=schedule)
-            entries[entry.name] = entry
-        self.data = entries
+        self.data = {document['name']: MongoSchedulerEntry.from_document(app=self.app, document=document)
+                     for document in Schedules().find()}
+        self.last_update = datetime.now()
 
-        self.logger.info('schedule updated, count={}'.format(len(self.data)))
+        self.logger.info('schedules updated, count={}'.format(len(self.data)))
         return self.data
 
 
@@ -84,5 +85,5 @@ if __name__ == '__main__':
                                                                     password=system_password)
     app = Celery(main='zimfarm', broker=url)
     app.conf.beat_scheduler = MongoScheduler
-    app.conf.beat_max_loop_interval = 600
+    app.conf.beat_max_loop_interval = timedelta(minutes=10).seconds
     app.start(argv=['celery', 'beat', '-l', 'debug'])
