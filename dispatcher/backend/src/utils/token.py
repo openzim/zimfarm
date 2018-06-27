@@ -3,7 +3,6 @@ import uuid
 import string
 import random
 from datetime import datetime, timedelta
-from typing import Optional
 
 import jwt
 from bson.objectid import ObjectId
@@ -16,7 +15,7 @@ class AccessToken:
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, datetime):
-                return int(datetime.timestamp())
+                return int(o.timestamp())
             elif isinstance(o, ObjectId):
                 return str(o)
             elif isinstance(o, uuid.UUID):
@@ -25,7 +24,7 @@ class AccessToken:
                 super().default(o)
 
     @classmethod
-    def encode(cls, user_id: ObjectId, username: str, scope: dict) -> str:
+    def encode(cls, user: dict) -> str:
         issue_time = datetime.now()
         expire_time = issue_time + timedelta(minutes=60)
         payload = {
@@ -33,15 +32,10 @@ class AccessToken:
             'exp': expire_time,
             'iat': issue_time,
             'jti': uuid.uuid4(),
-            'user_id': user_id,
-            'username': username,
-            'scope': scope
+            'user': user
         }
         return jwt.encode(payload, key=cls.secret, algorithm='HS256', json_encoder=cls.JSONEncoder).decode('utf-8')
 
     @classmethod
-    def decode(cls, token: str) -> Optional[dict]:
-        if token is None:
-            return None
-        else:
-            return jwt.decode(token, cls.secret, algorithms=['HS256'])
+    def decode(cls, token: str) -> dict:
+        return jwt.decode(token, cls.secret, algorithms=['HS256'])

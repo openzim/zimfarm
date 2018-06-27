@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
         "injectable",
+        "offliner",
         "zimfarm"
-    ]
+    ],
+    "python.pythonPath": "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
 }

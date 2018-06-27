@@ -126,3 +126,4 @@ id_rsa
 
 worker/setting.json
 worker/dist/
+.pytest_cache

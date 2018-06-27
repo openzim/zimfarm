@@ -18,14 +18,15 @@ def authorize():
     """
     Authorize a user with username and password
     When success, return json object with access and refresh token
-
-    [Header] username
-    [Header] password
     """
 
     # get username and password from request header
-    username = request.headers.get('username')
-    password = request.headers.get('password')
+    if 'application/x-www-form-urlencoded' in request.content_type:
+        username = request.form.get('username')
+        password = request.form.get('password')
+    else:
+        username = request.headers.get('username')
+        password = request.headers.get('password')
     if username is None or password is None:
         raise BadRequest()
 
@@ -35,12 +36,13 @@ def authorize():
         raise Unauthorized()
 
     # check password is valid
-    is_valid = check_password_hash(user['password_hash'], password)
+    password_hash = user.pop('password_hash')
+    is_valid = check_password_hash(password_hash, password)
     if not is_valid:
         raise Unauthorized()
 
     # generate token
-    access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
+    access_token = AccessToken.encode(user)
     refresh_token = uuid4()
 
     # store refresh token in database
@@ -65,8 +67,8 @@ def authorize():
 def token():
     """
     Issue a new set of access and refresh token after validating an old refresh token
-
-    [Header] refresh_token
+    Old refresh token can only be used once and hence is removed from database
+    Unused but expired refresh token is also deleted from database
     """
 
     # get old refresh token from request header
@@ -83,26 +85,28 @@ def token():
     # check token is not expired
     expire_time = old_token_document['expire_time']
     if expire_time < datetime.now():
-        raise Unauthorized('expired')
+        raise Unauthorized('token expired')
 
     # check user exists
-    user = Users().find_one({'_id': old_token_document['user_id']})
+    user_id = old_token_document['user_id']
+    user = Users().find_one({'_id': user_id}, {'password_hash': 0})
     if user is None:
         raise Unauthorized()
 
     # generate token
-    access_token = AccessToken.encode(user_id=user['_id'], username=user['username'], scope=user['scope'])
+    access_token = AccessToken.encode(user)
     refresh_token = uuid4()
 
     # store refresh token in database
     RefreshTokens().insert_one({
         'token': refresh_token,
         'user_id': user['_id'],
-        'expires': datetime.now() + timedelta(days=30)
+        'expire_time': datetime.now() + timedelta(days=30)
     })
 
     # delete old refresh token from database
     collection.delete_one({'token': UUID(old_token)})
+    collection.delete_many({'expire_time': {'$lte': datetime.now()}})
 
     # send response
     response_json = {
@@ -119,14 +123,12 @@ def token():
 def validate():
     """
     Validate an access token
-
-    [Header] token: the access token to validate
     """
     payload = AccessToken.decode(request.headers.get('access-token'))
     if payload is None:
         raise Unauthorized()
 
-    user = Users().find_one({'username': payload['username']})
+    user = Users().find_one({'username': payload['user']['username']})
     if user is None:
         raise Unauthorized()
 
