@@ -1,6 +1,6 @@
+from bson import ObjectId
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
-from bson import ObjectId
 
 from utils.mongo import Schedules
 from . import authenticate, bson_object_id, errors
@@ -64,6 +64,12 @@ class Schema:
 @blueprint.route("/", methods=["GET", "POST"])
 @authenticate
 def collection(user: dict):
+    """
+    List or create schedules
+
+    :param user:
+    :return: Response
+    """
     if request.method == "GET":
         # unpack url parameters
         skip = request.args.get('skip', default=0, type=int)

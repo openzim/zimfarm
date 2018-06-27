@@ -36,12 +36,12 @@ def authorize():
         raise Unauthorized()
 
     # check password is valid
-    is_valid = check_password_hash(user['password_hash'], password)
+    password_hash = user.pop('password_hash')
+    is_valid = check_password_hash(password_hash, password)
     if not is_valid:
         raise Unauthorized()
 
     # generate token
-    del user['password_hash']
     access_token = AccessToken.encode(user)
     refresh_token = uuid4()
 
