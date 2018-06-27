@@ -47,11 +47,10 @@ class MongoSchedulerEntry(ScheduleEntry):
             return None
 
     def __next__(self):
-        Schedules().update_one({'name': self.name},
-                               {
+        Schedules().update_one({'name': self.name}, {'$set': {
                                    'last_run': self.app.now(),
                                    'total_run': self.total_run_count + 1
-                               })
+                               }})
         document = Schedules().find_one({'name': self.name})
         return self.__class__.from_document(self.app, document)
 
