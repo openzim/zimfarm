@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
+import { Observable, defer } from 'rxjs';
+import { tap, catchError, map, switchMap } from 'rxjs/operators';
 
 import { apiRoot } from './config';
 
@@ -9,30 +10,38 @@ import { apiRoot } from './config';
     providedIn: 'root',
 })
 export class AuthService {
-
     constructor(private http: HttpClient) { }
 
-    authorize(username: string, password: string): Observable<boolean> {
-        return new Observable(observer => {
-            let header = new HttpHeaders({
-                'username': username,
-                'password': password
-            });
+    authorize(username: string, password: string): Observable<AuthResponseData> {
+        let header = new HttpHeaders({
+            'username': username,
+            'password': password
+        })
 
-            this.http.post<AuthResponseData>(
-                apiRoot + '/api/auth/authorize', null, {headers: header}
-            ).subscribe(data => {
-                this.accessToken = data.access_token
-                this.refreshToken = data.refresh_token
-                this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000)
+        return this.http.post<AuthResponseData>(
+            apiRoot + '/api/auth/authorize', null, {headers: header}
+        ).pipe(map(data => {
+            this.accessToken = data.access_token
+            this.refreshToken = data.refresh_token
+            this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000)
+            return data
+        }))
+    }
 
-                observer.next(true)
-                observer.complete()
-            }, error => {
-                observer.next(false)
-                observer.complete()
-            })
-        });
+    refresh(refreshToken: string): Observable<AuthResponseData> {
+        let header = new HttpHeaders({'refresh-token': refreshToken})
+        
+        return this.http.post<AuthResponseData>(
+            apiRoot + '/api/auth/token', null, {headers: header}
+        ).pipe(map(data => {
+            this.accessToken = data.access_token
+            this.refreshToken = data.refresh_token
+            this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000)
+            return data
+        }), catchError((error, caught) => {
+            // redirect back to login
+            return Observable.throw(error)
+        }))
     }
 
     logOut() {
@@ -58,9 +67,31 @@ interface AuthResponseData {
     refresh_token: string;
 }
 
-// export class AuthInterceptor implements HttpInterceptor {
-//     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-//         return next.handle(request);
-//     }
-// }
-
+@Injectable()
+export class AccessTokenInterceptor implements HttpInterceptor {
+    constructor(private authService: AuthService, private router: Router) {}
+    
+    // https://medium.com/@alexandrubereghici/angular-tutorial-implement-refresh-token-with-httpinterceptor-bfa27b966f57
+    intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+        if (request.url.includes('auth')) {
+            return next.handle(request);
+        } else {
+            let requestWithToken = request.clone({headers: request.headers.set('token', this.authService.accessToken)})
+            return next.handle(requestWithToken).pipe(catchError((error, _) => {
+                if (error instanceof HttpErrorResponse) {
+                    if (error.status == 401) {
+                        return this.authService.refresh(this.authService.refreshToken).pipe(switchMap((data, index) => {
+                            let requestWithToken = request.clone({headers: request.headers.set('token', this.authService.accessToken)})
+                            return next.handle(requestWithToken)
+                        }))
+                    } else {
+                        this.router.navigate(['login'])
+                        return Observable.throw(error)
+                    }
+                } else {
+                    return Observable.throw(error)
+                }
+            }))
+        }
+    }
+}

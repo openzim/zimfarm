@@ -1,3 +1,40 @@
-<div style="margin-top: 54px;">
-schedule
+<div class="container">
+    <div class="content toolbar">
+        <div></div>
+        <ul class="pagination">
+            <li class="page-item" (click)="goPrevious()"><button>Previous</button></li>
+            <li class="page-item" (click)="goNext()"><button>Next</button></li>
+        </ul>
+    </div>
+    <div class="content table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Identifier</th>
+                    <th>Language</th>
+                    <th>Offliner</th>
+                    <th>Last Run</th>
+                    <th>Next Run</th>
+                    <th>Run Every</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let schedule of schedules">
+                    <td>{{schedule.category}}_{{schedule.language}}</td>
+                    <td>{{schedule.language}}</td>
+                    <td>{{schedule.offliner}}</td>
+                    <td></td>
+                    <td></td>
+                    <td>{{schedule.beat.description()}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="content toolbar">
+        <div></div>
+        <ul class="pagination">
+            <li class="page-item"><button>Previous</button></li>
+            <li class="page-item"><button>Next</button></li>
+        </ul>
+    </div>
 </div>

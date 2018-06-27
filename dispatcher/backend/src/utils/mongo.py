@@ -98,3 +98,8 @@ class Tasks(BaseCollection):
             'type': 'list'
         }
     }
+
+
+class Schedules(BaseCollection):
+    def __init__(self):
+        super().__init__(Database(), 'schedules')

@@ -1,5 +1,8 @@
-celery==4.1.0
-PyJWT==1.5.3
-pymongo==3.6.0
+flask>=1.0
+celery>=4.2
+pymongo>=3.6
+jsonschema>=2.6
+PyJWT>=1.6
+
+
 cerberus==1.1
-flask==0.12.2
