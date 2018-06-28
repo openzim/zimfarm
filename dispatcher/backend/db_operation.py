@@ -2,6 +2,8 @@ import json
 from html.parser import HTMLParser
 import requests
 
+from pymongo import MongoClient
+
 
 class WikipediaListParser(HTMLParser):
     def __init__(self):
