@@ -1,2 +1,2 @@
-celery==4.1.0
-docker==3.1.0
+celery>=4.2
+docker>=3.4

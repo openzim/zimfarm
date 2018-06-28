@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from argparse import ArgumentParser
 from celery import Celery
 
 from . import tasks
@@ -25,7 +24,6 @@ class Worker:
 
     @staticmethod
     def read_setting():
-        Setting.interactive = False
         Setting.read_from_env()
 
     @staticmethod
