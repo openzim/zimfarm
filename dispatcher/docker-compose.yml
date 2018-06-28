@@ -12,7 +12,6 @@ services:
       - 5671:5671
       - 5672:5672
       - 8080:15672
-    hostname: rabbit
   mongo:
     image: mongo:latest
     restart: always
@@ -20,8 +19,6 @@ services:
       - 127.0.0.1:27017:27017
     volumes:
       - ./docker_data/mongo:/data/db
-    logging:
-      driver: none
   backend:
     build:
       context: ./backend
