@@ -18,20 +18,21 @@ class MongoSchedulerEntry(ScheduleEntry):
 
     @classmethod
     def from_document(cls, app: Celery, document: dict):
-        name = document.get('name', None)
+        schedule_name = document.get('name', None)
         task_name = document.get('task', {}).get('name', None)
-        task_config = document.get('task', {}).get('config', None)
+
+        offliner_config = document.get('offliner', {}).get('config', None)
         last_run = document.get('last_run', None)
         total_run = document.get('total_run', 0)
 
-        if name is None or task_name is None:
+        if schedule_name is None or task_name is None:
             return None
 
         schedule = cls.get_schedule(document['beat'])
         if schedule is None:
             return None
 
-        return cls(name, task_name, last_run, total_run, schedule, app, kwargs={'config': task_config})
+        return cls(schedule_name, task_name, last_run, total_run, schedule, app, offliner_config=offliner_config)
 
     @staticmethod
     def get_schedule(beat: dict) -> Optional[BaseSchedule]:
