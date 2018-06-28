@@ -10,6 +10,7 @@ services:
       - ./docker_data/rabbitmq:/var/lib/rabbitmq
     ports:
       - 5671:5671
+      - 5672:5672
     hostname: rabbit
   mongo:
     image: mongo:latest
