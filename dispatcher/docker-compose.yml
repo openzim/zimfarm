@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   rabbit:
     build:
@@ -11,6 +11,7 @@ services:
     ports:
       - 5671:5671
       - 5672:5672
+      - 8080:15672
     hostname: rabbit
   mongo:
     image: mongo:latest
