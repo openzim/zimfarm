@@ -63,3 +63,17 @@ services:
       - mongo
     environment:
       - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
+  flower:
+    image: totem/celery-flower-docker
+    ports:
+      - 0.0.0.0:5555:5555
+    links:
+      - rabbit
+    depends_on:
+      - rabbit
+    environment:
+      - AMQP_USERNAME=system
+      - AMQP_PASSWORD=${SYSTEM_PASSWORD}
+      - AMQP_HOST=rabbit
+      - FLOWER_BASIC_AUTH=admin:admin_pass
+
