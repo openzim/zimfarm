@@ -29,8 +29,8 @@ class MWOffliner(Base):
             PullContainer(docker_client=docker.from_env(), image_name='openzim/mwoffliner'),
             RunMWOffliner(docker_client=docker.from_env(), config=offliner_config, task_id=self.request.id,
                           working_dir=Setting.working_dir, redis_container_name=Setting.redis_name),
-            Upload(zim_files_dir, Setting.dispatcher_host, Setting.warehouse_host,
-                   Setting.warehouse_command_port, Setting.username, Setting.password)
+            # Upload(zim_files_dir, Setting.dispatcher_host, Setting.warehouse_host,
+            #        Setting.warehouse_command_port, Setting.username, Setting.password)
         ]
         logs = [] 
         success = True
