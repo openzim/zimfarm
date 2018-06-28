@@ -80,7 +80,7 @@ class MongoScheduler(Scheduler):
 if __name__ == '__main__':
     system_username = 'system'
     system_password = os.getenv('SYSTEM_PASSWORD', '')
-    url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username, password=system_password)
+    url = 'amqp://{username}:{password}@rabbit:5672/'.format(username=system_username, password=system_password)
     app = Celery(main='zimfarm', broker=url)
     app.conf.beat_scheduler = MongoScheduler
     app.conf.beat_max_loop_interval = timedelta(minutes=10).seconds
