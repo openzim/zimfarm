@@ -78,10 +78,8 @@ def collection(user: dict):
         limit = 20 if limit <= 0 else limit
 
         # get schedules from database
-        cursor = Schedules().aggregate([
-            {'$skip': skip},
-            {'$limit': limit},
-        ])
+
+        cursor = Schedules().find({}, {'offliner': 0}).skip(skip).limit(limit)
         schedules = [schedule for schedule in cursor]
 
         return jsonify({
