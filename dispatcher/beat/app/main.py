@@ -25,7 +25,7 @@ class MongoSchedulerEntry(ScheduleEntry):
         last_run = document.get('last_run', None)
         total_run = document.get('total_run', 0)
 
-        if schedule_name is None or task_name is None:
+        if schedule_name is None or task_name is None or offliner_config is None:
             return None
 
         schedule = cls.get_schedule(document['beat'])
