@@ -161,11 +161,11 @@ def rabbitmq_user(intention: str):
                 return Response("deny")
     elif intention == 'vhost' or intention == 'resource' or intention == 'topic':
         vhost = request.form.get('vhost')
-        if username == system_username and vhost == 'zimfarm':
+        if username == system_username and vhost == '':
             return Response("allow")
         else:
             user = Users().find_one({'username': username}, {'_id': 0})
-            if user is not None and vhost == 'zimfarm':
+            if user is not None and vhost == '':
                 return Response("allow")
             else:
                 return Response("deny")
