@@ -66,7 +66,7 @@ services:
   flower:
     image: totem/celery-flower-docker
     ports:
-      - 0.0.0.0:5555:5555
+      - 0.0.0.0:5555:172.17.42.1:5555
     links:
       - rabbit
     depends_on:
