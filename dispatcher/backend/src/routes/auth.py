@@ -154,9 +154,11 @@ def rabbitmq_user(intention: str):
         if username == system_username and password == system_password:
             return Response("allow")
         else:
-            user = Users().find_one({'username': username}, {'password_hash': 1, '_id': 0})
+            user = Users().find_one({'username': username}, {'_id': 0, 'password_hash': 1, 'scope.rabbitmq': 1})
+            tags = user.get('scope', {}).get('rabbitmq', [])
             if user is not None and check_password_hash(user['password_hash'], password):
-                return Response("allow")
+                tags = ['allow'] + tags
+                return Response(' '.join(tags))
             else:
                 return Response("deny")
     elif intention == 'vhost' or intention == 'resource' or intention == 'topic':
