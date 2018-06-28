@@ -1,19 +1,20 @@
 import os
 from datetime import datetime, timedelta
+from typing import Optional
+
 from celery import Celery
 from celery.beat import Scheduler, ScheduleEntry, crontab
 from celery.schedules import BaseSchedule
 from celery.utils.log import get_logger
-from typing import Optional
 
 from mongo import Schedules
 
 
 class MongoSchedulerEntry(ScheduleEntry):
-    def __init__(self, name: str, task: str, last_run_at: datetime,
+    def __init__(self, name: str, task_name: str, last_run_at: datetime,
                  total_run_count: int, schedule: BaseSchedule, app: Celery, *args, **kwargs):
-        super().__init__(name=name, task=task, last_run_at=last_run_at, total_run_count=total_run_count,
-                         schedule=schedule, args=args, kwargs=kwargs, app=app)
+        super().__init__(name=name, task=task_name, last_run_at=last_run_at, total_run_count=total_run_count,
+                         schedule=schedule, args=args, kwargs=kwargs, options={}, app=app)
         self.logger = get_logger('zimfarm')
 
     @classmethod
