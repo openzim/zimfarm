@@ -5,6 +5,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { Routes, RouterModule } from '@angular/router';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
+import { TimeAgoPipe } from 'time-ago-pipe';
+
 import { RootComponent, AppComponent } from './components/components';
 import { LoginComponent } from './components/login/login.component';
 import { NavigationBarComponent } from './components/navigation-bar/navigation-bar.component';
@@ -44,6 +46,7 @@ const routes: Routes = [
         RouterModule.forRoot(routes)
     ],
     declarations: [
+        TimeAgoPipe,
         RootComponent,
         AppComponent,
         LoginComponent,

@@ -12,19 +12,17 @@
                 <tr>
                     <th>Identifier</th>
                     <th>Language</th>
-                    <th>Offliner</th>
                     <th>Last Run</th>
-                    <th>Next Run</th>
+                    <th>Total Run</th>
                     <th>Run Every</th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let schedule of schedules">
-                    <td>{{schedule.category}}_{{schedule.language}}</td>
+                    <td>{{schedule.name}}</td>
                     <td>{{schedule.language}}</td>
-                    <td>{{schedule.offliner}}</td>
-                    <td></td>
-                    <td></td>
+                    <td><span *ngIf="schedule.last_run">{{schedule.last_run | timeAgo}}</span></td>
+                    <td><span *ngIf="schedule.total_run">{{schedule.total_run}}</span></td>
                     <td>{{schedule.beat.description()}}</td>
                 </tr>
             </tbody>

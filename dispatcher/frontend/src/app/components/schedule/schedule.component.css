@@ -86,6 +86,10 @@ tbody > tr {
     border-bottom: 1px solid #dddddd;
 }
 
+tbody > tr:hover {
+    background-color: #f8f8f8;
+  }
+
 td, th {
     text-align: left;
     padding: 1rem;

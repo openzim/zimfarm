@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 
-import { apiRoot } from './config';
+import { apiRoot, languageNames } from './const.service';
 import { map } from 'rxjs/operators';
 
 @Injectable({
@@ -22,6 +22,7 @@ export class SchedulesService {
             }
         ).pipe(map(data => {
             for (let item of data.items) {
+                item.language = languageNames[item.language]
                 item.beat = new Beat(item.beat.type, item.beat.config);
             }
             return data
@@ -41,11 +42,13 @@ export interface SchedulesListMeta {
 
 export interface Schedule {
     _id: string;
+    beat: Beat;
     category: string;
     language: string;
-    offliner: string;
-    beat: Beat;
+    last_run: Date;
+    name: string;
     task: Object;
+    total_run: number;
 }
 
 export class Beat {
@@ -58,6 +61,15 @@ export class Beat {
     }
 
     description(): string {
-        return `${this.type}(day_of_month=${this.config['day_of_month']})`
+        if (this.type == 'crontab') {
+            let minute = this.config['minute'] ? this.config['minute'] : '*'
+            let hour = this.config['hour'] ? this.config['hour'] : '*'
+            let day = this.config['day_of_week'] ? this.config['day_of_week'] : '*'
+            let day_of_month = this.config['day_of_month'] ? this.config['day_of_month'] : '*'
+            let month_of_year = this.config['month_of_year'] ? this.config['month_of_year'] : '*'
+            return `${this.type} <${Array(minute, hour, day, day_of_month, month_of_year).join('_')}>`
+        } else {
+            return '';
+        }
     }
 }
