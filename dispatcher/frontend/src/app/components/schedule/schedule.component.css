@@ -68,6 +68,7 @@
     border: none;
     cursor: pointer;
     font-size: 1rem;
+    padding: 0.25rem 0.5rem;
     color: #007bff;
 }
 
@@ -91,9 +92,18 @@ tbody > tr {
 
 tbody > tr:hover {
     background-color: #f8f8f8;
-  }
+}
 
 td, th {
-    text-align: left;
+    text-align: center;
     padding: 1rem;
+}
+
+td.name {
+    text-align: left;
+}
+
+td.run_every {
+    text-align: left;
+    min-width: 10rem;
 }
