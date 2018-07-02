@@ -101,9 +101,30 @@ td, th {
 
 td.name {
     text-align: left;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
 td.run_every {
     text-align: left;
     min-width: 10rem;
+}
+
+td.name > .circle {
+    width: 0.5rem;
+    height: 0.5rem;
+    -webkit-border-radius: 0.15rem;
+    -moz-border-radius: 0.15rem;
+    border-radius: 0.15rem;
+    border-width: 1px;
+    border-style: solid;
+    margin-right: 0.5rem;
+    background: #bbbbbb;
+    border-color: #999999;
+}
+
+td.name > .enabled {
+    background: #28a745;
+    border-color: #1e7b34;
 }

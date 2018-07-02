@@ -72,7 +72,7 @@ class MongoScheduler(Scheduler):
             return self.data
 
         self.data = {document['name']: MongoSchedulerEntry.from_document(app=self.app, document=document)
-                     for document in Schedules().find()}
+                     for document in Schedules().find({'enabled': True})}
         self.last_update = datetime.now()
 
         self.logger.debug('Schedules synced, count={}'.format(len(self.data)))

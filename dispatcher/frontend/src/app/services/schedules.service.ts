@@ -45,6 +45,7 @@ export interface Schedule {
     _id: string;
     beat: Beat;
     category: string;
+    enabled: boolean;
     language: string;
     last_run: Date;
     name: string;

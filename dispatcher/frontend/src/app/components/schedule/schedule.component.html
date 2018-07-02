@@ -19,7 +19,10 @@
             </thead>
             <tbody>
                 <tr *ngFor="let schedule of schedules">
-                    <td class="name">{{schedule.name}}</td>
+                    <td class="name">
+                        <div class="circle" [class.enabled]="schedule.enabled"></div>
+                        {{schedule.name}}
+                    </td>
                     <td>{{schedule.language}}</td>
                     <td style="min-width: 4rem;">
                         <span *ngIf="schedule.last_run">{{schedule.last_run | timeAgo}}</span>
