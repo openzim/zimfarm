@@ -20,8 +20,10 @@
             <tbody>
                 <tr *ngFor="let schedule of schedules">
                     <td class="name">
-                        <div class="circle" [class.enabled]="schedule.enabled"></div>
-                        {{schedule.name}}
+                        <div style="display: flex; flex-direction: row; align-items: center;">
+                            <div class="circle" [class.enabled]="schedule.enabled"></div>
+                            {{schedule.name}}
+                        </div>
                     </td>
                     <td>{{schedule.language}}</td>
                     <td style="min-width: 4rem;">
