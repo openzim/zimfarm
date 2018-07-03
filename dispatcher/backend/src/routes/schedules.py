@@ -1,5 +1,7 @@
+from celery.schedules import crontab
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
+from pymongo.errors import DuplicateKeyError
 
 from utils.mongo import Schedules
 from . import authenticate, errors
@@ -31,44 +33,49 @@ class Schema:
         }]
     }
 
-    @staticmethod
-    def mwoffliner_config(check_required: bool=True) -> dict:
-        schema = {
+    offliner = {
+        "oneOf": [{
             "type": "object",
             "properties": {
-                "mwUrl": {"type": "string"},
-                "adminEmail": {"type": "string"}
-            }
-        }
-        if check_required:
-            schema["required"] = ["mwUrl", "adminEmail"]
-        return schema
-
-    @staticmethod
-    def document(check_required: bool=True) -> dict:
-        task_schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "config": {"anyOf": [
-                    Schema.mwoffliner_config(check_required)
-                ]}
+                "name": {"type": "string", "enum": ["mwoffliner"]},
+                "config": {
+                    "type": "object",
+                    "properties": {
+                        "mwUrl": {"type": "string"},
+                        "adminEmail": {"type": "string"},
+                    },
+                    "additionalProperties": False
+                }
             },
-            "required": ["name", "config"]
-        }
-        schema = {
-            "type": "object",
-            "properties": {
-                "category": {"type": "string", "enum": ["wikipedia"]},
-                "language": {"type": "string"},
-                "offliner": {"type": "string", "enum": ["mwoffliner"]},
-                "task": task_schema,
-                "beat": Schema.beat
-            },
-            "required": ["category", "language", "offliner", "task", "beat"],
+            "required": ["name", "config"],
             "additionalProperties": False
-        }
-        return schema
+        }]
+    }
+
+    task = {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "enum": ["mwoffliner"]},
+        },
+        "required": ["name"],
+        "additionalProperties": False
+    }
+
+    create = {
+        "type": "object",
+        "properties": {
+            "category": {"type": "string", "enum": ["wikipedia"]},
+            "enabled": {"type": "boolean"},
+            "language": {"type": "string"},
+            "name": {"type": "string"},
+            "queue": {"type": "string", "enum": ["tiny", "small", "medium", "large"]},
+            "beat": beat,
+            "offliner": offliner,
+            "task": task
+        },
+        "required": ["category", "enabled", "language", "name", "queue", "beat", "offliner", "task"],
+        "additionalProperties": False
+    }
 
 
 @blueprint.route("/", methods=["GET", "POST"])
@@ -93,6 +100,7 @@ def collection(user: dict):
             'language': 1,
             'last_run': 1,
             'name': 1,
+            'queue': 1,
             'total_run': 1
         }
         cursor = Schedules().find({}, projection).skip(skip).limit(limit)
@@ -113,12 +121,16 @@ def collection(user: dict):
         # validate request json
         try:
             request_json = request.get_json()
-            validate(request_json, Schema.document())
+            validate(request_json, Schema.create)
         except ValidationError as error:
             raise errors.BadRequest(error.message)
 
-        schedule_id = Schedules().insert_one(request_json).inserted_id
-        return jsonify({'_id': schedule_id})
+        # insert document into database
+        try:
+            schedule_id = Schedules().insert_one(request_json).inserted_id
+            return jsonify({'_id': schedule_id})
+        except DuplicateKeyError:
+            raise errors.BadRequest('name {} already exists'.format(request_json['name']))
 
 
 @blueprint.route("/<string:name>", methods=["GET", "PATCH", "DELETE"])
@@ -166,6 +178,17 @@ def schedule_beat(name: str, user: dict):
             validate(request_json, Schema.beat)
         except ValidationError as error:
             raise errors.BadRequest(error.message)
+
+        # test crontab
+        try:
+            config = request_json['config']
+            crontab(minute=config.get('minute', '*'),
+                    hour=config.get('hour', '*'),
+                    day_of_week=config.get('day_of_week', '*'),
+                    day_of_month=config.get('day_of_month', '*'),
+                    month_of_year=config.get('month_of_year', '*'))
+        except Exception:
+            raise errors.BadRequest()
 
         # update database
         matched_count = Schedules().update_one({'name': name}, {'$set': {'beat': request_json}}).matched_count
