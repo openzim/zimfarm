@@ -145,6 +145,11 @@ def document(name: str, user: dict):
         if schedule is None:
             raise errors.NotFound()
         return jsonify(schedule)
+    elif request.method == "PATCH":
+        # check user permission
+        if not user.get('scope', {}).get('schedules', {}).get('update', False):
+            raise errors.NotEnoughPrivilege()
+
     elif request.method == "DELETE":
         # check user permission
         if not user.get('scope', {}).get('schedules', {}).get('delete', False):

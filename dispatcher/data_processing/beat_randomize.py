@@ -4,7 +4,7 @@ from random import randint
 
 def randomize(token: str):
     response = requests.get('https://farm.openzim.org/api/schedules/',
-                            params={'limit': 60}, headers={'token': token})
+                            params={'limit': 150}, headers={'token': token})
 
     assert response.status_code == 200
     response_json = response.json()
