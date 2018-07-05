@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   rabbit:
     build:
@@ -10,7 +10,8 @@ services:
       - ./docker_data/rabbitmq:/var/lib/rabbitmq
     ports:
       - 5671:5671
-    hostname: rabbit
+      - 5672:5672
+      - 8080:15672
   mongo:
     image: mongo:latest
     restart: always
@@ -18,8 +19,6 @@ services:
       - 127.0.0.1:27017:27017
     volumes:
       - ./docker_data/mongo:/data/db
-    logging:
-      driver: none
   backend:
     build:
       context: ./backend

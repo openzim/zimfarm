@@ -10,22 +10,27 @@
         <table>
             <thead>
                 <tr>
-                    <th>Identifier</th>
+                    <th>Name</th>
                     <th>Language</th>
-                    <th>Offliner</th>
                     <th>Last Run</th>
-                    <th>Next Run</th>
-                    <th>Run Every</th>
+                    <th>Total Run</th>
+                    <th>Run Every (UTC)</th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let schedule of schedules">
-                    <td>{{schedule.category}}_{{schedule.language}}</td>
+                    <td class="name">
+                        <div style="display: flex; flex-direction: row; align-items: center;">
+                            <div class="circle" [class.enabled]="schedule.enabled"></div>
+                            {{schedule.name}}
+                        </div>
+                    </td>
                     <td>{{schedule.language}}</td>
-                    <td>{{schedule.offliner}}</td>
-                    <td></td>
-                    <td></td>
-                    <td>{{schedule.beat.description()}}</td>
+                    <td style="min-width: 4rem;">
+                        <span *ngIf="schedule.last_run">{{schedule.last_run | timeAgo}}</span>
+                    </td>
+                    <td><span *ngIf="schedule.total_run">{{schedule.total_run}}</span></td>
+                    <td class="run_every">{{schedule.beat.description()}}</td>
                 </tr>
             </tbody>
         </table>

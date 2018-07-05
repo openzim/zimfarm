@@ -1,6 +1,9 @@
 .container {
     display: flex;
     flex-direction: column;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .content {
@@ -65,6 +68,7 @@
     border: none;
     cursor: pointer;
     font-size: 1rem;
+    padding: 0.25rem 0.5rem;
     color: #007bff;
 }
 
@@ -86,7 +90,43 @@ tbody > tr {
     border-bottom: 1px solid #dddddd;
 }
 
+tbody > tr:hover {
+    background-color: #f8f8f8;
+}
+
 td, th {
-    text-align: left;
+    text-align: center;
     padding: 1rem;
+}
+
+td.name {
+    text-align: left;
+    /* display: flex;
+    flex-direction: row;
+    
+    align-content: stretch */
+}
+
+td.run_every {
+    text-align: left;
+    min-width: 10rem;
+}
+
+td.name  .circle {
+    width: 0.5rem;
+    height: 0.5rem;
+    -webkit-border-radius: 0.15rem;
+    -moz-border-radius: 0.15rem;
+    border-radius: 0.15rem;
+    border-width: 1px;
+    border-style: solid;
+    margin-right: 0.5rem;
+    background: #bbbbbb;
+    border-color: #999999;
+    float: left;
+}
+
+td.name .enabled {
+    background: #28a745;
+    border-color: #1e7b34;
 }
