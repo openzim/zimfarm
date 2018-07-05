@@ -18,8 +18,8 @@ setup(
     keywords=['zimfarm', 'zim', 'celery'],
     packages=find_packages(exclude=['*.pyc']),
     install_requires=[
-        'celery==4.1.0',
-        'docker==3.1.0'
+        'celery>=4.2',
+        'docker>=3.4'
     ],
     python_requires='~=3.6',
     entry_points={

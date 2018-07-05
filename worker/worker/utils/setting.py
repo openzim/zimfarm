@@ -108,11 +108,11 @@ class Setting:
         cls.working_dir = Path(os.getenv('WORKING_DIR', ''))
         cls.redis_name = os.getenv('REDIS_NAME', 'zimfarm_redis')
 
-        print('Checking Settings')
+        print('Checking Settings...')
 
         if Setting.username is None:
-            print('USERNAME environmental variable is required.')
+            print('Error: USERNAME environmental variable is required.')
             sys.exit(1)
         if Setting.password is None:
-            print('PASSWORD environmental variable is required.')
+            print('Error: PASSWORD environmental variable is required.')
             sys.exit(1)
