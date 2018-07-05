@@ -161,7 +161,7 @@ def document(name: str, user: dict):
         return Response()
 
 
-@blueprint.route("/<string:name>/beat", methods=["GET", "PATCH"])
+@blueprint.route("/<string:name>/beat", methods=["PATCH"])
 @authenticate
 def schedule_beat(name: str, user: dict):
     """
@@ -202,24 +202,40 @@ def schedule_beat(name: str, user: dict):
         return jsonify({'name': name})
 
 
-# @blueprint.route("/<string:schedule_id>/task/config", methods=["PATCH"])
-# @authenticate
-# @bson_object_id(['schedule_id'])
-# def config(schedule_id: ObjectId, user: dict):
-#     # check user permission
-#     if not user.get('scope', {}).get('schedules', {}).get('update_task_config', False):
-#         raise errors.NotEnoughPrivilege()
-#
-#     # validate request json
-#     try:
-#         request_json = request.get_json()
-#         # TODO: add capabilities to validate other offliner config
-#         validate(request_json, Schema.mwoffliner_config(check_required=False))
-#     except ValidationError as error:
-#         raise errors.BadRequest(error.message)
-#
-#     task_config = Schedules().find_one({'_id': schedule_id}, {'task.config': 1})['task']['config']
-#     for key, value in request_json.items():
-#         task_config[key] = value
-#     Schedules().update_one({'_id': schedule_id}, {'$set': {'task.config': task_config}})
-#     return jsonify({'_id': schedule_id})
+@blueprint.route("/<string:name>/<string:property_name>", methods=["GET", "PATCH"])
+@authenticate
+def schedule_offliner(name: str, property_name: str, user: dict):
+    """
+    Get or Update beat, offliner or task of one schedule
+    """
+    if property_name not in ['offliner', 'task']:
+        raise errors.NotFound()
+
+    if request.method == "GET":
+        schedule = Schedules().find_one({'name': name}, {property_name: 1})
+        if schedule is None:
+            raise errors.NotFound()
+        return jsonify(schedule[property_name])
+    elif request.method == "PATCH":
+        # check user permission
+        if not user.get('scope', {}).get('schedules', {}).get('update', False):
+            raise errors.NotEnoughPrivilege()
+
+        # validate request json
+        request_json = request.get_json()
+        if property_name == 'offliner':
+            schema = Schema.offliner
+        elif property_name == 'task':
+            schema = Schema.task
+        else:
+            schema = None
+        try:
+            validate(request_json, schema)
+        except ValidationError as error:
+            raise errors.BadRequest(error.message)
+
+        # update database
+        matched_count = Schedules().update_one({'name': name}, {'$set': {'property_name': request_json}}).matched_count
+        if matched_count == 0:
+            raise errors.NotFound()
+        return jsonify({'name': name})
