@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import { SchedulesService, SchedulesListResponseData, SchedulesListMeta, Schedule } from '../../services/schedules.service';
 
 @Component({
-    templateUrl: './schedule.component.html',
-    styleUrls: ['./schedule.component.css']
+    templateUrl: './schedule-list.component.html',
+    styleUrls: ['./schedule-list.component.css']
 })
-export class ScheduleComponent implements OnInit {
+export class ScheduleListComponent implements OnInit {
     constructor(private router: Router, private schedulesService: SchedulesService) {}
 
     public schedules: Array<Schedule> = []

@@ -20,9 +20,9 @@
             <tbody>
                 <tr *ngFor="let schedule of schedules">
                     <td class="name">
-                        <div style="display: flex; flex-direction: row; align-items: center;">
+                        <div style="display: flex; align-items: center;">
                             <div class="circle" [class.enabled]="schedule.enabled"></div>
-                            {{schedule.name}}
+                            <a routerLink="{{schedule.name}}">{{schedule.name}}</a>
                         </div>
                     </td>
                     <td>{{schedule.language}}</td>
@@ -38,8 +38,8 @@
     <div class="content toolbar">
         <div></div>
         <ul class="pagination">
-            <li class="page-item"><button>Previous</button></li>
-            <li class="page-item"><button>Next</button></li>
+            <li class="page-item" (click)="goPrevious()"><button>Previous</button></li>
+            <li class="page-item" (click)="goNext()"><button>Next</button></li>
         </ul>
     </div>
 </div>
