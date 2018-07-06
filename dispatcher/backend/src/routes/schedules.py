@@ -208,7 +208,7 @@ def schedule_offliner(name: str, property_name: str, user: dict):
                 raise errors.BadRequest()
 
         # update database
-        matched_count = Schedules().update_one({'name': name}, {'$set': {'property_name': request_json}}).matched_count
+        matched_count = Schedules().update_one({'name': name}, {'$set': {property_name: request_json}}).matched_count
         if matched_count == 0:
             raise errors.NotFound()
         return jsonify({'name': name})
