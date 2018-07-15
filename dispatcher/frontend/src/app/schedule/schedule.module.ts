@@ -9,6 +9,7 @@ import { ScheduleOverviewComponent } from './schedule-overview/schedule-overview
 import { ScheduleBeatComponent } from './schedule-beat/schedule-beat.component';
 import { ScheduleOfflinerComponent } from './schedule-offliner/schedule-offliner.component';
 import { ScheduleTaskComponent } from './schedule-task/schedule-task.component';
+import { FormsModule } from '../../../node_modules/@angular/forms';
 
 const routes: Routes = [
     { path: '', component: ScheduleListComponent },
@@ -29,8 +30,8 @@ const routes: Routes = [
     imports: [
         CommonModule,
         SharedModule,
-        RouterModule.forChild(routes),
-        
+        FormsModule,
+        RouterModule.forChild(routes)
     ],
     declarations: [
         ScheduleListComponent, 

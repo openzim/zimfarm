@@ -4,7 +4,7 @@ from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
 
 from utils.token import AccessToken
-from .errors import Unauthorized
+from .errors import Unauthorized, NotEnoughPrivilege
 
 
 def authenticate(f):
