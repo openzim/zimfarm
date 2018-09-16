@@ -17,9 +17,7 @@ def authenticate(f):
             return f(*args, **kwargs)
         except jwt_exceptions.ExpiredSignatureError:
             raise Unauthorized('token expired')
-        except jwt_exceptions.InvalidTokenError:
-            raise Unauthorized('token invalid')
-        except jwt_exceptions.PyJWTError:
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
             raise Unauthorized('token invalid')
     return wrapper
 

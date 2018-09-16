@@ -103,7 +103,7 @@ def document(user_id: ObjectId, user: dict):
 @bson_object_id(['user_id'])
 def change_password(user_id: ObjectId, user: dict):
     # check user permission when not updating current user
-    if not user_id == ObjectId(user['_id']):
+    if user_id != ObjectId(user['_id']):
         if not user.get('scope', {}).get('users', {}).get('update', False):
             raise errors.NotEnoughPrivilege()
 
@@ -126,3 +126,11 @@ def change_password(user_id: ObjectId, user: dict):
     Users().update_one({'_id': ObjectId(user_id)},
                        {'$set': {'password_hash': generate_password_hash(password_new)}})
     return Response()
+
+
+@blueprint.route("/<string:user_id>/keys", methods=["GET", "POST"])
+@authenticate
+@bson_object_id(['user_id'])
+def ssh_keys(user_id: ObjectId, user: dict):
+    ssh_keys = Users().find_one({'_id': user_id}, {'ssh_keys': 1}).get('ssh_keys', [])
+    return jsonify(ssh_keys)
