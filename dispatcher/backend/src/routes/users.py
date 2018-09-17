@@ -1,3 +1,6 @@
+import base64
+import hashlib
+
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
@@ -132,5 +135,30 @@ def change_password(user_id: ObjectId, user: dict):
 @authenticate
 @bson_object_id(['user_id'])
 def ssh_keys(user_id: ObjectId, user: dict):
-    ssh_keys = Users().find_one({'_id': user_id}, {'ssh_keys': 1}).get('ssh_keys', [])
-    return jsonify(ssh_keys)
+    if request.method == "GET":
+        ssh_keys = Users().find_one({'_id': user_id}, {'ssh_keys': 1}).get('ssh_keys', [])
+        return jsonify(ssh_keys)
+    elif request.method == "POST":
+        # check user_id in url is the same as user_id in access token
+        if user_id != ObjectId(user['_id']):
+            raise errors.Unauthorized("Cannot add ssh keys to other user")
+
+        # validate request json
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "minLength": 1},
+                "key": {"type": "string", "minLength": 1}
+            },
+            "required": ["name", "key"],
+            "additionalProperties": False
+        }
+        try:
+            request_json = request.get_json()
+            validate(request_json, schema)
+        except ValidationError as error:
+            raise errors.BadRequest(error.message)
+
+        key = request_json['key']
+        fingerprint = hashlib.md5(key.encode()).hexdigest()
+        pass
