@@ -1,6 +1,7 @@
 import base64
-import hashlib
+import binascii
 
+import paramiko
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
@@ -160,5 +161,10 @@ def ssh_keys(user_id: ObjectId, user: dict):
             raise errors.BadRequest(error.message)
 
         key = request_json['key']
-        fingerprint = hashlib.md5(key.encode()).hexdigest()
-        pass
+        # TODO: validate public key
+        # compute fingerprint
+        try:
+            rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
+            fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
+        except (binascii.Error, paramiko.SSHException):
+            raise errors.BadRequest('Invalid RSA key')
