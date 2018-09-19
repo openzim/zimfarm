@@ -2,7 +2,6 @@ import os
 import sys
 
 from werkzeug.security import generate_password_hash
-from cerberus import Validator
 from pymongo import ASCENDING
 
 from utils import mongo
@@ -42,9 +41,6 @@ class Initializer:
                     }
                 }
             }
-            validator = Validator(mongo.Users.schema)
-            if not validator.validate(document):
-                sys.exit()
             users.insert_one(document)
 
 
