@@ -1,5 +1,6 @@
 import base64
 import binascii
+from datetime import datetime
 
 import paramiko
 from bson import ObjectId
@@ -142,7 +143,7 @@ def ssh_keys(user_id: ObjectId, user: dict):
     elif request.method == "POST":
         # check user_id in url is the same as user_id in access token
         if user_id != ObjectId(user['_id']):
-            raise errors.Unauthorized("Cannot add ssh keys to other user")
+            raise errors.Unauthorized("Cannot add ssh key to other user")
 
         # validate request json
         schema = {
@@ -160,11 +161,25 @@ def ssh_keys(user_id: ObjectId, user: dict):
         except ValidationError as error:
             raise errors.BadRequest(error.message)
 
+        # parse key
         key = request_json['key']
-        # TODO: validate public key
+        key_parts = key.split(' ')
+        if len(key_parts) >=2:
+            key = key_parts[1]
+
         # compute fingerprint
         try:
             rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
             fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
         except (binascii.Error, paramiko.SSHException):
             raise errors.BadRequest('Invalid RSA key')
+
+        document = {
+            'fingerprint': fingerprint,
+            'name': request_json['name'],
+            'key': key,
+            'added': datetime.now(),
+            'last_used': None
+        }
+
+        return jsonify(document)
