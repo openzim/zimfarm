@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { FormControl } from '@angular/forms';
 
 import { BeatConfig, CrontabBeatConfig } from '../../services/schedules.service';
 
@@ -8,6 +9,7 @@ import { BeatConfig, CrontabBeatConfig } from '../../services/schedules.service'
     styleUrls: ['./schedule-beat.component.css', '../schedule.shared.css']
 })
 export class ScheduleBeatComponent implements OnInit {
+    name = new FormControl('')
 
     constructor() { }
 
@@ -20,6 +22,4 @@ export class ScheduleBeatComponent implements OnInit {
         this.config.updateDescription()
         console.log(this.config)
     }
-    
-
 }

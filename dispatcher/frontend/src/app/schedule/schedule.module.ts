@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Routes, RouterModule } from '@angular/router';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { SharedModule } from '../shared/shared.module';
 import { ScheduleListComponent } from './schedule-list/schedule-list.component';
@@ -9,7 +10,6 @@ import { ScheduleOverviewComponent } from './schedule-overview/schedule-overview
 import { ScheduleBeatComponent } from './schedule-beat/schedule-beat.component';
 import { ScheduleOfflinerComponent } from './schedule-offliner/schedule-offliner.component';
 import { ScheduleTaskComponent } from './schedule-task/schedule-task.component';
-import { FormsModule } from '../../../node_modules/@angular/forms';
 
 const routes: Routes = [
     { path: '', component: ScheduleListComponent },
@@ -31,6 +31,7 @@ const routes: Routes = [
         CommonModule,
         SharedModule,
         FormsModule,
+        ReactiveFormsModule,
         RouterModule.forChild(routes)
     ],
     declarations: [
