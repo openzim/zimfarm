@@ -1,14 +1,14 @@
 import base64
 import binascii
 from datetime import datetime
+from typing import Union
 
 import jsonschema
 import paramiko
 from bson import ObjectId
 from flask import request, jsonify, Response
 
-from routes import authenticate, bson_object_id, errors
-from routes.users import url_user
+from routes import authenticate, bson_object_id, url_object_id, errors
 from utils.mongo import Users
 
 
@@ -21,8 +21,8 @@ def list(user_id: ObjectId, user: dict):
 
 
 @authenticate
-@url_user
-def add(user_id: ObjectId, username: str):
+@url_object_id
+def add(user: Union[ObjectId, str]):
     # validate request json
     schema = {
         "type": "object",
@@ -53,14 +53,12 @@ def add(user_id: ObjectId, username: str):
         raise errors.BadRequest('Invalid RSA key')
 
     # database
-    if user_id is not None:
-        filter = {'_id': user_id}
+    if isinstance(user, ObjectId):
+        filter = {'_id': user}
     else:
-        filter = {'username': username}
+        filter = {'username': user}
 
     document = {
-        'user_id': user_id,
-        'username': username,
         'fingerprint': fingerprint,
         'name': request_json['name'],
         'key': key,

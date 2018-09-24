@@ -1,4 +1,5 @@
 from functools import wraps
+
 from flask import request
 from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
@@ -35,6 +36,21 @@ def bson_object_id(keys: list):
                     kwargs[key] = object_id
                 except InvalidId:
                     raise errors.BadRequest(message="Invalid ObjectID")
+            return f(*args, **kwargs)
+        return wrapper
+    return decorate
+
+
+def url_object_id(keys: list):
+    def decorate(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            for key in keys:
+                try:
+                    object_id = ObjectId(kwargs.get(key, None))
+                    kwargs[key] = object_id
+                except InvalidId:
+                    pass
             return f(*args, **kwargs)
         return wrapper
     return decorate

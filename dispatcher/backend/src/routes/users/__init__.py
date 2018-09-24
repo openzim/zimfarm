@@ -13,18 +13,7 @@ from utils.mongo import Users
 blueprint = Blueprint('user', __name__, url_prefix='/api/users')
 
 
-def url_user(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        user = kwargs.get('user', None)
 
-        try:
-            user_id = ObjectId(user)
-            kwargs['user_id'] = user_id
-        except InvalidId:
-            kwargs['username'] = user
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @blueprint.route("/", methods=["GET", "POST"])
