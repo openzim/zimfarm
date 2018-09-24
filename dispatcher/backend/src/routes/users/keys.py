@@ -8,7 +8,7 @@ import paramiko
 from bson import ObjectId
 from flask import request, jsonify, Response
 
-from routes import authenticate, bson_object_id, url_object_id, errors
+from routes import authenticate, authenticate2, bson_object_id, url_object_id, errors
 from utils.mongo import Users
 
 
@@ -20,9 +20,9 @@ def list(user_id: ObjectId, user: dict):
     return jsonify(ssh_keys)
 
 
-@authenticate
-@url_object_id(['user_id'])
-def add(user_id: Union[ObjectId, str]):
+@authenticate2
+@url_object_id(['user'])
+def add(access_token, user: Union[ObjectId, str]):
     # TODO: change user_id to user in request
 
     # validate request json

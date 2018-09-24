@@ -23,6 +23,20 @@ def authenticate(f):
     return wrapper
 
 
+def authenticate2(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            token = request.headers.get('token', None)
+            kwargs['access_token'] = AccessToken.decode(token)
+            return f(*args, **kwargs)
+        except jwt_exceptions.ExpiredSignatureError:
+            raise Unauthorized('token expired')
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
+            raise Unauthorized('token invalid')
+    return wrapper
+
+
 def bson_object_id(keys: list):
     def decorate(f):
         @wraps(f)
