@@ -1,9 +1,6 @@
-import base64
-import binascii
-from datetime import datetime
+from functools import wraps
 
-import paramiko
-from bson import ObjectId
+from bson.objectid import ObjectId, InvalidId
 from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -14,6 +11,20 @@ from utils.mongo import Users
 
 
 blueprint = Blueprint('user', __name__, url_prefix='/api/users')
+
+
+def url_user(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        user = kwargs.get('user', None)
+
+        try:
+            user_id = ObjectId(user)
+            kwargs['user_id'] = user_id
+        except InvalidId:
+            kwargs['username'] = user
+        return f(*args, **kwargs)
+    return wrapper
 
 
 @blueprint.route("/", methods=["GET", "POST"])
@@ -134,8 +145,8 @@ def change_password(user_id: ObjectId, user: dict):
     return Response()
 
 
-blueprint.add_url_rule('/<string:user_id>/keys', 'list_ssh_keys', keys.list, methods=['GET'])
-blueprint.add_url_rule('/<string:user_id>/keys', 'add_ssh_keys', keys.add, methods=['POST'])
+blueprint.add_url_rule('/<string:user>/keys', 'list_ssh_keys', keys.list, methods=['GET'])
+blueprint.add_url_rule('/<string:user>/keys', 'add_ssh_keys', keys.add, methods=['POST'])
 
 # @blueprint.route("/<string:user_id>/keys", methods=["GET", "POST"])
 # @authenticate
@@ -149,41 +160,31 @@ blueprint.add_url_rule('/<string:user_id>/keys', 'add_ssh_keys', keys.add, metho
 #         if user_id != ObjectId(user['_id']):
 #             raise errors.Unauthorized("Cannot add ssh key to other user")
 #
-#         # validate request json
-#         schema = {
-#             "type": "object",
-#             "properties": {
-#                 "name": {"type": "string", "minLength": 1},
-#                 "key": {"type": "string", "minLength": 1}
-#             },
-#             "required": ["name", "key"],
-#             "additionalProperties": False
-#         }
-#         try:
-#             request_json = request.get_json()
-#             validate(request_json, schema)
-#         except ValidationError as error:
-#             raise errors.BadRequest(error.message)
-#
-#         # parse key
-#         key = request_json['key']
-#         key_parts = key.split(' ')
-#         if len(key_parts) >= 2:
-#             key = key_parts[1]
-#
-#         # compute fingerprint
-#         try:
-#             rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
-#             fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
-#         except (binascii.Error, paramiko.SSHException):
-#             raise errors.BadRequest('Invalid RSA key')
-#
-#         document = {
-#             'fingerprint': fingerprint,
-#             'name': request_json['name'],
-#             'key': key,
-#             'added': datetime.now(),
-#             'last_used': None
-#         }
-#
-#         return jsonify(document)
+        # validate request json
+        # schema = {
+        #     "type": "object",
+        #     "properties": {
+        #         "name": {"type": "string", "minLength": 1},
+        #         "key": {"type": "string", "minLength": 1}
+        #     },
+        #     "required": ["name", "key"],
+        #     "additionalProperties": False
+        # }
+        # try:
+        #     request_json = request.get_json()
+        #     validate(request_json, schema)
+        # except ValidationError as error:
+        #     raise errors.BadRequest(error.message)
+        #
+        # # parse key
+        # key = request_json['key']
+        # key_parts = key.split(' ')
+        # if len(key_parts) >= 2:
+        #     key = key_parts[1]
+        #
+        # # compute fingerprint
+        # try:
+        #     rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
+        #     fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
+        # except (binascii.Error, paramiko.SSHException):
+        #     raise errors.BadRequest('Invalid RSA key')
