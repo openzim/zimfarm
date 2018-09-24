@@ -134,8 +134,8 @@ def change_password(user_id: ObjectId, user: dict):
     return Response()
 
 
-blueprint.add_url_rule('/<string:user>/keys', 'list_ssh_keys', keys.list, methods=['GET'])
-blueprint.add_url_rule('/<string:user>/keys', 'add_ssh_keys', keys.add, methods=['POST'])
+blueprint.add_url_rule('/<string:user_id>/keys', 'list_ssh_keys', keys.list, methods=['GET'])
+blueprint.add_url_rule('/<string:user_id>/keys', 'add_ssh_keys', keys.add, methods=['POST'])
 
 # @blueprint.route("/<string:user_id>/keys", methods=["GET", "POST"])
 # @authenticate
