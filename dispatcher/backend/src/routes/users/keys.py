@@ -22,7 +22,9 @@ def list(user_id: ObjectId, user: dict):
 
 @authenticate
 @url_object_id(['user_id'])
-def add(user: Union[ObjectId, str]):
+def add(user_id: Union[ObjectId, str]):
+    # TODO: change user_id to user in request
+
     # validate request json
     schema = {
         "type": "object",
