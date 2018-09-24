@@ -59,7 +59,7 @@ def add(access_token, user: Union[ObjectId, str]):
         filter = {'_id': user}
     else:
         filter = {'username': user}
-    path = 'user.ssh_keys.{}'.format(fingerprint)
+    path = 'ssh_keys.{}'.format(fingerprint)
     filter[path] = {'$exists': False}
 
     Users().update_one(filter, {'$set': {path: {
