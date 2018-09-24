@@ -62,11 +62,15 @@ def add(access_token, user: Union[ObjectId, str]):
     path = 'ssh_keys.{}'.format(fingerprint)
     filter[path] = {'$exists': False}
 
-    Users().update_one(filter, {'$set': {path: {
+    user_id = Users().update_one(filter, {'$set': {path: {
         'name': request_json['name'],
         'key': key,
+        'type': 'RSA',
         'added': datetime.now(),
         'last_used': None
-    }}})
+    }}}).upserted_id
 
-    return jsonify({})
+    if user_id is not None:
+        return jsonify()
+    else:
+        raise errors.BadRequest('Key already exists')

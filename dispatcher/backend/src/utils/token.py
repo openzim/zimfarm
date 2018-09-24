@@ -5,7 +5,7 @@ import random
 from datetime import datetime, timedelta
 
 import jwt
-from bson.objectid import ObjectId
+from bson.objectid import ObjectId, InvalidId
 
 
 class AccessToken:
@@ -22,6 +22,23 @@ class AccessToken:
                 return str(o)
             else:
                 super().default(o)
+
+    class Payload:
+        def __init__(self, data: dict):
+            self._data = data
+            self._data['user']['_id'] = ObjectId(self._data['user']['_id'])
+
+        @property
+        def user_id(self) -> ObjectId:
+            return self._data['user']['_id']
+
+        @property
+        def username(self) -> ObjectId:
+            return self._data['user']['username']
+
+        @property
+        def email(self) -> ObjectId:
+            return self._data['user'].get('email', None)
 
     @classmethod
     def encode(cls, user: dict) -> str:
