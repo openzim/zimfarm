@@ -59,13 +59,14 @@ def add(access_token, user: Union[ObjectId, str]):
         filter = {'_id': user}
     else:
         filter = {'username': user}
+    path = 'user.ssh_keys.{}'.format(fingerprint)
+    filter[path] = {'$exists': False}
 
-    document = {
-        'fingerprint': fingerprint,
+    Users().update_one(filter, {'$set': {path: {
         'name': request_json['name'],
         'key': key,
         'added': datetime.now(),
         'last_used': None
-    }
+    }}})
 
-    return jsonify(document)
+    return jsonify({})
