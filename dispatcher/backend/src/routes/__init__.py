@@ -41,11 +41,11 @@ def bson_object_id(keys: list):
     return decorate
 
 
-def url_object_id(keys: list):
+def url_object_id(path_components: list):
     def decorate(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            for key in keys:
+            for key in path_components:
                 try:
                     object_id = ObjectId(kwargs.get(key, None))
                     kwargs[key] = object_id

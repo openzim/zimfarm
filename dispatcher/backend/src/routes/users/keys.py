@@ -21,7 +21,7 @@ def list(user_id: ObjectId, user: dict):
 
 
 @authenticate
-@url_object_id
+@url_object_id(['user'])
 def add(user: Union[ObjectId, str]):
     # validate request json
     schema = {
