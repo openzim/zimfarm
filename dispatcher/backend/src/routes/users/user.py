@@ -70,6 +70,7 @@ def create(token: AccessToken.Payload):
     except DuplicateKeyError:
         raise errors.BadRequest('User already exists')
 
+
 @authenticate2
 @url_object_id('user')
 def get(token: AccessToken.Payload, user: Union[ObjectId, str]):
@@ -80,7 +81,7 @@ def get(token: AccessToken.Payload, user: Union[ObjectId, str]):
 
     # find user based on _id or username
     user = Users().find_one({'$or': [{'_id': user}, {'username': user}]},
-                            {'_id': 1, 'username': 1, 'email': 1})
+                            {'_id': 1, 'username': 1, 'email': 1, 'scope': 1})
 
     if user is None:
         raise errors.NotFound()
