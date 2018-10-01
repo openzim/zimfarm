@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Union
 
 from flask import request
 from jwt import exceptions as jwt_exceptions
@@ -56,14 +57,16 @@ def bson_object_id(keys: list):
     return decorate
 
 
-def url_object_id(path_components: list):
+def url_object_id(names: Union[list, str]):
+    if isinstance(names, str):
+        names = [names]
     def decorate(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            for key in path_components:
+            for name in names:
                 try:
-                    object_id = ObjectId(kwargs.get(key, None))
-                    kwargs[key] = object_id
+                    object_id = ObjectId(kwargs.get(name, None))
+                    kwargs[name] = object_id
                 except InvalidId:
                     pass
             return f(*args, **kwargs)
