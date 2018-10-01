@@ -15,3 +15,4 @@ class Blueprint(flask.Blueprint):
     def __init__(self):
         super().__init__('users', __name__, url_prefix='/api/users')
         self.add_url_rule('/', 'list_users', user.list, methods=['GET'])
+        self.add_url_rule('/', 'create_user', user.create, methods=['POST'])

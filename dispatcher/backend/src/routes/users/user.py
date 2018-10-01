@@ -1,5 +1,7 @@
 
 from flask import request, jsonify
+from jsonschema import validate, ValidationError
+from werkzeug.security import generate_password_hash
 
 from routes import authenticate2, errors
 from utils.mongo import Users
@@ -9,7 +11,7 @@ from utils.token import AccessToken
 @authenticate2
 def list(token: AccessToken.Payload):
     # check user permission
-    if not token.get_permission('users', 'read', False):
+    if not token.get_permission('users', 'read'):
         raise errors.NotEnoughPrivilege()
 
     # unpack url parameters
@@ -29,3 +31,35 @@ def list(token: AccessToken.Payload):
         },
         'items': users
     })
+
+
+@authenticate2
+def create(token: AccessToken.Payload):
+    # check user permission
+    if not token.get_permission('users', 'create'):
+        raise errors.NotEnoughPrivilege()
+
+    # validate request json
+    schema = {
+        "type": "object",
+        "properties": {
+            "username": {"type": "string", "minLength": 1},
+            "password": {"type": "string", "minLength": 6},
+            "email": {"type": ["string", "null"]},
+            "scope": {"type": "object"}
+        },
+        "required": ["username", "password"],
+        "additionalProperties": False
+    }
+    try:
+        request_json = request.get_json()
+        validate(request_json, schema)
+    except ValidationError as error:
+        raise errors.BadRequest(error.message)
+
+    # generate password hash
+    password = request_json.pop('password')
+    request_json['password_hash'] = generate_password_hash(password)
+
+    user_id = Users().insert_one(request_json).inserted_id
+    return jsonify({'_id': user_id})
