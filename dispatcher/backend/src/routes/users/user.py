@@ -1,6 +1,7 @@
 
 from flask import request, jsonify
 from jsonschema import validate, ValidationError
+from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
 
 from routes import authenticate2, errors
@@ -61,5 +62,8 @@ def create(token: AccessToken.Payload):
     password = request_json.pop('password')
     request_json['password_hash'] = generate_password_hash(password)
 
-    user_id = Users().insert_one(request_json).inserted_id
-    return jsonify({'_id': user_id})
+    try:
+        user_id = Users().insert_one(request_json).inserted_id
+        return jsonify({'_id': user_id})
+    except DuplicateKeyError:
+        raise errors.BadRequest('User already exists')
