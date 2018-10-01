@@ -19,7 +19,7 @@ def list(token: AccessToken.Payload):
     limit = 20 if limit <= 0 else limit
 
     # get users from database
-    cursor = Users().find({}, {'password_hash': 0})
+    cursor = Users().find({}, {'_id': 1, 'username': 1, 'email': 1})
     users = [user for user in cursor]
 
     return jsonify({
