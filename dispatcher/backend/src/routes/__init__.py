@@ -29,7 +29,7 @@ def authenticate2(f):
         try:
             token = request.headers.get('token', None)
             payload = AccessToken.decode(token)
-            kwargs['access_token'] = AccessToken.Payload(payload)
+            kwargs['token'] = AccessToken.Payload(payload)
             return f(*args, **kwargs)
         except jwt_exceptions.ExpiredSignatureError:
             raise Unauthorized('token expired')

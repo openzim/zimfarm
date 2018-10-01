@@ -10,6 +10,7 @@ from flask import request, jsonify, Response
 
 from routes import authenticate, authenticate2, bson_object_id, url_object_id, errors
 from utils.mongo import Users
+from utils.token import AccessToken
 
 
 @authenticate
@@ -22,7 +23,7 @@ def list(user_id: ObjectId, user: dict):
 
 @authenticate2
 @url_object_id(['user'])
-def add(access_token, user: Union[ObjectId, str]):
+def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
     # TODO: change user_id to user in request
 
     # validate request json

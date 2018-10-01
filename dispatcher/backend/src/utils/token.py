@@ -40,6 +40,9 @@ class AccessToken:
         def email(self) -> ObjectId:
             return self._data['user'].get('email', None)
 
+        def get_permission(self, namespace: str, name: str, default: bool = False):
+            return self._data['user']['scope'].get(namespace, {}).get(name, default)
+
     @classmethod
     def encode(cls, user: dict) -> str:
         issue_time = datetime.now()
