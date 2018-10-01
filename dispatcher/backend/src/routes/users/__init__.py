@@ -7,8 +7,6 @@ import flask
 # from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import user, keys
-# from .. import authenticate, bson_object_id, errors
-# from utils.mongo import Users
 
 
 class Blueprint(flask.Blueprint):
@@ -16,3 +14,4 @@ class Blueprint(flask.Blueprint):
         super().__init__('users', __name__, url_prefix='/api/users')
         self.add_url_rule('/', 'list_users', user.list, methods=['GET'])
         self.add_url_rule('/', 'create_user', user.create, methods=['POST'])
+        self.add_url_rule('/', 'get_user', user.get, methods=['GET'])
