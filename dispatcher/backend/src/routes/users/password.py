@@ -23,6 +23,7 @@ def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
 
         # get current password hash
         user = Users().find_one({'$or': [{'_id': user}, {'username': user}]}, {'password_hash': 1})
+        print('user: {}'.format(user))
         if user is None:
             raise errors.NotFound()
 
