@@ -1,39 +1,53 @@
 from typing import Union
 
-import jsonschema
-import paramiko
 from bson import ObjectId
-from flask import request, jsonify, Response
+from flask import request, Response
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from routes import authenticate, authenticate2, bson_object_id, url_object_id, errors
+from routes import authenticate2, url_object_id, errors
 from utils.token import AccessToken
 from utils.mongo import Users
 
 
 @authenticate2
 @url_object_id(['user'])
-def change(token: AccessToken.Payload, user: Union[ObjectId, str]):
-    # check user permission when not updating current user
-    if user_id != ObjectId(user['_id']):
-        if not user.get('scope', {}).get('users', {}).get('update', False):
+def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
+    request_json = request.get_json()
+    if user == token.user_id or user == token.username:
+        # user is trying to set their own password
+
+        # get current password
+        password_current = request_json.get('current', None)
+        if password_current is None:
+            raise errors.BadRequest()
+
+        # get current password hash
+        user = Users().find_one({'$or': [{'_id': user}, {'username': user}]}, {'password_hash': 1})
+        if user is None:
+            raise errors.NotFound()
+
+        # check current password is valid
+        is_valid = check_password_hash(user['password_hash'], password_current)
+        if not is_valid:
+            raise errors.Unauthorized()
+    else:
+        # user is trying to set other user's password
+        # check permission
+        if not token.get_permission('users', 'reset_password'):
             raise errors.NotEnoughPrivilege()
 
-    request_json = request.get_json()
-
-    # TODO: use json schema to validate
-    password_old = request_json.get('old', None)
+    # get new password
     password_new = request_json.get('new', None)
-    if password_new is None or password_old is None:
+    if password_new is None:
         raise errors.BadRequest()
 
-    user = Users().find_one({'_id': user_id}, {'password_hash': 1})
-    if user is None:
+    # set new password
+    matched_count = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
+                                       {'$set': {
+                                           'password_hash': generate_password_hash(password_new)}
+                                       }).matched_count
+    # send response
+    if matched_count == 0:
         raise errors.NotFound()
-
-    valid = check_password_hash(user['password_hash'], password_old)
-    if not valid:
-        raise errors.Unauthorized()
-
-    Users().update_one({'_id': ObjectId(user_id)},
-                       {'$set': {'password_hash': generate_password_hash(password_new)}})
-    return Response()
+    else:
+        return Response()
