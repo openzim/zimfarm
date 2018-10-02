@@ -8,16 +8,24 @@ import paramiko
 from bson import ObjectId
 from flask import request, jsonify, Response
 
-from routes import authenticate, authenticate2, bson_object_id, url_object_id, errors
+from routes import authenticate2, url_object_id, errors
 from utils.mongo import Users
 from utils.token import AccessToken
 
 
-@authenticate
-@bson_object_id(['user_id'])
-def list(user_id: ObjectId, user: dict):
-    # TODO: check permission
-    ssh_keys = Users().find_one({'_id': user_id}, {'ssh_keys': 1}).get('ssh_keys', [])
+@authenticate2
+@url_object_id('user')
+def list(token: AccessToken.Payload, user: Union[ObjectId, str]):
+    # if user in url is not user in token, check user permission
+    if user != token.user_id and user != token.username:
+        if not token.get_permission('users', 'read'):
+            raise errors.NotEnoughPrivilege()
+
+    user = Users().find_one({'$or': [{'_id': user}, {'username': user}]}, {'ssh_keys': 1})
+    if user is None:
+        raise errors.NotFound()
+
+    ssh_keys = user.get('ssh_keys', [])
     return jsonify(ssh_keys)
 
 
