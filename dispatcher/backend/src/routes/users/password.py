@@ -23,7 +23,6 @@ def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
 
         # get current password hash
         user = Users().find_one({'$or': [{'_id': user}, {'username': user}]}, {'password_hash': 1})
-        print('user: {}'.format(user))
         if user is None:
             raise errors.NotFound()
 
@@ -47,6 +46,7 @@ def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
                                        {'$set': {
                                            'password_hash': generate_password_hash(password_new)}
                                        }).matched_count
+    print('matched_count: {}'.format(matched_count))
     # send response
     if matched_count == 0:
         raise errors.NotFound()
