@@ -1,7 +1,7 @@
 from typing import Union
 
 from bson import ObjectId
-from flask import request, jsonify
+from flask import request, jsonify, Response
 from jsonschema import validate, ValidationError
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
@@ -74,7 +74,7 @@ def create(token: AccessToken.Payload):
 @authenticate2
 @url_object_id('user')
 def get(token: AccessToken.Payload, user: Union[ObjectId, str]):
-    # check user permission
+    # if user in url is not user in token, check user permission
     if user != token.user_id and user != token.username:
         if not token.get_permission('users', 'read'):
             raise errors.NotEnoughPrivilege()
@@ -86,3 +86,19 @@ def get(token: AccessToken.Payload, user: Union[ObjectId, str]):
     if user is None:
         raise errors.NotFound()
     return jsonify(user)
+
+
+@authenticate2
+@url_object_id('user')
+def delete(token: AccessToken.Payload, user: Union[ObjectId, str]):
+    # if user in url is not user in token, check user permission
+    if user != token.user_id and user != token.username:
+        if not token.get_permission('users', 'delete'):
+            raise errors.NotEnoughPrivilege()
+
+    # delete user
+    deleted_count = Users().delete_one({'$or': [{'_id': user}, {'username': user}]}).deleted_count
+    if deleted_count == 0:
+        raise errors.NotFound()
+    else:
+        return Response()

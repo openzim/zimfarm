@@ -15,3 +15,4 @@ class Blueprint(flask.Blueprint):
         self.add_url_rule('/', 'list_users', user.list, methods=['GET'])
         self.add_url_rule('/', 'create_user', user.create, methods=['POST'])
         self.add_url_rule('/<string:user>', 'get_user', user.get, methods=['GET'])
+        self.add_url_rule('/<string:user>', 'delete_user', user.delete, methods=['DELETE'])
