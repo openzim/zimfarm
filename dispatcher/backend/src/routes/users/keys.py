@@ -78,15 +78,15 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         raise errors.BadRequest('SSH key already exists')
 
     # add new ssh key to database
-    Users().update_one({'$or': [{'_id': user}, {'username': user}]},
-                       {'$push': {'ssh_keys': {
-                           'name': request_json['name'],
-                           'fingerprint': fingerprint,
-                           'key': key,
-                           'type': 'RSA',
-                           'added': datetime.now(),
-                           'last_used': None
-                       }}})
+    ssh_key = {
+        'name': request_json['name'],
+        'fingerprint': fingerprint,
+        'key': key,
+        'type': 'RSA',
+        'added': datetime.now(),
+        'last_used': None
+    }
+    Users().update_one(filter, {'$push': {'ssh_keys': ssh_key}})
 
     return Response()
 
