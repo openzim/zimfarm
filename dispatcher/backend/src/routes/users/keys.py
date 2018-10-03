@@ -71,6 +71,7 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         result = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
                                     {'$push': {'ssh_keys': {
                                         'name': request_json['name'],
+                                        'fingerprint': fingerprint,
                                         'key': key,
                                         'type': 'RSA',
                                         'added': datetime.now(),
