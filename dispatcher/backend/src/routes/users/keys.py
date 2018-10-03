@@ -18,7 +18,7 @@ from utils.token import AccessToken
 def list(token: AccessToken.Payload, user: Union[ObjectId, str]):
     # if user in url is not user in token, check user permission
     if user != token.user_id and user != token.username:
-        if not token.get_permission('users', 'read'):
+        if not token.get_permission('users', 'ssh_keys.read'):
             raise errors.NotEnoughPrivilege()
 
     user = Users().find_one({'$or': [{'_id': user}, {'username': user}]}, {'ssh_keys': 1})
@@ -32,7 +32,9 @@ def list(token: AccessToken.Payload, user: Union[ObjectId, str]):
 @authenticate2
 @url_object_id(['user'])
 def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
-    # TODO: change user_id to user in request
+    # if user in url is not user in token, not allowed to add ssh keys
+    if user != token.user_id and user != token.username:
+        raise errors.NotEnoughPrivilege()
 
     # validate request json
     schema = {
@@ -50,7 +52,7 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
     except jsonschema.ValidationError as error:
         raise errors.BadRequest(error.message)
 
-    # parse key
+    # parse public key string
     key = request_json['key']
     key_parts = key.split(' ')
     if len(key_parts) >= 2:
@@ -64,13 +66,9 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         raise errors.BadRequest('Invalid RSA key')
 
     # database
-    if isinstance(user, ObjectId):
-        filter = {'_id': user}
-    else:
-        filter = {'username': user}
     path = 'ssh_keys.{}'.format(fingerprint)
-    filter[path] = {'$exists': False}
-
+    filter = {'$or': [{'_id': user, 'path': {'$exists': False}},
+                      {'username': user}]}
     user_id = Users().update_one(filter, {'$set': {path: {
         'name': request_json['name'],
         'key': key,
@@ -83,3 +81,22 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         return jsonify()
     else:
         raise errors.BadRequest('Key already exists')
+
+
+@authenticate2
+@url_object_id('user')
+def delete(token: AccessToken.Payload, user: Union[ObjectId, str], fingerprint: str):
+    # if user in url is not user in token, check user permission
+    if user != token.user_id and user != token.username:
+        if not token.get_permission('users', 'ssh_keys.delete'):
+            raise errors.NotEnoughPrivilege()
+
+    # database
+    path = 'ssh_keys.{}'.format(fingerprint)
+    modified_count = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
+                                        {'$unset': {path: ''}}).modified_count
+
+    if modified_count > 0:
+        return Response()
+    else:
+        raise errors.NotFound()
