@@ -77,10 +77,23 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         'last_used': None
     }}}).upserted_id
 
-    if user_id is not None:
-        return jsonify()
+    user = Users().find_one({'$or': [{'_id': user}, {'username': user}],
+                             'ssh_keys.fingerprint': fingerprint},
+                            {'_id': 1})
+    print(user)
+    matched_count = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
+                                       {'$push': {'ssh_keys': {
+                                           'name': request_json['name'],
+                                           'key': key,
+                                           'type': 'RSA',
+                                           'added': datetime.now(),
+                                           'last_used': None
+                                       }}}).matched_count
+
+    if matched_count == 0:
+        raise errors.NotFound()
     else:
-        raise errors.BadRequest('Key already exists')
+        return Response()
 
 
 @authenticate2
