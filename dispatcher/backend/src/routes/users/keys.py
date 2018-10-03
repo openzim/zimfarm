@@ -66,24 +66,29 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
     except (binascii.Error, paramiko.SSHException):
         raise errors.BadRequest('Invalid RSA key')
 
-    # database
-    try:
-        result = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
-                                    {'$push': {'ssh_keys': {
-                                        'name': request_json['name'],
-                                        'fingerprint': fingerprint,
-                                        'key': key,
-                                        'type': 'RSA',
-                                        'added': datetime.now(),
-                                        'last_used': None
-                                    }}})
-    except DuplicateKeyError:
+    # get existing ssh key fingerprints
+    filter = {'$or': [{'_id': user}, {'username': user}]}
+    user = Users().find_one(filter, {'ssh_keys.fingerprint': 1})
+    if user is None:
+        raise errors.NotFound()
+
+    # find out if new ssh already exist
+    fingerprints = [ssh_key['fingerprint'] for ssh_key in user.get('ssh_keys', [])]
+    if fingerprint in fingerprints:
         raise errors.BadRequest('SSH key already exists')
 
-    if result.matched_count == 0:
-        raise errors.NotFound()
-    else:
-        return Response()
+    # add new ssh key to database
+    Users().update_one({'$or': [{'_id': user}, {'username': user}]},
+                       {'$push': {'ssh_keys': {
+                           'name': request_json['name'],
+                           'fingerprint': fingerprint,
+                           'key': key,
+                           'type': 'RSA',
+                           'added': datetime.now(),
+                           'last_used': None
+                       }}})
+
+    return Response()
 
 
 @authenticate2
