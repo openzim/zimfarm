@@ -7,6 +7,7 @@ import jsonschema
 import paramiko
 from bson import ObjectId
 from flask import request, jsonify, Response
+from pymongo.errors import DuplicateKeyError
 
 from routes import authenticate2, url_object_id, errors
 from utils.mongo import Users
@@ -66,31 +67,19 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         raise errors.BadRequest('Invalid RSA key')
 
     # database
-    path = 'ssh_keys.{}'.format(fingerprint)
-    filter = {'$or': [{'_id': user, 'path': {'$exists': False}},
-                      {'username': user}]}
-    user_id = Users().update_one(filter, {'$set': {path: {
-        'name': request_json['name'],
-        'key': key,
-        'type': 'RSA',
-        'added': datetime.now(),
-        'last_used': None
-    }}}).upserted_id
+    try:
+        result = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
+                                    {'$push': {'ssh_keys': {
+                                        'name': request_json['name'],
+                                        'key': key,
+                                        'type': 'RSA',
+                                        'added': datetime.now(),
+                                        'last_used': None
+                                    }}})
+    except DuplicateKeyError:
+        raise errors.BadRequest('SSH key already exists')
 
-    user = Users().find_one({'$or': [{'_id': user}, {'username': user}],
-                             'ssh_keys.fingerprint': fingerprint},
-                            {'_id': 1})
-    print(user)
-    matched_count = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
-                                       {'$push': {'ssh_keys': {
-                                           'name': request_json['name'],
-                                           'key': key,
-                                           'type': 'RSA',
-                                           'added': datetime.now(),
-                                           'last_used': None
-                                       }}}).matched_count
-
-    if matched_count == 0:
+    if result.matched_count == 0:
         raise errors.NotFound()
     else:
         return Response()
