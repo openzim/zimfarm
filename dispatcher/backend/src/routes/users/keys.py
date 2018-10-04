@@ -7,7 +7,6 @@ import jsonschema
 import paramiko
 from bson import ObjectId
 from flask import request, jsonify, Response
-from pymongo.errors import DuplicateKeyError
 
 from routes import authenticate2, url_object_id, errors
 from utils.mongo import Users
