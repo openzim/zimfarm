@@ -100,11 +100,10 @@ def delete(token: AccessToken.Payload, user: Union[ObjectId, str], fingerprint: 
             raise errors.NotEnoughPrivilege()
 
     # database
-    path = 'ssh_keys.{}'.format(fingerprint)
-    modified_count = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
-                                        {'$unset': {path: ''}}).modified_count
+    result = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
+                                {'$pull': {'ssh_keys': {'fingerprint': fingerprint}}})
 
-    if modified_count > 0:
+    if result.matched_count > 0:
         return Response()
     else:
         raise errors.NotFound()
