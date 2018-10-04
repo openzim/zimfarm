@@ -16,7 +16,7 @@ class Blueprint(flask.Blueprint):
         self.add_url_rule('/<string:user>/keys', 'list_ssh_keys', keys.list, methods=['GET'])
         self.add_url_rule('/<string:user>/keys', 'add_ssh_keys', keys.add, methods=['POST'])
         self.add_url_rule('/<string:user>/keys/<string:fingerprint>',
-                          'delete_ssh_keys', keys.add, methods=['DELETE'])
+                          'delete_ssh_keys', keys.delete, methods=['DELETE'])
 
         self.add_url_rule('/<string:user>/password', 'update_user_password',
                           password.update, methods=['PATCH'])
