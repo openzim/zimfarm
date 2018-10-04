@@ -73,7 +73,7 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         raise errors.NotFound()
 
     # find out if new ssh already exist
-    fingerprints = [ssh_key['fingerprint'] for ssh_key in user.get('ssh_keys', [])]
+    fingerprints = set([ssh_key['fingerprint'] for ssh_key in user.get('ssh_keys', [])])
     if fingerprint in fingerprints:
         raise errors.BadRequest('SSH key already exists')
 
