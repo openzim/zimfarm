@@ -103,7 +103,7 @@ def delete(token: AccessToken.Payload, user: Union[ObjectId, str], fingerprint: 
     result = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
                                 {'$pull': {'ssh_keys': {'fingerprint': fingerprint}}})
 
-    if result.matched_count > 0:
+    if result.modified_count > 0:
         return Response()
     else:
         raise errors.NotFound()
