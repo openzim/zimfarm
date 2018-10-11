@@ -44,6 +44,6 @@ def ssh_key():
                              'ssh_keys': {'$elemMatch': {'fingerprint': fingerprint}}})
 
     if user is None:
-        raise errors.NotFound()
+        raise errors.Unauthorized()
     else:
         return Response()
