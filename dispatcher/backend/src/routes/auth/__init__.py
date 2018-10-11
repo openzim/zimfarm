@@ -121,7 +121,7 @@ class Blueprint(flask.Blueprint):
         self.add_url_rule('/authorize', 'auth_with_credentials', credentials, methods=['POST'])
         self.add_url_rule('/token', 'auth_with_token', token, methods=['POST'])
         self.add_url_rule('/validate/ssh_key', 'validate_ssh_key', validate.ssh_key, methods=['POST'])
-        self.add_url_rule('/rabbitmq/<string:intention>', 'validate_ssh_key', rabbitmq.auth, methods=['POST'])
+        self.add_url_rule('/rabbitmq/<string:intention>', 'rabbitmq_auth', rabbitmq.auth, methods=['POST'])
 
 
 # @blueprint.route("/validate", methods=["POST"])
