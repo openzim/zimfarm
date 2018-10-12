@@ -43,7 +43,7 @@ def ssh_key():
     username = request_json['username']
     user = Users().update_one({'username': username,
                                'ssh_keys': {'$elemMatch': {'fingerprint': fingerprint}}},
-                              {'ssh_keys.$.last_used': datetime.now()})
+                              {'$set': {'ssh_keys.$.last_used': datetime.now()}})
 
     if user is None:
         raise errors.Unauthorized()
