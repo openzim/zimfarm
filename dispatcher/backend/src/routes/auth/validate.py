@@ -1,5 +1,6 @@
 import base64
 import binascii
+from datetime import datetime
 
 import paramiko
 import jsonschema
@@ -40,8 +41,9 @@ def ssh_key():
 
     # database
     username = request_json['username']
-    user = Users().find_one({'username': username,
-                             'ssh_keys': {'$elemMatch': {'fingerprint': fingerprint}}})
+    user = Users().update_one({'username': username,
+                               'ssh_keys': {'$elemMatch': {'fingerprint': fingerprint}}},
+                              {'ssh_keys.$.last_used': datetime.now()})
 
     if user is None:
         raise errors.Unauthorized()
