@@ -1,9 +1,11 @@
-import sys
-import time
-import socket
+import json
 import signal
+import socket
+import sys
 import threading
+import time
 import traceback
+import urllib.request
 
 import paramiko
 
@@ -17,11 +19,23 @@ class Server(paramiko.ServerInterface):
     def get_allowed_auths(self, username):
         return "publickey"
 
-    def check_auth_publickey(self, username, key):
+    def check_auth_publickey(self, username, key: paramiko.PKey):
+        # print(username, key)
+        print('username: {}'.format(username))
+        print('key: {}'.format(type(key.get_base64())))
+        data = {
+            'username': username,
+            'key': key.get_base64()
+        }
+        data = json.dumps(data)
+        with urllib.request.urlopen('https://farm.openzim.org/auth/validate/ssh_key', data) as response:
+            print(response.code)
+
         return paramiko.AUTH_SUCCESSFUL
 
     def check_channel_request(self, kind, chanid):
-        return paramiko.OPEN_SUCCEEDED if kind == "session" else paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
+        return paramiko.OPEN_SUCCEEDED if kind == "session" \
+            else paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
 
 
 class Thread(threading.Thread):
