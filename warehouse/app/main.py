@@ -20,15 +20,13 @@ class Server(paramiko.ServerInterface):
         return "publickey"
 
     def check_auth_publickey(self, username, key: paramiko.PKey):
-        # print(username, key)
-        print('username: {}'.format(username))
-        print('key: {}'.format(type(key.get_base64())))
+        url = 'https://farm.openzim.org/auth/validate/ssh_key'
         data = {
             'username': username,
             'key': key.get_base64()
         }
-        data = json.dumps(data)
-        with urllib.request.urlopen('https://farm.openzim.org/auth/validate/ssh_key', data) as response:
+        data = json.dumps(data).encode()
+        with urllib.request.urlopen(url, data) as response:
             print(response.code)
 
         return paramiko.AUTH_SUCCESSFUL
