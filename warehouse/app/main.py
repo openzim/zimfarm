@@ -20,16 +20,19 @@ class Server(paramiko.ServerInterface):
         return "publickey"
 
     def check_auth_publickey(self, username, key: paramiko.PKey):
-        url = 'https://farm.openzim.org/auth/validate/ssh_key'
+        url = 'https://farm.openzim.org/api/auth/validate/ssh_key'
         data = {
             'username': username,
             'key': key.get_base64()
         }
         data = json.dumps(data).encode()
-        with urllib.request.urlopen(url, data) as response:
-            print(response.code)
-
-        return paramiko.AUTH_SUCCESSFUL
+        headers = {'content-type': 'application/json'}
+        request = urllib.request.Request(url, data, headers, method='POST')
+        with urllib.request.urlopen(request) as response:
+            if response.code < 300:
+                return paramiko.AUTH_SUCCESSFUL
+            else:
+                return paramiko.AUTH_FAILED
 
     def check_channel_request(self, kind, chanid):
         return paramiko.OPEN_SUCCEEDED if kind == "session" \
