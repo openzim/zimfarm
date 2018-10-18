@@ -2,36 +2,10 @@ import signal
 import socket
 import sys
 import threading
-import time
-import traceback
 
 import paramiko
 
-from server import Server
-from sftp import SFTPHandler
-
-
-class Thread(threading.Thread):
-    def __init__(self, client: socket.socket):
-        super().__init__()
-        self.client = client
-        self.host_key = paramiko.RSAKey(filename="/Users/chrisli/.ssh/id_rsa")
-
-    def run(self):
-        try:
-            transport = paramiko.Transport(self.client)
-            transport.add_server_key(self.host_key)
-            transport.set_subsystem_handler("sftp", paramiko.SFTPServer, sftp_si=SFTPHandler)
-            transport.start_server(server=Server())
-            channel: paramiko.Channel = transport.accept()
-
-            while transport.is_active():
-                time.sleep(1)
-
-        except Exception as e:
-            print("*** Caught exception: " + str(e.__class__) + ": " + str(e))
-            traceback.print_exc()
-
+from thread import Thread
 
 if __name__ == '__main__':
     def signal_handler(number: int, *args):
@@ -55,6 +29,9 @@ if __name__ == '__main__':
     logger.info('Welcome to Zimfarm warehouse')
 
 
+    host_key = "/Users/chrisli/.ssh/id_rsa"
+    host_key = paramiko.RSAKey(filename=host_key)
+
     signal.signal(signal.SIGINT, signal_handler)
     # signal.signal(signal.SIGTERM, signal_handler)
 
@@ -65,7 +42,7 @@ if __name__ == '__main__':
         try:
             client, address = sock.accept()
             print('Received incoming connection from {}:{}'.format(address[0], address[1]))
-            thread = Thread(client)
+            thread = Thread(host_key, client)
             thread.start()
         except Exception as e:
             print("*** Listen/accept failed: " + str(e))
