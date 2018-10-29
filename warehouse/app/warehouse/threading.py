@@ -6,8 +6,8 @@ import logging
 
 import paramiko
 
-from server import Server
-from sftp import SFTPHandler
+from warehouse.server import Server
+from warehouse.sftp import SFTPHandler
 
 
 class Thread(threading.Thread):
@@ -21,13 +21,13 @@ class Thread(threading.Thread):
 
     def run(self):
         try:
-            transport = paramiko.Transport(self.socket)
-            transport.add_server_key(self.host_key)
-            transport.set_subsystem_handler(name="sftp", handler=paramiko.SFTPServer, sftp_si=SFTPHandler)
-            transport.start_server(server=Server())
-            self.channel = transport.accept(timeout=90)
+            with paramiko.Transport(self.socket) as transport:
+                transport.add_server_key(self.host_key)
+                transport.set_subsystem_handler(name="sftp", handler=paramiko.SFTPServer, sftp_si=SFTPHandler)
+                transport.start_server(server=Server())
+                self.channel = transport.accept(timeout=90)
 
-            while transport.is_active():
-                time.sleep(1)
+                while transport.is_active():
+                    time.sleep(1)
         except paramiko.SSHException as e:
             self.logger.error(e)
