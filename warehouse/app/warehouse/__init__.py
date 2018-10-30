@@ -24,13 +24,10 @@ class Warehouse:
         while True:
             try:
                 client, address = sock.accept()
-
-                self.logger.info('Received incoming connection -- {}:{}'.format(address[0], address[1]))
-
-                thread = Thread(client, key)
+                thread = Thread(client, address, key)
                 thread.start()
             except Exception as e:
-                print("*** Listen/accept failed: " + str(e))
+                self.logger.error('Failed to accept incoming connection: %s', e)
 
     def _get_private_key(self) -> paramiko.RSAKey:
         try:

@@ -13,13 +13,15 @@ from warehouse.sftp import SFTPHandler
 class Thread(threading.Thread):
     logger = logging.getLogger(__name__)
 
-    def __init__(self, socket: socket.socket, host_key: paramiko.RSAKey):
+    def __init__(self, socket: socket.socket, address: (str, int), host_key: paramiko.RSAKey):
         super().__init__()
         self.socket = socket
+        self.address = address
         self.host_key = host_key
         self.channel: Optional[paramiko.Channel, None] = None
 
     def run(self):
+        self.logger.info('Received incoming connection -- {}:{}'.format(self.address[0], self.address[1]))
         try:
             with paramiko.Transport(self.socket) as transport:
                 transport.add_server_key(self.host_key)
