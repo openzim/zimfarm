@@ -5,7 +5,7 @@ import sys
 
 import paramiko
 
-from . import errors
+from . import errors, sftp
 from .threading import Thread
 
 
@@ -18,6 +18,7 @@ class Warehouse:
     def start(self):
         self.logger.info('Welcome to Zimfarm warehouse')
 
+        self._configure_root_dir()
         key = self._get_private_key()
         sock = self._bind_socket()
 
@@ -67,3 +68,19 @@ class Warehouse:
         except Exception as e:
             self.logger.error('Socket binding failed -- {}'.format(e))
             sys.exit(1)
+
+    @staticmethod
+    def _configure_root_dir():
+        """Create root dir if not exist and set root in `sftp.Handler`
+        :return:
+        """
+        root = os.getenv('ROOT', '/zim_files')
+
+        if os.path.exists(root):
+            if not os.path.isdir(root):
+                os.remove(root)
+                os.makedirs(root)
+        else:
+            os.makedirs(root)
+
+        sftp.Handler.root = root

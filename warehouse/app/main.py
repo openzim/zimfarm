@@ -1,21 +1,8 @@
 import logging
 import os
+import sys
 
 from warehouse import Warehouse
-
-
-# def signal_handler(number: int, stack_frame):
-#     """Close paramiko threads when receiving SIGINT
-#
-#     :param number: the signal number, like signal.SIGINT
-#     :param stack_frame:
-#     :return:
-#     """
-#     for thread in threading.enumerate():
-#         if isinstance(thread, paramiko.Transport):
-#             thread.close()
-#     sys.exit(0)
-
 
 if __name__ == '__main__':
     # setting up logging
@@ -25,7 +12,8 @@ if __name__ == '__main__':
                         handlers=[logging.StreamHandler(),
                                   logging.FileHandler(log_path, mode='w')])
     # start zimfarm warehouse
-    warehouse = Warehouse()
-    warehouse.start()
-
-    # signal.signal(signal.SIGINT, signal_handler)
+    try:
+        warehouse = Warehouse()
+        warehouse.start()
+    except (KeyboardInterrupt, SystemExit):
+        sys.exit()

@@ -1,13 +1,12 @@
+import logging
 import socket
 import threading
 import time
 from typing import Optional
-import logging
 
 import paramiko
 
-from warehouse.server import Server
-from warehouse.sftp import SFTPHandler
+from warehouse import sftp
 
 
 class Thread(threading.Thread):
@@ -15,6 +14,7 @@ class Thread(threading.Thread):
 
     def __init__(self, socket: socket.socket, address: (str, int), host_key: paramiko.RSAKey):
         super().__init__()
+        self.daemon = True
         self.socket = socket
         self.address = address
         self.host_key = host_key
@@ -25,8 +25,8 @@ class Thread(threading.Thread):
         try:
             with paramiko.Transport(self.socket) as transport:
                 transport.add_server_key(self.host_key)
-                transport.set_subsystem_handler(name="sftp", handler=paramiko.SFTPServer, sftp_si=SFTPHandler)
-                transport.start_server(server=Server())
+                transport.set_subsystem_handler(name="sftp", handler=paramiko.SFTPServer, sftp_si=sftp.Handler)
+                transport.start_server(server=sftp.Server())
                 self.channel = transport.accept(timeout=90)
 
                 while transport.is_active():
