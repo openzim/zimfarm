@@ -90,7 +90,14 @@ class Handler(paramiko.SFTPServerInterface):
         return SFTPAttributes.from_stat(os.stat(path))
 
     def mkdir(self, path, attr):
-        return sftp.SFTP_OP_UNSUPPORTED
+        path = self.canonicalize(path)
+        try:
+            os.mkdir(path)
+            if attr is not None:
+                SFTPServer.set_file_attr(path, attr)
+        except OSError as e:
+            return SFTPServer.convert_errno(e.errno)
+        return sftp.SFTP_OK
 
     def open(self, path, flags, attr: SFTPAttributes):
         path = self.canonicalize(path)
