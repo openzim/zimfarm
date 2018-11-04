@@ -1,0 +1,53 @@
+<div class="title">
+    Beat
+</div>
+<div class="display">{{config.description}}</div>
+<form>
+    <div>
+        <table class="table-container">
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><label for="minute">Minute</label></td>
+                    <td><input type="text" id="minute" name="minute"
+                        [(ngModel)]="config.minute" (ngModelChange)="configChanged()"
+                        autocomplete="minute" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="hour">Hour</label></td>
+                    <td><input type="text" id="hour" name="hour"
+                        [(ngModel)]="config.hour" (ngModelChange)="configChanged()"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="day_of_week">Day of Week</label></td>
+                    <td><input type="text" id="day_of_week" name="day_of_week"
+                        [(ngModel)]="config.day_of_week" (ngModelChange)="configChanged()"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="day_of_month">Day of Month</label></td>
+                    <td><input type="text" id="day_of_month" name="day_of_month"
+                        [(ngModel)]="config.day_of_month" (ngModelChange)="configChanged()"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="month_of_year">Month of Year</label></td>
+                    <td><input type="text" id="month_of_year" name="month_of_year"
+                        [(ngModel)]="config.month_of_year" (ngModelChange)="configChanged()"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</form>

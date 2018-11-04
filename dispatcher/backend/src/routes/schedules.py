@@ -161,38 +161,6 @@ def document(name: str, user: dict):
         return Response()
 
 
-# @blueprint.route("/<string:name>/beat", methods=["PATCH"])
-# @authenticate
-# def schedule_beat(name: str, user: dict):
-#     """
-#     Get or Update beat of one schedule
-#     """
-#     if request.method == "GET":
-#         schedule = Schedules().find_one({'name': name}, {'beat': 1})
-#         if schedule is None:
-#             raise errors.NotFound()
-#         return jsonify(schedule['beat'])
-#     elif request.method == "PATCH":
-#         # check user permission
-#         if not user.get('scope', {}).get('schedules', {}).get('update', False):
-#             raise errors.NotEnoughPrivilege()
-#
-#         # validate request json
-#         request_json = request.get_json()
-#         try:
-#             validate(request_json, Schema.beat)
-#         except ValidationError as error:
-#             raise errors.BadRequest(error.message)
-#
-#
-#
-#         # update database
-#         matched_count = Schedules().update_one({'name': name}, {'$set': {'beat': request_json}}).matched_count
-#         if matched_count == 0:
-#             raise errors.NotFound()
-#         return jsonify({'name': name})
-
-
 @blueprint.route("/<string:name>/<string:property_name>", methods=["GET", "PATCH"])
 @authenticate
 def schedule_offliner(name: str, property_name: str, user: dict):
@@ -228,7 +196,7 @@ def schedule_offliner(name: str, property_name: str, user: dict):
             raise errors.BadRequest(error.message)
 
         if property_name == 'beat':
-            # test crontab
+            # test crontab init
             try:
                 config = request_json['config']
                 crontab(minute=config.get('minute', '*'),
@@ -240,7 +208,7 @@ def schedule_offliner(name: str, property_name: str, user: dict):
                 raise errors.BadRequest()
 
         # update database
-        matched_count = Schedules().update_one({'name': name}, {'$set': {'property_name': request_json}}).matched_count
+        matched_count = Schedules().update_one({'name': name}, {'$set': {property_name: request_json}}).matched_count
         if matched_count == 0:
             raise errors.NotFound()
         return jsonify({'name': name})

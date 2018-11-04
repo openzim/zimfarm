@@ -1,0 +1,38 @@
+div.display {
+    margin: 2rem 0rem;
+    font-size: 2rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+table {
+    border-collapse: collapse;
+    width:100%
+}
+
+th, td {
+    border: 1px solid #dddddd;
+    height: 2.5rem;
+}
+
+tr > td:first-child {
+    text-align: center;
+}
+
+tr > td:last-child > input {
+    border: 0;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 1rem;
+}
+

@@ -1,10 +1,12 @@
 from functools import wraps
+from typing import Union
+
 from flask import request
 from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
 
 from utils.token import AccessToken
-from .errors import Unauthorized
+from .errors import Unauthorized, NotEnoughPrivilege
 
 
 def authenticate(f):
@@ -17,9 +19,22 @@ def authenticate(f):
             return f(*args, **kwargs)
         except jwt_exceptions.ExpiredSignatureError:
             raise Unauthorized('token expired')
-        except jwt_exceptions.InvalidTokenError:
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
             raise Unauthorized('token invalid')
-        except jwt_exceptions.PyJWTError:
+    return wrapper
+
+
+def authenticate2(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            token = request.headers.get('token', None)
+            payload = AccessToken.decode(token)
+            kwargs['token'] = AccessToken.Payload(payload)
+            return f(*args, **kwargs)
+        except jwt_exceptions.ExpiredSignatureError:
+            raise Unauthorized('token expired')
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
             raise Unauthorized('token invalid')
     return wrapper
 
@@ -37,6 +52,23 @@ def bson_object_id(keys: list):
                     kwargs[key] = object_id
                 except InvalidId:
                     raise errors.BadRequest(message="Invalid ObjectID")
+            return f(*args, **kwargs)
+        return wrapper
+    return decorate
+
+
+def url_object_id(names: Union[list, str]):
+    if isinstance(names, str):
+        names = [names]
+    def decorate(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            for name in names:
+                try:
+                    object_id = ObjectId(kwargs.get(name, None))
+                    kwargs[name] = object_id
+                except InvalidId:
+                    pass
             return f(*args, **kwargs)
         return wrapper
     return decorate

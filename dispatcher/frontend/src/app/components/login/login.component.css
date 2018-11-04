@@ -72,6 +72,7 @@ input[type=text], input[type=password] {
     border-radius: 0.25rem;
     box-sizing: border-box;
     font-size: 1rem;
+    -webkit-appearance: none;
 }
 
 input[type=submit] {

@@ -1,0 +1,6 @@
+celery>=4.2.0
+Flask>=1.0.0
+jsonschema>=2.6.0
+paramiko>=2.4.0
+PyJWT>=1.6.0
+pymongo>=3.7.0
