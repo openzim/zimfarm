@@ -48,11 +48,11 @@ class Handler(paramiko.SFTPServerInterface):
         super().__init__(*args, **kwargs)
 
     def canonicalize(self, path):
-        if os.path.isabs(path):
-            path = self.root + path
+        path = super().canonicalize(path)
+        if path.startswith(self.root):
+            return path
         else:
-            path = self.root + '/' + path
-        return os.path.normpath(path)
+            return self.root + path
 
     def chattr(self, path, attr):
         """
