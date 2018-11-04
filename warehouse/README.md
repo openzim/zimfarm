@@ -1,43 +1,42 @@
 # Warehouse
 
-The ftp server accepting uploads from zimfarm workers
+The sftp server accepting uploads from zimfarm workers. 
 
-## How to run
+Docker image: `docker pull openzim/zimfarm-warehouse`
 
-1. close this repo
-2. change directory to warehouse: `cd warehouse`
-3. (optional) customize Dockerfile, see guide below
-4. build container and run `docker build -t warehouse .`
-5. run container
-```
-docker run -p 21:21 -p 28011-28090:28011-28090 \
-           -v /files:/files \
-           -e FTP_COMMAND_PORT=21 \
-           -e FTP_DATA_PORT_RANGE=28011-28090 \
-           -e TOKEN_VALIDATION_URL=https://farm.openzim.org/api/auth/validate \
-           -e MASQUERADE_ADDRESS=163.172.33.162 \
-           warehouse
-```
+When offliners finished running on workers, files are transported to warehouse using SFTP. 
+Worker's identity is validated by public key authentication. 
+Upon receiving auth challenge, warehouse send http request to dispatcher to validate public key.
 
+Workers can:
+- create directories
+- list contents in a directory
+- create and upload files
+- get or change attributes of files or directories
 
-Example:
-```
-docker build -t warehouse . &&
-docker run -p 21:21 -p 28011-28090:28011-28090 \
-           -v /var/www/staging.download.kiwix.org:/files \
-           -e FTP_COMMAND_PORT=21 \
-           -e FTP_DATA_PORT_RANGE=28011-28090 \
-           -e TOKEN_VALIDATION_URL=https://farm.openzim.org/api/auth/validate \
-           -e MASQUERADE_ADDRESS=163.172.33.162 \
-           warehouse
-```
+Workers can not:
+- delete directories and files
+- follow or create links
+
 
 ## Environment Variables
 
-| Env                  | Default     | Description                                                                     |
-|----------------------|-------------|---------------------------------------------------------------------------------|
-| FTP_COMMAND_PORT     | 21          | command port inside container                                                   |
-| FTP_DATA_PORT_RANGE  | 28011-28090 | data port range inside container                                                |
-| TOKEN_VALIDATION_URL |             | url used to validate file uploading token                                       |
-| MASQUERADE_ADDRESS   |             | IP address in PASV reply, set when warehouse is running behind a NAT or gateway |
-| FILE_STORAGE_DIR     | /files      | the directory where all zim files are stored inside the container               |
+| Env       | Default        | Description                                                  |
+|-----------|----------------|--------------------------------------------------------------|
+| RSA_KEY   |                | Server's RSA private key, will be generated if not specified |
+| PORT      | 22             | Port the SFTP server will be listening                       |
+| ROOT_PATH | /zim_files     | Path where the SFTP server will be severing from             |
+| LOG_PATH  | /warehouse.log | SFTP server log                                              |
+
+## Example
+
+```bash
+docker pull openzim/zimfarm-warehouse && \
+docker run \
+    -v /zim_files:/zim_files \
+    -v /logs/warehouse.log:/warehouse.log \
+    -p 1522:22 \
+    -d \
+    --name zimfarm_warehouse \
+    openzim/zimfarm-warehouse
+```
