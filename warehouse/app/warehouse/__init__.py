@@ -74,7 +74,7 @@ class Warehouse:
         """Create root dir if not exist and set root in `sftp.Handler`
         :return:
         """
-        root = os.getenv('ROOT', '/zim_files')
+        root = os.getenv('ROOT_PATH', '/zim_files')
 
         if os.path.exists(root):
             if not os.path.isdir(root):
