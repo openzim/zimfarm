@@ -14,7 +14,7 @@ def randomize(token: str):
         config = {
             'minute': randint(0, 3) * 15,
             'hour': randint(0, 23),
-            'day_of_week': randint(0, 6)
+            'day_of_month': randint(0, 28)
         }
         request_json = {
             'type': 'crontab',

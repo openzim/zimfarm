@@ -5,13 +5,10 @@ import { HttpClientModule } from '@angular/common/http';
 import { Routes, RouterModule } from '@angular/router';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
-import { TimeAgoPipe } from 'time-ago-pipe';
-
 import { RootComponent, AppComponent } from './components/components';
 import { LoginComponent } from './components/login/login.component';
 import { NavigationBarComponent } from './components/navigation-bar/navigation-bar.component';
 import { QueueComponent } from './components/queue/queue.component';
-import { ScheduleComponent } from './components/schedule/schedule.component';
 import { WorkerComponent } from './components/worker/worker.component';
 import { LogComponent } from './components/log/log.component';
 import { UserComponent } from './components/user/user.component';
@@ -26,12 +23,12 @@ const routes: Routes = [
         component: AppComponent,
         canActivate: [AuthGuard],
         children: [
+            { path: 'schedule', loadChildren: './schedule/schedule.module#ScheduleModule' },
             { path: 'queue', component: QueueComponent },
-            { path: 'schedule', component: ScheduleComponent },
             { path: 'worker', component: WorkerComponent },
             { path: 'log', component: LogComponent },
             { path: 'user', component: UserComponent },
-            { path: '**', redirectTo: 'queue' }
+            { path: '**', redirectTo: 'schedule' }
         ]
     },
     
@@ -46,13 +43,11 @@ const routes: Routes = [
         RouterModule.forRoot(routes)
     ],
     declarations: [
-        TimeAgoPipe,
         RootComponent,
         AppComponent,
         LoginComponent,
         NavigationBarComponent,
         QueueComponent,
-        ScheduleComponent,
         WorkerComponent,
         LogComponent,
         UserComponent

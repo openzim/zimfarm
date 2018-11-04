@@ -88,8 +88,8 @@ ENV/
 /node_modules
 
 # IDEs and editors
-/.idea
-/.vscode
+.idea
+.vscode
 .project
 .classpath
 .c9/

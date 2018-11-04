@@ -1,20 +1,17 @@
 from uuid import UUID, uuid4
 from datetime import datetime, timedelta
 
-from flask import Blueprint, request, Response, jsonify
+import flask
+from flask import request, jsonify
 from werkzeug.security import check_password_hash
 
-from app import system_username, system_password
 from utils.mongo import Users, RefreshTokens
 from utils.token import AccessToken
-from .errors import BadRequest, Unauthorized
+from . import validate, rabbitmq
+from ..errors import BadRequest, Unauthorized
 
 
-blueprint = Blueprint('auth', __name__, url_prefix='/api/auth')
-
-
-@blueprint.route("/authorize", methods=["POST"])
-def authorize():
+def credentials():
     """
     Authorize a user with username and password
     When success, return json object with access and refresh token
@@ -63,7 +60,6 @@ def authorize():
     return response
 
 
-@blueprint.route("/token", methods=["POST"])
 def token():
     """
     Issue a new set of access and refresh token after validating an old refresh token
@@ -119,56 +115,10 @@ def token():
     return response
 
 
-@blueprint.route("/validate", methods=["POST"])
-def validate():
-    """
-    Validate an access token
-    """
-    payload = AccessToken.decode(request.headers.get('access-token'))
-    if payload is None:
-        raise Unauthorized()
-
-    user = Users().find_one({'username': payload['user']['username']})
-    if user is None:
-        raise Unauthorized()
-
-    return Response()
-
-
-@blueprint.route("/rabbitmq/<string:intention>", methods=["POST"])
-def rabbitmq_user(intention: str):
-    """
-    Handles RabbitMQ auth http backend request
-    See also: https://github.com/rabbitmq/rabbitmq-auth-backend-http
-    See also: https://www.rabbitmq.com/management.html
-    """
-
-    username = request.form.get('username', None)
-    if username is None:
-        return Response('deny')
-
-    if intention == 'user':
-        password = request.form.get('password')
-        if username == system_username and password == system_password:
-            return Response('allow')
-        else:
-            user = Users().find_one({'username': username}, {'_id': 0, 'password_hash': 1, 'scope.rabbitmq': 1})
-            password_hash = user.get('password_hash', '')
-            tags = user.get('scope', {}).get('rabbitmq', [])
-            if user is not None and check_password_hash(password_hash, password):
-                tags = ['allow'] + tags
-                return Response(' '.join(tags))
-            else:
-                return Response("deny")
-    elif intention == 'vhost' or intention == 'resource' or intention == 'topic':
-        vhost = request.form.get('vhost', None)
-        if vhost != 'zimfarm':
-            return Response("deny")
-
-        if username == system_username:
-            return Response("allow")
-        else:
-            user = Users().find_one({'username': username}, {'_id': 1})
-            return Response("allow" if user is not None else "deny")
-    else:
-        return Response("deny")
+class Blueprint(flask.Blueprint):
+    def __init__(self):
+        super().__init__('auth', __name__, url_prefix='/api/auth')
+        self.add_url_rule('/authorize', 'auth_with_credentials', credentials, methods=['POST'])
+        self.add_url_rule('/token', 'auth_with_token', token, methods=['POST'])
+        self.add_url_rule('/validate/ssh_key', 'validate_ssh_key', validate.ssh_key, methods=['POST'])
+        self.add_url_rule('/rabbitmq/<string:intention>', 'rabbitmq_auth', rabbitmq.auth, methods=['POST'])

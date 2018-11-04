@@ -2,7 +2,6 @@ import os
 import sys
 
 from werkzeug.security import generate_password_hash
-from cerberus import Validator
 from pymongo import ASCENDING
 
 from utils import mongo
@@ -13,6 +12,9 @@ class Initializer:
     def create_database_indexes():
         mongo.Users().create_index([(mongo.Users.username, ASCENDING)], name='username', unique=True)
         mongo.Users().create_index([(mongo.Users.email, ASCENDING)], name='email', unique=True)
+        mongo.Users().create_index('ssh_keys.fingerprint', name='ssh_keys.fingerprint',
+                                   partialFilterExpression={'ssh_keys': {'$exists': True}})
+
         mongo.RefreshTokens().create_index([('token', ASCENDING)], name='token', unique=True)
 
         mongo.Tasks().create_index([('status', ASCENDING)], name='status', unique=False)
@@ -42,9 +44,6 @@ class Initializer:
                     }
                 }
             }
-            validator = Validator(mongo.Users.schema)
-            if not validator.validate(document):
-                sys.exit()
             users.insert_one(document)
 
 

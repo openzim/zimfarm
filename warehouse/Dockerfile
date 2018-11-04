@@ -4,6 +4,14 @@ WORKDIR /usr/src
 COPY ./app /usr/src/app
 
 RUN pip3 install -r ./app/requirements.txt
-RUN mkdir /files
+RUN mkdir /zim_files
+RUN ssh-keygen -t rsa -N "" -f server.key
+
+ENV RSA_KEY server.key
+ENV ROOT /zim_files
+ENV LOG_PATH warehouse.log
+ENV PORT 22
+
+EXPOSE 22
 
 ENTRYPOINT ["python3", "app/main.py"]
