@@ -1,2 +1,3 @@
 celery>=4.2
 docker>=3.4
+paramiko>=2.4
