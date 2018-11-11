@@ -1,54 +1,38 @@
+import logging
 import sys
-from pathlib import Path
+
 from celery import Celery
 
 from . import tasks
-from .utils import Setting
+from .utils import Settings
 
 
 class Worker:
+    logger = logging.getLogger(__name__)
+
     def __init__(self):
         pass
 
     def start(self):
-        self.print_banner()
-        self.read_setting()
-        self.check_docker()
-        self.start_celery()
+        self.logger.info('Starting Zimfarm Worker...')
 
-    @staticmethod
-    def print_banner():
-        print("=========================================================\n",
-              "Welcome to Zimfarm worker:\n",
-              "=========================================================\n", sep='')
+        # setting
+        Settings.sanity_check()
+        Settings.log()
 
-    @staticmethod
-    def read_setting():
-        Setting.read_from_env()
-
-    @staticmethod
-    def check_docker():
-        docker_socket = Path('/var/run/docker.sock')
-        if not docker_socket.exists():
-            if Setting.interactive:
-                print('Error: cannot find docker socket at {}, '
-                      'have you installed docker yet?'.format(str(docker_socket)))
-            else:
-                print('Error: cannot find docker socket at {}, '
-                      'have you forgot to map it to the container?'.format(str(docker_socket)))
+        # check docker socket exists
+        if not Settings.docker_socket_path.exists():
+            self.logger.error('Cannot find docker socket at {}'.format(Settings.docker_socket_path))
             sys.exit(1)
 
-    @staticmethod
-    def start_celery():
-        print("---------------------------------------------------------\n",
-              "Starting...", sep='')
-
-        app = Celery(main='zimfarm_worker', broker='amqps://{username}:{password}@{host}:{port}/zimfarm'
-                     .format(username=Setting.username, password=Setting.password,
-                             host=Setting.dispatcher_host, port=Setting.rabbitmq_port))
-        app.register_task(tasks.MWOffliner())
-        app.start(argv=['celery', 'worker',
-                        '--task-events',
-                        '-l', 'info',
-                        '--concurrency', '1',
-                        '-n', '{}@%h'.format(Setting.username)])
+        # start celery
+        broker_url = 'amqps://{username}:{password}@{host}:{port}/zimfarm'.format(
+            username=Settings.username, password=Settings.password,
+            host=Settings.dispatcher_hostname, port=Settings.rabbit_port)
+        celery = Celery(main='zimfarm_worker', broker=broker_url)
+        celery.register_task(tasks.MWOffliner())
+        celery.start(argv=['celery', 'worker',
+                           '--task-events',
+                           '-l', 'info',
+                           '--concurrency', '1',
+                           '-n', '{}@%h'.format(Settings.username)])
