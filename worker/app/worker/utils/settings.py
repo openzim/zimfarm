@@ -25,9 +25,9 @@ class Settings:
             logger.error('{name} environmental variable is required.'.format(name=name))
             sys.exit(1)
 
-        if cls.username is None:
+        if cls.username is None or cls.username == '':
             log_error_and_exit('USERNAME')
-        if cls.password is None:
+        if cls.password is None or cls.password == '':
             log_error_and_exit('PASSWORD')
 
     @classmethod
