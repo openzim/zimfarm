@@ -1,6 +1,20 @@
+import logging
+import os
+import sys
+
 from worker import Worker
 
-
 if __name__ == '__main__':
-    worker = Worker()
-    worker.start()
+    # setting up logging
+    log_path = os.getenv('LOG_PATH', '/worker.log')
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)s: %(message)s',
+                        handlers=[logging.StreamHandler(),
+                                  logging.FileHandler(log_path, mode='w')])
+
+    # start zimfarm worker
+    try:
+        worker = Worker()
+        worker.start()
+    except (KeyboardInterrupt, SystemExit):
+        sys.exit()
