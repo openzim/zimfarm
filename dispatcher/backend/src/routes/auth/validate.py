@@ -45,7 +45,7 @@ def ssh_key():
                                'ssh_keys': {'$elemMatch': {'fingerprint': fingerprint}}},
                               {'$set': {'ssh_keys.$.last_used': datetime.now()}})
 
-    if user is None:
+    if user.matched_count == 0:
         raise errors.Unauthorized()
     else:
         return Response()
