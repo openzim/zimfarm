@@ -1,10 +1,11 @@
 import os
+from typing import Union
 
 import paramiko
 
 
 class SFTPClient:
-    def __init__(self, hostname: str, port: int, username: str, private_key: str):
+    def __init__(self, hostname: str, port: int, username: str, private_key: Union[str, paramiko.RSAKey]):
         """Create an instance of SFTP client.
 
         :param hostname: address of SFTP server
@@ -12,8 +13,11 @@ class SFTPClient:
         """
 
         self.username = username
-        self.private_key = paramiko.RSAKey.from_private_key_file(private_key)
         self.transport = paramiko.Transport((hostname, port))
+        if isinstance(private_key, str):
+            self.private_key = paramiko.RSAKey.from_private_key_file(private_key)
+        else:
+            self.private_key = private_key
 
     def __enter__(self):
         self.transport.connect(username=self.username, pkey=self.private_key)
@@ -38,3 +42,7 @@ class SFTPClient:
 
             remote_path = os.path.basename(os.path.normpath(file_path))
             client.put(localpath=file_path, remotepath=remote_path)
+
+    def list_dir(self, path: str):
+        with paramiko.SFTPClient.from_transport(self.transport) as client:
+            return client.listdir(path)

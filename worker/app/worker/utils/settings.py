@@ -68,6 +68,20 @@ class Settings:
             sys.exit(1)
 
     @classmethod
+    def ensure_correct_typing(cls):
+        logger = logging.getLogger(__name__)
+        try:
+            cls.rabbit_port = int(cls.rabbit_port)
+        except ValueError:
+            logger.error('{} environmental variable is not an integer.'.format('RABBIT_PORT'))
+            sys.exit(1)
+        try:
+            cls.warehouse_port = int(cls.warehouse_port)
+        except ValueError:
+            logger.error('{} environmental variable is not an integer.'.format('WAREHOUSE_PORT'))
+            sys.exit(1)
+
+    @classmethod
     def log(cls):
         logger = logging.getLogger(__name__)
         variables = {
