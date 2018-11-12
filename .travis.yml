@@ -2,3 +2,8 @@ sudo: required
 
 services:
   - docker
+
+before_install:
+  - export SYSTEM_PASSWORD=`pwgen -Bs1 12`
+install:
+  - docker-compose -f ./dispatcher/docker-compose.yml up -d
