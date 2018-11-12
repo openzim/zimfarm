@@ -3,7 +3,7 @@ import os
 import paramiko
 
 
-class Client:
+class SFTPClient:
     def __init__(self, hostname: str, port: int, username: str, private_key: str):
         """Create an instance of SFTP client.
 
