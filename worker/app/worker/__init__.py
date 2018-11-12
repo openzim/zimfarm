@@ -4,7 +4,7 @@ import sys
 from celery import Celery
 
 from . import tasks
-from .utils import Settings
+from .utils import Settings, SFTPClient
 
 
 class Worker:
@@ -18,12 +18,18 @@ class Worker:
 
         # setting
         Settings.sanity_check()
+        Settings.ensure_correct_typing()
         Settings.log()
 
-        # check docker socket exists
-        if not Settings.docker_socket_path.exists():
-            self.logger.error('Cannot find docker socket at {}'.format(Settings.docker_socket_path))
-            sys.exit(1)
+        # sftp smoke test
+        hostname = Settings.warehouse_hostname
+        port = Settings.warehouse_port
+        username = Settings.username
+        private_key = Settings.private_key
+        with SFTPClient(hostname, port, username, private_key) as client:
+            contents = client.list_dir('/')
+            # TODO: handle test failure
+
 
         # start celery
         broker_url = 'amqps://{username}:{password}@{host}:{port}/zimfarm'.format(
