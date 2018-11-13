@@ -12,7 +12,7 @@ def upload():
 
     sftp_client.mkdir('/wikipedia')
     sftp_client.chdir('/wikipedia')
-    sftp_client.put()
+    sftp_client.listdir()
 
 class Client:
     def __init__(self, hostname: str, port: int, username: str, private_key: str):

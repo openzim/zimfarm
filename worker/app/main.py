@@ -11,6 +11,7 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)s: %(message)s',
                         handlers=[logging.StreamHandler(),
                                   logging.FileHandler(log_path, mode='w')])
+    logging.getLogger("paramiko").setLevel(logging.WARNING)
 
     # start zimfarm worker
     try:

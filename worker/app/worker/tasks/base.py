@@ -8,10 +8,10 @@ class Base(Task):
 
     abstract = True
     resultrepr_maxsize = 1024000
+    logger = get_task_logger(__name__)
 
     def __init__(self):
         super().__init__()
-        self.logger = get_task_logger(__name__)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         self.logger.error("task failed")
