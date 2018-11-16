@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import paramiko
 from celery import Celery
 
 from . import tasks
@@ -21,15 +22,8 @@ class Worker:
         Settings.ensure_correct_typing()
         Settings.log()
 
-        # sftp smoke test
-        hostname = Settings.warehouse_hostname
-        port = Settings.warehouse_port
-        username = Settings.username
-        private_key = Settings.private_key
-        with SFTPClient(hostname, port, username, private_key) as client:
-            contents = client.list_dir('/')
-            # TODO: handle test failure
-
+        self.credential_smoke_test()
+        self.sftp_smoke_test()
 
         # start celery
         broker_url = 'amqps://{username}:{password}@{host}:{port}/zimfarm'.format(
@@ -42,3 +36,20 @@ class Worker:
                            '-l', 'info',
                            '--concurrency', '1',
                            '-n', '{}@%h'.format(Settings.username)])
+
+    def credential_smoke_test(self):
+        # TODO: make a simple request to validate username and password
+        pass
+
+    def sftp_smoke_test(self):
+        try:
+            hostname = Settings.warehouse_hostname
+            port = Settings.warehouse_port
+            username = Settings.username
+            private_key = Settings.private_key
+            with SFTPClient(hostname, port, username, private_key) as client:
+                client.list_dir('/')
+            self.logger.info('SFTP auth check success.')
+        except paramiko.AuthenticationException:
+            self.logger.error('SFTP auth check failed -- please double check your username and private key.')
+            sys.exit(1)
