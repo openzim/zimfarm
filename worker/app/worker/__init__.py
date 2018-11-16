@@ -22,6 +22,7 @@ class Worker:
         Settings.ensure_correct_typing()
         Settings.log()
 
+        # test
         self.credential_smoke_test()
         self.sftp_smoke_test()
 
@@ -36,6 +37,10 @@ class Worker:
                            '-l', 'info',
                            '--concurrency', '1',
                            '-n', '{}@%h'.format(Settings.username)])
+
+    def docker_smoke_test(self):
+        # TODO: list containers to make sure have access to docker
+        pass
 
     def credential_smoke_test(self):
         # TODO: make a simple request to validate username and password
