@@ -1,8 +1,10 @@
 from typing import Optional
+
+import docker.errors
 from docker import DockerClient
 from docker.models.containers import Container
-import docker.errors
-from .operation import Operation, Error
+
+from .base import Operation
 
 
 class RunRedis(Operation):
@@ -17,24 +19,22 @@ class RunRedis(Operation):
         self.container_name = container_name
 
     def execute(self):
-        try:
-            container = self._get_container(self.container_name)
-            if container is not None:
-                if container.status == 'running':
-                    self.success = True
-                    return
-                else:
-                    container.remove()
+        """Run a redis container detached with `self.container_name` if there isn't one running already.
 
-            self.docker.images.pull('redis', tag='latest')
-            self.docker.containers.run('redis', detach=True, name=self.container_name)
-            self.success = True
-        except docker.errors.ImageNotFound as e:
-            self.success = False
-            self.error = Error('docker.errors.ImageNotFound', e.status_code, message=str(e))
-        except docker.errors.APIError as e:
-            self.success = False
-            self.error = Error('docker.errors.APIError', e.status_code, message=str(e))
+        :raise: docker.errors.ImageNotFound
+        :raise: docker.errors.APIError
+        """
+
+        container = self._get_container(self.container_name)
+        if container is not None:
+            if container.status == 'running':
+                self.success = True
+                return
+            else:
+                container.remove()
+
+        self.docker.images.pull('redis', tag='latest')
+        self.docker.containers.run('redis', detach=True, name=self.container_name)
 
     def _get_container(self, container_name: str) -> Optional[Container]:
         try:
