@@ -1,9 +1,9 @@
 import docker
+import docker.errors
 
 from .base import Base, TaskFailed
 from ..operations import RunRedis, PullContainer, RunMWOffliner, Upload
 from ..utils import Settings
-
 
 class MWOffliner(Base):
     """MWOffliner zimfarm task. This task have four steps:
@@ -18,24 +18,28 @@ class MWOffliner(Base):
 
     name = 'mwoffliner'
 
-    @property
-    def short_task_id(self) -> str:
-        return self.request.id.split('-')[0]
-
     def run(self, offliner_config):
-        print(offliner_config)
-
         operations = [
             RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name),
             PullContainer(docker_client=docker.from_env(), image_name='openzim/mwoffliner'),
-            RunMWOffliner(docker_client=docker.from_env(), config=offliner_config, short_task_id=self.short_task_id,
-                          working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
+            # RunMWOffliner(docker_client=docker.from_env(), config=offliner_config, short_task_id=self.short_task_id,
+            #               working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
         ]
 
         for index, operation in enumerate(operations):
             self.logger.info('Task {}[{}] -- step {} of {}: {}'.format(
                 self.name, self.short_task_id, index + 1, len(operations), operation.name))
-            operation.execute()
+
+            if isinstance(operation, RunMWOffliner):
+                self.logger.info('{name}[{id}] -- Running MWOffliner, mwUrl: {mwUrl}'.format(
+                    name=self.name, id=self.short_task_id, mwUrl=offliner_config['mwUrl']))
+
+            try:
+                operation.execute()
+            except docker.errors.APIError:
+                pass
+            except docker.errors.ImageNotFound:
+                pass
 
 
         # operations = [

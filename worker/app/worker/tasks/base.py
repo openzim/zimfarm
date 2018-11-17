@@ -10,6 +10,10 @@ class Base(Task):
     resultrepr_maxsize = 1024000
     logger = get_task_logger(__name__)
 
+    @property
+    def short_task_id(self) -> str:
+        return self.request.id.split('-')[0]
+
     def __init__(self):
         super().__init__()
 

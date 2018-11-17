@@ -8,10 +8,7 @@ from .base import Operation
 
 
 class RunRedis(Operation):
-    """Run redis container with `container_name` if no such container is already running.
-    """
-
-    name = 'Start Redis'
+    name = 'start_redis'
 
     def __init__(self, docker_client: DockerClient, container_name: str):
         super().__init__()
