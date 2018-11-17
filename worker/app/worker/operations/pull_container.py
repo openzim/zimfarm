@@ -1,11 +1,9 @@
 from docker import DockerClient
-import docker.errors
-from .base import Operation, Error
+
+from .base import Operation
 
 
 class PullContainer(Operation):
-    """Pull container with `image_name`.
-    """
 
     name = 'pull_container'
 
@@ -15,7 +13,7 @@ class PullContainer(Operation):
         self.image_name = image_name
 
     def execute(self):
-        """
+        """Pull container with `image_name`, lagged 'latest'.
 
         :raise: docker.errors.APIError
         """

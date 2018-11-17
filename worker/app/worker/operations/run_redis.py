@@ -8,6 +8,7 @@ from .base import Operation
 
 
 class RunRedis(Operation):
+
     name = 'start_redis'
 
     def __init__(self, docker_client: DockerClient, container_name: str):
