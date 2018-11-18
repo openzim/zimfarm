@@ -1,8 +1,8 @@
-import os
+from pathlib import Path
 from typing import Union
 
 import paramiko
-from pathlib import Path
+
 
 class SFTPClient:
     def __init__(self, hostname: str, port: int, username: str, private_key: Union[str, paramiko.RSAKey]):
