@@ -1,8 +1,19 @@
-FROM python:latest
+FROM python:3.6
 
-COPY . /usr/src/worker
-WORKDIR /usr/src/worker
+WORKDIR /usr/src
+COPY ./app /usr/src/app
 
-RUN pip3 install -r ./requirements.txt
+RUN pip3 install -r ./app/requirements.txt
 
-ENTRYPOINT ["python", "docker_entry.py"]
+ENV USERNAME username
+ENV PASSWORD password
+
+ENV DISPATCHER_HOST farm.openzim.org
+ENV RABBIT_PORT 5671
+ENV WAREHOUSE_HOST farm.openzim.org
+ENV WAREHOUSE_PORT 1522
+
+ENV WORKING_DIR /Volumes/Data/zimfarm_working
+
+
+ENTRYPOINT ["python", "app/main.py"]

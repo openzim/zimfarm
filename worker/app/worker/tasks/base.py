@@ -8,10 +8,14 @@ class Base(Task):
 
     abstract = True
     resultrepr_maxsize = 1024000
+    logger = get_task_logger(__name__)
+
+    @property
+    def short_task_id(self) -> str:
+        return self.request.id.split('-')[0]
 
     def __init__(self):
         super().__init__()
-        self.logger = get_task_logger(__name__)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         self.logger.error("task failed")
