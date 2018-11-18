@@ -2,7 +2,7 @@ import os
 from typing import Union
 
 import paramiko
-
+from pathlib import Path
 
 class SFTPClient:
     def __init__(self, hostname: str, port: int, username: str, private_key: Union[str, paramiko.RSAKey]):
@@ -26,7 +26,7 @@ class SFTPClient:
     def __exit__(self, *args, **kwargs):
         self.transport.close()
 
-    def upload_file(self, category: str, file_path: str):
+    def upload_file(self, category: str, file_path: Path):
         """Upload a file to warehouse.
 
         :param category: zim file category
@@ -40,8 +40,8 @@ class SFTPClient:
                 client.mkdir(working_dir)
                 client.chdir(working_dir)
 
-            remote_path = os.path.basename(os.path.normpath(file_path))
-            client.put(localpath=file_path, remotepath=remote_path)
+            remote_path = file_path.parts[-1]
+            client.put(localpath=file_path, remotepath=remote_path, confirm=True)
 
     def list_dir(self, path: str):
         with paramiko.SFTPClient.from_transport(self.transport) as client:

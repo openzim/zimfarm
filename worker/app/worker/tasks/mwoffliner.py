@@ -21,9 +21,9 @@ class MWOffliner(Base):
     def run(self, offliner_config):
         operations = [
             RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name),
-            # RunMWOffliner(docker_client=docker.from_env(), config=offliner_config, short_task_id=self.short_task_id,
-            #               working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
-            Upload('wikipedia', working_dir=Settings.working_dir_container, short_task_id='4264840f')
+            RunMWOffliner(docker_client=docker.from_env(), config=offliner_config, short_task_id=self.short_task_id,
+                          working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
+            Upload('wikipedia', working_dir=Settings.working_dir_container, short_task_id=self.short_task_id)
         ]
 
         for index, operation in enumerate(operations):

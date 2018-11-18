@@ -1,4 +1,5 @@
 import logging
+import shutil
 from pathlib import Path
 
 from .base import Operation
@@ -15,7 +16,6 @@ class Upload(Operation):
         self.category = category
         self.short_task_id = short_task_id
         self.working_dir = Path(working_dir).joinpath(short_task_id)
-        # print([p for p in self.working_dir.iterdir()])
 
     def execute(self):
         hostname = Settings.warehouse_hostname
@@ -28,6 +28,8 @@ class Upload(Operation):
                 for file in self.working_dir.iterdir():
                     if file.is_dir():
                         continue
-                    client.upload_file(self.category, str(file))
+                    client.upload_file(self.category, file)
         except Exception:
             pass
+
+        shutil.rmtree(self.working_dir)
