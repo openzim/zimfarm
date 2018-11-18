@@ -1,15 +1,21 @@
+import logging
 from pathlib import Path
 
-from .operation import Operation
-from ..utils.sftp import SFTPClient
+from .base import Operation
 from ..utils.settings import Settings
+from ..utils.sftp import SFTPClient
 
 
 class Upload(Operation):
-    def __init__(self, category: str, dir: Path):
+
+    logger = logging.getLogger(__name__)
+
+    def __init__(self, category: str, working_dir: str, short_task_id: str):
         super().__init__()
         self.category = category
-        self.dir = dir
+        self.short_task_id = short_task_id
+        self.working_dir = Path(working_dir).joinpath(short_task_id)
+        # print([p for p in self.working_dir.iterdir()])
 
     def execute(self):
         hostname = Settings.warehouse_hostname
@@ -17,10 +23,11 @@ class Upload(Operation):
         username = Settings.username
         private_key = Settings.private_key
 
-
         try:
-            with Client(hostname, port, username, private_key) as client:
-
-
-        with Client('farm.openzim.org', 1522, 'automactic', '/Users/chrisli/.ssh/id_rsa') as client:
-            client.upload_file('wikipedia', '/Users/chrisli/Downloads/shields/I-93.png')
+            with SFTPClient(hostname, port, username, private_key) as client:
+                for file in self.working_dir.iterdir():
+                    if file.is_dir():
+                        continue
+                    client.upload_file(self.category, str(file))
+        except Exception:
+            pass
