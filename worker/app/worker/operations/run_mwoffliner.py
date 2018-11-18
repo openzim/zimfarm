@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from docker import DockerClient
-import docker.errors
-from .base import Operation, Error
+
+from .base import Operation
 
 
 class RunMWOffliner(Operation):
