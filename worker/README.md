@@ -1,52 +1,42 @@
-# Worker
+# Overview
 
-Worker is a celery node that produce zim files per dispatcher instructions.
+Zimfarm worker is a celery node that generate zim files based on  dispatcher instructions.
 
-After worker successfully established a secure connection with dispatcher, it will start to receive and execute tasks. Each task contains roughly three stages:
+After successfully established a secure connection with dispatcher, worker will receive and execute tasks to generate zim files. 
+Each task contains roughly three stages:
 
 - prepare: run helper docker containers, pull images, etc
 - generate: generate zim files using a offliner docker container
 - upload: upload the zim files back to zimfarm warehouse
 
-To run containers, zimfarm worker need to take control of a docker socket.
+To run containers, zimfarm worker need to have access to a docker socket on the host system.
 
 ## Requirements:
 
 Any Linux or Unix based system that has docker installed. Windows are not supported.
 
-## How to use:
+## Environmental Variables
 
-### Method1: docker
+- USERNAME
+- PASSWORD
+- WORKING_DIR path of a working directory in host system
 
-1. clone this repo
-2. `cd worker`
-3. build image: `docker build . -t zimfarm_worker`
-4. run container:
+## Docker Volumes
 
+- docker socket `/var/run/docker.sock:/var/run/docker.sock`
+- rsa private key `PATH:/usr/src/.ssh/id_rsa`
+- working dir `PATH:/zim_files`
+
+## Example
+
+```bash
+docker pull openzim/zimfarm-worker &&
+docker run
+-v /var/run/docker.sock:/var/run/docker.sock
+-v PATH_SSH_KEY:/usr/src/.ssh/id_rsa
+-v PATH_WORKING_DIR:/zim_files
+--env USERNAME=username
+--env PASSWORD=password
+--env WORKING_DIR=PATH_WORKING_DIR
+openzim/zimfarm-worker
 ```
-docker run \
-    -d \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v HOST_OUTPUT:/files \
-    -e USERNAME=username \
-    -e PASSWORD=password \
-    -e WORKING_DIR=HOST_OUTPUT \
-    zimfarm_worker
-```
-
-**Important**: HOST_OUTPUT is where you want the output dir to be on your host system. An absolute path is needed. It appears twice in the above command and you have to use exactly the same value in both places.
-
-Other available environmental variables:
-
-- DISPATCHER_HOST: default farm.openzim.org
-- WAREHOUSE_HOST: default farm.openzim.org
-- RABBITMQ_PORT: default 5671, port used to communicate with RabbitMQ
-- WAREHOUSE_COMMAND_PORT, default 21, warehouse ftp server command port
-- WORKING_DIR: working directory in host file system
-- REDIS_NAME: default zimfarm_redis, name of redis helper container
-
-### Method2: pip
-
-1. setup virtualenv (optional)
-2. `pip install zimfarm-worker`
-3. run `zimfarm-worker`, enter your credentials and answer some questions
