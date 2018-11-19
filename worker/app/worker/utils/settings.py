@@ -32,7 +32,7 @@ class Settings:
         if cls.password is None or cls.password == '':
             logger.error('{} environmental variable is required.'.format('PASSWORD'))
             sys.exit(1)
-        if cls.working_dir_host is None:
+        if cls.working_dir_host is None or cls.working_dir_host == '':
             logger.error('{} environmental variable is required.'.format('WORKING_DIR'))
             sys.exit(1)
 
@@ -43,7 +43,7 @@ class Settings:
                          .format(cls.working_dir_container))
             sys.exit(1)
         if not working_dir_container.is_dir():
-            logger.error('Working directory inside container at {} is not a directory.'
+            logger.error('Working directory mapping inside container at {} is not a directory.'
                          .format(cls.working_dir_container))
             sys.exit(1)
 
