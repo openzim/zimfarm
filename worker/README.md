@@ -30,13 +30,12 @@ Any Linux or Unix based system that has docker installed. Windows are not suppor
 ## Example
 
 ```bash
-docker pull openzim/zimfarm-worker &&
-docker run
--v /var/run/docker.sock:/var/run/docker.sock
--v PATH_SSH_KEY:/usr/src/.ssh/id_rsa
--v PATH_WORKING_DIR:/zim_files
---env USERNAME=username
---env PASSWORD=password
---env WORKING_DIR=PATH_WORKING_DIR
-openzim/zimfarm-worker
+docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v PATH_SSH_KEY:/usr/src/.ssh/id_rsa \
+    -v PATH_WORKING_DIR:/zim_files \
+    --env USERNAME='username' \
+    --env PASSWORD='password' \
+    --env WORKING_DIR='PATH_WORKING_DIR' \
+openzim/zimfarm-worker:latest
 ```
