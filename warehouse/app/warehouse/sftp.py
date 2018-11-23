@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+import urllib.error
 import urllib.request
 
 import paramiko
@@ -28,11 +29,12 @@ class Server(paramiko.ServerInterface):
         data = json.dumps(data).encode()
         headers = {'content-type': 'application/json'}
         request = urllib.request.Request(url, data, headers, method='POST')
-        with urllib.request.urlopen(request) as response:
-            if response.code < 300:
-                return paramiko.AUTH_SUCCESSFUL
-            else:
-                return paramiko.AUTH_FAILED
+
+        try:
+            urllib.request.urlopen(request)
+            return paramiko.AUTH_SUCCESSFUL
+        except urllib.error.HTTPError:
+            return paramiko.AUTH_FAILED
 
     def check_channel_request(self, kind, chanid):
         if kind == "session":
