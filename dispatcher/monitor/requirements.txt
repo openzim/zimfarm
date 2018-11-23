@@ -1,0 +1,2 @@
+celery>=4.2
+pymongo>=3.7
