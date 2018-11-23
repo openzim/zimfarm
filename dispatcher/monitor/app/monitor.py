@@ -58,6 +58,7 @@ class Monitor:
             load_average = [[load] for load in worker.loadavg]
         else:
             load_average = [[None], [None], [None]]
+        load_average_tags = ['1_min', '5_mins', '15_mins']
 
         filter = {'hostname': worker.hostname}
         update = {'$set': {
@@ -67,7 +68,7 @@ class Monitor:
         if len(worker.heartbeats) == 1:
             # if we only have one heartbeat, wipe out history
             update['$set']['heartbeats'] = [datetime.fromtimestamp(heartbeat) for heartbeat in worker.heartbeats]
-            update['$set']['load_average'] = dict(zip(['1_min', '5_mins', '15_mins'], load_average))
+            update['$set']['load_average'] = dict(zip(load_average_tags, load_average))
         else:
             # if we have multiple heartbeats already, append to database
             update['$push'] = {
@@ -76,7 +77,7 @@ class Monitor:
                     '$slice': -60
                 }
             }
-            load_average_tags = ['1_min', '5_mins', '15_mins']
+
             for index, tag in enumerate(load_average_tags):
                 path = 'load_average.{}'.format(tag)
                 update['$push'][path] = {
@@ -91,6 +92,20 @@ class Monitor:
         self.state.event(event)
         worker: Worker = self.state.workers.get(event['hostname'])
         self.logger.info('Worker offline: {}'.format(worker.hostname))
+
+        filter = {'hostname': worker.hostname}
+        update = {'$set': {
+            'status': worker.status_string.lower(),
+            'session.offline': datetime.fromtimestamp(worker.heartbeats[-1]) if worker.heartbeats else datetime.now(),
+            'heartbeats': [],
+            'load_average': {
+                '1_min': [],
+                '5_mins': [],
+                '15_mins': []
+            }
+        }}
+        workers = mongo.Workers()
+        workers.update_one(filter, update, upsert=True)
 
     def handle_others(self, event):
         print('others')
