@@ -27,7 +27,7 @@ class Monitor:
     def _worker_online(self, event):
         self.state.event(event)
         worker: Worker = self.state.workers.get(event['hostname'])
-        self.logger.info('Worker online: {}'.format(worker.hostname))
+        self.logger.debug('Worker online: {}'.format(worker.hostname))
 
         workers = mongo.Workers()
         filter = {'hostname': worker.hostname}
@@ -37,7 +37,7 @@ class Monitor:
                 'session': {
                     'online': datetime.fromtimestamp(worker.heartbeats[-1]) if worker.heartbeats else datetime.now(),
                     'offline': None,
-                    'processed': 0
+                    'processed': worker.processed
                 },
                 'heartbeats': [],
                 'load_average': {
