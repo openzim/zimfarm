@@ -27,7 +27,7 @@ class Monitor:
     def _worker_online(self, event):
         self.state.event(event)
         worker: Worker = self.state.workers.get(event['hostname'])
-        self.logger.debug('Worker online: {}'.format(worker.hostname))
+        self.logger.info('Worker online: {}'.format(worker.hostname))
 
         workers = mongo.Workers()
         filter = {'hostname': worker.hostname}
@@ -52,7 +52,7 @@ class Monitor:
     def _worker_heartbeat(self, event):
         self.state.event(event)
         worker: Worker = self.state.workers.get(event['hostname'])
-        self.logger.info('Worker heartbeat: {}'.format(worker.hostname))
+        self.logger.debug('Worker heartbeat: {}'.format(worker.hostname))
 
         if worker.loadavg:
             load_average = [[load] for load in worker.loadavg]
