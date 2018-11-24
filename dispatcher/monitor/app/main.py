@@ -1,4 +1,5 @@
 import logging
+import os
 
 from celery import Celery
 
@@ -10,11 +11,12 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)s: %(message)s',
                         handlers=[logging.StreamHandler(),
                                   logging.FileHandler('/worker.log', mode='w')])
-    logging.getLogger("paramiko").setLevel(logging.WARNING)
 
     # configure celery
-    broker_url = 'amqps://{username}:{password}@farm.openzim.org:5671/zimfarm'.format(
-        username='automactic', password='macOS10&open')
+    system_username = 'system'
+    system_password = os.getenv('SYSTEM_PASSWORD', '')
+    broker_url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(
+        username=system_username, password=system_password)
     celery = Celery(broker=broker_url)
 
     # start monitor
