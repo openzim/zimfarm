@@ -7,7 +7,7 @@ from pymongo.database import Database as BaseDatabase
 
 class Client(MongoClient):
     def __init__(self):
-        super().__init__(host=os.getenv('MONGO_HOST'), port=int(os.getenv('MONGO_PORT')))
+        super().__init__(host='mongo')
 
 
 class Database(BaseDatabase):
