@@ -5,7 +5,7 @@ services:
     container_name: zimfarm_proxy
     restart: always
     ports:
-      - 8080:80
+      - 8088:80
       - 4344:443
     volumes:
       - /data/nginx/conf.d:/etc/nginx/conf.d
