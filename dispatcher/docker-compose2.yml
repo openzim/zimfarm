@@ -25,7 +25,7 @@ services:
       - /data/certs:/etc/nginx/certs:ro
       - /data/nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
-    command: "-notify-sighup nginx -watch -wait 5ys:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf"
+    command: "-notify-sighup nginx -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf"
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
     container_name: zimfarm_letsencrypt
