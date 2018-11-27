@@ -58,3 +58,11 @@ services:
       - 127.0.0.1:27017:27017
     volumes:
       - /data/mongo:/data/db
+  rabbit:
+    build:
+      context: ./rabbit
+      dockerfile: Dockerfile
+    container_name: rabbit
+    restart: always
+    volumes:
+      - /data/certs/farm.openzim.org:/certs
