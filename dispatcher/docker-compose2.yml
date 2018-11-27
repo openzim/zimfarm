@@ -50,3 +50,5 @@ services:
       - VIRTUAL_HOST farm.openzim.org
       - LETSENCRYPT_HOST farm.openzim.org
       - LETSENCRYPT_EMAIL contact@kiwix.org
+    expose:
+      - 80
