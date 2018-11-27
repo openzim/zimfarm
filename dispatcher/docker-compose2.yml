@@ -23,8 +23,8 @@ services:
       - /data/nginx/vhost.d:/etc/nginx/vhost.d
       - /data/nginx/html:/usr/share/nginx/html
       - /data/certs:/etc/nginx/certs:ro
-      - /data/nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /data/nginx/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
     command: "-notify-sighup proxy -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf"
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
@@ -50,5 +50,11 @@ services:
       - VIRTUAL_HOST=farm.openzim.org
       - LETSENCRYPT_HOST=farm.openzim.org
       - LETSENCRYPT_EMAIL=contact@kiwix.org
-    expose:
-      - 80
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    ports:
+      - 127.0.0.1:27017:27017
+    volumes:
+      - /data/mongo:/data/db
