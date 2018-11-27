@@ -47,8 +47,8 @@ services:
     container_name: web
     restart: always
     environment:
-      - VIRTUAL_HOST farm.openzim.org
-      - LETSENCRYPT_HOST farm.openzim.org
-      - LETSENCRYPT_EMAIL contact@kiwix.org
+      - VIRTUAL_HOST=farm.openzim.org
+      - LETSENCRYPT_HOST=farm.openzim.org
+      - LETSENCRYPT_EMAIL=contact@kiwix.org
     expose:
       - 80
