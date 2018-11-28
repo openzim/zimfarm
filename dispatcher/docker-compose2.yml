@@ -57,6 +57,7 @@ services:
       - LETSENCRYPT_EMAIL=contact@kiwix.org
       - INIT_USERNAME=admin
       - INIT_PASSWORD=admin_pass
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
   mongo:
     image: mongo:latest
     container_name: mongo
@@ -77,3 +78,25 @@ services:
     volumes:
       - /data/certs/farm.openzim.org:/certs
       - /data/rabbit:/var/lib/rabbitmq
+  beat:
+    build:
+      context: ./beat
+      dockerfile: Dockerfile
+    container_name: beat
+    restart: always
+    links:
+      - rabbit
+      - mongo
+    environment:
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
+  monitor:
+    build:
+      context: ./monitor
+      dockerfile: Dockerfile
+    container_name: monitor
+    restart: always
+    links:
+      - rabbit
+      - mongo
+    environment:
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
