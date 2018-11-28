@@ -42,14 +42,21 @@ services:
       - NGINX_PROXY_CONTAINER=proxy
       - NGINX_DOCKER_GEN_CONTAINER=generator
 
-  web:
-    image: nginx:latest
-    container_name: web
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
     restart: always
+    links:
+      - rabbit
+      - mongo
     environment:
       - VIRTUAL_HOST=farm.openzim.org
       - LETSENCRYPT_HOST=farm.openzim.org
       - LETSENCRYPT_EMAIL=contact@kiwix.org
+      - INIT_USERNAME=admin
+      - INIT_PASSWORD=admin_pass
   mongo:
     image: mongo:latest
     container_name: mongo
