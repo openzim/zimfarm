@@ -32,6 +32,7 @@ def authenticate2(f):
                 token = request.headers['token']
             elif 'Authorization' in request.headers:
                 token = request.headers['Authorization']
+                print(token)
                 prefix = 'Bearer '
                 token = token[len(prefix):] if token.startswith(prefix) else token
             else:
