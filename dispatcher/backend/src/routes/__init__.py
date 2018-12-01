@@ -28,11 +28,14 @@ def authenticate2(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
-            token = request.headers.get('token', None)
-            if token is None:
+            if 'token' in request.headers:
+                token = request.headers['token']
+            elif 'Authorization' in request.headers:
+                token = request.headers['Authorization']
                 prefix = 'Bearer '
-                token = request.headers.get('Authorization')
                 token = token[len(prefix):] if token.startswith(prefix) else token
+            else:
+                token = None
             payload = AccessToken.decode(token)
             kwargs['token'] = AccessToken.Payload(payload)
             return f(*args, **kwargs)
