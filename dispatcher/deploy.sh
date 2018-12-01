@@ -2,4 +2,4 @@
 
 git pull
 export SYSTEM_PASSWORD=`pwgen -Bs1 12`
-docker-compose -f docker-compose2.yml up --build -d
+docker-compose -f docker-compose.yml up --build -d
