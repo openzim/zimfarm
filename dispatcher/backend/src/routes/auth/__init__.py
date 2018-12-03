@@ -52,6 +52,8 @@ def credentials():
     # send response
     response_json = {
         'access_token': access_token,
+        'token_type': 'bearer',
+        'expires_in': timedelta(minutes=60).total_seconds(),
         'refresh_token': refresh_token
     }
     response = jsonify(response_json)
