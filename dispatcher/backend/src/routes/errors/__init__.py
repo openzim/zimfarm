@@ -1,7 +1,7 @@
 from flask import Flask, Response, jsonify
 from jwt import exceptions as jwt_exceptions
 
-from . import oauth
+from . import oauth2
 
 
 def register_handlers(app: Flask):
@@ -11,7 +11,7 @@ def register_handlers(app: Flask):
     app.errorhandler(NotFound)(NotFound.handler)
     app.errorhandler(InternalError)(InternalError.handler)
 
-    app.errorhandler(oauth.OAuth2Base)(oauth.handler)
+    app.errorhandler(oauth2.OAuth2Base)(oauth2.handler)
 
     @app.errorhandler(jwt_exceptions.ExpiredSignature)
     def handler(_):
