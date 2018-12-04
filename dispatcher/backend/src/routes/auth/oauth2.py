@@ -1,17 +1,18 @@
-import json
-from flask import request, Response
-from werkzeug.security import check_password_hash
 from datetime import datetime, timedelta
+from uuid import uuid4
+
+from flask import request, jsonify
+from werkzeug.security import check_password_hash
 
 from utils.mongo import Users, RefreshTokens
-from ..errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 from utils.token import AccessToken
-from uuid import UUID, uuid4
+from ..errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 
 
 def handler():
-    """Handles OAuth2 """
+    """Handles OAuth2 authentication"""
 
+    # get grant_type
     if request.is_json:
         grant_type = request.json.get('grant_type')
     elif request.mimetype == 'application/x-www-form-urlencoded':
@@ -20,6 +21,7 @@ def handler():
         grant_type = request.headers.get('grant_type')
 
     if grant_type == 'password':
+        # password grant
         if request.is_json:
             username = request.json.get('username')
             password = request.json.get('password')
@@ -37,6 +39,7 @@ def handler():
 
         return password_grant(username, password)
     elif grant_type == 'refresh_token':
+        # refresh token grant
         if request.is_json:
             refresh_token = request.json.get('refresh_token')
         elif request.mimetype == 'application/x-www-form-urlencoded':
@@ -49,6 +52,7 @@ def handler():
 
         return refresh_token_grant(refresh_token)
     else:
+        # unknown grant
         raise UnsupportedGrantType('{} is not a supported grant type'.format(grant_type))
 
 
@@ -77,21 +81,20 @@ def password_grant(username: str, password: str):
         'expire_time': datetime.now() + timedelta(days=30)
     })
 
-    return GrantResponse(access_token, refresh_token)
+    return grant_response(access_token, refresh_token)
 
 
 def refresh_token_grant(refresh_token: str):
-    """Implements logic for refreshing an access token."""
-    return GrantResponse()
+    """Implements logic for refresh token grant."""
+    return grant_response()
 
 
-class GrantResponse(Response):
-    def __init__(self, access_token: str, refresh_token: str):
-        body = {
-            'access_token': access_token,
-            'token_type': 'bearer',
-            'expires_in': timedelta(minutes=60).total_seconds(),
-            'refresh_token': refresh_token}
-        super().__init__(response=json.dumps(body), status=200)
-        self.headers['Cache-Control'] = 'no-store'
-        self.headers['Pragma'] = 'no-cache'
+def grant_response(access_token: str, refresh_token: str):
+    response = jsonify({
+        'access_token': access_token,
+        'token_type': 'bearer',
+        'expires_in': timedelta(minutes=60).total_seconds(),
+        'refresh_token': refresh_token})
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Pragma'] = 'no-cache'
+    return response
