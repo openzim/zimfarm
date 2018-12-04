@@ -1,3 +1,4 @@
+import json
 from flask import request, Response
 from werkzeug.security import check_password_hash
 from datetime import datetime, timedelta
@@ -10,6 +11,7 @@ from uuid import UUID, uuid4
 
 def handler():
     """Handles OAuth2 """
+
     if request.is_json:
         grant_type = request.json.get('grant_type')
     elif request.mimetype == 'application/x-www-form-urlencoded':
@@ -66,17 +68,16 @@ def password_grant(username: str, password: str):
 
     # generate token
     access_token = AccessToken.encode(user)
-    refresh_token = uuid4()
+    refresh_token = str(uuid4())
 
     # store refresh token in database
-    # RefreshTokens().insert_one({
-    #     'token': refresh_token,
-    #     'user_id': user['_id'],
-    #     'expire_time': datetime.now() + timedelta(days=30)
-    # })
+    RefreshTokens().insert_one({
+        'token': refresh_token,
+        'user_id': user['_id'],
+        'expire_time': datetime.now() + timedelta(days=30)
+    })
 
-
-    return GrantResponse()
+    return GrantResponse(access_token, refresh_token)
 
 
 def refresh_token_grant(refresh_token: str):
@@ -85,4 +86,12 @@ def refresh_token_grant(refresh_token: str):
 
 
 class GrantResponse(Response):
-    pass
+    def __init__(self, access_token: str, refresh_token: str):
+        body = {
+            'access_token': access_token,
+            'token_type': 'bearer',
+            'expires_in': timedelta(minutes=60).total_seconds(),
+            'refresh_token': refresh_token}
+        super().__init__(response=json.dumps(body), status=200)
+        self.headers['Cache-Control'] = 'no-store'
+        self.headers['Pragma'] = 'no-cache'
