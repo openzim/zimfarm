@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from flask import request, jsonify
 from werkzeug.security import check_password_hash
@@ -53,7 +53,7 @@ def handler():
         return refresh_token_grant(refresh_token)
     else:
         # unknown grant
-        raise UnsupportedGrantType('{} is not a supported grant type'.format(grant_type))
+        raise UnsupportedGrantType('{} is not a supported grant type.'.format(grant_type))
 
 
 def password_grant(username: str, password: str):
@@ -62,13 +62,13 @@ def password_grant(username: str, password: str):
     # check user exists
     user = Users().find_one({'username': username})
     if user is None:
-        raise InvalidGrant('Username or password is Invalid')
+        raise InvalidGrant('Username or password is invalid.')
 
     # check password is valid
     password_hash = user.pop('password_hash')
     is_valid = check_password_hash(password_hash, password)
     if not is_valid:
-        raise InvalidGrant('Username or password is Invalid')
+        raise InvalidGrant('Username or password is invalid.')
 
     # generate token
     access_token = AccessToken.encode(user)
@@ -86,6 +86,24 @@ def password_grant(username: str, password: str):
 
 def refresh_token_grant(refresh_token: str):
     """Implements logic for refresh token grant."""
+
+    # check token exists in database and get expire time and user id
+    collection = RefreshTokens()
+    old_token_document = collection.find_one({'token': UUID(refresh_token)}, {'expire_time': 1, 'user_id': 1})
+    if old_token_document is None:
+        raise InvalidGrant('Refresh token is invalid.')
+
+    # check token is not expired
+    expire_time = old_token_document['expire_time']
+    if expire_time < datetime.now():
+        raise InvalidGrant('Refresh token is expired.')
+
+    # check user exists
+    user_id = old_token_document['user_id']
+    user = Users().find_one({'_id': user_id}, {'password_hash': 0})
+    if user is None:
+        raise InvalidGrant('Refresh token is invalid.')
+
     return grant_response()
 
 
