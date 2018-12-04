@@ -15,7 +15,7 @@ def oauth2():
     elif grant_type == 'token':
         pass
     else:
-        raise errors.oauth.UnsupportedGrantType()
+        raise errors.oauth.UnsupportedGrantType('{} is not a supported grant type'.format(grant_type))
 
     return Response()
 
