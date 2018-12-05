@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+from typing import Union
 from uuid import uuid4, UUID
 
+from bson import ObjectId
 from flask import request, jsonify
 from werkzeug.security import check_password_hash
 
@@ -73,14 +75,7 @@ class OAuth2:
 
         # generate token
         access_token = AccessToken.encode(user)
-        refresh_token = str(uuid4())
-
-        # store refresh token in database
-        RefreshTokens().insert_one({
-            'token': refresh_token,
-            'user_id': user['_id'],
-            'expire_time': datetime.now() + timedelta(days=30)
-        })
+        refresh_token = OAuth2.generate_refresh_token(user['_id'])
 
         return OAuth2.grant_response(access_token, refresh_token)
 
@@ -108,7 +103,33 @@ class OAuth2:
         return OAuth2.grant_response()
 
     @staticmethod
-    def grant_response(access_token: str, refresh_token: str):
+    def generate_refresh_token(user_id: ObjectId) -> UUID:
+        """Generate and store refresh token in database.
+
+        :param user_id: id of user to associate the refresh token with
+        :return: generated refresh token
+        """
+
+        refresh_token = uuid4()
+        RefreshTokens().insert_one({
+            'token': refresh_token,
+            'user_id': user_id,
+            'expire_time': datetime.now() + timedelta(days=30)
+        })
+        return refresh_token
+
+    @staticmethod
+    def grant_response(access_token: str, refresh_token: Union[str, UUID]):
+        """
+
+        :param access_token:
+        :param refresh_token:
+        :return:
+        """
+
+        if isinstance(refresh_token, UUID):
+            refresh_token = str(refresh_token)
+
         response = jsonify({
             'access_token': access_token,
             'token_type': 'bearer',
