@@ -3,7 +3,7 @@ from typing import Union
 from uuid import uuid4, UUID
 
 from bson import ObjectId
-from flask import request, jsonify
+from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
 from utils.mongo import Users, RefreshTokens
@@ -77,15 +77,16 @@ class OAuth2:
         access_token = AccessToken.encode(user)
         refresh_token = OAuth2.generate_refresh_token(user['_id'])
 
-        return OAuth2.grant_response(access_token, refresh_token)
+        return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
-    def refresh_token_grant(refresh_token: str):
+    def refresh_token_grant(old_refresh_token: str):
         """Implements logic for refresh token grant."""
 
         # check token exists in database and get expire time and user id
+        old_refresh_token = UUID(old_refresh_token)
         collection = RefreshTokens()
-        old_token_document = collection.find_one({'token': UUID(refresh_token)}, {'expire_time': 1, 'user_id': 1})
+        old_token_document = collection.find_one({'token': old_refresh_token}, {'expire_time': 1, 'user_id': 1})
         if old_token_document is None:
             raise InvalidGrant('Refresh token is invalid.')
 
@@ -100,7 +101,15 @@ class OAuth2:
         if user is None:
             raise InvalidGrant('Refresh token is invalid.')
 
-        return OAuth2.grant_response()
+        # generate token
+        access_token = AccessToken.encode(user)
+        refresh_token = OAuth2.generate_refresh_token(user['_id'])
+
+        # delete old refresh token from database
+        collection.delete_one({'token': old_refresh_token})
+        collection.delete_many({'expire_time': {'$lte': datetime.now()}})
+
+        return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
     def generate_refresh_token(user_id: ObjectId) -> UUID:
@@ -119,8 +128,8 @@ class OAuth2:
         return refresh_token
 
     @staticmethod
-    def grant_response(access_token: str, refresh_token: Union[str, UUID]):
-        """
+    def success_response(access_token: str, refresh_token: Union[str, UUID]) -> Response:
+        """Create a response when grant success.
 
         :param access_token:
         :param refresh_token:
@@ -133,7 +142,7 @@ class OAuth2:
         response = jsonify({
             'access_token': access_token,
             'token_type': 'bearer',
-            'expires_in': timedelta(minutes=60).total_seconds(),
+            'expires_in': int(AccessToken.expire_time_delta.total_seconds()),
             'refresh_token': refresh_token})
         response.headers['Cache-Control'] = 'no-store'
         response.headers['Pragma'] = 'no-cache'
