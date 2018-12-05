@@ -53,6 +53,11 @@ class OAuth2:
             if refresh_token is None:
                 raise InvalidRequest('Request was missing the "refresh_token" parameter.')
 
+            try:
+                refresh_token = UUID(refresh_token)
+            except ValueError:
+                raise InvalidGrant('Refresh token is invalid.')
+
             return self.refresh_token_grant(refresh_token)
         else:
             # unknown grant
@@ -80,11 +85,10 @@ class OAuth2:
         return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
-    def refresh_token_grant(old_refresh_token: str):
+    def refresh_token_grant(old_refresh_token: UUID):
         """Implements logic for refresh token grant."""
 
         # check token exists in database and get expire time and user id
-        old_refresh_token = UUID(old_refresh_token)
         collection = RefreshTokens()
         old_token_document = collection.find_one({'token': old_refresh_token}, {'expire_time': 1, 'user_id': 1})
         if old_token_document is None:
