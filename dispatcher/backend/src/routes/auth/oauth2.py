@@ -120,7 +120,7 @@ class OAuth2:
         """Generate and store refresh token in database.
 
         :param user_id: id of user to associate the refresh token with
-        :return: generated refresh token
+        :return: a UUID4 refresh token
         """
 
         refresh_token = uuid4()
@@ -133,12 +133,7 @@ class OAuth2:
 
     @staticmethod
     def success_response(access_token: str, refresh_token: Union[str, UUID]) -> Response:
-        """Create a response when grant success.
-
-        :param access_token:
-        :param refresh_token:
-        :return:
-        """
+        """Create a response when grant success."""
 
         if isinstance(refresh_token, UUID):
             refresh_token = str(refresh_token)
