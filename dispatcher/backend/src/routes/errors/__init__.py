@@ -1,7 +1,7 @@
 from flask import Flask, Response, jsonify
 from jwt import exceptions as jwt_exceptions
 
-from . import oauth2
+from errors import oauth2
 
 
 def register_handlers(app: Flask):

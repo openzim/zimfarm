@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash
 
 from utils.mongo import Users, RefreshTokens
 from utils.token import AccessToken
-from ..errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
+from errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 
 
 class OAuth2:
