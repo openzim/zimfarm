@@ -117,11 +117,16 @@ def token():
     return response
 
 
+class OAuth:
+    def __call__(self, *args, **kwargs):
+        return flask.Response()
+
+
 class Blueprint(flask.Blueprint):
     def __init__(self):
         super().__init__('auth', __name__, url_prefix='/api/auth')
         self.add_url_rule('/authorize', 'auth_with_credentials', credentials, methods=['POST'])
         self.add_url_rule('/token', 'auth_with_token', token, methods=['POST'])
-        self.add_url_rule('/token_beta', 'oauth2', oauth2.handler, methods=['POST'])
+        self.add_url_rule('/token_beta', 'oauth2', OAuth(), methods=['POST'])
         self.add_url_rule('/validate/ssh_key', 'validate_ssh_key', validate.ssh_key, methods=['POST'])
         self.add_url_rule('/rabbitmq/<string:intention>', 'rabbitmq_auth', rabbitmq.auth, methods=['POST'])
