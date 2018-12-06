@@ -3,8 +3,11 @@ from flask import jsonify
 from utils.mongo import Workers
 from utils.token import AccessToken
 
+from .. import authenticate2
 
-def list(token: AccessToken.Payload):
+
+@authenticate2
+def list():
     projection = {
         '_id': 1,
         'hostname': 1,
