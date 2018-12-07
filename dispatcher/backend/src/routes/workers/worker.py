@@ -21,12 +21,12 @@ def list(token: AccessToken.Payload):
     tags = ['1_min', '5_mins', '15_mins']
     for tag in tags:
         project['load_average'][tag] = {'$arrayElemAt': ['$load_averages.{}'.format(tag), -1]}
-    pipeline = {
-        '$project': project,
-        '$sort': {
+    pipeline = [
+        {'$project': project},
+        {'$sort': {
             'status': -1  # online comes before offline
-        }
-    }
+        }}
+    ]
 
     # get list of workers
     workers = [worker for worker in Workers().aggregate(pipeline)]
