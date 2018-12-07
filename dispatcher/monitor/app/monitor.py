@@ -40,7 +40,7 @@ class Monitor:
                     'processed': worker.processed
                 },
                 'heartbeats': [],
-                'load_average': {
+                'load_averages': {
                     '1_min': [],
                     '5_mins': [],
                     '15_mins': []
