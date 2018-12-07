@@ -55,10 +55,10 @@ class Monitor:
         self.logger.debug('Worker heartbeat: {}'.format(worker.hostname))
 
         if worker.loadavg:
-            load_average = [[load] for load in worker.loadavg]
+            load_averages = [[load] for load in worker.loadavg]
         else:
-            load_average = [[None], [None], [None]]
-        load_average_tags = ['1_min', '5_mins', '15_mins']
+            load_averages = [[None], [None], [None]]
+        load_averages_tags = ['1_min', '5_mins', '15_mins']
 
         filter = {'hostname': worker.hostname}
         update = {'$set': {
@@ -68,7 +68,7 @@ class Monitor:
         if len(worker.heartbeats) == 1:
             # if we only have one heartbeat, wipe out history
             update['$set']['heartbeats'] = [datetime.fromtimestamp(heartbeat) for heartbeat in worker.heartbeats]
-            update['$set']['load_average'] = dict(zip(load_average_tags, load_average))
+            update['$set']['load_averages'] = dict(zip(load_averages_tags, load_averages))
         else:
             # if we have multiple heartbeats already, append to database
             update['$push'] = {
@@ -78,10 +78,10 @@ class Monitor:
                 }
             }
 
-            for index, tag in enumerate(load_average_tags):
-                path = 'load_average.{}'.format(tag)
+            for index, tag in enumerate(load_averages_tags):
+                path = 'load_averages.{}'.format(tag)
                 update['$push'][path] = {
-                    '$each': load_average[index],
+                    '$each': load_averages[index],
                     '$slice': -60
                 }
 
@@ -98,7 +98,7 @@ class Monitor:
             'status': worker.status_string.lower(),
             'session.offline': datetime.fromtimestamp(worker.heartbeats[-1]) if worker.heartbeats else datetime.now(),
             'heartbeats': [],
-            'load_average': {
+            'load_averages': {
                 '1_min': [],
                 '5_mins': [],
                 '15_mins': []
