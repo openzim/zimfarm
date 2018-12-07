@@ -7,17 +7,25 @@ from .. import authenticate2
 
 
 @authenticate2
-def list():
-    projection = {
-        '_id': 1,
+def list(token: AccessToken.Payload):
+    """return a list of workers"""
+    # get aggregation project stage
+    project = {
         'hostname': 1,
         'status': 1,
         'session': 1,
-        # 'heartbeats': {'$slice': -1},
-        # 'load_average.1_min': {'$slice': -1},
-        # 'load_average.5_mins': {'$slice': -1},
-        # 'load_average.15_mins': {'$slice': -1},
+        'heartbeat': {'$arrayElemAt': ['$heartbeats', -1]},
+        'load_average': {}
     }
-    workers = Workers()
-    workers = [workers for workers in workers.find({}, projection)]
+    tags = ['1_min', '5_mins', '15_mins']
+    for tag in tags:
+        project['load_average'][tag] = {'$arrayElemAt': ['$load_averages.{}'.format(tag), -1]}
+    pipeline = {
+        '$project': project,
+        '$sort': {
+            'status': -1  # online comes before offline
+        }
+    }
+
+    workers = [worker for worker in Workers().aggregate(pipeline)]
     return jsonify(workers)

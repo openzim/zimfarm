@@ -32,8 +32,9 @@ def authenticate2(f):
                 token = request.headers['token']
             elif 'Authorization' in request.headers:
                 token = request.headers['Authorization']
-                prefix = 'Bearer '
-                token = token[len(prefix):] if token.startswith(prefix) else token
+                token_parts = token.split(' ')
+                if len(token_parts) > 1:
+                    token = token_parts[1]
             else:
                 token = None
             payload = AccessToken.decode(token)
