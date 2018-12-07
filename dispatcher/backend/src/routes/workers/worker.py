@@ -9,6 +9,7 @@ from .. import authenticate2
 @authenticate2
 def list(token: AccessToken.Payload):
     """return a list of workers"""
+
     # get aggregation project stage
     project = {
         'hostname': 1,
@@ -27,5 +28,6 @@ def list(token: AccessToken.Payload):
         }
     }
 
+    # get list of workers
     workers = [worker for worker in Workers().aggregate(pipeline)]
     return jsonify(workers)
