@@ -13,7 +13,7 @@ flask.register_blueprint(auth.Blueprint())
 flask.register_blueprint(schedules.blueprint)
 # flask.register_blueprint(task.blueprint)
 flask.register_blueprint(users.Blueprint())
-flask.register_blueprint(workers.blueprint)
+flask.register_blueprint(workers.Blueprint())
 
 errors.register_handlers(flask)
 

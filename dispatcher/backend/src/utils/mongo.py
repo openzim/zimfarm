@@ -103,3 +103,8 @@ class Tasks(BaseCollection):
 class Schedules(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'schedules')
+
+
+class Workers(BaseCollection):
+    def __init__(self):
+        super().__init__(Database(), 'workers')
