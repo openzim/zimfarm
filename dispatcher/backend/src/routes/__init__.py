@@ -28,7 +28,15 @@ def authenticate2(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
-            token = request.headers.get('token', None)
+            if 'token' in request.headers:
+                token = request.headers['token']
+            elif 'Authorization' in request.headers:
+                token = request.headers['Authorization']
+                token_parts = token.split(' ')
+                if len(token_parts) > 1:
+                    token = token_parts[1]
+            else:
+                token = None
             payload = AccessToken.decode(token)
             kwargs['token'] = AccessToken.Payload(payload)
             return f(*args, **kwargs)

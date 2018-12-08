@@ -11,6 +11,7 @@ from bson.objectid import ObjectId, InvalidId
 class AccessToken:
     secret = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)])
     issuer = 'dispatcher'
+    expire_time_delta = timedelta(minutes=60)
 
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
@@ -46,7 +47,7 @@ class AccessToken:
     @classmethod
     def encode(cls, user: dict) -> str:
         issue_time = datetime.now()
-        expire_time = issue_time + timedelta(minutes=60)
+        expire_time = issue_time + cls.expire_time_delta
         payload = {
             'iss': cls.issuer,
             'exp': expire_time,

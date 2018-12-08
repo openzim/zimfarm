@@ -9,6 +9,7 @@ from utils.mongo import Users, RefreshTokens
 from utils.token import AccessToken
 from . import validate, rabbitmq
 from ..errors import BadRequest, Unauthorized
+from .oauth2 import OAuth2
 
 
 def credentials():
@@ -52,6 +53,8 @@ def credentials():
     # send response
     response_json = {
         'access_token': access_token,
+        'token_type': 'bearer',
+        'expires_in': timedelta(minutes=60).total_seconds(),
         'refresh_token': refresh_token
     }
     response = jsonify(response_json)
@@ -120,5 +123,6 @@ class Blueprint(flask.Blueprint):
         super().__init__('auth', __name__, url_prefix='/api/auth')
         self.add_url_rule('/authorize', 'auth_with_credentials', credentials, methods=['POST'])
         self.add_url_rule('/token', 'auth_with_token', token, methods=['POST'])
+        self.add_url_rule('/oauth2', 'oauth2', OAuth2(), methods=['POST'])
         self.add_url_rule('/validate/ssh_key', 'validate_ssh_key', validate.ssh_key, methods=['POST'])
         self.add_url_rule('/rabbitmq/<string:intention>', 'rabbitmq_auth', rabbitmq.auth, methods=['POST'])
