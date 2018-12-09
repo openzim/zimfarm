@@ -1,7 +1,8 @@
+
+import {throwError as observableThrowError,  Observable, defer } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { Observable, defer } from 'rxjs';
 import { tap, catchError, map, switchMap } from 'rxjs/operators';
 
 import { apiRoot } from './config';
@@ -40,7 +41,7 @@ export class AuthService {
             return data
         }), catchError((error, caught) => {
             // redirect back to login
-            return Observable.throw(error)
+            return observableThrowError(error)
         }))
     }
 
@@ -86,10 +87,10 @@ export class AccessTokenInterceptor implements HttpInterceptor {
                         }))
                     } else {
                         this.router.navigate(['login'])
-                        return Observable.throw(error)
+                        return observableThrowError(error)
                     }
                 } else {
-                    return Observable.throw(error)
+                    return observableThrowError(error)
                 }
             }))
         }
