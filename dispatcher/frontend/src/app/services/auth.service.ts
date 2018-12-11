@@ -15,12 +15,13 @@ export class AuthService {
 
     authorize(username: string, password: string): Observable<AuthResponseData> {
         let header = new HttpHeaders({
+            'grant_type': 'password',
             'username': username,
             'password': password
         })
 
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/authorize', null, {headers: header}
+            apiRoot + '/api/auth/oauth2', null, {headers: header}
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
@@ -30,10 +31,13 @@ export class AuthService {
     }
 
     refresh(refreshToken: string): Observable<AuthResponseData> {
-        let header = new HttpHeaders({'refresh-token': refreshToken})
+        let header = new HttpHeaders({
+            'grant_type': 'refresh_token',
+            'refresh_token': refreshToken
+        })
         
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/token', null, {headers: header}
+            apiRoot + '/api/auth/oauth2', null, {headers: header}
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
