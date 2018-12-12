@@ -1,7 +1,8 @@
+
+import {throwError as observableThrowError,  Observable, defer } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { Observable, defer } from 'rxjs';
 import { tap, catchError, map, switchMap } from 'rxjs/operators';
 
 import { apiRoot } from './config';
@@ -13,13 +14,14 @@ export class AuthService {
     constructor(private http: HttpClient) { }
 
     authorize(username: string, password: string): Observable<AuthResponseData> {
-        let header = new HttpHeaders({
+        let body = {
+            'grant_type': 'password',
             'username': username,
             'password': password
-        })
+        }
 
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/authorize', null, {headers: header}
+            apiRoot + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
@@ -29,10 +31,13 @@ export class AuthService {
     }
 
     refresh(refreshToken: string): Observable<AuthResponseData> {
-        let header = new HttpHeaders({'refresh-token': refreshToken})
+        let body = {
+            'grant_type': 'refresh_token',
+            'refresh_token': refreshToken
+        }
         
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/token', null, {headers: header}
+            apiRoot + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
@@ -40,7 +45,7 @@ export class AuthService {
             return data
         }), catchError((error, caught) => {
             // redirect back to login
-            return Observable.throw(error)
+            return observableThrowError(error)
         }))
     }
 
@@ -86,10 +91,10 @@ export class AccessTokenInterceptor implements HttpInterceptor {
                         }))
                     } else {
                         this.router.navigate(['login'])
-                        return Observable.throw(error)
+                        return observableThrowError(error)
                     }
                 } else {
-                    return Observable.throw(error)
+                    return observableThrowError(error)
                 }
             }))
         }
