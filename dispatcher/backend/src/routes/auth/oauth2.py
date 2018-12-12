@@ -16,9 +16,6 @@ class OAuth2:
         """Handles OAuth2 authentication"""
 
         # get grant_type
-        print(request.is_json)
-        print(request.mimetype == 'application/x-www-form-urlencoded')
-        print(request.headers)
         if request.is_json:
             grant_type = request.json.get('grant_type')
         elif request.mimetype == 'application/x-www-form-urlencoded':
