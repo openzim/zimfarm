@@ -31,13 +31,13 @@ export class AuthService {
     }
 
     refresh(refreshToken: string): Observable<AuthResponseData> {
-        let header = new HttpHeaders({
+        let body = {
             'grant_type': 'refresh_token',
             'refresh_token': refreshToken
-        })
+        }
         
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/oauth2', null, {headers: header}
+            apiRoot + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
