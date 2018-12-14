@@ -4,10 +4,19 @@ from jsonschema import validate, ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from mongo import Schedules
-from . import authenticate, errors
+from .. import authenticate, errors
 
 
 blueprint = Blueprint('schedules', __name__, url_prefix='/api/schedules')
+
+
+import flask
+
+
+class Blueprint(flask.Blueprint):
+    def __init__(self):
+        super().__init__('users', __name__, url_prefix='/api/users')
+
 
 
 class Schema:
