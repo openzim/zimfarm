@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify, Response
 from jsonschema import validate, ValidationError
 from pymongo.errors import DuplicateKeyError
 
-from utils.mongo import Schedules
+from mongo import Schedules
 from . import authenticate, errors
 
 

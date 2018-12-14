@@ -1,10 +1,9 @@
 import os
-import sys
 
 from werkzeug.security import generate_password_hash
 from pymongo import ASCENDING
 
-from utils import mongo
+import mongo
 
 
 class Initializer:

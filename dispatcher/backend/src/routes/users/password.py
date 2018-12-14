@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from routes import authenticate2, url_object_id, errors
 from utils.token import AccessToken
-from utils.mongo import Users
+from mongo import Users
 
 
 @authenticate2
