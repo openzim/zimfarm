@@ -8,7 +8,7 @@ from .. import authenticate2, errors
 
 
 @authenticate2
-def list(_):
+def list(token):
     """Return a list of schedules"""
 
     # unpack url parameters
