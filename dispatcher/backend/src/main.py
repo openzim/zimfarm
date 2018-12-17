@@ -10,7 +10,7 @@ flask = Flask(__name__)
 flask.json_encoder = Encoder
 
 flask.register_blueprint(auth.Blueprint())
-flask.register_blueprint(schedules.blueprint)
+flask.register_blueprint(schedules.Blueprint())
 # flask.register_blueprint(task.blueprint)
 flask.register_blueprint(users.Blueprint())
 flask.register_blueprint(workers.Blueprint())
