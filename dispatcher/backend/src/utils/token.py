@@ -8,6 +8,29 @@ import jwt
 from bson.objectid import ObjectId, InvalidId
 
 
+class AccessControl:
+    secret = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)])
+    issuer = 'dispatcher'
+    expire_time_delta = timedelta(minutes=60)
+
+    class JSONEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, datetime):
+                return int(o.timestamp())
+            elif isinstance(o, ObjectId):
+                return str(o)
+            elif isinstance(o, uuid.UUID):
+                return str(o)
+            else:
+                super().default(o)
+
+    def __init__(self, user_id: ObjectId, username: str, scope):
+        pass
+
+    def encode(self):
+        pass
+
+
 class AccessToken:
     secret = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)])
     issuer = 'dispatcher'
