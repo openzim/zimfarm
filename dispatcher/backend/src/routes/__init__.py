@@ -47,7 +47,7 @@ def authenticate2(f):
     return wrapper
 
 
-def auth(f):
+def authenticate3(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
