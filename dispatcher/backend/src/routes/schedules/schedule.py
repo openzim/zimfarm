@@ -5,11 +5,11 @@ from pymongo.errors import DuplicateKeyError
 
 from mongo import Schedules
 from utils.token import AccessControl
-from .. import authenticate3, errors
+from .. import authenticate, errors
 
 
-@authenticate3
-def list(token: AccessControl):
+@authenticate
+def list():
     """Return a list of schedules"""
 
     # unpack url parameters

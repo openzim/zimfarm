@@ -9,19 +9,19 @@ from utils.token import AccessToken, AccessControl
 from .errors import Unauthorized, NotEnoughPrivilege
 
 
-def authenticate(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            token = request.headers.get('token', None)
-            user = AccessToken.decode(token).get('user', {})
-            kwargs['user'] = user
-            return f(*args, **kwargs)
-        except jwt_exceptions.ExpiredSignatureError:
-            raise Unauthorized('token expired')
-        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
-            raise Unauthorized('token invalid')
-    return wrapper
+# def authenticate(f):
+#     @wraps(f)
+#     def wrapper(*args, **kwargs):
+#         try:
+#             token = request.headers.get('token', None)
+#             user = AccessToken.decode(token).get('user', {})
+#             kwargs['user'] = user
+#             return f(*args, **kwargs)
+#         except jwt_exceptions.ExpiredSignatureError:
+#             raise Unauthorized('token expired')
+#         except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
+#             raise Unauthorized('token invalid')
+#     return wrapper
 
 
 def authenticate2(f):
@@ -47,7 +47,7 @@ def authenticate2(f):
     return wrapper
 
 
-def authenticate3(f):
+def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
@@ -57,7 +57,13 @@ def authenticate3(f):
                 token = token_parts[1]
             payload = AccessToken.decode(token)
             kwargs['token'] = AccessToken.Payload(payload)
-            return f(*args, **kwargs)
+
+            try:
+                response = f(*args, **kwargs)
+            except TypeError:
+                kwargs.pop('token')
+                response = f(*args, **kwargs)
+            return response
         except jwt_exceptions.ExpiredSignatureError:
             raise Unauthorized('token expired')
         except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
