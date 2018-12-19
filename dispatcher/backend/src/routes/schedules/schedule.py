@@ -4,11 +4,12 @@ from jsonschema import validate, ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from mongo import Schedules
-from .. import authenticate2, errors
+from utils.token import AccessControl
+from .. import auth, errors
 
 
-@authenticate2
-def list(token):
+@auth
+def list(token: AccessControl):
     """Return a list of schedules"""
 
     # unpack url parameters

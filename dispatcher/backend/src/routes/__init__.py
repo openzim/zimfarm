@@ -5,7 +5,7 @@ from flask import request
 from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
 
-from utils.token import AccessToken
+from utils.token import AccessToken, AccessControl
 from .errors import Unauthorized, NotEnoughPrivilege
 
 
@@ -37,6 +37,24 @@ def authenticate2(f):
                     token = token_parts[1]
             else:
                 token = None
+            payload = AccessToken.decode(token)
+            kwargs['token'] = AccessToken.Payload(payload)
+            return f(*args, **kwargs)
+        except jwt_exceptions.ExpiredSignatureError:
+            raise Unauthorized('token expired')
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
+            raise Unauthorized('token invalid')
+    return wrapper
+
+
+def auth(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            token = request.headers.get('Authorization', '')
+            token_parts = token.split(' ')
+            if len(token_parts) > 1:
+                token = token_parts[1]
             payload = AccessToken.decode(token)
             kwargs['token'] = AccessToken.Payload(payload)
             return f(*args, **kwargs)
