@@ -13,7 +13,7 @@ class Route:
             'DELETE': self.delete
         }
         handler = handlers[request.method]
-        handler(*args, **kwargs)
+        return handler(*args, **kwargs)
 
     @abc.abstractmethod
     def get(self, *args, **kwargs):
