@@ -1,8 +1,12 @@
-from flask import request, jsonify
+from http import HTTPStatus
+from bson.objectid import ObjectId, InvalidId
+
+
+from flask import request, jsonify, Response
 
 from .. import authenticate
+from mongo import Schedules
 
-import abc
 
 class Route:
     def __call__(self, *args, **kwargs):
@@ -15,21 +19,17 @@ class Route:
         handler = handlers[request.method]
         return handler(*args, **kwargs)
 
-    @abc.abstractmethod
     def get(self, *args, **kwargs):
-        pass
+        return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
-    @abc.abstractmethod
     def post(self, *args, **kwargs):
-        pass
+        return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
-    @abc.abstractmethod
     def patch(self, *args, **kwargs):
-        pass
+        return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
-    @abc.abstractmethod
     def delete(self, *args, **kwargs):
-        pass
+        return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
 
 class Schedule(Route):
@@ -42,9 +42,20 @@ class Schedule(Route):
         from datetime import datetime
         self.datetime = datetime.now()
 
+    @staticmethod
+    def get_schedule_filter(schedule: str):
+        try:
+            schedule_id = ObjectId(schedule)
+            return {'_id': schedule_id}
+        except InvalidId:
+            schedule_name = schedule
+            return {'name': schedule_name}
+
     @authenticate
-    def get(self, *args, **kwargs):
-        return jsonify({'datetime': self.datetime.isoformat()})
+    def get(self, schedule: str, *args, **kwargs):
+        filter = self.get_schedule_filter(schedule)
+        schedule = Schedules().find_one(filter)
+        return jsonify(schedule)
 
     def post(self, *args, **kwargs):
         pass
