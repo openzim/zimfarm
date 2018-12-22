@@ -42,7 +42,7 @@ class Schedule(Route):
         from datetime import datetime
         self.datetime = datetime.utcnow()
 
-    def get(self):
+    def get(self, *args, **kwargs):
         return str(self.datetime)
 
     def post(self, *args, **kwargs):
