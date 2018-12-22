@@ -1,42 +1,73 @@
-from celery.schedules import crontab
-from flask import Blueprint, request, jsonify, Response
-from jsonschema import validate, ValidationError
-from pymongo.errors import DuplicateKeyError
+from flask import request
 
-from mongo import Schedules
-from utils.token import AccessControl
-from .. import authenticate, errors
+from .. import authenticate
+
+import abc
+
+class Route:
+    def __call__(self, *args, **kwargs):
+        handlers = {
+            'GET': self.get,
+            'POST': self.post,
+            'PATCH': self.patch,
+            'DELETE': self.delete
+        }
+        handler = handlers[request.method]
+        handler(*args, **kwargs)
+
+    @abc.abstractmethod
+    def get(self, *args, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def post(self, *args, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def patch(self, *args, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def delete(self, *args, **kwargs):
+        pass
 
 
-@authenticate
-def list():
-    """Return a list of schedules"""
+class Schedule(Route):
+    rule = '/<string:schedule>'
+    name = 'schedule'
+    methods = ['GET', 'POST', 'PATCH']
 
-    # unpack url parameters
-    skip = request.args.get('skip', default=0, type=int)
-    limit = request.args.get('limit', default=20, type=int)
-    skip = 0 if skip < 0 else skip
-    limit = 20 if limit <= 0 else limit
+    def get(self):
+        pass
 
-    # get schedules from database
-    projection = {
-        '_id': 0,
-        'beat': 1,
-        'category': 1,
-        'enabled': 1,
-        'language': 1,
-        'last_run': 1,
-        'name': 1,
-        'queue': 1,
-        'total_run': 1
-    }
-    cursor = Schedules().find({}, projection).skip(skip).limit(limit)
-    schedules = [schedule for schedule in cursor]
+    def post(self):
+        pass
 
-    return jsonify({
-        'meta': {
-            'skip': skip,
-            'limit': limit,
-        },
-        'items': schedules
-    })
+    def patch(self):
+        pass
+
+
+
+# @authenticate
+# def update(token: AccessControl, schedule_id: ObjectId, schedule_name: str):
+#     """Update fields of schedule"""
+#
+#     schedules = Schedules()
+#     schedules.find_one()
+#
+#
+# def schedule_filter(f):
+#     @wraps(f)
+#     def wrapper(*args, **kwargs):
+#         schedule_id_name = kwargs.pop('schedule_id_name')
+#
+#         try:
+#             schedule_id = ObjectId(schedule_id_name)
+#             filter = {'_id': schedule_id}
+#         except InvalidId:
+#             schedule_name = schedule_id_name
+#             filter = {'name': schedule_name}
+#
+#         kwargs['filter'] = filter
+#         return f(*args, **kwargs)
+#     return wrapper

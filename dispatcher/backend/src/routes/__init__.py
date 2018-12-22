@@ -9,21 +9,6 @@ from utils.token import AccessToken, AccessControl
 from .errors import Unauthorized, NotEnoughPrivilege
 
 
-# def authenticate(f):
-#     @wraps(f)
-#     def wrapper(*args, **kwargs):
-#         try:
-#             token = request.headers.get('token', None)
-#             user = AccessToken.decode(token).get('user', {})
-#             kwargs['user'] = user
-#             return f(*args, **kwargs)
-#         except jwt_exceptions.ExpiredSignatureError:
-#             raise Unauthorized('token expired')
-#         except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
-#             raise Unauthorized('token invalid')
-#     return wrapper
-
-
 def authenticate2(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
