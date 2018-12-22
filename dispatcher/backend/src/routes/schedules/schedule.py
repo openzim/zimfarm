@@ -42,6 +42,7 @@ class Schedule(Route):
         from datetime import datetime
         self.datetime = datetime.now()
 
+    @authenticate
     def get(self, *args, **kwargs):
         return jsonify({'datetime': self.datetime.isoformat()})
 
