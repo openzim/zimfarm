@@ -37,10 +37,15 @@ class Schedule(Route):
     name = 'schedule'
     methods = ['GET', 'POST', 'PATCH']
 
-    def get(self):
-        pass
+    def __init__(self):
 
-    def post(self):
+        from datetime import datetime
+        self.datetime = datetime.utcnow()
+
+    def get(self):
+        return str(self.datetime)
+
+    def post(self, *args, **kwargs):
         pass
 
     def patch(self):
