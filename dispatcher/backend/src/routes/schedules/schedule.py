@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, jsonify
 
 from .. import authenticate
 
@@ -40,10 +40,10 @@ class Schedule(Route):
     def __init__(self):
 
         from datetime import datetime
-        self.datetime = datetime.utcnow()
+        self.datetime = datetime.now()
 
     def get(self, *args, **kwargs):
-        return str(self.datetime)
+        return jsonify({'datetime': self.datetime.isoformat()})
 
     def post(self, *args, **kwargs):
         pass
