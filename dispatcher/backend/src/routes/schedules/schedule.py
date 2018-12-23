@@ -1,15 +1,12 @@
-from http import HTTPStatus
-
 import trafaret
 from bson.objectid import ObjectId, InvalidId
 from flask import request, jsonify, Response
 
+from errors.http import InvalidRequestJSON, ScheduleNotFound
 from models.schedule import ScheduleCategory
 from mongo import Schedules
 from .. import authenticate
 from ..base import Route
-
-from errors.http import InvalidRequestJSON, ScheduleNotFound
 
 
 class SchedulesRoute(Route):
