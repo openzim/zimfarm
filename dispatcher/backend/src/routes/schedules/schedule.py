@@ -7,7 +7,7 @@ from models.schedule import ScheduleCategory
 from mongo import Schedules
 from .. import authenticate
 from ..base import Route
-from . import URLComponent
+from .base import URLComponent
 
 
 class SchedulesRoute(Route):
