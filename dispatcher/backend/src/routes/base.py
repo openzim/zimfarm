@@ -1,9 +1,13 @@
 from http import HTTPStatus
 
-from flask import request, Response
+from flask import request, Response, Blueprint
 
 
 class Route:
+    rule = ''
+    name = ''
+    route = []
+
     def __call__(self, *args, **kwargs):
         handlers = {
             'GET': self.get,
@@ -25,3 +29,8 @@ class Route:
 
     def delete(self, *args, **kwargs):
         return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
+
+
+class BaseBlueprint(Blueprint):
+    def register_route(self, route: Route):
+        self.add_url_rule(route.rule, route.name, route(), methods=route.methods)

@@ -9,7 +9,7 @@ from .base import URLComponent
 from errors.http import ScheduleNotFound
 
 
-class ScheduleRoute(Route, URLComponent):
+class BeatRoute(Route, URLComponent):
     rule = '/<string:schedule>/beat'
     name = 'beat'
     methods = ['GET']
