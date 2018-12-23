@@ -7,6 +7,7 @@ from models.schedule import ScheduleCategory
 from mongo import Schedules
 from .. import authenticate
 from ..base import Route
+from . import URLComponent
 
 
 class SchedulesRoute(Route):
@@ -48,19 +49,10 @@ class SchedulesRoute(Route):
         })
 
 
-class ScheduleRoute(Route):
+class ScheduleRoute(Route, URLComponent):
     rule = '/<string:schedule>'
     name = 'schedule'
     methods = ['GET', 'PATCH']
-
-    @staticmethod
-    def get_schedule_query(schedule: str):
-        try:
-            schedule_id = ObjectId(schedule)
-            return {'_id': schedule_id}
-        except InvalidId:
-            schedule_name = schedule
-            return {'name': schedule_name}
 
     @authenticate
     def get(self, schedule: str, *args, **kwargs):
