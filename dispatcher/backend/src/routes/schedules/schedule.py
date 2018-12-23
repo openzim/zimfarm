@@ -12,6 +12,45 @@ from ..base import Route
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 
 
+class SchedulesRoute(Route):
+    rule = '/'
+    name = 'schedules'
+    methods = ['GET']
+
+    @authenticate
+    def get(self, *args, **kwargs):
+        """Return a list of schedules"""
+
+        # unpack url parameters
+        skip = request.args.get('skip', default=0, type=int)
+        limit = request.args.get('limit', default=20, type=int)
+        skip = 0 if skip < 0 else skip
+        limit = 20 if limit <= 0 else limit
+
+        # get schedules from database
+        projection = {
+            '_id': 0,
+            'beat': 1,
+            'category': 1,
+            'enabled': 1,
+            'language': 1,
+            'last_run': 1,
+            'name': 1,
+            'queue': 1,
+            'total_run': 1
+        }
+        cursor = Schedules().find({}, projection).skip(skip).limit(limit)
+        schedules = [schedule for schedule in cursor]
+
+        return jsonify({
+            'meta': {
+                'skip': skip,
+                'limit': limit,
+            },
+            'items': schedules
+        })
+
+
 class ScheduleRoute(Route):
     rule = '/<string:schedule>'
     name = 'schedule'
