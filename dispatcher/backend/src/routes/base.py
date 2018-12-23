@@ -33,4 +33,4 @@ class Route:
 
 class BaseBlueprint(Blueprint):
     def register_route(self, route: Route):
-        self.add_url_rule(route.rule, route.name, route(), methods=route.methods)
+        self.add_url_rule(route.rule, route.name, route, methods=route.methods)
