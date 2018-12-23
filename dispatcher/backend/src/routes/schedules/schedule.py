@@ -67,4 +67,4 @@ class ScheduleRoute(Route):
             else:
                 raise ScheduleNotFound()
         except trafaret.DataError as e:
-            raise InvalidRequestJSON(e.error)
+            raise InvalidRequestJSON(str(e.error))
