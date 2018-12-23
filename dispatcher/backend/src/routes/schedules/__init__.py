@@ -1,7 +1,7 @@
 import flask
 
 from . import schedules
-from .scheduleroute import ScheduleRoute
+from .schedule import ScheduleRoute
 
 
 class Blueprint(flask.Blueprint):
