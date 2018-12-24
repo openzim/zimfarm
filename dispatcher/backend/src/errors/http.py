@@ -1,4 +1,3 @@
-from typing import Optional
 from http import HTTPStatus
 
 from flask import jsonify
