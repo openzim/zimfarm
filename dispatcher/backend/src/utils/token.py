@@ -84,7 +84,7 @@ class AccessControl:
         self.scope = scope
 
     def encode(self):
-        issue_time = datetime.now()
+        issue_time = datetime.utcnow()
         expire_time = issue_time + self.expire_time_delta
         payload = {
             'iss': self.issuer,

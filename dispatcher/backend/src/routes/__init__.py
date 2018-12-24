@@ -40,8 +40,7 @@ def authenticate(f):
             token_parts = token.split(' ')
             if len(token_parts) > 1:
                 token = token_parts[1]
-            payload = AccessToken.decode(token)
-            kwargs['token'] = AccessToken.Payload(payload)
+            kwargs['token'] = AccessControl.decode(token)
 
             try:
                 response = f(*args, **kwargs)
