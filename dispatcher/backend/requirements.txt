@@ -4,3 +4,6 @@ jsonschema>=2.6.0
 paramiko>=2.4.0
 PyJWT>=1.6.0
 pymongo>=3.7.0
+trafaret>=1.2.0
+pytest>=4.0.0
+pytest-env>=0.6.0

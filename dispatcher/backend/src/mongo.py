@@ -1,3 +1,5 @@
+import os
+
 from pymongo import MongoClient
 from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
@@ -5,7 +7,7 @@ from pymongo.collection import Collection as BaseCollection
 
 class Client(MongoClient):
     def __init__(self):
-        super().__init__(host='mongo')
+        super().__init__(host=os.getenv('MONGO_HOSTNAME', 'mongo'))
 
 
 class Database(BaseDatabase):

@@ -1,1 +1,16 @@
 language: python
+python:
+  - "3.6"
+
+services:
+  - mongodb
+
+install:
+  - pip install -r dispatcher/backend/requirements.txt
+
+before_script:
+  - cd dispatcher/backend/src
+  - export PYTHONPATH=$PWD
+
+script:
+  - pytest tests/integration

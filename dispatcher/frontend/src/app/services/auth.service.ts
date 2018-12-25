@@ -81,12 +81,12 @@ export class AccessTokenInterceptor implements HttpInterceptor {
         if (request.url.includes('auth')) {
             return next.handle(request);
         } else {
-            let requestWithToken = request.clone({headers: request.headers.set('token', this.authService.accessToken)})
+            let requestWithToken = request.clone({headers: request.headers.set('Authorization', 'Bearer ' + this.authService.accessToken)})
             return next.handle(requestWithToken).pipe(catchError((error, _) => {
                 if (error instanceof HttpErrorResponse) {
                     if (error.status == 401) {
                         return this.authService.refresh(this.authService.refreshToken).pipe(switchMap((data, index) => {
-                            let requestWithToken = request.clone({headers: request.headers.set('token', this.authService.accessToken)})
+                            let requestWithToken = request.clone({headers: request.headers.set('Authorization', 'Bearer ' + this.authService.accessToken)})
                             return next.handle(requestWithToken)
                         }))
                     } else {

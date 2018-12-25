@@ -2,7 +2,7 @@ from flask import request, Response
 from werkzeug.security import check_password_hash
 
 from app import system_username, system_password
-from utils.mongo import Users
+from mongo import Users
 
 
 def auth(intention: str):
