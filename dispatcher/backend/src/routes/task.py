@@ -4,7 +4,7 @@ from cerberus import Validator
 from bson import ObjectId
 
 from app import celery
-from utils.mongo import Tasks
+from mongo import Tasks
 from utils.token import AccessToken
 from utils.status import Task as TaskStatus
 from . import errors
