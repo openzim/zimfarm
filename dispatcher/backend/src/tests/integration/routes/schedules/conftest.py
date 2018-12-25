@@ -66,4 +66,4 @@ def make_schedule(database, make_beat_crontab, make_offliner_mwoffliner):
 @pytest.fixture(scope='module')
 def schedule(make_schedule, make_beat_crontab):
     beat = make_beat_crontab(minute='0', hour='15', day_of_month='*/5')
-    return make_schedule('name', 'bm', 'wikipedia', beat)
+    return make_schedule('name', 'language', 'wikipedia', beat)
