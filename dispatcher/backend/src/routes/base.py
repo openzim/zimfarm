@@ -3,7 +3,7 @@ from http import HTTPStatus
 from flask import request, Response, Blueprint
 
 
-class Route:
+class BaseRoute:
     rule = ''
     name = ''
     route = []
@@ -32,5 +32,5 @@ class Route:
 
 
 class BaseBlueprint(Blueprint):
-    def register_route(self, route: Route):
+    def register_route(self, route: BaseRoute):
         self.add_url_rule(route.rule, route.name, route, methods=route.methods)

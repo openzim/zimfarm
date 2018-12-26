@@ -6,11 +6,11 @@ from errors.http import InvalidRequestJSON, ScheduleNotFound
 from models.schedule import ScheduleCategory
 from mongo import Schedules
 from .. import authenticate
-from ..base import Route
+from ..base import BaseRoute
 from .base import URLComponent
 
 
-class SchedulesRoute(Route):
+class SchedulesRoute(BaseRoute):
     rule = '/'
     name = 'schedules'
     methods = ['GET']
@@ -49,7 +49,7 @@ class SchedulesRoute(Route):
         })
 
 
-class ScheduleRoute(Route, URLComponent):
+class ScheduleRoute(BaseRoute, URLComponent):
     rule = '/<string:schedule>'
     name = 'schedule'
     methods = ['GET', 'PATCH']

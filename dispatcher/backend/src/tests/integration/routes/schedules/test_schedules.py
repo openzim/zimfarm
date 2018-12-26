@@ -1,6 +1,4 @@
-
-
-class TestListSchedule:
+class TestListSchedules:
     url = '/api/schedules/'
 
     def test_unauthorized(self, client):
