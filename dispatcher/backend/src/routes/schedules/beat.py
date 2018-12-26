@@ -6,16 +6,18 @@ from mongo import Schedules
 from .base import URLComponent
 from .validators import CrontabValidator
 from .. import authenticate
-from ..base import Route
+from ..base import BaseRoute
 
 
-class BeatRoute(Route, URLComponent):
+class BeatRoute(BaseRoute, URLComponent):
     rule = '/<string:schedule>/beat'
     name = 'beat'
     methods = ['GET', 'PATCH']
 
     @authenticate
     def get(self, schedule: str, *args, **kwargs):
+        """Get schedule beat"""
+
         query = self.get_schedule_query(schedule)
         schedule = Schedules().find_one(query, {'beat': 1})
 
@@ -27,8 +29,9 @@ class BeatRoute(Route, URLComponent):
 
     @authenticate
     def patch(self, schedule: str, *args, **kwargs):
-        """
-        Update schedule beat:
+        """Update schedule beat:
+
+        Crontab beat:
         - minute
         - hour
         - day_of_week
@@ -39,17 +42,20 @@ class BeatRoute(Route, URLComponent):
         try:
             query = self.get_schedule_query(schedule)
             request_json = request.get_json()
+            if request_json is None:
+                raise InvalidRequestJSON()
+
             beat_type = request_json.get('type')
             config = request_json.get('config')
 
             if beat_type == 'crontab':
                 config = CrontabValidator().check(config)
                 beat = {'type': beat_type, 'config': config}
-                modified_count = Schedules().update_one(query, {'$set': {'beat': beat}}).modified_count
+                matched_count = Schedules().update_one(query, {'$set': {'beat': beat}}).matched_count
             else:
                 raise InvalidRequestJSON('Invalid beat type')
 
-            if modified_count:
+            if matched_count:
                 return Response()
             else:
                 raise ScheduleNotFound()
