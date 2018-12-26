@@ -9,3 +9,10 @@ class CrontabValidator(Dict):
             Key('day_of_week', default='*', trafaret=String(allow_blank=False)),
             Key('day_of_month', default='*', trafaret=String(allow_blank=False)),
             Key('month_of_year', default='*', trafaret=String(allow_blank=False)))
+
+
+class MWOfflinerConfigValidator(Dict):
+    def __init__(self):
+        super().__init__(
+
+        )
