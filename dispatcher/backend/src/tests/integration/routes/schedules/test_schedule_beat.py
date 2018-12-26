@@ -52,6 +52,24 @@ class TestScheduleBeatUpdate:
         assert response.status_code == 200
         assert beat == response.get_json()
 
+    def test_update_beat_crontab_partial(self, client, access_token, make_beat_crontab, make_schedule):
+        """Test partial update crontab beat"""
+
+        schedule = make_schedule('name', 'language', 'wikipedia')
+        url = '/api/schedules/{schedule}/beat'.format(schedule=str(schedule['_id']))
+        beat = make_beat_crontab(day_of_month='10')
+
+        # partial update
+        partial_beat = {'type': 'crontab', 'config': {'day_of_month': '10'}}
+        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        response = client.patch(url, headers=headers, data=json.dumps(partial_beat))
+        assert response.status_code == 200
+
+        # check updated value
+        response = client.get(url, headers={'Authorization': access_token})
+        assert response.status_code == 200
+        assert beat == response.get_json()
+
     @pytest.mark.parametrize('body', [None, '', 'bad_body'])
     def test_bad_body(self, client, access_token, schedule, body):
         """Test cannot update beat with a bad request body"""
