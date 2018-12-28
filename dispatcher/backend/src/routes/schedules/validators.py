@@ -1,4 +1,4 @@
-from trafaret import Dict, Key, String
+from trafaret import Dict, Key, String, URL, Email
 
 
 class CrontabValidator(Dict):
@@ -14,5 +14,6 @@ class CrontabValidator(Dict):
 class MWOfflinerConfigValidator(Dict):
     def __init__(self):
         super().__init__(
-
+            Key('mwUrl', trafaret=URL()),
+            Key('adminEmail', trafaret=Email())
         )
