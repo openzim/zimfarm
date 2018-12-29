@@ -1,6 +1,31 @@
 .container {
     display: flex;
+}
+
+@media only screen and (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+}
+
+.schedule-filter {
+    display: flex;
     flex-direction: column;
+    flex: 2;
+    min-width: 8rem;
+    max-width: 15rem;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    flex: 5;
+}
+
+.schedule-detail {
+    display: flex;
+    flex-direction: column;
+    flex: 3;
 }
 
 .content {
