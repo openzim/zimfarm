@@ -1,16 +1,13 @@
 language: python
-python:
-  - "3.6"
 
-services:
-  - mongodb
-
-install:
-  - pip install -r dispatcher/backend/requirements.txt
-
-before_script:
-  - cd dispatcher/backend/src
-  - export PYTHONPATH=$PWD
-
-script:
-  - pytest tests/integration
+matrix:
+  include:
+    - name: "backend integration test"
+      python: "3.6"
+      env: ROOT_PATH=tests/integration
+      services: mongodb
+      install: pip install -r dispatcher/backend/requirements.txt
+      before_script:
+        - cd dispatcher/backend/src
+        - export PYTHONPATH=$PWD
+      script: pytest tests/integration
