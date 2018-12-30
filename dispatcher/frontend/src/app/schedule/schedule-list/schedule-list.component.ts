@@ -11,13 +11,18 @@ export class ScheduleListComponent implements OnInit {
     constructor(private router: Router, private schedulesService: SchedulesService) {}
 
     public schedules: Array<Schedule> = []
+    public selectedSchedule: Schedule;
     private meta: SchedulesListMeta;
 
     ngOnInit() {
-        this.schedulesService.list().subscribe(data => {
+        this.schedulesService.list(0, 200).subscribe(data => {
             this.schedules = data.items
             this.meta = data.meta
         })
+    }
+
+    onSelect(schedule: Schedule): void {
+        this.selectedSchedule = schedule;
     }
 
     goPrevious(): void {
