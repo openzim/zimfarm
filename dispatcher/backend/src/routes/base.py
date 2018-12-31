@@ -6,7 +6,7 @@ from flask import request, Response, Blueprint
 class BaseRoute:
     rule = ''
     name = ''
-    route = []
+    methods = []
 
     def __call__(self, *args, **kwargs):
         handlers = {
