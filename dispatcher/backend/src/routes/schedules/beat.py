@@ -16,7 +16,7 @@ class BeatRoute(BaseRoute, URLComponent):
     methods = ['GET', 'PATCH']
 
     @authenticate
-    def get(self, schedule: str, *args, **kwargs):
+    def get(self, schedule: str):
         """Get schedule beat"""
 
         query = self.get_schedule_query(schedule)
@@ -29,7 +29,7 @@ class BeatRoute(BaseRoute, URLComponent):
             return jsonify(beat)
 
     @authenticate
-    def patch(self, schedule: str, *args, **kwargs):
+    def patch(self, schedule: str):
         """Update schedule beat:
 
         Crontab beat:
