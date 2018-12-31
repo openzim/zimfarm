@@ -17,7 +17,7 @@ const routes: Routes = [
         path: '', 
         component: ScheduleListComponent, 
         children: [
-            {path: ':name', component: ScheduleBeatComponent}
+            {path: ':name', component: ScheduleDetailComponent}
         ]
     }
 ];

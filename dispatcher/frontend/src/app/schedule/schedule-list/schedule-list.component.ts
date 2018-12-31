@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { switchMap, map } from 'rxjs/operators';
 
 import { SchedulesService, SchedulesListResponseData, SchedulesListMeta, Schedule } from '../../services/schedules.service';
 
@@ -8,29 +9,37 @@ import { SchedulesService, SchedulesListResponseData, SchedulesListMeta, Schedul
     styleUrls: ['./schedule-list.component.css']
 })
 export class ScheduleListComponent implements OnInit {
-    constructor(private router: Router, private schedulesService: SchedulesService) {}
+    constructor(private router: Router, private route: ActivatedRoute, private schedulesService: SchedulesService) {}
 
     public schedules: Array<Schedule> = []
-    public selectedSchedule: Schedule;
+    private selectedScheduleName: string | null;
     private meta: SchedulesListMeta;
 
     ngOnInit() {
         this.schedulesService.list(0, 200).subscribe(data => {
-            this.schedules = data.items
-            this.meta = data.meta
+            this.schedules = data.items;
+            this.meta = data.meta;
+
+            let firstChild = this.route.snapshot.firstChild;
+            if (firstChild != null) {
+                this.selectedScheduleName = firstChild.url[0].path;
+            }
         })
     }
 
     onSelect(schedule: Schedule): void {
-        this.selectedSchedule = schedule;
+        if (this.isSelected(schedule)) {
+            this.selectedScheduleName = null;
+            this.router.navigate(['../'], {relativeTo: this.route});
+        } else {
+            this.selectedScheduleName = schedule.name;
+            this.router.navigate([schedule.name], {relativeTo: this.route});
+        }
     }
 
     isSelected(schedule: Schedule): boolean {
-        if (this.selectedSchedule != null) {
-            return this.selectedSchedule._id == schedule._id && this.selectedSchedule.name == schedule.name;
-        } else {
-            return false;
-        }
+        if (this.selectedScheduleName == null) { return false; }
+        return this.selectedScheduleName == schedule.name;
     }
 
     goPrevious(): void {

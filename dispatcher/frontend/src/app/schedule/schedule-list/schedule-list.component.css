@@ -1,7 +1,6 @@
 .container {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    justify-content: center;
 }
 
 /* wider than 768px */
@@ -14,7 +13,9 @@
 
 .schedule-list {
     display: flex;
+    flex: 1;
     flex-direction: column;
+    max-width: 60rem;
 }
 
 .schedules {
@@ -41,27 +42,30 @@
     background-color: #e2e2e2;
 }
 
+.schedule > .detail {
+    padding-left: 1.7rem;
+    padding-right: 0.5rem;
+}
+
+.schedule > .collapsed {
+    padding-top: 0.25rem;
+    padding-bottom: 0.5rem;
+}
+
+.schedule.selected > :not(.expanded) {
+    background-color: #c7ebfc;
+}
+
+.schedule.selected > .expanded {
+    background-color: #ffffff;
+}
+
 .schedule > .title {
     display: flex;
+    flex-direction: row;
     align-items: center;
     padding: 0.25rem 0.5rem;
-    /* background-color: #eeeeee; */
-}
-
-.schedule:hover > .title, .schedule.selected > .title {
-    /* background-color: #e6e6e6; */
-}
-
-.schedule > .attributes {
-    padding-top: 0.25rem;
-    padding-left: 1.7rem;
-    padding-bottom: 0.5rem;
-    padding-right: 0.5rem;
-    /* background-color: #fdfdfd; */
-}
-
-.schedule:hover > .attributes, .schedule.selected > .attributes {
-    /* background-color: #f6f6f6; */
+    cursor: pointer;
 }
 
 .circle {

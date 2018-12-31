@@ -28,14 +28,18 @@ button.success:active {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
+.h2 {
+    font-size: 1.2rem;
+}
+
 .h3 {
     font-size: 1rem;
 }
 
-.semi-bold {
-    font-weight: 500;
-}
-
 .h4 {
     font-size: 0.8rem;
+}
+
+.semi-bold {
+    font-weight: 500;
 }

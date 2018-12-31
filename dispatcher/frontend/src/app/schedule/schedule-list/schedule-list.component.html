@@ -3,18 +3,20 @@
         <ul class="schedules">
             <li class="schedule" 
                 *ngFor="let schedule of schedules" 
-                [class.selected]="schedule === selectedSchedule"
-                (click)="onSelect(schedule)">
-                <div class="title">
+                [class.selected]="isSelected(schedule)">
+                <div class="title" (click)="onSelect(schedule)">
                     <div class="circle" [class.enabled]="schedule.enabled"></div>
-                    <div>{{schedule.name}}</div>
+                    <div class="h2 semi-bold">{{schedule.name}}</div>
                 </div>
-                <div class="attributes h4">
-                    <div>{{schedule.language}}</div>
+                <div class="detail collapsed h4">
+                    <div>Language: {{schedule.language}}</div>
+                    <div>Category: {{schedule.category}}</div>
                     <div>Last run: {{schedule.last_run | timeAgo}}</div>
                     <div>Schedule: {{schedule.beat.description()}}</div>
                 </div>
-                <div *ngIf="isSelected(schedule)"><router-outlet></router-outlet></div>
+                <div class="detail expanded" *ngIf="isSelected(schedule)">
+                    <router-outlet></router-outlet>
+                </div>
             </li>
         </ul>
     </div>
