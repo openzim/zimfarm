@@ -23,12 +23,12 @@ def make_beat_crontab():
 
 @pytest.fixture(scope='module')
 def make_offliner_mwoffliner():
-    def _make_offliner_mwoffliner(language: str = 'en') -> dict:
+    def _make_offliner_mwoffliner(sub_domain: str = 'en', admin_email: str = 'test@kiwix.org') -> dict:
         return {
             'name': 'mwoffliner',
             'config': {
-                'mwUrl': 'https://{}.wikipedia.org/'.format(language),
-                'adminEmail': 'test@kiwix.org'
+                'mwUrl': 'https://{}.wikipedia.org/'.format(sub_domain),
+                'adminEmail': admin_email
             }
         }
     return _make_offliner_mwoffliner
@@ -38,7 +38,8 @@ def make_offliner_mwoffliner():
 def make_schedule(database, make_beat_crontab, make_offliner_mwoffliner):
     schedule_ids = []
 
-    def _make_schedule(name: str, language: str, category: str, beat: dict = None) -> dict:
+    def _make_schedule(name: str, language: str, category: str,
+                       beat: dict = None, offliner: dict = None) -> dict:
         document = {
             '_id': ObjectId(),
             'name': name,
@@ -49,7 +50,7 @@ def make_schedule(database, make_beat_crontab, make_offliner_mwoffliner):
             'total_run': 10,
             'last_run': datetime(2018, 12, 1, 10, 35, 00, tzinfo=pytz.utc),
             'beat': beat or make_beat_crontab(),
-            'offline': make_offliner_mwoffliner(),
+            'offliner': offliner or make_offliner_mwoffliner(),
             'task': {
                 'name': 'mwoffliner'
             }
@@ -64,6 +65,7 @@ def make_schedule(database, make_beat_crontab, make_offliner_mwoffliner):
 
 
 @pytest.fixture(scope='module')
-def schedule(make_schedule, make_beat_crontab):
+def schedule(make_schedule, make_beat_crontab, make_offliner_mwoffliner):
     beat = make_beat_crontab(minute='0', hour='15', day_of_month='*/5')
-    return make_schedule('name', 'language', 'wikipedia', beat)
+    offliner = make_offliner_mwoffliner(sub_domain='en')
+    return make_schedule('name', 'language', 'wikipedia', beat, offliner)

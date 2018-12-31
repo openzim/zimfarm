@@ -16,6 +16,7 @@ test_data = [
     {'mwUrl': 'bad_url', 'adminEmail': 'test@kiwix.org'},
     {'mwURL': 'https://en.wikipedia.org', 'adminEmail': 'test@kiwix.org'},
     {'mwUrl': 'https://en.wikipedia.org', 'adminEmail': 'bad_email'},
+    {'mwUrl': 'https://en.wikipedia.org', 'adminEmail': 'test@kiwix.org', 'randomProperty': 100},
 ])
 def test_invalid_required(test_input):
     with pytest.raises(trafaret.DataError):
