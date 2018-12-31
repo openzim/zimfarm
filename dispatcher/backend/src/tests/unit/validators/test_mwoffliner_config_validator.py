@@ -14,6 +14,7 @@ test_data = [
     {'mwUrl': 'https://en.wikipedia.org'},
     {'adminEmail': 'test@kiwix.org'},
     {'mwUrl': 'bad_url', 'adminEmail': 'test@kiwix.org'},
+    {'mwURL': 'https://en.wikipedia.org', 'adminEmail': 'test@kiwix.org'},
     {'mwUrl': 'https://en.wikipedia.org', 'adminEmail': 'bad_email'},
 ])
 def test_invalid_required(test_input):
