@@ -30,11 +30,3 @@ class MWOfflinerConfigValidator(Dict):
             Key('skipHtmlCache', optional=True, trafaret=Bool),
             Key('withZimFullTextIndex', optional=True, trafaret=Bool),
             Key('mobileLayout', optional=True, trafaret=Bool))
-
-
-class MWOfflinerConfigValidator2(Dict):
-    def __init__(self):
-        super().__init__(
-            Key('mwUrl', trafaret=URL),
-            Key('adminEmail', trafaret=Email),
-        )
