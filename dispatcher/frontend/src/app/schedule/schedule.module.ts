@@ -13,16 +13,11 @@ import { ScheduleOfflinerComponent } from './schedule-offliner/schedule-offliner
 import { ScheduleTaskComponent } from './schedule-task/schedule-task.component';
 
 const routes: Routes = [
-    { path: '', component: ScheduleListComponent },
     {
-        path: ':name', 
-        component: ScheduleDetailComponent,
+        path: '', 
+        component: ScheduleListComponent, 
         children: [
-            { path: '', component: ScheduleOverviewComponent },
-            { path: 'beat', component: ScheduleBeatComponent },
-            { path: 'offliner', component: ScheduleOfflinerComponent },
-            { path: 'task', component: ScheduleTaskComponent },
-            { path: '**', redirectTo: '' }
+            {path: ':name', component: ScheduleBeatComponent}
         ]
     }
 ];

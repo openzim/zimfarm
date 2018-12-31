@@ -1,32 +1,20 @@
 .container {
     display: flex;
+    flex-direction: column;
     align-items: stretch;
 }
 
 /* wider than 768px */
 @media only screen and (min-width: 768px) {
-    .container {
-        height: calc(100vh - 54px);
-    }
 }
 
+/* narrower than 768px */
 @media only screen and (max-width: 768px) {
-    .container {
-        flex-direction: column;
-    }
 }
 
 .schedule-list {
     display: flex;
     flex-direction: column;
-    flex: 3;
-}
-
-/* wider than 768px */
-@media only screen and (min-width: 768px) {
-    .schedule-list {
-        max-width: 22.5rem;
-    }
 }
 
 .schedules {
@@ -42,17 +30,26 @@
     flex-direction: column;
     justify-items: stretch;
     min-height: fit-content;
+    background-color: #fbfbfb;
+}
+
+.schedule:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.schedule:hover {
+    background-color: #e2e2e2;
 }
 
 .schedule > .title {
     display: flex;
     align-items: center;
     padding: 0.25rem 0.5rem;
-    background-color: #eeeeee;
+    /* background-color: #eeeeee; */
 }
 
 .schedule:hover > .title, .schedule.selected > .title {
-    background-color: #e6e6e6;
+    /* background-color: #e6e6e6; */
 }
 
 .schedule > .attributes {
@@ -60,19 +57,11 @@
     padding-left: 1.7rem;
     padding-bottom: 0.5rem;
     padding-right: 0.5rem;
-    background-color: #fdfdfd;
+    /* background-color: #fdfdfd; */
 }
 
 .schedule:hover > .attributes, .schedule.selected > .attributes {
-    background-color: #f6f6f6;
-}
-
-.schedule-detail {
-    display: flex;
-    flex-direction: column;
-    flex: 7;
-    border-left: #cacaca solid 1px;
-    background-color: #fdfdfd;
+    /* background-color: #f6f6f6; */
 }
 
 .circle {

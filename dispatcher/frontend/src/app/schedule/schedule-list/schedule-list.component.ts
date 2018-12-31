@@ -25,6 +25,14 @@ export class ScheduleListComponent implements OnInit {
         this.selectedSchedule = schedule;
     }
 
+    isSelected(schedule: Schedule): boolean {
+        if (this.selectedSchedule != null) {
+            return this.selectedSchedule._id == schedule._id && this.selectedSchedule.name == schedule.name;
+        } else {
+            return false;
+        }
+    }
+
     goPrevious(): void {
         let skip = Math.max(0, this.meta.skip - 20);
         this.schedulesService.list(skip, 20).subscribe(data => {

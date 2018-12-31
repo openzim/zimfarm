@@ -14,10 +14,8 @@
                     <div>Last run: {{schedule.last_run | timeAgo}}</div>
                     <div>Schedule: {{schedule.beat.description()}}</div>
                 </div>
+                <div *ngIf="isSelected(schedule)"><router-outlet></router-outlet></div>
             </li>
         </ul>
-    </div>
-    <div class="schedule-detail">
-        schedule-detail
     </div>
 </div>
