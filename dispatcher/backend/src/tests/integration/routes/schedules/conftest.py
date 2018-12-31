@@ -23,7 +23,7 @@ def make_beat_crontab():
 
 @pytest.fixture(scope='module')
 def make_offliner_mwoffliner():
-    def _make_offliner_mwoffliner(language: str = 'bm') -> dict:
+    def _make_offliner_mwoffliner(language: str = 'en') -> dict:
         return {
             'name': 'mwoffliner',
             'config': {
