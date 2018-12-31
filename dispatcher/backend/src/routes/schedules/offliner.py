@@ -13,7 +13,7 @@ class OfflinerRoute(BaseRoute, URLComponent):
     methods = ['GET']
 
     @authenticate
-    def get(self, schedule: str, *args, **kwargs):
+    def get(self, schedule: str):
         """Get schedule offliner"""
 
         query = self.get_schedule_query(schedule)
