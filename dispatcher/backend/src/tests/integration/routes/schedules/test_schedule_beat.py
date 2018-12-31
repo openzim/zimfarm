@@ -35,7 +35,7 @@ class TestScheduleBeatGet:
 
 
 class TestScheduleBeatUpdate:
-    def test_update_beat_crontab(self, client, access_token, make_beat_crontab, make_schedule):
+    def test_update_beat_crontab_full(self, client, access_token, make_beat_crontab, make_schedule):
         """Test update crontab beat"""
 
         schedule = make_schedule('name', 'language', 'wikipedia')
@@ -70,7 +70,9 @@ class TestScheduleBeatUpdate:
         assert response.status_code == 200
         assert beat == response.get_json()
 
-    @pytest.mark.parametrize('body', [None, '', 'bad_body'])
+    @pytest.mark.parametrize('body', [
+        None, '', 'bad_body', '{"type": "bad_type", "config": {}}', '{"type": "bad_type", "config": null}'
+    ])
     def test_bad_body(self, client, access_token, schedule, body):
         """Test cannot update beat with a bad request body"""
 
@@ -79,11 +81,22 @@ class TestScheduleBeatUpdate:
         response = client.patch(url, headers=headers, data=body)
         assert response.status_code == 400
 
+    @pytest.mark.parametrize('update', [{'hour': ''}, {'day_of_month': '*//4'}])
+    def test_bad_crontab(self, client, access_token, schedule, make_beat_crontab, update):
+        """Test cannot update beat with a bad crontab"""
+
+        beat = make_beat_crontab(minute='30', hour='7', day_of_month='20')
+        beat['config'].update(update)
+        url = '/api/schedules/{schedule}/beat'.format(schedule=str(schedule['_id']))
+        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        response = client.patch(url, headers=headers, data=json.dumps(beat))
+        assert response.status_code == 400
+
     def test_bad_content_type(self, client, access_token, schedule, make_beat_crontab):
         """Test cannot update beat with a bad content type"""
 
         beat = make_beat_crontab(minute='30', hour='7', day_of_month='20')
-        url = '/api/schedules/{schedule}/beat'.format(schedule='bad_schedule_id')
+        url = '/api/schedules/{schedule}/beat'.format(schedule=str(schedule['_id']))
         headers = {'Authorization': access_token}
         response = client.patch(url, headers=headers, data=json.dumps(beat))
         assert response.status_code == 400
