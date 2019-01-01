@@ -14,6 +14,7 @@ class Scheduler(beat.Scheduler):
     logger = get_logger(__name__)
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.last_update: Optional[datetime] = None
         self.cached = {}
 
