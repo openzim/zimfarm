@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { SharedModule } from '../shared/shared.module';
 import { ScheduleListComponent } from './schedule-list/schedule-list.component';
+import { ScheduleListFilterComponent } from './schedule-list-filter/schedule-list-filter.component';
 import { ScheduleDetailComponent } from './schedule-detail/schedule-detail.component';
 import { ScheduleOverviewComponent } from './schedule-overview/schedule-overview.component';
 import { ScheduleBeatComponent } from './schedule-beat/schedule-beat.component';
@@ -12,16 +13,11 @@ import { ScheduleOfflinerComponent } from './schedule-offliner/schedule-offliner
 import { ScheduleTaskComponent } from './schedule-task/schedule-task.component';
 
 const routes: Routes = [
-    { path: '', component: ScheduleListComponent },
     {
-        path: ':name', 
-        component: ScheduleDetailComponent,
+        path: '', 
+        component: ScheduleListComponent, 
         children: [
-            { path: '', component: ScheduleOverviewComponent },
-            { path: 'beat', component: ScheduleBeatComponent },
-            { path: 'offliner', component: ScheduleOfflinerComponent },
-            { path: 'task', component: ScheduleTaskComponent },
-            { path: '**', redirectTo: '' }
+            {path: ':name', component: ScheduleDetailComponent}
         ]
     }
 ];
@@ -36,6 +32,7 @@ const routes: Routes = [
     ],
     declarations: [
         ScheduleListComponent, 
+        ScheduleListFilterComponent, 
         ScheduleDetailComponent, 
         ScheduleOverviewComponent, 
         ScheduleBeatComponent, 

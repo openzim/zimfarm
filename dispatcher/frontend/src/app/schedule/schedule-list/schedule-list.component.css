@@ -1,103 +1,163 @@
 .container {
     display: flex;
-    flex-direction: column;
+    align-items: stretch;
+    min-height: calc(100vh - 54px);
 }
 
-.content {
-    margin-left: 1rem;
-    margin-right: 1rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-}
-
-.content:first-child {
-    margin-top: 0.5rem;
-}
-
-.content:last-child {
-    margin-bottom: 0.5rem;
-}
-
-@media only screen and (max-width: 768px) {
-    .content {
-        margin-left: 0;
-        margin-right: 0;
+/* when narrower than 1024px, put filter on top of list */
+@media only screen and (max-width: 1024px) {
+    .container {
+        flex-direction: column;
     }
 }
 
-.toolbar {
-    padding: 0 0.25rem;
-    display: flex;
-    justify-content: space-between;
+.filter {
+    flex: 3;
+    max-width: 20rem;
 }
 
-.pagination {
+/* schedule list */
+
+.list {
     display: flex;
-    list-style: none;
+    flex: 7;
+    flex-direction: column;
+}
+
+/* when wider than 1024px, show divider on the left of list */
+@media only screen and (min-width: 1024px) {
+    .list {
+        border-left: #c4c4c4 solid 1px;
+    }
+}
+
+/* column widths */
+
+.name {
+    flex: 3;
+}
+
+.language {
+    flex: 1;
+}
+
+.category {
+    flex: 1;
+}
+
+.beat {
+    flex: 1;
+}
+
+/* schedule list & cell */
+
+.schedules {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
     padding: 0;
-    margin: 0.25rem;
-    border: 1px solid #dddddd;
-    border-radius: 4px;
-    background-color: #f8f8f8;
-    overflow: hidden;
+    margin: 0;
 }
 
-.page-item {
-    border-right: 1px solid #dddddd;
-    display: list-item;
+.schedule {
+    display: flex;
+    flex-direction: column;
+    justify-items: stretch;
+    list-style-type: none;
+    min-height: fit-content;
 }
 
-.page-item:hover {
-    background-color: #eeeeee;
+.schedule:nth-child(odd) {
+    background-color: #fbfbfb;
 }
 
-.page-item:active {
-    background-color: #e9ecef;
+.schedule:nth-child(even) {
+    background-color: #f2f2f2;
 }
 
-.page-item:last-child {
-    border-right: 0px;
+.schedule:hover {
+    background-color: #e2e2e2;
 }
 
-.page-item > button {
-    box-sizing: border-box;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 0.25rem 0.5rem;
-    color: #007bff;
+.schedule .detail {
+    padding-left: 1.7rem;
+    padding-right: 0.5rem;
 }
 
-.table-container {
-    overflow-x: auto;
+.schedule.selected > :not(.expanded) {
+    background-color: #e4e4e4;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
+.schedule.selected > .expanded {
+    background-color: #ffffff;
 }
 
-thead > tr {
-    border-top: 2px solid #dddddd;
-    border-bottom: 2px solid #dddddd;
+/* list mode */
+@media only screen and (max-width: 768px) {
+    .schedule > .row {
+        display: none;
+    }
+
+    .list > .header {
+        display: none;
+    }
+
+    .schedule > .card > .title {
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+    }
+
+    .schedule > .card > .detail {
+        padding-top: 0.25rem;
+        padding-bottom: 0.5rem;
+    }
 }
 
-tbody > tr {
-    border-bottom: 1px solid #dddddd;
+/* table mode */
+@media only screen and (min-width: 768px) {
+    .schedule > .card {
+        display: none;
+    }
+
+    /* header */
+    .list > .header {
+        display: flex;
+        align-items: baseline;
+        list-style-type: none;
+        padding: 0.75rem 0.5rem;
+        margin: 0;
+        background-color: #ebebeb;
+        border-bottom: #dddddd solid 2px;
+    }
+    
+    .list > .header li {
+        display: flex;
+        justify-content: center;
+    }
+
+    /* rows */
+    .schedule > .row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0.5rem;
+        cursor: pointer;
+    }
+
+    .schedule > .row > div:not(.name) {
+        display: flex;
+        justify-content: center;
+    }
+    
+    .schedule > .row > div.name {
+        display: flex;
+        align-items: center;
+    }
 }
 
-tbody > tr:hover {
-    background-color: #f8f8f8;
-}
-
-td, th {
-    text-align: center;
-    padding: 1rem;
-}
-
-td.name  .circle {
+/* indicator */
+.circle {
     width: 0.5rem;
     height: 0.5rem;
     -webkit-border-radius: 0.15rem;
@@ -111,22 +171,7 @@ td.name  .circle {
     float: left;
 }
 
-td.name .enabled {
+.circle.enabled {
     background: #28a745;
     border-color: #1e7b34;
-}
-
-td.name a {
-    color: #1B6CD0;
-    font-weight: 500;
-    text-decoration: none;
-}
-
-td.name a:hover {
-    text-decoration: underline;
-}
-
-td.run_every {
-    text-align: left;
-    min-width: 10rem;
 }

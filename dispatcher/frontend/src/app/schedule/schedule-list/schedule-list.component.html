@@ -1,45 +1,43 @@
 <div class="container">
-    <div class="content toolbar">
-        <div></div>
-        <ul class="pagination">
-            <li class="page-item" (click)="goPrevious()"><button>Previous</button></li>
-            <li class="page-item" (click)="goNext()"><button>Next</button></li>
+    <div class="filter">
+        <label>Schedule Filter</label>
+    </div>
+    <div class="list">
+        <ul class="header h3 semi-bold">
+            <li class="name"><label>Name</label></li>
+            <li class="language"><label>Language</label></li>
+            <li class="category"><label>Category</label></li>
+            <li class="beat"><label>Last Run</label></li>
         </ul>
-    </div>
-    <div class="content table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Language</th>
-                    <th>Last Run</th>
-                    <th>Total Run</th>
-                    <th>Run Every (UTC)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngFor="let schedule of schedules">
-                    <td class="name">
-                        <div style="display: flex; align-items: center;">
-                            <div class="circle" [class.enabled]="schedule.enabled"></div>
-                            <a routerLink="{{schedule.name}}">{{schedule.name}}</a>
-                        </div>
-                    </td>
-                    <td>{{schedule.language}}</td>
-                    <td style="min-width: 4rem;">
-                        <span *ngIf="schedule.last_run">{{schedule.last_run | timeAgo}}</span>
-                    </td>
-                    <td><span *ngIf="schedule.total_run">{{schedule.total_run}}</span></td>
-                    <td class="run_every">{{schedule.beat.description()}}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="content toolbar">
-        <div></div>
-        <ul class="pagination">
-            <li class="page-item" (click)="goPrevious()"><button>Previous</button></li>
-            <li class="page-item" (click)="goNext()"><button>Next</button></li>
+        <ul class="schedules">
+            <li class="schedule" 
+                *ngFor="let schedule of schedules" 
+                [class.selected]="isSelected(schedule)">
+                <div class="row h3" (click)="onSelect(schedule)">
+                    <div class="name">
+                        <div class="circle" [class.enabled]="schedule.enabled"></div>
+                        <div>{{schedule.name}}</div>
+                    </div>
+                    <div class="language"><div>{{schedule.language}}</div></div>
+                    <div class="category"><div>{{schedule.category}}</div></div>
+                    <div class="beat"><div>{{schedule.last_run | timeAgo}}</div></div>
+                </div>
+                <div class="card">
+                    <div class="title" (click)="onSelect(schedule)">
+                        <div class="circle" [class.enabled]="schedule.enabled"></div>
+                        <div class="h2 semi-bold">{{schedule.name}}</div>
+                    </div>
+                    <div class="detail h4">
+                        <div>Language: {{schedule.language}}</div>
+                        <div>Category: {{schedule.category}}</div>
+                        <div>Last run: {{schedule.last_run | timeAgo}}</div>
+                        <div>Beat: {{schedule.beat.description()}}</div>
+                    </div>
+                </div>
+                <div class="detail expanded" *ngIf="isSelected(schedule)">
+                    <router-outlet></router-outlet>
+                </div>
+            </li>
         </ul>
     </div>
 </div>
