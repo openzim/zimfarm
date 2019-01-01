@@ -27,3 +27,19 @@ button.success:active {
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
 }
+
+.h2 {
+    font-size: 1.2rem;
+}
+
+.h3 {
+    font-size: 1rem;
+}
+
+.h4 {
+    font-size: 0.8rem;
+}
+
+.semi-bold {
+    font-weight: 500;
+}
