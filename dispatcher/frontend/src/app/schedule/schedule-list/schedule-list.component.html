@@ -3,25 +3,36 @@
         <label>Schedule Filter</label>
     </div>
     <div class="list">
-        <ul class="schedules-header h2 semi-bold">
+        <ul class="header h3 semi-bold">
             <li class="name"><label>Name</label></li>
             <li class="language"><label>Language</label></li>
             <li class="category"><label>Category</label></li>
-            <li class="beat"><label>Beat</label></li>
+            <li class="beat"><label>Last Run</label></li>
         </ul>
         <ul class="schedules">
             <li class="schedule" 
                 *ngFor="let schedule of schedules" 
                 [class.selected]="isSelected(schedule)">
-                <div class="title" (click)="onSelect(schedule)">
-                    <div class="circle" [class.enabled]="schedule.enabled"></div>
-                    <div class="h2 semi-bold">{{schedule.name}}</div>
+                <div class="row h3" (click)="onSelect(schedule)">
+                    <div class="name">
+                        <div class="circle" [class.enabled]="schedule.enabled"></div>
+                        <div>{{schedule.name}}</div>
+                    </div>
+                    <div class="language"><div>{{schedule.language}}</div></div>
+                    <div class="category"><div>{{schedule.category}}</div></div>
+                    <div class="beat"><div>{{schedule.last_run | timeAgo}}</div></div>
                 </div>
-                <div class="detail collapsed h4">
-                    <div>Language: {{schedule.language}}</div>
-                    <div>Category: {{schedule.category}}</div>
-                    <div>Last run: {{schedule.last_run | timeAgo}}</div>
-                    <div>Beat: {{schedule.beat.description()}}</div>
+                <div class="card">
+                    <div class="title" (click)="onSelect(schedule)">
+                        <div class="circle" [class.enabled]="schedule.enabled"></div>
+                        <div class="h2 semi-bold">{{schedule.name}}</div>
+                    </div>
+                    <div class="detail h4">
+                        <div>Language: {{schedule.language}}</div>
+                        <div>Category: {{schedule.category}}</div>
+                        <div>Last run: {{schedule.last_run | timeAgo}}</div>
+                        <div>Beat: {{schedule.beat.description()}}</div>
+                    </div>
                 </div>
                 <div class="detail expanded" *ngIf="isSelected(schedule)">
                     <router-outlet></router-outlet>

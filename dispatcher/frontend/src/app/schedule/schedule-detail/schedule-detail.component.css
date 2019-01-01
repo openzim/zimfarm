@@ -20,16 +20,16 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    height: 10rem;
+    height: 15rem;
     align-items: center;
     justify-content: center;
 }
 
 /* wider than 768px */
-@media only screen and (min-width: 768px) {
+/* @media only screen and (min-width: 768px) {
     .task-list {
         margin-top: 0.75rem;
         margin-bottom: 0.75rem;
         border-left: 1px solid #000000;
     }
-}
+} */
