@@ -1,5 +1,14 @@
 <div class="container">
-    <div class="schedule-list">
+    <div class="filter">
+        <label>Schedule Filter</label>
+    </div>
+    <div class="list">
+        <ul class="schedules-header h2 semi-bold">
+            <li class="name"><label>Name</label></li>
+            <li class="language"><label>Language</label></li>
+            <li class="category"><label>Category</label></li>
+            <li class="beat"><label>Beat</label></li>
+        </ul>
         <ul class="schedules">
             <li class="schedule" 
                 *ngFor="let schedule of schedules" 
@@ -12,7 +21,7 @@
                     <div>Language: {{schedule.language}}</div>
                     <div>Category: {{schedule.category}}</div>
                     <div>Last run: {{schedule.last_run | timeAgo}}</div>
-                    <div>Schedule: {{schedule.beat.description()}}</div>
+                    <div>Beat: {{schedule.beat.description()}}</div>
                 </div>
                 <div class="detail expanded" *ngIf="isSelected(schedule)">
                     <router-outlet></router-outlet>

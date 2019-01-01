@@ -1,21 +1,75 @@
 .container {
     display: flex;
-    justify-content: center;
+    align-items: stretch;
+    min-height: calc(100vh - 54px);
 }
 
-/* wider than 768px */
-@media only screen and (min-width: 768px) {
+/* when narrower than 1024px, put filter on top of list */
+@media only screen and (max-width: 1024px) {
+    .container {
+        flex-direction: column;
+    }
 }
 
-/* narrower than 768px */
-@media only screen and (max-width: 768px) {
+.filter {
+    flex: 3;
+    max-width: 20rem;
 }
 
-.schedule-list {
+.list {
     display: flex;
-    flex: 1;
+    flex: 7;
     flex-direction: column;
-    max-width: 60rem;
+}
+
+/* when wider than 1024px, show divider on the left of list */
+@media only screen and (min-width: 1024px) {
+    .list {
+        border-left: #c4c4c4 solid 1px;
+    }
+}
+
+.schedules-header {
+    display: flex;
+    align-items: baseline;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    background-color: #ebebeb;
+    border-bottom: #dddddd solid 2px;
+}
+
+/* when narrower than 768px, put filter on top of list */
+@media only screen and (max-width: 768px) {
+    .schedules-header {
+        display: none;
+    }
+}
+
+.schedules-header li {
+    display: flex;
+    justify-content: center;
+    padding: 0.75rem;
+}
+
+.schedules-header li:first-child {
+    margin-left: 1.7rem;
+}
+
+.name {
+    flex: 1
+}
+
+.language {
+    flex: 2
+}
+
+.category {
+    flex: 1
+}
+
+.beat {
+    flex: 6
 }
 
 .schedules {
@@ -30,7 +84,11 @@
     display: flex;
     flex-direction: column;
     justify-items: stretch;
+    list-style-type: none;
     min-height: fit-content;
+}
+
+.schedule:nth-child(odd) {
     background-color: #fbfbfb;
 }
 
