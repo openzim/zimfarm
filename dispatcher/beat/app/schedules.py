@@ -92,16 +92,21 @@ class SchedulerEntry(beat.ScheduleEntry):
     def __next__(self):
         """Return the next instance"""
 
+        timestamp = datetime.utcnow().replace(tzinfo=pytz.utc)
+
         Schedules().update_one(
             {'name': self.name},
-            {'$set': {'last_run': self.app.now(), 'total_run': self.total_run_count + 1}})
-        Tasks().insert_one({
+            {'$set': {'last_run': timestamp, 'total_run': self.total_run_count + 1}})
+        task_id = Tasks().insert_one({
             'schedule_id': self.id,
             'debug': True,
             'timestamp': {
-                'created': datetime.utcnow().replace(tzinfo=pytz.utc)
+                'created': timestamp
             }
-        })
+        }).inserted_id
 
         document = Schedules().find_one({'name': self.name})
-        return self.__class__.from_document(self.app, document)
+        schedule = self.__class__.from_document(self.app, document)
+        schedule.options['task_id'] = str(task_id)
+
+        return schedule
