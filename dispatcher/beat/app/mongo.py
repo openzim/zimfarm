@@ -16,3 +16,8 @@ class Database(BaseDatabase):
 class Schedules(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'schedules')
+
+
+class Tasks(BaseCollection):
+    def __init__(self):
+        super().__init__(Database(), 'tasks')
