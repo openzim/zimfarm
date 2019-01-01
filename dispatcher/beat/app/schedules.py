@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
+import pytz
+from bson import ObjectId
 from celery import Celery, beat, schedules
 from celery.schedules import BaseSchedule
 from celery.utils.log import get_logger
 
-from mongo import Schedules
+from mongo import Schedules, Tasks
 
 
 class Scheduler(beat.Scheduler):
@@ -41,8 +43,9 @@ class SchedulerEntry(beat.ScheduleEntry):
 
     logger = get_logger(__name__)
 
-    def __init__(self, name: str, task_name: str, last_run_at: datetime,
+    def __init__(self, id: ObjectId, name: str, task_name: str, last_run_at: datetime,
                  total_run_count: int, schedule: BaseSchedule, app: Celery, *args, **kwargs):
+        self.id = id
         super().__init__(name=name, task=task_name, last_run_at=last_run_at, total_run_count=total_run_count,
                          schedule=schedule, args=args, kwargs=kwargs, options={}, app=app)
 
@@ -50,21 +53,22 @@ class SchedulerEntry(beat.ScheduleEntry):
     def from_document(cls, app: Celery, document: dict) -> Optional['SchedulerEntry']:
         """Create an instance from a mongo document"""
 
-        schedule_name = document.get('name', None)
-        task_name = document.get('task', {}).get('name', None)
+        schedule_id = document.get('_id')
+        schedule_name = document.get('name')
+        task_name = document.get('task', {}).get('name')
 
         offliner_config = document.get('offliner', {}).get('config', None)
         last_run = document.get('last_run', None)
         total_run = document.get('total_run', 0)
 
-        if schedule_name is None or task_name is None or offliner_config is None:
+        if schedule_id is None or schedule_name is None or task_name is None or offliner_config is None:
             return None
 
         schedule = cls.get_schedule(document)
         if schedule is None:
             return None
 
-        return cls(schedule_name, task_name, last_run, total_run, schedule, app, offliner_config=offliner_config)
+        return cls(schedule_id, schedule_name, task_name, last_run, total_run, schedule, app, offliner_config=offliner_config)
 
     @staticmethod
     def get_schedule(document: dict) -> Optional[BaseSchedule]:
@@ -86,9 +90,18 @@ class SchedulerEntry(beat.ScheduleEntry):
             return None
 
     def __next__(self):
-        Schedules().update_one({'name': self.name}, {'$set': {
-                                   'last_run': self.app.now(),
-                                   'total_run': self.total_run_count + 1
-                               }})
+        """Return the next instance"""
+
+        Schedules().update_one(
+            {'name': self.name},
+            {'$set': {'last_run': self.app.now(), 'total_run': self.total_run_count + 1}})
+        Tasks().insert_one({
+            'schedule_id': self.id,
+            'debug': True,
+            'timestamp': {
+                'created': datetime.utcnow().replace(tzinfo=pytz.utc)
+            }
+        })
+
         document = Schedules().find_one({'name': self.name})
         return self.__class__.from_document(self.app, document)
