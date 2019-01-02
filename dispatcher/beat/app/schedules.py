@@ -39,6 +39,7 @@ class Scheduler(beat.Scheduler):
         return self.cached
 
     def send_task(self, *args, **kwargs):
+        print('send_task: {}'.format(args))
         print('send_task: {}'.format(kwargs))
         return super().send_task(*args, **kwargs)
 
