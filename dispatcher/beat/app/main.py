@@ -1,15 +1,15 @@
 import os
 import sys
-import amqp
 from datetime import timedelta
 from time import sleep
 
-from pymongo.errors import ServerSelectionTimeoutError
+import amqp
 from celery import Celery
+from kombu import Queue, Exchange
+from pymongo.errors import ServerSelectionTimeoutError
 
 from mongo import Client
 from schedules import Scheduler
-from kombu import Queue, Exchange
 
 
 def check_mongo_booted() -> bool:
