@@ -39,6 +39,8 @@ class Scheduler(beat.Scheduler):
         return self.cached
 
     def send_task(self, *args, **kwargs):
+
+
         print('send_task: {}'.format(args))
         print('send_task: {}'.format(kwargs))
         return super().send_task(*args, **kwargs)
@@ -48,11 +50,12 @@ class SchedulerEntry(beat.ScheduleEntry):
 
     logger = get_logger(__name__)
 
-    def __init__(self, id: ObjectId, name: str, task_name: str, last_run_at: datetime,
-                 total_run_count: int, schedule: BaseSchedule, app: Celery, *args, **kwargs):
+    def __init__(self, schedule_id: ObjectId, name: str, task_name: str, last_run_at: datetime,
+                 total_run_count: int, schedule: BaseSchedule, app: Celery, task_args: tuple, task_kwargs: dict):
         super().__init__(name=name, task=task_name, last_run_at=last_run_at, total_run_count=total_run_count,
-                         schedule=schedule, args=args, kwargs=kwargs, options={'schedule_id': str(id)}, app=app)
-        self.id = id
+                         schedule=schedule, args=task_args, kwargs=task_kwargs,
+                         options={'schedule_id': schedule_id}, app=app)
+        self.id = schedule_id
 
     @classmethod
     def from_document(cls, app: Celery, document: dict) -> Optional['SchedulerEntry']:
@@ -73,7 +76,8 @@ class SchedulerEntry(beat.ScheduleEntry):
         if schedule is None:
             return None
 
-        return cls(schedule_id, schedule_name, task_name, last_run, total_run, schedule, app, offliner_config=offliner_config)
+        return cls(schedule_id, schedule_name, task_name, last_run, total_run, schedule, app,
+                   task_args=(), task_kwargs={'offliner_config': offliner_config})
 
     @staticmethod
     def get_schedule(document: dict) -> Optional[BaseSchedule]:
@@ -111,7 +115,4 @@ class SchedulerEntry(beat.ScheduleEntry):
         # }).inserted_id
 
         document = Schedules().find_one({'name': self.name})
-        schedule = self.__class__.from_document(self.app, document)
-        # schedule.options['schedule_id'] = str(schedule.id)
-        # schedule.options['task_id'] = str(ObjectId())
-        return schedule
+        return self.__class__.from_document(self.app, document)
