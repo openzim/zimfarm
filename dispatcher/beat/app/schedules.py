@@ -38,6 +38,10 @@ class Scheduler(beat.Scheduler):
         self.logger.debug('Schedules synced, count={}'.format(len(self.cached)))
         return self.cached
 
+    def send_task(self, *args, **kwargs):
+        super().send_task(*args, **kwargs)
+        print('send_task: {}'.format(kwargs))
+
 
 class SchedulerEntry(beat.ScheduleEntry):
 
@@ -97,17 +101,13 @@ class SchedulerEntry(beat.ScheduleEntry):
         Schedules().update_one(
             {'name': self.name},
             {'$set': {'last_run': timestamp, 'total_run': self.total_run_count + 1}})
-        task_id = Tasks().insert_one({
-            'schedule_id': self.id,
-            'debug': True,
-            'timestamp': {
-                'created': timestamp
-            }
-        }).inserted_id
+        # task_id = Tasks().insert_one({
+        #     'schedule_id': self.id,
+        #     'debug': True,
+        #     'timestamp': {
+        #         'created': timestamp
+        #     }
+        # }).inserted_id
 
         document = Schedules().find_one({'name': self.name})
-        schedule = self.__class__.from_document(self.app, document)
-        schedule.options['task_id'] = str(task_id)
-        print(schedule.options)
-
-        return schedule
+        return self.__class__.from_document(self.app, document)
