@@ -59,9 +59,10 @@ class Scheduler(beat.Scheduler):
         if len(args) == 3:
             task_kwargs = args[2]
             mw_url = task_kwargs.get('offliner_config', {}).get('mwUrl')
-            print(mw_url)
             if 'bm' in mw_url:
+                kwargs['exchange'] = 'offliner'
                 kwargs['routing_key'] = 'mwoffliner.small'
+                print('bm in mw_url, kwargs: {}'.format(kwargs))
 
         return super().send_task(*args, **kwargs)
 

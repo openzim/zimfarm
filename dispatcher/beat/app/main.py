@@ -40,8 +40,8 @@ if __name__ == '__main__':
 
     # configure queue
     offliner_exchange = Exchange('offliner', 'topic')
-    app.conf.task_queues = [
+    app.conf.task_queues = (
         Queue('offliner_small', offliner_exchange, routing_key='#.small')
-    ]
+    )
 
     app.start(argv=['celery', 'beat', '--loglevel', 'debug'])
