@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ]
 
     retries = 3
-    while retries < 3:
+    while retries > 0:
         try:
             app.start(argv=['celery', 'beat', '--loglevel', 'debug'])
         except amqp.exceptions.AccessRefused:
