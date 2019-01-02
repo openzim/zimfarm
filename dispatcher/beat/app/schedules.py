@@ -48,7 +48,7 @@ class Scheduler(beat.Scheduler):
                     'created': datetime.utcnow().replace(tzinfo=pytz.utc)
                 }
             }).inserted_id
-            kwargs['task_id'] = task_id
+            kwargs['task_id'] = str(task_id)
 
         print('send_task: {}'.format(args))
         print('send_task: {}'.format(kwargs))
