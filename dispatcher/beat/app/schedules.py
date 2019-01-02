@@ -39,7 +39,16 @@ class Scheduler(beat.Scheduler):
         return self.cached
 
     def send_task(self, *args, **kwargs):
-
+        schedule_id = kwargs.get('schedule_id')
+        if schedule_id:
+            task_id = Tasks().insert_one({
+                'schedule_id': schedule_id,
+                'debug': True,
+                'timestamp': {
+                    'created': datetime.utcnow().replace(tzinfo=pytz.utc)
+                }
+            }).inserted_id
+            kwargs['task_id'] = task_id
 
         print('send_task: {}'.format(args))
         print('send_task: {}'.format(kwargs))
@@ -101,18 +110,8 @@ class SchedulerEntry(beat.ScheduleEntry):
     def __next__(self):
         """Return the next instance"""
 
-        timestamp = datetime.utcnow().replace(tzinfo=pytz.utc)
-
         Schedules().update_one(
             {'name': self.name},
-            {'$set': {'last_run': timestamp, 'total_run': self.total_run_count + 1}})
-        # task_id = Tasks().insert_one({
-        #     'schedule_id': self.id,
-        #     'debug': True,
-        #     'timestamp': {
-        #         'created': timestamp
-        #     }
-        # }).inserted_id
-
+            {'$set': {'last_run': datetime.utcnow().replace(tzinfo=pytz.utc), 'total_run': self.total_run_count + 1}})
         document = Schedules().find_one({'name': self.name})
         return self.__class__.from_document(self.app, document)
