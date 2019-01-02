@@ -55,8 +55,6 @@ class Scheduler(beat.Scheduler):
             }).inserted_id
             kwargs['task_id'] = str(task_id)
 
-        print('send_task, kwargs: {}'.format(kwargs))
-
         return super().send_task(*args, **kwargs)
 
 
