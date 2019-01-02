@@ -61,7 +61,6 @@ class Scheduler(beat.Scheduler):
             mw_url = task_kwargs.get('offliner_config', {}).get('mwUrl')
             if 'bm' in mw_url:
                 kwargs['queue'] = 'offliner_small'
-                kwargs['routing_key'] = 'mwoffliner.small'
                 print('bm in mw_url, kwargs: {}'.format(kwargs))
 
         return super().send_task(*args, **kwargs)

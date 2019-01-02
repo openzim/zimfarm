@@ -1,5 +1,6 @@
 import os
 import sys
+import amqp
 from datetime import timedelta
 from time import sleep
 
@@ -41,7 +42,17 @@ if __name__ == '__main__':
     # configure queue
     offliner_exchange = Exchange('offliner', 'topic')
     app.conf.task_queues = [
-        Queue('offliner_small', offliner_exchange, routing_key='#.small')
+        Queue('offliner_tiny', offliner_exchange, routing_key='#.small'),
+        Queue('offliner_small', offliner_exchange, routing_key='#.small'),
+        Queue('offliner_medium', offliner_exchange, routing_key='#.small'),
+        Queue('offliner_large', offliner_exchange, routing_key='#.small'),
+        Queue('offliner_gigantic', offliner_exchange, routing_key='#.small'),
     ]
 
-    app.start(argv=['celery', 'beat', '--loglevel', 'debug'])
+    retries = 3
+    while retries < 3:
+        try:
+            app.start(argv=['celery', 'beat', '--loglevel', 'debug'])
+        except amqp.exceptions.AccessRefused:
+            retries -= 1
+            sleep(2)
