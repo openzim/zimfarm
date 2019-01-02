@@ -7,7 +7,7 @@ RUN pip3 install -r ./app/requirements.txt
 
 ENV USERNAME username
 ENV PASSWORD password
-ENV HOSTNAME default_hostname
+ENV NODE_NAME default_node_name
 
 ENV DISPATCHER_HOST farm.openzim.org
 ENV RABBIT_PORT 5671

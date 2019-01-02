@@ -20,7 +20,7 @@ Any Linux or Unix based system that has docker installed. Windows are not suppor
 - USERNAME
 - PASSWORD
 - WORKING_DIR: path of a working directory in host system
-- HOSTNAME: name of the worker
+- NODE_NAME: name of the celery node
 
 ## Docker Volumes
 
@@ -38,5 +38,6 @@ docker run \
     --env USERNAME='username' \
     --env PASSWORD='password' \
     --env WORKING_DIR='PATH_WORKING_DIR' \
+    --env NODE_NAME='default_node_name' \
 openzim/zimfarm-worker:latest
 ```
