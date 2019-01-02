@@ -10,7 +10,7 @@ ENV PASSWORD password
 
 ENV DISPATCHER_HOST farm.openzim.org
 ENV RABBIT_PORT 5671
-ENV WAREHOUSE_HOST farm.openzim.org
+ENV WAREHOUSE_HOST warehouse.farm.openzim.org
 ENV WAREHOUSE_PORT 1522
 
 ENTRYPOINT ["python", "app/main.py"]
