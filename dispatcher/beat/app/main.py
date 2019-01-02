@@ -42,11 +42,10 @@ if __name__ == '__main__':
     # configure queue
     offliner_exchange = Exchange('offliner', 'topic')
     app.conf.task_queues = [
-        Queue('offliner_tiny', offliner_exchange, routing_key='#.small'),
-        Queue('offliner_small', offliner_exchange, routing_key='#.small'),
-        Queue('offliner_medium', offliner_exchange, routing_key='#.small'),
-        Queue('offliner_large', offliner_exchange, routing_key='#.small'),
-        Queue('offliner_gigantic', offliner_exchange, routing_key='#.small'),
+        Queue('offliner_default', offliner_exchange, routing_key='#'),
+        Queue('offliner_small', offliner_exchange, routing_key='small'),
+        Queue('offliner_medium', offliner_exchange, routing_key='medium'),
+        Queue('offliner_large', offliner_exchange, routing_key='large')
     ]
 
     retries = 3

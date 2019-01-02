@@ -55,13 +55,7 @@ class Scheduler(beat.Scheduler):
             }).inserted_id
             kwargs['task_id'] = str(task_id)
 
-        # testing queues: if running bm.wikipedia.org offliner, set routing key
-        if len(args) == 3:
-            task_kwargs = args[2]
-            mw_url = task_kwargs.get('offliner_config', {}).get('mwUrl')
-            if 'bm' in mw_url:
-                kwargs['queue'] = 'offliner_small'
-                print('bm in mw_url, kwargs: {}'.format(kwargs))
+        print('send_task, kwargs: {}'.format(kwargs))
 
         return super().send_task(*args, **kwargs)
 
