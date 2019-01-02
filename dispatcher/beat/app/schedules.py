@@ -107,6 +107,6 @@ class SchedulerEntry(beat.ScheduleEntry):
 
         document = Schedules().find_one({'name': self.name})
         schedule = self.__class__.from_document(self.app, document)
-        schedule.options['task_id'] = str(task_id)
+        schedule.kwargs['task_id'] = str(task_id)
 
         return schedule
