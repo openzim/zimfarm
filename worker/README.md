@@ -19,7 +19,8 @@ Any Linux or Unix based system that has docker installed. Windows are not suppor
 
 - USERNAME
 - PASSWORD
-- WORKING_DIR path of a working directory in host system
+- WORKING_DIR: path of a working directory in host system
+- HOSTNAME: name of the worker
 
 ## Docker Volumes
 
