@@ -61,11 +61,11 @@ class SchedulerEntry(beat.ScheduleEntry):
 
     logger = get_logger(__name__)
 
-    def __init__(self, schedule_id: ObjectId, name: str, task_name: str, last_run_at: datetime,
-                 total_run_count: int, schedule: BaseSchedule, app: Celery, task_args: tuple, task_kwargs: dict):
+    def __init__(self, schedule_id: ObjectId, name: str, task_name: str, last_run_at: datetime, total_run_count: int,
+                 schedule: BaseSchedule, app: Celery, task_args: tuple, task_kwargs: dict, task_options: dict):
+        task_options['schedule_id'] = schedule_id
         super().__init__(name=name, task=task_name, last_run_at=last_run_at, total_run_count=total_run_count,
-                         schedule=schedule, args=task_args, kwargs=task_kwargs,
-                         options={'schedule_id': schedule_id}, app=app)
+                         schedule=schedule, args=task_args, kwargs=task_kwargs, options=task_options, app=app)
         self.id = schedule_id
 
     @classmethod
@@ -74,7 +74,8 @@ class SchedulerEntry(beat.ScheduleEntry):
 
         schedule_id = document.get('_id')
         schedule_name = document.get('name')
-        task_name = document.get('task', {}).get('name')
+        task_options = document.get('task', {})
+        task_name = task_options.pop('name')
 
         offliner_config = document.get('offliner', {}).get('config', None)
         last_run = document.get('last_run', None)
@@ -88,7 +89,7 @@ class SchedulerEntry(beat.ScheduleEntry):
             return None
 
         return cls(schedule_id, schedule_name, task_name, last_run, total_run, schedule, app,
-                   task_args=(), task_kwargs={'offliner_config': offliner_config})
+                   task_args=(), task_kwargs={'offliner_config': offliner_config}, task_options=task_options)
 
     @staticmethod
     def get_schedule(document: dict) -> Optional[BaseSchedule]:
