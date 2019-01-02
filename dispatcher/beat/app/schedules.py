@@ -39,6 +39,11 @@ class Scheduler(beat.Scheduler):
         return self.cached
 
     def send_task(self, *args, **kwargs):
+        """
+        Override the send_task function of the base class.
+        Inserting a task document and set the document id as task id.
+        """
+
         schedule_id = kwargs.get('schedule_id')
         if schedule_id:
             task_id = Tasks().insert_one({
@@ -49,9 +54,6 @@ class Scheduler(beat.Scheduler):
                 }
             }).inserted_id
             kwargs['task_id'] = str(task_id)
-
-        print('send_task: {}'.format(args))
-        print('send_task: {}'.format(kwargs))
         return super().send_task(*args, **kwargs)
 
 
