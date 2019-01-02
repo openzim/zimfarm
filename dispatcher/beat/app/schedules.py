@@ -49,9 +49,9 @@ class SchedulerEntry(beat.ScheduleEntry):
 
     def __init__(self, id: ObjectId, name: str, task_name: str, last_run_at: datetime,
                  total_run_count: int, schedule: BaseSchedule, app: Celery, *args, **kwargs):
-        self.id = id
         super().__init__(name=name, task=task_name, last_run_at=last_run_at, total_run_count=total_run_count,
                          schedule=schedule, args=args, kwargs=kwargs, options={}, app=app)
+        self.id = id
 
     @classmethod
     def from_document(cls, app: Celery, document: dict) -> Optional['SchedulerEntry']:
@@ -110,4 +110,7 @@ class SchedulerEntry(beat.ScheduleEntry):
         # }).inserted_id
 
         document = Schedules().find_one({'name': self.name})
-        return self.__class__.from_document(self.app, document)
+        schedule = self.__class__.from_document(self.app, document)
+        schedule.options['schedule_id'] = schedule.id
+        schedule.options['task_id'] = ObjectId()
+        return schedule
