@@ -8,6 +8,7 @@ from celery import Celery
 
 from mongo import Client
 from schedules import Scheduler
+from kombu import Queue, Exchange
 
 
 def check_mongo_booted() -> bool:
@@ -32,6 +33,15 @@ if __name__ == '__main__':
     url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username, password=system_password)
 
     app = Celery(main='zimfarm', broker=url)
+
+    # configure beat
     app.conf.beat_scheduler = Scheduler
     app.conf.beat_max_loop_interval = timedelta(minutes=2).seconds
+
+    # configure queue
+    offliner_exchange = Exchange('offliner', 'topic')
+    app.conf.task_queues = [
+        Queue('offliner_small', offliner_exchange, routing_key='#.small')
+    ]
+
     app.start(argv=['celery', 'beat', '--loglevel', 'debug'])
