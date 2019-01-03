@@ -3,6 +3,7 @@ import sys
 
 import paramiko
 from celery import Celery
+from kombu import Queue, Exchange
 
 from . import tasks
 from .utils import Settings, SFTPClient
@@ -26,17 +27,29 @@ class Worker:
         self.credential_smoke_test()
         self.sftp_smoke_test()
 
-        # start celery
+        # configure celery
         broker_url = 'amqps://{username}:{password}@{host}:{port}/zimfarm'.format(
             username=Settings.username, password=Settings.password,
             host=Settings.dispatcher_hostname, port=Settings.rabbit_port)
-        celery = Celery(main='zimfarm_worker', broker=broker_url)
-        celery.register_task(tasks.MWOffliner())
-        celery.start(argv=['celery', 'worker',
-                           '--task-events',
-                           '-l', 'info',
-                           '--concurrency', '1',
-                           '-n', '{}@{}'.format(Settings.username, Settings.node_name)])
+        app = Celery(main='zimfarm_worker', broker=broker_url)
+        app.register_task(tasks.MWOffliner())
+
+        # configure queues
+        offliner_exchange = Exchange('offliner', 'topic')
+        app.conf.task_queues = [
+            Queue('offliner_default', offliner_exchange, routing_key='#'),
+            Queue('offliner_small', offliner_exchange, routing_key='small'),
+            Queue('offliner_medium', offliner_exchange, routing_key='medium'),
+            Queue('offliner_large', offliner_exchange, routing_key='large')
+        ]
+
+        # start celery
+        app.start(argv=['celery', 'worker',
+                        '--task-events',
+                        '-l', 'info',
+                        '--concurrency', '1',
+                        '-Q', Settings.queues,
+                        '-n', '{}@{}'.format(Settings.username, Settings.node_name)])
 
     def docker_smoke_test(self):
         # TODO: list containers to make sure have access to docker
