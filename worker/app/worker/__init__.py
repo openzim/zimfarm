@@ -36,7 +36,7 @@ class Worker:
                            '--task-events',
                            '-l', 'info',
                            '--concurrency', '1',
-                           '-n', '{}@%h'.format(Settings.username)])
+                           '-n', '{}@{}'.format(Settings.username, Settings.node_name)])
 
     def docker_smoke_test(self):
         # TODO: list containers to make sure have access to docker

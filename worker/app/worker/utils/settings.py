@@ -9,6 +9,8 @@ class Settings:
     username: str = os.getenv('USERNAME', None)
     password: str = os.getenv('PASSWORD', None)
 
+    node_name: str = os.getenv('NODE_NAME', None)
+
     dispatcher_hostname: str = os.getenv('DISPATCHER_HOST', 'farm.openzim.org')
     rabbit_port: int = os.getenv('RABBIT_PORT', 5671)
     warehouse_hostname: str = os.getenv('WAREHOUSE_HOST', 'farm.openzim.org')
@@ -34,6 +36,9 @@ class Settings:
             sys.exit(1)
         if cls.working_dir_host is None or cls.working_dir_host == '':
             logger.error('{} environmental variable is required.'.format('WORKING_DIR'))
+            sys.exit(1)
+        if cls.node_name is None or cls.node_name == '' or cls.node_name == 'default_node_name':
+            logger.error('{} environmental variable is required.'.format('NODE_NAME'))
             sys.exit(1)
 
         # check working directory mapping inside container
