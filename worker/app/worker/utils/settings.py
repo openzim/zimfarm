@@ -10,6 +10,7 @@ class Settings:
     password: str = os.getenv('PASSWORD', None)
 
     node_name: str = os.getenv('NODE_NAME', None)
+    queues: str = os.getenv('QUEUES', None)
 
     dispatcher_hostname: str = os.getenv('DISPATCHER_HOST', 'farm.openzim.org')
     rabbit_port: int = os.getenv('RABBIT_PORT', 5671)
@@ -39,6 +40,9 @@ class Settings:
             sys.exit(1)
         if cls.node_name is None or cls.node_name == '' or cls.node_name == 'default_node_name':
             logger.error('{} environmental variable is required.'.format('NODE_NAME'))
+            sys.exit(1)
+        if cls.queues is None or cls.queues == '':
+            logger.error('{} environmental variable is required.'.format('QUEUES'))
             sys.exit(1)
 
         # check working directory mapping inside container
@@ -95,7 +99,9 @@ class Settings:
             'RABBIT_PORT': cls.rabbit_port,
             'WAREHOUSE_HOST': cls.warehouse_hostname,
             'WAREHOUSE_PORT': cls.warehouse_port,
-            'WORKING_DIR': cls.working_dir_host
+            'WORKING_DIR': cls.working_dir_host,
+            'NODE_NAME': cls.node_name,
+            'QUEUES': cls.queues
         }
 
         for name, value in variables.items():
