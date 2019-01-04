@@ -79,7 +79,10 @@ class OAuth2:
             raise InvalidGrant('Username or password is invalid.')
 
         # generate token
-        access_token = AccessControl.encode(user)
+        user_id = user.get('_id')
+        username = user.get('username')
+        scope = user.get('scope', {})
+        access_token = AccessControl(user_id, username, scope).encode()
         refresh_token = OAuth2.generate_refresh_token(user['_id'])
 
         return OAuth2.success_response(access_token, refresh_token)
@@ -106,7 +109,10 @@ class OAuth2:
             raise InvalidGrant('Refresh token is invalid.')
 
         # generate token
-        access_token = AccessControl.encode(user)
+        user_id = user.get('_id')
+        username = user.get('username')
+        scope = user.get('scope', {})
+        access_token = AccessControl(user_id, username, scope).encode()
         refresh_token = OAuth2.generate_refresh_token(user['_id'])
 
         # delete old refresh token from database
