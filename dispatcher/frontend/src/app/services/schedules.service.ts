@@ -3,7 +3,8 @@ import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, Htt
 import { Observable, throwError } from 'rxjs';
 import cronstrue from 'cronstrue';
 
-import { apiRoot, languageNames } from './const.service';
+import { languageNames } from './const.service';
+import { apiRoot } from './config';
 import { map } from 'rxjs/operators';
 
 @Injectable({
@@ -14,7 +15,7 @@ export class SchedulesService {
 
     list(skip: number = 0, limit: number = 20) {
         return this.http.get<SchedulesListResponseData>(
-            'https://farm.openzim.org/api/schedules/', 
+            apiRoot + '/api/schedules/', 
             {
                 params: {
                     skip: skip.toString(),
