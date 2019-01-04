@@ -7,7 +7,7 @@ from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
 from mongo import Users, RefreshTokens
-from utils.token import AccessToken
+from utils.token import AccessControl
 from errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 
 
@@ -79,7 +79,7 @@ class OAuth2:
             raise InvalidGrant('Username or password is invalid.')
 
         # generate token
-        access_token = AccessToken.encode(user)
+        access_token = AccessControl.encode(user)
         refresh_token = OAuth2.generate_refresh_token(user['_id'])
 
         return OAuth2.success_response(access_token, refresh_token)
@@ -106,7 +106,7 @@ class OAuth2:
             raise InvalidGrant('Refresh token is invalid.')
 
         # generate token
-        access_token = AccessToken.encode(user)
+        access_token = AccessControl.encode(user)
         refresh_token = OAuth2.generate_refresh_token(user['_id'])
 
         # delete old refresh token from database
@@ -141,7 +141,7 @@ class OAuth2:
         response = jsonify({
             'access_token': access_token,
             'token_type': 'bearer',
-            'expires_in': int(AccessToken.expire_time_delta.total_seconds()),
+            'expires_in': int(AccessControl.expire_time_delta.total_seconds()),
             'refresh_token': refresh_token})
         response.headers['Cache-Control'] = 'no-store'
         response.headers['Pragma'] = 'no-cache'
