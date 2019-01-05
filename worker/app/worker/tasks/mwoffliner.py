@@ -18,12 +18,12 @@ class MWOffliner(Base):
 
     name = 'offliner.mwoffliner'
 
-    def run(self, config: dict, warehouse_path: str, tag: str = 'latest'):
+    def run(self, image_tag: str, config: dict, warehouse_path: str, *args, **kwargs):
         """Run MWOffliner based offliner tasks.
 
+        :param image_tag: mwoffliner image tag
         :param config: offliner config
         :param warehouse_path: path appending to files when uploading
-        :param tag: mwoffliner image tag
         :return:
         """
 
