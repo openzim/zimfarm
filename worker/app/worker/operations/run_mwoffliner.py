@@ -13,6 +13,7 @@ class RunMWOffliner(Operation):
 
     def __init__(self, docker_client: DockerClient, tag: str, config: {}, task_id: str, working_dir_host: str,
                  redis_container_name: str):
+        tag = 'latest' if not tag else tag
         super().__init__()
         self.docker = docker_client
         self.config = config
