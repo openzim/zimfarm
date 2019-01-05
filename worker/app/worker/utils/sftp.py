@@ -26,22 +26,28 @@ class SFTPClient:
     def __exit__(self, *args, **kwargs):
         self.transport.close()
 
-    def upload_file(self, category: str, file_path: Path):
+    def upload_file(self, remote_working_dir: str, file_path: Path):
         """Upload a file to warehouse.
 
-        :param category: zim file category
+        :param remote_working_dir: zim file category
         :param file_path: local path of file need to upload
         """
-        working_dir = '/' + category
-        with paramiko.SFTPClient.from_transport(self.transport) as client:
-            try:
-                client.chdir(working_dir)
-            except IOError:
-                client.mkdir(working_dir)
-                client.chdir(working_dir)
 
+        with paramiko.SFTPClient.from_transport(self.transport) as client:
+            # create remote working dir if it does not exist
+            try:
+                client.chdir(remote_working_dir)
+            except IOError:
+                client.mkdir(remote_working_dir)
+                client.chdir(remote_working_dir)
+
+            # upload file to remote dir as a tmp file
             remote_path = file_path.parts[-1]
-            client.put(localpath=file_path, remotepath=remote_path, confirm=True)
+            remote_path_temp = remote_path + '.tmp'
+            client.put(localpath=file_path, remotepath=remote_path_temp, confirm=True)
+
+            # rename file back to original name
+            client.rename(remote_path_temp, remote_path)
 
     def list_dir(self, path: str):
         with paramiko.SFTPClient.from_transport(self.transport) as client:
