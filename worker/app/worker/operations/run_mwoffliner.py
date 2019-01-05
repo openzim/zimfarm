@@ -11,7 +11,7 @@ class RunMWOffliner(Operation):
 
     name = 'Run Offliner'
 
-    def __init__(self, docker_client: DockerClient, config: {}, short_task_id: str, working_dir_host: str,
+    def __init__(self, docker_client: DockerClient, tag: str, config: {}, short_task_id: str, working_dir_host: str,
                  redis_container_name: str):
         super().__init__()
         self.docker = docker_client
@@ -19,7 +19,7 @@ class RunMWOffliner(Operation):
         self.short_task_id = short_task_id
         self.working_dir_host = Path(working_dir_host)
         self.redis_container_name = redis_container_name
-        self.image_name = 'openzim/mwoffliner:latest'
+        self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
     def execute(self):
         """Run mwoffliner container
