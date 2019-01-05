@@ -76,7 +76,7 @@ class SchedulerEntry(beat.ScheduleEntry):
         schedule_id = document.get('_id')
         schedule_name = document.get('name')
         task_options = document.get('celery', {})
-        task_name = task_options.pop('name')
+        task_name = task_options.pop('task_name')
 
         task_config = document.get('task', {})
         last_run = document.get('last_run', None)
