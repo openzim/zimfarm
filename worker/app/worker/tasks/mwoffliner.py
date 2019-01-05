@@ -18,18 +18,18 @@ class MWOffliner(Base):
 
     name = 'offliner.mwoffliner'
 
-    def run(self, config: dict, warehouse_path: str, tag: str = 'latest'):
+    def run(self, image_tag: str, config: dict, warehouse_path: str, *args, **kwargs):
         """Run MWOffliner based offliner tasks.
 
+        :param image_tag: mwoffliner image tag
         :param config: offliner config
         :param warehouse_path: path appending to files when uploading
-        :param tag: mwoffliner image tag
         :return:
         """
 
         operations = [
             RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name),
-            RunMWOffliner(docker_client=docker.from_env(), config=config, task_id=self.short_task_id,
+            RunMWOffliner(docker_client=docker.from_env(), tag=image_tag, config=config, task_id=self.short_task_id,
                           working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
             Upload(warehouse_path, working_dir=Settings.working_dir_container, short_task_id=self.short_task_id)
         ]
