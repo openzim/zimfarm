@@ -18,15 +18,6 @@ class Schedule:
         underscored_name = self.language_name_en.replace(' ', '_')
         return f'{self.category}_{underscored_name}'
 
-    def generate_offliner(self):
-        return {
-            'name': 'mwoffliner',
-            'config': {
-                'mwUrl': self.mw_url,
-                'adminEmail': 'chris@kiwix.org'
-            }
-        }
-
     def generate_beat(self):
         config = {
             'minute': str(randint(0, 3) * 15),
@@ -36,7 +27,16 @@ class Schedule:
             'month_of_year': '*'}
         return {
             'type': 'crontab',
-            'config': config
+            'config': config}
+
+    def generate_task_config(self):
+        return {
+            'image': 'openzim/mwoffliner',
+            'config': {
+                'mwUrl': self.mw_url,
+                'adminEmail': 'contact@kiwix.org'
+            },
+            'warehouse_path': self.category
         }
 
     def generate_document(self) -> dict:
@@ -49,10 +49,10 @@ class Schedule:
                 'name_native': self.language_name,
                 'name_en': self.language_name_en
             },
-            'offliner': self.generate_offliner(),
             'beat': self.generate_beat(),
-            'task': {
-                'name': 'mwoffliner',
+            'task': self.generate_task_config(),
+            'celery': {
+                'task_name': 'mwoffliner',
                 'queue': 'offliner_default'
             }
         }
