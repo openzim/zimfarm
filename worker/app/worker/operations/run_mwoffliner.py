@@ -11,12 +11,12 @@ class RunMWOffliner(Operation):
 
     name = 'Run Offliner'
 
-    def __init__(self, docker_client: DockerClient, tag: str, config: {}, short_task_id: str, working_dir_host: str,
+    def __init__(self, docker_client: DockerClient, tag: str, config: {}, task_id: str, working_dir_host: str,
                  redis_container_name: str):
         super().__init__()
         self.docker = docker_client
         self.config = config
-        self.short_task_id = short_task_id
+        self.task_id = task_id
         self.working_dir_host = Path(working_dir_host)
         self.redis_container_name = redis_container_name
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
@@ -29,12 +29,16 @@ class RunMWOffliner(Operation):
         :raise: docker.errors.ContainerError
         """
 
-        volumes = {self.working_dir_host.joinpath(self.short_task_id).absolute(): {'bind': '/output', 'mode': 'rw'}}
+        # pull mwoffliner image
+        self.docker.images.pull(self.image_name)
+
+        # run mwoffliner
+        volumes = {self.working_dir_host.joinpath(self.task_id).absolute(): {'bind': '/output', 'mode': 'rw'}}
         self.std_out = self.docker.containers.run(image=self.image_name,
                                                   command=self._get_command(self.config),
                                                   remove=True, volumes=volumes,
                                                   links={self.redis_container_name: 'redis'},
-                                                  name='mwoffliner_{}'.format(self.short_task_id))
+                                                  name='mwoffliner_{}'.format(self.task_id))
 
     @staticmethod
     def _get_command(config: {}):

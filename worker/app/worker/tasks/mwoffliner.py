@@ -29,7 +29,7 @@ class MWOffliner(Base):
 
         operations = [
             RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name),
-            RunMWOffliner(docker_client=docker.from_env(), config=config, short_task_id=self.short_task_id,
+            RunMWOffliner(docker_client=docker.from_env(), config=config, task_id=self.short_task_id,
                           working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
             Upload(warehouse_path, working_dir=Settings.working_dir_container, short_task_id=self.short_task_id)
         ]
