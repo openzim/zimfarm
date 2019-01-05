@@ -16,7 +16,7 @@ class MWOffliner(Base):
     Steps will be executed one after another.
     """
 
-    name = 'mwoffliner'
+    name = 'offliner.mwoffliner'
 
     def run(self, config: dict, warehouse_path: str, tag: str = 'latest'):
         """Run MWOffliner based offliner tasks.
