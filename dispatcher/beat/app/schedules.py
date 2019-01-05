@@ -75,14 +75,14 @@ class SchedulerEntry(beat.ScheduleEntry):
 
         schedule_id = document.get('_id')
         schedule_name = document.get('name')
-        task_options = document.get('task', {})
+        task_options = document.get('celery', {})
         task_name = task_options.pop('name')
 
-        offliner_config = document.get('offliner', {}).get('config', None)
+        task_config = document.get('task', {})
         last_run = document.get('last_run', None)
         total_run = document.get('total_run', 0)
 
-        if schedule_id is None or schedule_name is None or task_name is None or offliner_config is None:
+        if schedule_id is None or schedule_name is None or task_name is None or task_config is None:
             return None
 
         schedule = cls.get_schedule(document)
@@ -90,7 +90,7 @@ class SchedulerEntry(beat.ScheduleEntry):
             return None
 
         return cls(schedule_id, schedule_name, task_name, last_run, total_run, schedule, app,
-                   task_args=(), task_kwargs={'offliner_config': offliner_config}, task_options=task_options)
+                   task_args=(), task_kwargs=task_config, task_options=task_options)
 
     @staticmethod
     def get_schedule(document: dict) -> Optional[BaseSchedule]:
