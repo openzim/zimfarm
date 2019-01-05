@@ -102,10 +102,6 @@ class Parser:
                 print(f'{schedule.name} already exist')
 
 
-class RemoteDatabase:
-    pass
-
-
 if __name__ == '__main__':
     parser = Parser(path='./mwoffliner_site_matrix.json')
     parser.parse()
