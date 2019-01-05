@@ -31,7 +31,6 @@ class Schedule:
 
     def generate_task_config(self):
         return {
-            'image': 'openzim/mwoffliner',
             'config': {
                 'mwUrl': self.mw_url,
                 'adminEmail': 'contact@kiwix.org'
@@ -52,7 +51,7 @@ class Schedule:
             'beat': self.generate_beat(),
             'task': self.generate_task_config(),
             'celery': {
-                'task_name': 'mwoffliner',
+                'task_name': 'offliner.mwoffliner',
                 'queue': 'offliner_default'
             }
         }
