@@ -41,7 +41,7 @@ class SFTPClient:
                 client.mkdir(remote_working_dir)
                 client.chdir(remote_working_dir)
 
-            # upload file to remote dir
+            # upload file to remote dir as a tmp file
             remote_path = file_path.parts[-1]
             remote_path_temp = remote_path + '.tmp'
             client.put(localpath=file_path, remotepath=remote_path_temp, confirm=True)

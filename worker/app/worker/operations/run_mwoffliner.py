@@ -23,7 +23,7 @@ class RunMWOffliner(Operation):
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
     def execute(self):
-        """Run mwoffliner container
+        """Pull and run mwoffliner
 
         :raise: docker.errors.ImageNotFound
         :raise: docker.errors.APIError
