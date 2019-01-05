@@ -11,9 +11,9 @@ class Upload(Operation):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, category: str, working_dir: str, short_task_id: str):
+    def __init__(self, remote_working_dir: str, working_dir: str, short_task_id: str):
         super().__init__()
-        self.category = category
+        self.remote_working_dir = remote_working_dir
         self.short_task_id = short_task_id
         self.working_dir = Path(working_dir).joinpath(short_task_id)
 
@@ -28,7 +28,7 @@ class Upload(Operation):
                 for file in self.working_dir.iterdir():
                     if file.is_dir():
                         continue
-                    client.upload_file(self.category, file)
+                    client.upload_file(self.remote_working_dir, file)
         except Exception:
             pass
 
