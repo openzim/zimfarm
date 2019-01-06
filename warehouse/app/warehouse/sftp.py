@@ -160,11 +160,22 @@ class Handler(paramiko.SFTPServerInterface):
         return sftp.SFTP_OP_UNSUPPORTED
 
     def rename(self, oldpath, newpath):
-        if oldpath.startswith(newpath):
-            return sftp.SFTP_OK
-        else:
+        oldpath, newpath = self.canonicalize(oldpath), self.canonicalize(newpath)
+
+        # check permission
+        if not oldpath.startswith(self.root) or not newpath.startswith(self.root):
             return sftp.SFTP_PERMISSION_DENIED
 
+        # only check prefix of old path is new path, and do not care what temp file extension is used (tmp or temp)
+        if not oldpath.startswith(newpath):
+            return sftp.SFTP_PERMISSION_DENIED
+
+        # return error if file exists at new path
+        if os.path.exists(newpath):
+            return sftp.SFTP_FAILURE
+
+        os.rename(oldpath, newpath)
+        return sftp.SFTP_OK
 
     def rmdir(self, path):
         return sftp.SFTP_OP_UNSUPPORTED
