@@ -160,7 +160,11 @@ class Handler(paramiko.SFTPServerInterface):
         return sftp.SFTP_OP_UNSUPPORTED
 
     def rename(self, oldpath, newpath):
-        return sftp.SFTP_OP_UNSUPPORTED
+        if oldpath.startswith(newpath):
+            return sftp.SFTP_OK
+        else:
+            return sftp.SFTP_PERMISSION_DENIED
+
 
     def rmdir(self, path):
         return sftp.SFTP_OP_UNSUPPORTED
