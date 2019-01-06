@@ -42,12 +42,12 @@ class SFTPClient:
                 client.chdir(remote_working_dir)
 
             # upload file to remote dir as a tmp file
-            remote_path = file_path.parts[-1]
-            remote_path_temp = remote_path + '.tmp'
-            client.put(localpath=file_path, remotepath=remote_path_temp, confirm=True)
+            file_name = file_path.parts[-1]
+            file_name_tmp = file_name + '.tmp'
+            client.put(localpath=file_path, remotepath=file_name_tmp, confirm=True)
 
             # rename file back to original name
-            client.rename(remote_path_temp, remote_path)
+            client.rename(file_name_tmp, file_name)
 
     def list_dir(self, path: str):
         with paramiko.SFTPClient.from_transport(self.transport) as client:
