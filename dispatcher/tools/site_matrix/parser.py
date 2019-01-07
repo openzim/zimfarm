@@ -6,17 +6,20 @@ from pymongo import MongoClient
 
 
 class Schedule:
-    def __init__(self, language_code: str, language_name: str, language_name_en: str,  category: str, mw_url: str):
+    def __init__(self, language_code: str, language_name: str, language_name_en: str,
+                 category_code: str, category_name: str, mw_url: str):
         self.language_code = language_code
         self.language_name = language_name
         self.language_name_en = language_name_en
-        self.category = category
+        self.category_code = category_code
+        self.category_name = category_name
         self.mw_url = mw_url
+
+        self.beat = self.generate_beat()
 
     @property
     def name(self):
-        underscored_name = self.language_name_en.replace(' ', '_')
-        return f'{self.category}_{underscored_name}'
+        return f'{self.category_name}_{self.language_code}'
 
     def generate_beat(self):
         config = {
