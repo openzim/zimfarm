@@ -10,7 +10,6 @@ from utils.celery import Celery
 from mongo import Tasks, Schedules
 
 
-@authenticate
 class TasksRoute(BaseRoute):
     rule = '/'
     name = 'tasks'
