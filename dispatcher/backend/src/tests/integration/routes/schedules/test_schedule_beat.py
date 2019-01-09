@@ -38,7 +38,7 @@ class TestScheduleBeatUpdate:
     def test_update_beat_crontab_full(self, client, access_token, make_beat_crontab, make_schedule):
         """Test update crontab beat"""
 
-        schedule = make_schedule('name', 'language', 'wikipedia')
+        schedule = make_schedule('name', 'wikipedia')
         url = '/api/schedules/{schedule}/beat'.format(schedule=str(schedule['_id']))
         beat = make_beat_crontab(minute='30', hour='7', day_of_month='20')
 
@@ -55,7 +55,7 @@ class TestScheduleBeatUpdate:
     def test_update_beat_crontab_partial(self, client, access_token, make_beat_crontab, make_schedule):
         """Test partial update crontab beat"""
 
-        schedule = make_schedule('name', 'language', 'wikipedia')
+        schedule = make_schedule('name', 'wikipedia')
         url = '/api/schedules/{schedule}/beat'.format(schedule=str(schedule['_id']))
         beat = make_beat_crontab(day_of_month='10')
 
