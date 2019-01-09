@@ -1,5 +1,4 @@
 import trafaret
-from bson.objectid import ObjectId, InvalidId
 from flask import request, jsonify, Response
 
 from errors.http import InvalidRequestJSON, ScheduleNotFound
@@ -27,15 +26,13 @@ class SchedulesRoute(BaseRoute):
 
         # get schedules from database
         projection = {
-            '_id': 0,
-            'beat': 1,
+            '_id': 1,
             'category': 1,
             'enabled': 1,
-            'language': 1,
-            'last_run': 1,
             'name': 1,
-            'queue': 1,
-            'total_run': 1
+            'celery.queue': 1,
+            'language': 1,
+            'tags': 1
         }
         cursor = Schedules().find({}, projection).skip(skip).limit(limit)
         schedules = [schedule for schedule in cursor]
@@ -52,7 +49,7 @@ class SchedulesRoute(BaseRoute):
 class ScheduleRoute(BaseRoute, URLComponent):
     rule = '/<string:schedule>'
     name = 'schedule'
-    methods = ['GET', 'PATCH']
+    methods = ['GET']
 
     @authenticate
     def get(self, schedule: str, *args, **kwargs):
