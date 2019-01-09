@@ -1,7 +1,4 @@
-from datetime import datetime
-
 import pytest
-import pytz
 from bson import ObjectId
 
 
@@ -22,39 +19,62 @@ def make_beat_crontab():
 
 
 @pytest.fixture(scope='module')
-def make_offliner_mwoffliner():
-    def _make_offliner_mwoffliner(sub_domain: str = 'en', admin_email: str = 'test@kiwix.org') -> dict:
+def make_celery():
+    def _make_celery() -> dict:
         return {
-            'name': 'mwoffliner',
-            'config': {
-                'mwUrl': 'https://{}.wikipedia.org/'.format(sub_domain),
-                'adminEmail': admin_email
-            }
+            'task_name': 'offliner.mwoffliner',
+            'queue': 'offliner_default'
         }
-    return _make_offliner_mwoffliner
+    return _make_celery
 
 
 @pytest.fixture(scope='module')
-def make_schedule(database, make_beat_crontab, make_offliner_mwoffliner):
+def make_language():
+    def _make_language(code: str = 'en', name_en: str = 'language_en', name_native: str = 'language_native') -> dict:
+        return {
+            'code': code,
+            'name_en': name_en,
+            'name_native': name_native
+        }
+    return _make_language
+
+
+@pytest.fixture(scope='module')
+def make_task_mwoffliner():
+    def _make_task_mwoffliner(sub_domain: str = 'en', admin_email: str = 'test@kiwix.org',
+                              format: str = 'nopic') -> dict:
+        return {
+            'image_name': 'openzim/mwoffliner',
+            'image_tag': 'latest',
+            'warehouse_path': '/wikipedia',
+            'config': {
+                'mwUrl': 'https://{}.wikipedia.org'.format(sub_domain),
+                'adminEmail': admin_email,
+                'format': format,
+                'withZimFullTextIndex': True
+            }
+        }
+    return _make_task_mwoffliner
+
+
+@pytest.fixture(scope='module')
+def make_schedule(database, make_beat_crontab, make_celery, make_language, make_task_mwoffliner):
     schedule_ids = []
 
-    def _make_schedule(name: str, language: str, category: str,
-                       beat: dict = None, offliner: dict = None) -> dict:
+    def _make_schedule(name: str, category: str,
+                       beat: dict = None, task: dict = None) -> dict:
         document = {
             '_id': ObjectId(),
             'name': name,
-            'language': language,
             'category': category,
-            'queue': 'tiny',
             'enabled': True,
-            'total_run': 10,
-            'last_run': datetime(2018, 12, 1, 10, 35, 00, tzinfo=pytz.utc),
             'beat': beat or make_beat_crontab(),
-            'offliner': offliner or make_offliner_mwoffliner(),
-            'task': {
-                'name': 'mwoffliner'
-            }
+            'celery': make_celery(),
+            'language': make_language(),
+            'tags': ['nopic'],
+            'task': task or make_task_mwoffliner()
         }
+        print(document)
         schedule_id = database.schedules.insert_one(document).inserted_id
         schedule_ids.append(schedule_id)
         return document
@@ -65,7 +85,7 @@ def make_schedule(database, make_beat_crontab, make_offliner_mwoffliner):
 
 
 @pytest.fixture(scope='module')
-def schedule(make_schedule, make_beat_crontab, make_offliner_mwoffliner):
+def schedule(make_schedule, make_beat_crontab, make_task_mwoffliner):
     beat = make_beat_crontab(minute='0', hour='15', day_of_month='*/5')
-    offliner = make_offliner_mwoffliner(sub_domain='en')
-    return make_schedule('name', 'language', 'wikipedia', beat, offliner)
+    task = make_task_mwoffliner(sub_domain='en')
+    return make_schedule('name', 'wikipedia', beat, task)
