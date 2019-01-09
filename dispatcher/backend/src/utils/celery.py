@@ -11,4 +11,4 @@ class Celery(CeleryBase):
                                     ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)]))
         url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username,
                                                                         password=system_password)
-        celery = CeleryBase(main='zimfarm', broker=url)
+        super().__init__(main='zimfarm', broker=url)

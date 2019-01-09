@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytz
 
-from flask import request
+from flask import request, Response
 
 from routes import authenticate
 from routes.base import BaseRoute
@@ -37,7 +37,9 @@ class TasksRoute(BaseRoute):
             queue = schedule.get('celery', {}).get('queue')
             task_kwargs = schedule.get('task', {})
 
-            celery = Celery
+            celery = Celery()
             celery.send_task(name=task_name, args=(), kwargs=task_kwargs, task_id=str(task_id), queue=queue)
+
+            return Response()
         else:
             raise InvalidRequestJSON()
