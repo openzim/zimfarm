@@ -26,7 +26,7 @@ class SchedulesRoute(BaseRoute):
 
         # get schedules from database
         projection = {
-            '_id': 0,
+            '_id': 1,
             'category': 1,
             'enabled': 1,
             'name': 1,
