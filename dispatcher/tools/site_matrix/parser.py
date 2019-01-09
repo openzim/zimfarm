@@ -181,13 +181,13 @@ def parse_and_save():
 
 
 if __name__ == '__main__':
-    # parse_and_save()
-    with SSHTunnelForwarder(
-            'farm.openzim.org',
-            ssh_username='chris',
-            ssh_pkey="/Users/chrisli/.ssh/id_rsa",
-            remote_bind_address=('127.0.0.1', 27017),
-            local_bind_address=('0.0.0.0', 27017)
-    ) as tunnel:
-        parse_and_save()
+    parse_and_save()
+    # with SSHTunnelForwarder(
+    #         'farm.openzim.org',
+    #         ssh_username='chris',
+    #         ssh_pkey="/Users/chrisli/.ssh/id_rsa",
+    #         remote_bind_address=('127.0.0.1', 27017),
+    #         local_bind_address=('0.0.0.0', 27017)
+    # ) as tunnel:
+    #     parse_and_save()
     print('FINISH!')

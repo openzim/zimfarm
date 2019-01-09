@@ -10,7 +10,7 @@ def initialize_schedule(database: Database):
 
     json_schema = {
         'bsonType': 'object',
-        'required': ['name', 'category', 'enabled'],
+        'required': ['name', 'category', 'enabled', 'tags'],
         'properties': {
             'name': {
                 'bsonType': 'string',
@@ -24,6 +24,14 @@ def initialize_schedule(database: Database):
                 'bsonType': 'bool',
                 'description': 'if the schedule is enabled'
             },
+            'tags': {
+                'bsonType': 'array',
+                'description': 'an array of schedule tags',
+                'items': {
+                    'bsonType': 'string',
+                    'enum': ['nodet', 'nopic', 'novid']
+                }
+            },
             'last_run': {
                 'bsonType': 'date',
                 'description': 'last time the schedule is run'
@@ -31,6 +39,28 @@ def initialize_schedule(database: Database):
             'total_run': {
                 'bsonType': 'int',
                 'description': 'total time the schedule has run'
+            },
+            'beat': {
+                'bsonType': 'object',
+                'description': 'schedule beat',
+                'required': ['type', 'config'],
+                'properties': {
+                    'type': {
+                        'bsonType': 'string',
+                        'enum': ['crontab']
+                    },
+                    'config': {
+                        'bsonType': 'object',
+                        'required': ['minute', 'hour', 'day_of_month', 'day_of_week', 'month_of_year'],
+                        'properties': {
+                            'minute': {'bsonType': 'string'},
+                            'hour': {'bsonType': 'string'},
+                            'day_of_month': {'bsonType': 'string'},
+                            'day_of_week': {'bsonType': 'string'},
+                            'month_of_year': {'bsonType': 'string'}
+                        }
+                    }
+                }
             }
         }
     }
