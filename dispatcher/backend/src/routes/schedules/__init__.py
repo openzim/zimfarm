@@ -1,6 +1,6 @@
 from routes.base import BaseBlueprint
 from .beat import BeatRoute
-from .offliner import OfflinerRoute
+from .task import TaskRoute
 from .schedule import ScheduleRoute, SchedulesRoute
 
 
@@ -11,4 +11,4 @@ class Blueprint(BaseBlueprint):
         self.register_route(SchedulesRoute())
         self.register_route(ScheduleRoute())
         self.register_route(BeatRoute())
-        self.register_route(OfflinerRoute())
+        self.register_route(TaskRoute())
