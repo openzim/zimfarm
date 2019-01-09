@@ -33,8 +33,11 @@ class TasksRoute(BaseRoute):
                     'created': datetime.utcnow().replace(tzinfo=pytz.utc)
                 }
             }).inserted_id
+            task_name = schedule.get('celery', {}).get('task_name')
+            queue = schedule.get('celery', {}).get('queue')
+            task_kwargs = schedule.get('task', {})
 
             celery = Celery
-            celery.send_task()
+            celery.send_task(name=task_name, args=(), kwargs=task_kwargs, task_id=str(task_id), queue=queue)
         else:
             raise InvalidRequestJSON()
