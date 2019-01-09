@@ -74,7 +74,6 @@ def make_schedule(database, make_beat_crontab, make_celery, make_language, make_
             'tags': ['nopic'],
             'task': task or make_task_mwoffliner()
         }
-        print(document)
         schedule_id = database.schedules.insert_one(document).inserted_id
         schedule_ids.append(schedule_id)
         return document
@@ -89,3 +88,15 @@ def schedule(make_schedule, make_beat_crontab, make_task_mwoffliner):
     beat = make_beat_crontab(minute='0', hour='15', day_of_month='*/5')
     task = make_task_mwoffliner(sub_domain='en')
     return make_schedule('name', 'wikipedia', beat, task)
+
+
+@pytest.fixture(scope='module')
+def schedules(make_schedule, make_beat_crontab, make_task_mwoffliner):
+    schedules = []
+    for index in range(50):
+        name = 'schedule_{}'.format(index)
+        beat = make_beat_crontab(minute='0', hour='15', day_of_month='*/5')
+        task = make_task_mwoffliner(sub_domain='en')
+        schedule = make_schedule(name, 'wikipedia', beat, task)
+        schedules.append(schedule)
+    return schedules
