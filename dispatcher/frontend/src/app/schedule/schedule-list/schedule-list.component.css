@@ -45,7 +45,11 @@
     flex: 1;
 }
 
-.beat {
+.tags {
+    flex: 1;
+}
+
+.queue {
     flex: 1;
 }
 
