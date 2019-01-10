@@ -3,7 +3,7 @@ import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, Htt
 import { Observable, throwError } from 'rxjs';
 import cronstrue from 'cronstrue';
 
-import { apiRoot, languageNames } from './const.service';
+import { apiRoot } from './config';
 import { map } from 'rxjs/operators';
 
 @Injectable({
@@ -14,7 +14,7 @@ export class SchedulesService {
 
     list(skip: number = 0, limit: number = 20) {
         return this.http.get<SchedulesListResponseData>(
-            'https://farm.openzim.org/api/schedules/', 
+            apiRoot + '/api/schedules/', 
             {
                 params: {
                     skip: skip.toString(),
@@ -23,8 +23,7 @@ export class SchedulesService {
             }
         ).pipe(map(data => {
             for (let item of data.items) {
-                item.language = languageNames[item.language]
-                item.beat = new Beat(item.beat.type, item.beat.config);
+                item.celery_queue = item['celery']['queue'];
             }
             return data
         }))
@@ -43,15 +42,20 @@ export interface SchedulesListMeta {
 
 export interface Schedule {
     _id: string;
-    beat: Beat;
     category: string;
+    celery_queue: string;
     enabled: boolean;
-    language: string;
-    last_run: Date;
+    language: Language;
     name: string;
-    task: Object;
-    total_run: number;
+    tags: [string];
 }
+
+export interface Language {
+    code: string;
+    name_en: string;
+    name_native: string;
+}
+
 
 export class Beat {
     type: string;

@@ -7,7 +7,8 @@
             <li class="name"><label>Name</label></li>
             <li class="language"><label>Language</label></li>
             <li class="category"><label>Category</label></li>
-            <li class="beat"><label>Last Run</label></li>
+            <li class="tags"><label>Tags</label></li>
+            <li class="queue"><label>Queue</label></li>
         </ul>
         <ul class="schedules">
             <li class="schedule" 
@@ -18,9 +19,10 @@
                         <div class="circle" [class.enabled]="schedule.enabled"></div>
                         <div>{{schedule.name}}</div>
                     </div>
-                    <div class="language"><div>{{schedule.language}}</div></div>
+                    <div class="language"><div>{{schedule.language.name_en}}</div></div>
                     <div class="category"><div>{{schedule.category}}</div></div>
-                    <div class="beat"><div>{{schedule.last_run | timeAgo}}</div></div>
+                    <div class="tags"><div>{{schedule.tags}}</div></div>
+                    <div class="tags"><div>{{schedule.celery_queue}}</div></div>
                 </div>
                 <div class="card">
                     <div class="title" (click)="onSelect(schedule)">
@@ -28,10 +30,10 @@
                         <div class="h2 semi-bold">{{schedule.name}}</div>
                     </div>
                     <div class="detail h4">
-                        <div>Language: {{schedule.language}}</div>
+                        <div>Language: {{schedule.language.name_en}}</div>
                         <div>Category: {{schedule.category}}</div>
-                        <div>Last run: {{schedule.last_run | timeAgo}}</div>
-                        <div>Beat: {{schedule.beat.description()}}</div>
+                        <div>Tags: {{schedule.tags}}</div>
+                        <div>Queue: {{schedule.celery_queue}}</div>
                     </div>
                 </div>
                 <div class="detail expanded" *ngIf="isSelected(schedule)">
