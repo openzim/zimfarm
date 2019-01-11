@@ -1,6 +1,8 @@
 import logging
 import os
+from time import sleep
 
+from amqp.exceptions import AccessRefused
 from celery import Celery
 
 from monitor import Monitor
@@ -20,5 +22,16 @@ if __name__ == '__main__':
     celery = Celery(broker=broker_url)
 
     # start monitor
-    monitor = Monitor(celery)
-    monitor.start()
+    retries = 3
+    while retries:
+        try:
+            monitor = Monitor(celery)
+            monitor.start()
+        except AccessRefused:
+            sleep(2)
+        finally:
+            retries -= 1
+    else:
+        logger = logging.getLogger(__name__)
+        logger.error('Failed to start celery monitor')
+        exit(1)
