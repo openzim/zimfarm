@@ -41,11 +41,12 @@ class TestScheduleList:
         url = '/api/schedules/'
         response = client.get(url)
         assert response.status_code == 401
+        assert response.get_json() == {'error': 'token invalid'}
 
 
 class TestScheduleGet:
     def test_get_schedule_with_id(self, client, access_token, schedule):
-        """Test get schedule"""
+        """Test get schedule with id"""
 
         url = '/api/schedules/{}'.format(schedule['_id'])
         response = client.get(url, headers={'Authorization': access_token})
@@ -55,7 +56,7 @@ class TestScheduleGet:
         assert response.get_json() == schedule
 
     def test_get_schedule_with_name(self, client, access_token, schedule):
-        """Test get schedule"""
+        """Test get schedule with name"""
 
         url = '/api/schedules/{}'.format(schedule['name'])
         response = client.get(url, headers={'Authorization': access_token})
@@ -63,3 +64,9 @@ class TestScheduleGet:
 
         schedule['_id'] = str(schedule['_id'])
         assert response.get_json() == schedule
+
+    def test_unauthorized(self, client, access_token, schedule):
+        url = '/api/schedules/{}'.format(schedule['name'])
+        response = client.get(url)
+        assert response.status_code == 401
+        assert response.get_json() == {'error': 'token invalid'}
