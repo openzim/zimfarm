@@ -10,35 +10,35 @@ The `offliner` property is an object, containing:
 """
 
 
-class TestScheduleTaskConfigGet:
-    def test_offliner_mwoffliner(self, client, access_token, schedule):
-        """Test get task config"""
-
-        schedule_id = schedule['_id']
-        url = '/api/schedules/{schedule}/task'.format(schedule=str(schedule_id))
-        response = client.get(url, headers={'Authorization': access_token})
-        assert response.status_code == 200
-        assert schedule['task'] == response.get_json()
-
-        schedule_name = schedule['name']
-        url = '/api/schedules/{schedule}/task'.format(schedule=str(schedule_name))
-        response = client.get(url, headers={'Authorization': access_token})
-        assert response.status_code == 200
-        assert schedule['task'] == response.get_json()
-
-    def test_no_access_token(self, client, schedule):
-        """Test cannot get offliner without access token"""
-
-        url = '/api/schedules/{schedule}/task'.format(schedule=str(schedule['_id']))
-        response = client.get(url)
-        assert response.status_code == 401
-
-    def test_bad_schedule_id_or_name(self, client, access_token, schedule):
-        """Test cannot get offliner with a bad schedule id or name"""
-
-        url = '/api/schedules/{schedule}/task'.format(schedule='bad_schedule_id')
-        response = client.get(url, headers={'Authorization': access_token})
-        assert response.status_code == 404
+# class TestScheduleTaskConfigGet:
+#     def test_offliner_mwoffliner(self, client, access_token, schedule):
+#         """Test get task config"""
+#
+#         schedule_id = schedule['_id']
+#         url = '/api/schedules/{schedule}/task'.format(schedule=str(schedule_id))
+#         response = client.get(url, headers={'Authorization': access_token})
+#         assert response.status_code == 200
+#         assert schedule['task'] == response.get_json()
+#
+#         schedule_name = schedule['name']
+#         url = '/api/schedules/{schedule}/task'.format(schedule=str(schedule_name))
+#         response = client.get(url, headers={'Authorization': access_token})
+#         assert response.status_code == 200
+#         assert schedule['task'] == response.get_json()
+#
+#     def test_no_access_token(self, client, schedule):
+#         """Test cannot get offliner without access token"""
+#
+#         url = '/api/schedules/{schedule}/task'.format(schedule=str(schedule['_id']))
+#         response = client.get(url)
+#         assert response.status_code == 401
+#
+#     def test_bad_schedule_id_or_name(self, client, access_token, schedule):
+#         """Test cannot get offliner with a bad schedule id or name"""
+#
+#         url = '/api/schedules/{schedule}/task'.format(schedule='bad_schedule_id')
+#         response = client.get(url, headers={'Authorization': access_token})
+#         assert response.status_code == 404
 
 
 # class TestScheduleTaskConfigMWOfflinerUpdate:
