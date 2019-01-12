@@ -23,7 +23,7 @@ export class SchedulesService {
             }
         ).pipe(map(data => {
             for (let item of data.items) {
-                item.celery_queue = item['celery']['queue'];
+                item.celery_queue = item['config']['queue'];
             }
             return data
         }))

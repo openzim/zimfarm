@@ -16,7 +16,7 @@ export class ScheduleListComponent implements OnInit {
     private meta: SchedulesListMeta;
 
     ngOnInit() {
-        this.schedulesService.list(0, 1000).subscribe(data => {
+        this.schedulesService.list(0, 100).subscribe(data => {
             this.schedules = data.items;
             this.meta = data.meta;
 
