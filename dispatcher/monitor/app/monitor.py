@@ -4,6 +4,8 @@ from datetime import datetime
 from celery import Celery
 from celery.events.state import State, Worker
 
+from handlers import BaseHandler, BaseTaskEventHandler
+
 import mongo
 
 
@@ -13,6 +15,7 @@ class Monitor:
     def __init__(self, celery: Celery):
         self.celery = celery
         self.state: State = celery.events.State()
+        BaseHandler.state = self.state
 
     def start(self):
         with self.celery.connection() as connection:
@@ -20,6 +23,11 @@ class Monitor:
                 'worker-online': self._worker_online,
                 'worker-heartbeat': self._worker_heartbeat,
                 'worker-offline': self._worker_offline,
+                'task-sent': BaseTaskEventHandler(),
+                'task-received': BaseTaskEventHandler(),
+                'task-started': BaseTaskEventHandler(),
+                'task-succeeded': BaseTaskEventHandler(),
+                'task-failed': BaseTaskEventHandler(),
                 '*': self.handle_others}
             receiver = self.celery.events.Receiver(connection, handlers=handlers)
             receiver.capture(limit=None, timeout=None, wakeup=True)
