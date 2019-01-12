@@ -9,7 +9,7 @@ from monitor import Monitor
 
 if __name__ == '__main__':
     # configure logging
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         handlers=[logging.StreamHandler(),
                                   logging.FileHandler('/worker.log', mode='w')])
