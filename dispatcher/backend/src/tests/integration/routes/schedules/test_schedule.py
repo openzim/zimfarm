@@ -41,3 +41,25 @@ class TestScheduleList:
         url = '/api/schedules/'
         response = client.get(url)
         assert response.status_code == 401
+
+
+class TestScheduleGet:
+    def test_get_schedule_with_id(self, client, access_token, schedule):
+        """Test get schedule"""
+
+        url = '/api/schedules/{}'.format(schedule['_id'])
+        response = client.get(url, headers={'Authorization': access_token})
+        assert response.status_code == 200
+
+        schedule['_id'] = str(schedule['_id'])
+        assert response.get_json() == schedule
+
+    def test_get_schedule_with_name(self, client, access_token, schedule):
+        """Test get schedule"""
+
+        url = '/api/schedules/{}'.format(schedule['name'])
+        response = client.get(url, headers={'Authorization': access_token})
+        assert response.status_code == 200
+
+        schedule['_id'] = str(schedule['_id'])
+        assert response.get_json() == schedule
