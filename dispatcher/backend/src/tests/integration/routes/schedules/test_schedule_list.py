@@ -17,7 +17,7 @@ class TestScheduleList:
             assert isinstance(item['category'], str)
             assert isinstance(item['enabled'], bool)
             assert isinstance(item['name'], str)
-            assert isinstance(item['celery']['queue'], str)
+            assert isinstance(item['config']['queue'], str)
             assert isinstance(item['language']['code'], str)
             assert isinstance(item['language']['name_en'], str)
             assert isinstance(item['language']['name_native'], str)
@@ -36,3 +36,8 @@ class TestScheduleList:
         response_json = response.get_json()
         assert 'items' in response_json
         assert len(response_json['items']) == expected
+
+    def test_unauthorized(self, client):
+        url = '/api/schedules/'
+        response = client.get(url)
+        assert response.status_code == 401
