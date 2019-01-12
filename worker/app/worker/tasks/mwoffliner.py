@@ -18,26 +18,29 @@ class MWOffliner(Base):
 
     name = 'offliner.mwoffliner'
 
-    def run(self, image_tag: str, config: dict, warehouse_path: str, *args, **kwargs):
+    def run(self, offliner: dict, warehouse_path: str, *args, **kwargs):
         """Run MWOffliner based offliner tasks.
 
-        :param image_tag: mwoffliner image tag
-        :param config: offliner config
+        :param offliner: offliner config
         :param warehouse_path: path appending to files when uploading
         :return:
         """
 
+        offliner_image_tag = offliner.get('image_tag', 'latest')
+        offliner_flags = offliner.get('flags', {})
+
         operations = [
             RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name),
-            RunMWOffliner(docker_client=docker.from_env(), tag=image_tag, config=config, task_id=self.short_task_id,
-                          working_dir_host=Settings.working_dir_host, redis_container_name=Settings.redis_name),
+            RunMWOffliner(docker_client=docker.from_env(), tag=offliner_image_tag, config=offliner_flags,
+                          task_id=self.short_task_id, working_dir_host=Settings.working_dir_host,
+                          redis_container_name=Settings.redis_name),
             Upload(warehouse_path, working_dir=Settings.working_dir_container, short_task_id=self.short_task_id)
         ]
 
         for index, operation in enumerate(operations):
             if isinstance(operation, RunMWOffliner):
                 self.logger.info('{name}[{id}] -- Running MWOffliner, mwUrl: {mwUrl}'.format(
-                    name=self.name, id=self.short_task_id, mwUrl=config['mwUrl']))
+                    name=self.name, id=self.short_task_id, mwUrl=offliner_flags['mwUrl']))
             if isinstance(operation, Upload):
                 self.logger.info('{name}[{id}] -- Upload files'.format(name=self.name, id=self.short_task_id))
 
