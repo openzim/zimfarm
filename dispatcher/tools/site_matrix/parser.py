@@ -6,61 +6,6 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 
 
-class Schedule:
-    def __init__(self, language_code: str, language_name: str, language_name_en: str,
-                 category_code: str, category_name: str, mw_url: str):
-        self.language_code = language_code
-        self.language_name = language_name
-        self.language_name_en = language_name_en
-        self.category_code = category_code
-        self.category_name = category_name
-        self.mw_url = mw_url
-
-        self.beat = self.generate_beat()
-
-    @property
-    def name(self):
-        return f'{self.category_name}_{self.language_code}'
-
-    def generate_beat(self):
-        config = {
-            'minute': str(randint(0, 5) * 10),
-            'hour': str(randint(0, 23)),
-            'day_of_month': str(randint(1, 28)),
-            'day_of_week': '*',
-            'month_of_year': '*'}
-        return {
-            'type': 'crontab',
-            'config': config}
-
-    def generate_task_config(self):
-        return {
-            'config': {
-                'mwUrl': self.mw_url,
-                'adminEmail': 'contact@kiwix.org'
-            },
-            'warehouse_path': self.category
-        }
-
-    def generate_document(self) -> dict:
-        return {
-            'name': self.name,
-            'enabled': False,
-            'category': self.category,
-            'language': {
-                'code': self.language_code,
-                'name_native': self.language_name,
-                'name_en': self.language_name_en
-            },
-            'beat': self.generate_beat(),
-            'task': self.generate_task_config(),
-            'celery': {
-                'task_name': 'offliner.mwoffliner',
-                'queue': 'offliner_default'
-            }
-        }
-
-
 class Beat:
     @staticmethod
     def generate_once_per_month():
@@ -76,30 +21,6 @@ class Beat:
         }
 
 
-class Celery:
-    @staticmethod
-    def generate():
-        return {
-            'task_name': 'offliner.mwoffliner',
-            'queue': 'offliner_default'
-        }
-
-
-class TaskConfig:
-    @staticmethod
-    def generate(mw_url, category, format):
-        return {
-            'config': {
-                'mwUrl': mw_url,
-                'adminEmail': 'contact@kiwix.org',
-                'format': format,
-                'withZimFullTextIndex': True
-            },
-            'image_tag': 'latest',
-            'warehouse_path': f'/{category}'
-        }
-
-
 class Language:
     @staticmethod
     def generate(code: str, name: str, name_en: str):
@@ -107,6 +28,26 @@ class Language:
             'code': code,
             'name_native': name,
             'name_en': name_en
+        }
+
+
+class TaskConfig:
+    @staticmethod
+    def generate(mw_url, category, format):
+        return {
+            'task_name': 'offliner.mwoffliner',
+            'queue': 'offliner_default',
+            'offliner': {
+                'image_name': 'openzim/mwoffliner',
+                'image_tag': 'latest',
+                'flags': {
+                    'mwUrl': mw_url,
+                    'adminEmail': 'contact@kiwix.org',
+                    'format': format,
+                    'withZimFullTextIndex': True
+                },
+            },
+            'warehouse_path': f'/{category}'
         }
 
 
@@ -149,11 +90,10 @@ class Parser:
 
             beat = Beat.generate_once_per_month()
             language = Language.generate(language_code, language_name, language_name_en)
-            celery = Celery.generate()
 
             tags = ['nodet', 'nopic', 'novid']
             for tag in tags:
-                task_config = TaskConfig.generate(mw_url, site_code, tag)
+                config = TaskConfig.generate(mw_url, site_code, tag)
                 name = f'{site_name}_{language_code}_{tag}'
                 schedule = {
                     'name': name,
@@ -161,9 +101,8 @@ class Parser:
                     'category': site_code,
                     'tags': [tag],
                     'beat': beat,
-                    'celery': celery,
                     'language': language,
-                    'task': task_config
+                    'config': config
                 }
 
                 self.collection.update_one({'name': schedule['name']}, {'$set': schedule}, upsert=True)
