@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { switchMap, map } from 'rxjs/operators';
 
 import { SchedulesService, SchedulesListResponseData, SchedulesListMeta, Schedule } from '../../services/schedules.service';
 

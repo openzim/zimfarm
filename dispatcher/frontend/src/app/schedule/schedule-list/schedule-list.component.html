@@ -1,4 +1,4 @@
-<div class="container">
+<div class="root container">
     <div class="filter">
         <label>Schedule Filter</label>
     </div>
@@ -22,7 +22,7 @@
                     <div class="language"><div>{{schedule.language.name_en}}</div></div>
                     <div class="category"><div>{{schedule.category}}</div></div>
                     <div class="tags"><div>{{schedule.tags}}</div></div>
-                    <div class="tags"><div>{{schedule.celery_queue}}</div></div>
+                    <div class="tags"><div>{{schedule.config.queue}}</div></div>
                 </div>
                 <div class="card">
                     <div class="title" (click)="onSelect(schedule)">
@@ -33,7 +33,7 @@
                         <div>Language: {{schedule.language.name_en}}</div>
                         <div>Category: {{schedule.category}}</div>
                         <div>Tags: {{schedule.tags}}</div>
-                        <div>Queue: {{schedule.celery_queue}}</div>
+                        <div>Queue: {{schedule.config.queue}}</div>
                     </div>
                 </div>
                 <div class="detail expanded" *ngIf="isSelected(schedule)">

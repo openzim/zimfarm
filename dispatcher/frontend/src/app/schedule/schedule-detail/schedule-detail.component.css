@@ -1,35 +1,37 @@
-.schedule {
+.container {
     display: flex;
-    align-items: flex-start;
-    
-}
-
-/* narrower than 768px */
-@media only screen and (max-width: 768px) {
-    .schedule {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-.detail {
-    flex: 1;
-}
-
-.task-list {
-    display: flex;
-    flex: 1;
     flex-direction: column;
-    height: 15rem;
-    align-items: center;
-    justify-content: center;
+    
+    padding: 0.5rem 1rem;
 }
 
-/* wider than 768px */
-/* @media only screen and (min-width: 768px) {
-    .task-list {
-        margin-top: 0.75rem;
-        margin-bottom: 0.75rem;
-        border-left: 1px solid #000000;
-    }
-} */
+.section {
+    max-width: 60rem;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.title {
+    max-width: 60rem;;
+    padding: 0.5rem 0.5rem;
+    padding-top: 1rem;
+    border-bottom: 1.5px solid #eeeeee;
+}
+
+.content {
+    padding: 0.5rem;
+}
+
+.item {
+    display: flex;
+    align-content: stretch;
+}
+
+.item .name {
+    flex: 1;
+}
+
+.item .value {
+    flex: 2;
+}
