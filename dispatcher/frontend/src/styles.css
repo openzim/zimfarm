@@ -21,11 +21,15 @@ button.success:active {
 
 }
 
-.container {
+.root {
     margin-top: 54px;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
+}
+
+.h1 {
+    font-size: 1.5rem;
 }
 
 .h2 {
@@ -42,4 +46,8 @@ button.success:active {
 
 .semi-bold {
     font-weight: 500;
+}
+
+.bold {
+    font-weight: 600;
 }

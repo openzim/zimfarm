@@ -1,14 +1,25 @@
-<div class="schedule">
-    <!-- <div class="detail">
-        <div class="navigation">
-            <ul>
-                <li>Offliner</li>
-                <li>Beat</li>
-            </ul>
+<div class="container" *ngIf="schedule">
+    <div class="section">
+        <div class="title h2 semi-bold">Beat</div>
+        <div>{{schedule.beat | beatDescription}}</div>
+    </div>
+    <div class="section">
+        <div class="title h2 semi-bold">Offliner</div>
+        <div class="content" *ngIf="schedule.config.offliner">
+            <div class="item">
+                <div class="name">Image Name: </div>
+                <label class="value">{{schedule.config.offliner.image_name}}: {{schedule.config.offliner.image_tag}}</label>
+            </div>
+            <div class="item">
+                <div class="name">Command: </div>
+                <code class="value">
+                    <div>mwoffliner \</div>
+                    <div *ngIf="schedule.config.offliner.flags.mwUrl">--mwUrl={{schedule.config.offliner.flags.mwUrl}} \</div>
+                    <div *ngIf="schedule.config.offliner.flags.adminEmail">--adminEmail={{schedule.config.offliner.flags.adminEmail}} \</div>
+                    <div *ngIf="schedule.config.offliner.flags.format">--format={{schedule.config.offliner.flags.format}} \</div>
+                    <div *ngIf="schedule.config.offliner.flags.withZimFullTextIndex">--withZimFullTextIndex={{schedule.config.offliner.flags.withZimFullTextIndex}} \</div>
+                </code>
+            </div>
         </div>
-    </div> -->
-    <div class="task-list">
-        <label class="h3 semi-bold">Schedule Detail View</label>
-        <label class="h4">Under construction...</label>
     </div>
 </div>
