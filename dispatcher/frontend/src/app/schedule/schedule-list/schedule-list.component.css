@@ -1,7 +1,6 @@
 .container {
     display: flex;
     align-items: stretch;
-    min-height: calc(100vh - 54px);
 }
 
 /* when narrower than 1024px, put filter on top of list */
@@ -81,11 +80,6 @@
 
 .schedule:hover {
     background-color: #e2e2e2;
-}
-
-.schedule .detail {
-    padding-left: 1.7rem;
-    padding-right: 0.5rem;
 }
 
 .schedule.selected > :not(.expanded) {

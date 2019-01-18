@@ -23,10 +23,15 @@ export class SchedulesService {
             }
         ).pipe(map(data => {
             for (let item of data.items) {
-                item.celery_queue = item['config']['queue'];
+                // item.config_queue = item['config']['queue'];
             }
             return data
         }))
+    }
+
+    get(schedule_id_name: string) {
+        let url = apiRoot + '/api/schedules/' + schedule_id_name
+        return this.http.get<Schedule>(url);
     }
 }
 
@@ -43,19 +48,13 @@ export interface SchedulesListMeta {
 export interface Schedule {
     _id: string;
     category: string;
-    celery_queue: string;
     enabled: boolean;
-    language: Language;
     name: string;
+    beat: Beat;
+    config: Config;
+    language: Language;
     tags: [string];
 }
-
-export interface Language {
-    code: string;
-    name_en: string;
-    name_native: string;
-}
-
 
 export class Beat {
     type: string;
@@ -80,42 +79,21 @@ export class Beat {
     }
 }
 
-export class BeatConfig {
-    config: Object;
-    description: string;
-
-    constructor(config: Object) {this.config = config}
-    updateDescription(): void {}
+export interface Config {
+    task_name: string;
+    queue: string;
+    warehouse_path: string;
+    offliner: ConfigOffliner;
 }
 
-export class CrontabBeatConfig extends BeatConfig {
-    get minute(): string {return this.getValue('minute')}
-    set minute(value: string) {this.config['minute'] = value}
-    get hour(): string {return this.getValue('hour')}
-    set hour(value: string) {this.config['hour'] = value}
-    get day_of_week(): string {return this.getValue('day_of_week')}
-    set day_of_week(value: string) {this.config['day_of_week'] = value}
-    get day_of_month(): string {return this.getValue('day_of_month')}
-    set day_of_month(value: string) {this.config['day_of_month'] = value}
-    get month_of_year(): string {return this.getValue('month_of_year')}
-    set month_of_year(value: string) {this.config['month_of_year'] = value}
+export interface ConfigOffliner {
+    image_name: string;
+    image_tag: string;
+    flags: Object;
+}
 
-    constructor(config: Object) {
-        super(config)
-        this.updateDescription()
-    }
-    private getValue(name: string) {
-        let value = this.config[name]
-        return value != null && value != '' ? this.config[name] : '*'
-    }
-
-    updateDescription(): void {
-        this.description = cronstrue.toString(Array(
-            this.minute,
-            this.hour,
-            this.day_of_month,
-            this.month_of_year,
-            this.day_of_week
-        ).join(' '))
-    }
+export interface Language {
+    code: string;
+    name_en: string;
+    name_native: string;
 }
