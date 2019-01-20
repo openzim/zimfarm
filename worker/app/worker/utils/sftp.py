@@ -1,7 +1,10 @@
+import logging
 from pathlib import Path
 from typing import Union
 
 import paramiko
+
+logger = logging.getLogger(__name__)
 
 
 class SFTPClient:
@@ -43,8 +46,11 @@ class SFTPClient:
 
             # check if file already exist
             file_name = file_path.parts[-1]
-            if client.stat(file_name):
+            try:
+                client.stat(file_name)
                 return
+            except IOError:
+                pass
 
             # upload file to remote dir as a tmp file
             file_name_tmp = file_name + '.tmp'

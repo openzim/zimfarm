@@ -1,6 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
+from paramiko.ssh_exception import SSHException
 
 from .base import Operation
 from ..utils.settings import Settings
@@ -34,7 +35,7 @@ class Upload(Operation):
                     if file.is_dir():
                         continue
                     client.upload_file(self.remote_working_dir, file)
-        except Exception:
+        except SSHException as e:
             pass
 
         shutil.rmtree(self.working_dir)
