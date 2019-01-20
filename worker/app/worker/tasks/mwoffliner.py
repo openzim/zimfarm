@@ -1,13 +1,13 @@
+import logging
+from pathlib import Path
+
 import docker
 import docker.errors
-from pathlib import Path
-import logging
 
+from worker.operations.error import OfflinerError
 from .base import Base
 from ..operations import RunRedis, RunMWOffliner, Upload
 from ..utils import Settings
-from worker.operations.error import OfflinerError
-
 
 logger = logging.getLogger(__name__)
 
