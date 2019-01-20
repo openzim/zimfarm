@@ -40,9 +40,6 @@ class RunMWOffliner(Operation):
                                                   links={self.redis_container_name: 'redis'},
                                                   name='mwoffliner_{}'.format(self.task_id))
 
-        # get operation output
-
-
     @staticmethod
     def _get_command(flags: {}):
         flags['redis'] = 'redis://redis'
