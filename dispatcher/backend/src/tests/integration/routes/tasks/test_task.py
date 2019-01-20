@@ -4,20 +4,21 @@ from unittest.mock import patch
 
 
 @pytest.fixture(scope='session')
-def celery_m():
+def celery():
     with patch('routes.tasks.task.Celery') as mocked_celery:
         yield mocked_celery.return_value
 
 
 class TestTaskCreate:
-    def test_create_from_schedule(self, client, access_token, schedule, celery_m):
+    def test_create_from_schedule(self, client, access_token, schedule, celery):
         url = '/api/tasks/'
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
         data = json.dumps({'schedule_name': schedule.get('name')})
         response = client.post(url, headers=headers, data=data)
         assert response.status_code == 200
 
-        celery_m.send_task.assert_called_once()
+        celery.send_task.assert_called_once()
+
 
     @pytest.mark.parametrize('body', [
         None, '', '[]', '{"test": 123}'
