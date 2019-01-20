@@ -35,10 +35,7 @@ To get a new ZIM file the typical workflow is:
 
 ## Run worker
 
-1. Clone this repo
-2. Make sure you are in master branch
-3. Open a terminal session change directory to root of worker folder
-4. Run `docker build -t zimfarm_worker . && docker run -v /var/run/docker.sock:/var/run/docker.sock zimfarm_worker`
+Refer to [worker](https://github.com/openzim/zimfarm/tree/master/worker)
 
 ## Architecture
 
