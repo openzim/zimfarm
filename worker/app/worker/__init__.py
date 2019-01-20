@@ -46,7 +46,7 @@ class Worker:
         # start celery
         app.start(argv=['celery', 'worker',
                         '--task-events',
-                        '-l', 'debug',
+                        '-l', 'info',
                         '--concurrency', '1',
                         '-Q', Settings.queues,
                         '-n', '{}@{}'.format(Settings.username, Settings.node_name)])
