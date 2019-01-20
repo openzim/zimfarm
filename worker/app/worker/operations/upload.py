@@ -11,11 +11,16 @@ class Upload(Operation):
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, remote_working_dir: str, working_dir: str, short_task_id: str):
+    def __init__(self, remote_working_dir: str, working_dir: Path):
+        """Initializer for upload operation
+
+        :param remote_working_dir: path in warehouse to upload files
+        :param working_dir: path to the dir containing zim files to upload inside container
+        """
+
         super().__init__()
         self.remote_working_dir = remote_working_dir
-        self.short_task_id = short_task_id
-        self.working_dir = Path(working_dir).joinpath(short_task_id)
+        self.working_dir = working_dir
 
     def execute(self):
         hostname = Settings.warehouse_hostname
