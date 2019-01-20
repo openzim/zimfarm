@@ -20,6 +20,9 @@ class TasksRoute(BaseRoute):
         """Create task from a schedule"""
 
         request_json = request.get_json()
+        if not request_json:
+            raise InvalidRequestJSON()
+
         schedule_name = request_json.get('schedule_name')
 
         schedule = Schedules().find_one({'name': schedule_name}, {'config': 1})
