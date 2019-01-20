@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from docker import DockerClient
+from docker import DockerClient, errors
 
 from .base import Operation
+from .error import OfflinerError
 
 
 class RunMWOffliner(Operation):
@@ -22,23 +23,28 @@ class RunMWOffliner(Operation):
         self.redis_container_name = redis_container_name
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
-    def execute(self):
+    def execute(self) -> bytes:
         """Pull and run mwoffliner
 
-        :raise: docker.errors.ImageNotFound
-        :raise: docker.errors.APIError
-        :raise: docker.errors.ContainerError
+        :raise: OfflinerError
+        :return: std_out of mwoffliner container
         """
 
-        # pull mwoffliner image
-        self.docker.images.pull(self.image_name)
+        try:
+            # pull mwoffliner image
+            self.docker.images.pull(self.image_name)
 
-        # run mwoffliner
-        volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
-        self.std_out = self.docker.containers.run(image=self.image_name, command=self.command,
-                                                  remove=True, volumes=volumes,
-                                                  links={self.redis_container_name: 'redis'},
-                                                  name='mwoffliner_{}'.format(self.task_id))
+            # run mwoffliner
+            volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
+            stdout = self.docker.containers.run(
+                image=self.image_name, command=self.command, remove=True, volumes=volumes,
+                links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
+
+            return stdout
+        except errors.APIError as e:
+            raise OfflinerError(code='docker.APIError', message=str(e))
+        except errors.ContainerError as e:
+            raise OfflinerError(code='docker.ContainerError', stderr=e.stderr)
 
     @staticmethod
     def _get_command(flags: {}):

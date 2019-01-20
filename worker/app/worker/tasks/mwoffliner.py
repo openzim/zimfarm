@@ -1,10 +1,15 @@
-import docker
-import docker.errors
+import logging
 from pathlib import Path
 
+import docker
+import docker.errors
+
+from worker.operations.error import OfflinerError
 from .base import Base
 from ..operations import RunRedis, RunMWOffliner, Upload
 from ..utils import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class MWOffliner(Base):
@@ -31,36 +36,39 @@ class MWOffliner(Base):
         offliner_flags = offliner.get('flags', {})
 
         try:
+            # run redis
             run_redis = RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name)
             run_redis.execute()
 
+            # run mwoffliner
             run_mwoffliner = RunMWOffliner(
                 docker_client=docker.from_env(), tag=offliner_image_tag, flags=offliner_flags,
                 task_id=self.task_id, working_dir_host=Settings.working_dir_host,
                 redis_container_name=Settings.redis_name)
             self.logger.info('{name}[{id}] -- Running MWOffliner, mwUrl: {mwUrl}'.format(
                 name=self.name, id=self.task_id, mwUrl=offliner_flags['mwUrl']))
-            run_mwoffliner.execute()
+            self.logger.debug('{name}[{id}] -- Running MWOffliner, command: {command}'.format(
+                name=self.name, id=self.task_id, command=run_mwoffliner.command))
+            offliner_stdout = run_mwoffliner.execute()
+            self.send_event('offliner_finished', offliner_stdout)
 
-            stats = self.get_file_stats()
+            # get stats of generated files
+            working_dir_container = Path(Settings.working_dir_container).joinpath(self.task_id)
+            stats = self.get_file_stats(working_dir_container)
 
-            upload = Upload(warehouse_path, working_dir=Settings.working_dir_container,
-                            short_task_id=self.task_id)
+            # upload files
+            upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
             self.logger.info('{name}[{id}] -- Upload files'.format(name=self.name, id=self.task_id))
             upload.execute()
 
             return stats
-        except docker.errors.APIError:
-            pass
-        except docker.errors.ImageNotFound:
-            pass
-        except docker.errors.ContainerError as error:
-            # error.stderr
-            pass
+        except OfflinerError as e:
+            self.send_event('offliner_failed', e)
+            raise
 
-    def get_file_stats(self):
+    @staticmethod
+    def get_file_stats(working_dir: Path):
         stats = []
-        working_dir = Path(Settings.working_dir_container).joinpath(self.task_id)
         for file in working_dir.iterdir():
             if file.is_dir():
                 continue
