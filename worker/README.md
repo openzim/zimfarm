@@ -22,6 +22,10 @@ Any Linux or Unix based system that has docker installed. Windows are not suppor
 - WORKING_DIR: path of a working directory in host system
 - NODE_NAME: name of the celery node
 - QUEUES: comma separated queue names
+  - offliner_default
+  - offliner_small
+  - offliner_medium 
+  - offliner_large  
 
 ## Docker Volumes
 
