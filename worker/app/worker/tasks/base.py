@@ -11,8 +11,8 @@ class Base(Task):
     logger = get_task_logger(__name__)
 
     @property
-    def short_task_id(self) -> str:
-        return self.request.id.split('-')[0]
+    def task_id(self) -> str:
+        return self.request.id
 
     def __init__(self):
         super().__init__()
