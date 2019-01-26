@@ -59,7 +59,7 @@ services:
       - INIT_PASSWORD=admin_pass
       - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
   mongo:
-    image: mongo:latest
+    image: mongo:4.0
     container_name: mongo
     restart: always
     ports:
@@ -74,7 +74,7 @@ services:
     restart: always
     ports:
       - 5671:5671
-      - 8080:15671
+      - 15672:15672
     volumes:
       - /data/certs/farm.openzim.org:/certs
       - /data/rabbit:/var/lib/rabbitmq
