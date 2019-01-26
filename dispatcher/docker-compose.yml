@@ -74,7 +74,7 @@ services:
     restart: always
     ports:
       - 5671:5671
-      - 127.0.0.1:15672:15672
+      - 15672:15672
     volumes:
       - /data/certs/farm.openzim.org:/certs
       - /data/rabbit:/var/lib/rabbitmq
