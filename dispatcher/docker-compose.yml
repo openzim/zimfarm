@@ -59,7 +59,7 @@ services:
       - INIT_PASSWORD=admin_pass
       - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
   mongo:
-    image: mongo:latest
+    image: mongo:4.0
     container_name: mongo
     restart: always
     ports:
