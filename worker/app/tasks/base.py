@@ -19,7 +19,3 @@ class Base(Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         self.logger.error("task failed")
-
-
-class TaskFailed(Exception):
-    pass

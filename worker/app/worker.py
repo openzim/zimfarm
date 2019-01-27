@@ -5,8 +5,8 @@ import paramiko
 from celery import Celery
 from kombu import Queue, Exchange
 
-from . import tasks
-from .utils import Settings, SFTPClient
+import tasks
+from utils import Settings, SFTPClient
 
 
 class Worker:
@@ -24,42 +24,50 @@ class Worker:
         Settings.log()
 
         # test
-        self.credential_smoke_test()
-        self.sftp_smoke_test()
+        self.credential_test()
+        self.sftp_test()
 
-        # configure celery
+        # configure celery broker
         broker_url = 'amqps://{username}:{password}@{host}:{port}/zimfarm'.format(
             username=Settings.username, password=Settings.password,
             host=Settings.dispatcher_hostname, port=Settings.rabbit_port)
         app = Celery(main='zimfarm_worker', broker=broker_url)
+
+        # register tasks
         app.register_task(tasks.MWOffliner())
 
         # configure queues
-        offliner_exchange = Exchange('offliner', 'topic')
+        exchange = Exchange('offliner', 'topic')
         app.conf.task_queues = [
-            Queue('offliner_default', offliner_exchange, routing_key='#'),
-            Queue('offliner_small', offliner_exchange, routing_key='small'),
-            Queue('offliner_medium', offliner_exchange, routing_key='medium'),
-            Queue('offliner_large', offliner_exchange, routing_key='large')
+            Queue('default', exchange, routing_key='#'),
+            Queue('small', exchange, routing_key='small'),
+            Queue('medium', exchange, routing_key='medium'),
+            Queue('large', exchange, routing_key='large')
         ]
 
-        # start celery
-        app.start(argv=['celery', 'worker',
-                        '--task-events',
-                        '-l', 'info',
-                        '--concurrency', '1',
-                        '-Q', Settings.queues,
-                        '-n', '{}@{}'.format(Settings.username, Settings.node_name)])
+        # configure celery
+        app.conf.worker_send_task_events = True
+        app.conf.task_acks_late = True
+        app.conf.worker_concurrency = Settings.concurrency
+        app.conf.worker_prefetch_multiplier = 1
 
-    def docker_smoke_test(self):
+        # start celery
+        app.worker_main([
+            'worker',
+            '--hostname', '{}@{}'.format(Settings.username, Settings.node_name),
+            '--queues', Settings.queues,
+            '--loglevel', 'info',
+        ])
+
+    def docker_test(self):
         # TODO: list containers to make sure have access to docker
         pass
 
-    def credential_smoke_test(self):
+    def credential_test(self):
         # TODO: make a simple request to validate username and password
         pass
 
-    def sftp_smoke_test(self):
+    def sftp_test(self):
         try:
             hostname = Settings.warehouse_hostname
             port = Settings.warehouse_port
