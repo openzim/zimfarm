@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 
 from worker import Worker
 
@@ -14,8 +13,5 @@ if __name__ == '__main__':
     logging.getLogger("paramiko").setLevel(logging.WARNING)
 
     # start zimfarm worker
-    try:
-        worker = Worker()
-        worker.start()
-    except (KeyboardInterrupt, SystemExit):
-        sys.exit()
+    worker = Worker()
+    worker.start()
