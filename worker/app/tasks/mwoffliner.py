@@ -4,10 +4,10 @@ from pathlib import Path
 import docker
 import docker.errors
 
-from worker.operations.error import OfflinerError
+from operations.base import OfflinerError, UploadError
 from .base import Base
-from ..operations import RunRedis, RunMWOffliner, Upload
-from ..utils import Settings
+from operations import RunRedis, RunMWOffliner, Upload
+from utils import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,9 @@ class MWOffliner(Base):
             return stats
         except OfflinerError as e:
             self.send_event('offliner_failed', e)
+            raise e
+        except UploadError as e:
+            self.send_event('upload_failed', e)
             raise
 
     @staticmethod

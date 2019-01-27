@@ -8,9 +8,6 @@ from .base import Operation
 
 
 class RunRedis(Operation):
-
-    name = 'start_redis'
-
     def __init__(self, docker_client: DockerClient, container_name: str):
         super().__init__()
         self.docker = docker_client
@@ -26,7 +23,6 @@ class RunRedis(Operation):
         container = self._get_container(self.container_name)
         if container is not None:
             if container.status == 'running':
-                self.success = True
                 return
             else:
                 container.remove()

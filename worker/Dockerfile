@@ -1,9 +1,11 @@
 FROM python:3.6
 
 WORKDIR /usr/src
-COPY ./app /usr/src/app
 
-RUN pip3 install -r ./app/requirements.txt
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+COPY app app
 
 ENV USERNAME username
 ENV PASSWORD password
