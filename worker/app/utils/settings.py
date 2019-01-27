@@ -2,7 +2,10 @@ import logging
 import os
 import sys
 from pathlib import Path
+
 from paramiko import RSAKey, SSHException
+
+logger = logging.getLogger(__name__)
 
 
 class Settings:
@@ -11,6 +14,7 @@ class Settings:
 
     node_name: str = os.getenv('NODE_NAME', None)
     queues: str = os.getenv('QUEUES', None)
+    concurrency: int = os.getenv('CONCURRENCY', None)
 
     dispatcher_hostname: str = os.getenv('DISPATCHER_HOST', 'farm.openzim.org')
     rabbit_port: int = os.getenv('RABBIT_PORT', 5671)
@@ -78,16 +82,24 @@ class Settings:
 
     @classmethod
     def ensure_correct_typing(cls):
-        logger = logging.getLogger(__name__)
+        try:
+            if cls.concurrency is not None:
+                cls.concurrency = int(cls.concurrency)
+                if cls.concurrency < 1:
+                    logger.error('CONCURRENCY environmental variable cannot be less than one.')
+                    sys.exit(1)
+        except ValueError:
+            logger.error('CONCURRENCY environmental variable is not an integer.')
+            sys.exit(1)
         try:
             cls.rabbit_port = int(cls.rabbit_port)
         except ValueError:
-            logger.error('{} environmental variable is not an integer.'.format('RABBIT_PORT'))
+            logger.error('RABBIT_PORT environmental variable is not an integer.')
             sys.exit(1)
         try:
             cls.warehouse_port = int(cls.warehouse_port)
         except ValueError:
-            logger.error('{} environmental variable is not an integer.'.format('WAREHOUSE_PORT'))
+            logger.error('WAREHOUSE_PORT environmental variable is not an integer.')
             sys.exit(1)
 
     @classmethod

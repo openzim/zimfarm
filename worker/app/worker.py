@@ -48,7 +48,7 @@ class Worker:
         # configure celery
         app.conf.worker_send_task_events = True
         app.conf.task_acks_late = True
-        app.conf.worker_concurrency = 1
+        app.conf.worker_concurrency = Settings.concurrency
         app.conf.worker_prefetch_multiplier = 1
 
         # start celery
