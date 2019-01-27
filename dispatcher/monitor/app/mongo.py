@@ -1,5 +1,3 @@
-import os
-
 from pymongo import MongoClient
 from pymongo.collection import Collection as BaseCollection
 from pymongo.database import Database as BaseDatabase
