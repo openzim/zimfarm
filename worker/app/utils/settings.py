@@ -30,8 +30,6 @@ class Settings:
 
     @classmethod
     def sanity_check(cls):
-        logger = logging.getLogger(__name__)
-
         # check mandatory env variables exist
         if cls.username is None or cls.username == '':
             logger.error('{} environmental variable is required.'.format('USERNAME'))
@@ -104,7 +102,6 @@ class Settings:
 
     @classmethod
     def log(cls):
-        logger = logging.getLogger(__name__)
         variables = {
             'USERNAME': cls.username,
             'DISPATCHER_HOST': cls.dispatcher_hostname,
