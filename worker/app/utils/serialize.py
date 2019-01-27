@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 
-from worker.operations.error import OperationError
+from operations.error import OperationError
 
 
 class ResultEncoder(json.JSONEncoder):

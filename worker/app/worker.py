@@ -5,8 +5,8 @@ import paramiko
 from celery import Celery
 from kombu import Queue, Exchange
 
-from . import tasks
-from .utils import Settings, SFTPClient
+import tasks
+from utils import Settings, SFTPClient
 
 
 class Worker:

@@ -4,8 +4,8 @@ from pathlib import Path
 from paramiko.ssh_exception import SSHException
 
 from .base import Operation
-from ..utils.settings import Settings
-from ..utils.sftp import SFTPClient
+from utils.settings import Settings
+from utils.sftp import SFTPClient
 
 
 class Upload(Operation):
