@@ -2,15 +2,11 @@ from pathlib import Path
 
 from docker import DockerClient, errors
 
-from .base import Operation
-from .error import OfflinerError
+from .base import Operation, OfflinerError
 
 
 class RunMWOffliner(Operation):
-    """Run MWOffliner container with `config`
-    """
-
-    name = 'Run Offliner'
+    """Run MWOffliner container with `config`"""
 
     def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str,
                  redis_container_name: str):

@@ -1,17 +1,17 @@
 import logging
 import shutil
 from pathlib import Path
+
 from paramiko.ssh_exception import SSHException
 
-from .base import Operation
 from utils.settings import Settings
 from utils.sftp import SFTPClient
+from .base import Operation, UploadError
+
+logger = logging.getLogger(__name__)
 
 
 class Upload(Operation):
-
-    logger = logging.getLogger(__name__)
-
     def __init__(self, remote_working_dir: str, working_dir: Path):
         """Initializer for upload operation
 
@@ -36,6 +36,6 @@ class Upload(Operation):
                         continue
                     client.upload_file(self.remote_working_dir, file)
         except SSHException as e:
-            pass
+            raise UploadError(code='paramiko.Error', message=str(e))
 
         shutil.rmtree(self.working_dir)
