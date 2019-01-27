@@ -1,8 +1,15 @@
+import os
+import random
+import string
+
 from flask import request, Response
 from werkzeug.security import check_password_hash
 
-from app import system_username, system_password
 from mongo import Users
+
+system_username = 'system'
+system_password = os.getenv('SYSTEM_PASSWORD',
+                            ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(32)]))
 
 
 def auth(intention: str):
@@ -28,16 +35,16 @@ def auth(intention: str):
                 tags = ['allow'] + tags
                 return Response(' '.join(tags))
             else:
-                return Response("deny")
+                return Response('deny')
     elif intention == 'vhost' or intention == 'resource' or intention == 'topic':
         vhost = request.form.get('vhost', None)
         if vhost != 'zimfarm':
-            return Response("deny")
+            return Response('deny')
 
         if username == system_username:
-            return Response("allow")
+            return Response('allow')
         else:
             user = Users().find_one({'username': username}, {'_id': 1})
-            return Response("allow" if user is not None else "deny")
+            return Response('allow' if user is not None else 'deny')
     else:
-        return Response("deny")
+        return Response('deny')
