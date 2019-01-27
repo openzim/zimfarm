@@ -4,10 +4,9 @@ from datetime import datetime
 from celery import Celery
 from celery.events.state import State, Worker
 
-from handlers import BaseHandler
-from handlers.task import BaseTaskEventHandler
-
 import mongo
+from handlers import BaseHandler
+from handlers.task import BaseTaskEventHandler, TaskSucceededEventHandler
 
 
 class Monitor:
@@ -27,7 +26,7 @@ class Monitor:
                 'task-sent': BaseTaskEventHandler(),
                 'task-received': BaseTaskEventHandler(),
                 'task-started': BaseTaskEventHandler(),
-                'task-succeeded': BaseTaskEventHandler(),
+                'task-succeeded': TaskSucceededEventHandler(),
                 'task-failed': BaseTaskEventHandler(),
                 '*': self.handle_others}
             receiver = self.celery.events.Receiver(connection, handlers=handlers)
