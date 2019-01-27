@@ -24,8 +24,8 @@ class Worker:
         Settings.log()
 
         # test
-        self.credential_smoke_test()
-        self.sftp_smoke_test()
+        self.credential_test()
+        self.sftp_test()
 
         # configure celery broker
         broker_url = 'amqps://{username}:{password}@{host}:{port}/zimfarm'.format(
@@ -59,15 +59,15 @@ class Worker:
             '--loglevel', 'info',
         ])
 
-    def docker_smoke_test(self):
+    def docker_test(self):
         # TODO: list containers to make sure have access to docker
         pass
 
-    def credential_smoke_test(self):
+    def credential_test(self):
         # TODO: make a simple request to validate username and password
         pass
 
-    def sftp_smoke_test(self):
+    def sftp_test(self):
         try:
             hostname = Settings.warehouse_hostname
             port = Settings.warehouse_port
