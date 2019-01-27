@@ -16,3 +16,8 @@ class Database(BaseDatabase):
 class Workers(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'workers')
+
+
+class Tasks(BaseCollection):
+    def __init__(self):
+        super().__init__(Database(), 'tasks')
