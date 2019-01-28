@@ -21,11 +21,12 @@ Any Linux or Unix based system that has docker installed. Windows are not suppor
 - PASSWORD
 - WORKING_DIR: path of a working directory in host system
 - NODE_NAME: name of the celery node
+- CONCURRENCY: max number of concurrent tasks, default to number of CPU cores
 - QUEUES: comma separated queue names
-  - offliner_default
-  - offliner_small
-  - offliner_medium 
-  - offliner_large  
+  - default
+  - small
+  - medium 
+  - large  
 
 ## Docker Volumes
 
@@ -44,6 +45,8 @@ docker run \
     --env PASSWORD='password' \
     --env WORKING_DIR='PATH_WORKING_DIR' \
     --env NODE_NAME='default_node_name' \
-    --env QUEUES='offliner_small' \
+    --env QUEUES='default' \
+    --env CONCURRENCY=2 \
+    --name=zimfarm_worker \
 openzim/zimfarm-worker:latest
 ```
