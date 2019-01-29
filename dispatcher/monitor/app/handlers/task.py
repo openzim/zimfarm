@@ -1,5 +1,5 @@
 import logging
-import json
+import ast
 
 from bson.objectid import ObjectId, InvalidId
 from celery.events.state import Task
@@ -23,12 +23,13 @@ class BaseTaskEventHandler(BaseHandler):
 class TaskSucceededEventHandler(BaseTaskEventHandler):
     def __call__(self, event):
         task = super().__call__(event)
-        logger.debug(task.result)
-        # result = json.loads(task.result)
+
+        result = ast.literal_eval(task.result)
+        logger.debug(result)
 
         try:
             task_id = ObjectId(task.uuid)
         except InvalidId:
             return
 
-        Tasks().update_one({'_id': task_id}, {'$set': {'files': task.result}})
+        Tasks().update_one({'_id': task_id}, {'$set': {'files': result}})
