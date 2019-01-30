@@ -35,6 +35,8 @@ class TaskSucceededEventHandler(BaseTaskEventHandler):
         task_id = self.get_task_id(task)
         result = ast.literal_eval(task.result)
 
+        logger.info('Task Succeeded: {}'.format(task_id))
+
         if task_id:
             Tasks().update_one({'_id': task_id},
                                {'$set': {'status': TaskStatus.succeeded, 'files': result}})
