@@ -6,7 +6,8 @@ from celery.events.state import State, Worker
 
 import mongo
 from handlers import BaseHandler
-from handlers.task import BaseTaskEventHandler, TaskSucceededEventHandler
+from handlers import tasks as task_handlers
+from handlers.tasks import BaseTaskEventHandler
 
 
 class Monitor:
@@ -26,8 +27,8 @@ class Monitor:
                 'task-sent': BaseTaskEventHandler(),
                 'task-received': BaseTaskEventHandler(),
                 'task-started': BaseTaskEventHandler(),
-                'task-succeeded': TaskSucceededEventHandler(),
-                'task-failed': BaseTaskEventHandler(),
+                'task-succeeded': task_handlers.TaskSucceededEventHandler(),
+                'task-failed': task_handlers.TaskFailedEventHandler(),
                 '*': self.handle_others}
             receiver = self.celery.events.Receiver(connection, handlers=handlers)
             receiver.capture(limit=None, timeout=None, wakeup=True)

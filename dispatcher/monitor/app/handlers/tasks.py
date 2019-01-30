@@ -7,7 +7,7 @@ from celery.events.state import Task
 
 from entities import TaskStatus
 from mongo import Tasks
-from . import BaseHandler
+from handlers import BaseHandler
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,22 @@ class TaskSucceededEventHandler(BaseTaskEventHandler):
         update = {
             'status': TaskStatus.succeeded,
             'files': result
+        }
+
+        if task_id:
+            Tasks().update_one({'_id': task_id}, {'$set': update})
+
+
+class TaskFailedEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task = super().__call__(event)
+        task_id = self.get_task_id(task)
+        exception = task.exception
+
+        logger.info('Task Failed: {}, {}, {}'.format(task_id, exception, task.timestamp))
+
+        update = {
+            'status': TaskStatus.failed,
         }
 
         if task_id:
