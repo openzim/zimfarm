@@ -1,0 +1,2 @@
+class TaskStatus:
+    succeeded = 'succeeded'
