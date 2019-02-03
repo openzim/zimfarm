@@ -24,9 +24,9 @@ class Monitor:
                 'worker-online': self._worker_online,
                 'worker-heartbeat': self._worker_heartbeat,
                 'worker-offline': self._worker_offline,
-                'task-sent': BaseTaskEventHandler(),
-                'task-received': BaseTaskEventHandler(),
-                'task-started': BaseTaskEventHandler(),
+                'task-sent': task_handlers.TaskSentEventHandler(),
+                'task-received': task_handlers.TaskReceivedEventHandler(),
+                'task-started': task_handlers.TaskStartedEventHandler(),
                 'task-succeeded': task_handlers.TaskSucceededEventHandler(),
                 'task-failed': task_handlers.TaskFailedEventHandler(),
                 '*': self.handle_others}
