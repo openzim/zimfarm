@@ -32,7 +32,7 @@ class BaseTaskEventHandler(BaseHandler):
         event = {'code': code, 'timestamp': timestamp}
         event.update(kwargs)
         Tasks().update_one({'_id': task_id},
-                           {'$push': event})
+                           {'$push': {'events': event}})
 
 
 class TaskSentEventHandler(BaseTaskEventHandler):
