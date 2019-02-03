@@ -7,7 +7,6 @@ from celery.events.state import State, Worker
 import mongo
 from handlers import BaseHandler
 from handlers import tasks as task_handlers
-from handlers.tasks import BaseTaskEventHandler
 
 
 class Monitor:
