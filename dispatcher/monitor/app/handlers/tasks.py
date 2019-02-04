@@ -3,13 +3,13 @@ import logging
 from datetime import datetime
 from typing import Optional
 
+import pytz
 from bson.objectid import ObjectId, InvalidId
 from celery.events.state import Task
 
 from entities import TaskEvent
 from handlers import BaseHandler
 from mongo import Tasks
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,10 @@ class BaseTaskEventHandler(BaseHandler):
             return None
 
     @staticmethod
+    def get_timestamp(task: Task) -> datetime:
+        return datetime.fromtimestamp(task.timestamp, tz=pytz.utc)
+
+    @staticmethod
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
         event = {'code': code, 'timestamp': timestamp}
         event.update(kwargs)
@@ -42,7 +46,7 @@ class TaskSentEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Sent: {id}'.format(id=task_id))
 
-        self.save_event(task_id, TaskEvent.sent, task.timestamp)
+        self.save_event(task_id, TaskEvent.sent, self.get_timestamp(task))
 
 
 class TaskReceivedEventHandler(BaseTaskEventHandler):
@@ -52,7 +56,7 @@ class TaskReceivedEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Received: {id}'.format(id=task_id))
 
-        self.save_event(task_id, TaskEvent.received, task.timestamp)
+        self.save_event(task_id, TaskEvent.received, self.get_timestamp(task))
 
 
 class TaskStartedEventHandler(BaseTaskEventHandler):
@@ -62,7 +66,7 @@ class TaskStartedEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Started: {id}, hostname={hostname}'.format(id=task_id, hostname=task.worker.hostname))
 
-        self.save_event(task_id, TaskEvent.started, task.timestamp)
+        self.save_event(task_id, TaskEvent.started, self.get_timestamp(task))
 
 
 class TaskSucceededEventHandler(BaseTaskEventHandler):
@@ -73,7 +77,7 @@ class TaskSucceededEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Succeeded: {}, {}, {}'.format(task_id, task.timestamp, task.runtime))
 
-        self.save_event(task_id, TaskEvent.succeeded, task.timestamp)
+        self.save_event(task_id, TaskEvent.succeeded, self.get_timestamp(task))
         Tasks().update_one({'_id': task_id}, {'$set': {'files': files}})
 
 
@@ -84,4 +88,5 @@ class TaskFailedEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Failed: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
 
-        self.save_event(task_id, TaskEvent.failed, task.timestamp, exception=task.exception, traceback=task.traceback)
+        self.save_event(task_id, TaskEvent.failed, self.get_timestamp(task),
+                        exception=task.exception, traceback=task.traceback)
