@@ -16,4 +16,5 @@ matrix:
       before_script:
         - cd dispatcher/backend/src
         - export PYTHONPATH=$PWD
+        - python prestart.py
       script: pytest tests/integration
