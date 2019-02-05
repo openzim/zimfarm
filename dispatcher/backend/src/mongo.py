@@ -7,7 +7,7 @@ from pymongo.collection import Collection as BaseCollection
 
 class Client(MongoClient):
     def __init__(self):
-        super().__init__(host=os.getenv('MONGO_HOSTNAME', 'localhost'))
+        super().__init__(host=os.getenv('MONGO_HOSTNAME', 'mongo'))
 
 
 class Database(BaseDatabase):
