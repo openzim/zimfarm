@@ -16,5 +16,6 @@ matrix:
       before_script:
         - cd dispatcher/backend/src
         - export PYTHONPATH=$PWD
+        - export MONGO_HOSTNAME=localhost
         - python prestart.py
       script: pytest tests/integration
