@@ -25,32 +25,32 @@ class Users(BaseCollection):
         self.create_index('ssh_keys.fingerprint', name='ssh_keys.fingerprint',
                           partialFilterExpression={'ssh_keys': {'$exists': True}})
 
-        schema = {
-            "bsonType": "object",
-            "required": ["username", "password_hash"],
-            "properties": {
-                "username": {"bsonType": "string"},
-                "password_hash": {"bsonType": "string"},
-                "email": {"bsonType": "string"},
-                "ssh_keys": {
-                    "bsonType": "array",
-                    "items": {
-                        "bsonType": "object",
-                        "required": ["name", "fingerprint", "key", "type", "added", "last_used"],
-                        "properties": {
-                            "name": {"bsonType": "string"},
-                            "fingerprint": {"bsonType": "string"},
-                            "key": {"bsonType": "string"},
-                            "type": {"enum": ["RSA"]},
-                            "added": {"bsonType": "date"},
-                            "last_used": {"bsonType": "date"},
-                        },
-                        "additionalProperties": False
-                    }
-                }
-            }
-        }
-        self.database.command({'collMod': 'users', 'validator': {'$jsonSchema': schema}})
+        # schema = {
+        #     "bsonType": "object",
+        #     "required": ["username", "password_hash"],
+        #     "properties": {
+        #         "username": {"bsonType": "string"},
+        #         "password_hash": {"bsonType": "string"},
+        #         "email": {"bsonType": "string"},
+        #         "ssh_keys": {
+        #             "bsonType": "array",
+        #             "items": {
+        #                 "bsonType": "object",
+        #                 "required": ["name", "fingerprint", "key", "type", "added", "last_used"],
+        #                 "properties": {
+        #                     "name": {"bsonType": "string"},
+        #                     "fingerprint": {"bsonType": "string"},
+        #                     "key": {"bsonType": "string"},
+        #                     "type": {"enum": ["RSA"]},
+        #                     "added": {"bsonType": "date"},
+        #                     "last_used": {"bsonType": "date"},
+        #                 },
+        #                 "additionalProperties": False
+        #             }
+        #         }
+        #     }
+        # }
+        # self.database.command({'collMod': 'users', 'validator': {'$jsonSchema': schema}})
 
 
 class RefreshTokens(BaseCollection):
