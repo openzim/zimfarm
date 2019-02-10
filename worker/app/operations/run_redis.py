@@ -1,5 +1,5 @@
 from typing import Optional
-
+from time import sleep
 import docker.errors
 from docker import DockerClient
 from docker.models.containers import Container
@@ -20,15 +20,21 @@ class RunRedis(Operation):
         :raise: docker.errors.APIError
         """
 
-        container = self._get_container(self.container_name)
-        if container is not None:
-            if container.status == 'running':
-                return
-            else:
-                container.remove()
+        retries = 3
+        while retries:
+            try:
+                container = self._get_container(self.container_name)
+                if container:
+                    if container.status == 'running':
+                        return
+                    else:
+                        container.remove()
 
-        self.docker.images.pull('redis', tag='latest')
-        self.docker.containers.run('redis', detach=True, name=self.container_name)
+                self.docker.images.pull('redis', tag='latest')
+                self.docker.containers.run('redis', detach=True, name=self.container_name)
+            except docker.errors.APIError:
+                retries -= 1
+                sleep(3)
 
     def _get_container(self, container_name: str) -> Optional[Container]:
         try:

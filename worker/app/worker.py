@@ -39,11 +39,11 @@ class Worker:
         # configure queues
         exchange = Exchange('offliner', 'topic')
         app.conf.task_queues = [
-            Queue('default', exchange, routing_key='#'),
             Queue('small', exchange, routing_key='small'),
             Queue('medium', exchange, routing_key='medium'),
-            Queue('large', exchange, routing_key='large')
-        ]
+            Queue('large', exchange, routing_key='large'),
+            Queue('large', exchange, routing_key='default'),
+            Queue('debug', exchange, routing_key='debug')]
 
         # configure celery
         app.conf.worker_send_task_events = True
