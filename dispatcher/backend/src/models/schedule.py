@@ -39,7 +39,8 @@ class ScheduleService:
             }
 
             celery = Celery()
-            celery.send_task(name=task_name, args=(), kwargs=task_kwargs, task_id=str(task_id), queue=queue)
+            celery.send_task(name=task_name, args=(), kwargs=task_kwargs, task_id=str(task_id),
+                             exchange='offliner', routing_key=queue)
 
             return task_id
         else:
