@@ -1,5 +1,7 @@
 import os
+
 from celery import Celery as CeleryBase
+from kombu import Queue, Exchange
 
 
 class Celery(CeleryBase):
@@ -9,3 +11,12 @@ class Celery(CeleryBase):
         url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username,
                                                                         password=system_password)
         super().__init__(main='zimfarm', broker=url)
+
+        exchange = Exchange('offliner', 'topic')
+        self.conf.task_queues = [
+            Queue('small', exchange, routing_key='small'),
+            Queue('medium', exchange, routing_key='medium'),
+            Queue('large', exchange, routing_key='large'),
+            Queue('large', exchange, routing_key='default'),
+            Queue('debug', exchange, routing_key='debug'),
+        ]
