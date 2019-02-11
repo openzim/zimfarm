@@ -78,7 +78,7 @@ class SchedulerEntry(beat.ScheduleEntry):
         config = document.get('config', {})
 
         task_name = config.get('task_name')
-        queue = config.get('queue', 'offliner_default')
+        routing_key = config.get('queue', 'default')
         offliner = config.get('offliner')
         warehouse_path = config.get('warehouse_path')
 
@@ -90,7 +90,7 @@ class SchedulerEntry(beat.ScheduleEntry):
         task_options = {
             'task_name': task_name,
             'exchange': 'offliner',
-            'routing_key': queue
+            'routing_key': routing_key
         }
 
         last_run = document.get('last_run', None)
