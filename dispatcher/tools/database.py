@@ -5,15 +5,15 @@ import pytz
 import json
 
 
-def main(client: MongoClient):
+def get_schedule_to_run_json(client: MongoClient):
     schedules_collection = client['Zimfarm']['schedules']
     schedules = schedules_collection.find({"tags": ["nopic", "novid"]}, {"_id": 1, "name": 1})
 
     tasks = client['Zimfarm']['tasks']
     tasks_succeed = tasks.find({
         "timestamp.created": {
-            '$gt': datetime(2019, 2, 1, 00, 00, 00, tzinfo=pytz.utc)
-        }, "events.2.code": "succeeded"}, {'schedule_id': 1})
+            '$gte': datetime(2019, 2, 1, 00, 00, 00, tzinfo=pytz.utc)
+        }, "files": {"$exists": True}}, {'schedule_id': 1})
     schedules_id_succeed = [task['schedule_id'] for task in tasks_succeed]
     schedules_id_succeed = set(schedules_id_succeed)
 
@@ -68,5 +68,5 @@ if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            assemble_manual_run_request(client)
+            get_schedule_to_run_json(client)
     print('FINISH!')
