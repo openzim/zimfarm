@@ -40,13 +40,13 @@ if __name__ == '__main__':
     app.conf.beat_max_loop_interval = timedelta(minutes=2).seconds
 
     # configure queue
-    offliner_exchange = Exchange('offliner', 'topic')
+    exchange = Exchange('offliner', 'topic')
     app.conf.task_queues = [
-        Queue('offliner_default', offliner_exchange, routing_key='#'),
-        Queue('offliner_small', offliner_exchange, routing_key='small'),
-        Queue('offliner_medium', offliner_exchange, routing_key='medium'),
-        Queue('offliner_large', offliner_exchange, routing_key='large')
-    ]
+        Queue('small', exchange, routing_key='small'),
+        Queue('medium', exchange, routing_key='medium'),
+        Queue('large', exchange, routing_key='large'),
+        Queue('large', exchange, routing_key='default'),
+        Queue('debug', exchange, routing_key='debug')]
 
     retries = 3
     while retries > 0:

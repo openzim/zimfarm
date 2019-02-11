@@ -89,7 +89,8 @@ class SchedulerEntry(beat.ScheduleEntry):
 
         task_options = {
             'task_name': task_name,
-            'queue': queue
+            'exchange': 'offliner',
+            'routing_key': queue
         }
 
         last_run = document.get('last_run', None)
