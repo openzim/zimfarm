@@ -17,7 +17,10 @@ def get_schedule_to_run_json(client: MongoClient):
     schedules_id_succeed = [task['schedule_id'] for task in tasks_succeed]
     schedules_id_succeed = set(schedules_id_succeed)
 
-    schedules_to_run = [schedule['name'] for schedule in schedules if schedule['_id'] not in schedules_id_succeed]
+    blacklist = ['Wikivoyage_en', 'Wikivoyage_de']
+
+    schedules_to_run = [schedule['name'] for schedule in schedules
+                        if schedule['_id'] not in schedules_id_succeed and schedule['name'] not in blacklist]
     print(len(schedules_to_run))
     encoded = json.dumps(schedules_to_run)
     print(encoded)
@@ -34,7 +37,7 @@ def assemble_manual_run_request(client: MongoClient):
 
 def nopic_to_nopic_and_novid(client: MongoClient):
     schedules_collection = client['Zimfarm']['schedules']
-    schedules = schedules_collection.find({"category": "wikiversity", "tags": ["nopic"]}, {"_id": 1, "name": 1})
+    schedules = schedules_collection.find({"category": "wikisource", "tags": ["nopic"]}, {"_id": 1, "name": 1})
 
     update_count = 0
     for schedule in schedules:
@@ -44,6 +47,8 @@ def nopic_to_nopic_and_novid(client: MongoClient):
             {'_id': schedule_id},
             {'$set': {
                 'name': schedule_name,
+                'config.queue': 'small',
+                'config.offliner.flags.useCache': True,
                 'config.offliner.flags.format': ["nopic", "novid"],
                 'tags': ["nopic", "novid"]}})
         update_count += result.modified_count
