@@ -37,7 +37,7 @@ def assemble_manual_run_request(client: MongoClient):
 
 def nopic_to_nopic_and_novid(client: MongoClient):
     schedules_collection = client['Zimfarm']['schedules']
-    schedules = schedules_collection.find({"category": "wikisource", "tags": ["nopic"]}, {"_id": 1, "name": 1})
+    schedules = schedules_collection.find({"category": "wikipedia", "tags": ["nopic"], "language.code": { '$in': ["ja", "nl", "pl", "pt", "ru"] }}, {"_id": 1, "name": 1})
 
     update_count = 0
     for schedule in schedules:
@@ -47,7 +47,7 @@ def nopic_to_nopic_and_novid(client: MongoClient):
             {'_id': schedule_id},
             {'$set': {
                 'name': schedule_name,
-                'config.queue': 'small',
+                'config.queue': 'medium',
                 'config.offliner.flags.useCache': True,
                 'config.offliner.flags.format': ["nopic", "novid"],
                 'tags': ["nopic", "novid"]}})
@@ -73,5 +73,5 @@ if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            get_schedule_to_run_json(client)
+            nopic_to_nopic_and_novid(client)
     print('FINISH!')
