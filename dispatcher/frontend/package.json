@@ -20,6 +20,8 @@
     "@angular/platform-browser": "^7.1.4",
     "@angular/platform-browser-dynamic": "^7.1.4",
     "@angular/router": "^7.1.4",
+    "ag-grid-angular": "^20.0.0",
+    "ag-grid-community": "^20.0.0",
     "core-js": "^2.6.1",
     "cronstrue": "^1.58.0",
     "rxjs": "^6.3.3",
