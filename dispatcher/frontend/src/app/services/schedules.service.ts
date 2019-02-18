@@ -22,9 +22,6 @@ export class SchedulesService {
                 }
             }
         ).pipe(map(data => {
-            for (let item of data.items) {
-                // item.config_queue = item['config']['queue'];
-            }
             return data
         }))
     }
