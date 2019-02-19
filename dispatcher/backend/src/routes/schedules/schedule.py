@@ -35,7 +35,7 @@ class SchedulesRoute(BaseRoute):
             'category': 1,
             'enabled': 1,
             'name': 1,
-            'config.queue': 1,
+            'config': 1,
             'language': 1,
             'tags': 1
         }
