@@ -23,6 +23,11 @@ class SchedulesRoute(BaseRoute):
         limit = request.args.get('limit', default=20, type=int)
         skip = 0 if skip < 0 else skip
         limit = 20 if limit <= 0 else limit
+        categories = request.args.getlist('categories')
+
+        filter = {}
+        if categories:
+            filter['category'] = {'$in': categories}
 
         # get schedules from database
         projection = {
@@ -34,7 +39,7 @@ class SchedulesRoute(BaseRoute):
             'language': 1,
             'tags': 1
         }
-        cursor = Schedules().find({}, projection).skip(skip).limit(limit)
+        cursor = Schedules().find(filter, projection).skip(skip).limit(limit)
         schedules = [schedule for schedule in cursor]
 
         return jsonify({
