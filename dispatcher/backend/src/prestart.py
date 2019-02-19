@@ -34,4 +34,5 @@ class Initializer:
 if __name__ == "__main__":
     print("Running pre-start initialization...")
     mongo.Users().initialize()
+    mongo.Schedules().initialize()
     Initializer.create_initial_user()

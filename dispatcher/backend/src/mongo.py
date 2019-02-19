@@ -67,6 +67,13 @@ class Schedules(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'schedules')
 
+    def initialize(self):
+        self.create_index('name', name='name', unique=True)
+        self.create_index('category', name='category')
+        self.create_index('enabled', name='enabled')
+        self.create_index('config.queue', name='config.queue')
+        self.create_index('language.code', name='language.code')
+
 
 class Workers(BaseCollection):
     def __init__(self):
