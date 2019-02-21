@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { IDatasource, IGetRowsParams } from 'ag-grid-community';
+import { IDatasource, IGetRowsParams, GridOptions } from 'ag-grid-community';
 
 import { SchedulesService, Schedule } from '../../services/schedules.service';
+import { CategoryFilterComponent } from '../schedule-filters/category-filter';
 
 @Component({
     templateUrl: './schedule-grid.component.html'
@@ -14,16 +15,28 @@ export class ScheduleGridComponent implements OnInit {
     ngOnInit() {
     }
 
-    gridOptions = {
+    gridOptions: GridOptions = {
         rowModelType: 'infinite',
-        datasource: new DataSource(this.schedulesService)
+        datasource: new DataSource(this.schedulesService),
+        frameworkComponents: {
+            categoryFilter: CategoryFilterComponent
+        }
     };
 
     columnDefs = [
-        {headerName: 'Name', field: 'name'},
-        {headerName: 'Category', field: 'category', filter: true},
-        {headerName: 'Language', field: 'language.name_en'},
-        {headerName: 'Queue', field: 'config.queue'}
+        {headerName: "Details", marryChildren: true, children: [
+            {headerName: 'Name', field: 'name'},
+            {headerName: 'Language', field: 'language.name_en', width: 150},
+            {headerName: 'Category', field: 'category', filter: 'categoryFilter', width: 120},
+            {headerName: 'Queue', field: 'config.queue', width: 120}
+        ]},
+        {headerName: "MWOffliner", marryChildren: true, children: [
+            {headerName: 'mwUrl', field: 'config.offliner.flags.mwUrl'},
+            {headerName: 'format', field: 'config.offliner.flags.format', width: 100},
+            {headerName: 'version', field: 'config.offliner.image_tag', width: 100},
+        ]}
+
+        
     ];
 }
 
@@ -33,7 +46,8 @@ class DataSource implements IDatasource {
     getRows(params: IGetRowsParams): void {
         let skip = params.startRow;
         let limit = params.endRow - params.startRow;
-        this.schedulesService.list(skip, limit).subscribe(data => {
+        let categories = params.filterModel['category'];
+        this.schedulesService.list(skip, limit, categories).subscribe(data => {
             if (limit > data.items.length) {
                 params.successCallback(data.items, params.startRow + data.items.length);
             } else {

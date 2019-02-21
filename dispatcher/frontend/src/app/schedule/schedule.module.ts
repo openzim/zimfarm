@@ -12,6 +12,7 @@ import { ScheduleOverviewComponent } from './schedule-overview/schedule-overview
 import { ScheduleOfflinerComponent } from './schedule-offliner/schedule-offliner.component';
 import { ScheduleTaskComponent } from './schedule-task/schedule-task.component';
 import { ScheduleGridComponent } from './schedule-grid/schedule-grid.component';
+import { CategoryFilterComponent } from './schedule-filters/category-filter';
 
 const routes: Routes = [
     {
@@ -30,7 +31,7 @@ const routes: Routes = [
         FormsModule,
         ReactiveFormsModule,
         RouterModule.forChild(routes),
-        AgGridModule.withComponents([])
+        AgGridModule.withComponents([CategoryFilterComponent])
     ],
     declarations: [
         ScheduleGridComponent,
@@ -39,6 +40,7 @@ const routes: Routes = [
         ScheduleDetailComponent, 
         ScheduleOverviewComponent, 
         ScheduleOfflinerComponent, 
-        ScheduleTaskComponent]
+        ScheduleTaskComponent, 
+        CategoryFilterComponent]
 })
 export class ScheduleModule { }
