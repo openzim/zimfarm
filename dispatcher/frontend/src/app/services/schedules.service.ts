@@ -12,15 +12,15 @@ import { map } from 'rxjs/operators';
 export class SchedulesService {
     constructor(private http: HttpClient) { }
 
-    list(skip: number = 0, limit: number = 20) {
+    list(skip: number = 0, limit: number = 20, categories: string[] = []) {
+        let params = {
+            skip: skip.toString(),
+            limit: limit.toString()};
+        if (categories.length > 0) {
+            params['category'] = categories;
+        }
         return this.http.get<SchedulesListResponseData>(
-            apiRoot + '/api/schedules/', 
-            {
-                params: {
-                    skip: skip.toString(),
-                    limit: limit.toString()
-                }
-            }
+            apiRoot + '/api/schedules/', {params: params}
         ).pipe(map(data => {
             return data
         }))

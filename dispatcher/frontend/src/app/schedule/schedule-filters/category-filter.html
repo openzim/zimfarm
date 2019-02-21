@@ -1,0 +1,7 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <label formArrayName="categories" *ngFor="let category of form['controls'].categories['controls']; let i = index">
+        <input type="checkbox" [formControlName]="i">
+        {{categories[i]}}
+    </label>
+    <button>Apply</button>
+</form>
