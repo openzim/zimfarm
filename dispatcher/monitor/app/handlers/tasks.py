@@ -9,7 +9,7 @@ from celery.events.state import Task
 
 from entities import TaskEvent
 from handlers import BaseHandler
-from mongo import Tasks
+from common.mongo import Tasks
 
 logger = logging.getLogger(__name__)
 

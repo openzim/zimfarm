@@ -31,9 +31,9 @@ export class ScheduleGridComponent implements OnInit {
             {headerName: 'Queue', field: 'config.queue', width: 120}
         ]},
         {headerName: "MWOffliner", marryChildren: true, children: [
-            {headerName: 'mwUrl', field: 'config.offliner.flags.mwUrl'},
-            {headerName: 'format', field: 'config.offliner.flags.format', width: 100},
-            {headerName: 'version', field: 'config.offliner.image_tag', width: 100},
+            {headerName: 'mwUrl', field: 'config.flags.mwUrl'},
+            {headerName: 'format', field: 'config.flags.format', width: 100},
+            {headerName: 'version', field: 'config.image.tag', width: 100},
         ]}
 
         

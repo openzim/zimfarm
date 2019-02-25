@@ -1,9 +1,6 @@
-import trafaret
-from flask import request, jsonify, Response
+from flask import request
 
-from errors.http import InvalidRequestJSON, ScheduleNotFound
-from models.schedule import ScheduleCategory
-from mongo import Schedules
+from errors.http import InvalidRequestJSON
 from .. import authenticate
 from routes.base import BaseRoute
 from .base import URLComponent

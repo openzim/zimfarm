@@ -5,7 +5,7 @@ import flask
 from flask import request, jsonify
 from werkzeug.security import check_password_hash
 
-from mongo import Users, RefreshTokens
+from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
 from . import validate, rabbitmq
 from ..errors import BadRequest, Unauthorized
