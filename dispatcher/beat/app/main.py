@@ -8,7 +8,7 @@ from celery import Celery
 from kombu import Queue, Exchange
 from pymongo.errors import ServerSelectionTimeoutError
 
-from mongo import Client
+from common.mongo import Client
 from schedules import Scheduler
 
 

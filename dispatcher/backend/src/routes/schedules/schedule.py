@@ -3,7 +3,7 @@ from flask import request, jsonify, Response
 
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 from models.schedule import ScheduleCategory
-from mongo import Schedules
+from common.mongo import Schedules
 from .. import authenticate
 from ..base import BaseRoute
 from .base import URLComponent

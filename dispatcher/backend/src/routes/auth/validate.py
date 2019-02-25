@@ -7,7 +7,7 @@ import jsonschema
 from flask import request, Response
 
 from routes import errors
-from mongo import Users
+from common.mongo import Users
 
 
 def ssh_key():

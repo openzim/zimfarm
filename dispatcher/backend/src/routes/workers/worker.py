@@ -1,6 +1,6 @@
 from flask import jsonify
 
-from mongo import Workers
+from common.mongo import Workers
 from utils.token import AccessToken
 
 from .. import authenticate2

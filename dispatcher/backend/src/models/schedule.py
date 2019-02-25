@@ -5,7 +5,7 @@ from typing import Optional
 import pytz
 from bson import ObjectId
 
-from mongo import Tasks, Schedules
+from common.mongo import Tasks, Schedules
 from utils.celery import Celery
 
 
