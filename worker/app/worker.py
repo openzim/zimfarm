@@ -48,6 +48,7 @@ class Worker:
         # configure celery
         app.conf.worker_send_task_events = True
         app.conf.task_acks_late = True
+        app.conf.task_reject_on_worker_lost = True
         app.conf.worker_concurrency = Settings.concurrency
         app.conf.worker_prefetch_multiplier = 1
 
@@ -57,6 +58,7 @@ class Worker:
             '--hostname', '{}@{}'.format(Settings.username, Settings.node_name),
             '--queues', Settings.queues,
             '--loglevel', 'info',
+            '-Ofair'
         ])
 
     def docker_test(self):

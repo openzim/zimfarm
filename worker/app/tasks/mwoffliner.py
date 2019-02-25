@@ -64,10 +64,10 @@ class MWOffliner(Base):
             return stats
         except OfflinerError as e:
             self.send_event('offliner_failed', e)
-            raise e
+            self.retry(exc=e, countdown=600)
         except UploadError as e:
             self.send_event('upload_failed', e)
-            raise
+            self.retry(exc=e, countdown=600)
 
     @staticmethod
     def get_file_stats(working_dir: Path):
