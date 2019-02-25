@@ -24,16 +24,16 @@ class MWOffliner(Base):
 
     name = 'offliner.mwoffliner'
 
-    def run(self, offliner: dict, warehouse_path: str, *args, **kwargs):
+    def run(self, flags: dict, image: dict, warehouse_path: str, *args, **kwargs):
         """Run MWOffliner based offliner tasks.
 
-        :param offliner: offliner config
+        :param flags: offliner flags
+        :param image: offliner image name and tag
         :param warehouse_path: path appending to files when uploading
         :return:
         """
 
-        offliner_image_tag = offliner.get('image_tag', 'latest')
-        offliner_flags = offliner.get('flags', {})
+        image_tag = image.get('tag', 'latest')
 
         try:
             # run redis
@@ -42,11 +42,11 @@ class MWOffliner(Base):
 
             # run mwoffliner
             run_mwoffliner = RunMWOffliner(
-                docker_client=docker.from_env(), tag=offliner_image_tag, flags=offliner_flags,
+                docker_client=docker.from_env(), tag=image_tag, flags=flags,
                 task_id=self.task_id, working_dir_host=Settings.working_dir_host,
                 redis_container_name=Settings.redis_name)
             self.logger.info('{name}[{id}] -- Running MWOffliner, mwUrl: {mwUrl}'.format(
-                name=self.name, id=self.task_id, mwUrl=offliner_flags['mwUrl']))
+                name=self.name, id=self.task_id, mwUrl=flags['mwUrl']))
             self.logger.debug('{name}[{id}] -- Running MWOffliner, command: {command}'.format(
                 name=self.name, id=self.task_id, command=run_mwoffliner.command))
             offliner_stdout = run_mwoffliner.execute()
