@@ -35,15 +35,15 @@ def make_config():
         return {
             'task_name': 'offliner.mwoffliner',
             'queue': 'offliner_default',
-            'offliner': {
-                'image_name': 'openzim/mwoffliner',
-                'image_tag': 'latest',
-                'flags': {
-                    'mwUrl': 'https://{}.wikipedia.org'.format(sub_domain),
-                    'adminEmail': 'test@kiwix.org',
-                    'format': format,
-                    'withZimFullTextIndex': True
-                }
+            'image': {
+                'name': 'openzim/mwoffliner',
+                'tag': 'latest'
+            },
+            'flags': {
+                'mwUrl': 'https://{}.wikipedia.org'.format(sub_domain),
+                'adminEmail': 'test@kiwix.org',
+                'format': format,
+                'withZimFullTextIndex': True
             },
             'warehouse_path': '/wikipedia'
         }
