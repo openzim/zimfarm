@@ -30,12 +30,12 @@ class ScheduleService:
 
             task_name = config.get('task_name')
             queue = config.get('queue')
-            offliner = config.get('offliner')
-            warehouse_path = config.get('warehouse_path')
 
             task_kwargs = {
-                'offliner': offliner,
-                'warehouse_path': warehouse_path
+                'flags': config.get('flags'),
+                'image': config.get('image'),
+                'queue': queue,
+                'warehouse_path': config.get('warehouse_path')
             }
 
             celery = Celery()
