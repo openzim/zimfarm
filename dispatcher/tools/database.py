@@ -37,7 +37,7 @@ def assemble_manual_run_request(client: MongoClient):
 
 def nopic_to_nopic_and_novid(client: MongoClient):
     schedules_collection = client['Zimfarm']['schedules']
-    schedules = schedules_collection.find({"category": "wikipedia", "tags": ["nopic"], "language.code": { '$in': ["ja", "nl", "pl", "pt", "ru"] }}, {"_id": 1, "name": 1})
+    schedules = schedules_collection.find({"category": "wikipedia", "tags": ["nopic"]}, {"_id": 1, "name": 1})
 
     update_count = 0
     for schedule in schedules:
@@ -47,9 +47,9 @@ def nopic_to_nopic_and_novid(client: MongoClient):
             {'_id': schedule_id},
             {'$set': {
                 'name': schedule_name,
-                'config.queue': 'medium',
-                'config.offliner.flags.useCache': True,
-                'config.offliner.flags.format': ["nopic", "novid"],
+                'config.queue': 'large',
+                'config.flags.useCache': True,
+                'config.flags.format': ["nopic", "novid"],
                 'tags': ["nopic", "novid"]}})
         update_count += result.modified_count
     print(f"Update count: {update_count}")
