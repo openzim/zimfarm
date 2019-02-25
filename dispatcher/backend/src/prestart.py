@@ -2,7 +2,7 @@ import os
 
 from werkzeug.security import generate_password_hash
 
-import mongo
+from common import mongo
 
 
 class Initializer:

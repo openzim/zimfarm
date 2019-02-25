@@ -9,7 +9,7 @@ from bson import ObjectId
 from flask import request, jsonify, Response
 
 from routes import authenticate2, url_object_id, errors
-from mongo import Users
+from common.mongo import Users
 from utils.token import AccessToken
 
 

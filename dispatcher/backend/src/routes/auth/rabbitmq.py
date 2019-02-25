@@ -5,7 +5,7 @@ import string
 from flask import request, Response
 from werkzeug.security import check_password_hash
 
-from mongo import Users
+from common.mongo import Users
 
 system_username = 'system'
 system_password = os.getenv('SYSTEM_PASSWORD',

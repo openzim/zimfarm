@@ -4,7 +4,7 @@ from datetime import datetime
 from celery import Celery
 from celery.events.state import State, Worker
 
-import mongo
+from common import mongo
 from handlers import BaseHandler
 from handlers import tasks as task_handlers
 

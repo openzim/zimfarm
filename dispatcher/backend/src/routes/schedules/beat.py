@@ -3,7 +3,7 @@ from celery.schedules import crontab, ParseException
 from flask import jsonify, request, Response
 
 from errors.http import ScheduleNotFound, InvalidRequestJSON
-from mongo import Schedules
+from common.mongo import Schedules
 from .base import URLComponent
 from .validators import CrontabValidator
 from .. import authenticate

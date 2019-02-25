@@ -6,7 +6,7 @@ from bson import ObjectId
 from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
-from mongo import Users, RefreshTokens
+from common.mongo import Users, RefreshTokens
 from utils.token import AccessControl
 from errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 

@@ -7,7 +7,7 @@ from celery import Celery, beat, schedules
 from celery.schedules import BaseSchedule
 from celery.utils.log import get_logger
 
-from mongo import Schedules, Tasks
+from common.mongo import Schedules, Tasks
 
 
 class Scheduler(beat.Scheduler):

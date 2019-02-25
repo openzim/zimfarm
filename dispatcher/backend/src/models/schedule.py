@@ -5,7 +5,7 @@ from typing import Optional
 import pytz
 from bson import ObjectId
 
-from mongo import Tasks, Schedules
+from common.mongo import Tasks, Schedules
 from utils.celery import Celery
 
 
@@ -30,17 +30,17 @@ class ScheduleService:
 
             task_name = config.get('task_name')
             queue = config.get('queue')
-            offliner = config.get('offliner')
-            warehouse_path = config.get('warehouse_path')
 
             task_kwargs = {
-                'offliner': offliner,
-                'warehouse_path': warehouse_path
+                'flags': config.get('flags'),
+                'image': config.get('image'),
+                'queue': queue,
+                'warehouse_path': config.get('warehouse_path')
             }
 
             celery = Celery()
             celery.send_task(name=task_name, args=(), kwargs=task_kwargs, task_id=str(task_id),
-                             exchange='offliner', routing_key=queue)
+                             exchange='offliner', routing_key=queue, retries=3)
 
             return task_id
         else:
