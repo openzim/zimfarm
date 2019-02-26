@@ -21,6 +21,7 @@ def get_schedule_to_run_json(client: MongoClient):
 
     schedules_to_run = [schedule['name'] for schedule in schedules
                         if schedule['_id'] not in schedules_id_succeed and schedule['name'] not in blacklist]
+    schedules_to_run = [schedule for schedule in schedules_to_run if '_a' not in schedule]
     print(len(schedules_to_run))
     encoded = json.dumps(schedules_to_run)
     print(encoded)
@@ -73,5 +74,5 @@ if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            nopic_to_nopic_and_novid(client)
+            get_schedule_to_run_json(client)
     print('FINISH!')
