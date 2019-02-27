@@ -42,7 +42,6 @@ class Worker:
             Queue('small', exchange, routing_key='small'),
             Queue('medium', exchange, routing_key='medium'),
             Queue('large', exchange, routing_key='large'),
-            Queue('large', exchange, routing_key='default'),
             Queue('debug', exchange, routing_key='debug')]
 
         # configure celery
