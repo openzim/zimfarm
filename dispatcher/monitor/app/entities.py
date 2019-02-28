@@ -4,3 +4,4 @@ class TaskEvent:
     started = 'started'
     succeeded = 'succeeded'
     failed = 'failed'
+    retried = 'retried'
