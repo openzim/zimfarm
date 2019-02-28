@@ -35,8 +35,10 @@ class BaseTaskEventHandler(BaseHandler):
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
         event = {'code': code, 'timestamp': timestamp}
         event.update(kwargs)
-        Tasks().update_one({'_id': task_id},
-                           {'$push': {'events': event}})
+        updates = {
+            '$set': {'timestamp.{}'.format(code): timestamp},
+            '$push': {'events': event}}
+        Tasks().update_one({'_id': task_id}, updates)
 
 
 class TaskSentEventHandler(BaseTaskEventHandler):
@@ -89,4 +91,15 @@ class TaskFailedEventHandler(BaseTaskEventHandler):
         logger.info('Task Failed: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
 
         self.save_event(task_id, TaskEvent.failed, self.get_timestamp(task),
+                        exception=task.exception, traceback=task.traceback)
+
+
+class TaskRetriedEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task = super().__call__(event)
+        task_id = self.get_task_id(task)
+
+        logger.info('Task Retried: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
+
+        self.save_event(task_id, TaskEvent.retried, self.get_timestamp(task),
                         exception=task.exception, traceback=task.traceback)
