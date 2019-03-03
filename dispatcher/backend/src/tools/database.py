@@ -7,21 +7,20 @@ import json
 
 def get_schedule_to_run_json(client: MongoClient):
     schedules_collection = client['Zimfarm']['schedules']
-    schedules = schedules_collection.find({"tags": ["nopic", "novid"]}, {"_id": 1, "name": 1})
 
     tasks = client['Zimfarm']['tasks']
     tasks_succeed = tasks.find({
-        "timestamp.created": {
-            '$gte': datetime(2019, 2, 1, 00, 00, 00, tzinfo=pytz.utc)
+        "timestamp.succeeded": {
+            '$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)
         }, "files": {"$exists": True}}, {'schedule_id': 1})
     schedules_id_succeed = [task['schedule_id'] for task in tasks_succeed]
     schedules_id_succeed = set(schedules_id_succeed)
 
-    blacklist = ['Wikivoyage_en', 'Wikivoyage_de']
-
-    schedules_to_run = [schedule['name'] for schedule in schedules
-                        if schedule['_id'] not in schedules_id_succeed and schedule['name'] not in blacklist]
-    schedules_to_run = [schedule for schedule in schedules_to_run if '_a' not in schedule]
+    schedules = schedules_collection.find({"tags": ["nopic", "novid"]}, {"_id": 1, "name": 1, "language.code": 1})
+    schedules_to_run = [schedule for schedule in schedules
+                        if schedule['_id'] not in schedules_id_succeed]
+    schedules_to_run = [schedule for schedule in schedules_to_run if 'e' <= schedule['language']['code'][0] < 'n']
+    schedules_to_run = [schedule['name'] for schedule in schedules_to_run]
     print(len(schedules_to_run))
     encoded = json.dumps(schedules_to_run)
     print(encoded)
