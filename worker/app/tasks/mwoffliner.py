@@ -50,7 +50,7 @@ class MWOffliner(Base):
             self.logger.debug('{name}[{id}] -- Running MWOffliner, command: {command}'.format(
                 name=self.name, id=self.task_id, command=run_mwoffliner.command))
             offliner_stdout = run_mwoffliner.execute()
-            self.send_event('offliner_finished', offliner_stdout)
+            self.send_event('offliner_finished', stdout=offliner_stdout)
 
             # get stats of generated files
             working_dir_container = Path(Settings.working_dir_container).joinpath(self.task_id)
@@ -63,11 +63,11 @@ class MWOffliner(Base):
 
             return stats
         except OfflinerError as e:
-            self.send_event('offliner_failed', e)
-            self.retry(exc=e, countdown=600)
+            self.send_event('offliner_failed', exception=e)
+            raise e
         except UploadError as e:
-            self.send_event('upload_failed', e)
-            self.retry(exc=e, countdown=600)
+            self.send_event('upload_failed', exception=e)
+            raise e
 
     @staticmethod
     def get_file_stats(working_dir: Path):

@@ -56,8 +56,7 @@ class Worker:
             'worker',
             '--hostname', '{}@{}'.format(Settings.username, Settings.node_name),
             '--queues', Settings.queues,
-            '--loglevel', 'info',
-            '-Ofair'
+            '--loglevel', 'info'
         ])
 
     def docker_test(self):
