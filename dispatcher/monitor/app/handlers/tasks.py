@@ -68,7 +68,7 @@ class TaskStartedEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Started: {id}, hostname={hostname}'.format(id=task_id, hostname=task.worker.hostname))
 
-        self.save_event(task_id, TaskEvent.started, self.get_timestamp(task))
+        self.save_event(task_id, TaskEvent.started, self.get_timestamp(task), hostname=task.worker.hostname)
 
 
 class TaskSucceededEventHandler(BaseTaskEventHandler):
@@ -79,7 +79,7 @@ class TaskSucceededEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Succeeded: {}, {}, {}'.format(task_id, task.timestamp, task.runtime))
 
-        self.save_event(task_id, TaskEvent.succeeded, self.get_timestamp(task))
+        self.save_event(task_id, TaskEvent.succeeded, self.get_timestamp(task), hostname=task.worker.hostname)
         Tasks().update_one({'_id': task_id}, {'$set': {'files': files}})
 
 
@@ -90,7 +90,7 @@ class TaskFailedEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Failed: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
 
-        self.save_event(task_id, TaskEvent.failed, self.get_timestamp(task),
+        self.save_event(task_id, TaskEvent.failed, self.get_timestamp(task), hostname=task.worker.hostname,
                         exception=task.exception, traceback=task.traceback)
 
 
@@ -101,5 +101,5 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
 
         logger.info('Task Retried: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
 
-        self.save_event(task_id, TaskEvent.retried, self.get_timestamp(task),
+        self.save_event(task_id, TaskEvent.retried, self.get_timestamp(task), hostname=task.worker.hostname,
                         exception=task.exception, traceback=task.traceback)
