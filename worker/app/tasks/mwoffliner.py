@@ -1,13 +1,14 @@
 import logging
+import shutil
 from pathlib import Path
 
 import docker
 import docker.errors
 
-from operations.base import OfflinerError, UploadError
-from .base import Base
 from operations import RunRedis, RunMWOffliner, Upload
+from operations.base import OfflinerError, UploadError
 from utils import Settings
+from .base import Base
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class MWOffliner(Base):
         """
 
         image_tag = image.get('tag', 'latest')
+        working_dir_container = Path(Settings.working_dir_container).joinpath(self.task_id)
 
         try:
             # run redis
@@ -50,24 +52,24 @@ class MWOffliner(Base):
             self.logger.debug('{name}[{id}] -- Running MWOffliner, command: {command}'.format(
                 name=self.name, id=self.task_id, command=run_mwoffliner.command))
             offliner_stdout = run_mwoffliner.execute()
-            self.send_event('offliner_finished', offliner_stdout)
-
-            # get stats of generated files
-            working_dir_container = Path(Settings.working_dir_container).joinpath(self.task_id)
-            stats = self.get_file_stats(working_dir_container)
+            self.send_event('offliner_finished', stdout=offliner_stdout)
 
             # upload files
             upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
             self.logger.info('{name}[{id}] -- Upload files'.format(name=self.name, id=self.task_id))
             upload.execute()
 
+            stats = self.get_file_stats(working_dir_container)
+            self.clean_up(working_dir_container)
             return stats
         except OfflinerError as e:
-            self.send_event('offliner_failed', e)
-            self.retry(exc=e, countdown=600)
+            self.clean_up(working_dir_container)
+            self.send_event('offliner_failed', exception=e)
+            raise e
         except UploadError as e:
-            self.send_event('upload_failed', e)
-            self.retry(exc=e, countdown=600)
+            self.clean_up(working_dir_container)
+            self.send_event('upload_failed', exception=e)
+            raise e
 
     @staticmethod
     def get_file_stats(working_dir: Path):
@@ -77,3 +79,7 @@ class MWOffliner(Base):
                 continue
             stats.append({'name': file.name, 'size': file.stat().st_size})
         return stats
+
+    @staticmethod
+    def clean_up(working_dir: Path):
+        shutil.rmtree(working_dir)

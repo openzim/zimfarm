@@ -1,5 +1,4 @@
 import logging
-import shutil
 from pathlib import Path
 
 from paramiko.ssh_exception import SSHException
@@ -37,5 +36,3 @@ class Upload(Operation):
                     client.upload_file(self.remote_working_dir, file)
         except SSHException as e:
             raise UploadError(code='paramiko.Error', message=str(e))
-
-        shutil.rmtree(self.working_dir)
