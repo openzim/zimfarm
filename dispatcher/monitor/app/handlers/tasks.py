@@ -9,7 +9,7 @@ from celery.events.state import Task
 
 from entities import TaskEvent
 from handlers import BaseHandler
-from common.mongo import Tasks
+from common.mongo import Tasks, Schedules
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +35,18 @@ class BaseTaskEventHandler(BaseHandler):
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
         event = {'code': code, 'timestamp': timestamp}
         event.update(kwargs)
-        updates = {
-            '$set': {'timestamp.{}'.format(code): timestamp},
+        task_updates = {
+            '$set': {'status': code, 'timestamp.{}'.format(code): timestamp},
             '$push': {'events': event}}
-        Tasks().update_one({'_id': task_id}, updates)
+        Tasks().update_one({'_id': task_id}, task_updates)
+
+        # update most recent task in schedule
+        task = Tasks().find_one({'_id': task_id}, {'schedule_id': 1, 'schedule_name': 1})
+        schedule_id = task.get('schedule_id')
+        schedule_name = task.get('schedule_name')
+        filter = {'_id': schedule_id} if schedule_id else {'name': schedule_name}
+        schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code}}}
+        Schedules().update_one(filter, schedule_update)
 
 
 class TaskSentEventHandler(BaseTaskEventHandler):
