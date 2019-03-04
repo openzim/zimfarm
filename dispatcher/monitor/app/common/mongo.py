@@ -21,3 +21,8 @@ class Workers(BaseCollection):
 class Tasks(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'tasks')
+
+
+class Schedules(BaseCollection):
+    def __init__(self):
+        super().__init__(Database(), 'schedules')
