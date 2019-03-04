@@ -19,3 +19,4 @@ class Celery(CeleryBase):
             Queue('large', exchange, routing_key='large'),
             Queue('debug', exchange, routing_key='debug'),
         ]
+        self.conf.task_send_sent_event = True
