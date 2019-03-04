@@ -23,10 +23,7 @@ class ScheduleService:
         config = schedule.get('config')
 
         if id and config:
-            task_id = Tasks().insert_one({
-                'schedule_id': id,
-                'timestamp': {'created': datetime.utcnow().replace(tzinfo=pytz.utc)}
-            }).inserted_id
+            task_id = Tasks().insert_one({'schedule_name': schedule_name}).inserted_id
 
             task_name = config.get('task_name')
             queue = config.get('queue')
@@ -40,7 +37,7 @@ class ScheduleService:
 
             celery = Celery()
             celery.send_task(name=task_name, args=(), kwargs=task_kwargs, task_id=str(task_id),
-                             exchange='offliner', routing_key=queue, retries=3)
+                             exchange='offliner', routing_key=queue)
 
             return task_id
         else:
