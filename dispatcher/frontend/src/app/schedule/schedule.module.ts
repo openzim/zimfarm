@@ -5,12 +5,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AgGridModule } from 'ag-grid-angular';
 
 import { SharedModule } from '../shared/shared.module';
-import { ScheduleListComponent } from './schedule-list/schedule-list.component';
-import { ScheduleListFilterComponent } from './schedule-list-filter/schedule-list-filter.component';
-import { ScheduleDetailComponent } from './schedule-detail/schedule-detail.component';
-import { ScheduleOverviewComponent } from './schedule-overview/schedule-overview.component';
-import { ScheduleOfflinerComponent } from './schedule-offliner/schedule-offliner.component';
-import { ScheduleTaskComponent } from './schedule-task/schedule-task.component';
 import { ScheduleGridComponent } from './schedule-grid/schedule-grid.component';
 import { CategoryFilterComponent } from './schedule-filters/category-filter';
 
@@ -18,9 +12,9 @@ const routes: Routes = [
     {
         path: '', 
         component: ScheduleGridComponent, 
-        children: [
-            {path: ':name', component: ScheduleDetailComponent}
-        ]
+        // children: [
+        //     {path: ':name', component: ScheduleDetailComponent}
+        // ]
     }
 ];
 
@@ -35,12 +29,6 @@ const routes: Routes = [
     ],
     declarations: [
         ScheduleGridComponent,
-        ScheduleListComponent, 
-        ScheduleListFilterComponent, 
-        ScheduleDetailComponent, 
-        ScheduleOverviewComponent, 
-        ScheduleOfflinerComponent, 
-        ScheduleTaskComponent, 
         CategoryFilterComponent]
 })
 export class ScheduleModule { }
