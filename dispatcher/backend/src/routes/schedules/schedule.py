@@ -38,6 +38,7 @@ class SchedulesRoute(BaseRoute):
             'name': 1,
             'config': 1,
             'language': 1,
+            'most_recent_task': 1,
             'tags': 1
         }
         cursor = Schedules().find(filter, projection).skip(skip).limit(limit)
