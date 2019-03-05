@@ -30,6 +30,9 @@ export class ScheduleGridComponent implements OnInit {
             {headerName: 'Language', field: 'language.name_en', columnGroupShow: 'open', width: 150, },
             {headerName: 'Category', field: 'category', filter: 'categoryFilter', columnGroupShow: 'open', width: 120, }
         ]},
+        {headerName: "Task", marryChildren: true, openByDefault: true, children: [
+            {headerName: 'Status', field: 'most_recent_task.status', width: 120},
+        ]},
         {headerName: "MWOffliner", marryChildren: true, openByDefault: true, children: [
             {headerName: 'mwUrl', field: 'config.flags.mwUrl'},
             {headerName: 'format', field: 'config.flags.format', columnGroupShow: 'open', width: 100,},
