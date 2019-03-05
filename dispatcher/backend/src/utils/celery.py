@@ -1,15 +1,18 @@
 import os
+from typing import Optional
 
 from celery import Celery as CeleryBase
 from kombu import Queue, Exchange
 
 
 class Celery(CeleryBase):
-    def __init__(self):
-        system_username = 'system'
-        system_password = os.getenv('SYSTEM_PASSWORD','')
-        url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(username=system_username,
-                                                                        password=system_password)
+    def __init__(self, username: Optional[str], password: Optional[str], port: Optional[int]):
+        username = username if username else 'system'
+        password = password if password else os.getenv('SYSTEM_PASSWORD','')
+        port = port if port else 5672
+
+        url = 'amqp://{username}:{password}@rabbit:{port}/zimfarm'.format(
+            username=username, password=password, port=port)
         super().__init__(main='zimfarm', broker=url)
 
         exchange = Exchange('offliner', 'topic')
