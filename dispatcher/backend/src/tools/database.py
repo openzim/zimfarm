@@ -69,9 +69,26 @@ def remove_duplicated_novid_schedule(client: MongoClient):
     print(f"Delete count: {delete_count}")
 
 
+def update_most_recent_task(client: MongoClient):
+    tasks = client['Zimfarm']['tasks']
+    for task in tasks.find({}):
+        schedule_id = task.get('schedule_id')
+        schedule_name = task.get('schedule_name')
+        schedule_filter = {'_id': schedule_id} if schedule_id else {'name': schedule_name}
+
+        events = task.get('events', [])
+        if events:
+            event = events[-1]
+            update = {'$set': {'most_recent_task': {'_id': task['_id'],
+                                                    'status': event['code'],
+                                                    'updated_at': event['timestamp']}}}
+            client['Zimfarm']['schedules'].update_one(schedule_filter, update)
+
+
+
 if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            get_schedule_to_run_json(client)
+            update_most_recent_task(client)
     print('FINISH!')
