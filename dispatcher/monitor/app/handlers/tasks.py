@@ -45,7 +45,7 @@ class BaseTaskEventHandler(BaseHandler):
         schedule_id = task.get('schedule_id')
         schedule_name = task.get('schedule_name')
         filter = {'_id': schedule_id} if schedule_id else {'name': schedule_name}
-        schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code}}}
+        schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}}
         Schedules().update_one(filter, schedule_update)
 
 
