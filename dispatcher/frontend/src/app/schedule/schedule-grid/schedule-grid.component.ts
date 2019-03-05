@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { formatDate } from '@angular/common';
 import { IDatasource, IGetRowsParams, GridOptions } from 'ag-grid-community';
 
 import { SchedulesService, Schedule } from '../../services/schedules.service';
@@ -30,11 +31,20 @@ export class ScheduleGridComponent implements OnInit {
             {headerName: 'Language', field: 'language.name_en', columnGroupShow: 'open', width: 150, },
             {headerName: 'Category', field: 'category', filter: 'categoryFilter', columnGroupShow: 'open', width: 120, }
         ]},
-        {headerName: "Task", marryChildren: true, openByDefault: true, children: [
+        {headerName: "Task this month", marryChildren: true, openByDefault: true, children: [
             {headerName: 'Status', field: 'most_recent_task.status', width: 120},
+            {headerName: 'Timestamp', field: 'most_recent_task.updated_at', width: 120, cellRenderer: (params) => {
+                if (params.value) {
+                    return formatDate(params.value, 'MMM-dd HH:mm', 'en-US', '+0000');
+                }
+            }},
         ]},
         {headerName: "MWOffliner", marryChildren: true, openByDefault: true, children: [
-            {headerName: 'mwUrl', field: 'config.flags.mwUrl'},
+            {headerName: 'mwUrl', field: 'config.flags.mwUrl', cellRenderer: (params) => {
+                if (params.value) {
+                    return `<a href="${params.value}">${params.value}</a>`;
+                }
+            }},
             {headerName: 'format', field: 'config.flags.format', columnGroupShow: 'open', width: 100,},
             {headerName: 'version', field: 'config.image.tag', columnGroupShow: 'open', width: 100,},
             {headerName: 'namespaces', field: 'config.flags.addNamespaces', columnGroupShow: 'open', width: 120,},
