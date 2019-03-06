@@ -6,7 +6,7 @@ from kombu import Queue, Exchange
 
 
 class Celery(CeleryBase):
-    def __init__(self, username: Optional[str], password: Optional[str], port: Optional[int]):
+    def __init__(self, username: Optional[str] = None, password: Optional[str] = None, port: Optional[int] = None):
         username = username if username else 'system'
         password = password if password else os.getenv('SYSTEM_PASSWORD','')
         port = port if port else 5672
