@@ -40,7 +40,7 @@ class RunMWOffliner(Operation):
         except errors.APIError as e:
             raise OfflinerError(code='docker.APIError', message=str(e))
         except errors.ContainerError as e:
-            raise OfflinerError(code='docker.ContainerError', stderr=e.stderr)
+            raise OfflinerError(code='docker.ContainerError', stderr=e.stderr.decode("utf-8"))
 
     @staticmethod
     def _get_command(flags: {}):
