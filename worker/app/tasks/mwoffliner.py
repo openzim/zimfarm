@@ -58,15 +58,12 @@ class MWOffliner(Base):
             self.logger.info('Uploading files, {}'.format(files_description))
             upload.execute()
 
-            self.clean_up(working_dir_container)
             return files
         except OfflinerError as e:
-            self.clean_up(working_dir_container)
-            self.send_event('offliner_failed', exception=e)
-            raise e
-        except UploadError as e:
-            self.clean_up(working_dir_container)
-            self.send_event('upload_failed', exception=e)
+            extras = {'code': e.code, 'message': e.message}
+            if e.stderr:
+                extras['stderr'] = e.stderr.decode("utf-8")
+            self.send_event('offliner_failed', **extras)
             raise e
 
     @staticmethod
@@ -81,6 +78,12 @@ class MWOffliner(Base):
 
         return stats, ', '.join(description)
 
-    @staticmethod
-    def clean_up(working_dir: Path):
+    def clean_up(self):
+        working_dir = Path(Settings.working_dir_container).joinpath(self.task_id)
         shutil.rmtree(working_dir)
+
+    def on_success(self, retval, task_id, args, kwargs):
+        self.clean_up()
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        self.clean_up()
