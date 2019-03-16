@@ -52,7 +52,7 @@ class MWOffliner(Base):
             self.logger.debug('{name}[{id}] -- Running MWOffliner, command: {command}'.format(
                 name=self.name, id=self.task_id, command=run_mwoffliner.command))
             offliner_stdout = run_mwoffliner.execute()
-            self.send_event('offliner_finished', stdout=offliner_stdout)
+            self.send_event('offliner_finished', stdout=offliner_stdout.decode("utf-8"))
 
             # upload files
             upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
