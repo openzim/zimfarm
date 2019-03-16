@@ -50,7 +50,7 @@ class MWOffliner(Base):
             self.logger.info('Running MWOffliner, mwUrl: {mwUrl}'.format(mwUrl=flags['mwUrl']))
             self.logger.debug('Running MWOffliner, command: {command}'.format(command=run_mwoffliner.command))
             offliner_stdout = run_mwoffliner.execute()
-            self.send_event('offliner_finished', stdout=offliner_stdout.decode("utf-8"))
+            self.send_event('offliner_finished', stdout=offliner_stdout)
             files, files_description = self.get_files(working_dir_container)
 
             # upload files
@@ -60,10 +60,7 @@ class MWOffliner(Base):
 
             return files
         except OfflinerError as e:
-            extras = {'code': e.code, 'message': e.message}
-            if e.stderr:
-                extras['stderr'] = e.stderr.decode("utf-8")
-            self.send_event('offliner_failed', **extras)
+            self.send_event('offliner_failed', **e.to_dict())
             raise e
 
     @staticmethod

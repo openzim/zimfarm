@@ -19,7 +19,7 @@ class RunMWOffliner(Operation):
         self.redis_container_name = redis_container_name
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
-    def execute(self) -> bytes:
+    def execute(self) -> str:
         """Pull and run mwoffliner
 
         :raise: OfflinerError
@@ -36,7 +36,7 @@ class RunMWOffliner(Operation):
                 image=self.image_name, command=self.command, remove=True, volumes=volumes,
                 links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
 
-            return stdout
+            return stdout.decode("utf-8")
         except errors.APIError as e:
             raise OfflinerError(code='docker.APIError', message=str(e))
         except errors.ContainerError as e:
