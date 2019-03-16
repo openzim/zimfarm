@@ -47,21 +47,19 @@ class MWOffliner(Base):
                 docker_client=docker.from_env(), tag=image_tag, flags=flags,
                 task_id=self.task_id, working_dir_host=Settings.working_dir_host,
                 redis_container_name=Settings.redis_name)
-            self.logger.info('{name}[{id}] -- Running MWOffliner, mwUrl: {mwUrl}'.format(
-                name=self.name, id=self.task_id, mwUrl=flags['mwUrl']))
-            self.logger.debug('{name}[{id}] -- Running MWOffliner, command: {command}'.format(
-                name=self.name, id=self.task_id, command=run_mwoffliner.command))
+            self.logger.info('Running MWOffliner, mwUrl: {mwUrl}'.format(mwUrl=flags['mwUrl']))
+            self.logger.debug('Running MWOffliner, command: {command}'.format(command=run_mwoffliner.command))
             offliner_stdout = run_mwoffliner.execute()
             self.send_event('offliner_finished', stdout=offliner_stdout.decode("utf-8"))
+            files, files_description = self.get_files(working_dir_container)
 
             # upload files
             upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
-            self.logger.info('{name}[{id}] -- Upload files'.format(name=self.name, id=self.task_id))
+            self.logger.info('Uploading files, {}'.format(files_description))
             upload.execute()
 
-            stats = self.get_file_stats(working_dir_container)
             self.clean_up(working_dir_container)
-            return stats
+            return files
         except OfflinerError as e:
             self.clean_up(working_dir_container)
             self.send_event('offliner_failed', exception=e)
@@ -72,13 +70,16 @@ class MWOffliner(Base):
             raise e
 
     @staticmethod
-    def get_file_stats(working_dir: Path):
+    def get_files(working_dir: Path):
         stats = []
+        description = []
         for file in working_dir.iterdir():
             if file.is_dir():
                 continue
             stats.append({'name': file.name, 'size': file.stat().st_size})
-        return stats
+            description.append('{name} - {size}'.format(name=file.name, size=file.stat().st_size))
+
+        return stats, ', '.join(description)
 
     @staticmethod
     def clean_up(working_dir: Path):
