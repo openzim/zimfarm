@@ -17,7 +17,7 @@ class OperationError(Exception):
 
 
 class OfflinerError(OperationError):
-    def __init__(self, code: str, message: Optional[str] = None, stderr: Optional[bytes] = None):
+    def __init__(self, code: str, message: Optional[str] = None, stderr: Optional[str] = None):
         self.code = code
         self.message = message
         self.stderr = stderr
