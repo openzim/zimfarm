@@ -5,8 +5,8 @@ docker stop zimfarm_worker || true
 docker rm zimfarm_worker || true
 
 echo "Stopping offliners"
-docker stop $(docker ps -aq -f=zimfarm_)
-docker rm $(docker ps -aq -f=zimfarm_)
+docker stop $(docker ps -aq -f name=zimfarm_)
+docker rm $(docker ps -aq -f name=zimfarm_)
 rm -r /srv/zimfarm
 
 echo "Starting zimfarm_worker"

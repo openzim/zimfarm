@@ -13,7 +13,7 @@ def get_schedule_to_run_json(client: MongoClient):
         "timestamp.succeeded": {
             '$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)
         }, "files": {"$exists": True}}, {'schedule_id': 1})
-    schedules_id_succeed = [task['schedule_id'] for task in tasks_succeed]
+    schedules_id_succeed = [task.get('schedule_id') for task in tasks_succeed]
     schedules_id_succeed = set(schedules_id_succeed)
 
     schedules = schedules_collection.find({"tags": ["nopic", "novid"]}, {"_id": 1, "name": 1, "language.code": 1})
