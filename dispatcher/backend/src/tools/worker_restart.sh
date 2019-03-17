@@ -10,7 +10,7 @@ docker rm $(docker ps -aq -f name=zimfarm_)
 rm -r /srv/zimfarm
 
 echo "Starting zimfarm_worker"
-docker pull openzim/zimfarm-worker:latest &&
+docker pull openzim/zimfarm-worker:latest
 docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /home/automactic/.ssh/id_rsa:/usr/src/.ssh/id_rsa \
