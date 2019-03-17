@@ -46,5 +46,5 @@ if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            pass
+            get_schedule_to_run_json(client)
     print('FINISH!')
