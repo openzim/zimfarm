@@ -23,7 +23,7 @@ class ScheduleService:
         config = schedule.get('config')
 
         if id and config:
-            task_id = Tasks().insert_one({'schedule_name': schedule_name}).inserted_id
+            task_id = Tasks().insert_one({'schedule': {'_id': id, 'name': schedule_name}}).inserted_id
 
             task_name = config.get('task_name')
             queue = config.get('queue')
