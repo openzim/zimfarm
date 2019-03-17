@@ -26,6 +26,25 @@ def get_schedule_to_run_json(client: MongoClient):
     print(encoded)
 
 
+def get_sent_task_schedule_ids(client: MongoClient) -> set:
+    tasks = client['Zimfarm']['tasks']
+    tasks_sent = tasks.find({"timestamp.sent": {'$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)}},
+                            {'schedule': 1})
+    return set([task['schedule']['_id'] for task in tasks_sent])
+
+
+def get_schedules_to_run(schedules_excluded: set):
+    schedules = client['Zimfarm']['schedules']
+    schedules = schedules.find({}, {'name': 1, 'language': 1})
+    schedules = [schedule for schedule in schedules if schedule['_id'] not in schedules_excluded]
+    schedules = [schedule for schedule in schedules if 'n' <= schedule['language']['code'][0] < 'o']
+    schedule_names = [schedule['name'] for schedule in schedules]
+
+    print(len(schedule_names))
+    encoded = json.dumps(schedule_names)
+    print(encoded)
+
+
 def update_most_recent_task(client: MongoClient):
     tasks = client['Zimfarm']['tasks']
     for task in tasks.find({}):
@@ -46,5 +65,6 @@ if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            get_schedule_to_run_json(client)
+            excluded = get_sent_task_schedule_ids(client)
+            get_schedules_to_run(excluded)
     print('FINISH!')
