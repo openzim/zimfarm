@@ -5,30 +5,17 @@ import pytz
 import json
 
 
-def get_schedule_to_run_json(client: MongoClient):
-    schedules_collection = client['Zimfarm']['schedules']
-
+def get_succeed_task_schedule_ids(client: MongoClient) -> set:
     tasks = client['Zimfarm']['tasks']
-    tasks_succeed = tasks.find({
-        "timestamp.succeeded": {
-            '$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)
-        }, "files": {"$exists": True}}, {'schedule_id': 1})
-    schedules_id_succeed = [task.get('schedule_id') for task in tasks_succeed]
-    schedules_id_succeed = set(schedules_id_succeed)
-
-    schedules = schedules_collection.find({"tags": ["nopic", "novid"]}, {"_id": 1, "name": 1, "language.code": 1})
-    schedules_to_run = [schedule for schedule in schedules
-                        if schedule['_id'] not in schedules_id_succeed]
-    schedules_to_run = [schedule for schedule in schedules_to_run if 'e' <= schedule['language']['code'][0] < 'n']
-    schedules_to_run = [schedule['name'] for schedule in schedules_to_run]
-    print(len(schedules_to_run))
-    encoded = json.dumps(schedules_to_run)
-    print(encoded)
+    tasks_sent = tasks.find({'timestamp.succeeded': {'$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)},
+                             'files': {'$exists': True}},
+                            {'schedule': 1})
+    return set([task['schedule']['_id'] for task in tasks_sent])
 
 
 def get_sent_task_schedule_ids(client: MongoClient) -> set:
     tasks = client['Zimfarm']['tasks']
-    tasks_sent = tasks.find({"timestamp.sent": {'$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)}},
+    tasks_sent = tasks.find({'timestamp.sent': {'$gte': datetime(2019, 3, 1, 00, 00, 00, tzinfo=pytz.utc)}},
                             {'schedule': 1})
     return set([task['schedule']['_id'] for task in tasks_sent])
 
@@ -37,7 +24,7 @@ def get_schedules_to_run(schedules_excluded: set):
     schedules = client['Zimfarm']['schedules']
     schedules = schedules.find({}, {'name': 1, 'language': 1})
     schedules = [schedule for schedule in schedules if schedule['_id'] not in schedules_excluded]
-    schedules = [schedule for schedule in schedules if 'n' <= schedule['language']['code'][0] < 'o']
+    # schedules = [schedule for schedule in schedules if 'n' <= schedule['language']['code'][0] <= 'z']
     schedule_names = [schedule['name'] for schedule in schedules]
 
     print(len(schedule_names))
