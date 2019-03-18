@@ -27,3 +27,6 @@ class TestTaskCreate:
         response = client.post(url, headers={'Authorization': access_token}, data=body)
         assert response.status_code == 400
 
+
+class TestTaskList:
+    pass
