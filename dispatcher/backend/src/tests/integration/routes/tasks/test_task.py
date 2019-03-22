@@ -10,6 +10,11 @@ def send_task():
 
 
 class TestTaskCreate:
+    @pytest.fixture()
+    def schedule(self, make_schedule):
+        schedule = make_schedule('wikipedia_en')
+        return schedule
+
     def test_create_from_schedule(self, client, access_token, schedule, send_task):
         url = '/api/tasks/'
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
