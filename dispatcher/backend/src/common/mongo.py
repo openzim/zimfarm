@@ -62,6 +62,11 @@ class Tasks(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'tasks')
 
+    def initialize(self):
+        self.create_index('status', name='status')
+        self.create_index('schedule._id', name='schedule._id')
+        self.create_index('schedule.name', name='schedule.name')
+
 
 class Schedules(BaseCollection):
     def __init__(self):
