@@ -66,6 +66,12 @@ class Tasks(BaseCollection):
         self.create_index('status', name='status')
         self.create_index('schedule._id', name='schedule._id')
         self.create_index('schedule.name', name='schedule.name')
+        self.create_index('timestamp.sent', name='timestamp.sent')
+        self.create_index('timestamp.received', name='timestamp.received')
+        self.create_index('timestamp.started', name='timestamp.started')
+        self.create_index('timestamp.succeeded', name='timestamp.succeeded')
+        self.create_index('timestamp.failed', name='timestamp.failed')
+
 
 
 class Schedules(BaseCollection):
