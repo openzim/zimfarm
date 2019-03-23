@@ -1,5 +1,5 @@
 from routes.base import BaseBlueprint
-from .task import TasksRoute
+from routes.tasks.task import TasksRoute, TaskRoute
 
 
 class Blueprint(BaseBlueprint):
@@ -7,3 +7,4 @@ class Blueprint(BaseBlueprint):
         super().__init__('tasks', __name__, url_prefix='/api/tasks')
 
         self.register_route(TasksRoute())
+        self.register_route(TaskRoute())
