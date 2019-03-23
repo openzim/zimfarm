@@ -21,7 +21,7 @@ class Users(BaseCollection):
 
     def initialize(self):
         self.create_index('username', name='username', unique=True)
-        self.create_index('email', name='email', unique=True)
+        self.create_index('email', name='email')
         self.create_index('ssh_keys.fingerprint', name='ssh_keys.fingerprint',
                           partialFilterExpression={'ssh_keys': {'$exists': True}})
 
