@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { Routes, RouterModule } from '@angular/router';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RootComponent, AppComponent } from './components/components';
 import { LoginComponent } from './components/login/login.component';
@@ -21,6 +22,7 @@ const routes: Routes = [
         canActivate: [AuthGuard],
         children: [
             { path: 'schedules', loadChildren: './schedule/schedule.module#ScheduleModule' },
+            { path: 'tasks', loadChildren: './task/task.module#TaskModule' },
             { path: 'user', component: UserComponent },
             { path: '**', redirectTo: 'schedules' }
         ]
@@ -34,6 +36,7 @@ const routes: Routes = [
         BrowserModule,
         FormsModule,
         HttpClientModule,
+        NoopAnimationsModule,
         RouterModule.forRoot(routes)
     ],
     declarations: [
