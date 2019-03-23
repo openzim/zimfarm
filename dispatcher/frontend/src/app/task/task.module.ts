@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Routes, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AgGridModule } from 'ag-grid-angular';
+import { MatListModule } from '@angular/material/list';
 
 import { TaskListComponent } from './task-list/task-list';
 
@@ -22,6 +23,7 @@ const routes: Routes = [
         FormsModule,
         ReactiveFormsModule,
         RouterModule.forChild(routes),
+        MatListModule
         // AgGridModule.withComponents([CategoryFilterComponent])
     ],
     declarations: [
