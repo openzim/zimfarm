@@ -36,3 +36,8 @@ class ResourceNotFound(HTTPBase):
 class ScheduleNotFound(ResourceNotFound):
     def __init__(self):
         super().__init__('Schedule Not Found')
+
+
+class TaskNotFound(ResourceNotFound):
+    def __init__(self):
+        super().__init__('Task Not Found')
