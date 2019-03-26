@@ -34,7 +34,7 @@
 }
 
 .navbar .item {
-    margin: 0 0.5rem;
+    margin: 0;
     display: flex;
     align-items: stretch;
 }
@@ -50,11 +50,11 @@
 }
 
 .navbar a:hover {
-    background: #ddd;
+    background: #e3e3e3;
     color: black;
 }
 
 .navbar a.active {
-    background: #ddd;
+    background: #dddddd;
     color: black;
 }

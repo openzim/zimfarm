@@ -1,0 +1,25 @@
+.container {
+    width: 100%; 
+    height: calc(100vh - 54px); 
+    margin-top: 54px;
+    display: flex;
+}
+
+@media (max-width: 560px) {
+    .container {
+        height: auto;
+        flex-direction: column-reverse;
+    }
+}
+
+.list {
+    flex: 3;
+    max-width: 400px;
+    overflow: scroll;
+}
+
+.detail {
+    flex: 7;
+    overflow: scroll;
+    background-color: #fafafa;
+}
