@@ -21,7 +21,9 @@ export class ScheduleGridComponent implements OnInit {
         datasource: new DataSource(this.schedulesService),
         frameworkComponents: {
             categoryFilter: CategoryFilterComponent
-        }
+        },
+        cacheBlockSize: 200,
+        cacheOverflowSize: 20
     };
 
     columnDefs = [

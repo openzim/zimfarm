@@ -35,4 +35,5 @@ if __name__ == "__main__":
     print("Running pre-start initialization...")
     mongo.Users().initialize()
     mongo.Schedules().initialize()
+    mongo.Tasks().initialize()
     Initializer.create_initial_user()

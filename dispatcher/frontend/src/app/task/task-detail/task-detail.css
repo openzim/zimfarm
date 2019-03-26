@@ -1,0 +1,21 @@
+.task-detail-container {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+mat-expansion-panel div.preformatted {
+    overflow: auto;
+}
+
+mat-panel-title {
+    flex: 1;
+}
+
+mat-panel-description {
+    flex: 2;
+}
+
+mat-card {
+    margin-bottom: 1rem;
+}

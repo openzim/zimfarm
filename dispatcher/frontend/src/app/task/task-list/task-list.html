@@ -1,0 +1,18 @@
+<div class="container" >
+    <div class="list">
+        <mat-list *ngFor="let task of tasks">
+            <mat-list-item>
+                <div>
+                    <a routerLink="{{task._id}}">{{task._id}}</a>
+                    <label></label><br>
+                    <label>{{task.schedule.name}} -- {{task.status}}</label>
+                </div>
+            </mat-list-item>
+            <mat-divider></mat-divider>
+        </mat-list>
+    </div>
+    <mat-divider [vertical]="true"></mat-divider>
+    <div class="detail">
+        <router-outlet></router-outlet>
+    </div>
+</div>
