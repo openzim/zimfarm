@@ -24,7 +24,7 @@ def get_schedules_to_run(schedules_excluded: set):
     schedules = client['Zimfarm']['schedules']
     schedules = schedules.find({}, {'name': 1, 'language': 1})
     schedules = [schedule for schedule in schedules if schedule['_id'] not in schedules_excluded]
-    schedules = [schedule for schedule in schedules if 'a' <= schedule['language']['code'][0] <= 'a']
+    schedules = [schedule for schedule in schedules if 'b' <= schedule['language']['code'][0] <= 'e']
     schedule_names = [schedule['name'] for schedule in schedules]
 
     print(len(schedule_names))
@@ -77,6 +77,6 @@ if __name__ == '__main__':
     with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
-            excluded = get_sent_task_schedule_ids(client)
-            get_schedules_to_run(excluded)
+            excluded = get_succeed_task_schedule_ids(client)
+            get_schedules_to_run({})
     print('FINISH!')
