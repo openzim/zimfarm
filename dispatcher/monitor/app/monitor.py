@@ -117,5 +117,9 @@ class Monitor:
         workers.update_one(filter, update, upsert=True)
 
     def handle_others(self, event):
-        print('Other event: {}'.format(event))
-        pass
+        self.state.event(event)
+        task = self.state.tasks.get(event['uuid'])
+
+        event_description = str(event)[:100]
+        print(f'Other event: {event_description}')
+        print(f'Other event info: {task.info}')
