@@ -49,7 +49,8 @@ class SchedulesRoute(BaseRoute):
         utc_now = datetime.utcnow()
         first_day_this_month = datetime(year=utc_now.year, month=utc_now.month, day=1)
         for schedule in schedules:
-            if schedule['most_recent_task']['updated_at'] > first_day_this_month:
+            most_recent_task_updated_at = schedule.get('most_recent_task', {}).get('updated_at')
+            if most_recent_task_updated_at and most_recent_task_updated_at > first_day_this_month:
                 schedule['task_this_month'] = schedule['most_recent_task']
             else:
                 schedule['task_this_month'] = None
