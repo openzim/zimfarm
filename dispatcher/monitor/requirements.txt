@@ -1,2 +1,2 @@
-celery> == 4.3.*
+celery == 4.3.*
 pymongo == 3.7.*
