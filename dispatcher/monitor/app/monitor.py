@@ -121,5 +121,5 @@ class Monitor:
         task = self.state.tasks.get(event['uuid'])
 
         event_description = str(event)[:100]
-        print(f'Other event: {event_description}')
-        print(f'Other event info: {task.info}')
+        self.logger.info(f'Other event: {event_description}')
+        self.logger.info(f'Other event info: {task.info}')
