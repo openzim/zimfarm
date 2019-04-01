@@ -117,9 +117,7 @@ class Monitor:
         workers.update_one(filter, update, upsert=True)
 
     def handle_others(self, event):
-        self.state.event(event)
-        task = self.state.tasks.get(event['uuid'])
-
         event_description = str(event)[:100]
         self.logger.info(f'Other event: {event_description}')
-        self.logger.info(f'Other event info: {task.info}')
+
+        self.logger.info(f'Other event, keys: {list(event.keys())}')

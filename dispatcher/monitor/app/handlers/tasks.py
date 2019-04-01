@@ -59,6 +59,9 @@ class TaskSentEventHandler(BaseTaskEventHandler):
 
 class TaskReceivedEventHandler(BaseTaskEventHandler):
     def __call__(self, event):
+        task_id = event.get('uuid')
+        logger.info(f'Task Received_raw: {task_id}')
+
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
