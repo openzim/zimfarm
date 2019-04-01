@@ -9,7 +9,7 @@ from celery.events.state import Task
 
 from entities import TaskEvent
 from handlers import BaseHandler
-from common.mongo import Tasks, Schedules
+from mongo import Tasks, Schedules
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class TaskSentEventHandler(BaseTaskEventHandler):
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
-        logger.info('Task Sent: {id}'.format(id=task_id))
+        logger.info(f'Task Sent: {task_id}')
 
         self.save_event(task_id, TaskEvent.sent, self.get_timestamp(task))
 
@@ -62,7 +62,7 @@ class TaskReceivedEventHandler(BaseTaskEventHandler):
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
-        logger.info('Task Received: {id}'.format(id=task_id))
+        logger.info(f'Task Received: {task_id}')
 
         self.save_event(task_id, TaskEvent.received, self.get_timestamp(task))
 
@@ -72,7 +72,7 @@ class TaskStartedEventHandler(BaseTaskEventHandler):
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
-        logger.info('Task Started: {id}, hostname={hostname}'.format(id=task_id, hostname=task.worker.hostname))
+        logger.info(f'Task Started: {task_id}, hostname={task.worker.hostname}')
 
         self.save_event(task_id, TaskEvent.started, self.get_timestamp(task), hostname=task.worker.hostname)
 
@@ -83,9 +83,10 @@ class TaskSucceededEventHandler(BaseTaskEventHandler):
         task_id = self.get_task_id(task)
         files = ast.literal_eval(task.result)
 
-        logger.info('Task Succeeded: {}, {}, {}'.format(task_id, task.timestamp, task.runtime))
+        logger.info(f'Task Succeeded: {task_id}, {task.timestamp}, {task.runtime}')
 
-        self.save_event(task_id, TaskEvent.succeeded, self.get_timestamp(task), hostname=task.worker.hostname)
+        self.save_event(task_id, TaskEvent.succeeded, self.get_timestamp(task),
+                        hostname=task.worker.hostname, files=files)
         Tasks().update_one({'_id': task_id}, {'$set': {'files': files}})
 
 
@@ -94,7 +95,7 @@ class TaskFailedEventHandler(BaseTaskEventHandler):
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
-        logger.info('Task Failed: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
+        logger.info(f'Task Failed: {task_id}, {task.timestamp}')
 
         self.save_event(task_id, TaskEvent.failed, self.get_timestamp(task), hostname=task.worker.hostname,
                         exception=task.exception, traceback=task.traceback)
@@ -105,7 +106,7 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
-        logger.info('Task Retried: {}, {}, {}'.format(task_id, task.timestamp, task.exception))
+        logger.info(f'Task Retried: {task_id}, {task.timestamp}')
 
         self.save_event(task_id, TaskEvent.retried, self.get_timestamp(task), hostname=task.worker.hostname,
                         exception=task.exception, traceback=task.traceback)
