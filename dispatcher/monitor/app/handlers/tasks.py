@@ -57,26 +57,16 @@ class BaseTaskEventHandler(BaseHandler):
         # update task status and timestamp
         code = last_event['code']
         timestamp = last_event['timestamp']
-        Tasks().update_one({'_id': task_id}, {
-            '$set': {'status': code, f'timestamp.{code}': timestamp}
-        })
+        hostname = kwargs.get('hostname')
+        task_updates = {'status': code, f'timestamp.{code}': timestamp}
+        if hostname:
+            task_updates['hostname'] = hostname
+        Tasks().update_one({'_id': task_id}, {'$set': task_updates})
 
         # update schedule most recent task
         schedule_id = task['schedule']['_id']
-        Schedules().update_one({'_id': schedule_id}, {
-            '$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}
-        })
-
-        # task_updates = {
-        #     '$set': {'status': code, 'timestamp.{}'.format(code): timestamp},
-        #     '$push': {'events': event}}
-        # Tasks().update_one({'_id': task_id}, task_updates)
-        #
-        # # update most recent task in schedule
-        # task = Tasks().find_one({'_id': task_id}, {'schedule._id': 1})
-        # schedule_id = task['schedule']['_id']
-        # schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}}
-        # Schedules().update_one({'_id': schedule_id}, schedule_update)
+        schedule_updates = {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}
+        Schedules().update_one({'_id': schedule_id}, {'$set': schedule_updates})
 
 
 class TaskSentEventHandler(BaseTaskEventHandler):
@@ -91,9 +81,6 @@ class TaskSentEventHandler(BaseTaskEventHandler):
 
 class TaskReceivedEventHandler(BaseTaskEventHandler):
     def __call__(self, event):
-        task_id = event.get('uuid')
-        logger.info(f'Task Received_raw: {task_id}')
-
         task = super().__call__(event)
         task_id = self.get_task_id(task)
 
