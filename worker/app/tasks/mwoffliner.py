@@ -60,7 +60,9 @@ class MWOffliner(Base):
         except docker.errors.APIError as e:
             raise self.retry(exc=e)
         except docker.errors.ContainerError as e:
-            self.send_event('error', exit_code=e.exit_status, command=e.command, stderr=e.stderr.decode("utf-8"))
+            self.send_event('task-container_error', exit_code=e.exit_status,
+                            command=e.command, stderr=e.stderr.decode("utf-8"))
+            raise Exception from e
 
     @staticmethod
     def get_files(working_dir: Path):
