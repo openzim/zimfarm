@@ -35,16 +35,48 @@ class BaseTaskEventHandler(BaseHandler):
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
         event = {'code': code, 'timestamp': timestamp}
         event.update(kwargs)
-        task_updates = {
-            '$set': {'status': code, 'timestamp.{}'.format(code): timestamp},
-            '$push': {'events': event}}
-        Tasks().update_one({'_id': task_id}, task_updates)
 
-        # update most recent task in schedule
-        task = Tasks().find_one({'_id': task_id}, {'schedule._id': 1})
+        # insert event
+        update = {'$push': {'events': {'$each': [event], '$sort': {'timestamp': 1}}}}
+        Tasks().update_one({'_id': task_id}, update)
+
+        # get last event
+        cursor = Tasks().aggregate([
+            {'$match': {'_id': task_id}},
+            {'$project': {
+                'schedule._id': 1,
+                'last_event': {'$arrayElemAt': ['$events', -1]}
+            }}
+        ])
+        tasks = [task for task in cursor]
+        task = tasks[0] if tasks else None
+        if not task:
+            return
+        last_event = task['last_event']
+
+        # update task status and timestamp
+        code = last_event['code']
+        timestamp = last_event['timestamp']
+        Tasks().update_one({'_id': task_id}, {
+            '$set': {'status': code, f'timestamp.{code}': timestamp}
+        })
+
+        # update schedule most recent task
         schedule_id = task['schedule']['_id']
-        schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}}
-        Schedules().update_one({'_id': schedule_id}, schedule_update)
+        Schedules().update_one({'_id': schedule_id}, {
+            '$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}
+        })
+
+        # task_updates = {
+        #     '$set': {'status': code, 'timestamp.{}'.format(code): timestamp},
+        #     '$push': {'events': event}}
+        # Tasks().update_one({'_id': task_id}, task_updates)
+        #
+        # # update most recent task in schedule
+        # task = Tasks().find_one({'_id': task_id}, {'schedule._id': 1})
+        # schedule_id = task['schedule']['_id']
+        # schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}}
+        # Schedules().update_one({'_id': schedule_id}, schedule_update)
 
 
 class TaskSentEventHandler(BaseTaskEventHandler):
