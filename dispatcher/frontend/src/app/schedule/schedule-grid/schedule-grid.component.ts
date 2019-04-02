@@ -34,8 +34,8 @@ export class ScheduleGridComponent implements OnInit {
             {headerName: 'Category', field: 'category', filter: 'categoryFilter', columnGroupShow: 'open', width: 120, }
         ]},
         {headerName: "Task this month", marryChildren: true, openByDefault: true, children: [
-            {headerName: 'Status', field: 'most_recent_task.status', width: 120},
-            {headerName: 'Timestamp', field: 'most_recent_task.updated_at', width: 120, cellRenderer: (params) => {
+            {headerName: 'Status', field: 'task_this_month.status', width: 120},
+            {headerName: 'Timestamp', field: 'task_this_month.updated_at', width: 120, cellRenderer: (params) => {
                 if (params.value) {
                     return formatDate(params.value, 'MMM-dd HH:mm', 'en-US', '+0000');
                 }
