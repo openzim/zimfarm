@@ -117,7 +117,7 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
 
 class TaskContainerErrorEventHandler(BaseTaskEventHandler):
     def __call__(self, event):
-        task_id = event.get('uuid')
+        task_id = ObjectId(event.get('uuid'))
 
         exit_code = event.get('exit_code')
         command = event.get('command')
