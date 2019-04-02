@@ -6,7 +6,6 @@ import docker
 import docker.errors
 
 from operations import RunRedis, RunMWOffliner, Upload
-from operations.base import OfflinerError, UploadError
 from utils import Settings
 from .base import Base
 
@@ -49,8 +48,7 @@ class MWOffliner(Base):
                 redis_container_name=Settings.redis_name)
             self.logger.info('Running MWOffliner, mwUrl: {mwUrl}'.format(mwUrl=flags['mwUrl']))
             self.logger.debug('Running MWOffliner, command: {command}'.format(command=run_mwoffliner.command))
-            offliner_stdout = run_mwoffliner.execute()
-            self.send_event('offliner_finished', stdout=offliner_stdout)
+            run_mwoffliner.execute()
             files, files_description = self.get_files(working_dir_container)
 
             # upload files
@@ -59,9 +57,10 @@ class MWOffliner(Base):
             upload.execute()
 
             return files
-        except OfflinerError as e:
-            self.send_event('offliner_failed', **e.to_dict())
-            raise e
+        except docker.errors.APIError as e:
+            raise self.retry(exc=e)
+        except docker.errors.ContainerError as e:
+            self.send_event('error', exit_code=e.exit_status, command=e.command, stderr=e.stderr.decode("utf-8"))
 
     @staticmethod
     def get_files(working_dir: Path):
