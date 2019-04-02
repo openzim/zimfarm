@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from docker import DockerClient, errors
+from docker import DockerClient
 
-from .base import Operation, OfflinerError
+from .base import Operation
 
 
 class RunMWOffliner(Operation):
@@ -19,28 +19,17 @@ class RunMWOffliner(Operation):
         self.redis_container_name = redis_container_name
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
-    def execute(self) -> str:
-        """Pull and run mwoffliner
+    def execute(self):
+        """Pull and run mwoffliner"""
 
-        :raise: OfflinerError
-        :return: std_out of mwoffliner container
-        """
+        # pull mwoffliner image
+        self.docker.images.pull(self.image_name)
 
-        try:
-            # pull mwoffliner image
-            self.docker.images.pull(self.image_name)
-
-            # run mwoffliner
-            volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
-            stdout = self.docker.containers.run(
-                image=self.image_name, command=self.command, remove=True, volumes=volumes,
-                links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
-
-            return stdout.decode("utf-8")
-        except errors.APIError as e:
-            raise OfflinerError(code='docker.APIError', message=str(e))
-        except errors.ContainerError as e:
-            raise OfflinerError(code='docker.ContainerError', stderr=e.stderr.decode("utf-8"))
+        # run mwoffliner
+        volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
+        self.docker.containers.run(
+            image=self.image_name, command=self.command, remove=True, volumes=volumes,
+            links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
 
     @staticmethod
     def _get_command(flags: {}):
