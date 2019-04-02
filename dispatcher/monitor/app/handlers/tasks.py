@@ -122,5 +122,9 @@ class TaskContainerErrorEventHandler(BaseTaskEventHandler):
         exit_code = event.get('exit_code')
         command = event.get('command')
         stderr = event.get('stderr')
+        timestamp = datetime.fromtimestamp(event['timestamp'], tz=pytz.utc)
 
         logger.info(f'Task Container Error: {task_id}, {exit_code}, {command}')
+
+        self.save_event(task_id, TaskEvent.container_error, timestamp, exit_code=exit_code,
+                        command=command, stderr=stderr)

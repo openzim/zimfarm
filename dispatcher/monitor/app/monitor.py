@@ -29,7 +29,7 @@ class Monitor:
                 'task-succeeded': task_handlers.TaskSucceededEventHandler(),
                 'task-failed': task_handlers.TaskFailedEventHandler(),
                 'task-retried': task_handlers.TaskRetriedEventHandler(),
-                'error': task_handlers.TaskContainerErrorEventHandler(),
+                'task-container_error': task_handlers.TaskContainerErrorEventHandler(),
                 '*': self.handle_others}
             receiver = self.celery.events.Receiver(connection, handlers=handlers)
             receiver.capture(limit=None, timeout=None, wakeup=True)
