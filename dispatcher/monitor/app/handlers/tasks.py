@@ -113,3 +113,14 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
 
         self.save_event(task_id, TaskEvent.retried, self.get_timestamp(task), hostname=task.worker.hostname,
                         exception=task.exception, traceback=task.traceback)
+
+
+class TaskContainerErrorEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task_id = event.get('uuid')
+
+        exit_code = event.get('exit_code')
+        command = event.get('command')
+        stderr = event.get('stderr')
+
+        logger.info(f'Task Container Error: {task_id}, {exit_code}, {command}')
