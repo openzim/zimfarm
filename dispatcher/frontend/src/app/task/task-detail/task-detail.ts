@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from "@angular/router";
-
-import { TasksService, Task, ListResponseData } from '../../services/task.service';
-import { switchMap } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+
+import { Task, TasksService } from '../../services/task.service';
 
 @Component({
     templateUrl: './task-detail.html',
@@ -16,12 +16,6 @@ export class TaskDetailComponent implements OnInit {
     task$: Observable<Task>;
 
     ngOnInit() {
-        // this.route.paramMap.subscribe(params => {
-        //     console.log(params);
-        //     this.task_id = params.get('id');
-        //     // this.animal = params.get("animal")
-        // })
-
         this.task$ = this.route.paramMap.pipe(
             switchMap(params => {
                 this.task_id = params.get('id');

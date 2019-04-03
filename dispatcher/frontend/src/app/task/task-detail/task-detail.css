@@ -1,11 +1,7 @@
 .task-detail-container {
-    max-width: 50rem;
-    margin: 0 auto;
+    /* max-width: 50rem; */
+    /* margin: 0 auto; */
     padding: 1rem;
-}
-
-mat-expansion-panel div.preformatted {
-    overflow: auto;
 }
 
 mat-panel-title {
@@ -18,4 +14,23 @@ mat-panel-description {
 
 mat-card {
     margin-bottom: 1rem;
+}
+
+div.preformatted {
+    overflow: auto;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+}
+
+div.preformatted pre {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+}
+
+pre.word-wrap {
+    white-space: pre-wrap;       /* css-3 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }

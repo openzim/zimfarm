@@ -15,8 +15,23 @@
             </mat-expansion-panel-header>
             <label *ngIf="event.hostname">{{event.hostname}}</label>
 
-            <div class="preformatted" *ngIf="event.traceback">
-                <pre>{{event.traceback}}</pre>
+            <div *ngIf="event.command">
+                <label>Command</label>
+                <div class="preformatted">
+                    <pre class="word-wrap">{{event.command}}</pre>
+                </div>
+            </div>
+            <div *ngIf="event.stderr">
+                <label>Stderr</label>
+                <button>Copy to Clipboard</button>
+                <div class="preformatted">
+                    <pre>{{event.stderr}}</pre>
+                </div>
+            </div>
+            <div *ngIf="event.traceback">
+                <div class="preformatted">
+                    <pre>{{event.traceback}}</pre>
+                </div>
             </div>
         </mat-expansion-panel>
     </mat-accordion>
