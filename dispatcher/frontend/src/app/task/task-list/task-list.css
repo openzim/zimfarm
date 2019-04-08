@@ -5,13 +5,19 @@ mat-drawer-container {
     display: flex;
 }
 
-@media (max-width: 560px) {
+/* @media (max-width: 560px) {
     .container {
         height: auto;
         flex-direction: column-reverse;
     }
-}
+} */
 
 mat-drawer {
     width: 300px;
+}
+
+mat-drawer-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
