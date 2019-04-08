@@ -39,12 +39,9 @@ class TasksRoute(BaseRoute):
         limit = 100 if limit <= 0 else limit
 
         # get tasks from database
-        projection = {
-            '_id': 1,
-            'status': 1,
-            'schedule': 1,
-        }
-        cursor = Tasks().find({}, projection).sort('_id', pymongo.DESCENDING).skip(skip).limit(limit)
+        filter = {'status': {'$nin': ['sent', 'received']}}
+        projection = {'_id': 1, 'status': 1, 'schedule': 1}
+        cursor = Tasks().find(filter, projection).sort('_id', pymongo.DESCENDING).skip(skip).limit(limit)
         tasks = [task for task in cursor]
 
         return jsonify({
