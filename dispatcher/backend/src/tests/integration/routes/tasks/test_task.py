@@ -1,6 +1,9 @@
 import json
-import pytest
 from unittest.mock import patch
+
+import pytest
+
+from common.entities import TaskStatus
 
 
 class TestTaskCreate:
@@ -39,6 +42,8 @@ class TestTaskList:
         assert response.status_code == 401
 
     def test_list(self, client, access_token, tasks):
+        tasks = [task for task in tasks if task['status'] not in [TaskStatus.sent, TaskStatus.received]]
+
         url = '/api/tasks/'
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
         response = client.get(url, headers=headers)
@@ -52,7 +57,7 @@ class TestTaskList:
         tasks.sort(key=lambda task: task['_id'], reverse=True)
         assert len(items) == len(tasks)
         for index, task in enumerate(tasks):
-            assert len(items[index]) == 3
+            assert set(items[index].keys()) == {'_id', 'status', 'schedule'}
             assert items[index]['_id'] == str(task['_id'])
             assert items[index]['status'] == task['status']
             assert items[index]['schedule']['_id'] == str(task['schedule']['_id'])
