@@ -35,16 +35,38 @@ class BaseTaskEventHandler(BaseHandler):
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
         event = {'code': code, 'timestamp': timestamp}
         event.update(kwargs)
-        task_updates = {
-            '$set': {'status': code, 'timestamp.{}'.format(code): timestamp},
-            '$push': {'events': event}}
-        Tasks().update_one({'_id': task_id}, task_updates)
 
-        # update most recent task in schedule
-        task = Tasks().find_one({'_id': task_id}, {'schedule._id': 1})
+        # insert event
+        update = {'$push': {'events': {'$each': [event], '$sort': {'timestamp': 1}}}}
+        Tasks().update_one({'_id': task_id}, update)
+
+        # get last event
+        cursor = Tasks().aggregate([
+            {'$match': {'_id': task_id}},
+            {'$project': {
+                'schedule._id': 1,
+                'last_event': {'$arrayElemAt': ['$events', -1]}
+            }}
+        ])
+        tasks = [task for task in cursor]
+        task = tasks[0] if tasks else None
+        if not task:
+            return
+        last_event = task['last_event']
+
+        # update task status and timestamp
+        code = last_event['code']
+        timestamp = last_event['timestamp']
+        hostname = kwargs.get('hostname')
+        task_updates = {'status': code, f'timestamp.{code}': timestamp}
+        if hostname:
+            task_updates['hostname'] = hostname
+        Tasks().update_one({'_id': task_id}, {'$set': task_updates})
+
+        # update schedule most recent task
         schedule_id = task['schedule']['_id']
-        schedule_update = {'$set': {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}}
-        Schedules().update_one({'_id': schedule_id}, schedule_update)
+        schedule_updates = {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}
+        Schedules().update_one({'_id': schedule_id}, {'$set': schedule_updates})
 
 
 class TaskSentEventHandler(BaseTaskEventHandler):
@@ -110,3 +132,18 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
 
         self.save_event(task_id, TaskEvent.retried, self.get_timestamp(task), hostname=task.worker.hostname,
                         exception=task.exception, traceback=task.traceback)
+
+
+class TaskContainerErrorEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task_id = ObjectId(event.get('uuid'))
+
+        exit_code = event.get('exit_code')
+        command = event.get('command')
+        stderr = event.get('stderr')
+        timestamp = datetime.fromtimestamp(event['timestamp'], tz=pytz.utc)
+
+        logger.info(f'Task Container Error: {task_id}, {exit_code}, {command}')
+
+        self.save_event(task_id, TaskEvent.container_error, timestamp, exit_code=exit_code,
+                        command=command, stderr=stderr)

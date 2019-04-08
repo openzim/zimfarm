@@ -20,6 +20,7 @@ if __name__ == '__main__':
     broker_url = 'amqp://{username}:{password}@rabbit:5672/zimfarm'.format(
         username=system_username, password=system_password)
     celery = Celery(broker=broker_url)
+    celery.conf.broker_heartbeat = 0
 
     # start monitor
     retries = 3

@@ -29,6 +29,7 @@ class Monitor:
                 'task-succeeded': task_handlers.TaskSucceededEventHandler(),
                 'task-failed': task_handlers.TaskFailedEventHandler(),
                 'task-retried': task_handlers.TaskRetriedEventHandler(),
+                'task-container_error': task_handlers.TaskContainerErrorEventHandler(),
                 '*': self.handle_others}
             receiver = self.celery.events.Receiver(connection, handlers=handlers)
             receiver.capture(limit=None, timeout=None, wakeup=True)
@@ -117,9 +118,7 @@ class Monitor:
         workers.update_one(filter, update, upsert=True)
 
     def handle_others(self, event):
-        self.state.event(event)
-        task = self.state.tasks.get(event['uuid'])
-
         event_description = str(event)[:100]
         self.logger.info(f'Other event: {event_description}')
-        self.logger.info(f'Other event info: {task.info}')
+
+        self.logger.info(f'Other event, keys: {list(event.keys())}')
