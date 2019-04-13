@@ -72,7 +72,7 @@ class SchedulesBackupRoute(BaseRoute):
     def get(self, *args, **kwargs):
         """Return all schedules backup"""
 
-        projection = {'beat': -1, 'most_recent_task': -1}
+        projection = {'beat': 0, 'most_recent_task': 0}
         cursor = Schedules().find({}, projection)
         schedules = [schedule for schedule in cursor]
         return jsonify(schedules)
