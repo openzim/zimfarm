@@ -66,7 +66,7 @@ class SchedulesRoute(BaseRoute):
 
 class SchedulesBackupRoute(BaseRoute):
     rule = '/backup/'
-    name = 'schedules'
+    name = 'schedules_backup'
     methods = ['GET']
 
     def get(self, *args, **kwargs):
