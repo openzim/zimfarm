@@ -64,6 +64,20 @@ class SchedulesRoute(BaseRoute):
         })
 
 
+class SchedulesBackupRoute(BaseRoute):
+    rule = '/backup/'
+    name = 'schedules_backup'
+    methods = ['GET']
+
+    def get(self, *args, **kwargs):
+        """Return all schedules backup"""
+
+        projection = {'beat': -1, 'most_recent_task': -1}
+        cursor = Schedules().find({}, projection)
+        schedules = [schedule for schedule in cursor]
+        return jsonify(schedules)
+
+
 class ScheduleRoute(BaseRoute, URLComponent):
     rule = '/<string:schedule>'
     name = 'schedule'
