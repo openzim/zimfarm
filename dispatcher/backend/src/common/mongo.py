@@ -97,7 +97,7 @@ class Tasks(BaseCollection):
         self.create_index('timestamp.succeeded', name='timestamp.succeeded')
         self.create_index('timestamp.failed', name='timestamp.failed')
 
-        self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
+        # self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
 
 
 class Schedules(BaseCollection):
