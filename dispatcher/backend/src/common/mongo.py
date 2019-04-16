@@ -3,6 +3,7 @@ import os
 from pymongo import MongoClient
 from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
+from common.entities import TaskStatus
 
 
 class Client(MongoClient):
@@ -25,33 +26,6 @@ class Users(BaseCollection):
         self.create_index('ssh_keys.fingerprint', name='ssh_keys.fingerprint',
                           partialFilterExpression={'ssh_keys': {'$exists': True}})
 
-        # schema = {
-        #     "bsonType": "object",
-        #     "required": ["username", "password_hash"],
-        #     "properties": {
-        #         "username": {"bsonType": "string"},
-        #         "password_hash": {"bsonType": "string"},
-        #         "email": {"bsonType": "string"},
-        #         "ssh_keys": {
-        #             "bsonType": "array",
-        #             "items": {
-        #                 "bsonType": "object",
-        #                 "required": ["name", "fingerprint", "key", "type", "added", "last_used"],
-        #                 "properties": {
-        #                     "name": {"bsonType": "string"},
-        #                     "fingerprint": {"bsonType": "string"},
-        #                     "key": {"bsonType": "string"},
-        #                     "type": {"enum": ["RSA"]},
-        #                     "added": {"bsonType": "date"},
-        #                     "last_used": {"bsonType": "date"},
-        #                 },
-        #                 "additionalProperties": False
-        #             }
-        #         }
-        #     }
-        # }
-        # self.database.command({'collMod': 'users', 'validator': {'$jsonSchema': schema}})
-
 
 class RefreshTokens(BaseCollection):
     def __init__(self):
@@ -59,8 +33,59 @@ class RefreshTokens(BaseCollection):
 
 
 class Tasks(BaseCollection):
-    def __init__(self):
-        super().__init__(Database(), 'tasks')
+    _name = 'tasks'
+    schema = {
+        'bsonType': 'object',
+        'required': ['status', 'command', 'schedule', 'worker', 'timestamp'],
+        'properties': {
+            'status': {'enum': TaskStatus.all()},
+            'command': {'bsonType': ['string', 'null']},
+            'schedule': {'oneOf': [
+                {'bsonType': 'null'},
+                {
+                    'bsonType': 'object',
+                    'required': ['_id', 'name'],
+                    'properties': {
+                        '_id': {'bsonType': 'objectId'},
+                        'name': {'bsonType': 'string'},
+                    }
+                }
+            ]},
+            'worker': {'oneOf': [
+                {'bsonType': 'null'},
+                {
+                    'bsonType': 'object',
+                    # 'required': ['_id', 'name'],
+                    'properties': {
+                        '_id': {'bsonType': 'objectId'},
+                        'name': {'bsonType': 'string'},
+                    }
+                }
+            ]},
+            'timestamp': {'bsonType': 'object'},
+            'events': {
+                'bsonType': 'array',
+                'items': {'bsonType': 'object'}
+            },
+            'error': {'oneOf': [
+                {'bsonType': 'null'},
+                {
+                    'bsonType': 'object',
+                    'properties': {
+                        'exception': {'bsonType': 'string'},
+                        'exit_code': {'bsonType': 'int'},
+                        'traceback': {'bsonType': 'string'},
+                        'stderr': {'bsonType': 'string'}
+                    }
+                }
+            ]},
+        }
+    }
+
+    def __init__(self, database=None):
+        if not database:
+            database = Database()
+        super().__init__(database, self._name)
 
     def initialize(self):
         self.create_index('status', name='status')
@@ -72,6 +97,7 @@ class Tasks(BaseCollection):
         self.create_index('timestamp.succeeded', name='timestamp.succeeded')
         self.create_index('timestamp.failed', name='timestamp.failed')
 
+        self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
 
 
 class Schedules(BaseCollection):

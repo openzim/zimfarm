@@ -4,6 +4,7 @@ import pytest
 from bson import ObjectId
 
 from common.entities import TaskStatus
+from common.mongo import Tasks
 
 
 @pytest.fixture()
@@ -25,6 +26,7 @@ def make_event():
 @pytest.fixture()
 def make_task(database, make_schedule, make_event):
     task_ids = []
+    tasks = Tasks(database=database)
 
     def _make_task(schedule, status=TaskStatus.sent, hostname='username@zimfarm_worker.com'):
         if status == TaskStatus.sent:
@@ -63,13 +65,13 @@ def make_task(database, make_schedule, make_event):
             task['error'] = None
             task['files'] = [{'name': 'mwoffliner_1.zim', 'size': 1000}]
 
-        database.tasks.insert_one(task)
+        tasks.insert_one(task)
         task_ids.append(task['_id'])
         return task
 
     yield _make_task
 
-    database.tasks.delete_many({'_id': {'$in': task_ids}})
+    tasks.delete_many({'_id': {'$in': task_ids}})
 
 
 @pytest.fixture()
