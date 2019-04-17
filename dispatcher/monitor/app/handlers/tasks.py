@@ -33,10 +33,8 @@ class BaseTaskEventHandler(BaseHandler):
 
     @staticmethod
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
-        event = {'code': code, 'timestamp': timestamp}
-        event.update(kwargs)
-
         # insert event
+        event = {'code': code, 'timestamp': timestamp}
         update = {'$push': {'events': {'$each': [event], '$sort': {'timestamp': 1}}}}
         Tasks().update_one({'_id': task_id}, update)
 
@@ -54,13 +52,24 @@ class BaseTaskEventHandler(BaseHandler):
             return
         last_event = task['last_event']
 
-        # update task status and timestamp
+        # update task status, timestamp and other fields
         code = last_event['code']
         timestamp = last_event['timestamp']
-        hostname = kwargs.get('hostname')
         task_updates = {'status': code, f'timestamp.{code}': timestamp}
-        if hostname:
-            task_updates['hostname'] = hostname
+        if 'hostname' in kwargs:
+            task_updates['hostname'] = kwargs['hostname']
+        if 'command' in kwargs:
+            task_updates['command'] = kwargs['command']
+        if 'files' in kwargs:
+            task_updates['files'] = kwargs['files']
+        if 'exception' in kwargs:
+            task_updates['error.exception'] = kwargs['exception']
+        if 'traceback' in kwargs:
+            task_updates['error.traceback'] = kwargs['traceback']
+        if 'exit_code' in kwargs:
+            task_updates['error.exit_code'] = kwargs['exit_code']
+        if 'stderr' in kwargs:
+            task_updates['error.stderr'] = kwargs['stderr']
         Tasks().update_one({'_id': task_id}, {'$set': task_updates})
 
         # update schedule most recent task
@@ -109,7 +118,6 @@ class TaskSucceededEventHandler(BaseTaskEventHandler):
 
         self.save_event(task_id, TaskEvent.succeeded, self.get_timestamp(task),
                         hostname=task.worker.hostname, files=files)
-        Tasks().update_one({'_id': task_id}, {'$set': {'files': files}})
 
 
 class TaskFailedEventHandler(BaseTaskEventHandler):
