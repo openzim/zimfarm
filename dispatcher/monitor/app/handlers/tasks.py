@@ -62,14 +62,20 @@ class BaseTaskEventHandler(BaseHandler):
             task_updates['command'] = kwargs['command']
         if 'files' in kwargs:
             task_updates['files'] = kwargs['files']
-        if 'exception' in kwargs:
-            task_updates['error.exception'] = kwargs['exception']
-        if 'traceback' in kwargs:
-            task_updates['error.traceback'] = kwargs['traceback']
         if 'exit_code' in kwargs:
             task_updates['error.exit_code'] = kwargs['exit_code']
         if 'stderr' in kwargs:
             task_updates['error.stderr'] = kwargs['stderr']
+        if 'task_name' in kwargs:
+            task_updates['debug.task_name'] = kwargs['task_name']
+        if 'task_args' in kwargs:
+            task_updates['debug.task_args'] = kwargs['task_args']
+        if 'task_kwargs' in kwargs:
+            task_updates['debug.task_kwargs'] = kwargs['task_kwargs']
+        if 'exception' in kwargs:
+            task_updates['debug.exception'] = kwargs['exception']
+        if 'traceback' in kwargs:
+            task_updates['debug.traceback'] = kwargs['traceback']
         Tasks().update_one({'_id': task_id}, {'$set': task_updates})
 
         # update schedule most recent task
@@ -85,7 +91,8 @@ class TaskSentEventHandler(BaseTaskEventHandler):
 
         logger.info(f'Task Sent: {task_id}')
 
-        self.save_event(task_id, TaskEvent.sent, self.get_timestamp(task))
+        kwargs = {'task_name': task.name, 'task_args': task.args, 'task_kwargs': task.kwargs}
+        self.save_event(task_id, TaskEvent.sent, self.get_timestamp(task), **kwargs)
 
 
 class TaskReceivedEventHandler(BaseTaskEventHandler):
