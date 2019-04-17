@@ -91,7 +91,9 @@ class TaskSentEventHandler(BaseTaskEventHandler):
 
         logger.info(f'Task Sent: {task_id}')
 
-        kwargs = {'task_name': task.name, 'task_args': task.args, 'task_kwargs': task.kwargs}
+        kwargs = {'task_name': task.name,
+                  'task_args': ast.literal_eval(task.args),
+                  'task_kwargs': ast.literal_eval(task.kwargs)}
         self.save_event(task_id, TaskEvent.sent, self.get_timestamp(task), **kwargs)
 
 

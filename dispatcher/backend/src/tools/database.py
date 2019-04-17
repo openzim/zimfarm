@@ -24,7 +24,7 @@ def get_schedules_to_run(schedules_excluded: set):
     schedules = client['Zimfarm']['schedules']
     schedules = schedules.find({}, {'name': 1, 'language': 1})
     schedules = [schedule for schedule in schedules if schedule['_id'] not in schedules_excluded]
-    schedules = [schedule for schedule in schedules if 'b' <= schedule['language']['code'][0] <= 'e']
+    schedules = [schedule for schedule in schedules if 'a' <= schedule['language']['code'][0] <= 'e']
     schedule_names = [schedule['name'] for schedule in schedules]
 
     print(len(schedule_names))
