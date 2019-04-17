@@ -1,10 +1,10 @@
 import pytest
-
 from bson import ObjectId
-
-from main import flask
 from pymongo import MongoClient
 from pymongo.database import Database
+
+from common import mongo
+from main import flask
 from utils.token import AccessControl
 
 
@@ -23,4 +23,7 @@ def access_token():
 
 @pytest.fixture(scope='session')
 def database() -> Database:
-    yield MongoClient('localhost', 27017)['Zimfarm']
+    client = MongoClient('localhost', 27017)
+    database = client['Zimfarm']
+    mongo.Tasks(database=database).initialize()
+    yield database
