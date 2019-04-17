@@ -9,7 +9,7 @@ from common.entities import TaskStatus
 class TestTaskCreate:
     @pytest.fixture(scope='session')
     def send_task(self):
-        with patch('models.ScheduleService.send_task') as mocked_send_task:
+        with patch('utils.celery.Celery.send_task_from_schedule') as mocked_send_task:
             yield mocked_send_task
 
     @pytest.fixture()
