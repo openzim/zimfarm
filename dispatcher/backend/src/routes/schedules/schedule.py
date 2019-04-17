@@ -1,13 +1,14 @@
+from datetime import datetime
+
 import trafaret
 from flask import request, jsonify, Response
 
-from datetime import datetime
-from errors.http import InvalidRequestJSON, ScheduleNotFound
-from models.schedule import ScheduleCategory
+from common.entities import ScheduleCategory
 from common.mongo import Schedules
+from errors.http import InvalidRequestJSON, ScheduleNotFound
+from .base import URLComponent
 from .. import authenticate
 from ..base import BaseRoute
-from .base import URLComponent
 
 
 class SchedulesRoute(BaseRoute):
@@ -107,7 +108,7 @@ class ScheduleRoute(BaseRoute, URLComponent):
         try:
             name = trafaret.String(allow_blank=False)
             language = trafaret.String(allow_blank=False)
-            category = trafaret.Enum(*ScheduleCategory.all_values())
+            category = trafaret.Enum(*ScheduleCategory.all())
             validator = trafaret.Dict(
                 trafaret.Key('name', optional=True, trafaret=name),
                 trafaret.Key('language', optional=True, trafaret=language),
