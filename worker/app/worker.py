@@ -50,6 +50,7 @@ class Worker:
         app.conf.task_reject_on_worker_lost = True
         app.conf.worker_concurrency = Settings.concurrency
         app.conf.worker_prefetch_multiplier = 1
+        app.conf.broker_heartbeat = 0
 
         # start celery
         app.worker_main([
