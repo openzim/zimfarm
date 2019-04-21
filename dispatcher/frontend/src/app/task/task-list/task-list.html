@@ -1,17 +1,11 @@
-<mat-drawer-container class="example-container">
-    <mat-drawer mode="side" opened>
-        <mat-list>
-            <mat-list-item *ngFor="let task of tasks">
-                <div>
-                    <a routerLink="{{task._id}}">{{task._id}}</a>
-                    <label></label><br>
-                    <label>{{task.schedule.name}} -- {{task.status}}</label>
-                </div>
-                <mat-divider></mat-divider>
-            </mat-list-item>
-        </mat-list>
-    </mat-drawer>
-    <mat-drawer-content>
+<mat-sidenav-container>
+    <mat-sidenav mode="side" opened [fixedInViewport]="true" [fixedTopGap]="54">
+        <cdk-virtual-scroll-viewport itemSize="50">
+            <task-list-item *cdkVirtualFor="let task of tasks" [task]="task">
+            </task-list-item>
+        </cdk-virtual-scroll-viewport>
+    </mat-sidenav>
+    <mat-sidenav-content>
         <router-outlet></router-outlet>
-    </mat-drawer-content>
-</mat-drawer-container>
+    </mat-sidenav-content>
+</mat-sidenav-container>

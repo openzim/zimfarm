@@ -1,4 +1,6 @@
 @import "~@angular/material/prebuilt-themes/indigo-pink.css";
+@import '~material-design-icons/iconfont/material-icons.css';
+@import '~@fortawesome/fontawesome-free/css/all.css';
 
 body {
     margin: 0px;
