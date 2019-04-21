@@ -1,24 +1,33 @@
-.task-detail-container {
-    /* max-width: 50rem; */
-    /* margin: 0 auto; */
-    padding: 1rem;
-}
-
-mat-panel-title {
-    flex: 1;
-}
-
-mat-panel-description {
-    flex: 2;
-}
-
 mat-card {
-    margin-bottom: 1rem;
+    margin: 1rem;
+    margin-bottom: 0.5rem;;
+}
+
+mat-tab-group {
+    padding-bottom: 1rem;
+}
+
+div.overview, div.error, div.debug {
+    display: flex;
+    max-width: 75rem;
+    margin: auto;
+}
+
+div.debug {
+    padding-bottom: 30rem;
+}
+
+div.overview mat-list {
+    margin: 1rem;
+}
+
+mat-list > mat-list-item.preformatted {
+    height: auto;
 }
 
 div.preformatted {
     overflow: auto;
-    background-color: #f8f8f8;
+    background-color: #f0f0f0;
     border-radius: 5px;
 }
 
@@ -27,10 +36,11 @@ div.preformatted pre {
     padding: 0.5rem 0.75rem;
 }
 
-pre.word-wrap {
+div.preformatted pre {
     white-space: pre-wrap;       /* css-3 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
     white-space: -pre-wrap;      /* Opera 4-6 */
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    font-size: 14px;
 }
