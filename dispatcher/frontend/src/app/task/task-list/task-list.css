@@ -1,8 +1,7 @@
-mat-drawer-container {
+mat-sidenav-container {
     width: 100%; 
-    height: calc(100vh - 54px); 
-    margin-top: 54px;
-    display: flex;
+    min-height: calc(100vh); 
+    display: flex; 
 }
 
 /* @media (max-width: 560px) {
@@ -12,12 +11,27 @@ mat-drawer-container {
     }
 } */
 
-mat-drawer {
+mat-sidenav {
     width: 300px;
 }
 
-mat-drawer-content {
+mat-list {
+    vertical-align:top;
+}
+
+mat-sidenav-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: 54px;
+}
+
+cdk-virtual-scroll-viewport {
+    height: 100%;
+}
+
+task-list-item {
+    height: 50px;
     display: flex;
     flex-direction: column;
 }

@@ -1,0 +1,46 @@
+div.item {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-self: stretch;
+    align-content: stretch;
+    justify-content: space-around;
+    padding: 0 1rem;
+}
+
+div.item > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.9rem;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+    
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.sent {
+    color: #FDD835;
+}
+
+.received {
+    color: #FB8C00;
+}
+
+.started {
+    color: #039BE5;
+}
+
+.succeeded {
+    color: #43A047;
+}
+
+.failed {
+    color: #E53935;
+}

@@ -1,38 +1,97 @@
-<div class='task-detail-container' *ngIf="task$ | async as task">
+<div *ngIf="task$ | async as task">
     <mat-card>
         <mat-card-title>{{task.status}}</mat-card-title>
         <mat-card-subtitle>{{task._id}}</mat-card-subtitle>
     </mat-card>
-    <mat-accordion>
-        <mat-expansion-panel *ngFor="let event of task.events" [expanded]="event.code == 'failed'">
-            <mat-expansion-panel-header>
-                <mat-panel-title>
-                    {{event.code}}
-                </mat-panel-title>
-                <mat-panel-description>
-                    {{event.timestamp | date:'MMM d, h:mm:ss a':'UTC'}}
-                </mat-panel-description>
-            </mat-expansion-panel-header>
-            <label *ngIf="event.hostname">{{event.hostname}}</label>
-
-            <div *ngIf="event.command">
-                <label>Command</label>
-                <div class="preformatted">
-                    <pre class="word-wrap">{{event.command}}</pre>
+    <mat-tab-group [animationDuration]="0" [disableRipple]="true">
+        <mat-tab label="Overview">
+            <div class="overview">
+                <div style="flex: 1;">
+                    <mat-list>
+                        <h3 mat-subheader>Schedule</h3>
+                        <mat-list-item>
+                            <mat-icon mat-list-icon>schedule</mat-icon>
+                            <p mat-line>{{task.schedule.name}}</p>
+                        </mat-list-item>
+                        <h3 mat-subheader *ngIf="task.files">Files</h3>
+                        <mat-list-item *ngFor="let file of task.files">
+                            <mat-icon mat-list-icon>description</mat-icon>
+                            <h4 mat-line>{{file.name}}</h4>
+                            <p mat-line>{{file.size}}</p>
+                        </mat-list-item>
+                        <h3 mat-subheader>Worker</h3>
+                        <mat-list-item>
+                            <mat-icon mat-list-icon>developer_board</mat-icon>
+                            <p mat-line>{{task.hostname}}</p>
+                        </mat-list-item>
+                    </mat-list>
+                </div>
+                <mat-divider [vertical]="true"></mat-divider>
+                <div style="flex: 1;">
+                    <mat-list>
+                        <h3 mat-subheader>Events</h3>
+                        <mat-list-item *ngFor="let event of task.events">
+                            <mat-icon mat-list-icon>note</mat-icon>
+                            <h4 mat-line>{{event.code}}</h4>
+                            <p mat-line>{{event.timestamp | date:'MMM d, h:mm:ss a':'UTC'}}</p>
+                        </mat-list-item>
+                    </mat-list>
                 </div>
             </div>
-            <div *ngIf="event.stderr">
-                <label>Stderr</label>
-                <button>Copy to Clipboard</button>
-                <div class="preformatted">
-                    <pre>{{event.stderr}}</pre>
-                </div>
+        </mat-tab>
+        <mat-tab label="Error" *ngIf="task.error">
+            <div class="error">
+                <mat-list style="flex: 1;">
+                    <h3 mat-subheader>Exit Code</h3>
+                    <mat-list-item class="preformatted">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.error.exit_code}}</pre>
+                        </div>
+                    </mat-list-item>
+                    <h3 mat-subheader>Standard Error</h3>
+                    <mat-list-item class="preformatted">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.error.stderr}}</pre>
+                        </div>
+                    </mat-list-item>
+                </mat-list>
             </div>
-            <div *ngIf="event.traceback">
-                <div class="preformatted">
-                    <pre>{{event.traceback}}</pre>
-                </div>
+        </mat-tab>
+        <mat-tab label="Debug">
+            <div class="debug">
+                <mat-list style="flex: 1;">
+                    <h3 mat-subheader>Task name</h3>
+                    <mat-list-item class="preformatted">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.debug.task_name}}</pre>
+                        </div>
+                    </mat-list-item>
+                    <h3 mat-subheader>Task args</h3>
+                    <mat-list-item class="preformatted">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.debug.task_args | json}}</pre>
+                        </div>
+                    </mat-list-item>
+                    <h3 mat-subheader>Task kwargs</h3>
+                    <mat-list-item class="preformatted">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.debug.task_kwargs | json}}</pre>
+                        </div>
+                    </mat-list-item>
+                    <h3 mat-subheader *ngIf="task.debug.exception">Exception</h3>
+                    <mat-list-item style="height: auto" *ngIf="task.debug.exception">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.debug.exception}}</pre>
+                        </div>
+                    </mat-list-item>
+                    <h3 mat-subheader *ngIf="task.debug.traceback">Traceback</h3>
+                    <mat-list-item style="height: auto" *ngIf="task.debug.traceback">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.debug.traceback}}</pre>
+                        </div>
+                    </mat-list-item>
+                </mat-list>
             </div>
-        </mat-expansion-panel>
-    </mat-accordion>
+        </mat-tab>
+    </mat-tab-group>
 </div>

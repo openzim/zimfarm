@@ -1,0 +1,16 @@
+<div class="item">
+    <div [ngClass]="task.status">
+        <label>
+            <i [ngClass]="{
+                sent: 'far fa-hourglass',
+                received: 'far fa-hourglass',
+                started: 'fas fa-hammer',
+                succeeded: 'fas fa-check',
+                failed: 'fas fa-times'
+            }[task.status]"></i>
+            {{task.schedule.name}}
+        </label>
+        <a routerLink="{{task._id}}">#{{task._id | slice:-5}}</a>
+    </div>
+</div>
+<mat-divider></mat-divider>

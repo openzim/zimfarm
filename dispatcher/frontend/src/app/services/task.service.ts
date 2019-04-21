@@ -41,7 +41,7 @@ export interface ListMeta {
 export interface Task {
     _id: string;
     status: string;
-    schedule: string;
+    schedule: Schedule;
 }
 
 export interface Schedule {

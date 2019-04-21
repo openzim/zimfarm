@@ -26,6 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
+@angular/cdk/scrolling
+
 @angular/common
 MIT
 
@@ -66,11 +68,13 @@ THE SOFTWARE.
 
 @angular/material/divider
 
-@angular/material/expansion
+@angular/material/icon
 
 @angular/material/list
 
 @angular/material/sidenav
+
+@angular/material/tabs
 
 @angular/platform-browser
 MIT
