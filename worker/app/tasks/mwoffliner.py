@@ -63,25 +63,3 @@ class MWOffliner(Base):
             self.send_event('task-container_error', exit_code=e.exit_status,
                             command=e.command, stderr=e.stderr.decode("utf-8"))
             raise Exception from e
-
-    @staticmethod
-    def get_files(working_dir: Path):
-        stats = []
-        description = []
-        for file in working_dir.iterdir():
-            if file.is_dir():
-                continue
-            stats.append({'name': file.name, 'size': file.stat().st_size})
-            description.append('{name} - {size}'.format(name=file.name, size=file.stat().st_size))
-
-        return stats, ', '.join(description)
-
-    def clean_up(self):
-        working_dir = Path(Settings.working_dir_container).joinpath(self.task_id)
-        shutil.rmtree(working_dir)
-
-    def on_success(self, retval, task_id, args, kwargs):
-        self.clean_up()
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        self.clean_up()
