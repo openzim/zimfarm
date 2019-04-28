@@ -1,8 +1,9 @@
 from pathlib import Path
 
 from docker import DockerClient
+from docker.models.containers import Container
 
-from .base import Operation
+from .base import Operation, ContainerResult
 
 
 class RunMWOffliner(Operation):
@@ -19,7 +20,7 @@ class RunMWOffliner(Operation):
         self.redis_container_name = redis_container_name
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
-    def execute(self):
+    def execute(self) -> ContainerResult:
         """Pull and run mwoffliner"""
 
         # pull mwoffliner image
@@ -27,9 +28,16 @@ class RunMWOffliner(Operation):
 
         # run mwoffliner
         volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
-        self.docker.containers.run(
-            image=self.image_name, command=self.command, remove=True, volumes=volumes,
+        container: Container = self.docker.containers.run(
+            image=self.image_name, command=self.command, remove=True, volumes=volumes, detach=True,
             links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
+
+        exit_code = container.wait()['StatusCode']
+        stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
+        stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
+        result = ContainerResult(container.image, self.command, exit_code, stdout, stderr)
+
+        return result
 
     @staticmethod
     def _get_command(flags: {}):
