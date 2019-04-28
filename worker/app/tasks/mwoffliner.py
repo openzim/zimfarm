@@ -47,7 +47,7 @@ class MWOffliner(Base):
                 redis_container_name=Settings.redis_name)
             logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
             logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
-            self.send_event('task-command', command=run_mwoffliner.command)
+            self.send_event('task-container_started', image=image, command=run_mwoffliner.command)
 
             result = run_mwoffliner.execute()
             logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
