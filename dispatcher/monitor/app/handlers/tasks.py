@@ -42,31 +42,16 @@ class BaseTaskEventHandler(BaseHandler):
     def get_timestamp_from_event(event: dict) -> datetime:
         return datetime.fromtimestamp(event['timestamp'], tz=pytz.utc)
 
-    @staticmethod
-    def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
+    def save_event(self, task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
         # insert event and sort by timestamp
         event = {'code': code, 'timestamp': timestamp}
         update = {'$push': {'events': {'$each': [event], '$sort': {'timestamp': 1}}}}
         Tasks().update_one({'_id': task_id}, update)
 
-        # get last event
-        cursor = Tasks().aggregate([
-            {'$match': {'_id': task_id}},
-            {'$project': {
-                'schedule._id': 1,
-                'last_event': {'$arrayElemAt': ['$events', -1]}
-            }}
-        ])
-        tasks = [task for task in cursor]
-        task = tasks[0] if tasks else None
-        if not task:
-            return
-        last_event = task['last_event']
-
         # update task status, timestamp and other fields
-        code = last_event['code']
-        timestamp = last_event['timestamp']
-        task_updates = {'status': code, f'timestamp.{code}': timestamp}
+        task_updates = {f'timestamp.{code}': timestamp}
+        if 'container' not in code:
+            task_updates['status'] = code
         if 'hostname' in kwargs:
             task_updates['hostname'] = kwargs['hostname']
         if 'files' in kwargs:
@@ -93,9 +78,31 @@ class BaseTaskEventHandler(BaseHandler):
             task_updates['debug.traceback'] = kwargs['traceback']
         Tasks().update_one({'_id': task_id}, {'$set': task_updates})
 
+        self._update_schedule_most_recent_task_status(task_id)
+
+    @staticmethod
+    def _update_schedule_most_recent_task_status(task_id):
+        # get schedule and last event
+        cursor = Tasks().aggregate([
+            {'$match': {'_id': task_id}},
+            {'$project': {
+                'schedule._id': 1,
+                'last_event': {'$arrayElemAt': ['$events', -1]}
+            }}
+        ])
+        tasks = [task for task in cursor]
+        task = tasks[0] if tasks else None
+        if not task:
+            return
+
         # update schedule most recent task
         schedule_id = task['schedule']['_id']
-        schedule_updates = {'most_recent_task': {'_id': task_id, 'status': code, 'updated_at': timestamp}}
+        last_event_code = task['last_event']['code']
+        last_event_timestamp = task['last_event']['timestamp']
+        if 'container' in last_event_code:
+            return
+        schedule_updates = {'most_recent_task': {
+            '_id': task_id, 'status': last_event_code, 'updated_at': last_event_timestamp}}
         Schedules().update_one({'_id': schedule_id}, {'$set': schedule_updates})
 
 
