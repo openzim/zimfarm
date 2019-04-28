@@ -1,14 +1,14 @@
-import logging
 from pathlib import Path
 
 import docker
 import docker.errors
+from celery.utils.log import get_task_logger
 
 from operations import RunRedis, RunMWOffliner, Upload
 from utils import Settings
 from .base import Base
 
-logger = logging.getLogger(__name__)
+logger = get_task_logger(__name__)
 
 
 class MWOffliner(Base):
@@ -45,12 +45,12 @@ class MWOffliner(Base):
                 docker_client=docker.from_env(), tag=image_tag, flags=flags,
                 task_id=self.task_id, working_dir_host=Settings.working_dir_host,
                 redis_container_name=Settings.redis_name)
-            self.logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
-            self.logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
+            logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
+            logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
             self.send_event('task-command', command=run_mwoffliner.command)
 
             result = run_mwoffliner.execute()
-            self.logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
+            logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
             self.send_event('task-container_finished', exit_code=result.exit_code, stdout=result.stdout,
                             stderr=result.stderr)
 
@@ -59,7 +59,7 @@ class MWOffliner(Base):
 
             # upload files
             files, files_description = self.get_files(working_dir_container)
-            self.logger.info('Uploading files, {}'.format(files_description))
+            logger.info('Uploading files, {}'.format(files_description))
             upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
             upload.execute()
 
