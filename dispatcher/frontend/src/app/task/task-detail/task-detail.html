@@ -43,12 +43,12 @@
         <mat-tab label="Container" *ngIf="task.container">
             <div class="container">
                 <mat-list>
-                    <h3 mat-subheader>Image</h3>
-                    <mat-list-item class="preformatted">
+                    <h3 mat-subheader *ngIf="task.container.image">Image</h3>
+                    <mat-list-item class="preformatted" *ngIf="task.container.image">
                         <div mat-line><pre>{{task.container.image.name}}:{{task.container.image.tag}}</pre></div>
                     </mat-list-item>
-                    <h3 mat-subheader>Command</h3>
-                    <mat-list-item class="preformatted">
+                    <h3 mat-subheader *ngIf="task.container.command">Command</h3>
+                    <mat-list-item class="preformatted" *ngIf="task.container.command">
                         <div mat-line><pre>{{task.container.command}}</pre></div>
                     </mat-list-item>
                     <h3 mat-subheader>Exit Code</h3>
