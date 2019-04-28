@@ -1,13 +1,8 @@
 <div *ngIf="task$ | async as task">
     <mat-card>
-        <!-- <mat-card-header>
         <mat-icon mat-card-avatar mat-list-icon>note</mat-icon>
         <mat-card-title>{{task.status}}</mat-card-title>
         <mat-card-subtitle>{{task._id}}</mat-card-subtitle>
-        </mat-card-header> -->
-                <i class="fab fa-angellist" mat-card-avatar></i>
-                <mat-card-title>Shiba Inu</mat-card-title>
-                <mat-card-subtitle>Dog Breed</mat-card-subtitle>
     </mat-card>
     <mat-tab-group [animationDuration]="0" [disableRipple]="true">
         <mat-tab label="Overview">
