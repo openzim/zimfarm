@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 from typing import Optional
+
+from docker.models.images import Image
 
 
 class Operation:
@@ -11,23 +14,27 @@ class Operation:
         pass
 
 
+@dataclass()
+class ContainerResult:
+    image: Image
+    command: str
+    exit_code: int
+    stdout: str
+    stderr: str
+
+    def is_successful(self):
+        return self.exit_code == 0
+
+    def __repr__(self):
+        if self.exit_code == 0:
+            return f'Command {self.command} in image {self.image} returned with zero exit code.'
+        else:
+            return f'Command {self.command} in image {self.image} returned with non-zero exit code {self.exit_code}.'
+
+
 class OperationError(Exception):
     def to_dict(self):
         return {}
-
-
-class OfflinerError(OperationError):
-    def __init__(self, code: str, message: Optional[str] = None, stderr: Optional[str] = None):
-        self.code = code
-        self.message = message
-        self.stderr = stderr
-
-    def to_dict(self):
-        return {
-            'code': self.code,
-            'message': self.message,
-            'stderr': self.stderr
-        }
 
 
 class UploadError(OperationError):

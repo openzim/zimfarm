@@ -1,5 +1,4 @@
 import logging
-import shutil
 from pathlib import Path
 
 import docker
@@ -46,42 +45,26 @@ class MWOffliner(Base):
                 docker_client=docker.from_env(), tag=image_tag, flags=flags,
                 task_id=self.task_id, working_dir_host=Settings.working_dir_host,
                 redis_container_name=Settings.redis_name)
-            self.logger.info('Running MWOffliner, mwUrl: {mwUrl}'.format(mwUrl=flags['mwUrl']))
-            self.logger.debug('Running MWOffliner, command: {command}'.format(command=run_mwoffliner.command))
-            run_mwoffliner.execute()
-            files, files_description = self.get_files(working_dir_container)
+            self.logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
+            self.logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
+            self.send_event('task-command', command=run_mwoffliner.command)
+
+            result = run_mwoffliner.execute()
+            self.logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
+            self.send_event('task-container_finished', exit_code=result.exit_code, stdout=result.stdout,
+                            stderr=result.stderr)
+
+            if not result.is_successful():
+                raise Exception(result)
 
             # upload files
-            upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
+            files, files_description = self.get_files(working_dir_container)
             self.logger.info('Uploading files, {}'.format(files_description))
+            upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
             upload.execute()
 
             return files
         except docker.errors.APIError as e:
             raise self.retry(exc=e)
         except docker.errors.ContainerError as e:
-            self.send_event('task-container_error', exit_code=e.exit_status,
-                            command=e.command, stderr=e.stderr.decode("utf-8"))
             raise Exception from e
-
-    @staticmethod
-    def get_files(working_dir: Path):
-        stats = []
-        description = []
-        for file in working_dir.iterdir():
-            if file.is_dir():
-                continue
-            stats.append({'name': file.name, 'size': file.stat().st_size})
-            description.append('{name} - {size}'.format(name=file.name, size=file.stat().st_size))
-
-        return stats, ', '.join(description)
-
-    def clean_up(self):
-        working_dir = Path(Settings.working_dir_container).joinpath(self.task_id)
-        shutil.rmtree(working_dir)
-
-    def on_success(self, retval, task_id, args, kwargs):
-        self.clean_up()
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        self.clean_up()
