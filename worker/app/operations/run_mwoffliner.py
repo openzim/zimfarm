@@ -29,13 +29,15 @@ class RunMWOffliner(Operation):
         # run mwoffliner
         volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
         container: Container = self.docker.containers.run(
-            image=self.image_name, command=self.command, remove=True, volumes=volumes, detach=True,
+            image=self.image_name, command=self.command, volumes=volumes, detach=True,
             links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
 
         exit_code = container.wait()['StatusCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
         result = ContainerResult(container.image, self.command, exit_code, stdout, stderr)
+
+        container.remove()
 
         return result
 
