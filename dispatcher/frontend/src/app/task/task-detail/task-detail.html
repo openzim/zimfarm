@@ -1,43 +1,43 @@
 <div *ngIf="task$ | async as task">
     <mat-card>
-        <mat-icon mat-card-avatar mat-list-icon>note</mat-icon>
         <mat-card-title>{{task.status}}</mat-card-title>
-        <mat-card-subtitle>{{task._id}}</mat-card-subtitle>
+        <mat-card-subtitle>{{task.schedule.name}} | #{{task._id | slice:-5}}</mat-card-subtitle>
     </mat-card>
     <mat-tab-group [animationDuration]="0" [disableRipple]="true">
         <mat-tab label="Overview">
             <div class="overview">
-                <div style="flex: 1;">
-                    <mat-list>
-                        <h3 mat-subheader>Schedule</h3>
-                        <mat-list-item>
-                            <mat-icon mat-list-icon>schedule</mat-icon>
-                            <p mat-line>{{task.schedule.name}}</p>
-                        </mat-list-item>
-                        <h3 mat-subheader *ngIf="task.files">Files</h3>
-                        <mat-list-item *ngFor="let file of task.files">
-                            <mat-icon mat-list-icon>description</mat-icon>
-                            <h4 mat-line>{{file.name}}</h4>
-                            <p mat-line>{{file.size | fileSize}}</p>
-                        </mat-list-item>
-                        <h3 mat-subheader>Worker</h3>
-                        <mat-list-item>
-                            <mat-icon mat-list-icon>developer_board</mat-icon>
-                            <p mat-line>{{task.hostname}}</p>
-                        </mat-list-item>
-                    </mat-list>
-                </div>
+                <mat-list>
+                    <h3 mat-subheader>ID</h3>
+                    <mat-list-item>
+                        <i class="far fa-id-badge" mat-list-icon></i>
+                        <p mat-line>{{task._id}}</p>
+                    </mat-list-item>
+                    <h3 mat-subheader>Schedule</h3>
+                    <mat-list-item>
+                        <mat-icon mat-list-icon>schedule</mat-icon>
+                        <p mat-line>{{task.schedule.name}}</p>
+                    </mat-list-item>
+                    <h3 mat-subheader *ngIf="task.files">Files</h3>
+                    <mat-list-item *ngFor="let file of task.files">
+                        <mat-icon mat-list-icon>description</mat-icon>
+                        <h4 mat-line>{{file.name}}</h4>
+                        <p mat-line>{{file.size | fileSize}}</p>
+                    </mat-list-item>
+                    <h3 mat-subheader>Worker</h3>
+                    <mat-list-item>
+                        <mat-icon mat-list-icon>developer_board</mat-icon>
+                        <p mat-line>{{task.hostname}}</p>
+                    </mat-list-item>
+                </mat-list>
                 <mat-divider [vertical]="true"></mat-divider>
-                <div style="flex: 1;">
-                    <mat-list>
-                        <h3 mat-subheader>Events</h3>
-                        <mat-list-item *ngFor="let event of task.events">
-                            <mat-icon mat-list-icon>note</mat-icon>
-                            <h4 mat-line>{{event.code}}</h4>
-                            <p mat-line>{{event.timestamp | date:'MMM d, h:mm:ss a':'UTC'}}</p>
-                        </mat-list-item>
-                    </mat-list>
-                </div>
+                <mat-list>
+                    <h3 mat-subheader>Events</h3>
+                    <mat-list-item *ngFor="let event of task.events">
+                        <mat-icon mat-list-icon>note</mat-icon>
+                        <h4 mat-line>{{event.code}}</h4>
+                        <p mat-line>{{event.timestamp | date:'MMM d, h:mm:ss a':'UTC'}}</p>
+                    </mat-list-item>
+                </mat-list>
             </div>
         </mat-tab>
         <mat-tab label="Container" *ngIf="task.container">

@@ -1,6 +1,6 @@
 mat-card {
     margin: 1rem;
-    margin-bottom: 0.5rem;;
+    margin-bottom: 0.5rem;
 }
 
 mat-tab-group {
@@ -21,8 +21,16 @@ div.container, div.debug {
     padding-bottom: 30rem;
 }
 
-div.overview mat-list {
-    /* margin: 1rem; */
+@media screen and (max-width: 65rem) {
+    div.overview {
+        flex-direction: column;
+    }
+}
+
+@media screen and (min-width: 65rem) {
+    div.overview mat-list {
+        margin: 1rem;
+    }
 }
 
 mat-list mat-list-item.preformatted {
