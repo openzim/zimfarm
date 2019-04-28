@@ -1,7 +1,13 @@
 <div *ngIf="task$ | async as task">
     <mat-card>
+        <!-- <mat-card-header>
+        <mat-icon mat-card-avatar mat-list-icon>note</mat-icon>
         <mat-card-title>{{task.status}}</mat-card-title>
         <mat-card-subtitle>{{task._id}}</mat-card-subtitle>
+        </mat-card-header> -->
+                <i class="fab fa-angellist" mat-card-avatar></i>
+                <mat-card-title>Shiba Inu</mat-card-title>
+                <mat-card-subtitle>Dog Breed</mat-card-subtitle>
     </mat-card>
     <mat-tab-group [animationDuration]="0" [disableRipple]="true">
         <mat-tab label="Overview">
@@ -17,7 +23,7 @@
                         <mat-list-item *ngFor="let file of task.files">
                             <mat-icon mat-list-icon>description</mat-icon>
                             <h4 mat-line>{{file.name}}</h4>
-                            <p mat-line>{{file.size}}</p>
+                            <p mat-line>{{file.size | fileSize}}</p>
                         </mat-list-item>
                         <h3 mat-subheader>Worker</h3>
                         <mat-list-item>
@@ -42,22 +48,30 @@
         <mat-tab label="Container" *ngIf="task.container">
             <div class="container">
                 <mat-list>
+                    <h3 mat-subheader>Image</h3>
+                    <mat-list-item class="preformatted">
+                        <div mat-line><pre>{{task.container.image.name}}:{{task.container.image.tag}}</pre></div>
+                    </mat-list-item>
+                    <h3 mat-subheader>Command</h3>
+                    <mat-list-item class="preformatted">
+                        <div mat-line><pre>{{task.container.command}}</pre></div>
+                    </mat-list-item>
                     <h3 mat-subheader>Exit Code</h3>
                     <mat-list-item class="preformatted">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.container.exit_code}}</pre>
-                        </div>
+                        <div mat-line><pre>{{task.container.exit_code}}</pre></div>
                     </mat-list-item>
                     <h3 mat-subheader>Standard Error</h3>
                     <mat-list-item class="preformatted">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.container.stderr}}</pre>
+                        <div mat-line>
+                            <pre *ngIf="task.container.stderr;else none">{{task.container.stderr}}</pre>
+                            <ng-template #none><pre>None</pre></ng-template>
                         </div>
                     </mat-list-item>
-                    <h3 mat-subheader>Standard Error</h3>
+                    <h3 mat-subheader>Standard Output</h3>
                     <mat-list-item class="preformatted">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.container.stderr}}</pre>
+                        <div mat-line>
+                            <pre *ngIf="task.container.stdout;else none">{{task.container.stdout}}</pre>
+                            <ng-template #none><pre>None</pre></ng-template>
                         </div>
                     </mat-list-item>
                 </mat-list>
@@ -68,33 +82,23 @@
                 <mat-list>
                     <h3 mat-subheader>Task name</h3>
                     <mat-list-item class="preformatted">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.debug.task_name}}</pre>
-                        </div>
+                        <div mat-line><pre>{{task.debug.task_name}}</pre></div>
                     </mat-list-item>
                     <h3 mat-subheader>Task args</h3>
                     <mat-list-item class="preformatted">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.debug.task_args | json}}</pre>
-                        </div>
+                        <div mat-line><pre>{{task.debug.task_args | json}}</pre></div>
                     </mat-list-item>
                     <h3 mat-subheader>Task kwargs</h3>
                     <mat-list-item class="preformatted">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.debug.task_kwargs | json}}</pre>
-                        </div>
+                        <div mat-line><pre>{{task.debug.task_kwargs | json}}</pre></div>
                     </mat-list-item>
                     <h3 mat-subheader *ngIf="task.debug.exception">Exception</h3>
-                    <mat-list-item style="height: auto" *ngIf="task.debug.exception">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.debug.exception}}</pre>
-                        </div>
+                    <mat-list-item class="preformatted" *ngIf="task.debug.exception">
+                        <div mat-line><pre>{{task.debug.exception}}</pre></div>
                     </mat-list-item>
                     <h3 mat-subheader *ngIf="task.debug.traceback">Traceback</h3>
-                    <mat-list-item style="height: auto" *ngIf="task.debug.traceback">
-                        <div class="preformatted" mat-line>
-                            <pre>{{task.debug.traceback}}</pre>
-                        </div>
+                    <mat-list-item class="preformatted" *ngIf="task.debug.traceback">
+                        <div mat-line><pre>{{task.debug.traceback}}</pre></div>
                     </mat-list-item>
                 </mat-list>
             </div>

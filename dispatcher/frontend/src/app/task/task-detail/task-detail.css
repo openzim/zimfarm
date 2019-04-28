@@ -22,25 +22,25 @@ div.container, div.debug {
 }
 
 div.overview mat-list {
-    margin: 1rem;
+    /* margin: 1rem; */
 }
 
-mat-list > mat-list-item.preformatted {
+mat-list mat-list-item.preformatted {
     height: auto;
 }
 
-div.preformatted {
+mat-list-item.preformatted div {
     overflow: auto;
     background-color: #f0f0f0;
     border-radius: 5px;
 }
 
-div.preformatted pre {
+mat-list-item.preformatted pre {
     margin: 0;
     padding: 0.5rem 0.75rem;
 }
 
-div.preformatted pre {
+mat-list-item.preformatted pre {
     white-space: pre-wrap;       /* css-3 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
     white-space: -pre-wrap;      /* Opera 4-6 */
