@@ -1,42 +1,54 @@
 mat-card {
     margin: 1rem;
-    margin-bottom: 0.5rem;;
+    margin-bottom: 0.5rem;
 }
 
 mat-tab-group {
     padding-bottom: 1rem;
 }
 
-div.overview, div.error, div.debug {
+mat-list {
+    flex: 1;
+}
+
+div.overview, div.container, div.debug {
     display: flex;
     max-width: 75rem;
     margin: auto;
 }
 
-div.debug {
+div.container, div.debug {
     padding-bottom: 30rem;
 }
 
-div.overview mat-list {
-    margin: 1rem;
+@media screen and (max-width: 65rem) {
+    div.overview {
+        flex-direction: column;
+    }
 }
 
-mat-list > mat-list-item.preformatted {
+@media screen and (min-width: 65rem) {
+    div.overview mat-list {
+        margin: 1rem;
+    }
+}
+
+mat-list mat-list-item.preformatted {
     height: auto;
 }
 
-div.preformatted {
+mat-list-item.preformatted div {
     overflow: auto;
     background-color: #f0f0f0;
     border-radius: 5px;
 }
 
-div.preformatted pre {
+mat-list-item.preformatted pre {
     margin: 0;
     padding: 0.5rem 0.75rem;
 }
 
-div.preformatted pre {
+mat-list-item.preformatted pre {
     white-space: pre-wrap;       /* css-3 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
     white-space: -pre-wrap;      /* Opera 4-6 */

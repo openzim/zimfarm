@@ -16,7 +16,7 @@ import {ScrollingModule} from '@angular/cdk/scrolling';
 import { TaskDetailComponent } from './task-detail/task-detail';
 import { TaskListComponent } from './task-list/task-list';
 import { TaskListItemComponent } from './task-list-item/task-list-item';
-
+import { FileSizePipe } from '../shared/file-size.pipe';
 
 const routes: Routes = [
     {
@@ -50,7 +50,8 @@ const routes: Routes = [
     declarations: [
         TaskListComponent,
         TaskDetailComponent,
-        TaskListItemComponent
+        TaskListItemComponent,
+        FileSizePipe
     ]
 })
 export class TaskModule { }
