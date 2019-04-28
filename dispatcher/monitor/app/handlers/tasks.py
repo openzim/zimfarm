@@ -188,7 +188,7 @@ class TaskContainerFinishedEventHandler(BaseTaskEventHandler):
         stdout = event.get('stdout')
         stderr = event.get('stderr')
 
-        logger.info(f'Task Container Error: {task_id}, {exit_code}')
+        logger.info(f'Task Container Finished: {task_id}, {exit_code}')
 
         self.save_event(task_id, TaskEvent.container_finished, timestamp,
                         exit_code=exit_code, stdout=stdout, stderr=stderr)
