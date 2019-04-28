@@ -7,13 +7,17 @@ mat-tab-group {
     padding-bottom: 1rem;
 }
 
-div.overview, div.error, div.debug {
+mat-list {
+    flex: 1;
+}
+
+div.overview, div.container, div.debug {
     display: flex;
     max-width: 75rem;
     margin: auto;
 }
 
-div.debug {
+div.container, div.debug {
     padding-bottom: 30rem;
 }
 

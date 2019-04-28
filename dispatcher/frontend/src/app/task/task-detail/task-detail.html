@@ -39,19 +39,25 @@
                 </div>
             </div>
         </mat-tab>
-        <mat-tab label="Error" *ngIf="task.error">
-            <div class="error">
-                <mat-list style="flex: 1;">
+        <mat-tab label="Container" *ngIf="task.container">
+            <div class="container">
+                <mat-list>
                     <h3 mat-subheader>Exit Code</h3>
                     <mat-list-item class="preformatted">
                         <div class="preformatted" mat-line>
-                            <pre>{{task.error.exit_code}}</pre>
+                            <pre>{{task.container.exit_code}}</pre>
                         </div>
                     </mat-list-item>
                     <h3 mat-subheader>Standard Error</h3>
                     <mat-list-item class="preformatted">
                         <div class="preformatted" mat-line>
-                            <pre>{{task.error.stderr}}</pre>
+                            <pre>{{task.container.stderr}}</pre>
+                        </div>
+                    </mat-list-item>
+                    <h3 mat-subheader>Standard Error</h3>
+                    <mat-list-item class="preformatted">
+                        <div class="preformatted" mat-line>
+                            <pre>{{task.container.stderr}}</pre>
                         </div>
                     </mat-list-item>
                 </mat-list>
@@ -59,7 +65,7 @@
         </mat-tab>
         <mat-tab label="Debug">
             <div class="debug">
-                <mat-list style="flex: 1;">
+                <mat-list>
                     <h3 mat-subheader>Task name</h3>
                     <mat-list-item class="preformatted">
                         <div class="preformatted" mat-line>
