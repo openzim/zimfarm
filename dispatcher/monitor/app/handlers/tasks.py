@@ -28,12 +28,23 @@ class BaseTaskEventHandler(BaseHandler):
             return None
 
     @staticmethod
+    def get_task_id_from_event(event: dict) -> Optional[ObjectId]:
+        try:
+            return ObjectId(event.get('uuid'))
+        except InvalidId:
+            return None
+
+    @staticmethod
     def get_timestamp(task: Task) -> datetime:
         return datetime.fromtimestamp(task.timestamp, tz=pytz.utc)
 
     @staticmethod
+    def get_timestamp_from_event(event: dict) -> datetime:
+        return datetime.fromtimestamp(event['timestamp'], tz=pytz.utc)
+
+    @staticmethod
     def save_event(task_id: ObjectId, code: str, timestamp: datetime, **kwargs):
-        # insert event
+        # insert event and sort by timestamp
         event = {'code': code, 'timestamp': timestamp}
         update = {'$push': {'events': {'$each': [event], '$sort': {'timestamp': 1}}}}
         Tasks().update_one({'_id': task_id}, update)
@@ -58,14 +69,18 @@ class BaseTaskEventHandler(BaseHandler):
         task_updates = {'status': code, f'timestamp.{code}': timestamp}
         if 'hostname' in kwargs:
             task_updates['hostname'] = kwargs['hostname']
-        if 'command' in kwargs:
-            task_updates['command'] = kwargs['command']
         if 'files' in kwargs:
             task_updates['files'] = kwargs['files']
+        if 'command' in kwargs:
+            task_updates['container.command'] = kwargs['command']
+        if 'image' in kwargs:
+            task_updates['container.image'] = kwargs['image']
         if 'exit_code' in kwargs:
-            task_updates['error.exit_code'] = kwargs['exit_code']
+            task_updates['container.exit_code'] = kwargs['exit_code']
+        if 'stdout' in kwargs:
+            task_updates['container.stdout'] = kwargs['stdout']
         if 'stderr' in kwargs:
-            task_updates['error.stderr'] = kwargs['stderr']
+            task_updates['container.stderr'] = kwargs['stderr']
         if 'task_name' in kwargs:
             task_updates['debug.task_name'] = kwargs['task_name']
         if 'task_args' in kwargs:
@@ -151,16 +166,29 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
                         exception=task.exception, traceback=task.traceback)
 
 
-class TaskContainerErrorEventHandler(BaseTaskEventHandler):
+class TaskContainerStartedEventHandler(BaseTaskEventHandler):
     def __call__(self, event):
-        task_id = ObjectId(event.get('uuid'))
+        task_id = self.get_task_id_from_event(event)
+        timestamp = self.get_timestamp_from_event(event)
+
+        image = event.get('image')
+        command = event.get('command')
+
+        logger.info(f'Task Container Started: {task_id}, {command}')
+
+        self.save_event(task_id, TaskEvent.container_started, timestamp, image=image, command=command)
+
+
+class TaskContainerFinishedEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task_id = self.get_task_id_from_event(event)
+        timestamp = self.get_timestamp_from_event(event)
 
         exit_code = event.get('exit_code')
-        command = event.get('command')
+        stdout = event.get('stdout')
         stderr = event.get('stderr')
-        timestamp = datetime.fromtimestamp(event['timestamp'], tz=pytz.utc)
 
-        logger.info(f'Task Container Error: {task_id}, {exit_code}, {command}')
+        logger.info(f'Task Container Error: {task_id}, {exit_code}')
 
-        self.save_event(task_id, TaskEvent.container_error, timestamp, exit_code=exit_code,
-                        command=command, stderr=stderr)
+        self.save_event(task_id, TaskEvent.container_finished, timestamp,
+                        exit_code=exit_code, stdout=stdout, stderr=stderr)
