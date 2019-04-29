@@ -55,7 +55,7 @@ class MWOffliner(Base):
                             stderr=result.stderr)
 
             if not result.is_successful():
-                raise Exception(result)
+                raise Exception(str(result))
 
             # upload files
             files, files_description = self.get_files(working_dir_container)
