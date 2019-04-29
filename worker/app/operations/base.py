@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from docker.models.images import Image
-
 
 class Operation:
     """Base class for all operations"""
@@ -16,7 +14,7 @@ class Operation:
 
 @dataclass()
 class ContainerResult:
-    image: Image
+    image_name: str
     command: str
     exit_code: int
     stdout: str
@@ -26,10 +24,9 @@ class ContainerResult:
         return self.exit_code == 0
 
     def __repr__(self):
-        if self.exit_code == 0:
-            return f'Command {self.command} in image {self.image} returned with zero exit code.'
-        else:
-            return f'Command {self.command} in image {self.image} returned with non-zero exit code {self.exit_code}.'
+        exit_code_description = 'zero' if self.exit_code == 0 else 'non-zero'
+        return (f'Command {self.command} in image {self.image_name} returned '
+                f'with {exit_code_description} exit code {self.exit_code}.')
 
 
 class OperationError(Exception):
