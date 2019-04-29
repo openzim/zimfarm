@@ -24,7 +24,7 @@ def make_event():
 
 
 @pytest.fixture()
-def make_task(database, make_schedule, make_event):
+def make_task(database, make_event):
     task_ids = []
     tasks = Tasks(database=database)
 
@@ -42,28 +42,36 @@ def make_task(database, make_schedule, make_event):
 
         timestamp = {event: datetime.now() for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
+        container = {
+            'command': 'mwoffliner --mwUrl=https://example.com',
+            'image': {'name': 'mwoffliner', 'tag': '1.8.0'},
+            'exit_code': 0,
+            'stderr': 'example_stderr',
+            'stdout': 'example_stdout'
+        }
+        debug = {
+            'args': [],
+            'kwargs': {}
+        }
+
+        if status == TaskStatus.failed:
+            debug['exception'] = 'example_exception'
+            debug['traceback'] = 'example_traceback'
+            files = []
+        else:
+            files = [{'name': 'mwoffliner_1.zim', 'size': 1000}]
 
         task = {
             '_id': ObjectId(),
             'status': status,
-            'command': 'mwoffliner --mwUrl=https://example.com',
+            'hostname': hostname,
             'schedule': schedule,
-            'worker': {'_id': ObjectId(), 'name': 'worker_A'},
             'timestamp': timestamp,
-            'events': events
+            'events': events,
+            'container': container,
+            'debug': debug,
+            'files': files
         }
-
-        if status == TaskStatus.failed:
-            task['error'] = {
-                'exception': 'Exception()',
-                'exit_code': 2,
-                'traceback': 'test_traceback',
-                'stderr': 'test_stderr'
-            }
-            task['files'] = []
-        else:
-            task['error'] = None
-            task['files'] = [{'name': 'mwoffliner_1.zim', 'size': 1000}]
 
         tasks.insert_one(task)
         task_ids.append(task['_id'])
@@ -76,7 +84,7 @@ def make_task(database, make_schedule, make_event):
 
 @pytest.fixture()
 def schedule(make_schedule):
-    return make_schedule('Schedule_a')
+    return make_schedule('Schedule_example')
 
 
 @pytest.fixture()

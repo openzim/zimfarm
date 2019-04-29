@@ -35,7 +35,7 @@ class RunMWOffliner(Operation):
         exit_code = container.wait()['StatusCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
-        result = ContainerResult(container.image, self.command, exit_code, stdout, stderr)
+        result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
 
         container.remove()
 
