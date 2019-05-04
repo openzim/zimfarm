@@ -27,7 +27,7 @@ export class AuthService {
         }
 
         return this.http.post<AuthResponseData>(
-            this.getAPIRoot + '/api/auth/oauth2', body
+            this.getAPIRoot() + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
@@ -43,7 +43,7 @@ export class AuthService {
         }
         
         return this.http.post<AuthResponseData>(
-            this.getAPIRoot + '/api/auth/oauth2', body
+            this.getAPIRoot() + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
