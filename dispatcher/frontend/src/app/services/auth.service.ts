@@ -1,17 +1,23 @@
-
-import {throwError as observableThrowError,  Observable, defer } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { tap, catchError, map, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError as observableThrowError } from 'rxjs';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
-import { apiRoot } from './config';
 
 @Injectable({
     providedIn: 'root',
 })
 export class AuthService {
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private router: Router) { }
+
+    private getAPIRoot(): string {
+        let root = window.location.origin;
+        if (root.includes('localhost')) {
+            root = 'https://farm.openzim.org';
+        }
+        return root;
+    }
 
     authorize(username: string, password: string): Observable<AuthResponseData> {
         let body = {
@@ -21,7 +27,7 @@ export class AuthService {
         }
 
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/oauth2', body
+            this.getAPIRoot + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
@@ -37,14 +43,14 @@ export class AuthService {
         }
         
         return this.http.post<AuthResponseData>(
-            apiRoot + '/api/auth/oauth2', body
+            this.getAPIRoot + '/api/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
             this.refreshTokenExpire = new Date(Date.now() + 30*24*3600000)
             return data
-        }), catchError((error, caught) => {
-            // redirect back to login
+        }), catchError(error => {
+            this.router.navigate(['login'])
             return observableThrowError(error)
         }))
     }
@@ -74,29 +80,45 @@ interface AuthResponseData {
 
 @Injectable()
 export class AccessTokenInterceptor implements HttpInterceptor {
-    constructor(private authService: AuthService, private router: Router) {}
+    constructor(private authService: AuthService) {}
+
+    private refreshTokenInProgress = false;
+    private accessTokenSubject: BehaviorSubject<null|string> = new BehaviorSubject<null|string>(this.authService.accessToken);
     
     // https://medium.com/@alexandrubereghici/angular-tutorial-implement-refresh-token-with-httpinterceptor-bfa27b966f57
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         if (request.url.includes('auth')) {
             return next.handle(request);
         } else {
-            let requestWithToken = request.clone({headers: request.headers.set('Authorization', 'Bearer ' + this.authService.accessToken)})
-            return next.handle(requestWithToken).pipe(catchError((error, _) => {
-                if (error instanceof HttpErrorResponse) {
-                    if (error.status == 401) {
-                        return this.authService.refresh(this.authService.refreshToken).pipe(switchMap((data, index) => {
-                            let requestWithToken = request.clone({headers: request.headers.set('Authorization', 'Bearer ' + this.authService.accessToken)})
-                            return next.handle(requestWithToken)
+            let requestWithToken = this.makeRequestWithToken(request, this.authService.accessToken);
+            return next.handle(requestWithToken).pipe(catchError(error => {
+                if (error instanceof HttpErrorResponse && error.status == 401) {
+                    if (this.refreshTokenInProgress) {
+                        return this.accessTokenSubject.pipe(
+                            filter(accessToken => accessToken != null), 
+                            take(1), 
+                            switchMap(accessToken => {
+                                let requestWithToken = this.makeRequestWithToken(request, accessToken);
+                                return next.handle(requestWithToken)
                         }))
                     } else {
-                        this.router.navigate(['login'])
-                        return observableThrowError(error)
+                        this.refreshTokenInProgress = true;
+                        this.accessTokenSubject.next(null);
+                        return this.authService.refresh(this.authService.refreshToken).pipe(switchMap(responseData => {
+                            this.refreshTokenInProgress = false;
+                            this.accessTokenSubject.next(responseData.access_token);
+                            let requestWithToken = this.makeRequestWithToken(request, responseData.access_token);
+                            return next.handle(requestWithToken)
+                        }))
                     }
                 } else {
                     return observableThrowError(error)
                 }
             }))
         }
+    }
+
+    private makeRequestWithToken(request: HttpRequest<any>, accessToken: string): HttpRequest<any> {
+        return request.clone({headers: request.headers.set('Authorization', 'Bearer ' + accessToken)})
     }
 }
