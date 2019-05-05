@@ -1,22 +1,19 @@
+import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
 import { RouterModule, Routes } from '@angular/router';
-import {MatGridListModule} from '@angular/material/grid-list';
-import {MatChipsModule} from '@angular/material/chips';
-import {ScrollingModule} from '@angular/cdk/scrolling';
 
-import { TaskDetailComponent } from './task-detail/task-detail';
-import { TaskListComponent } from './task-list/task-list';
-import { TaskListItemComponent } from './task-list-item/task-list-item';
 import { FileSizePipe } from '../shared/file-size.pipe';
+import { TaskDetailComponent } from './task-detail/task-detail';
+import { TaskListItemComponent } from './task-list-item/task-list-item';
+import { TaskListComponent } from './task-list/task-list';
 
 const routes: Routes = [
     {
@@ -36,22 +33,17 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         MatCardModule,
         MatDividerModule,
-        MatExpansionModule,
         MatIconModule,
         MatListModule,
         MatSidenavModule,
         MatTabsModule,
-        MatGridListModule,
-        MatChipsModule,
         ScrollingModule
-        
-        // AgGridModule.withComponents([CategoryFilterComponent])
     ],
     declarations: [
-        TaskListComponent,
+        FileSizePipe,
         TaskDetailComponent,
         TaskListItemComponent,
-        FileSizePipe
+        TaskListComponent,
     ]
 })
 export class TaskModule { }
