@@ -11,14 +11,11 @@ import { Task, TasksService } from '../../services/task.service';
 })
 export class TaskDetailComponent implements OnInit {
     constructor(private route: ActivatedRoute, private tasksService: TasksService) { }
-    task: Observable<Task>
-    task_id: string;
     task$: Observable<Task>;
 
     ngOnInit() {
         this.task$ = this.route.paramMap.pipe(
             switchMap(params => {
-                this.task_id = params.get('id');
                 return this.tasksService.get(params.get('id'));
             })
         );
