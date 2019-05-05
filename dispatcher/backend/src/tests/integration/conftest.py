@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from bson import ObjectId
 from pymongo import MongoClient
@@ -23,7 +25,7 @@ def access_token():
 
 @pytest.fixture(scope='session')
 def database() -> Database:
-    client = MongoClient('localhost', 27017)
+    client = MongoClient(os.getenv('MONGO_HOSTNAME'), 27017)
     database = client['Zimfarm']
     mongo.Tasks(database=database).initialize()
     yield database
