@@ -1,5 +1,4 @@
 from routes.base import BaseBlueprint
-from .beat import BeatRoute
 from .schedule import ScheduleRoute, SchedulesRoute, SchedulesBackupRoute
 
 
@@ -10,4 +9,3 @@ class Blueprint(BaseBlueprint):
         self.register_route(SchedulesRoute())
         self.register_route(ScheduleRoute())
         self.register_route(SchedulesBackupRoute())
-        self.register_route(BeatRoute())
