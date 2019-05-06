@@ -38,9 +38,13 @@ class TasksRoute(BaseRoute):
         limit = request.args.get('limit', default=100, type=int)
         skip = 0 if skip < 0 else skip
         limit = 100 if limit <= 0 else limit
+        statuses = request.args.getlist('status')
 
         # get tasks from database
-        filter = {'status': {'$nin': ['sent', 'received']}}
+        if statuses:
+            filter = {'status': {'$in': statuses}}
+        else:
+            filter = {'status': {'$nin': ['sent', 'received']}}
         projection = {'_id': 1, 'status': 1, 'schedule': 1}
         cursor = Tasks().find(filter, projection).sort('_id', pymongo.DESCENDING).skip(skip).limit(limit)
         tasks = [task for task in cursor]

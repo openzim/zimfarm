@@ -36,49 +36,17 @@ class Tasks(BaseCollection):
     _name = 'tasks'
     schema = {
         'bsonType': 'object',
-        'required': ['status', 'command', 'schedule', 'worker', 'timestamp'],
+        'required': ['schedule'],
         'properties': {
             'status': {'enum': TaskStatus.all()},
-            'command': {'bsonType': ['string', 'null']},
-            'schedule': {'oneOf': [
-                {'bsonType': 'null'},
-                {
-                    'bsonType': 'object',
-                    'required': ['_id', 'name'],
-                    'properties': {
-                        '_id': {'bsonType': 'objectId'},
-                        'name': {'bsonType': 'string'},
-                    }
+            'schedule': {
+                'bsonType': 'object',
+                'required': ['_id', 'name'],
+                'properties': {
+                    '_id': {'bsonType': 'objectId'},
+                    'name': {'bsonType': 'string'},
                 }
-            ]},
-            'worker': {'oneOf': [
-                {'bsonType': 'null'},
-                {
-                    'bsonType': 'object',
-                    # 'required': ['_id', 'name'],
-                    'properties': {
-                        '_id': {'bsonType': 'objectId'},
-                        'name': {'bsonType': 'string'},
-                    }
-                }
-            ]},
-            'timestamp': {'bsonType': 'object'},
-            'events': {
-                'bsonType': 'array',
-                'items': {'bsonType': 'object'}
             },
-            'error': {'oneOf': [
-                {'bsonType': 'null'},
-                {
-                    'bsonType': 'object',
-                    'properties': {
-                        'exception': {'bsonType': 'string'},
-                        'exit_code': {'bsonType': 'int'},
-                        'traceback': {'bsonType': 'string'},
-                        'stderr': {'bsonType': 'string'}
-                    }
-                }
-            ]},
         }
     }
 
@@ -97,7 +65,7 @@ class Tasks(BaseCollection):
         self.create_index('timestamp.succeeded', name='timestamp.succeeded')
         self.create_index('timestamp.failed', name='timestamp.failed')
 
-        # self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
+        self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
 
 
 class Schedules(BaseCollection):

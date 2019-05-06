@@ -3,14 +3,16 @@ language: python
 matrix:
   include:
     - name: "backend: unit test"
-      python: "3.6"
+      dist: xenial
+      python: "3.7"
       install: pip install -r dispatcher/backend/requirements.txt
       before_script:
         - cd dispatcher/backend/src
         - export PYTHONPATH=$PWD
       script: pytest tests/unit
     - name: "backend: integration test"
-      python: "3.6"
+      dist: xenial
+      python: "3.7"
       services: mongodb
       install: pip install -r dispatcher/backend/requirements.txt
       before_script:
