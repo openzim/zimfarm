@@ -1,6 +1,6 @@
 from datetime import datetime
 
-import trafaret
+import trafaret as t
 from flask import request, jsonify, Response
 
 from common.entities import ScheduleCategory
@@ -106,13 +106,13 @@ class ScheduleRoute(BaseRoute, URLComponent):
         """
 
         try:
-            name = trafaret.String(allow_blank=False)
-            language = trafaret.String(allow_blank=False)
-            category = trafaret.Enum(*ScheduleCategory.all())
-            validator = trafaret.Dict(
-                trafaret.Key('name', optional=True, trafaret=name),
-                trafaret.Key('language', optional=True, trafaret=language),
-                trafaret.Key('category', optional=True, trafaret=category))
+            name = t.String(allow_blank=False)
+            language = t.String(allow_blank=False)
+            category = t.Enum(*ScheduleCategory.all())
+            validator = t.Dict(
+                t.Key('name', optional=True, trafaret=name),
+                t.Key('language', optional=True, trafaret=language),
+                t.Key('category', optional=True, trafaret=category))
 
             update = request.get_json()
             update = validator.check(update)
@@ -124,5 +124,5 @@ class ScheduleRoute(BaseRoute, URLComponent):
                 return Response()
             else:
                 raise ScheduleNotFound()
-        except trafaret.DataError as e:
+        except t.DataError as e:
             raise InvalidRequestJSON(str(e.error))
