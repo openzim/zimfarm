@@ -2,6 +2,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+from bson import ObjectId
 
 from common.entities import TaskStatus
 
@@ -36,6 +37,13 @@ class TestTaskCreate:
 
 
 class TestTaskList:
+    def _assert_task(self, task, item):
+        assert set(item.keys()) == {'_id', 'status', 'schedule'}
+        assert item['_id'] == str(task['_id'])
+        assert item['status'] == task['status']
+        assert item['schedule']['_id'] == str(task['schedule']['_id'])
+        assert item['schedule']['name'] == task['schedule']['name']
+
     def test_unauthorized(self, client, tasks):
         url = '/api/tasks/'
         response = client.get(url)
@@ -57,11 +65,8 @@ class TestTaskList:
         tasks.sort(key=lambda task: task['_id'], reverse=True)
         assert len(items) == len(tasks)
         for index, task in enumerate(tasks):
-            assert set(items[index].keys()) == {'_id', 'status', 'schedule'}
-            assert items[index]['_id'] == str(task['_id'])
-            assert items[index]['status'] == task['status']
-            assert items[index]['schedule']['_id'] == str(task['schedule']['_id'])
-            assert items[index]['schedule']['name'] == str(task['schedule']['name'])
+            item = items[index]
+            self._assert_task(task, item)
 
     def test_list_pagination(self, client, access_token, tasks):
         url = '/api/tasks/?limit={}&skip={}'.format(10, 5)
@@ -72,6 +77,24 @@ class TestTaskList:
         data = json.loads(response.data)
         assert data['meta']['limit'] == 10
         assert data['meta']['skip'] == 5
+
+    @pytest.mark.parametrize('statuses', [[TaskStatus.succeeded], [TaskStatus.succeeded, TaskStatus.received]])
+    def test_status(self, client, access_token, tasks, statuses):
+        url = f'/api/tasks/?'
+        for status in statuses:
+            url += f'status={status}&'
+
+        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        response = client.get(url, headers=headers)
+        assert response.status_code == 200
+
+        tasks = {task['_id']: task for task in tasks if task['status'] in statuses}
+        items = json.loads(response.data)['items']
+
+        assert len(tasks) == len(items)
+        for item in items:
+            task = tasks[ObjectId(item['_id'])]
+            self._assert_task(task, item)
 
 
 class TestTaskGet:

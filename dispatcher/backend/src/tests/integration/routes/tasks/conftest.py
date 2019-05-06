@@ -8,13 +8,6 @@ from common.mongo import Tasks
 
 
 @pytest.fixture()
-def make_schedule():
-    def _make_schedule(name: str):
-        return {'_id': ObjectId(), 'name': name}
-    return _make_schedule
-
-
-@pytest.fixture()
 def make_event():
     def _make_event(code: str, timestamp: datetime, **kwargs):
         event = {'code': code, 'timestamp': timestamp}
@@ -28,7 +21,8 @@ def make_task(database, make_event):
     task_ids = []
     tasks = Tasks(database=database)
 
-    def _make_task(schedule, status=TaskStatus.sent, hostname='username@zimfarm_worker.com'):
+    def _make_task(schedule_id=ObjectId(), schedule_name='', status=TaskStatus.sent,
+                   hostname='username@zimfarm_worker.com'):
         if status == TaskStatus.sent:
             events = [TaskStatus.sent]
         elif status == TaskStatus.received:
@@ -40,6 +34,7 @@ def make_task(database, make_event):
         else:
             events = [TaskStatus.sent, TaskStatus.received, TaskStatus.started, TaskStatus.failed]
 
+        schedule = {'_id': schedule_id, 'name': schedule_name}
         timestamp = {event: datetime.now() for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
         container = {
@@ -83,24 +78,19 @@ def make_task(database, make_event):
 
 
 @pytest.fixture()
-def schedule(make_schedule):
-    return make_schedule('Schedule_example')
-
-
-@pytest.fixture()
-def tasks(make_task, schedule):
+def tasks(make_task):
     tasks = []
     for i in range(5):
         tasks += [
-            make_task(schedule, status=TaskStatus.sent),
-            make_task(schedule, status=TaskStatus.received),
-            make_task(schedule, status=TaskStatus.started),
-            make_task(schedule, status=TaskStatus.succeeded),
-            make_task(schedule, status=TaskStatus.failed),
+            make_task(status=TaskStatus.sent),
+            make_task(status=TaskStatus.received),
+            make_task(status=TaskStatus.started),
+            make_task(status=TaskStatus.succeeded),
+            make_task(status=TaskStatus.failed),
         ]
     return tasks
 
 
 @pytest.fixture()
-def task(make_task, schedule):
-    return make_task(schedule, status=TaskStatus.succeeded)
+def task(make_task):
+    return make_task(status=TaskStatus.succeeded)
