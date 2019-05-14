@@ -1,7 +1,7 @@
 from bson.objectid import ObjectId, InvalidId
 
 
-class URLComponent:
+class ScheduleQueryMixin:
     @staticmethod
     def get_schedule_query(schedule_id_or_name: str):
         try:

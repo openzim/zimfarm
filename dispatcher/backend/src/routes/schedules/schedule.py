@@ -1,4 +1,5 @@
 from datetime import datetime
+from http import HTTPStatus
 
 import trafaret as t
 from flask import request, jsonify, Response
@@ -6,7 +7,7 @@ from flask import request, jsonify, Response
 from common.entities import ScheduleCategory
 from common.mongo import Schedules
 from errors.http import InvalidRequestJSON, ScheduleNotFound
-from .base import URLComponent
+from routes.schedules.base import ScheduleQueryMixin
 from .. import authenticate
 from ..base import BaseRoute
 
@@ -79,10 +80,10 @@ class SchedulesBackupRoute(BaseRoute):
         return jsonify(schedules)
 
 
-class ScheduleRoute(BaseRoute, URLComponent):
+class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
     rule = '/<string:schedule>'
     name = 'schedule'
-    methods = ['GET']
+    methods = ['GET', 'DELETE']
 
     @authenticate
     def get(self, schedule: str, *args, **kwargs):
@@ -126,3 +127,15 @@ class ScheduleRoute(BaseRoute, URLComponent):
                 raise ScheduleNotFound()
         except t.DataError as e:
             raise InvalidRequestJSON(str(e.error))
+
+    @authenticate
+    def delete(self, schedule: str, *args, **kwargs):
+        """Delete a schedule."""
+
+        query = self.get_schedule_query(schedule)
+        result = Schedules().delete_one(query)
+
+        if result.deleted_count == 0:
+            raise ScheduleNotFound()
+        else:
+            return '', HTTPStatus.NO_CONTENT
