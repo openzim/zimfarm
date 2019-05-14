@@ -31,7 +31,7 @@ class RunRedis(Operation):
                         container.remove()
 
                 self.docker.images.pull('redis', tag='latest')
-                self.docker.containers.run('redis', detach=True, name=self.container_name)
+                self.docker.containers.run('redis', command='redis-server --save "" --appendonly no', detach=True, name=self.container_name)
             except docker.errors.APIError:
                 retries -= 1
                 sleep(3)
