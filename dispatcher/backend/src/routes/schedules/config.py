@@ -3,10 +3,10 @@ from flask import request
 from errors.http import InvalidRequestJSON
 from .. import authenticate
 from routes.base import BaseRoute
-from .base import URLComponent
+from .base import ScheduleQueryMixin
 
 
-class OfflinerFlagsRoute(BaseRoute, URLComponent):
+class OfflinerFlagsRoute(BaseRoute, ScheduleQueryMixin):
     rule = '/<string:schedule>/config/offliner/flags'
     name = 'schedule_config_offliner_flags'
     methods = ['PATCH']
