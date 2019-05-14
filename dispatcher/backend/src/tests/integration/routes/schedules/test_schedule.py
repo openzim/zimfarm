@@ -1,4 +1,11 @@
+from uuid import uuid4
+
 import pytest
+
+
+@pytest.fixture()
+def schedule(make_schedule):
+    return make_schedule(name=str(uuid4()))
 
 
 class TestScheduleList:
@@ -68,5 +75,21 @@ class TestScheduleGet:
     def test_unauthorized(self, client, access_token, schedule):
         url = '/api/schedules/{}'.format(schedule['name'])
         response = client.get(url)
+        assert response.status_code == 401
+        assert response.get_json() == {'error': 'token invalid'}
+
+
+class TestScheduleDelete:
+    @pytest.mark.parametrize('key', ['_id', 'name'])
+    def test_delete_schedule(self, client, access_token, schedule, key):
+        """Test delete schedule with id or name"""
+
+        url = '/api/schedules/{}'.format(schedule[key])
+        response = client.delete(url, headers={'Authorization': access_token})
+        assert response.status_code == 204
+
+    def test_unauthorized(self, client, access_token, schedule):
+        url = '/api/schedules/{}'.format(schedule['name'])
+        response = client.delete(url)
         assert response.status_code == 401
         assert response.get_json() == {'error': 'token invalid'}
