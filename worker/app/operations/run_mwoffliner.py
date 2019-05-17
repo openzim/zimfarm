@@ -51,7 +51,7 @@ class RunMWOffliner(Operation):
                 params.append('--{name}'.format(name=key))
             elif isinstance(value, list):
                 for item in value:
-                    params.append('--{name}={value}'.format(name=key, value=item))
+                    params.append('--{name}="{value}"'.format(name=key, value=item))
             else:
-                params.append('--{name}={value}'.format(name=key, value=value))
+                params.append('--{name}="{value}"'.format(name=key, value=value))
         return 'mwoffliner {}'.format(' '.join(params))
