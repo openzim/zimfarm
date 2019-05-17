@@ -41,12 +41,34 @@ class TestMWOfflinerFlagsValidator:
         flags = {'mwUrl': 'https://www.wikipedia.org', 'adminEmail': 'contact@kiwix.org'}
         mwoffliner_flags_validator.check(flags)
 
-        flags = {'mwUrl': 'https://www.wikipedia.org',
+        flags = {'mwUrl': 'https://en.wikipedia.org/',
                  'adminEmail': 'contact@kiwix.org',
-                 'format': ['nopic', 'novid'],
+                 'articleList': 'https://en.wikipedia.org/list',
+                 'customZimFavicon': 'https://en.wikipedia.org/icon.png',
+                 'customZimTitle': "Wikipedia Offline",
+                 'customZimDescription': "An offline Wikipedia",
+                 'customZimTags': ['Highlight'],
+                 'customMainPage': "Main_Page",
+                 'filenamePrefix': "wikipedia_all",
+                 'format': ['nopic', 'novid', 'nopdf', 'nodet,nopic', 'novid,nopdf'],
+                 'keepEmptyParagraphs': False,
+                 'mwWikiPath': "/wiki",
+                 'mwApiPath': "/w/api.php",
+                 'mwModulePath': "/w/load.php",
+                 'mwDomain': "en.wikipedia.org",
+                 'mwUsername': "ausername",
+                 'mwPassword': "apassword",
+                 'minifyHtml': False,
+                 'publisher': 'Kiwix',
+                 'requestTimeout': 2,
                  'useCache': True,
+                 'skipCacheCleaning': False,
+                 'speed': 1.0,
                  'verbose': False,
-                 'speed': 1.0}
+                 'withoutZimFullTextIndex': False,
+                 'addNamespaces': "100,200",
+                 'getCategories': False,
+                 }
         mwoffliner_flags_validator.check(flags)
 
         flags = make_mwoffliner_flags()
@@ -66,10 +88,35 @@ class TestMWOfflinerFlagsValidator:
             mwoffliner_flags_validator.check(flags)
 
     @pytest.mark.parametrize('data', [
-        {'mwUrl': 'http:/example.com'}, {'adminEmail': 'user @example.com'},
-        {'format': ['pic', 123]}, {'useCache': 'False'}, {'verbose': 'False'}, {'speed': 'zero'},
-        {'articleList': 'abc'}, {'customZimFavicon': '123'},
-        {'customZimTitle': 123}, {'customZimDescription': None},
+        {'mwUrl': 'http:/example.com'},
+        {'adminEmail': 'user @example.com'},
+        {'articleList': 'abc'},
+        {'customZimFavicon': 'http:/example.com'},
+        {'customZimTitle': 123},
+        {'customZimDescription': None},
+        {'customZimTags': 'abc'},
+        {'customZimTags': ['Highlight', 123]},
+        {'customMainPage': 123},
+        {'filenamePrefix': 123},
+        {'format': ['pic', 123]},
+        {'keepEmptyParagraphs': 'True'},
+        {'mwWikiPath': 123},
+        {'mwApiPath': 123},
+        {'mwModulePath': 123},
+        {'mwDomain': 123},
+        {'mwUsername': 123},
+        {'mwPassword': 123},
+        {'minifyHtml': 'False'},
+        {'publisher': 123},
+        {'requestTimeout': 1.23},
+        {'useCache': 'False'},
+        {'skipCacheCleaning': 'False'},
+        {'speed': 'zero'},
+        {'verbose': 'False'},
+        {'withoutZimFullTextIndex': 'False'},
+        {'addNamespaces': 123},
+        {'getCategories': 'False'},
+
     ])
     def test_invalid_field(self, data):
         with pytest.raises(t.DataError):
