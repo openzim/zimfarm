@@ -19,7 +19,6 @@ errors.register_handlers(flask)
 
 
 if __name__ == "__main__":
-    Initializer.create_database_indexes()
     Initializer.create_initial_user()
 
     is_debug = os.getenv('DEBUG', False)
