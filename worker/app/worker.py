@@ -1,22 +1,32 @@
 import logging
 import sys
 
+import docker
 import paramiko
 from celery import Celery
+from celery.signals import worker_shutting_down
 from kombu import Queue, Exchange
 
 import tasks
 from utils import Settings, SFTPClient
 
+logger = logging.getLogger(__name__)
+
+
+@worker_shutting_down.connect
+def worker_shutting_down_clean_up(*args, **kwargs):
+    logger.info('Shutting Down...')
+
+    client = docker.from_env()
+    containers = client.containers.list(filters={'name': 'mwoffliner'})
+    for container in containers:
+        logger.info(f'Terminating container: {container.name}')
+        container.stop(timeout=0)
+
 
 class Worker:
-    logger = logging.getLogger(__name__)
-
-    def __init__(self):
-        pass
-
     def start(self):
-        self.logger.info('Starting Zimfarm Worker...')
+        logger.info('Starting Zimfarm Worker...')
 
         # setting
         Settings.sanity_check()
@@ -68,7 +78,8 @@ class Worker:
         # TODO: make a simple request to validate username and password
         pass
 
-    def sftp_test(self):
+    @staticmethod
+    def sftp_test():
         try:
             hostname = Settings.warehouse_hostname
             port = Settings.warehouse_port
@@ -76,7 +87,7 @@ class Worker:
             private_key = Settings.private_key
             with SFTPClient(hostname, port, username, private_key) as client:
                 client.list_dir('/')
-            self.logger.info('SFTP auth check success.')
+            logger.info('SFTP auth check success.')
         except paramiko.AuthenticationException:
-            self.logger.error('SFTP auth check failed -- please double check your username and private key.')
+            logger.error('SFTP auth check failed -- please double check your username and private key.')
             sys.exit(1)
