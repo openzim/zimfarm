@@ -173,6 +173,19 @@ class TaskRetriedEventHandler(BaseTaskEventHandler):
                         exception=task.exception, traceback=task.traceback)
 
 
+class TaskRevokedEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task = super().__call__(event)
+        task_id = self.get_task_id(task)
+
+        terminated = event.get('terminated')
+        signum = event.get('signum')
+
+        logger.info(f'Task Revoked: {task_id}, terminated: {terminated}, signum: {signum}')
+
+        self.save_event(task_id, TaskEvent.revoked, self.get_timestamp(task))
+
+
 class TaskContainerStartedEventHandler(BaseTaskEventHandler):
     def __call__(self, event):
         task_id = self.get_task_id_from_event(event)

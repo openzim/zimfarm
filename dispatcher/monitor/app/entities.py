@@ -7,3 +7,4 @@ class TaskEvent:
     container_finished = 'container_finished'
     failed = 'failed'
     retried = 'retried'
+    revoked = 'revoked'
