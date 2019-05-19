@@ -110,7 +110,8 @@ class Settings:
             'WAREHOUSE_PORT': cls.warehouse_port,
             'WORKING_DIR': cls.working_dir_host,
             'NODE_NAME': cls.node_name,
-            'QUEUES': cls.queues
+            'QUEUES': cls.queues,
+            'CONCURRENCY': cls.concurrency
         }
 
         for name, value in variables.items():
