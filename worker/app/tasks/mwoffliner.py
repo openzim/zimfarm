@@ -36,23 +36,20 @@ class MWOffliner(Base):
         working_dir_container = Path(Settings.working_dir_container).joinpath(self.task_id)
 
         try:
-            # run redis
-            run_redis = RunRedis(docker_client=docker.from_env(), container_name=Settings.redis_name)
-            run_redis.execute()
-
             # run mwoffliner
-            run_mwoffliner = RunMWOffliner(
-                docker_client=docker.from_env(), tag=image_tag, flags=flags,
-                task_id=self.task_id, working_dir_host=Settings.working_dir_host,
-                redis_container_name=Settings.redis_name)
-            logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
-            logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
-            self.send_event('task-container_started', image=image, command=run_mwoffliner.command)
+            with RunRedis(docker_client=docker.from_env(), task_id=self.task_id) as redis_container:
+                run_mwoffliner = RunMWOffliner(
+                    docker_client=docker.from_env(), tag=image_tag, flags=flags,
+                    task_id=self.task_id, working_dir_host=Settings.working_dir_host,
+                    redis_container=redis_container)
+                logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
+                logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
 
-            result = run_mwoffliner.execute()
-            logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
-            self.send_event('task-container_finished', exit_code=result.exit_code, stdout=result.stdout,
-                            stderr=result.stderr)
+                self.send_event('task-container_started', image=image, command=run_mwoffliner.command)
+                result = run_mwoffliner.execute()
+                logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
+                self.send_event('task-container_finished', exit_code=result.exit_code,
+                                stdout=result.stdout, stderr=result.stderr)
 
             if not result.is_successful():
                 raise Exception(str(result))
