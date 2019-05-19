@@ -29,6 +29,7 @@ class Monitor:
                 'task-succeeded': task_handlers.TaskSucceededEventHandler(),
                 'task-failed': task_handlers.TaskFailedEventHandler(),
                 'task-retried': task_handlers.TaskRetriedEventHandler(),
+                'task-revoked': task_handlers.TaskRevokedEventHandler(),
                 'task-container_started': task_handlers.TaskContainerStartedEventHandler(),
                 'task-container_finished': task_handlers.TaskContainerFinishedEventHandler(),
                 '*': self.handle_others}
