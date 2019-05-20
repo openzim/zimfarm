@@ -1,6 +1,14 @@
 import trafaret as t
 
 
+class ConfigValidator(t.Dict):
+
+    def check(self, config, *args, **kwargs):
+        super(ConfigValidator, self).check(config, *args, **kwargs)
+        flags_validator = get_flags_validator(config.get("task_name"))
+        return flags_validator.check(config.get("flags"))
+
+
 mwoffliner_flags_validator = t.Dict({
     t.Key('mwUrl'): t.URL,
     t.Key('adminEmail'): t.Email,
@@ -31,15 +39,26 @@ mwoffliner_flags_validator = t.Dict({
     t.Key('getCategories', optional=True): t.Bool,
 })
 
+phet_flags_validator = t.Dict()
 
-config_validator = t.Dict({
-    t.Key('task_name'): t.Enum('offliner.mwoffliner'),
+config_validator = ConfigValidator({
+    t.Key('task_name'): t.Enum('offliner.mwoffliner', 'offliner.phet'),
     t.Key('queue'): t.Enum('small', 'medium', 'large', 'debug'),
     t.Key('warehouse_path'): t.Enum(
-        '/wikipedia', '/other', '/psiram', '/vikidia', '/wikibooks', '/wikinews',
-        '/wikiquote', '/wikisource', '/wikiversity', '/wikivoyage', '/wiktionary'),
+        '/gutenberg', '/other', '/phet', '/psiram', '/stack_exchange',
+        '/ted', '/vikidia', '/wikibooks', '/wikinews', '/wikipedia',
+        '/wikiquote', '/wikisource', '/wikispecies', '/wikiversity',
+        '/wikivoyage', '/wiktionary'),
     t.Key('image'): t.Dict(
-        t.Key('name', trafaret=t.Enum('openzim/mwoffliner')),
+        t.Key('name', trafaret=t.Enum('openzim/mwoffliner', 'openzim/phet')),
         t.Key('tag', trafaret=t.String)),
-    t.Key('flags'): mwoffliner_flags_validator
+    t.Key('flags'): t.Or(mwoffliner_flags_validator, phet_flags_validator),
 })
+
+
+def get_flags_validator(task_name):
+    if task_name == "offliner.phet":
+        return phet_flags_validator
+    if task_name == "offliner.mwoffliner":
+        return mwoffliner_flags_validator
+    return t.Dict()
