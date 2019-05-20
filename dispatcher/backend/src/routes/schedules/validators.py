@@ -45,7 +45,7 @@ config_validator = ConfigValidator({
     t.Key('task_name'): t.Enum('offliner.mwoffliner', 'offliner.phet'),
     t.Key('queue'): t.Enum('small', 'medium', 'large', 'debug'),
     t.Key('warehouse_path'): t.Enum(
-        '/gutenberg', '/other', '/phet', '/psiram', 'stack_exchange',
+        '/gutenberg', '/other', '/phet', '/psiram', '/stack_exchange',
         '/ted', '/vikidia', '/wikibooks', '/wikinews', '/wikipedia',
         '/wikiquote', '/wikisource', '/wikispecies', '/wikiversity',
         '/wikivoyage', '/wiktionary'),
