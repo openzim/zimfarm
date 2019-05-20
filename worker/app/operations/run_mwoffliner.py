@@ -10,14 +10,14 @@ class RunMWOffliner(Operation):
     """Run MWOffliner container with `config`"""
 
     def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str,
-                 redis_container_name: str):
+                 redis_container: Container):
         tag = 'latest' if not tag else tag
         super().__init__()
         self.docker = docker_client
         self.command = self._get_command(flags)
         self.task_id = task_id
         self.working_dir_host = Path(working_dir_host).joinpath(self.task_id).absolute()
-        self.redis_container_name = redis_container_name
+        self.redis_container = redis_container
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
 
     def execute(self) -> ContainerResult:
@@ -30,7 +30,7 @@ class RunMWOffliner(Operation):
         volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
         container: Container = self.docker.containers.run(
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
-            links={self.redis_container_name: 'redis'}, name='mwoffliner_{}'.format(self.task_id))
+            links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}')
 
         exit_code = container.wait()['StatusCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")

@@ -1,6 +1,5 @@
 from typing import Optional
-from time import sleep
-import docker.errors
+
 from docker import DockerClient
 from docker.models.containers import Container
 
@@ -8,36 +7,40 @@ from .base import Operation
 
 
 class RunRedis(Operation):
-    def __init__(self, docker_client: DockerClient, container_name: str):
+    def __init__(self, docker_client: DockerClient, task_id: str):
         super().__init__()
         self.docker = docker_client
-        self.container_name = container_name
+        self._container_name = f'redis_{task_id}'
+        self._container: Optional[Container] = None
 
-    def execute(self):
-        """Run a redis container detached with `self.container_name` if there isn't one running already.
+    def execute(self) -> Container:
+        """Run a redis container detached.
 
         :raise: docker.errors.ImageNotFound
         :raise: docker.errors.APIError
         """
 
-        retries = 3
-        while retries:
-            try:
-                container = self._get_container(self.container_name)
-                if container:
-                    if container.status == 'running':
-                        return
-                    else:
-                        container.remove()
+        if self._container:
+            return self._container
 
-                self.docker.images.pull('redis', tag='latest')
-                self.docker.containers.run('redis', command='redis-server --save "" --appendonly no', detach=True, name=self.container_name)
-            except docker.errors.APIError:
-                retries -= 1
-                sleep(3)
+        self._remove_existing()
 
-    def _get_container(self, container_name: str) -> Optional[Container]:
-        try:
-            return self.docker.containers.get(container_name)
-        except docker.errors.NotFound:
-            return None
+        image = self.docker.images.pull('redis', tag='latest')
+        self._container = self.docker.containers.run(
+            image, command='redis-server --save "" --appendonly no', detach=True, name=self._container_name)
+        return self._container
+
+    def __enter__(self):
+        return self.execute()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._container:
+            self._container.stop()
+            self._container.remove()
+
+    def _remove_existing(self):
+        containers = self.docker.containers.list(all=True, filters={'name': self._container_name})
+        if containers:
+            container = containers[0]
+            container.stop()
+            container.remove()

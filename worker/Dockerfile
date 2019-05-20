@@ -7,6 +7,9 @@ RUN pip3 install -r requirements.txt
 
 COPY app app
 
+RUN adduser --disabled-password --gecos "" celery_runner
+RUN usermod -aG root celery_runner
+
 ENV USERNAME username
 ENV PASSWORD password
 ENV NODE_NAME default_node_name

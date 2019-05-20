@@ -24,7 +24,6 @@ class Settings:
     working_dir_host: str = os.getenv('WORKING_DIR', None)
     working_dir_container: str = '/zim_files'
     private_key: str = '/usr/src/.ssh/id_rsa'
-    redis_name: str = os.getenv('REDIS_NAME', 'zimfarm_redis')
 
     docker_socket: str = '/var/run/docker.sock'
 
@@ -110,7 +109,8 @@ class Settings:
             'WAREHOUSE_PORT': cls.warehouse_port,
             'WORKING_DIR': cls.working_dir_host,
             'NODE_NAME': cls.node_name,
-            'QUEUES': cls.queues
+            'QUEUES': cls.queues,
+            'CONCURRENCY': cls.concurrency
         }
 
         for name, value in variables.items():
