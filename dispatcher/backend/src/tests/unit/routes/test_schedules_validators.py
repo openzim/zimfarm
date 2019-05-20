@@ -1,7 +1,7 @@
 import pytest
 import trafaret as t
 
-from routes.schedules.validators import mwoffliner_flags_validator, config_validator
+from routes.schedules.validators import mwoffliner_flags_validator, config_validator, phet_flags_validator
 
 
 def make_mwoffliner_flags(**kwargs):
@@ -21,16 +21,31 @@ def make_mwoffliner_flags(**kwargs):
     return flags
 
 
-def make_config(**kwargs):
+def make_mwoffliner_config(**kwargs):
     config = {
         'task_name': 'offliner.mwoffliner',
-        'queue': 'small',
+        'queue': 'medium',
         'warehouse_path': '/wikipedia',
         'image': {
             'name': 'openzim/mwoffliner',
             'tag': '1.8.0'
         },
         'flags': make_mwoffliner_flags()
+    }
+    config.update(kwargs)
+    return config
+
+
+def make_phet_config(**kwargs):
+    config = {
+        'task_name': 'offliner.phet',
+        'queue': 'small',
+        'warehouse_path': '/phet',
+        'image': {
+            'name': 'openzim/phet',
+            'tag': 'latest'
+        },
+        'flags': {}
     }
     config.update(kwargs)
     return config
@@ -133,21 +148,33 @@ class TestMWOfflinerFlagsValidator:
         assert set(result['format']) == set(expected)
 
 
-class TestConfigValidator:
+class TestPhetFlagsValidator:
     def test_valid(self):
+        flags = {}
+        phet_flags_validator.check(flags)
+
+    def test_invalid_mwoffliner(self):
+        with pytest.raises(t.DataError):
+            flags = make_mwoffliner_flags()
+            phet_flags_validator.check(flags)
+
+
+class TestConfigValidator:
+    @pytest.mark.parametrize('make_config', [make_mwoffliner_config, make_phet_config])
+    def test_valid(self, make_config):
         config = make_config()
         config_validator.check(config)
 
     @pytest.mark.parametrize('missing_key', ['task_name', 'queue', 'warehouse_path', 'image', 'flags'])
     def test_missing_required(self, missing_key):
         with pytest.raises(t.DataError):
-            config = make_config()
+            config = make_mwoffliner_config()
             config.pop(missing_key)
             config_validator.check(config)
 
     def test_extra_key(self):
         with pytest.raises(t.DataError):
-            config = make_config()
+            config = make_mwoffliner_config()
             config['extra'] = 'some_value'
             config_validator.check(config)
 
