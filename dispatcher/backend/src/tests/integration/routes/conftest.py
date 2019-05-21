@@ -93,11 +93,13 @@ def schedules(make_schedule, make_beat_crontab, make_language):
     schedules.append(make_schedule(name="wikipedia_fr_all_maxi"))
     schedules.append(make_schedule(name="wikipedia_fr_all_nopic"))
     schedules.append(make_schedule(name="wikipedia_bm_all_nopic"))
-    schedules.append(make_schedule(language=make_language(code="fr")))
-    schedules.append(make_schedule(language=make_language(code="bm")))
-    schedules.append(make_schedule(category="phet"))
-    schedules.append(make_schedule(category="wikibooks"))
-    schedules.append(make_schedule(tags=["all"]))
-    schedules.append(make_schedule(tags=["all", "mini"]))
-    schedules.append(make_schedule(tags=["mini", "nopic"]))
+    schedules.append(make_schedule(language=make_language(code="fr"),
+                                   name="schedule_43"))
+    schedules.append(make_schedule(language=make_language(code="bm"),
+                                   name="schedule_44"))
+    schedules.append(make_schedule(category="phet", name="schedule_45"))
+    schedules.append(make_schedule(category="wikibooks", name="schedule_46"))
+    schedules.append(make_schedule(tags=["all"], name="schedule_47"))
+    schedules.append(make_schedule(tags=["all", "mini"], name="schedule_48"))
+    schedules.append(make_schedule(tags=["mini", "nopic"], name="schedule_49"))
     return schedules
