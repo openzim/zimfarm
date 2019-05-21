@@ -42,8 +42,6 @@ class SchedulesRoute(BaseRoute):
         if name:
             query['name'] = {'$regex': r".*{}.*".format(name), '$options': 'i'}
 
-        print(query)
-
         # get schedules from database
         projection = {
             '_id': 1,
