@@ -44,6 +44,30 @@ class TestScheduleList:
         assert 'items' in response_json
         assert len(response_json['items']) == expected
 
+    @pytest.mark.parametrize('params, expected', [
+        ("name=Wikipedia_fr", 2),
+        ("name=Wikipedia", 3),
+        ("name=Wiki.*pic$", 2),
+        ("lang=fr", 1),
+        ("lang=bm", 1),
+        ("category=phet", 1),
+        ("category=wikibooks", 1),
+        ("category=wikipedia", 48),
+        ("category=phet&category=wikipedia", 49),
+        ("tag=all", 2),
+        ("tag=mini", 2),
+        ("tag=all&tag=mini", 1),
+    ])
+    def test_list_schedules_with_filter(self, client, access_token, schedules, params, expected):
+
+        url = '/api/schedules/?{}&limit=50'.format(params)
+        response = client.get(url, headers={'Authorization': access_token})
+        assert response.status_code == 200
+
+        response_json = response.get_json()
+        assert 'items' in response_json
+        assert len(response_json['items']) == expected
+
     def test_unauthorized(self, client):
         url = '/api/schedules/'
         response = client.get(url)
