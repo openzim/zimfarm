@@ -55,15 +55,16 @@ def make_schedule(database, make_beat_crontab, make_language, make_config):
     schedule_ids = []
 
     def _make_schedule(name: str = 'schedule_name', category: str = 'wikipedia',
-                       beat: dict = None, config: dict = None) -> dict:
+                       beat: dict = None, tags: list = ['nopic'],
+                       language: dict = None, config: dict = None) -> dict:
         document = {
             '_id': ObjectId(),
             'name': name,
             'category': category,
             'enabled': True,
             'beat': beat or make_beat_crontab(),
-            'language': make_language(),
-            'tags': ['nopic'],
+            'language': language or make_language(),
+            'tags': tags,
             'config': config or make_config()
         }
         schedule_id = database.schedules.insert_one(document).inserted_id
@@ -81,10 +82,24 @@ def schedule(make_schedule, make_beat_crontab):
 
 
 @pytest.fixture(scope='module')
-def schedules(make_schedule, make_beat_crontab):
+def schedules(make_schedule, make_beat_crontab, make_language):
     schedules = []
-    for index in range(50):
+    for index in range(40):
         name = 'schedule_{}'.format(index)
         schedule = make_schedule(name)
         schedules.append(schedule)
+
+    # custom schedules for query lookup
+    schedules.append(make_schedule(name="wikipedia_fr_all_maxi"))
+    schedules.append(make_schedule(name="wikipedia_fr_all_nopic"))
+    schedules.append(make_schedule(name="wikipedia_bm_all_nopic"))
+    schedules.append(make_schedule(language=make_language(code="fr"),
+                                   name="schedule_43"))
+    schedules.append(make_schedule(language=make_language(code="bm"),
+                                   name="schedule_44"))
+    schedules.append(make_schedule(category="phet", name="schedule_45"))
+    schedules.append(make_schedule(category="wikibooks", name="schedule_46"))
+    schedules.append(make_schedule(tags=["all"], name="schedule_47"))
+    schedules.append(make_schedule(tags=["all", "mini"], name="schedule_48"))
+    schedules.append(make_schedule(tags=["mini", "nopic"], name="schedule_49"))
     return schedules

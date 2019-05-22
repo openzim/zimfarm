@@ -27,11 +27,20 @@ class SchedulesRoute(BaseRoute):
         skip = 0 if skip < 0 else skip
         limit = 20 if limit <= 0 else limit
         categories = request.args.getlist('category')
+        tags = request.args.getlist('tag')
+        lang = request.args.get('lang')
+        name = request.args.get('name')
 
         # assemble filters
-        filter = {}
+        query = {}
         if categories:
-            filter['category'] = {'$in': categories}
+            query['category'] = {'$in': categories}
+        if lang:
+            query['language.code'] = lang
+        if tags:
+            query['tags'] = {'$all': tags}
+        if name:
+            query['name'] = {'$regex': r".*{}.*".format(name), '$options': 'i'}
 
         # get schedules from database
         projection = {
@@ -44,7 +53,8 @@ class SchedulesRoute(BaseRoute):
             'most_recent_task': 1,
             'tags': 1
         }
-        cursor = Schedules().find(filter, projection).skip(skip).limit(limit)
+        cursor = Schedules().find(query, projection).skip(skip).limit(limit)
+        count = Schedules().count_documents(query)
         schedules = [schedule for schedule in cursor]
 
         # task this month
@@ -61,6 +71,7 @@ class SchedulesRoute(BaseRoute):
             'meta': {
                 'skip': skip,
                 'limit': limit,
+                'count': count,
             },
             'items': schedules
         })
