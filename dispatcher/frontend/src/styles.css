@@ -55,3 +55,27 @@ button.success:active {
 .bold {
     font-weight: 600;
 }
+
+/* filtering */
+button.apply-filter {
+	padding: .2em;
+	margin: .5em;
+	background-color: #294CA3;
+	color: white;
+	font-size: 1em;
+	font-weight: bold;
+}
+
+.filter-select-group {
+	margin: .5em;
+}
+
+.filter-select-group button, span.filter-select-group {
+	padding: .2em;
+	margin: .2em;
+    background-color: lightgray;
+}
+
+form.filter-form {
+	margin: .5em;
+}

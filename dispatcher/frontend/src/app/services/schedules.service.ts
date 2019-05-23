@@ -12,12 +12,26 @@ import { map } from 'rxjs/operators';
 export class SchedulesService {
     constructor(private http: HttpClient) { }
 
-    list(skip: number = 0, limit: number = 20, categories: string[] = []) {
+    list(skip: number = 0, limit: number = 20, queues: string[] = [],
+         categories: string[] = [], languages: string[] = [],
+         name: string = "", tags: string[] = []) {
         let params = {
             skip: skip.toString(),
             limit: limit.toString()};
+        if (queues.length > 0) {
+            params['queue'] = queues;
+        }
         if (categories.length > 0) {
             params['category'] = categories;
+        }
+        if (languages.length > 0) {
+            params['lang'] = languages;
+        }
+        if (name.length > 0) {
+            params['name'] = name;
+        }
+        if (tags.length > 0) {
+            params['tag'] = tags;
         }
         return this.http.get<SchedulesListResponseData>(
             apiRoot + '/api/schedules/', {params: params}

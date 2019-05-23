@@ -7,6 +7,10 @@ import { AgGridModule } from 'ag-grid-angular';
 import { SharedModule } from '../shared/shared.module';
 import { ScheduleGridComponent } from './schedule-grid/schedule-grid.component';
 import { CategoryFilterComponent } from './schedule-filters/category-filter';
+import { LanguageFilterComponent } from './schedule-filters/language-filter';
+import { QueueFilterComponent } from './schedule-filters/queue-filter';
+import { NameFilterComponent } from './schedule-filters/name-filter';
+import { TagsFilterComponent } from './schedule-filters/tags-filter';
 
 const routes: Routes = [
     {
@@ -25,10 +29,16 @@ const routes: Routes = [
         FormsModule,
         ReactiveFormsModule,
         RouterModule.forChild(routes),
-        AgGridModule.withComponents([CategoryFilterComponent])
+        AgGridModule.withComponents([CategoryFilterComponent, LanguageFilterComponent,
+                                     QueueFilterComponent, NameFilterComponent,
+                                     TagsFilterComponent])
     ],
     declarations: [
         ScheduleGridComponent,
-        CategoryFilterComponent]
+        CategoryFilterComponent,
+        LanguageFilterComponent,
+        QueueFilterComponent,
+        NameFilterComponent,
+        TagsFilterComponent]
 })
 export class ScheduleModule { }
