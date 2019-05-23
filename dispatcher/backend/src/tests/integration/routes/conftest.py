@@ -31,10 +31,11 @@ def make_language():
 
 @pytest.fixture(scope='module')
 def make_config():
-    def _make_config(sub_domain: str = 'en', format: str = 'nopic') -> dict:
+    def _make_config(sub_domain: str = 'en', format: str = 'nopic',
+                     queue: str = 'offliner_default') -> dict:
         return {
             'task_name': 'offliner.mwoffliner',
-            'queue': 'offliner_default',
+            'queue': queue,
             'image': {
                 'name': 'openzim/mwoffliner',
                 'tag': 'latest'
@@ -82,9 +83,9 @@ def schedule(make_schedule, make_beat_crontab):
 
 
 @pytest.fixture(scope='module')
-def schedules(make_schedule, make_beat_crontab, make_language):
+def schedules(make_schedule, make_config, make_beat_crontab, make_language):
     schedules = []
-    for index in range(40):
+    for index in range(38):
         name = 'schedule_{}'.format(index)
         schedule = make_schedule(name)
         schedules.append(schedule)
@@ -102,4 +103,9 @@ def schedules(make_schedule, make_beat_crontab, make_language):
     schedules.append(make_schedule(tags=["all"], name="schedule_47"))
     schedules.append(make_schedule(tags=["all", "mini"], name="schedule_48"))
     schedules.append(make_schedule(tags=["mini", "nopic"], name="schedule_49"))
+    schedules.append(make_schedule(config=make_config(queue='small')))
+    schedules.append(make_schedule(config=make_config(queue='small'),
+                                   name="youtube_fr_all_novid",
+                                   language=make_language(code="fr"),
+                                   category="other", tags=["nopic", "novid"]))
     return schedules

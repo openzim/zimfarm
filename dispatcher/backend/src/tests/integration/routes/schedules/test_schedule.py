@@ -48,15 +48,20 @@ class TestScheduleList:
         ("name=Wikipedia_fr", 2),
         ("name=Wikipedia", 3),
         ("name=Wiki.*pic$", 2),
-        ("lang=fr", 1),
+        ("lang=fr", 2),
         ("lang=bm", 1),
+        ("lang=bm&lang=fr", 3),
         ("category=phet", 1),
         ("category=wikibooks", 1),
-        ("category=wikipedia", 48),
-        ("category=phet&category=wikipedia", 49),
+        ("category=wikipedia", 47),
+        ("category=phet&category=wikipedia", 48),
         ("tag=all", 2),
         ("tag=mini", 2),
         ("tag=all&tag=mini", 1),
+        ("queue=small", 2),
+        ("queue=offliner_default", 48),
+        ("queue=offliner_default&queue=small", 50),
+        ("name=youtube&lang=fr&category=other&tag=nopic&tag=novid&queue=small", 1),
     ])
     def test_list_schedules_with_filter(self, client, access_token, schedules, params, expected):
 
