@@ -3,7 +3,7 @@ import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, Htt
 import { Observable, throwError } from 'rxjs';
 import cronstrue from 'cronstrue';
 
-import { apiRoot } from './config';
+import { getAPIRoot } from './config';
 import { map } from 'rxjs/operators';
 
 @Injectable({
@@ -34,14 +34,14 @@ export class SchedulesService {
             params['tag'] = tags;
         }
         return this.http.get<SchedulesListResponseData>(
-            apiRoot + '/api/schedules/', {params: params}
+            getAPIRoot() + '/schedules/', {params: params}
         ).pipe(map(data => {
             return data
         }))
     }
 
     get(schedule_id_name: string) {
-        let url = apiRoot + '/api/schedules/' + schedule_id_name
+        let url = getAPIRoot() + '/schedules/' + schedule_id_name
         return this.http.get<Schedule>(url);
     }
 }
