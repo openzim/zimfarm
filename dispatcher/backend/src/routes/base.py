@@ -12,6 +12,7 @@ class BaseRoute:
         handlers = {
             'GET': self.get,
             'POST': self.post,
+            'PUT': self.put,
             'PATCH': self.patch,
             'DELETE': self.delete
         }
@@ -22,6 +23,9 @@ class BaseRoute:
         return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
     def post(self, *args, **kwargs):
+        return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
+
+    def put(self, *args, **kwargs):
         return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
     def patch(self, *args, **kwargs):

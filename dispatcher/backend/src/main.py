@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 
-from routes import auth, schedules, users, workers, errors, tasks
+from routes import auth, schedules, users, workers, languages, errors, tasks
 from utils.json import Encoder
 from prestart import Initializer
 
@@ -14,6 +14,7 @@ flask.register_blueprint(schedules.Blueprint())
 flask.register_blueprint(tasks.Blueprint())
 flask.register_blueprint(users.Blueprint())
 flask.register_blueprint(workers.Blueprint())
+flask.register_blueprint(languages.Blueprint())
 
 errors.register_handlers(flask)
 

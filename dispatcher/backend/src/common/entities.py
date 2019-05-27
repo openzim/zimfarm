@@ -1,6 +1,4 @@
 
-from common.languages import all_languages
-
 class TaskStatus:
     sent = 'sent'
     received = 'received'

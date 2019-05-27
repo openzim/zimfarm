@@ -36,4 +36,5 @@ if __name__ == "__main__":
     mongo.Users().initialize()
     mongo.Schedules().initialize()
     mongo.Tasks().initialize()
+    mongo.Languages().initialize()
     Initializer.create_initial_user()
