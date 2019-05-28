@@ -1,5 +1,7 @@
 # ZIM Farm
 
+backend: [![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm)
+
 The ZIM farm (zimfarm) is a half-decentralised software solution to
 build [ZIM files](http://www.openzim.org/) efficiently. This means scrapping Web contents,
 packaging them into a ZIM file and uploading the result to an online
