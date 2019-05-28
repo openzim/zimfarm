@@ -47,7 +47,7 @@ export class ScheduleGridComponent implements OnInit {
         {headerName: 'Name', field: 'name', filter: 'nameFilter', width: 150, pinned: 'left'},
         {headerName: "Details", marryChildren: true, openByDefault: true, children: [
             {headerName: 'Queue', field: 'config.queue', filter: 'queueFilter', width: 120},
-            {headerName: 'Language', field: 'language.code', filter: 'languageFilter', columnGroupShow: 'open', width: 150, cellRenderer: (params) => {return this.languagesService.getEnglishName(params.value);}},
+            {headerName: 'Language', field: 'language.code', filter: 'languageFilter', columnGroupShow: 'open', width: 120},
             {headerName: 'Category', field: 'category', filter: 'categoryFilter', columnGroupShow: 'open', width: 120},
             {headerName: 'Tags', field: 'tags', filter: 'tagsFilter', columnGroupShow: 'open', width: 120}
         ]},

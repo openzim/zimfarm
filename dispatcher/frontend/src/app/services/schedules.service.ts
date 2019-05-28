@@ -54,6 +54,7 @@ export interface SchedulesListResponseData {
 export interface SchedulesListMeta {
     limit: number;
     skip: number;
+    count: number;
 }
 
 export interface Schedule {

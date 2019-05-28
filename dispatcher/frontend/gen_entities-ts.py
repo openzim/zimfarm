@@ -9,7 +9,7 @@ if __name__ == '__main__':
     sys.path.append(src_dir)
 
     try:
-        from common.entities import ScheduleCategory, ScheduleQueue, ScheduleLanguage
+        from common.entities import ScheduleCategory, ScheduleQueue
     except ImportError as exp:
         print("Unable to import entities. Path issue? -- {}".format(exp))
         import traceback
@@ -17,15 +17,12 @@ if __name__ == '__main__':
         sys.exit(1)
 
     output = """
+// please occasionaly sync this with backend via `gen_entities-ts.py script`
 export let queues = {queues};
 export let categories = {categories};
-export let languages = [
-    {languages}
-];
 
 """.format(queues=repr(ScheduleQueue.all()),
            categories=repr(ScheduleCategory.all()),
-           languages=',\n\t'.join([repr(l) for l in ScheduleLanguage.all()]),
            )
 
     with open(os.path.join(this_dir, "src/app/services/entities.ts"), "w") as fp:

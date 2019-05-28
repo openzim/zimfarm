@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { languages } from './entities';
+import { HttpClient } from '@angular/common/http';
+
+import { getAPIRoot } from './config';
 
 export interface Language {
     code: string;
@@ -7,31 +9,27 @@ export interface Language {
     name_native: string;
 }
 
+export interface LanguagesListResponseData {
+    items: Array<Language>;
+    meta: LanguagesListMeta;
+}
+
+export interface LanguagesListMeta {
+    limit: number;
+    skip: number;
+    count: number;
+}
+
 @Injectable({
     providedIn: 'root',
 })
 export class LanguagesService {
+    constructor(private http: HttpClient) {}
 
-    lang_codes: Array<string> = [];
-    lang_names: Array<string> = [];
-
-    constructor() {
-        languages.forEach((item) => {
-            this.lang_codes.push(item.code);
-            this.lang_names.push(item.name_en);
-        });
-    }
-
-    all(): Array<Language> {
-        return languages;
-    }
-
-    getEnglishName(lang_code: string): string {
-        let pos = this.lang_codes.indexOf(lang_code);
-        if (pos < 0) {
-            return lang_code;    
-        }
-        return this.lang_names[pos];
+    fetch(skip: number = 0, limit: number = 500) {
+        let params = {skip: skip.toString(), limit: limit.toString()};
+        let url = getAPIRoot() + '/languages/';
+        return this.http.get<LanguagesListResponseData>(url, {params: params});
     }
 }
 

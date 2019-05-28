@@ -1,11 +1,11 @@
 <div class="filter-select-group">
-	<button (click)="applyToAll(true)">select all</button>
-	<button (click)="applyToAll(false)">select none</button>
+    <button (click)="applyToAll(true)">select all</button>
+    <button (click)="applyToAll(false)">select none</button>
 </div>
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="filter-form">
-    <label formArrayName="languages" *ngFor="let language of form['controls'].languages['controls']; let i = index">
+    <label formArrayName="languages" *ngFor="let language of getLanguages(); let i = index">
         <input type="checkbox" [formControlName]="i">
-        {{ languageName(getLanguages()[i]) }} (<code>{{ getLanguages()[i] }}</code>)
+        {{ getLanguages()[i].name_en }} (<code>{{ getLanguages()[i].code }}</code>)
     </label>
     <button class="apply-filter">Apply</button>
 </form>

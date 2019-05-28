@@ -1,7 +1,5 @@
 
-// this file is a placeholder for entities.
-// it is replaced at build-time (build_prod.sh) by values from the backend.
+// please occasionaly sync this with backend via `gen_entities-ts.py script`
+export let queues = ['small', 'medium', 'large', 'debug'];
+export let categories = ['gutenberg', 'other', 'phet', 'psiram', 'stack_exchange', 'ted', 'vikidia', 'wikibooks', 'wikinews', 'wikipedia', 'wikiquote', 'wikisource', 'wikispecies', 'wikiversity', 'wikivoyage', 'wiktionary'];
 
-export let queues = ['default'];
-export let categories = ['default'];
-export let languages = [{'code': 'default', 'name_en': 'Default', 'name_native': 'Default'}];
