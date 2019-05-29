@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getAPIRoot } from './config';
 
 @Injectable({
     providedIn: 'root',
@@ -9,11 +10,7 @@ export class TasksService {
     constructor(private http: HttpClient) { }
 
     private getTasksAPIRoot(): string {
-        let root = window.location.origin;
-        if (root.includes('localhost')) {
-            root = 'https://farm.openzim.org';
-        }
-        return root + '/api/tasks/'
+        return getAPIRoot() + '/tasks/'
     }
 
     list(skip: number = 0, limit: number = 100): Observable<ListResponseData> {

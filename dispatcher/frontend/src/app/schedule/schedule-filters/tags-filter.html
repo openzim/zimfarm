@@ -1,0 +1,5 @@
+<form (ngSubmit)="onSubmit()" class="filter-form">
+  <label for="tags">Comma-separated Tags <span class="filter-select-group" title="reset" (click)="onReset()">⤫</span></label>
+  <input type="text" placeholder="mini, all (intersection)" class="form-control" id="tags" required [(ngModel)]="_tags" name="tags">
+  <button class="apply-filter">Apply</button>
+</form>
