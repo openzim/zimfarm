@@ -1,6 +1,7 @@
-import time
+import asyncio
 from pathlib import Path
 
+import aiodocker
 from docker import DockerClient
 from docker.models.containers import Container
 
@@ -34,20 +35,11 @@ class RunMWOffliner(Operation):
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
             links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}')
 
-        stdout_histories = []
-        while container.status != 'not-running':
-            stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
-            stdout_histories.append(stdout)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._wait_for_finish(container.id))
 
-            if len(stdout_histories) > 10:
-                first_stdout = stdout_histories.pop()
-                if first_stdout == stdout:
-                    container.kill()
-
-            time.sleep(60)
-            container.reload()
-
-        exit_code = container.attrs['State']['StatusCode']
+        container.reload()
+        exit_code = container.attrs['State']['ExitCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
         result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
@@ -55,6 +47,25 @@ class RunMWOffliner(Operation):
         container.remove()
 
         return result
+
+    async def _wait_for_finish(self, container_id: str):
+        docker = aiodocker.Docker()
+        container = await docker.containers.get(container_id)
+
+        tasks = [
+            asyncio.create_task(container.wait()),
+            asyncio.create_task(self.detect_stuck(container))
+        ]
+        finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+
+        try:
+            await asyncio.gather(*pending)
+        except asyncio.CancelledError:
+            pass
+
+        await docker.close()
 
     @staticmethod
     def _get_command(flags: {}):
