@@ -83,27 +83,3 @@ class Schedules(BaseCollection):
 class Workers(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'workers')
-
-
-class Languages(BaseCollection):
-    _name = 'languages'
-    schema = {
-        'type': 'object',
-        'required': ['code', 'name_en', 'name_native'],
-        'properties': {
-            '_id': {'bsonType': 'objectId'},
-            'code': {'type': 'string', 'minLength': 2},
-            'name_en': {'type': 'string'},
-            'name_native': {'type': 'string'},
-        },
-        'additionalProperties': False
-    }
-
-    def __init__(self, database=None):
-        if not database:
-            database = Database()
-        super().__init__(database, self._name)
-
-    def initialize(self):
-        self.create_index('code', name='code')
-        self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
