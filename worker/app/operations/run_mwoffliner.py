@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 from docker import DockerClient
@@ -19,6 +20,7 @@ class RunMWOffliner(Operation):
         self.working_dir_host = Path(working_dir_host).joinpath(self.task_id).absolute()
         self.redis_container = redis_container
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
+        self.image_tag = tag
 
     def execute(self) -> ContainerResult:
         """Pull and run mwoffliner"""
@@ -32,7 +34,20 @@ class RunMWOffliner(Operation):
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
             links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}')
 
-        exit_code = container.wait()['StatusCode']
+        stdout_histories = []
+        while container.status != 'not-running':
+            stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
+            stdout_histories.append(stdout)
+
+            if len(stdout_histories) > 10:
+                first_stdout = stdout_histories.pop()
+                if first_stdout == stdout:
+                    container.kill()
+
+            time.sleep(60)
+            container.reload()
+
+        exit_code = container.attrs['State']['StatusCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
         result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
