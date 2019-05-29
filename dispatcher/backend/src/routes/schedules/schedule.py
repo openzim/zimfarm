@@ -28,15 +28,18 @@ class SchedulesRoute(BaseRoute):
         limit = 20 if limit <= 0 else limit
         categories = request.args.getlist('category')
         tags = request.args.getlist('tag')
-        lang = request.args.get('lang')
+        lang = request.args.getlist('lang')
+        queue = request.args.getlist('queue')
         name = request.args.get('name')
 
         # assemble filters
         query = {}
         if categories:
             query['category'] = {'$in': categories}
+        if queue:
+            query['config.queue'] = {'$in': queue}
         if lang:
-            query['language.code'] = lang
+            query['language.code'] = {'$in': lang}
         if tags:
             query['tags'] = {'$all': tags}
         if name:
