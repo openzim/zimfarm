@@ -1,5 +1,7 @@
 import trafaret as t
 
+from common.entities import ScheduleCategory, ScheduleQueue
+
 
 class ConfigValidator(t.Dict):
 
@@ -43,12 +45,8 @@ phet_flags_validator = t.Dict()
 
 config_validator = ConfigValidator({
     t.Key('task_name'): t.Enum('offliner.mwoffliner', 'offliner.phet'),
-    t.Key('queue'): t.Enum('small', 'medium', 'large', 'debug'),
-    t.Key('warehouse_path'): t.Enum(
-        '/gutenberg', '/other', '/phet', '/psiram', '/stack_exchange',
-        '/ted', '/vikidia', '/wikibooks', '/wikinews', '/wikipedia',
-        '/wikiquote', '/wikisource', '/wikispecies', '/wikiversity',
-        '/wikivoyage', '/wiktionary'),
+    t.Key('queue'): t.Enum(*ScheduleQueue.all()),
+    t.Key('warehouse_path'): t.Enum(*ScheduleCategory.all_warehouse_paths()),
     t.Key('image'): t.Dict(
         t.Key('name', trafaret=t.Enum('openzim/mwoffliner', 'openzim/phet')),
         t.Key('tag', trafaret=t.String)),
