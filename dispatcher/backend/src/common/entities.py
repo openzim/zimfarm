@@ -58,20 +58,3 @@ class ScheduleQueue:
     @classmethod
     def all(cls):
         return [cls.small, cls.medium, cls.large, cls.debug]
-
-
-class ScheduleLanguage:
-
-    @classmethod
-    def all(cls):
-        return [{'code': key,
-                 'name_en': value['name_en'], 'name_native': value['name_native']}
-                for key, value in all_languages.items()]
-
-    @classmethod
-    def get_english_name(cls, lang_code):
-        return all_languages.get(lang_code, {}).get("name_en") or lang_code
-
-    @classmethod
-    def get_native_name(cls, lang_code):
-        return all_languages.get(lang_code, {}).get("name_native") or lang_code
