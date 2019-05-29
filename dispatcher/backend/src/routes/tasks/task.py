@@ -2,10 +2,11 @@ import pymongo
 from bson.objectid import ObjectId, InvalidId
 from flask import request, Response, jsonify
 
-from common.mongo import Tasks
+from common.mongo import Tasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate
 from routes.base import BaseRoute
+from routes.errors import NotFound
 from utils.celery import Celery
 
 
@@ -21,9 +22,16 @@ class TasksRoute(BaseRoute):
         request_json = request.get_json()
         if not request_json:
             raise InvalidRequestJSON()
+        schedule_names = request_json.get('schedule_names', [])
+        if not isinstance(schedule_names, list):
+            raise InvalidRequestJSON()
 
         celery = Celery()
-        schedule_names = request_json.get('schedule_names', [])
+
+        # verify requested names exists
+        if not Schedules().count_documents(
+                {'name': {'$in': schedule_names}}) == len(schedule_names):
+            raise NotFound()
         for schedule_name in schedule_names:
             celery.send_task_from_schedule(schedule_name)
 
