@@ -7,8 +7,12 @@ RUN pip3 install -r requirements.txt
 
 COPY app app
 
+RUN groupadd -r docker
 RUN adduser --disabled-password --gecos "" celery_runner
-RUN usermod -aG root celery_runner
+RUN usermod -aG root,docker celery_runner
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 ENV USERNAME username
 ENV PASSWORD password
@@ -20,4 +24,4 @@ ENV RABBIT_PORT 5671
 ENV WAREHOUSE_HOST warehouse.farm.openzim.org
 ENV WAREHOUSE_PORT 1522
 
-ENTRYPOINT ["python", "app/main.py"]
+ENTRYPOINT ["/entrypoint.sh"]
