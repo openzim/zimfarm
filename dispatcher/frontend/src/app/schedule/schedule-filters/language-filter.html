@@ -3,9 +3,9 @@
     <button (click)="applyToAll(false)">select none</button>
 </div>
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="filter-form">
-    <label formArrayName="categories" *ngFor="let category of form['controls'].categories['controls']; let i = index">
+    <label formArrayName="languages" *ngFor="let language of getLanguages(); let i = index">
         <input type="checkbox" [formControlName]="i">
-        {{getCategories()[i]}}
+        {{ getLanguages()[i].name_en }} (<code>{{ getLanguages()[i].code }}</code>)
     </label>
     <button class="apply-filter">Apply</button>
 </form>

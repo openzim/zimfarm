@@ -1,0 +1,5 @@
+<form (ngSubmit)="onSubmit()" class="filter-form">
+  <label for="name">Name lookup (regex)<span class="filter-select-group" title="reset" (click)="onReset()">⤫</span></label>
+  <input type="text" class="form-control" id="name" placeholder="_ar.*foot" required [(ngModel)]="name" name="name">
+  <button class="apply-filter">Apply</button>
+</form>

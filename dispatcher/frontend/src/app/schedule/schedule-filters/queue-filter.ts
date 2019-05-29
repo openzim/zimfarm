@@ -2,28 +2,28 @@ import { Component, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormControl, FormArray } from '@angular/forms';
 import { AgFilterComponent } from 'ag-grid-angular';
 import { IFilterParams, IDoesFilterPassParams } from 'ag-grid-community';
-import { categories } from '../../services/entities';
+import { queues } from '../../services/entities';
 
 @Component({
-    templateUrl: './category-filter.html'
+    templateUrl: './queue-filter.html'
 })
-export class CategoryFilterComponent implements AgFilterComponent {
+export class QueueFilterComponent implements AgFilterComponent {
     form: FormGroup;
     params: IFilterParams;
     hidePopup?: Function;
-    selectedCategories: string[];
+    selectedQueues: string[];
 
     constructor(private formBuilder: FormBuilder) {
-        this.selectedCategories = [];
-        let controls = this.getCategories().map(_ => new FormControl(false));
-        this.form = this.formBuilder.group({categories: new FormArray(controls)})
+        this.selectedQueues = [];
+        let controls = this.getQueues().map(_ => new FormControl(false));
+        this.form = this.formBuilder.group({queues: new FormArray(controls)})
     }
 
-    getCategories() { return categories; }
+    getQueues() { return queues; }
 
     onSubmit() {
-        this.selectedCategories = this.form.value.categories
-            .map((value, index) => value ? this.getCategories()[index] : null)
+        this.selectedQueues = this.form.value.queues
+            .map((value, index) => value ? this.getQueues()[index] : null)
             .filter(value => value !== null);
         this.params.filterChangedCallback();
         this.hidePopup();
@@ -34,7 +34,7 @@ export class CategoryFilterComponent implements AgFilterComponent {
     }
 
     isFilterActive(): boolean {
-        return this.selectedCategories.length > 0;
+        return this.selectedQueues.length > 0;
     }
 
     doesFilterPass(params: IDoesFilterPassParams): boolean {
@@ -42,17 +42,17 @@ export class CategoryFilterComponent implements AgFilterComponent {
     }
 
     getModel(): any {
-        return this.selectedCategories;
+        return this.selectedQueues;
     }
 
     setModel(model: any) {
-        this.selectedCategories = model;
+        this.selectedQueues = model;
     }
 
     applyToAll(value: boolean): any {
-        this.form['controls'].categories['controls'].forEach(function (item, i) {
-            item.setValue(value);
-        });
+    	this.form['controls'].queues['controls'].forEach(function (item, i) {
+    		item.setValue(value);
+    	});
     }
 
     afterGuiAttached(params?: {hidePopup?: Function}) {

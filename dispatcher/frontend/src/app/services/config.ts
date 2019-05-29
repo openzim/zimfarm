@@ -1,2 +1,8 @@
-export let apiRoot: string = 'https://farm.openzim.org';
-// export let apiRoot: string = window.location.origin;
+
+export function getAPIRoot(): string {
+    let root = window.location.origin;
+    if (root.includes('localhost')) {
+        root = 'https://farm.openzim.org';
+    }
+    return root + '/api';
+}

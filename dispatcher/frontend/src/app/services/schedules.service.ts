@@ -3,7 +3,7 @@ import { HttpClient, HttpInterceptor, HttpHeaders, HttpRequest, HttpHandler, Htt
 import { Observable, throwError } from 'rxjs';
 import cronstrue from 'cronstrue';
 
-import { apiRoot } from './config';
+import { getAPIRoot } from './config';
 import { map } from 'rxjs/operators';
 
 @Injectable({
@@ -12,22 +12,36 @@ import { map } from 'rxjs/operators';
 export class SchedulesService {
     constructor(private http: HttpClient) { }
 
-    list(skip: number = 0, limit: number = 20, categories: string[] = []) {
+    list(skip: number = 0, limit: number = 20, queues: string[] = [],
+         categories: string[] = [], languages: string[] = [],
+         name: string = "", tags: string[] = []) {
         let params = {
             skip: skip.toString(),
             limit: limit.toString()};
+        if (queues.length > 0) {
+            params['queue'] = queues;
+        }
         if (categories.length > 0) {
             params['category'] = categories;
         }
+        if (languages.length > 0) {
+            params['lang'] = languages;
+        }
+        if (name.length > 0) {
+            params['name'] = name;
+        }
+        if (tags.length > 0) {
+            params['tag'] = tags;
+        }
         return this.http.get<SchedulesListResponseData>(
-            apiRoot + '/api/schedules/', {params: params}
+            getAPIRoot() + '/schedules/', {params: params}
         ).pipe(map(data => {
             return data
         }))
     }
 
     get(schedule_id_name: string) {
-        let url = apiRoot + '/api/schedules/' + schedule_id_name
+        let url = getAPIRoot() + '/schedules/' + schedule_id_name
         return this.http.get<Schedule>(url);
     }
 }
@@ -40,6 +54,7 @@ export interface SchedulesListResponseData {
 export interface SchedulesListMeta {
     limit: number;
     skip: number;
+    count: number;
 }
 
 export interface Schedule {
