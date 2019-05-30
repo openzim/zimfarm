@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from docker import DockerClient
@@ -19,6 +20,7 @@ class RunMWOffliner(Operation):
         self.working_dir_host = Path(working_dir_host).joinpath(self.task_id).absolute()
         self.redis_container = redis_container
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
+        self.image_tag = tag
 
     def execute(self) -> ContainerResult:
         """Pull and run mwoffliner"""
@@ -32,7 +34,11 @@ class RunMWOffliner(Operation):
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
             links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}')
 
-        exit_code = container.wait()['StatusCode']
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._wait_for_finish(container.id))
+
+        container.reload()
+        exit_code = container.attrs['State']['ExitCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
         result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
