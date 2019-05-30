@@ -1,4 +1,5 @@
 import asyncio
+import aiodocker
 from dataclasses import dataclass
 from typing import Optional
 
@@ -17,8 +18,27 @@ class Operation:
     def execute(self):
         pass
 
+    async def _wait_for_finish(self, container_id: str):
+        docker = aiodocker.Docker()
+        container = await docker.containers.get(container_id)
+
+        tasks = [
+            asyncio.create_task(container.wait()),
+            asyncio.create_task(self._detect_stuck(container))
+        ]
+        finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+
+        try:
+            await asyncio.gather(*pending)
+        except asyncio.CancelledError:
+            pass
+
+        await docker.close()
+
     @staticmethod
-    async def detect_stuck(container: DockerContainer, max_wait: int = 600):
+    async def _detect_stuck(container: DockerContainer, max_wait: int = 600):
         histories = []
         interval = 60
         while True:

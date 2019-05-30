@@ -1,7 +1,6 @@
 import asyncio
 from pathlib import Path
 
-import aiodocker
 from docker import DockerClient
 from docker.models.containers import Container
 
@@ -47,25 +46,6 @@ class RunMWOffliner(Operation):
         container.remove()
 
         return result
-
-    async def _wait_for_finish(self, container_id: str):
-        docker = aiodocker.Docker()
-        container = await docker.containers.get(container_id)
-
-        tasks = [
-            asyncio.create_task(container.wait()),
-            asyncio.create_task(self.detect_stuck(container))
-        ]
-        finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
-
-        try:
-            await asyncio.gather(*pending)
-        except asyncio.CancelledError:
-            pass
-
-        await docker.close()
 
     @staticmethod
     def _get_command(flags: {}):
