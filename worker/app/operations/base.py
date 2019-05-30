@@ -1,5 +1,12 @@
+import asyncio
+import aiodocker
 from dataclasses import dataclass
 from typing import Optional
+
+from aiodocker.containers import DockerContainer
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
 
 
 class Operation:
@@ -10,6 +17,40 @@ class Operation:
 
     def execute(self):
         pass
+
+    async def _wait_for_finish(self, container_id: str):
+        docker = aiodocker.Docker()
+        container = await docker.containers.get(container_id)
+
+        tasks = [
+            asyncio.create_task(container.wait()),
+            asyncio.create_task(self._detect_stuck(container))
+        ]
+        finished, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+
+        try:
+            await asyncio.gather(*pending)
+        except asyncio.CancelledError:
+            pass
+
+        await docker.close()
+
+    @staticmethod
+    async def _detect_stuck(container: DockerContainer, max_wait: int = 600):
+        histories = []
+        interval = 60
+        while True:
+            latest = await container.log(stdout=True, stderr=False, tail=100)
+            histories.append(latest)
+            if len(histories) > max_wait / interval:
+                earliest = histories.pop(0)
+                if earliest == latest:
+                    logger.info(f'Detected container stuck. Terminating...')
+                    await container.kill()
+                    break
+            await asyncio.sleep(interval)
 
 
 @dataclass()
