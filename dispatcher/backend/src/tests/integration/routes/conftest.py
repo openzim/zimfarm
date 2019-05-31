@@ -63,7 +63,6 @@ def make_schedule(database, make_beat_crontab, make_language, make_config):
             'name': name,
             'category': category,
             'enabled': True,
-            'beat': beat or make_beat_crontab(),
             'language': language or make_language(),
             'tags': tags,
             'config': config or make_config()
