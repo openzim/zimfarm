@@ -5,7 +5,7 @@ from worker import Worker
 
 if __name__ == '__main__':
     # setting up logging
-    log_path = os.getenv('LOG_PATH', '/worker.log')
+    log_path = os.getenv('LOG_PATH', '/usr/src/worker.log')
     logging.basicConfig(level=logging.INFO,
                         format='[%(asctime)s: %(levelname)s] %(message)s',
                         handlers=[logging.StreamHandler(),
