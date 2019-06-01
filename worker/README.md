@@ -73,11 +73,13 @@ Please make sure the RSA public key is uploaded to dispatcher using the public A
 
 ## Example
 
+__note__: your local `PATH_WORKING_DIR` must be group writable (chgrp rwx PATH_WORKING_DIR)
+
 ```bash
 docker run \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v PATH_SSH_KEY:/usr/src/.ssh/id_rsa \
-    -v PATH_WORKING_DIR:/zim_files \
+    -v /var/run/docker.sock:/var/run/docker.sock:rw \
+    -v PATH_SSH_KEY:/usr/src/.ssh/id_rsa:ro \
+    -v PATH_WORKING_DIR:/zim_files:rw \
     --env USERNAME='username' \
     --env PASSWORD='password' \
     --env WORKING_DIR='PATH_WORKING_DIR' \
