@@ -1,21 +1,23 @@
+import json
 from datetime import datetime
 from http import HTTPStatus
 
 import trafaret as t
 from flask import request, jsonify, Response
 
-from common.entities import ScheduleCategory
 from common.mongo import Schedules
 from errors.http import InvalidRequestJSON, ScheduleNotFound
+from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
 from .. import authenticate
 from ..base import BaseRoute
+from .validators import config_validator, language_validator, category_validator, schedule_validator
 
 
 class SchedulesRoute(BaseRoute):
     rule = '/'
     name = 'schedules'
-    methods = ['GET']
+    methods = ['GET', 'POST']
 
     @authenticate
     def get(self, *args, **kwargs):
@@ -79,6 +81,24 @@ class SchedulesRoute(BaseRoute):
             'items': schedules
         })
 
+    @authenticate
+    def post(self, *args, **kwargs):
+        """create a new schedule"""
+
+        try:
+            document = schedule_validator.check(request.get_json())
+        except t.DataError as e:
+            raise InvalidRequestJSON(str(e.error))
+
+        # make sure it's not a duplicate
+        if Schedules().find_one({'name': document['name']}, {'name': 1}):
+            raise BadRequest("schedule with name `{}` already exists"
+                             .format(document['name']))
+
+        schedule_id = Schedules().insert_one(document).inserted_id
+
+        return Response(json.dumps({'_id': str(schedule_id)}), HTTPStatus.CREATED)
+
 
 class SchedulesBackupRoute(BaseRoute):
     rule = '/backup/'
@@ -97,7 +117,7 @@ class SchedulesBackupRoute(BaseRoute):
 class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
     rule = '/<string:schedule>'
     name = 'schedule'
-    methods = ['GET', 'DELETE']
+    methods = ['GET', 'PATCH', 'DELETE']
 
     @authenticate
     def get(self, schedule: str, *args, **kwargs):
@@ -112,35 +132,37 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
 
     @authenticate
     def patch(self, schedule: str, *args, **kwargs):
-        """
-        Update properties of a schedule, including:
-        - name
-        - language
-        - category
-        - enabled
-        """
+        """Update all properties of a schedule but _id and most_recent_task"""
+
+        validator = t.Dict(
+            t.Key('name', optional=True, trafaret=t.String(allow_blank=False)),
+            t.Key('language', optional=True, trafaret=language_validator),
+            t.Key('category', optional=True, trafaret=category_validator),
+            t.Key('tags', optional=True, trafaret=t.List(t.String(allow_blank=False))),
+            t.Key('enabled', optional=True, trafaret=t.Bool()),
+            t.Key('config', optional=True, trafaret=config_validator),
+        )
 
         try:
-            name = t.String(allow_blank=False)
-            language = t.String(allow_blank=False)
-            category = t.Enum(*ScheduleCategory.all())
-            validator = t.Dict(
-                t.Key('name', optional=True, trafaret=name),
-                t.Key('language', optional=True, trafaret=language),
-                t.Key('category', optional=True, trafaret=category))
-
-            update = request.get_json()
-            update = validator.check(update)
-
-            query = self.get_schedule_query(schedule)
-            matched_count = Schedules().update_one(query, {'$set': update}).matched_count
-
-            if matched_count:
-                return Response()
-            else:
-                raise ScheduleNotFound()
+            update = validator.check(request.get_json())
+            # empty dict passes the validator but troubles mongo
+            if not request.get_json():
+                raise t.DataError("Update can't be empty")
         except t.DataError as e:
             raise InvalidRequestJSON(str(e.error))
+
+        if 'name' in update:
+            if Schedules().count_documents({'name': update['name']}):
+                raise BadRequest("Schedule with name `{}` already exists"
+                                 .format(update['name']))
+
+        query = self.get_schedule_query(schedule)
+        matched_count = Schedules().update_one(query, {'$set': update}).matched_count
+
+        if matched_count:
+            return Response('', HTTPStatus.NO_CONTENT)
+        else:
+            raise ScheduleNotFound()
 
     @authenticate
     def delete(self, schedule: str, *args, **kwargs):
