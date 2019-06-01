@@ -2,7 +2,7 @@ import { Component, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormControl, FormArray } from '@angular/forms';
 import { AgFilterComponent } from 'ag-grid-angular';
 import { IFilterParams, IDoesFilterPassParams } from 'ag-grid-community';
-import { queues } from '../../services/entities';
+import { TagsService } from '../../services/tags.service';
 
 @Component({
     templateUrl: './tags-filter.html'
@@ -11,29 +11,42 @@ export class TagsFilterComponent implements AgFilterComponent {
     form: FormGroup;
     params: IFilterParams;
     hidePopup?: Function;
-    _tags: string = "";  // ngModel comma-separated string
-    tags: string[] = []; // list of tags to forward
+    all_tags: string[] = [];
+    selectedTags: string[] = [];
+    initialized: boolean = false;
 
-    constructor(private formBuilder: FormBuilder) {
+    constructor(private formBuilder: FormBuilder,
+                private TagsService:TagsService) {
+        let controls = this.getTags().map(_ => new FormControl(false));
+        this.form = this.formBuilder.group({tags: new FormArray(controls)})
+    }
+
+    getTags(): Array<string> {
+        return this.all_tags;
     }
 
     onSubmit() {
-        this.setModel(this._tags);
+        this.selectedTags = this.form.value.tags
+            .map((value, index) => value ? this.getTags()[index] : null)
+            .filter(value => value !== null);
         this.params.filterChangedCallback();
         this.hidePopup();
-    }
-
-    onReset(): void {
-        this._tags = "";
-        this.setModel(this._tags);
     }
 
     agInit(params: IFilterParams) {
         this.params = params;
     }
 
+    ngOnInit() {
+        this.TagsService.fetch().subscribe(data => {
+            this.all_tags = data.items;
+            let controls = this.getTags().map(_ => new FormControl(false));
+            this.form = this.formBuilder.group({tags: new FormArray(controls)})
+        })
+    }
+
     isFilterActive(): boolean {
-        return this._tags.length > 0;
+        return this.selectedTags.length > 0;
     }
 
     doesFilterPass(params: IDoesFilterPassParams): boolean {
@@ -41,11 +54,17 @@ export class TagsFilterComponent implements AgFilterComponent {
     }
 
     getModel(): any {
-        return this.tags;
+        return this.selectedTags;
     }
 
     setModel(model: any) {
-        this.tags = model.split(",").map(x => x.trim()).filter(x => x.length > 0);
+        this.selectedTags = model;
+    }
+
+    applyToAll(value: boolean): any {
+        this.form['controls'].tags['controls'].forEach(function (item, i) {
+            item.setValue(value);
+        });
     }
 
     afterGuiAttached(params?: {hidePopup?: Function}) {
