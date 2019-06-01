@@ -1,24 +1,8 @@
 import json
-from random import randint
 
 from sshtunnel import SSHTunnelForwarder
 from pymongo import MongoClient
 from pymongo.collection import Collection
-
-
-class Beat:
-    @staticmethod
-    def generate_once_per_month():
-        return {
-            'type': 'crontab',
-            'config': {
-                'minute': str(randint(0, 3) * 15),
-                'hour': str(randint(0, 23)),
-                'day_of_month': str(randint(1, 28)),
-                'day_of_week': '*',
-                'month_of_year': '*'
-            }
-        }
 
 
 class Language:
@@ -88,7 +72,6 @@ class Parser:
             site_code = 'wikipedia' if site_code == 'wiki' else site_code
             site_name = site_code.capitalize()
 
-            beat = Beat.generate_once_per_month()
             language = Language.generate(language_code, language_name, language_name_en)
 
             tags = ['nodet', 'nopic', 'novid']
@@ -100,7 +83,6 @@ class Parser:
                     'enabled': False,
                     'category': site_code,
                     'tags': [tag],
-                    'beat': beat,
                     'language': language,
                     'config': config
                 }
