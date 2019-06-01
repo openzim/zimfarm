@@ -66,7 +66,6 @@ class Worker:
         # start celery
         app.worker_main([
             'worker',
-            '--uid', 'celery_runner',
             '--hostname', '{}@{}'.format(Settings.username, Settings.node_name),
             '--queues', Settings.queues,
             '--loglevel', 'info'
