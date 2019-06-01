@@ -6,9 +6,10 @@ from common.entities import ScheduleCategory, ScheduleQueue
 class ConfigValidator(t.Dict):
 
     def check(self, config, *args, **kwargs):
-        super(ConfigValidator, self).check(config, *args, **kwargs)
+        config = super(ConfigValidator, self).check(config, *args, **kwargs)
         flags_validator = get_flags_validator(config.get("task_name"))
-        return flags_validator.check(config.get("flags"))
+        config.update({'flags': flags_validator.check(config.get("flags"))})
+        return config
 
 
 mwoffliner_flags_validator = t.Dict({
@@ -60,3 +61,20 @@ def get_flags_validator(task_name):
     if task_name == "offliner.mwoffliner":
         return mwoffliner_flags_validator
     return t.Dict()
+
+
+language_validator = t.Dict(
+    t.Key('code', optional=False, trafaret=t.String(allow_blank=False)),
+    t.Key('name_en', optional=False, trafaret=t.String(allow_blank=False)),
+    t.Key('name_native', optional=False, trafaret=t.String(allow_blank=False)))
+
+category_validator = t.Enum(*ScheduleCategory.all())
+
+schedule_validator = t.Dict(
+    t.Key('name', optional=False, trafaret=t.String(allow_blank=False)),
+    t.Key('language', optional=False, trafaret=language_validator),
+    t.Key('category', optional=False, trafaret=category_validator),
+    t.Key('tags', optional=False, trafaret=t.List(t.String(allow_blank=False))),
+    t.Key('enabled', optional=False, trafaret=t.Bool()),
+    t.Key('config', optional=False, trafaret=config_validator),
+)
