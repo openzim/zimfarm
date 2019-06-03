@@ -1,4 +1,6 @@
+import os
 import json
+import getpass
 from datetime import datetime
 
 from pymongo import MongoClient
@@ -17,7 +19,11 @@ def get_schedules_to_run(query: dict):
 
 
 if __name__ == '__main__':
-    with SSHTunnelForwarder('farm.openzim.org', ssh_username='chris', ssh_pkey="/Users/chrisli/.ssh/id_rsa",
+    ssh_pkey = os.getenv('ZIMFARM_KEYPATH',
+                         os.path.abspath(os.path.expanduser('~/.ssh/id_rsa')))
+    ssh_username = os.getenv('ZIMFARM_USERNAME', getpass.getuser())
+
+    with SSHTunnelForwarder('farm.openzim.org', ssh_username=ssh_username, ssh_pkey=ssh_pkey,
                             remote_bind_address=('127.0.0.1', 27017), local_bind_address=('0.0.0.0', 27018)) as tunnel:
         with MongoClient(port=27018) as client:
             has_not_run_this_month = {'most_recent_task.updated_at': {'$lt': datetime(year=2019, month=6, day=1)}}
