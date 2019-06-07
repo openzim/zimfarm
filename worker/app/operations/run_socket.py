@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 from docker import DockerClient
@@ -8,17 +7,15 @@ from .base import Operation
 from utils.settings import Settings
 
 
-class RunRedis(Operation):
+class RunSocket(Operation):
     def __init__(self, docker_client: DockerClient, task_id: str):
         super().__init__()
         self.docker = docker_client
-        self.task_id = task_id
-        self._container_name = f'redis_{task_id}'
-        self._socket_container_name = f'socket_{task_id}'
+        self._container_name = f'socket_{task_id}'
         self._container: Optional[Container] = None
 
     def execute(self) -> Container:
-        """Run a redis container detached.
+        """Run a busybox container detached.
 
         :raise: docker.errors.ImageNotFound
         :raise: docker.errors.APIError
@@ -29,10 +26,13 @@ class RunRedis(Operation):
 
         self._remove_existing()
 
-        image = self.docker.images.pull('redis', tag='latest')
+        image = self.docker.images.pull('busybox', tag='latest')
+        volumes = {Settings.sockets_dir_host: {'bind': Settings.sockets_dir_container,
+                                               'mode': 'rw'}}
         self._container = self.docker.containers.run(
-            image, command=self._get_command(), detach=True,
-            name=self._container_name, volumes_from=self._socket_container_name)
+            image, detach=True,
+            command=f'chmod -R 777 {Settings.sockets_dir_container}',
+            volumes=volumes, name=self._container_name)
         return self._container
 
     def __enter__(self):
@@ -49,8 +49,3 @@ class RunRedis(Operation):
             container = containers[0]
             container.stop()
             container.remove()
-
-    def _get_command(self):
-        redis_socket = os.path.join(Settings.sockets_dir_container,
-                                    f'redis_{self.task_id}.sock')
-        return f'redis-server --save "" --appendonly no --unixsocket {redis_socket} --unixsocketperm 744'

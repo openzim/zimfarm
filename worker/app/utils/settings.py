@@ -27,6 +27,9 @@ class Settings:
 
     docker_socket: str = '/var/run/docker.sock'
 
+    sockets_dir_host: str = os.getenv('SOCKETS_DIR', '/tmp/sockets')
+    sockets_dir_container: str = '/tmp/sockets'
+
     @classmethod
     def sanity_check(cls):
         # check mandatory env variables exist

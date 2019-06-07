@@ -4,7 +4,7 @@ import docker
 import docker.errors
 from celery.utils.log import get_task_logger
 
-from operations import RunRedis, RunMWOffliner, Upload
+from operations import RunRedis, RunMWOffliner, Upload, RunSocket
 from utils import Settings
 from .base import Base
 
@@ -37,11 +37,13 @@ class MWOffliner(Base):
 
         try:
             # run mwoffliner
-            with RunRedis(docker_client=docker.from_env(), task_id=self.task_id) as redis_container:
+            with RunSocket(docker_client=docker.from_env(), task_id=self.task_id) as socket_container, \
+                    RunRedis(docker_client=docker.from_env(), task_id=self.task_id) as redis_container:
+
                 run_mwoffliner = RunMWOffliner(
                     docker_client=docker.from_env(), tag=image_tag, flags=flags,
                     task_id=self.task_id, working_dir_host=Settings.working_dir_host,
-                    redis_container=redis_container)
+                    redis_container=redis_container, socket_container=socket_container)
                 logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
                 logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
 
