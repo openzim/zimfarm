@@ -28,11 +28,21 @@ div.filter form {
     flex-direction: column;
 }
 
-div.filter mat-form-field {
-    padding: 0 1rem;
+div.filter .form-group {
+    display: flex;
+    align-items: center;
 }
 
-div.filter input {
+div.filter mat-form-field {
+    padding-left: 1rem;
+    flex: 1;
+}
+
+div.filter mat-form-field:last-child {
+    padding-right: 1rem;
+}
+
+div.filter input, div.filter i {
     font-size: 1rem;
 }
 

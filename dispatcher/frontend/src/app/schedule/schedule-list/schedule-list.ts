@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { Schedule, SchedulesService, SchedulesListRequestParams } from 'src/app/services/schedules.service';
 
 import { LanguagesService } from '../../services/languages.service';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { SchedulesService, Schedule } from 'src/app/services/schedules.service';
 
 @Component({
     templateUrl: './schedule-list.html',
@@ -24,13 +25,23 @@ export class ScheduleListComponent implements OnInit {
         }
 
     ngOnInit() {
-        this.schedulesService.list('').subscribe(data => {
+        this.schedulesService.list(new SchedulesListRequestParams()).subscribe(data => {
             this.schedules = data.items;
         })
-        this.scheduleFilterForm.valueChanges.subscribe(value => {
-            this.schedulesService.list(value['name']).subscribe(data => {
-                this.schedules = data.items;
+        this.scheduleFilterForm.valueChanges.pipe(
+            debounceTime(200),
+            distinctUntilChanged(),
+            switchMap(value => {
+                let params = new SchedulesListRequestParams()
+                params.name = value['name']
+                return this.schedulesService.list(params)
             })
+        ).subscribe(data => {
+            this.schedules = data.items;
         })
+    }
+
+    clearSearchText() {
+        this.scheduleFilterForm.controls['name'].setValue('')
     }
 }

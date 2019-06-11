@@ -2,10 +2,15 @@
     <mat-sidenav opened mode="side" [fixedInViewport]="true" [fixedTopGap]="54">
         <div class="filter">
             <form [formGroup]="scheduleFilterForm">
-                <mat-form-field appearance="standard">
-                    <input matInput type="search" placeholder="Search by Name" formControlName="name"
-                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                </mat-form-field>
+                <div class="form-group">
+                    <mat-form-field appearance="standard">
+                        <input matInput type="search" placeholder="Search by Name" formControlName="name"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </mat-form-field>
+                    <button mat-icon-button *ngIf="this.scheduleFilterForm.controls['name'].value ? this.scheduleFilterForm.controls['name'].value.length>0 : false" (click)="clearSearchText()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </form>
             <mat-divider></mat-divider>
         </div>

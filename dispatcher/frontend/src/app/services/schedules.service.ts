@@ -9,10 +9,9 @@ import { BaseService } from './base.service';
 export class SchedulesService extends BaseService {
     constructor(private http: HttpClient) { super() }
 
-    list(name: string) {
-        let params = {'name': name};
+    list(params: SchedulesListRequestParams) {
         return this.http.get<SchedulesListResponseData>(
-            this.getAPIRoot() + '/schedules/', {params: params})
+            this.getAPIRoot() + '/schedules/', {params: params.toDict()})
     }
 
     list_old(skip: number = 0, limit: number = 20, queues: string[] = [], categories: string[] = [], 
@@ -42,6 +41,18 @@ export class SchedulesService extends BaseService {
     get(schedule_id_name: string) {
         let url = this.getAPIRoot() + '/schedules/' + schedule_id_name
         return this.http.get<Schedule>(url);
+    }
+}
+
+export class SchedulesListRequestParams {
+    name?: string
+
+    toDict(): {} {
+        let params = {}
+        if (this.name && this.name.length > 0) {
+            params['name'] = this.name
+        }
+        return params
     }
 }
 
