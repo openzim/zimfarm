@@ -1,7 +1,6 @@
 mat-sidenav-container {
     width: 100%; 
     min-height: calc(100vh); 
-    display: flex; 
 }
 
 mat-sidenav {
@@ -15,8 +14,6 @@ mat-sidenav-content {
 }
 
 div.filter {
-    position: absolute;
-    width: 100%;
     height: 54px;
     background-color: #ECEFF1;
     font-size: 0.5rem;
@@ -49,7 +46,8 @@ div.filter input, div.filter i {
 mat-sidenav div.list {
     display: flex;
     flex-direction:column;
-    margin-top: 54px;
+    overflow-y: scroll;
+    height: calc(100vh - 108px);
 }
 
 mat-sidenav schedule-list-item:hover {
