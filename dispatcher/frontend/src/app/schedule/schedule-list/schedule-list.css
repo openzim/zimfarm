@@ -17,10 +17,13 @@ div.filter {
     height: 54px;
     background-color: #ECEFF1;
     font-size: 0.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 div.filter form {
     width: 100%;
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
