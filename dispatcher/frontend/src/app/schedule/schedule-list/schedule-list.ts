@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { LanguagesService } from '../../services/languages.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { SchedulesService, Schedule } from 'src/app/services/schedules.service';
-import { switchMap } from 'rxjs/operators';
 
 @Component({
     templateUrl: './schedule-list.html',
