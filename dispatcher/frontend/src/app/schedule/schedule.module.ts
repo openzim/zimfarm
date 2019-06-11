@@ -1,24 +1,29 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Routes, RouterModule } from '@angular/router';
+import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { AgGridModule } from 'ag-grid-angular';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterModule, Routes } from '@angular/router';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 import { SharedModule } from '../shared/shared.module';
-import { ScheduleGridComponent } from './schedule-grid/schedule-grid.component';
-import { CategoryFilterComponent } from './schedule-filters/category-filter';
-import { LanguageFilterComponent } from './schedule-filters/language-filter';
-import { QueueFilterComponent } from './schedule-filters/queue-filter';
-import { NameFilterComponent } from './schedule-filters/name-filter';
-import { TagsFilterComponent } from './schedule-filters/tags-filter';
+import { ScheduleDetailComponent } from './schedule-detail/schedule-detail';
+import { ScheduleListItemComponent } from './schedule-list-item/schedule-list-item';
+import { ScheduleListComponent } from './schedule-list/schedule-list';
+
 
 const routes: Routes = [
     {
         path: '', 
-        component: ScheduleGridComponent, 
-        // children: [
-        //     {path: ':name', component: ScheduleDetailComponent}
-        // ]
+        component: ScheduleListComponent, 
+        children: [
+            {path: ':id_or_name', component: ScheduleDetailComponent}
+        ]
     }
 ];
 
@@ -29,16 +34,18 @@ const routes: Routes = [
         FormsModule,
         ReactiveFormsModule,
         RouterModule.forChild(routes),
-        AgGridModule.withComponents([CategoryFilterComponent, LanguageFilterComponent,
-                                     QueueFilterComponent, NameFilterComponent,
-                                     TagsFilterComponent])
+        ScrollingModule,
+        MatSidenavModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatButtonModule,
+        MatToolbarModule,
+        MatListModule,
     ],
     declarations: [
-        ScheduleGridComponent,
-        CategoryFilterComponent,
-        LanguageFilterComponent,
-        QueueFilterComponent,
-        NameFilterComponent,
-        TagsFilterComponent]
+        ScheduleListComponent,
+        ScheduleListItemComponent,
+        ScheduleDetailComponent]
 })
 export class ScheduleModule { }

@@ -1,0 +1,19 @@
+<h2 class="mat-h2">Schedule </h2>
+<form *ngIf="schedule$ | async as schedule" [formGroup]="scheduleForm" 
+    (ngSubmit)="onSubmit(scheduleForm.value)">
+    <h2>{{schedule.name}}</h2>
+    <mat-form-field appearance="standard">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" readonly>
+    </mat-form-field>
+    <mat-form-field appearance="standard">
+        <mat-label>Category</mat-label>
+        <mat-select>
+            <mat-option *ngFor="let category of categories" [value]="category">
+            {{category}}
+            </mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    <button mat-flat-button class="button" color="primary" type="submit">Submit</button>
+</form>
