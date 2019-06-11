@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { LanguagesService } from '../../services/languages.service';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { SchedulesService, Schedule } from 'src/app/services/schedules.service';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
     templateUrl: './schedule-list.html',
@@ -28,7 +29,6 @@ export class ScheduleListComponent implements OnInit {
             this.schedules = data.items;
         })
         this.scheduleFilterForm.valueChanges.subscribe(value => {
-            console.log(value);
             this.schedulesService.list(value['name']).subscribe(data => {
                 this.schedules = data.items;
             })
