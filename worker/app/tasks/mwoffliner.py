@@ -4,7 +4,7 @@ import docker
 import docker.errors
 from celery.utils.log import get_task_logger
 
-from operations import RunRedis, RunMWOffliner, Upload
+from operations import RunRedis, RunMWOffliner
 from utils import Settings
 from .base import Base
 
@@ -55,10 +55,7 @@ class MWOffliner(Base):
                 raise Exception(str(result))
 
             # upload files
-            files, files_description = self.get_files(working_dir_container)
-            logger.info('Uploading files, {}'.format(files_description))
-            upload = Upload(remote_working_dir=warehouse_path, working_dir=working_dir_container)
-            upload.execute()
+            files = self.upload_zims(remote_working_dir=warehouse_path, directory=working_dir_container)
 
             return files
         except docker.errors.APIError as e:

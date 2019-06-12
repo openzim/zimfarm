@@ -6,6 +6,7 @@ from celery.task import Task
 from celery.utils.log import get_task_logger
 
 from utils import Settings
+from operations import Upload
 from utils.docker import get_ip_address
 from operations.run_dnscache import RunDNSCache
 
@@ -52,7 +53,7 @@ class Base(Task):
 
         # remove working_dir
         working_dir = Path(Settings.working_dir_container).joinpath(self.task_id)
-        shutil.rmtree(working_dir)
+        shutil.rmtree(working_dir, ignore_errors=True)
 
     @staticmethod
     def get_files(working_dir: Path):
@@ -71,3 +72,6 @@ class Base(Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         self.clean_up()
+
+    def upload_zims(self, remote_working_dir: str, files: list = None, directory: Path = None):
+        return Upload.upload(f'/zim{remote_working_dir}', files, directory)
