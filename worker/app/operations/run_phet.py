@@ -4,6 +4,7 @@ from docker import DockerClient
 from docker.models.containers import Container
 
 from .base import Operation, ContainerResult
+from .upload import Upload
 
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
@@ -33,9 +34,13 @@ class RunPhet(Operation):
             name='phet_{}'.format(self.task_id))
 
         exit_code = container.wait()['StatusCode']
+
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
         result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
+
+        # upload log
+        Upload.upload_log(container)
 
         container.remove()
 

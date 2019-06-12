@@ -5,6 +5,7 @@ from celery.task import Task
 from celery.utils.log import get_task_logger
 
 from utils import Settings
+from operations import Upload
 
 logger = get_task_logger(__name__)
 
@@ -44,3 +45,6 @@ class Base(Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         self.clean_up()
+
+    def upload_zims(self, remote_working_dir: str, files: list = None, directory: Path = None):
+        return Upload.upload(f'/zim{remote_working_dir}', files, directory)
