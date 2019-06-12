@@ -10,6 +10,7 @@ from utils.settings import Settings
 from utils.sftp import SFTPClient
 from .base import Operation, UploadError
 
+MAX_UPLOAD_LOG_LINES = 10 ** 6
 logger = logging.getLogger(__name__)
 
 
@@ -74,11 +75,17 @@ class Upload(Operation):
         """fetch, compress and upload the container's stdout to the warehouse"""
         container.reload()
 
-        # compress log output
+        # compress log output (using a 1M lines buffer to prevent swap)
         archive = Path(tempfile.gettempdir()).joinpath(container.name + '.log.xz')
         with lzma.open(archive, 'wb') as f:
+            buff, count = (b'', 0)
             for line in container.logs(stdout=True, stderr=True, stream=True):
-                f.write(line)
+                buff += line
+                count += 1
+                if count > MAX_UPLOAD_LOG_LINES:
+                    f.write(buff)
+                    buff, count = (b'', 0)
+            f.write(buff)
 
         # upload compressed file
         return Upload.upload('/logs/', files=[archive], delete=True)
