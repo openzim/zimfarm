@@ -25,15 +25,14 @@ Workers can not:
 |-----------|----------------|--------------------------------------------------------------|
 | RSA_KEY   |                | Server's RSA private key, will be generated if not specified |
 | PORT      | 22             | Port the SFTP server will be listening                       |
-| ROOT_PATH | /zim_files     | Path where the SFTP server will be severing from             |
+| ROOT_PATH | /files         | Path where the SFTP server will be severing from             |
 | LOG_PATH  | /warehouse.log | SFTP server log                                              |
 
 ## Example
 
 ```bash
 docker pull openzim/zimfarm-warehouse && \
-docker run \
-    -v /zim_files:/zim_files \
+docker run -v /files:/files \
     -v /logs/warehouse.log:/warehouse.log \
     -p 1522:22 \
     -d \
