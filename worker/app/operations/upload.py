@@ -88,4 +88,4 @@ class Upload(Operation):
             f.write(buff)
 
         # upload compressed file
-        return Upload.upload('/logs/', files=[archive], delete=True)
+        return Upload.upload('/logs/', files=[archive], delete=True)[-1]

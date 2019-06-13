@@ -28,18 +28,6 @@ class Base(Task):
         working_dir = Path(Settings.working_dir_container).joinpath(self.task_id)
         shutil.rmtree(working_dir)
 
-    @staticmethod
-    def get_files(working_dir: Path):
-        stats = []
-        description = []
-        for file in working_dir.iterdir():
-            if file.is_dir():
-                continue
-            stats.append({'name': file.name, 'size': file.stat().st_size})
-            description.append('{name} - {size}'.format(name=file.name, size=file.stat().st_size))
-
-        return stats, ', '.join(description)
-
     def on_success(self, retval, task_id, args, kwargs):
         self.clean_up()
 

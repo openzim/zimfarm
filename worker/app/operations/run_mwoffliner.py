@@ -40,13 +40,12 @@ class RunMWOffliner(Operation):
 
         container.reload()
 
+        container_log = Upload.upload_log(container)
+
         exit_code = container.attrs['State']['ExitCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
-        result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
-
-        # upload log
-        Upload.upload_log(container)
+        result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr, container_log)
 
         container.remove()
 
