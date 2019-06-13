@@ -18,7 +18,8 @@ def worker_shutting_down_clean_up(*args, **kwargs):
     logger.info('Shutting Down...')
 
     client = docker.from_env()
-    containers = client.containers.list(filters={'name': 'mwoffliner'})
+    containers = client.containers.list(
+        filters={'name': 'mwoffliner|redis|socket|phet|dnscache'})
     for container in containers:
         logger.info(f'Terminating container: {container.name}')
         container.stop(timeout=0)

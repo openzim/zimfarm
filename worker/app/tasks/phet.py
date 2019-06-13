@@ -38,9 +38,10 @@ class Phet(Base):
             # run phet
             run_phet = RunPhet(
                 docker_client=docker.from_env(), tag=image_tag, flags=flags,
-                task_id=self.task_id, working_dir_host=Settings.working_dir_host)
+                task_id=self.task_id, working_dir_host=Settings.working_dir_host,
+                dns=self.get_dns())
             logger.info(f'Running Phet')
-            logger.debug(f'Running Phet, command: {run_phet.command}')
+            logger.debug(f'Running Phet, dns={run_phet.dns}, command: {run_phet.command}')
             self.send_event('task-container_started', image=image, command=run_phet.command)
 
             result = run_phet.execute()
