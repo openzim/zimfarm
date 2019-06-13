@@ -11,7 +11,7 @@ class RunMWOffliner(Operation):
     """Run MWOffliner container with `config`"""
 
     def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str,
-                 redis_container: Container):
+                 redis_container: Container, dns: str):
         tag = 'latest' if not tag else tag
         super().__init__()
         self.docker = docker_client
@@ -21,6 +21,7 @@ class RunMWOffliner(Operation):
         self.redis_container = redis_container
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
         self.image_tag = tag
+        self.dns = dns
 
     def execute(self) -> ContainerResult:
         """Pull and run mwoffliner"""
@@ -32,7 +33,7 @@ class RunMWOffliner(Operation):
         volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
         container: Container = self.docker.containers.run(
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
-            links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}')
+            links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}', dns=self.dns)
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._wait_for_finish(container.id))

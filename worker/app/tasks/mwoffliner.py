@@ -41,9 +41,9 @@ class MWOffliner(Base):
                 run_mwoffliner = RunMWOffliner(
                     docker_client=docker.from_env(), tag=image_tag, flags=flags,
                     task_id=self.task_id, working_dir_host=Settings.working_dir_host,
-                    redis_container=redis_container)
+                    redis_container=redis_container, dns=self.get_dns())
                 logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
-                logger.debug(f'Running MWOffliner, command: {run_mwoffliner.command}')
+                logger.debug(f'Running MWOffliner, dns={run_mwoffliner.dns}, command: {run_mwoffliner.command}')
 
                 self.send_event('task-container_started', image=image, command=run_mwoffliner.command)
                 result = run_mwoffliner.execute()
