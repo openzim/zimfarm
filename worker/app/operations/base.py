@@ -60,6 +60,7 @@ class ContainerResult:
     exit_code: int
     stdout: str
     stderr: str
+    log: dict
 
     def is_successful(self):
         return self.exit_code == 0

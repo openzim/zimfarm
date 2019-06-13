@@ -49,7 +49,8 @@ class MWOffliner(Base):
                 result = run_mwoffliner.execute()
                 logger.info(f'MWOffliner finished, mwUrl: {flags["mwUrl"]}, exit code: {result.exit_code}')
                 self.send_event('task-container_finished', exit_code=result.exit_code,
-                                stdout=result.stdout, stderr=result.stderr)
+                                stdout=result.stdout, stderr=result.stderr,
+                                log=result.log)
 
             if not result.is_successful():
                 raise Exception(str(result))
