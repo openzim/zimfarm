@@ -66,6 +66,8 @@ class BaseTaskEventHandler(BaseHandler):
             task_updates['container.stdout'] = kwargs['stdout']
         if 'stderr' in kwargs:
             task_updates['container.stderr'] = kwargs['stderr']
+        if 'log' in kwargs:
+            task_updates['container.log'] = kwargs['log']
         if 'task_name' in kwargs:
             task_updates['debug.task_name'] = kwargs['task_name']
         if 'task_args' in kwargs:
@@ -207,8 +209,9 @@ class TaskContainerFinishedEventHandler(BaseTaskEventHandler):
         exit_code = event.get('exit_code')
         stdout = event.get('stdout')
         stderr = event.get('stderr')
+        log = event.get('log')
 
         logger.info(f'Task Container Finished: {task_id}, {exit_code}')
 
         self.save_event(task_id, TaskEvent.container_finished, timestamp,
-                        exit_code=exit_code, stdout=stdout, stderr=stderr)
+                        exit_code=exit_code, stdout=stdout, stderr=stderr, log=log)
