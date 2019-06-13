@@ -1,3 +1,4 @@
+import os
 import asyncio
 from pathlib import Path
 
@@ -5,6 +6,7 @@ from docker import DockerClient
 from docker.models.containers import Container
 
 from .base import Operation, ContainerResult
+from utils.settings import Settings
 
 
 class RunMWOffliner(Operation):
@@ -15,13 +17,14 @@ class RunMWOffliner(Operation):
         tag = 'latest' if not tag else tag
         super().__init__()
         self.docker = docker_client
-        self.command = self._get_command(flags)
-        self.task_id = task_id
-        self.working_dir_host = Path(working_dir_host).joinpath(self.task_id).absolute()
+        self.working_dir_host = Path(working_dir_host).joinpath(task_id).absolute()
         self.redis_container = redis_container
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
         self.image_tag = tag
         self.dns = dns
+        self.container_name = f'mwoffliner_{task_id}'
+        self.redis_socket_name = f'redis_{task_id}.sock'
+        self.command = self._get_command(flags)
 
     def execute(self) -> ContainerResult:
         """Pull and run mwoffliner"""
@@ -30,10 +33,12 @@ class RunMWOffliner(Operation):
         self.docker.images.pull(self.image_name)
 
         # run mwoffliner
-        volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'}}
+        volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'},
+                   Settings.sockets_dir_host: {'bind': Settings.sockets_dir_container,
+                                               'mode': 'rw'}}
         container: Container = self.docker.containers.run(
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
-            links={self.redis_container.name: 'redis'}, name=f'mwoffliner_{self.task_id}', dns=self.dns)
+            name=self.container_name, dns=self.dns)
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._wait_for_finish(container.id))
@@ -48,9 +53,8 @@ class RunMWOffliner(Operation):
 
         return result
 
-    @staticmethod
-    def _get_command(flags: {}):
-        flags['redis'] = 'redis://redis'
+    def _get_command(self, flags: {}):
+        flags['redis'] = os.path.join(Settings.sockets_dir_container, self.redis_socket_name)
         flags['outputDirectory'] = '/output'
         params: [str] = []
         for key, value in flags.items():
