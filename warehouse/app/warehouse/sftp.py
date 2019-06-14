@@ -157,7 +157,23 @@ class Handler(paramiko.SFTPServerInterface):
         return sftp.SFTP_OP_UNSUPPORTED
 
     def remove(self, path):
-        return sftp.SFTP_OP_UNSUPPORTED
+
+        path = self.canonicalize(path)
+
+        # check permission
+        if not path.startswith(self.root):
+            return sftp.SFTP_PERMISSION_DENIED
+
+        # return error if file doesn't exists
+        if not os.path.exists(path):
+            return sftp.SFTP_FAILURE
+
+        try:
+            os.unlink(path)
+        except Exception:
+            return sftp.SFTP_FAILURE
+
+        return sftp.SFTP_OK
 
     def rename(self, oldpath, newpath):
         oldpath, newpath = self.canonicalize(oldpath), self.canonicalize(newpath)
