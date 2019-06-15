@@ -23,6 +23,7 @@ class Settings:
 
     working_dir_host: str = os.getenv('WORKING_DIR', None)
     working_dir_container: str = '/zim_files'
+    sockets_dir_container: str = '/tmp/sockets'
     private_key: str = '/usr/src/.ssh/id_rsa'
 
     docker_socket: str = '/var/run/docker.sock'
