@@ -23,12 +23,10 @@ class Settings:
 
     working_dir_host: str = os.getenv('WORKING_DIR', None)
     working_dir_container: str = '/zim_files'
+    sockets_dir_container: str = '/tmp/sockets'
     private_key: str = '/usr/src/.ssh/id_rsa'
 
     docker_socket: str = '/var/run/docker.sock'
-
-    sockets_dir_host: str = os.getenv('SOCKETS_DIR', '/tmp/sockets')
-    sockets_dir_container: str = '/tmp/sockets'
 
     @classmethod
     def sanity_check(cls):

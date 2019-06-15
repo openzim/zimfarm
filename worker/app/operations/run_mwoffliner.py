@@ -18,6 +18,7 @@ class RunMWOffliner(Operation):
         super().__init__()
         self.docker = docker_client
         self.working_dir_host = Path(working_dir_host).joinpath(task_id).absolute()
+        self.sockets_dir_host = Path(working_dir_host).joinpath('sockets').absolute()
         self.redis_container = redis_container
         self.image_name = 'openzim/mwoffliner:{}'.format(tag)
         self.image_tag = tag
@@ -34,8 +35,8 @@ class RunMWOffliner(Operation):
 
         # run mwoffliner
         volumes = {self.working_dir_host: {'bind': '/output', 'mode': 'rw'},
-                   Settings.sockets_dir_host: {'bind': Settings.sockets_dir_container,
-                                               'mode': 'rw'}}
+                   self.sockets_dir_host: {'bind': Settings.sockets_dir_container,
+                                           'mode': 'rw'}}
         container: Container = self.docker.containers.run(
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
             name=self.container_name, dns=self.dns)

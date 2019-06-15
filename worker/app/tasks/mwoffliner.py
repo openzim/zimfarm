@@ -37,7 +37,7 @@ class MWOffliner(Base):
 
         try:
             # run mwoffliner
-            with RunRedis(docker_client=docker.from_env(), task_id=self.task_id) as redis_container:
+            with RunRedis(docker_client=docker.from_env(), task_id=self.task_id, working_dir_host=Settings.working_dir_host) as redis_container:
                 run_mwoffliner = RunMWOffliner(
                     docker_client=docker.from_env(), tag=image_tag, flags=flags,
                     task_id=self.task_id, working_dir_host=Settings.working_dir_host,
