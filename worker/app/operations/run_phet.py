@@ -12,7 +12,7 @@ logger = get_task_logger(__name__)
 class RunPhet(Operation):
     """Run Phet container with `config`"""
 
-    def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str):
+    def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str, dns: str):
         tag = 'latest' if not tag else tag
         super().__init__()
         self.docker = docker_client
@@ -20,6 +20,7 @@ class RunPhet(Operation):
         self.task_id = task_id
         self.working_dir_host = Path(working_dir_host).joinpath(self.task_id).absolute()
         self.image_name = 'openzim/phet:{}'.format(tag)
+        self.dns = dns
 
     def execute(self) -> ContainerResult:
         """Pull and run phet"""
@@ -31,7 +32,7 @@ class RunPhet(Operation):
         volumes = {self.working_dir_host: {'bind': '/phet/dist', 'mode': 'rw'}}
         container: Container = self.docker.containers.run(
             image=self.image_name, command=self.command, volumes=volumes, detach=True,
-            name='phet_{}'.format(self.task_id))
+            name=f'phet_{self.task_id}', dns=self.dns)
 
         exit_code = container.wait()['StatusCode']
 
