@@ -63,7 +63,7 @@ class Upload(Operation):
 
         stats = [{'name': file.name, 'size': file.stat().st_size} for file in files]
         files_desc = ','.join(['{name} - {size}'.format(**stat) for stat in stats])
-        logger.info('Uploading files, {}'.format(files_desc))
+        logger.info(f'Uploading files, {files_desc}')
 
         upload = Upload(remote_working_dir=remote_working_dir, files=files)
         upload.execute()

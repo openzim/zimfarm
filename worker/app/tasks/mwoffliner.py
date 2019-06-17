@@ -60,6 +60,8 @@ class MWOffliner(Base):
 
             return files
         except docker.errors.APIError as e:
+            self.clean_up()
             raise self.retry(exc=e)
         except docker.errors.ContainerError as e:
+            self.clean_up()
             raise Exception from e
