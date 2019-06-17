@@ -25,7 +25,9 @@ export class ScheduleListComponent implements OnInit {
         }
 
     ngOnInit() {
-        this.schedulesService.list(new SchedulesListRequestParams()).subscribe(data => {
+        let params = new SchedulesListRequestParams()
+        params.limit = 200
+        this.schedulesService.list(params).subscribe(data => {
             this.schedules = data.items;
         })
         this.scheduleFilterForm.valueChanges.pipe(
@@ -33,6 +35,7 @@ export class ScheduleListComponent implements OnInit {
             distinctUntilChanged(),
             switchMap(value => {
                 let params = new SchedulesListRequestParams()
+                params.limit = 200
                 params.name = value['name']
                 return this.schedulesService.list(params)
             })

@@ -45,13 +45,15 @@ export class SchedulesService extends BaseService {
 }
 
 export class SchedulesListRequestParams {
+    limit?: number;
+    offset?: number;
     name?: string
 
     toDict(): {} {
         let params = {}
-        if (this.name && this.name.length > 0) {
-            params['name'] = this.name
-        }
+        if (this.limit) { params['limit'] = this.limit}
+        if (this.offset) { params['offset'] = this.offset}
+        if (this.name && this.name.length > 0) {params['name'] = this.name}
         return params
     }
 }
