@@ -44,4 +44,8 @@ export class ScheduleListComponent implements OnInit {
     clearSearchText() {
         this.scheduleFilterForm.controls['name'].setValue('')
     }
+
+    scheduleListScrollIndexChange(event) {
+
+    }
 }

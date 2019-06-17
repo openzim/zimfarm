@@ -1,4 +1,61 @@
-form {
+.schedule-overview {
+    padding: 1rem;
+    background-color: rgba(236, 239, 241, 0.5);
+}
+
+.schedule-overview > h1 {
+    font-weight: 500;
+    margin: 0;
+    margin-bottom: 0.5rem;
+}
+
+.schedule-detail {
     display: flex;
     flex-direction: column;
+    padding: 1rem;
+}
+
+.schedule-detail > .card-container {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+mat-card {
+    padding: 0.25rem 0;
+    max-width: 40rem;
+    flex: 1;
+}
+
+mat-card > div, mat-card > form {
+    padding: 0.75rem 1rem;
+}
+
+mat-card h2, mat-card h3 {
+    margin: 0;
+}
+
+mat-card > .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+mat-card form {
+    display: flex;
+    flex-direction: column;
+}
+
+mat-card .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+mat-card .form-group.inline {
+    flex-direction: row;
+    justify-content: space-between; 
+}
+
+mat-card .form-group.inline > mat-form-field {
+    width: calc(50% - 0.25rem);
 }

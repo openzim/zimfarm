@@ -15,7 +15,9 @@
             <mat-divider></mat-divider>
         </div>
         <div class="list">
-            <schedule-list-item *ngFor="let schedule of schedules" [schedule]="schedule"></schedule-list-item>
+            <cdk-virtual-scroll-viewport itemSize="68" (scrolledIndexChange)="scheduleListScrollIndexChange($event)">
+                <schedule-list-item *cdkVirtualFor="let schedule of schedules" [schedule]="schedule"></schedule-list-item>
+            </cdk-virtual-scroll-viewport>
         </div>
     </mat-sidenav>
     <mat-sidenav-content>

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, scheduled } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
 
@@ -13,20 +13,23 @@ import { categories } from '../../services/entities';
     styleUrls: ['./schedule-detail.css']
 })
 export class ScheduleDetailComponent implements OnInit {
-    name = new FormControl('');
+    schedule$: Observable<Schedule>;
+    offlinerConfigForm = new FormGroup({
+        image: new FormGroup({
+            name: new FormControl(''),
+            tag: new FormControl('')
+        }),
+        flags: new FormGroup({
+            mwUrl: new FormControl(''),
+            adminEmail: new FormControl(''),
+            customMainPage: new FormControl('')
+        })
+    });
 
     constructor(
         private route: ActivatedRoute, 
         private schedulesService: SchedulesService, 
-        private formBuilder: FormBuilder) {
-            this.scheduleForm = this.formBuilder.group({
-                name: 'test',
-                address: ''
-            })
-        }
-    schedule$: Observable<Schedule>;
-    categories = categories;
-    scheduleForm: FormGroup;
+        private formBuilder: FormBuilder) {}
 
     ngOnInit() {
         this.schedule$ = this.route.paramMap.pipe(
@@ -34,9 +37,9 @@ export class ScheduleDetailComponent implements OnInit {
                 return this.schedulesService.get(params.get('id_or_name'));
             })
         );
-        // this.schedule$.subscribe(schedule => {
-        //     this.scheduleForm = this.formBuilder.group(schedule);
-        // })
+        this.schedule$.subscribe(schedule => {
+            this.offlinerConfigForm.patchValue(schedule.config);
+        })
     }
 
     onSubmit(schedule) {

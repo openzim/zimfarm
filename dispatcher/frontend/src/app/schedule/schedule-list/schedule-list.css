@@ -46,7 +46,11 @@ div.filter input, div.filter i {
     font-size: 1rem;
 }
 
-mat-sidenav div.list {
+cdk-virtual-scroll-viewport {
+    height: 100%;
+}
+
+mat-sidenav .list {
     display: flex;
     flex-direction:column;
     overflow-y: scroll;

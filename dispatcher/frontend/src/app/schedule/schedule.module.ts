@@ -10,6 +10,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule, Routes } from '@angular/router';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import {MatCardModule} from '@angular/material/card'; 
 
 import { SharedModule } from '../shared/shared.module';
 import { ScheduleDetailComponent } from './schedule-detail/schedule-detail';
@@ -42,6 +43,7 @@ const routes: Routes = [
         MatButtonModule,
         MatToolbarModule,
         MatListModule,
+        MatCardModule,
     ],
     declarations: [
         ScheduleListComponent,
