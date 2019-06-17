@@ -21,8 +21,8 @@ const routes: Routes = [
         component: AppComponent,
         canActivate: [AuthGuard],
         children: [
-            { path: 'schedules', loadChildren: './schedule/schedule.module#ScheduleModule' },
-            { path: 'tasks', loadChildren: './task/task.module#TaskModule' },
+            { path: 'schedules', loadChildren: () => import('./schedule/schedule.module').then(m => m.ScheduleModule) },
+            { path: 'tasks', loadChildren: () => import('./task/task.module').then(m => m.TaskModule) },
             { path: 'user', component: UserComponent },
             { path: '**', redirectTo: 'schedules' }
         ]

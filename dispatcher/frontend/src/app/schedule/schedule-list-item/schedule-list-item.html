@@ -1,0 +1,9 @@
+<a class="item" [routerLink]="['/schedules/',schedule.name]">
+    <div class="icon"></div>
+    <div>
+        <a class="name" [routerLink]="['/schedules/',schedule.name]">{{schedule.name}}</a>
+        <div class="language_name">{{schedule.language.name_en}}</div>
+        <div class="offliner">{{schedule.config.image.name}}: {{schedule.config.image.tag}}</div>
+    </div>
+</a>
+<mat-divider></mat-divider>
