@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Schedule } from '../../services/task.service';
+import { Schedule } from '../../services/schedules.service';
 
 @Component({
     selector: 'schedule-list-item',

@@ -80,16 +80,15 @@ export interface Schedule {
 }
 
 export interface Config {
+    image: ConfigImage;
     task_name: string;
     queue: string;
     warehouse_path: string;
-    offliner: ConfigOffliner;
 }
 
-export interface ConfigOffliner {
-    image_name: string;
-    image_tag: string;
-    flags: Object;
+export interface ConfigImage {
+    name: string;
+    tag: string;
 }
 
 export interface Language {
