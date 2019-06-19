@@ -78,6 +78,14 @@ class Settings:
             logger.error('Docker socket mapping did not found inside container at {}.'.format(cls.private_key))
             sys.exit(1)
 
+        # check sockets folder permission (redis is ran as user)
+        sockets_dir_from_worker = Path(cls.working_dir_container).joinpath('sockets')
+        sockets_dir_host = Path(cls.working_dir_host).joinpath('sockets')
+        if not oct(sockets_dir_from_worker.stat().st_mode & 0o777)[-3:] == '777':
+            logger.error('Sockets placeholder at {} need to be world-writable'
+                         .format(sockets_dir_host))
+            sys.exit(1)
+
     @classmethod
     def ensure_correct_typing(cls):
         try:
