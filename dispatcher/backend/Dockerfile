@@ -3,7 +3,7 @@ FROM tiangolo/uwsgi-nginx:python3.6
 COPY requirements.txt /usr/src/
 RUN pip install -r /usr/src/requirements.txt
 
-COPY nginx.conf /etc/nginx/conf.d/
+COPY nginx.conf /etc/nginx/conf.d/custom.conf
 
 COPY src /usr/src/flask
 COPY static /usr/src/static
