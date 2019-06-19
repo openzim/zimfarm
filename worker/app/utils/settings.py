@@ -81,10 +81,20 @@ class Settings:
         # check sockets folder permission (redis is ran as user)
         sockets_dir_from_worker = Path(cls.working_dir_container).joinpath('sockets')
         sockets_dir_host = Path(cls.working_dir_host).joinpath('sockets')
-        if not oct(sockets_dir_from_worker.stat().st_mode & 0o777)[-3:] == '777':
-            logger.error('Sockets placeholder at {} need to be world-writable'
-                         .format(sockets_dir_host))
-            sys.exit(1)
+        if not sockets_dir_from_worker.exists() or \
+                not oct(sockets_dir_from_worker.stat().st_mode & 0o777) == 0o777:
+            logger.info('Sockets directory at {} need to be world writable'
+                        .format(sockets_dir_host))
+            try:
+                sockets_dir_from_worker.mkdir(0o777, parents=True, exist_ok=True)
+                sockets_dir_from_worker.chmod(0o777)
+            except Exception as e:
+                logger.exception(e)
+                logger.error('Unable to make sockets directory at {} world writable'
+                             .format(sockets_dir_host))
+                sys.exit(1)
+            else:
+                logger.info('Changed sockets directory mode to world writable')
 
     @classmethod
     def ensure_correct_typing(cls):

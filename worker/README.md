@@ -73,12 +73,7 @@ Please make sure the RSA public key is uploaded to dispatcher using the public A
 
 ## Example
 
-__note__: your local `PATH_WORKING_DIR` must be group writable and `PATH_WORKING_DIR/sockets` must be world writable:
-
-```
-chmod g+rwx PATH_WORKING_DIR
-mkdir -p -m 0777 PATH_WORKING_DIR/sockets
-```
+__note__: your local `PATH_WORKING_DIR` must be group writable (chgrp rwx PATH_WORKING_DIR)
 
 ```bash
 docker run \
