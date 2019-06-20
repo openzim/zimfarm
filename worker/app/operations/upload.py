@@ -55,7 +55,7 @@ class Upload(Operation):
         """upload either a list of files (Path) or all files of a directory (Path)"""
 
         stats = [{'name': file.name, 'size': file.stat().st_size} for file in files]
-        files_desc = ','.join(['{name} - {size}'.format(**stat) for stat in stats])
+        files_desc = ','.join([f'{stat["name"]} - {stat["size"]}' for stat in stats])
         logger.info(f'Uploading files, {files_desc}')
 
         upload = Upload(remote_working_dir=remote_working_dir, files=files)
