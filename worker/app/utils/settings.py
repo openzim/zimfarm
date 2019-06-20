@@ -50,7 +50,7 @@ class Settings:
         # check working directory mapping inside container
         working_dir_container = Path(cls.working_dir_container)
         if not working_dir_container.exists():
-            logger.error('Working directory mapping did not found inside container at {}.'
+            logger.error('Working directory mapping not found inside container at {}.'
                          .format(cls.working_dir_container))
             sys.exit(1)
         if not working_dir_container.is_dir():
@@ -61,7 +61,7 @@ class Settings:
         # check RSA private key mapping inside container
         private_key = Path(cls.private_key)
         if not private_key.exists():
-            logger.error('Private key mapping did not found inside container at {}.'.format(cls.private_key))
+            logger.error('Private key mapping not found inside container at {}.'.format(cls.private_key))
             sys.exit(1)
         if not private_key.is_file():
             logger.error('Private key mapping at {} is not a file.'.format(cls.private_key))
@@ -75,7 +75,7 @@ class Settings:
         # check docker socket mapping inside container
         docker_socket = Path(cls.docker_socket)
         if not docker_socket.exists():
-            logger.error('Docker socket mapping did not found inside container at {}.'.format(cls.private_key))
+            logger.error('Docker socket mapping not found inside container at {}.'.format(cls.docker_socket))
             sys.exit(1)
 
         # check sockets folder permission (redis is ran as user)

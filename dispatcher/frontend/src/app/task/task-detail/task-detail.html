@@ -51,6 +51,12 @@
                     <mat-list-item class="preformatted" *ngIf="task.container.command">
                         <div mat-line><pre>{{task.container.command}}</pre></div>
                     </mat-list-item>
+                   <h3 mat-subheader *ngIf="task.container.log">Complete Log</h3>
+                    <mat-list-item *ngIf="task.container.log">
+                        <mat-icon mat-list-icon>description</mat-icon>
+                        <h4 mat-line><a href="{{getWareHouseLogsUrl()}}/{{task.container.log.name}}">{{task.container.log.name}}</a></h4>
+                        <p mat-line>{{task.container.log.size | fileSize}}</p>
+                    </mat-list-item>
                     <h3 mat-subheader>Standard Error</h3>
                     <mat-list-item class="preformatted">
                         <div mat-line>
