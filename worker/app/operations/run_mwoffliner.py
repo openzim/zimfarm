@@ -7,6 +7,7 @@ from docker.models.containers import Container
 
 from .base import Operation, ContainerResult
 from utils.settings import Settings
+from .upload import Upload
 
 
 class RunMWOffliner(Operation):
@@ -45,10 +46,13 @@ class RunMWOffliner(Operation):
         loop.run_until_complete(self._wait_for_finish(container.id))
 
         container.reload()
+
+        container_log = Upload.upload_log(container)
+
         exit_code = container.attrs['State']['ExitCode']
         stdout = container.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = container.logs(stdout=False, stderr=True).decode("utf-8")
-        result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr)
+        result = ContainerResult(self.image_name, self.command, exit_code, stdout, stderr, container_log)
 
         container.remove()
 
