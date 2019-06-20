@@ -6,4 +6,7 @@ export class BaseService {
         }
         return root + '/api';
     }
+    getWareHouseLogsUrl(): string {
+        return 'https://logs.warehouse.farm.openzim.org';
+    }
 }

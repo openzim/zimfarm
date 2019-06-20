@@ -6,7 +6,3 @@ export function getAPIRoot(): string {
     }
     return root + '/api';
 }
-
-export function getWareHouseLogsUrl(): string {
-    return 'https://logs.warehouse.farm.openzim.org';
-}

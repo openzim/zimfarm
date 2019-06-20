@@ -4,17 +4,15 @@ import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { Task, TasksService } from '../../services/task.service';
-import { getWareHouseLogsUrl } from '../../services/config';
+import { BaseService } from '../../services/base.service';
 
 @Component({
     templateUrl: './task-detail.html',
     styleUrls: ['./task-detail.css']
 })
-export class TaskDetailComponent implements OnInit {
+export class TaskDetailComponent extends BaseService implements OnInit {
 
-    warehouseUrl: string = getWareHouseLogsUrl();
-
-    constructor(private route: ActivatedRoute, private tasksService: TasksService) { }
+    constructor(private route: ActivatedRoute, private tasksService: TasksService) { super(); }
     task$: Observable<Task>;
 
     ngOnInit() {
