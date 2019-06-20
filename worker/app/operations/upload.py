@@ -51,15 +51,8 @@ class Upload(Operation):
             raise UploadError(code='paramiko.Error', message=str(e))
 
     @staticmethod
-    def upload(remote_working_dir: str, files: list = None, directory: Path = None, delete: bool = False):
+    def upload_files(remote_working_dir: str, files: list = None, delete: bool = False):
         """upload either a list of files (Path) or all files of a directory (Path)"""
-
-        if files is None and directory is None:
-            raise ValueError("upload requires either `files` or `directory`")
-
-        # build list of files if invoked with directory
-        if files is None:
-            files = [file for file in directory.iterdir() if not file.is_dir()]
 
         stats = [{'name': file.name, 'size': file.stat().st_size} for file in files]
         files_desc = ','.join(['{name} - {size}'.format(**stat) for stat in stats])
@@ -71,9 +64,16 @@ class Upload(Operation):
         return stats
 
     @staticmethod
+    def upload_directory_content(remote_working_dir: str, directory: Path = None, delete: bool = False):
+        """upload either a list of files (Path) or all files of a directory (Path)"""
+
+        files = [file for file in directory.iterdir() if not file.is_dir()]
+
+        return Upload.upload_files(remote_working_dir=remote_working_dir, files=files, delete=delete)
+
+    @staticmethod
     def upload_log(container):
         """fetch, compress and upload the container's stdout to the warehouse"""
-        container.reload()
 
         # compress log output (using a 1M lines buffer to prevent swap)
         archive = Path(tempfile.gettempdir()).joinpath(container.name + '.log.xz')
@@ -88,4 +88,4 @@ class Upload(Operation):
             f.write(buff)
 
         # upload compressed file
-        return Upload.upload('/logs/', files=[archive], delete=True)[-1]
+        return Upload.upload_files('/logs/', files=[archive], delete=True)[-1]

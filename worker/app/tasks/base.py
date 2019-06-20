@@ -61,5 +61,5 @@ class Base(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         self.clean_up()
 
-    def upload_zims(self, remote_working_dir: str, files: list = None, directory: Path = None):
-        return Upload.upload(f'/zim{remote_working_dir}', files, directory)
+    def upload_zims(self, remote_working_dir: str, directory: Path = None):
+        return Upload.upload_directory_content(f'/zim{remote_working_dir}', directory)
