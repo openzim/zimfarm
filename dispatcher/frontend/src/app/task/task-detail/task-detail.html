@@ -51,11 +51,7 @@
                     <mat-list-item class="preformatted" *ngIf="task.container.command">
                         <div mat-line><pre>{{task.container.command}}</pre></div>
                     </mat-list-item>
-                    <h3 mat-subheader>Exit Code</h3>
-                    <mat-list-item class="preformatted">
-                        <div mat-line><pre>{{task.container.exit_code}}</pre></div>
-                    </mat-list-item>
-                    <h3 mat-subheader *ngIf="task.container.log">Complete Log</h3>
+                   <h3 mat-subheader *ngIf="task.container.log">Complete Log</h3>
                     <mat-list-item *ngIf="task.container.log">
                         <mat-icon mat-list-icon>description</mat-icon>
                         <h4 mat-line><a href="{{warehouseUrl}}/{{task.container.log.name}}">{{task.container.log.name}}</a></h4>
@@ -74,6 +70,10 @@
                             <pre *ngIf="task.container.stdout;else none">{{task.container.stdout}}</pre>
                             <ng-template #none><pre>None</pre></ng-template>
                         </div>
+                    </mat-list-item>
+                    <h3 mat-subheader>Exit Code</h3>
+                    <mat-list-item class="preformatted">
+                        <div mat-line><pre>{{task.container.exit_code}}</pre></div>
                     </mat-list-item>
                 </mat-list>
             </div>

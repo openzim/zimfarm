@@ -1,0 +1,57 @@
+<div class="schedule-overview" *ngIf="schedule$ | async as schedule">
+    <h1 class="mat-1">Schedule: {{schedule.name}}</h1>
+    <label><i class="fas fa-language"></i> {{schedule.language.name_en}}</label>
+</div>
+<mat-divider></mat-divider>
+<div class="schedule-detail" *ngIf="schedule$ | async as schedule">
+    <div class="card-container">
+        <mat-card>
+            <div class="header">
+                <h2 class="mat-h2">Offliner Configuration</h2>
+                <button mat-button disabled>Edit</button>
+            </div>
+            <mat-divider></mat-divider>
+            <form [formGroup]="offlinerConfigForm">
+                <h3 class="mat-h3"><i class="fab fa-docker"></i> Docker Image</h3>
+                <div class="form-group inline" formGroupName="image">
+                    <mat-form-field appearance="standard" floatLabel="always">
+                        <mat-label>Name</mat-label>
+                        <input matInput formControlName="name">
+                    </mat-form-field>
+                    <mat-form-field appearance="standard" floatLabel="always">
+                        <mat-label>Tag</mat-label>
+                        <input matInput formControlName="tag">
+                    </mat-form-field>
+                </div>
+                <h3 class="mat-h3"><i class="fas fa-wrench"></i>  Command Options</h3>
+                <div class="form-group" formGroupName="flags">
+                    <mat-form-field appearance="standard" floatLabel="always">
+                        <mat-label>URL</mat-label>
+                        <input matInput type="url" formControlName="mwUrl" required>
+                        <mat-hint>Mediawiki base URL.</mat-hint>
+                    </mat-form-field>
+                    <mat-form-field appearance="standard" floatLabel="always">
+                        <mat-label>Admin Email</mat-label>
+                        <input matInput type="email" formControlName="adminEmail" required>
+                        <mat-hint>Email for mwoffliner user.</mat-hint>
+                    </mat-form-field>
+                    <mat-form-field appearance="standard" floatLabel="always">
+                        <mat-label>Custom Main Page</mat-label>
+                        <input matInput formControlName="customMainPage">
+                        <mat-hint>Path or URL to a custom page to use as welcome page.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </form>
+        </mat-card>
+    </div>
+    <div class="card-container">
+        <mat-card>
+            <div class="header">
+                <h2 class="mat-h2">Admin Configuration</h2>
+                <button mat-button disabled>Edit</button>
+            </div>
+            <mat-divider></mat-divider>
+            <div>stuff like queue, warehouse upload path goes here.</div>
+        </mat-card>
+    </div>
+</div>
