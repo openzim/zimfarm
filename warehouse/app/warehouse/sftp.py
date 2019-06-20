@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import threading
 import urllib.error
 import urllib.request
@@ -169,7 +170,10 @@ class Handler(paramiko.SFTPServerInterface):
             return sftp.SFTP_FAILURE
 
         try:
-            os.unlink(path)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
         except Exception:
             return sftp.SFTP_FAILURE
 
