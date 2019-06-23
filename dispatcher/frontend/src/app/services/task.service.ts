@@ -1,27 +1,22 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { getAPIRoot } from './config';
+
+import { BaseService } from './base.service';
 
 @Injectable({
     providedIn: 'root',
 })
-export class TasksService {
-    constructor(private http: HttpClient) { }
-
-    private getTasksAPIRoot(): string {
-        return getAPIRoot() + '/tasks/'
-    }
+export class TasksService extends BaseService {
+    constructor(private http: HttpClient) { super() }
 
     list(skip: number = 0, limit: number = 100): Observable<ListResponseData> {
-        let params = {
-            skip: skip.toString(),
-            limit: limit.toString()};
-        return this.http.get<ListResponseData>(this.getTasksAPIRoot(), {params: params});
+        let params = {skip: skip.toString(), limit: limit.toString()}
+        return this.http.get<ListResponseData>(this.getAPIRoot() + '/tasks/', {params: params});
     }
     
     get(task_id: string): Observable<Task> {
-        return this.http.get<Task>(this.getTasksAPIRoot() + task_id);
+        return this.http.get<Task>(this.getAPIRoot() + '/tasks/' + task_id);
     }
 }
 
