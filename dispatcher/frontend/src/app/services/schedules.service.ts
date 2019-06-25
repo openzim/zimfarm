@@ -84,6 +84,7 @@ export interface Config {
     task_name: string;
     queue: string;
     warehouse_path: string;
+    flags: {};
 }
 
 export interface ConfigImage {

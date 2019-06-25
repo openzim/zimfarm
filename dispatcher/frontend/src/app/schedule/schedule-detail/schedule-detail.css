@@ -59,3 +59,13 @@ mat-card .form-group.inline {
 mat-card .form-group.inline > mat-form-field {
     width: calc(50% - 0.25rem);
 }
+
+mat-card .form-group.row {
+    display: grid;
+    grid-column-gap: 1rem;
+    grid-template-columns: 12rem auto;
+}
+
+mat-card .form-group.row > label {
+    text-align: right;
+}
