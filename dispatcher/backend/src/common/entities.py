@@ -11,6 +11,10 @@ class TaskStatus:
     revoked = 'revoked'
 
     @classmethod
+    def incomplete(cls):
+        return [cls.sent, cls.received, cls.started, cls.container_started, cls.retried]
+
+    @classmethod
     def all(cls):
         return [cls.sent, cls.received, cls.started, cls.succeeded, cls.failed, cls.retried, cls.revoked]
 

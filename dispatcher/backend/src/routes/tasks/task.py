@@ -2,6 +2,7 @@ import pymongo
 from bson.objectid import ObjectId, InvalidId
 from flask import request, Response, jsonify
 
+from common.entities import TaskStatus
 from common.mongo import Tasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate
@@ -83,3 +84,28 @@ class TaskRoute(BaseRoute):
             raise TaskNotFound()
         else:
             return jsonify(task)
+
+
+class TaskCancelRoute(BaseRoute):
+    rule = '/<string:task_id>/cancel'
+    name = 'task_cancel'
+    methods = ['POST']
+
+    @authenticate
+    def post(self, task_id: str, *args, **kwargs):
+
+        try:
+            task_id = ObjectId(task_id)
+        except InvalidId:
+            task_id = None
+
+        task = Tasks().find_one(
+            {'$or': [{'status': {'$exists': False}, '_id': task_id},
+                     {'status': {'$in': TaskStatus.incomplete()}, '_id': task_id}]})
+        if task is None:
+            raise TaskNotFound()
+
+        celery = Celery()
+        celery.control.revoke(str(task_id), terminate=True)
+
+        return Response()
