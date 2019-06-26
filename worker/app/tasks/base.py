@@ -1,13 +1,15 @@
 import shutil
+import signal
 from pathlib import Path
 
 import docker
 from celery.task import Task
+from celery.signals import task_revoked
 from celery.utils.log import get_task_logger
 
 from utils import Settings
 from operations import Upload
-from utils.docker import get_ip_address
+from utils.docker import get_ip_address, remove_existing_container
 from operations.run_dnscache import RunDNSCache
 
 logger = get_task_logger(__name__)
@@ -63,3 +65,19 @@ class Base(Task):
 
     def upload_zims(self, remote_working_dir: str, directory: Path = None):
         return Upload.upload_directory_content(f'/zim{remote_working_dir}', directory)
+
+
+@task_revoked.connect
+def on_revoked_task(sender=None, **kwargs):
+    if not getattr(sender, 'name').startswith('offliner.'):
+        return
+
+    if not kwargs.get('signum') == signal.SIGTERM:
+        return
+
+    task_id = getattr(kwargs.get('request'), 'id')
+    if task_id is None:
+        return
+
+    logger.info(f'on_revoked_task for #{task_id}')
+    remove_existing_container(docker.from_env(), name=f'dnscache_{task_id}')
