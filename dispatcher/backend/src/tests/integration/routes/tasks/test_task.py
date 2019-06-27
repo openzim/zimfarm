@@ -122,3 +122,38 @@ class TestTaskGet:
         assert data['schedule']['name'] == task['schedule']['name']
         assert 'timestamp' in data
         assert 'events' in data
+
+
+class TestTaskCancel:
+    def test_unauthorized(self, client, task):
+        url = '/api/tasks/{}/cancel'.format(task['_id'])
+        response = client.post(url)
+        assert response.status_code == 401
+
+    def test_not_found(self, client, access_token):
+        url = '/api/tasks/task_id/cancel'
+        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        response = client.post(url, headers=headers)
+        assert response.status_code == 404
+
+    @pytest.fixture(scope='session')
+    def celery_ctrl(self):
+        with patch('utils.celery.Celery.control') as mocked_celery_control:
+            yield mocked_celery_control
+
+    def test_wrong_statuses(self, client, access_token, tasks, celery_ctrl):
+        for task in filter(lambda x: x['status'] not in TaskStatus.incomplete(), tasks):
+            url = '/api/tasks/{}/cancel'.format(task['_id'])
+            headers = {'Authorization': access_token,
+                       'Content-Type': 'application/json'}
+            response = client.post(url, headers=headers)
+            assert response.status_code == 404
+
+    def test_cancel_task(self, client, access_token, tasks, celery_ctrl):
+        for task in filter(lambda x: x['status'] in TaskStatus.incomplete(), tasks):
+            url = '/api/tasks/{}/cancel'.format(task['_id'])
+            headers = {'Authorization': access_token,
+                       'Content-Type': 'application/json'}
+            response = client.post(url, headers=headers)
+            assert response.status_code == 200
+            celery_ctrl.revoke.assert_called_with(str(task['_id']), terminate=True)
