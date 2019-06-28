@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
-import { getAPIRoot } from './config';
+import { BaseService } from './base.service';
 
 export interface TagsListResponseData {
     items: Array<string>;
@@ -17,12 +17,12 @@ export interface TagsListMeta {
 @Injectable({
     providedIn: 'root',
 })
-export class TagsService {
-    constructor(private http: HttpClient) {}
+export class TagsService extends BaseService{
+    constructor(private http: HttpClient) { super() }
 
     fetch(skip: number = 0, limit: number = 500) {
         let params = {skip: skip.toString(), limit: limit.toString()};
-        let url = getAPIRoot() + '/tags/';
+        let url = this.getAPIRoot() + '/tags/';
         return this.http.get<TagsListResponseData>(url, {params: params});
     }
 }
