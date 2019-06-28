@@ -3,13 +3,14 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, throwError as observableThrowError } from 'rxjs';
 import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
-import { getAPIRoot } from './config';
+
+import { BaseService } from './base.service';
 
 @Injectable({
     providedIn: 'root',
 })
-export class AuthService {
-    constructor(private http: HttpClient, private router: Router) { }
+export class AuthService extends BaseService {
+    constructor(private http: HttpClient, private router: Router) { super() }
 
     authorize(username: string, password: string): Observable<AuthResponseData> {
         let body = {
@@ -19,7 +20,7 @@ export class AuthService {
         }
 
         return this.http.post<AuthResponseData>(
-            getAPIRoot() + '/auth/oauth2', body
+            this.getAPIRoot() + '/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
@@ -35,7 +36,7 @@ export class AuthService {
         }
         
         return this.http.post<AuthResponseData>(
-            getAPIRoot() + '/auth/oauth2', body
+            this.getAPIRoot() + '/auth/oauth2', body
         ).pipe(map(data => {
             this.accessToken = data.access_token
             this.refreshToken = data.refresh_token
