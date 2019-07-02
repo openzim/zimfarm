@@ -5,6 +5,7 @@ from typing import Optional
 from docker import DockerClient
 from docker.models.containers import Container
 
+from .upload import Upload
 from .base import Operation
 from utils.docker import remove_existing_container
 from utils.settings import Settings
@@ -44,6 +45,8 @@ class RunRedis(Operation):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._container:
             self._container.stop()
+            # TODO: remove this ultimately (upload redis log to warehouse)
+            Upload.upload_log(self._container)
             self._container.remove()
 
     def _get_command(self):
