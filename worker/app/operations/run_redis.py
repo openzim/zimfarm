@@ -51,4 +51,4 @@ class RunRedis(Operation):
 
     def _get_command(self):
         redis_socket = os.path.join(Settings.sockets_dir_container, self.redis_socket_name)
-        return f'redis-server --save "" --appendonly no --unixsocket {redis_socket} --unixsocketperm 744'
+        return f'redis-server --save "" --appendonly no --unixsocket {redis_socket} --unixsocketperm 744 --port 0 --bind 127.0.0.1'
