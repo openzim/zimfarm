@@ -1,5 +1,5 @@
 from routes.base import BaseBlueprint
-from routes.tasks.task import TasksRoute, TaskRoute
+from routes.tasks.task import TasksRoute, TaskRoute, TaskCancelRoute
 
 
 class Blueprint(BaseBlueprint):
@@ -8,3 +8,4 @@ class Blueprint(BaseBlueprint):
 
         self.register_route(TasksRoute())
         self.register_route(TaskRoute())
+        self.register_route(TaskCancelRoute())
