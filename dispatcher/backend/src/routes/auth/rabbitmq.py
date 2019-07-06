@@ -29,9 +29,11 @@ def auth(intention: str):
             return Response('allow')
         else:
             user = Users().find_one({'username': username}, {'_id': 0, 'password_hash': 1, 'scope.rabbitmq': 1})
+            if user is None:
+                return Response('deny')
             password_hash = user.get('password_hash', '')
             tags = user.get('scope', {}).get('rabbitmq', [])
-            if user is not None and check_password_hash(password_hash, password):
+            if check_password_hash(password_hash, password):
                 tags = ['allow'] + tags
                 return Response(' '.join(tags))
             else:
