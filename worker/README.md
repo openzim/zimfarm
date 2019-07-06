@@ -2,9 +2,9 @@
 
 Zimfarm worker is a celery node that generate zim files based on dispatcher instructions.
 
-After successfully established a secure connection with dispatcher, 
-worker will receive and execute tasks to generate zim files. 
-Each task contains roughly three stages:
+After successfully established a secure connection with dispatcher,
+worker will receive and execute tasks to generate zim files. Each task
+contains roughly three stages:
 
 - prepare: run helper docker containers, pull images, etc
 - generate: generate zim files using a offliner docker container
@@ -26,8 +26,8 @@ Any Linux or Unix based system that has docker installed. Windows are not suppor
 - QUEUES: comma separated queue names
   - default
   - small
-  - medium 
-  - large  
+  - medium
+  - large
 
 ## Docker Volumes
 
@@ -60,11 +60,11 @@ Please make sure the RSA public key is uploaded to dispatcher using the public A
          -H 'Content-Type: application/json; charset=utf-8' \
          -d $'{"name": "WORKER_NAME", "key": "AAAAB3NzaC1y......BerDXG7kL"}'
     ```
-    
+
     Please only include the content of the RSA key in the request body.
-    
-3. Confirm the ssk key has been uploaded successfully
-    
+
+3. Confirm the RSA key has been uploaded successfully
+
     ```bash
     curl "https://farm.openzim.org/api/users/automactic/keys" \
          -H 'Authorization: Bearer ACCESS_TOKEN'
