@@ -48,12 +48,28 @@ export class SchedulesListRequestParams {
     limit?: number;
     offset?: number;
     name?: string
+    categories: Array<string> = [];
+
+    constructor(limit: number = 200, offset: number = 0, filterData: any = {}) {
+        this.limit = limit
+        this.offset = offset
+        this.name = filterData['search']
+        if (filterData['categories']) {
+            this.categories = Object.keys(filterData.categories).reduce((filtered, key) => {
+                if (filterData['categories'][key]) {
+                    filtered.push(key)
+                }
+                return filtered
+            }, Array<string>())
+        }
+    }
 
     toDict(): {} {
         let params = {}
         if (this.limit) { params['limit'] = this.limit}
         if (this.offset) { params['offset'] = this.offset}
         if (this.name && this.name.length > 0) {params['name'] = this.name}
+        if (this.categories.length > 0) {params['category'] = this.categories}
         return params
     }
 }
