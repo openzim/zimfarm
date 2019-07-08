@@ -1,6 +1,7 @@
 .item {
     display: flex;
     padding: 0.5rem;
+    align-items: center;
 }
 
 .icon {
@@ -25,4 +26,8 @@
 a {
     color: inherit;
     text-decoration: none;
+}
+
+a:hover {
+    background-color: #ECEFF1;
 }

@@ -11,6 +11,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule, Routes } from '@angular/router';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import {MatCardModule} from '@angular/material/card'; 
+import {MatCheckboxModule} from '@angular/material/checkbox';
 
 import { SharedModule } from '../shared/shared.module';
 import { ScheduleDetailComponent } from './schedule-detail/schedule-detail';
@@ -44,6 +45,7 @@ const routes: Routes = [
         MatToolbarModule,
         MatListModule,
         MatCardModule,
+        MatCheckboxModule,
     ],
     declarations: [
         ScheduleListComponent,
