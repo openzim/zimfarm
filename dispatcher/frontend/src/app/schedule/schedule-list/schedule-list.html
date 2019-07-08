@@ -1,20 +1,33 @@
 <mat-sidenav-container>
     <mat-sidenav opened mode="side" [fixedInViewport]="true" [fixedTopGap]="54">
-        <div class="filter">
-            <form [formGroup]="scheduleFilterForm">
-                <div class="form-group">
+        <div class="sidenav-container">
+            <form [formGroup]="filterForm">
+                <div class="search">
                     <mat-form-field appearance="standard">
-                        <input matInput type="search" placeholder="Search by Name" formControlName="name"
+                        <input matInput type="search" placeholder="Search by Name" formControlName="search"
                         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                     </mat-form-field>
-                    <button mat-icon-button *ngIf="this.scheduleFilterForm.controls['name'].value ? this.scheduleFilterForm.controls['name'].value.length>0 : false" (click)="clearSearchText()">
+                    <button mat-icon-button *ngIf="this.filterForm.controls['search'].value ? this.filterForm.controls['search'].value.length>0 : false" (click)="clearSearchText()">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
+                <mat-divider></mat-divider>
+                <div formGroupName="categories">
+                    <div class="banner">
+                        <label>Categories</label>
+                        <button mat-icon-button color="primary" aria-label="Example icon-button with a heart icon">
+                            <i [ngClass]="categoriesFilterExpanded ? 'fas fa-minus-circle' : 'fas fa-plus-circle'" (click)="toggleCategoriesFilter()"></i>
+                        </button>
+                    </div>
+                    <div class="pannel choices" *ngIf="categoriesFilterExpanded">
+                        <ng-container *ngFor="let category of categories">
+                            <mat-checkbox color="primary" [formControlName]="category.code">{{category.name}}</mat-checkbox>
+                        </ng-container>
+                    </div>
+                </div>
             </form>
+            <mat-divider [vertical]="true"></mat-divider>
             <mat-divider></mat-divider>
-        </div>
-        <div class="list">
             <cdk-virtual-scroll-viewport itemSize="68" (scrolledIndexChange)="scheduleListScrollIndexChange($event)">
                 <schedule-list-item *cdkVirtualFor="let schedule of schedules" [schedule]="schedule"></schedule-list-item>
             </cdk-virtual-scroll-viewport>

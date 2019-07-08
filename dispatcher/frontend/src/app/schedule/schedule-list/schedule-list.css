@@ -3,60 +3,81 @@ mat-sidenav-container {
     min-height: calc(100vh); 
 }
 
-mat-sidenav {
-    width: 300px;
-    display: flex;
-    flex-direction: column;
-}
-
 mat-sidenav-content {
     margin-top: 54px;
 }
 
-div.filter {
-    height: 54px;
-    background-color: #ECEFF1;
+mat-sidenav {
+    width: 300px;
+}
+
+div.sidenav-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 1000px) {
+    mat-sidenav {
+        width: 600px;
+    }
+
+    div.sidenav-container {
+        flex-direction: row;
+    }
+
+    div.sidenav-container > form {
+        flex: 1;
+    }
+}
+
+div.search {
+    height: 3rem;
+    background-color: #eceff1;
     font-size: 0.5rem;
-    display: flex;
-    flex-direction: column;
-}
-
-div.filter form {
-    width: 100%;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-div.filter .form-group {
     display: flex;
     align-items: center;
 }
 
-div.filter mat-form-field {
-    padding-left: 1rem;
+div.search > mat-form-field {
     flex: 1;
+    margin-left: 1rem;
 }
 
-div.filter mat-form-field:last-child {
-    padding-right: 1rem;
+div.search > mat-form-field:last-child {
+    margin-right: 1rem;
 }
 
-div.filter input, div.filter i {
+div.search input {
     font-size: 1rem;
 }
 
-cdk-virtual-scroll-viewport {
-    height: 100%;
-}
-
-mat-sidenav .list {
+div.banner {
+    height: 3rem;
+    padding-left: 1rem;
+    padding-right: 0.25rem;
+    background-color: #eceff1;
     display: flex;
-    flex-direction:column;
-    overflow-y: scroll;
-    height: calc(100vh - 108px);
+    align-items: center;
+    justify-content: space-between;
 }
 
-mat-sidenav schedule-list-item:hover {
-    background-color: #ECEFF1;
+div.banner > label {
+    font-weight: 500;
+}
+
+div.pannel {
+    padding: 0.5rem 1rem;
+}
+
+div.choices {
+    display: flex;
+    flex-direction: column;
+}
+
+cdk-virtual-scroll-viewport {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
 }
