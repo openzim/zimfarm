@@ -43,7 +43,7 @@ class Base(Task):
 
     def get_dns(self):
         """list of DNS IPs to feed `dns` on scrappers with: [<dnscache_ip>]"""
-        if not hasattr(self, 'run_dnscache'):
+        if not hasattr(self, 'run_dnscache') or self.task_id not in self.run_dnscache._container_name:
             self.set_up()
 
         return [get_ip_address(docker.from_env(), self.run_dnscache._container_name)]

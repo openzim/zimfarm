@@ -31,9 +31,7 @@ class RunDNSCache(Operation):
         return self._container
 
     def stop(self):
-        if self._container:
-            self._container.stop()
-            self._container.remove()
+        remove_existing_container(self.docker, name=self._container_name)
 
     def __enter__(self):
         return self.execute()
