@@ -6,6 +6,8 @@ from typing import Optional
 from aiodocker.containers import DockerContainer
 from celery.utils.log import get_task_logger
 
+from utils.settings import Settings
+
 logger = get_task_logger(__name__)
 
 
@@ -38,9 +40,10 @@ class Operation:
         await docker.close()
 
     @staticmethod
-    async def _detect_stuck(container: DockerContainer, max_wait: int = 600):
+    async def _detect_stuck(container: DockerContainer, max_wait: int = None):
         histories = []
         interval = 60
+        max_wait = max_wait or Settings.idle_timeout
         while True:
             latest = await container.log(stdout=True, stderr=False, tail=100)
             histories.append(latest)

@@ -15,6 +15,7 @@ class Settings:
     node_name: str = os.getenv('NODE_NAME', None)
     queues: str = os.getenv('QUEUES', None)
     concurrency: int = os.getenv('CONCURRENCY', None)
+    idle_timeout: int = os.getenv('IDLE_TIMEOUT', None)
 
     dispatcher_hostname: str = os.getenv('DISPATCHER_HOST', 'farm.openzim.org')
     rabbit_port: int = os.getenv('RABBIT_PORT', 5671)
@@ -108,6 +109,15 @@ class Settings:
             logger.error('CONCURRENCY environmental variable is not an integer.')
             sys.exit(1)
         try:
+            if not isinstance(cls.idle_timeout, int):
+                cls.idle_timeout = int(cls.idle_timeout)
+                if cls.idle_timeout < 1:
+                    logger.error('IDLE_TIMEOUT environment variable cannot be less than one.')
+                    sys.exit(1)
+        except ValueError:
+            logger.error('IDLE_TIMEOUT environment variable is not an integer.')
+            sys.exit(1)
+        try:
             cls.rabbit_port = int(cls.rabbit_port)
         except ValueError:
             logger.error('RABBIT_PORT environmental variable is not an integer.')
@@ -129,7 +139,8 @@ class Settings:
             'WORKING_DIR': cls.working_dir_host,
             'NODE_NAME': cls.node_name,
             'QUEUES': cls.queues,
-            'CONCURRENCY': cls.concurrency
+            'CONCURRENCY': cls.concurrency,
+            'IDLE_TIMEOUT': cls.idle_timeout,
         }
 
         for name, value in variables.items():
