@@ -11,6 +11,7 @@ ENV USERNAME username
 ENV PASSWORD password
 ENV NODE_NAME default_node_name
 ENV QUEUES celery
+ENV IDLE_TIMEOUT 600
 
 ENV DISPATCHER_HOST farm.openzim.org
 ENV RABBIT_PORT 5671
