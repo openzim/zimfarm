@@ -1,7 +1,5 @@
 import flask
 
-from . import user, keys, password
-
 
 class Blueprint(flask.Blueprint):
     def __init__(self):
