@@ -103,6 +103,9 @@ class SchedulesRoute(BaseRoute):
     def delete(self):
         return jsonify({})
 
+    def toto(self):
+        pass
+
 
 class SchedulesBackupRoute(BaseRoute):
     rule = '/backup/'
