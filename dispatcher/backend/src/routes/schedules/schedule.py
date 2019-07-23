@@ -99,6 +99,10 @@ class SchedulesRoute(BaseRoute):
 
         return Response(json.dumps({'_id': str(schedule_id)}), HTTPStatus.CREATED)
 
+    @authenticate
+    def delete(self):
+        return jsonify({})
+
 
 class SchedulesBackupRoute(BaseRoute):
     rule = '/backup/'
@@ -117,7 +121,7 @@ class SchedulesBackupRoute(BaseRoute):
 class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
     rule = '/<string:schedule>'
     name = 'schedule'
-    methods = ['GET', 'PATCH', 'DELETE']
+    methods = ['GET', 'PATCH', 'PUT', 'DELETE']
 
     @authenticate
     def get(self, schedule: str, *args, **kwargs):
@@ -129,6 +133,10 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise ScheduleNotFound()
         else:
             return jsonify(schedule)
+
+    @authenticate
+    def put(self):
+        return jsonify({})
 
     @authenticate
     def patch(self, schedule: str, *args, **kwargs):
