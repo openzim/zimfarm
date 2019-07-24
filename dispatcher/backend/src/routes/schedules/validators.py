@@ -40,6 +40,7 @@ mwoffliner_flags_validator = t.Dict({
     t.Key('withoutZimFullTextIndex', optional=True): t.Bool,
     t.Key('addNamespaces', optional=True): t.String,
     t.Key('getCategories', optional=True): t.Bool,
+    t.Key('noLocalParserFallback', optional=True): t.Bool,
 })
 
 phet_flags_validator = t.Dict()
