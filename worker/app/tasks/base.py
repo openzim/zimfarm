@@ -9,7 +9,7 @@ from celery.utils.log import get_task_logger
 
 from utils import Settings
 from operations import Upload
-from utils.docker import get_ip_address, remove_existing_container
+from utils.docker import remove_existing_container
 from operations.run_dnscache import RunDNSCache
 
 logger = get_task_logger(__name__)
@@ -35,7 +35,7 @@ class Base(Task):
             self.run_dnscache = RunDNSCache(docker_client=docker.from_env(),
                                             task_id=self.task_id)
             self.run_dnscache.execute()
-            logger.info(f'Running DNSCache at {self.get_dns()[-1]}')
+            logger.info(f'Running DNSCache at {self.run_dnscache.ip_address}')
         except docker.errors.APIError as e:
             raise self.retry(exc=e)
         except (docker.errors.ContainerError, docker.errors.ImageNotFound) as e:
@@ -43,10 +43,10 @@ class Base(Task):
 
     def get_dns(self):
         """list of DNS IPs to feed `dns` on scrappers with: [<dnscache_ip>]"""
-        if not hasattr(self, 'run_dnscache') or self.task_id not in self.run_dnscache._container_name:
+        if not hasattr(self, 'run_dnscache') or self.task_id not in self.run_dnscache.container_name:
             self.set_up()
 
-        return [get_ip_address(docker.from_env(), self.run_dnscache._container_name)]
+        return self.run_dnscache.get_ip_addresses()
 
     def clean_up(self):
         # ensure dnscache is stopped
