@@ -83,6 +83,7 @@ class TestMWOfflinerFlagsValidator:
                  'withoutZimFullTextIndex': False,
                  'addNamespaces': "100,200",
                  'getCategories': False,
+                 'noLocalParserFallback': True,
                  }
         mwoffliner_flags_validator.check(flags)
 
@@ -131,6 +132,7 @@ class TestMWOfflinerFlagsValidator:
         {'withoutZimFullTextIndex': 'False'},
         {'addNamespaces': 123},
         {'getCategories': 'False'},
+        {'noLocalParserFallback': 'False'},
 
     ])
     def test_invalid_field(self, data):
