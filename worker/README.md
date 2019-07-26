@@ -89,3 +89,45 @@ docker run \
     --name=zimfarm_worker \
 openzim/zimfarm-worker:latest
 ```
+
+## Optimization
+
+Workers (containers and sub-containers) inherits resources limits from the docker daemon which is usually launched as root.
+
+For workers' purposes, it is interesting to have the most available number of files open (`nofile`/`-n`) and the largest `stack`/`-s`).
+
+You can check docker's limits via:
+
+``` sh
+cat /proc/$(ps -ef | grep dockerd | head -n 1 |awk '{ print $2 }')/limits
+```
+
+Look for `Max stack size` and `Max open files`.
+
+**Note:** On most recent linux distro, the maximum value for _Max open files_ is hardcoded in the kernel and is `1048576` (1,048,576). If you're already getting this value (default on Ubuntu 18.04 server LTS), **there's no need to tweak it**.
+
+### Updating values of `nofile` and `stack`:
+
+* Change System and User values in systemd
+
+``` sh
+echo "DefaultLimitNOFILE=1048576" |sudo tee /etc/systemd/system.conf /etc/systemd/user.conf
+echo "DefaultLimitSTACK=infinity" |sudo tee /etc/systemd/system.conf /etc/systemd/user.conf
+sudo systemctl daemon-reexec
+```
+* Add overrides to `docker` service definition
+
+``` sh
+sudo mkdir -p /etc/systemd/system/docker.service.d/
+echo -e "[Service]\nLimitNOFILE=1048576\nLimitSTACK=infinity" |sudo tee /etc/systemd/system/docker.service.d/override.conf
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+
+Verify that new values applied (reboot might help):
+
+``` sh
+cat /proc/$(ps -ef | grep dockerd | head -n 1 |awk '{ print $2 }')/limits
+```
+
+_Note_: `/etc/security/limits.conf` is not used anymore on systemd-based distro.
