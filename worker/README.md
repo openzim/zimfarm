@@ -23,6 +23,7 @@ Any Linux or Unix based system that has Docker installed. Windows are not suppor
 - WORKING_DIR: path of a working directory in host system
 - NODE_NAME: name of the celery node
 - CONCURRENCY: max number of concurrent tasks, default to number of CPU cores
+- IDLE_TIMEOUT: max number of seconds without new log entry before failing (default: 600)
 - QUEUES: comma separated queue names
   - default
   - small

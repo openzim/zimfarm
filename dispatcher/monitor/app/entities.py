@@ -5,6 +5,7 @@ class TaskEvent:
     succeeded = 'succeeded'
     container_started = 'container_started'
     container_finished = 'container_finished'
+    container_killed = 'container_killed'
     failed = 'failed'
     retried = 'retried'
     revoked = 'revoked'

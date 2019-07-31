@@ -41,7 +41,7 @@ class MWOffliner(Base):
                 run_mwoffliner = RunMWOffliner(
                     docker_client=docker.from_env(), tag=image_tag, flags=flags,
                     task_id=self.task_id, working_dir_host=Settings.working_dir_host,
-                    redis_container=redis_container, dns=self.get_dns())
+                    redis_container=redis_container, dns=self.get_dns(), on_kill_cb=self.on_container_killed)
                 logger.info(f'Running MWOffliner, mwUrl: {flags["mwUrl"]}')
                 logger.debug(f'Running MWOffliner, dns={run_mwoffliner.dns}, command: {run_mwoffliner.command}')
 
@@ -65,3 +65,6 @@ class MWOffliner(Base):
         except docker.errors.ContainerError as e:
             self.clean_up()
             raise Exception from e
+
+    def on_container_killed(self, timeout):
+        self.send_event('task-container_killed', timeout)

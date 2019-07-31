@@ -14,7 +14,7 @@ class RunMWOffliner(Operation):
     """Run MWOffliner container with `config`"""
 
     def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str,
-                 redis_container: Container, dns: str):
+                 redis_container: Container, dns: str, on_kill_cb):
         tag = 'latest' if not tag else tag
         super().__init__()
         self.docker = docker_client
@@ -27,6 +27,7 @@ class RunMWOffliner(Operation):
         self.container_name = f'mwoffliner_{task_id}'
         self.redis_socket_name = f'redis_{task_id}.sock'
         self.command = self._get_command(flags)
+        self.container_killed_callback = on_kill_cb
 
     def execute(self) -> ContainerResult:
         """Pull and run mwoffliner"""
@@ -43,7 +44,7 @@ class RunMWOffliner(Operation):
             name=self.container_name, dns=self.dns)
 
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._wait_for_finish(container.id))
+        loop.run_until_complete(self._wait_for_finish(container.id, self.container_killed_callback))
 
         container.reload()
 

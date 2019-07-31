@@ -78,6 +78,8 @@ class BaseTaskEventHandler(BaseHandler):
             task_updates['debug.exception'] = kwargs['exception']
         if 'traceback' in kwargs:
             task_updates['debug.traceback'] = kwargs['traceback']
+        if 'timeout' in kwargs:
+            task_updates['container.timeout'] = kwargs['timeout']
         Tasks().update_one({'_id': task_id}, {'$set': task_updates})
 
         self._update_schedule_most_recent_task_status(task_id)
@@ -215,3 +217,15 @@ class TaskContainerFinishedEventHandler(BaseTaskEventHandler):
 
         self.save_event(task_id, TaskEvent.container_finished, timestamp,
                         exit_code=exit_code, stdout=stdout, stderr=stderr, log=log)
+
+
+class TaskContainerKilledEventHandler(BaseTaskEventHandler):
+    def __call__(self, event):
+        task_id = self.get_task_id_from_event(event)
+        timestamp = self.get_timestamp_from_event(event)
+
+        timeout = event.get('timeout')
+
+        logger.info(f'Task Container Killed: {task_id}, after {timeout}s')
+
+        self.save_event(task_id, TaskEvent.container_killed, timestamp, timeout=timeout)
