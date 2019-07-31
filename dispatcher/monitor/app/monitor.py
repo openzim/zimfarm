@@ -32,6 +32,7 @@ class Monitor:
                 'task-revoked': task_handlers.TaskRevokedEventHandler(),
                 'task-container_started': task_handlers.TaskContainerStartedEventHandler(),
                 'task-container_finished': task_handlers.TaskContainerFinishedEventHandler(),
+                'task-container_killed': task_handlers.TaskContainerKilledEventHandler(),
                 '*': self.handle_others}
             receiver = self.celery.events.Receiver(connection, handlers=handlers)
             receiver.capture(limit=None, timeout=None, wakeup=True)

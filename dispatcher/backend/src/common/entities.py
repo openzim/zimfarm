@@ -6,6 +6,7 @@ class TaskStatus:
     succeeded = 'succeeded'
     container_started = 'container_started'
     container_finished = 'container_finished'
+    container_killed = 'container_killed'
     failed = 'failed'
     retried = 'retried'
     revoked = 'revoked'
@@ -16,7 +17,9 @@ class TaskStatus:
 
     @classmethod
     def all(cls):
-        return [cls.sent, cls.received, cls.started, cls.succeeded, cls.failed, cls.retried, cls.revoked]
+        return [cls.sent, cls.received, cls.started, cls.succeeded,
+                cls.container_started, cls.container_finished, cls.container_killed,
+                cls.failed, cls.retried, cls.revoked]
 
 
 class ScheduleCategory:

@@ -15,6 +15,7 @@ class Settings:
     node_name: str = os.getenv('NODE_NAME', None)
     queues: str = os.getenv('QUEUES', None)
     concurrency: int = os.getenv('CONCURRENCY', None)
+    idle_timeout: int = os.getenv('IDLE_TIMEOUT', None)
 
     dispatcher_hostname: str = os.getenv('DISPATCHER_HOST', 'farm.openzim.org')
     rabbit_port: int = os.getenv('RABBIT_PORT', 5671)
@@ -32,19 +33,19 @@ class Settings:
     def sanity_check(cls):
         # check mandatory env variables exist
         if cls.username is None or cls.username == '':
-            logger.error('{} environmental variable is required.'.format('USERNAME'))
+            logger.error('{} environment variable is required.'.format('USERNAME'))
             sys.exit(1)
         if cls.password is None or cls.password == '':
-            logger.error('{} environmental variable is required.'.format('PASSWORD'))
+            logger.error('{} environment variable is required.'.format('PASSWORD'))
             sys.exit(1)
         if cls.working_dir_host is None or cls.working_dir_host == '':
-            logger.error('{} environmental variable is required.'.format('WORKING_DIR'))
+            logger.error('{} environment variable is required.'.format('WORKING_DIR'))
             sys.exit(1)
         if cls.node_name is None or cls.node_name == '' or cls.node_name == 'default_node_name':
-            logger.error('{} environmental variable is required.'.format('NODE_NAME'))
+            logger.error('{} environment variable is required.'.format('NODE_NAME'))
             sys.exit(1)
         if cls.queues is None or cls.queues == '':
-            logger.error('{} environmental variable is required.'.format('QUEUES'))
+            logger.error('{} environment variable is required.'.format('QUEUES'))
             sys.exit(1)
 
         # check working directory mapping inside container
@@ -99,23 +100,32 @@ class Settings:
     @classmethod
     def ensure_correct_typing(cls):
         try:
-            if cls.concurrency is not None:
+            if not isinstance(cls.concurrency, int):
                 cls.concurrency = int(cls.concurrency)
                 if cls.concurrency < 1:
-                    logger.error('CONCURRENCY environmental variable cannot be less than one.')
+                    logger.error('CONCURRENCY environment variable cannot be less than one.')
                     sys.exit(1)
         except ValueError:
-            logger.error('CONCURRENCY environmental variable is not an integer.')
+            logger.error('CONCURRENCY environment variable is not an integer.')
+            sys.exit(1)
+        try:
+            if not isinstance(cls.idle_timeout, int):
+                cls.idle_timeout = int(cls.idle_timeout)
+                if cls.idle_timeout < 1:
+                    logger.error('IDLE_TIMEOUT environment variable cannot be less than one.')
+                    sys.exit(1)
+        except ValueError:
+            logger.error('IDLE_TIMEOUT environment variable is not an integer.')
             sys.exit(1)
         try:
             cls.rabbit_port = int(cls.rabbit_port)
         except ValueError:
-            logger.error('RABBIT_PORT environmental variable is not an integer.')
+            logger.error('RABBIT_PORT environment variable is not an integer.')
             sys.exit(1)
         try:
             cls.warehouse_port = int(cls.warehouse_port)
         except ValueError:
-            logger.error('WAREHOUSE_PORT environmental variable is not an integer.')
+            logger.error('WAREHOUSE_PORT environment variable is not an integer.')
             sys.exit(1)
 
     @classmethod
@@ -129,7 +139,8 @@ class Settings:
             'WORKING_DIR': cls.working_dir_host,
             'NODE_NAME': cls.node_name,
             'QUEUES': cls.queues,
-            'CONCURRENCY': cls.concurrency
+            'CONCURRENCY': cls.concurrency,
+            'IDLE_TIMEOUT': cls.idle_timeout,
         }
 
         for name, value in variables.items():
