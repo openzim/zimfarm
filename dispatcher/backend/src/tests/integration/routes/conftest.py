@@ -77,6 +77,7 @@ def schedules(make_schedule, make_config, make_language):
     schedules.append(make_schedule(name="wikipedia_fr_all_maxi"))
     schedules.append(make_schedule(name="wikipedia_fr_all_nopic"))
     schedules.append(make_schedule(name="wikipedia_bm_all_nopic"))
+    schedules.append(make_schedule(name="schedule_42", category="gutenberg"))
     schedules.append(make_schedule(language=make_language(code="fr"),
                                    name="schedule_43"))
     schedules.append(make_schedule(language=make_language(code="bm"),

@@ -44,21 +44,24 @@ mwoffliner_flags_validator = t.Dict({
 })
 
 phet_flags_validator = t.Dict()
+gutenberg_flags_validator = t.Dict()
 
 config_validator = ConfigValidator({
-    t.Key('task_name'): t.Enum('offliner.mwoffliner', 'offliner.phet'),
+    t.Key('task_name'): t.Enum('offliner.mwoffliner', 'offliner.phet', 'offliner.gutenberg'),
     t.Key('queue'): t.Enum(*ScheduleQueue.all()),
     t.Key('warehouse_path'): t.Enum(*ScheduleCategory.all_warehouse_paths()),
     t.Key('image'): t.Dict(
-        t.Key('name', trafaret=t.Enum('openzim/mwoffliner', 'openzim/phet')),
+        t.Key('name', trafaret=t.Enum('openzim/mwoffliner', 'openzim/phet', 'openzim/gutenberg')),
         t.Key('tag', trafaret=t.String)),
-    t.Key('flags'): t.Or(mwoffliner_flags_validator, phet_flags_validator),
+    t.Key('flags'): t.Or(mwoffliner_flags_validator, phet_flags_validator, gutenberg_flags_validator),
 })
 
 
 def get_flags_validator(task_name):
     if task_name == "offliner.phet":
         return phet_flags_validator
+    if task_name == "offliner.gutenberg":
+        return gutenberg_flags_validator
     if task_name == "offliner.mwoffliner":
         return mwoffliner_flags_validator
     return t.Dict()
