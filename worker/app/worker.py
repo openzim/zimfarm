@@ -47,6 +47,7 @@ class Worker:
         # register tasks
         app.register_task(tasks.MWOffliner())
         app.register_task(tasks.Phet())
+        app.register_task(tasks.Gutenberg())
 
         # configure queues
         exchange = Exchange('offliner', 'topic')
