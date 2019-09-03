@@ -65,7 +65,7 @@ class TestMWOfflinerFlagsValidator:
                  'customZimTags': ['Highlight'],
                  'customMainPage': "Main_Page",
                  'filenamePrefix': "wikipedia_all",
-                 'format': ['nopic', 'novid', 'nopdf', 'nodet,nopic', 'novid,nopdf'],
+                 'format': ['nopic', 'novid', 'nodet,nopic'],
                  'keepEmptyParagraphs': False,
                  'mwWikiPath': "/wiki",
                  'mwApiPath': "/w/api.php",
