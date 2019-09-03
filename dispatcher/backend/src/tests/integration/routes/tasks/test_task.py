@@ -37,6 +37,8 @@ class TestTaskCreate:
 
 
 class TestTaskList:
+    url = '/api/tasks/'
+
     def _assert_task(self, task, item):
         assert set(item.keys()) == {'_id', 'status', 'schedule'}
         assert item['_id'] == str(task['_id'])
@@ -44,17 +46,24 @@ class TestTaskList:
         assert item['schedule']['_id'] == str(task['schedule']['_id'])
         assert item['schedule']['name'] == task['schedule']['name']
 
+    @pytest.mark.parametrize('query_param',
+                             [{'schedule_id': 'a'}, {'schedule_id': 123}])
+    def test_bad_rquest(self, client, access_token, query_param):
+        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        response = client.get(self.url,
+                              headers=headers,
+                              query_string=query_param)
+        assert response.status_code == 400
+
     def test_unauthorized(self, client, tasks):
-        url = '/api/tasks/'
-        response = client.get(url)
+        response = client.get(self.url)
         assert response.status_code == 401
 
     def test_list(self, client, access_token, tasks):
         tasks = [task for task in tasks if task['status'] not in [TaskStatus.sent, TaskStatus.received]]
 
-        url = '/api/tasks/'
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
-        response = client.get(url, headers=headers)
+        response = client.get(self.url, headers=headers)
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -95,6 +104,25 @@ class TestTaskList:
         for item in items:
             task = tasks[ObjectId(item['_id'])]
             self._assert_task(task, item)
+
+    def test_schedule_id(self, client, access_token, make_task):
+        """Test list tasks with schedule id as filter"""
+
+        # generate tasks with two schedule ids
+        schedule_id, another_schedule_id = ObjectId(), ObjectId()
+        for _ in range(5):
+            make_task(schedule_id=schedule_id)
+        for _ in range(10):
+            make_task(schedule_id=another_schedule_id)
+
+        # make request
+        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        response = client.get(self.url, headers=headers, query_string={'schedule_id': schedule_id})
+        assert response.status_code == 200
+
+        # check the correct number of schedule is returned
+        items = json.loads(response.data)['items']
+        assert len(items) == 5
 
 
 class TestTaskGet:
