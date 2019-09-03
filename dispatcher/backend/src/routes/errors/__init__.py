@@ -2,6 +2,7 @@ from flask import Flask, Response, jsonify
 from jwt import exceptions as jwt_exceptions
 
 from errors import oauth2, http
+import trafaret.dataerror
 
 
 def register_handlers(app: Flask):
@@ -13,6 +14,13 @@ def register_handlers(app: Flask):
 
     app.errorhandler(oauth2.OAuth2Base)(oauth2.handler)
     app.errorhandler(http.HTTPBase)(http.handler)
+
+    @app.errorhandler(trafaret.dataerror.DataError)
+    def handler(e):
+        print(e.error)
+        response = jsonify({'message': e.as_dict()})
+        response.status_code = 400
+        return response
 
     @app.errorhandler(jwt_exceptions.ExpiredSignature)
     def handler(_):

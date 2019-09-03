@@ -21,7 +21,7 @@ def make_task(database, make_event):
     task_ids = []
     tasks = Tasks(database=database)
 
-    def _make_task(schedule_id=ObjectId(), schedule_name='', status=TaskStatus.sent,
+    def _make_task(schedule_id=ObjectId(), schedule_name='', status=TaskStatus.succeeded,
                    hostname='username@zimfarm_worker.com'):
         if status == TaskStatus.sent:
             events = [TaskStatus.sent]
