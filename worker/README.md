@@ -132,3 +132,14 @@ cat /proc/$(ps -ef | grep dockerd | grep -v grep | head -n 1 | awk '{ print $2 }
 ```
 
 _Note_: `/etc/security/limits.conf` is not used anymore on systemd-based distro.
+
+## Docker cleanup
+
+We recommend to clean periodicaly and automatically unused Docker
+layers. Here is a script example (with execution
+permission) to be executed on a daily basis on the host system:
+```bash
+cat /etc/cron.daily/docker-clean
+#!/bin/bash
+docker system prune -af
+```
