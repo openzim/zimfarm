@@ -3,7 +3,7 @@ import trafaret as t
 from bson.objectid import ObjectId, InvalidId
 from flask import request, Response, jsonify
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate

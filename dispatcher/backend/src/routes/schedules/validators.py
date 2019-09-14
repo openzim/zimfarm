@@ -1,6 +1,6 @@
 import trafaret as t
 
-from common.entities import ScheduleCategory, ScheduleQueue
+from common.enum import ScheduleCategory, ScheduleQueue
 
 
 class ConfigValidator(t.Dict):
