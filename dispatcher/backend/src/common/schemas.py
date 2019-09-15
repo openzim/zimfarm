@@ -1,6 +1,7 @@
-from marshmallow import Schema, fields, validates_schema, validate, ValidationError
+from marshmallow import Schema, fields, validates_schema, validate, ValidationError, post_load
 
 from common.enum import DockerImageName, ScheduleQueue
+from common.entities import DockerImage, ScheduleConfig
 
 
 class DockerImageSchema(Schema):
@@ -15,6 +16,10 @@ class DockerImageSchema(Schema):
             allowed_tags = {'latest'}
         if data['tag'] not in allowed_tags:
             raise ValidationError(f'tag {data["tag"]} is not an allowed tag')
+
+    @post_load
+    def make_docker_image(self, data, **kwargs):
+        return DockerImage(**data)
 
 
 class MWOfflinerConfigFlagsSchema(Schema):
@@ -74,8 +79,13 @@ class ScheduleConfigSchema(Schema):
 
     @validates_schema
     def validate(self, data, **kwargs):
-        if data['image']['name'] == DockerImageName.mwoffliner:
+        image: DockerImage = data['image']
+        if image.name == DockerImageName.mwoffliner:
             schema = MWOfflinerConfigFlagsSchema()
         else:
             schema = Schema.from_dict({})
         data['flags'] = schema.load(data['flags'])
+
+    @post_load
+    def make_schedule_config(self, data, **kwargs):
+        return ScheduleConfig(**data)
