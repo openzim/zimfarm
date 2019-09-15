@@ -176,5 +176,3 @@ class TestScheduleConfigSchema:
         with pytest.raises(ValidationError):
             config = self._make_config(**{'queue': value})
             ScheduleConfigSchema().load(config)
-
-    # TODO: add test for task_name and warehouse_path
