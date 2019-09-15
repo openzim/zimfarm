@@ -1,4 +1,5 @@
 from flask import request
+from flask.views import MethodView
 
 from errors.http import InvalidRequestJSON
 from .. import authenticate
@@ -6,14 +7,10 @@ from routes.base import BaseRoute
 from .base import ScheduleQueryMixin
 
 
-class OfflinerFlagsRoute(BaseRoute, ScheduleQueryMixin):
-    rule = '/<string:schedule>/config/offliner/flags'
-    name = 'schedule_config_offliner_flags'
-    methods = ['PATCH']
+class ConfigRoute(MethodView):
+    rule = '/<string:schedule>/config/'
+    name = 'schedule_config'
 
     @authenticate
-    def patch(self, schedule: str):
-        query = self.get_schedule_query(schedule)
-        request_json = request.get_json()
-        if request_json is None:
-            raise InvalidRequestJSON()
+    def patch(self, schedule: str, **kwargs):
+        return ''

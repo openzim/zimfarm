@@ -64,3 +64,13 @@ class ScheduleQueue:
     @classmethod
     def all(cls):
         return [cls.small, cls.medium, cls.large, cls.debug]
+
+
+class DockerImageName:
+    mwoffliner = 'openzim/mwoffliner'
+    phet = 'openzim/phet'
+    gutenberg = 'openzim/gutenberg'
+
+    @classmethod
+    def all(cls) -> set:
+        return {cls.mwoffliner, cls.phet, cls.gutenberg}
