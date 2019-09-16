@@ -1,6 +1,5 @@
-from marshmallow import Schema, fields, validates_schema, validate, ValidationError, post_load
+from marshmallow import Schema, fields, validates_schema, validate, ValidationError
 
-from common.entities import DockerImage, ScheduleConfig
 from common.enum import DockerImageName, ScheduleQueue
 
 
