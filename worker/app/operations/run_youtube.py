@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
 class RunYoutube(Operation):
-    """Run Youtube container with `config`"""
+    """Run Youtube container with `flags`"""
 
     def __init__(self, docker_client: DockerClient, tag: str, flags: {}, task_id: str, working_dir_host: str, dns: str):
         tag = 'latest' if not tag else tag

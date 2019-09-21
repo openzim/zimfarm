@@ -14,7 +14,7 @@ logger = get_task_logger(__name__)
 class Youtube(Base):
     """Youtube zimfarm task. This task have two steps:
 
-    - generate zim files using phet (for all languages at once)
+    - generate zim files using youtube2zim
     - upload generated zim files
 
     Steps will be executed one after another.
@@ -25,7 +25,7 @@ class Youtube(Base):
     def run(self, flags: dict, image: dict, warehouse_path: str, *args, **kwargs):
         """Run Youtube based offliner tasks.
 
-        :param flags: offliner flags (phet has none)
+        :param flags: offliner flags (request type, id, etc)
         :param image: offliner image name and tag
         :param warehouse_path: folder to upload files into
         :return:
