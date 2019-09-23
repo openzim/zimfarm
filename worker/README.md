@@ -141,5 +141,5 @@ permission) to be executed on a daily basis on the host system:
 ```bash
 cat /etc/cron.daily/docker-clean
 #!/bin/bash
-docker system prune -af
+docker system prune --volumes -af
 ```
