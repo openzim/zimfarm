@@ -48,6 +48,7 @@ class Worker:
         app.register_task(tasks.MWOffliner())
         app.register_task(tasks.Phet())
         app.register_task(tasks.Gutenberg())
+        app.register_task(tasks.Youtube())
 
         # configure queues
         exchange = Exchange('offliner', 'topic')
