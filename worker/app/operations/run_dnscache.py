@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 import docker
@@ -27,8 +28,9 @@ class RunDNSCache(Operation):
 
         remove_existing_container(self.docker, name=self.container_name)
 
+        environment = {"USE_PUBLIC_DNS": os.getenv("USE_PUBLIC_DNS", "no")}
         image = self.docker.images.pull('openzim/dnscache', tag='latest')
-        self._container = self.docker.containers.run(image, detach=True, name=self.container_name)
+        self._container = self.docker.containers.run(image, detach=True, name=self.container_name, environment=environment)
         return self._container
 
     def get_ip_addresses(self):
