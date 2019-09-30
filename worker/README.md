@@ -18,17 +18,18 @@ Any Linux or Unix based system that has Docker installed. Windows are not suppor
 
 ## Environmental Variables
 
-- USERNAME
-- PASSWORD
-- WORKING_DIR: path of a working directory in host system
-- NODE_NAME: name of the celery node
-- CONCURRENCY: max number of concurrent tasks, default to number of CPU cores
-- IDLE_TIMEOUT: max number of seconds without new log entry before failing (default: 600)
-- QUEUES: comma separated queue names
-  - default
-  - small
-  - medium
-  - large
+- `USERNAME`
+- `PASSWORD`
+- `WORKING_DIR`: path of a working directory in host system
+- `NODE_NAME`: name of the celery node
+- `CONCURRENCY`: max number of concurrent tasks, default to number of CPU cores
+- `IDLE_TIMEOUT`: max number of seconds without new log entry before failing (default: 600)
+- `QUEUES`: comma separated queue names
+  - `default`
+  - `small`
+  - `medium`
+  - `large`
+- `USE_PUBLIC_DNS`: set to `yes` to use Public DNS services in `dnscache` container (attached to all scraper containers). Otherwise inherits DNS config from host.
 
 ## Docker Volumes
 
@@ -138,6 +139,7 @@ _Note_: `/etc/security/limits.conf` is not used anymore on systemd-based distro.
 We recommend to clean periodicaly and automatically unused Docker
 layers. Here is a script example (with execution
 permission) to be executed on a daily basis on the host system:
+
 ```bash
 cat /etc/cron.daily/docker-clean
 #!/bin/bash
