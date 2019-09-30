@@ -11,6 +11,12 @@ At the moment, this container has a static config of **caching every domain for 
 docker run --name dnscache openzim/dnscache
 ```
 
+It uses the host's DNS configuration (`/etc/resolv.conf`) or a mix of public DNS (CloudFare, Google, OpenDNS – all IPv4) if `USE_PUBLIC_DNS=yes`.
+
+``` sh
+docker run --name dnscache --env USE_PUBLIC_DNS=yes openzim/dnscache
+```
+
 To use your DNS cache container, you need to run your scrapper(s) with the `--dns=` option. This option **only accepts** IPv4 and IPv6 values (no alias).
 
 ### Find out the IP of your `dnscache` container:
