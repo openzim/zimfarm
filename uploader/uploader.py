@@ -3,7 +3,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import os
-import re
 import sys
 import logging
 import pathlib
@@ -106,7 +105,7 @@ CURL_ERRORS = {
 
 def get_host_pub_md5(host, port):
     keyscan = subprocess.run(
-        ["ssh-keyscan", "-t", "rsa", "-p", str(port), host],
+        ["/usr/bin/ssh-keyscan", "-t", "rsa", "-p", str(port), host],
         capture_output=True,
         text=True,
     )
@@ -119,7 +118,7 @@ def get_host_pub_md5(host, port):
         keyscan_output.seek(0)
 
         keygen = subprocess.run(
-            ["ssh-keygen", "-l", "-E", "md5", "-f", "-"],
+            ["/usr/bin/ssh-keygen", "-l", "-E", "md5", "-f", "-"],
             capture_output=True,
             text=True,
             stdin=keyscan_output,
@@ -140,7 +139,9 @@ def get_host_pub_md5(host, port):
 def extract_pubkey(private_key):
     """ extract public key from private key; save to a temp file, returning its path """
     keygen = subprocess.run(
-        ["ssh-keygen", "-y", "-f", str(private_key)], capture_output=True, text=True
+        ["/usr/bin/ssh-keygen", "-y", "-f", str(private_key)],
+        capture_output=True,
+        text=True,
     )
     if keygen.returncode != 0:
         logger.error(f"unable to extract public key from private key ({private_key}")
