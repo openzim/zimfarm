@@ -4,9 +4,12 @@ import shutil
 import threading
 import urllib.error
 import urllib.request
+import logging
 
 import paramiko
 from paramiko import sftp, SFTPServer, SFTPAttributes, SFTPHandle
+
+logger = logging.getLogger(__name__)
 
 
 class Server(paramiko.ServerInterface):

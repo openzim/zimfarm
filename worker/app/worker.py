@@ -25,7 +25,58 @@ def worker_shutting_down_clean_up(*args, **kwargs):
         container.stop(timeout=0)
 
 
+class StopRequested(Exception):
+    pass
+
+
 class Worker:
+
+    def __init__(self):
+        self.name = ''
+        self._stop_requested = False
+
+    def work(self):
+
+        try:
+            while True:
+                try:
+                    # self.check_for_suspension(burst)
+
+                    if self.should_run_maintenance_tasks:
+                        self.clean_registries()
+
+                    if self._stop_requested:
+                        self.log.info('Worker %s: stopping on request', self.key)
+                        break
+
+                    result = self.dequeue_job_and_maintain_ttl()
+                    if result is None:
+                        break
+
+                    job, queue = result
+                    self.execute_job(job, queue)
+                    self.heartbeat()
+
+                except StopRequested:
+                    break
+
+                except SystemExit:
+                    # Cold shutdown detected
+                    raise
+
+                except:  # noqa
+                    self.log.error(
+                        'Worker %s: found an unhandled exception, quitting...',
+                        self.key, exc_info=True
+                    )
+                    break
+        finally:
+            if not self.is_horse:
+                self.register_death()
+        return
+
+
+class WorkerOld:
     def start(self):
         logger.info('Starting Zimfarm Worker...')
 
