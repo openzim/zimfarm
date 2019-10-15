@@ -282,7 +282,7 @@ def main():
         )
         sys.exit(1)
 
-    # make sur upload-uri is correct (/logs/ or /zim/)
+    # make sur upload-uri is correct (trailing slash)
     try:
         url = urlparse(args.upload_uri)
     except Exception as exc:
@@ -292,11 +292,6 @@ def main():
         if not url.path.endswith("/"):
             logger.error(
                 f"invalid upload URI: `{args.upload_uri}` (missing trailing /)."
-            )
-            sys.exit(1)
-        if not re.match(r"^/(zim|logs)/.*$", url.path):
-            logger.error(
-                f"invalid upload URI: `{args.upload_uri}` (cannot upload elsewhere than /zim/ or /logs/)."
             )
             sys.exit(1)
 
