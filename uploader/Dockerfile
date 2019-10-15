@@ -11,7 +11,4 @@ RUN /usr/bin/curl -V
 COPY uploader.py /usr/local/bin/uploader
 RUN chmod +x /usr/local/bin/uploader
 
-ENV CURL_BIN_PATH "/usr/bin/curl"
-ENV USERNAME username
-
 CMD ["uploader"]
