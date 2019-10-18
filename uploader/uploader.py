@@ -4,12 +4,12 @@
 
 import os
 import sys
+import urllib
 import logging
 import pathlib
 import argparse
 import tempfile
 import subprocess
-from urllib.parse import urlparse
 
 logging.basicConfig(
     level=logging.INFO, format="[%(asctime)s: %(levelname)s] %(message)s"
@@ -159,6 +159,16 @@ def upload_file(
     logger.info(f"Starting upload of {src_path}")
     public_key = extract_pubkey(private_key)
 
+    # parse upload-uri so we can specify a temporary filename and rename upon success
+    try:
+        uri = urllib.parse.urlparse(upload_uri)
+    except Exception as exc:
+        logger.error(f"invalid upload URI: `{upload_uri}` ({exc}).")
+        return 1
+
+    temp_fname = f"{src_path.name}.tmp"
+    full_upload_uri = f"{upload_uri}{temp_fname}"
+
     args = [
         str(CURL_BIN_PATH),
         "--append",
@@ -166,7 +176,6 @@ def upload_file(
         "60",
         "--continue-at",
         "-",
-        "--insecure",
         "--ipv4",
         "--retry-connrefused",
         "--retry-delay",
@@ -175,6 +184,8 @@ def upload_file(
         "20",
         "--stderr",
         "-",
+        "--quote",
+        f"-rename {uri.path}{temp_fname} {uri.path}{src_path.name}",
         "--hostpubmd5",
         host_pub_md5,
         "--pubkey",
@@ -185,7 +196,7 @@ def upload_file(
         "{user}:".format(user=username),
         "--upload-file",
         str(src_path),
-        upload_uri,
+        full_upload_uri,
     ]
 
     logger.info("Executing: {args}\n".format(args=" ".join(args)))
@@ -285,7 +296,7 @@ def main():
 
     # make sur upload-uri is correct (trailing slash)
     try:
-        url = urlparse(args.upload_uri)
+        url = urllib.parse.urlparse(args.upload_uri)
     except Exception as exc:
         logger.error(f"invalid upload URI: `{args.upload_uri}` ({exc}).")
         sys.exit(1)
