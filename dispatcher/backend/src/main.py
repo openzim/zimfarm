@@ -4,6 +4,7 @@ from flask import Flask
 from routes import auth, schedules, users, workers, languages, tags, errors, tasks
 from utils.json import Encoder
 from prestart import Initializer
+from utils.zmq import socket
 
 
 flask = Flask(__name__)
@@ -18,6 +19,8 @@ flask.register_blueprint(languages.Blueprint())
 flask.register_blueprint(tags.Blueprint())
 
 errors.register_handlers(flask)
+
+print(f"started socket at {socket}")
 
 
 if __name__ == "__main__":

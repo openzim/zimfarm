@@ -68,6 +68,42 @@ class Tasks(BaseCollection):
         self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
 
 
+class RequestedTasks(BaseCollection):
+    _name = 'requested_tasks'
+    schema = {
+        'bsonType': 'object',
+        'required': ['schedule'],
+        'properties': {
+            'status': {'enum': TaskStatus.all()},
+            'schedule': {
+                'bsonType': 'object',
+                'required': ['_id', 'name'],
+                'properties': {
+                    '_id': {'bsonType': 'objectId'},
+                    'name': {'bsonType': 'string'},
+                }
+            },
+        }
+    }
+
+    def __init__(self, database=None):
+        if not database:
+            database = Database()
+        super().__init__(database, self._name)
+
+    def initialize(self):
+        self.create_index('status', name='status')
+        self.create_index('schedule._id', name='schedule._id')
+        self.create_index('schedule.name', name='schedule.name')
+        self.create_index('timestamp.sent', name='timestamp.sent')
+        self.create_index('timestamp.received', name='timestamp.received')
+        self.create_index('timestamp.started', name='timestamp.started')
+        self.create_index('timestamp.succeeded', name='timestamp.succeeded')
+        self.create_index('timestamp.failed', name='timestamp.failed')
+
+        self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
+
+
 class Schedules(BaseCollection):
     def __init__(self):
         super().__init__(Database(), 'schedules')
