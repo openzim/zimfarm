@@ -4,7 +4,7 @@ from bson.objectid import ObjectId, InvalidId
 from flask import request, Response, jsonify
 
 from common.entities import TaskStatus
-from common.mongo import Tasks, Schedules
+from common.mongo import RequestedTasks, Tasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate
 from routes.base import BaseRoute
@@ -16,29 +16,7 @@ from common.validators import ObjectIdValidator
 class TasksRoute(BaseRoute):
     rule = '/'
     name = 'tasks'
-    methods = ['POST', 'GET']
-
-    @authenticate
-    def post(self, *args, **kwargs):
-        """Create task from a schedule"""
-
-        request_json = request.get_json()
-        if not request_json:
-            raise InvalidRequestJSON()
-        schedule_names = request_json.get('schedule_names', [])
-        if not isinstance(schedule_names, list):
-            raise InvalidRequestJSON()
-
-        celery = Celery()
-
-        # verify requested names exists
-        if not Schedules().count_documents(
-                {'name': {'$in': schedule_names}}) == len(schedule_names):
-            raise NotFound()
-        for schedule_name in schedule_names:
-            celery.send_task_from_schedule(schedule_name)
-
-        return Response()
+    methods = ['GET']
 
     @authenticate
     def get(self, *args, **kwargs):
@@ -87,7 +65,7 @@ class TasksRoute(BaseRoute):
 class TaskRoute(BaseRoute):
     rule = '/<string:task_id>'
     name = 'task'
-    methods = ['GET']
+    methods = ['GET', 'POST']
 
     @authenticate
     def get(self, task_id: str, *args, **kwargs):
@@ -101,6 +79,45 @@ class TaskRoute(BaseRoute):
             raise TaskNotFound()
         else:
             return jsonify(task)
+
+    @authenticate
+    def post(self, task_id: str, *args, **kwargs):
+        """ create a task from a requested_task_id """
+        # TODO
+        try:
+            task_id = ObjectId(task_id)
+        except InvalidId:
+            task_id = None
+
+        task = RequestedTasks().find_one({'_id': task_id})
+        if task is None:
+            raise TaskNotFound()
+
+        schedule = Schedules().find_one({"name": task["schedule_name"]}, {"config": 1})
+        config = schedule.get("config")
+
+        if not config:
+            raise TaskNotFound()
+
+        requested_task_id = (
+            RequestedTasks()
+            .insert_one(
+                {"schedule": {"_id": schedule["_id"], "name": schedule_name}}
+            )
+            .inserted_id
+        )
+
+        task_name = config.get("task_name")
+        queue = config.get("queue")
+
+        task_kwargs = {
+            "flags": config.get("flags"),
+            "image": config.get("image"),
+            "queue": queue,
+            "warehouse_path": config.get("warehouse_path"),
+        }
+
+        return jsonify(task)
 
 
 class TaskCancelRoute(BaseRoute):
