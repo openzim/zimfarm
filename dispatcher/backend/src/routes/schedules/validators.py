@@ -84,6 +84,12 @@ language_validator = t.Dict(
 
 category_validator = t.Enum(*ScheduleCategory.all())
 
+
+resources_validator = t.Dict(
+    t.Key('cpu', optional=False, trafaret=t.Int()),
+    t.Key('memory', optional=False, trafaret=t.Int()),
+    t.Key('disk', optional=False, trafaret=t.Int()))
+
 schedule_validator = t.Dict(
     t.Key('name', optional=False, trafaret=t.String(allow_blank=False)),
     t.Key('language', optional=False, trafaret=language_validator),
@@ -91,4 +97,5 @@ schedule_validator = t.Dict(
     t.Key('tags', optional=False, trafaret=t.List(t.String(allow_blank=False))),
     t.Key('enabled', optional=False, trafaret=t.Bool()),
     t.Key('config', optional=False, trafaret=config_validator),
+    t.Key('resources', optional=False, trafaret=resources_validator)
 )
