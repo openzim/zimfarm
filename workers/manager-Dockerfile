@@ -1,0 +1,23 @@
+FROM python:3.8-slim-buster
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src
+
+COPY manager-requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+COPY app app
+RUN ln -s /usr/src/app/worker_manager.py /usr/local/bin/worker-manager
+RUN chmod +x /usr/local/bin/worker-manager
+
+ENV WEB_API_URI http://192.168.5.80/api
+ENV SOCKET_URI tcp://192.168.5.80:5676
+ENV WORKDIR /data
+VOLUME /var/run/docker.sock
+VOLUME /data
+
+CMD ["worker-manager"]
