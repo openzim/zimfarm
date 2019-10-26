@@ -36,17 +36,11 @@ class Tasks(BaseCollection):
     _name = 'tasks'
     schema = {
         'bsonType': 'object',
-        'required': ['schedule'],
+        'required': ['schedule_id', 'schedule_name'],
         'properties': {
             'status': {'enum': TaskStatus.all()},
-            'schedule': {
-                'bsonType': 'object',
-                'required': ['_id', 'name'],
-                'properties': {
-                    '_id': {'bsonType': 'objectId'},
-                    'name': {'bsonType': 'string'},
-                }
-            },
+            'schedule_id': {'bsonType': 'objectId'},
+            'schedule_name': {'bsonType': 'string'},
         }
     }
 
@@ -57,10 +51,9 @@ class Tasks(BaseCollection):
 
     def initialize(self):
         self.create_index('status', name='status')
-        self.create_index('schedule._id', name='schedule._id')
-        self.create_index('schedule.name', name='schedule.name')
-        self.create_index('timestamp.sent', name='timestamp.sent')
-        self.create_index('timestamp.received', name='timestamp.received')
+        self.create_index('schedule_id', name='schedule_id')
+        self.create_index('schedule_name', name='schedule_name')
+        self.create_index('timestamp.requested', name='timestamp.requested')
         self.create_index('timestamp.started', name='timestamp.started')
         self.create_index('timestamp.succeeded', name='timestamp.succeeded')
         self.create_index('timestamp.failed', name='timestamp.failed')
@@ -72,17 +65,11 @@ class RequestedTasks(BaseCollection):
     _name = 'requested_tasks'
     schema = {
         'bsonType': 'object',
-        'required': ['schedule'],
+        'required': ['schedule_id', 'schedule_name'],
         'properties': {
             'status': {'enum': TaskStatus.all()},
-            'schedule': {
-                'bsonType': 'object',
-                'required': ['_id', 'name'],
-                'properties': {
-                    '_id': {'bsonType': 'objectId'},
-                    'name': {'bsonType': 'string'},
-                }
-            },
+            'schedule_id': {'bsonType': 'objectId'},
+            'schedule_name': {'bsonType': 'string'},
         }
     }
 
@@ -93,13 +80,9 @@ class RequestedTasks(BaseCollection):
 
     def initialize(self):
         self.create_index('status', name='status')
-        self.create_index('schedule._id', name='schedule._id')
-        self.create_index('schedule.name', name='schedule.name')
-        self.create_index('timestamp.sent', name='timestamp.sent')
-        self.create_index('timestamp.received', name='timestamp.received')
-        self.create_index('timestamp.started', name='timestamp.started')
-        self.create_index('timestamp.succeeded', name='timestamp.succeeded')
-        self.create_index('timestamp.failed', name='timestamp.failed')
+        self.create_index('schedule_id', name='schedule_id')
+        self.create_index('schedule_name', name='schedule_name')
+        self.create_index('timestamp.requested', name='timestamp.requested')
 
         self.database.command({'collMod': self._name, 'validator': {'$jsonSchema': self.schema}})
 
