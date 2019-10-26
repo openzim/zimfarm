@@ -1,0 +1,22 @@
+FROM python:3.8-slim-buster
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src
+
+COPY task-requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+COPY app app
+RUN ln -s /usr/src/app/task_worker.py /usr/local/bin/task-worker
+RUN chmod +x /usr/local/bin/task-worker
+
+ENV WEB_API_URI http://192.168.5.80/api
+ENV WORKDIR /data
+VOLUME /var/run/docker.sock
+VOLUME /data
+
+CMD ["task-worker"]
