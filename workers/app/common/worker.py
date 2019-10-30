@@ -11,8 +11,8 @@ import docker
 import requests
 
 from common import logger
-from common.constants import AUTH_EXPIRY
-from common.dispatcher import get_token, query_api
+from common.constants import AUTH_EXPIRY, DOCKER_SOCKET, PRIVATE_KEY
+from common.dispatcher import get_token_ssh, query_api
 
 
 class BaseWorker:
@@ -40,13 +40,26 @@ class BaseWorker:
         else:
             logger.info("\tworkdir is available and writable")
 
+    def check_private_key(self):
+        logger.info(f"testing private key at {PRIVATE_KEY}…")
+        if (
+            not PRIVATE_KEY.exists()
+            or not PRIVATE_KEY.is_file()
+            or not os.access(PRIVATE_KEY, os.R_OK)
+        ):
+            logger.critical(f"\tprivate key is not a readable path")
+            sys.exit(1)
+        else:
+            logger.info("\tprivate key is available and readable")
+
     def check_auth(self):
+        logger.debug("check_auth()")
         self.access_token = self.refresh_token = None
         self.authenticated_on = datetime.datetime(2019, 1, 1)
 
         logger.info(f"testing authentication with {self.webapi_uri}…")
         success, status_code, response = self.query_api(
-            "GET", "/users", params={"limit": 1}
+            "GET", "/users/", params={"limit": 1}
         )
         if success and "items" in response and "meta" in response:
             logger.info("\tauthentication successful")
@@ -55,16 +68,16 @@ class BaseWorker:
             sys.exit(1)
 
     def check_docker(self):
-        docker_socket = pathlib.Path(os.getenv("DOCKER_SOCKET", "/var/run/docker.sock"))
-        logger.info(f"testing docker API on {docker_socket}…")
+
+        logger.info(f"testing docker API on {DOCKER_SOCKET}…")
         if (
-            not docker_socket.exists()
-            or not docker_socket.is_socket()
-            or not os.access(docker_socket, os.R_OK)
+            not DOCKER_SOCKET.exists()
+            or not DOCKER_SOCKET.is_socket()
+            or not os.access(DOCKER_SOCKET, os.R_OK)
         ):
-            logger.critical(f"\tsocket ({docker_socket}) not available.")
+            logger.critical(f"\tsocket ({DOCKER_SOCKET}) not available.")
             sys.exit(1)
-        self.docker = docker.DockerClient(base_url=f"unix://{docker_socket}")
+        self.docker = docker.DockerClient(base_url=f"unix://{DOCKER_SOCKET}")
         try:
             if len(self.docker.containers.list(all=False)) < 1:
                 logger.warning("\tno running container, am I out-of-docker?")
@@ -74,7 +87,7 @@ class BaseWorker:
             sys.exit(1)
         else:
             logger.info("\tdocker API access successful")
-            self.docker_api = docker.APIClient(base_url=f"unix://{docker_socket}")
+            # self.docker_api = docker.APIClient(base_url=f"unix://{DOCKER_SOCKET}")
 
     def authenticate(self, force=False):
         # our access token should grant us access for 60mn
@@ -83,13 +96,13 @@ class BaseWorker:
             <= datetime.datetime.now()
         ):
             try:
-                self.access_token, self.refresh_token = get_token(
-                    self.webapi_uri, self.username, self.password
+                self.access_token, self.refresh_token = get_token_ssh(
+                    self.webapi_uri, self.username, PRIVATE_KEY
                 )
                 self.authenticated_on = datetime.datetime.now()
                 return True
             except Exception as exc:
-                logger.error("authenticate() failure: {exc}")
+                logger.error(f"authenticate() failure: {exc}")
                 logger.exception(exc)
             return False
         return True
@@ -114,5 +127,7 @@ class BaseWorker:
             if status_code == requests.codes.UNAUTHORIZED:
                 self.authenticate(force=True)
                 continue
+            else:
+                break
 
         return success, status_code, response

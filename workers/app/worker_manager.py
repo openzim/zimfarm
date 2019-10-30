@@ -7,7 +7,12 @@ import sys
 import argparse
 
 from common import logger
-from common.constants import DEFAULT_WEB_API_URL, DEFAULT_SOCKET_URI, WORKER_MANAGER
+from common.constants import (
+    DEFAULT_WEB_API_URL,
+    DEFAULT_SOCKET_URI,
+    WORKER_MANAGER,
+    DEFAULT_WORKDIR,
+)
 from manager.worker import WorkerManager
 
 
@@ -38,18 +43,19 @@ def main():
     )
 
     parser.add_argument(
-        "--password",
-        help="password to authenticate to zimfarm",
-        required=not bool(os.getenv("PASSWORD")),
-        default=os.getenv("PASSWORD"),
+        "--workdir",
+        help="directory in which workers create task-related files",
+        required=not bool(DEFAULT_WORKDIR),
+        default=DEFAULT_WORKDIR,
+        dest="workdir",
     )
 
     parser.add_argument(
-        "--workdir",
-        help="directory in which workers create task-related files",
-        required=not bool(os.getenv("WORKDIR")),
-        default=os.getenv("WORKDIR"),
-        dest="workdir",
+        "--name",
+        help="name of this worker",
+        dest="worker_name",
+        required=not bool(os.getenv("WORKER_NAME")),
+        default=os.getenv("WORKER_NAME"),
     )
 
     args = parser.parse_args()
@@ -58,10 +64,10 @@ def main():
     try:
         manager = WorkerManager(
             username=args.username,
-            password=args.password,
             webapi_uri=args.webapi_uri,
             socket_uri=args.socket_uri,
             workdir=args.workdir,
+            worker_name=args.worker_name
         )
         sys.exit(manager.run())
     except Exception as exc:
