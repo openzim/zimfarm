@@ -1,12 +1,13 @@
 class TaskStatus:
 
     requested = "requested"
+    reserved = "reserved"
     started = "started"
     scraper_started = "scraper_started"
     scraper_completed = "scraper_completed"
     scraper_killed = "scraper_killed"
     failed = "failed"
-    cancelled = "cancelled"
+    canceled = "canceled"
     succeeded = "succeeded"
 
     created_file = "created_file"
@@ -14,19 +15,20 @@ class TaskStatus:
 
     @classmethod
     def incomplete(cls):
-        return [cls.requested, cls.started, cls.scraper_started]
+        return [cls.requested, cls.reserved, cls.started, cls.scraper_started]
 
     @classmethod
     def all(cls):
         return [
             cls.requested,
+            cls.reserved,
             cls.started,
             cls.succeeded,
             cls.scraper_started,
             cls.scraper_completed,
             cls.scraper_killed,
             cls.failed,
-            cls.cancelled,
+            cls.canceled,
         ]
 
     @classmethod

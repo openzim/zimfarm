@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import ast
 import logging
 import datetime
 
@@ -18,10 +17,11 @@ logger = logging.getLogger(__name__)
 def task_event_handler(task_id, event, payload):
     """ ventilate event processing to appropriate handler """
     handlers = {
+        TaskStatus.reserved: task_reserved_event_handler,
         TaskStatus.started: task_started_event_handler,
         TaskStatus.succeeded: task_suceeded_event_handler,
         TaskStatus.failed: task_failed_event_handler,
-        TaskStatus.cancelled: task_cancelled_event_handler,
+        TaskStatus.canceled: task_canceled_event_handler,
         TaskStatus.scraper_started: task_scraper_started_event_handler,
         TaskStatus.scraper_completed: task_scraper_completed_event_handler,
         TaskStatus.scraper_killed: task_scraper_killed_event_handler,
@@ -65,6 +65,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
             task_updates[update_key] = kwargs[payload_key]
 
     add_to_update_if_present("worker", "worker")
+    add_to_update_if_present("canceled_by", "canceled_by")
     add_to_update_if_present("command", "container.command")
     add_to_update_if_present("image", "container.image")
     add_to_update_if_present("exit_code", "container.exit_code")
@@ -137,12 +138,20 @@ def _update_schedule_most_recent_task_status(task_id):
     Schedules().update_one({"_id": schedule_id}, {"$set": schedule_updates})
 
 
-def task_started_event_handler(task_id, payload):
+def task_reserved_event_handler(task_id, payload):
     worker = payload.get("worker")
-    logger.info(f"Task Started: {task_id}, worker={worker}")
+    logger.info(f"Task Reserved: {task_id}, worker={worker}")
 
     save_event(
-        task_id, TaskStatus.started, get_timestamp_from_event(payload), worker=worker
+        task_id, TaskStatus.reserved, get_timestamp_from_event(payload), worker=worker
+    )
+
+
+def task_started_event_handler(task_id, payload):
+    logger.info(f"Task Started: {task_id}")
+
+    save_event(
+        task_id, TaskStatus.started, get_timestamp_from_event(payload)
     )
 
 
@@ -166,11 +175,16 @@ def task_failed_event_handler(task_id, payload):
     )
 
 
-def task_cancelled_event_handler(task_id, payload):
+def task_canceled_event_handler(task_id, payload):
     terminated = payload.get("terminated", False)
     logger.info(f"Task Cancelled: {task_id}, terminated: {terminated}")
 
-    save_event(task_id, TaskStatus.cancelled, get_timestamp_from_event(payload))
+    save_event(
+        task_id,
+        TaskStatus.canceled,
+        get_timestamp_from_event(payload),
+        canceled_by=payload.get("canceled_by"),
+    )
 
 
 def task_scraper_started_event_handler(task_id, payload):
@@ -236,5 +250,5 @@ def task_uploaded_file_event_handler(task_id, payload):
 
 def handle_others(self, event):
     event_description = str(event)[:100]
-    self.logger.info(f"Other event: {event_description}")
-    self.logger.info(f"Other event, keys: {list(event.keys())}")
+    logger.info(f"Other event: {event_description}")
+    logger.info(f"Other event, keys: {list(event.keys())}")
