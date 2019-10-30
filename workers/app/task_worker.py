@@ -37,13 +37,6 @@ def main():
     )
 
     parser.add_argument(
-        "--password",
-        help="password to authenticate to zimfarm",
-        required=not bool(os.getenv("PASSWORD")),
-        default=os.getenv("PASSWORD"),
-    )
-
-    parser.add_argument(
         "--workdir",
         help="directory in which workers create task-related files",
         required=not bool(os.getenv("WORKDIR")),
@@ -57,7 +50,6 @@ def main():
     try:
         worker = TaskWorker(
             username=args.username,
-            password=args.password,
             webapi_uri=args.webapi_uri,
             workdir=args.workdir,
             task_id=args.task_id,

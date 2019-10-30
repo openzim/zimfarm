@@ -7,6 +7,7 @@ import time
 import datetime
 import pathlib
 
+import requests
 import humanfriendly
 
 from common import logger
@@ -15,6 +16,7 @@ from common.docker import query_container_stats
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 ZIM_PATH = pathlib.Path(os.getenv("ZIM_PATH", "/zim-files"))
+WORKER_NAME = os.getenv("WORKER_NAME")
 
 
 class Monitor:
@@ -69,6 +71,9 @@ class TaskWorker(BaseWorker):
         # check workdir
         self.check_workdir()
 
+        # check SSH private key
+        self.check_private_key()
+
         # ensure we have valid credentials
         self.check_auth()
 
@@ -95,10 +100,10 @@ class TaskWorker(BaseWorker):
             )
         )
 
+        self.task = None
         self._stop_requested = False
 
         self.dnscache = None  # dnscache container
-        self.redis = None  # shared redis for the task
 
         self.zim_files = []
 
@@ -107,8 +112,26 @@ class TaskWorker(BaseWorker):
         self._stop_requested = True
 
     def get_task(self):
-        # self.task = get_task_detail(self.task_id)
-        pass
+        success, status_code, response = self.query_api("GET", f"/tasks/{self.task_id}")
+        if success and status_code == requests.codes.OK:
+            self.task = response
+            return True
+
+        if status_code == requests.codes.NOT_FOUND:
+            logger.warning(f"task #{self.task_id} doesn't exist")
+        else:
+            logger.warning(f"couldn't retrieve task detail for #{self.task_id}")
+        return False
+
+    def mark_task_started(self):
+        success, status_code, response = self.query_api(
+            "PATCH",
+            f"/tasks/{self.task_id}",
+            payload={"event": "started", "payload": {}},
+        )
+        if success and status_code == requests.codes.OK:
+            return
+        logger.warning(f"couldn't update task status")
 
     def start_dnscache(self):
         # self.dnscache = start_dnscache_container(self.task_id)
@@ -148,10 +171,11 @@ class TaskWorker(BaseWorker):
     def run(self):
 
         # get task detail from URL
-        task = self.get_task()
-        if task is None:
+        self.get_task()
+        if self.task is None:
             logger.error("couldn't get task, exiting.")
             return
+        self.mark_task_started()
 
         # prepare folder
         self.setup_volume()
@@ -170,20 +194,20 @@ class TaskWorker(BaseWorker):
                 return
 
             now = datetime.datetime.now()
-            if now - last_check.total_seconds() < SLEEP_INTERVAL:
+            if (now - last_check).total_seconds() < SLEEP_INTERVAL:
                 time.sleep(1)
                 continue
 
-            self.monitor.update()
+            # self.monitor.update()
 
-            self.fetch_and_upload_scraper_log()
+            # self.fetch_and_upload_scraper_log()
 
-            self.list_and_upload_zim_files()
+            # self.list_and_upload_zim_files()
 
-            if not self.monitor.working:
-                break
-            else:
-                pass
+            # if not self.monitor.working:
+            #     break
+            # else:
+            #     pass
 
         # done with processing, cleaning-up and exiting
         self.shutdown()
