@@ -1,5 +1,8 @@
+import os
 import base64
 import binascii
+import tempfile
+import subprocess
 from datetime import datetime
 from typing import Union
 
@@ -14,23 +17,25 @@ from utils.token import AccessToken
 
 
 @authenticate2
-@url_object_id('user')
+@url_object_id("user")
 def list(token: AccessToken.Payload, user: Union[ObjectId, str]):
     # if user in url is not user in token, check user permission
     if user != token.user_id and user != token.username:
-        if not token.get_permission('users', 'ssh_keys.read'):
+        if not token.get_permission("users", "ssh_keys.read"):
             raise errors.NotEnoughPrivilege()
 
-    user = Users().find_one({'$or': [{'_id': user}, {'username': user}]}, {'ssh_keys': 1})
+    user = Users().find_one(
+        {"$or": [{"_id": user}, {"username": user}]}, {"ssh_keys": 1}
+    )
     if user is None:
         raise errors.NotFound()
 
-    ssh_keys = user.get('ssh_keys', [])
+    ssh_keys = user.get("ssh_keys", [])
     return jsonify(ssh_keys)
 
 
 @authenticate2
-@url_object_id(['user'])
+@url_object_id(["user"])
 def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
     # if user in url is not user in token, not allowed to add ssh keys
     if user != token.user_id and user != token.username:
@@ -41,10 +46,10 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         "type": "object",
         "properties": {
             "name": {"type": "string", "minLength": 1},
-            "key": {"type": "string", "minLength": 1}
+            "key": {"type": "string", "minLength": 1},
         },
         "required": ["name", "key"],
-        "additionalProperties": False
+        "additionalProperties": False,
     }
     try:
         request_json = request.get_json()
@@ -53,8 +58,8 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         raise errors.BadRequest(error.message)
 
     # parse public key string
-    key = request_json['key']
-    key_parts = key.split(' ')
+    key = request_json["key"]
+    key_parts = key.split(" ")
     if len(key_parts) >= 2:
         key = key_parts[1]
 
@@ -63,44 +68,58 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
         fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
     except (binascii.Error, paramiko.SSHException):
-        raise errors.BadRequest('Invalid RSA key')
+        raise errors.BadRequest("Invalid RSA key")
 
     # get existing ssh key fingerprints
-    filter = {'$or': [{'_id': user}, {'username': user}]}
-    user = Users().find_one(filter, {'ssh_keys.fingerprint': 1})
+    filter = {"$or": [{"_id": user}, {"username": user}]}
+    user = Users().find_one(filter, {"ssh_keys.fingerprint": 1})
     if user is None:
         raise errors.NotFound()
 
     # find out if new ssh already exist
-    fingerprints = set([ssh_key['fingerprint'] for ssh_key in user.get('ssh_keys', [])])
+    fingerprints = set([ssh_key["fingerprint"] for ssh_key in user.get("ssh_keys", [])])
     if fingerprint in fingerprints:
-        raise errors.BadRequest('SSH key already exists')
+        raise errors.BadRequest("SSH key already exists")
 
     # add new ssh key to database
     ssh_key = {
-        'name': request_json['name'],
-        'fingerprint': fingerprint,
-        'key': key,
-        'type': 'RSA',
-        'added': datetime.now(),
-        'last_used': None
+        "name": request_json["name"],
+        "fingerprint": fingerprint,
+        "key": key,
+        "type": "RSA",
+        "added": datetime.now(),
+        "last_used": None,
     }
-    Users().update_one(filter, {'$push': {'ssh_keys': ssh_key}})
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".pub", delete=False) as fp:
+        fp.write("ssh-rsa {} {}\n".format(ssh_key["key"], ssh_key["name"]))
+    keygen = subprocess.run(
+        ["/usr/bin/ssh-keygen", "-e", "-f", fp.name, "-m", "PKCS8"],
+        capture_output=True,
+        text=True,
+    )
+    if keygen.returncode != 0:
+        raise errors.BadRequest(keygen.stderr)
+    ssh_key.update({"pkcs8_key": keygen.stdout})
+    os.unlink(fp.name)
+
+    Users().update_one(filter, {"$push": {"ssh_keys": ssh_key}})
 
     return Response()
 
 
 @authenticate2
-@url_object_id('user')
+@url_object_id("user")
 def delete(token: AccessToken.Payload, user: Union[ObjectId, str], fingerprint: str):
     # if user in url is not user in token, check user permission
     if user != token.user_id and user != token.username:
-        if not token.get_permission('users', 'ssh_keys.delete'):
+        if not token.get_permission("users", "ssh_keys.delete"):
             raise errors.NotEnoughPrivilege()
 
     # database
-    result = Users().update_one({'$or': [{'_id': user}, {'username': user}]},
-                                {'$pull': {'ssh_keys': {'fingerprint': fingerprint}}})
+    result = Users().update_one(
+        {"$or": [{"_id": user}, {"username": user}]},
+        {"$pull": {"ssh_keys": {"fingerprint": fingerprint}}},
+    )
 
     if result.modified_count > 0:
         return Response()
