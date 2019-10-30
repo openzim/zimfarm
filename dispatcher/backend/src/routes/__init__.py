@@ -76,6 +76,7 @@ def bson_object_id(keys: list):
 def url_object_id(names: Union[list, str]):
     if isinstance(names, str):
         names = [names]
+
     def decorate(f):
         @wraps(f)
         def wrapper(*args, **kwargs):

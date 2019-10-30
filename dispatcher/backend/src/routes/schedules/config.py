@@ -7,9 +7,9 @@ from .base import ScheduleQueryMixin
 
 
 class OfflinerFlagsRoute(BaseRoute, ScheduleQueryMixin):
-    rule = '/<string:schedule>/config/offliner/flags'
-    name = 'schedule_config_offliner_flags'
-    methods = ['PATCH']
+    rule = "/<string:schedule>/config/offliner/flags"
+    name = "schedule_config_offliner_flags"
+    methods = ["PATCH"]
 
     @authenticate
     def patch(self, schedule: str):
