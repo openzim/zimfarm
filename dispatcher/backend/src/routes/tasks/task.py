@@ -8,7 +8,6 @@ import datetime
 import pytz
 import pymongo
 import trafaret as t
-from bson.objectid import ObjectId, InvalidId
 from flask import request, jsonify
 
 from common.entities import TaskStatus
@@ -16,7 +15,7 @@ from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate
+from routes import authenticate, url_object_id
 from routes.base import BaseRoute
 from common.validators import ObjectIdValidator
 
@@ -28,7 +27,6 @@ class TasksRoute(BaseRoute):
     name = "tasks"
     methods = ["GET"]
 
-    @authenticate
     def get(self, *args, **kwargs):
         """Return a list of tasks"""
 
@@ -58,7 +56,7 @@ class TasksRoute(BaseRoute):
         if schedule_id:
             query["schedule._id"] = schedule_id
 
-        count = Tasks.count_documents(query)
+        count = Tasks().count_documents(query)
         projection = {"_id": 1, "status": 1, "timestamp.requested": 1, "schedule": 1}
         cursor = (
             Tasks()
@@ -79,13 +77,8 @@ class TaskRoute(BaseRoute):
     name = "task"
     methods = ["GET", "POST", "PATCH"]
 
-    @authenticate
+    @url_object_id("task_id")
     def get(self, task_id: str, *args, **kwargs):
-        try:
-            task_id = ObjectId(task_id)
-        except InvalidId:
-            task_id = None
-
         task = Tasks().find_one({"_id": task_id})
         if task is None:
             raise TaskNotFound()
@@ -93,28 +86,20 @@ class TaskRoute(BaseRoute):
             return jsonify(task)
 
     @authenticate
+    @url_object_id("task_id")
     def post(self, task_id: str, *args, **kwargs):
         """ create a task from a requested_task_id """
-        try:
-            task_id = ObjectId(task_id)
-        except InvalidId:
-            task_id = None
-
         requested_task = RequestedTasks().find_one({"_id": task_id})
         if requested_task is None:
             raise TaskNotFound()
 
-        worker_name = request.args.get("worker_name")
-        if not worker_name:
-            raise InvalidRequestJSON("missing worker_name")
+        validator = t.Dict({t.Key("worker_name"): t.String()})
+        request_args = validator.check(request.args.to_dict())
 
         now = datetime.datetime.now(tz=pytz.utc)
 
         document = {}
         document.update(requested_task)
-        # document.update({"status": TaskStatus.started, "worker": worker_name})
-        # document["timestamp"].update({TaskStatus.started: now})
-        # document["events"].append({"code": TaskStatus.started, "timestamp": now})
 
         try:
             Tasks().insert_one(requested_task)
@@ -127,12 +112,9 @@ class TaskRoute(BaseRoute):
             logger.exception(exc)
             raise exc
 
+        payload = {"worker": request_args["worker_name"], "timestamp": now.isoformat()}
         try:
-            task_event_handler(
-                task_id,
-                TaskStatus.started,
-                {"worker": worker_name, "timestamp": now.isoformat()},
-            )
+            task_event_handler(task_id, TaskStatus.reserved, payload)
         except Exception as exc:
             logger.exception(exc)
             logger.error("unable to create task. reverting.")
@@ -148,25 +130,23 @@ class TaskRoute(BaseRoute):
         except Exception as exc:
             logger.exception(exc)  # and pass
 
+        BROADCASTER.broadcast_updated_task(task_id, TaskStatus.reserved, payload)
+
         response = jsonify(Tasks().find_one({"_id": task_id}))
         response.status_code = 201
         return response
 
     @authenticate
+    @url_object_id("task_id")
     def patch(self, task_id: str, *args, **kwargs):
-        try:
-            task_id = ObjectId(task_id)
-        except InvalidId:
-            task_id = None
-
         task = Tasks().find_one({"_id": task_id}, {"_id": 1})
         if task is None:
             raise TaskNotFound()
 
-        # only applies to started tasks
+        # only applies to reserved tasks
         events = TaskStatus.all() + TaskStatus.file_events()
         events.remove(TaskStatus.requested)
-        events.remove(TaskStatus.started)
+        events.remove(TaskStatus.reserved)
 
         validator = t.Dict(
             t.Key("event", optional=False, trafaret=t.Enum(*events)),
@@ -174,19 +154,22 @@ class TaskRoute(BaseRoute):
         )
 
         try:
-            from pprint import pprint as pp
-
-            pp(request.get_json())
-            payload = validator.check(request.get_json())
+            request_json = validator.check(request.get_json())
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
                 raise t.DataError("Update can't be empty")
         except t.DataError as e:
             raise InvalidRequestJSON(str(e.error))
 
-        result = task_event_handler(task["_id"], payload["event"], payload["payload"])
+        result = task_event_handler(
+            task["_id"], request_json["event"], request_json["payload"]
+        )
 
-        return jsonify(result)
+        BROADCASTER.broadcast_updated_task(
+            task_id, request_json["event"], request_json["payload"]
+        )
+
+        return jsonify(result or {})
 
 
 class TaskCancelRoute(BaseRoute):
@@ -195,20 +178,24 @@ class TaskCancelRoute(BaseRoute):
     methods = ["POST"]
 
     @authenticate
+    @url_object_id("task_id")
     def post(self, task_id: str, *args, **kwargs):
-
-        try:
-            task_id = ObjectId(task_id)
-        except InvalidId:
-            task_id = None
-
         task = Tasks().find_one(
             {"status": {"$in": TaskStatus.incomplete()}, "_id": task_id}, {"_id": 1}
         )
         if task is None:
             raise TaskNotFound()
 
-        result = task_event_handler(task["_id"], TaskStatus.cancelled, {})
+        try:
+            username = kwargs["token"].username
+        except Exception as exc:
+            logger.error("unable to retrieve username from token")
+            logger.exception(exc)
+            username = None
+
+        result = task_event_handler(
+            task["_id"], TaskStatus.canceled, {"canceled_by": username}
+        )
 
         # broadcast cancel-request to worker
         BROADCASTER.broadcast_cancel_task(task_id)

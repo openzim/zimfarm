@@ -4,13 +4,12 @@ import datetime
 import pytz
 import pymongo
 import trafaret as t
-from bson.objectid import ObjectId, InvalidId
 from flask import request, jsonify
 
 from common.entities import TaskStatus
 from common.mongo import RequestedTasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate
+from routes import authenticate, url_object_id
 from routes.base import BaseRoute
 from routes.errors import NotFound
 from common.validators import ObjectIdValidator
@@ -71,7 +70,6 @@ class RequestedTasksRoute(BaseRoute):
         response.status_code = 201
         return response
 
-    @authenticate
     def get(self, *args, **kwargs):
         """ list of requested tasks """
 
@@ -80,13 +78,16 @@ class RequestedTasksRoute(BaseRoute):
         validator = t.Dict(
             {
                 t.Key("skip", default=0): t.Int(gte=0),
-                t.Key("limit", default=100): t.Int(gt=0, lte=200),
+                t.Key("limit", default=10): t.Int(gt=0, lte=200),
                 t.Key("schedule_id", optional=True): ObjectIdValidator,
             }
         )
         request_args = validator.check(request_args)
 
-        request_json = request.get_json()
+        try:
+            request_json = request.get_json()
+        except Exception:
+            request_json = None
         if request_json:
             matchingValidator = t.Dict(
                 {
@@ -115,7 +116,6 @@ class RequestedTasksRoute(BaseRoute):
         # matching request (mostly for workers)
         if "matching" in request_json_args:
             # matching_args = matchingValidator.check(requested_task)
-            logger.info("MATCHING REQUEST")
             matching_query = {
                 "resources.cpu": {"$lte": request_json_args["matching"]["cpu"]},
                 "resources.memory": {"$lte": request_json_args["matching"]["memory"]},
@@ -123,7 +123,6 @@ class RequestedTasksRoute(BaseRoute):
             }
         else:
             matching_query = {}
-        logger.info(request_json_args)
 
         pipeline = [
             {
@@ -175,12 +174,8 @@ class RequestedTaskRoute(BaseRoute):
     name = "requested_task"
     methods = ["GET"]
 
-    @authenticate
+    @url_object_id("requested_task_id")
     def get(self, requested_task_id: str, *args, **kwargs):
-        try:
-            requested_task_id = ObjectId(requested_task_id)
-        except InvalidId:
-            requested_task_id = None
 
         requested_task = RequestedTasks().find_one({"_id": requested_task_id})
         if requested_task is None:
@@ -202,12 +197,8 @@ class RequestedTaskDeleteRoute(BaseRoute):
     methods = ["DELETE"]
 
     @authenticate
+    @url_object_id("requested_task_id")
     def delete(self, requested_task_id: str, *args, **kwargs):
-
-        try:
-            requested_task_id = ObjectId(requested_task_id)
-        except InvalidId:
-            requested_task_id = None
 
         query = {"_id": requested_task_id}
         task = RequestedTasks().find_one(query, {"_id": 1})
