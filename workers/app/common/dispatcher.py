@@ -17,21 +17,20 @@ from common.constants import OPENSSL_BIN
 def get_token_ssh(webapi_uri, username, private_key):
     """ retrieve access_token, refresh_token using SSH private key as auth
 
-        - build a standard JSON payload (username, timestamp)
-        - sign this payload file using private key
-        - send username, payload and signature
+        - build a standard message (username:timestamp in ISO format)
+        - sign this message file using private key
+        - send message and signature as headers
         - server validates signature and checks timestamp is recent then auths """
 
     now = datetime.datetime.now()
-    payload = f"{username}:{now.isoformat()}"  # our message
+    message = f"{username}:{now.isoformat()}"
 
     with tempfile.TemporaryDirectory() as tmp_dirname:
         tmp_dir = pathlib.Path(tmp_dirname)
-        payload_path = tmp_dir.joinpath("payload.txt")
-        signatured_path = tmp_dir.joinpath(f"{payload_path.name}.sig")
-        with open(payload_path, "w", encoding="utf-8") as fp:
-            fp.write(payload)
-            # json.dump({"username": username, "timestamp": now.isoformat()}, fp)
+        message_path = tmp_dir.joinpath("message")
+        signatured_path = tmp_dir.joinpath(f"{message_path.name}.sig")
+        with open(message_path, "w", encoding="ASCII") as fp:
+            fp.write(message)
         pkey_util = subprocess.run(
             [
                 OPENSSL_BIN,
@@ -40,7 +39,7 @@ def get_token_ssh(webapi_uri, username, private_key):
                 "-inkey",
                 str(private_key),
                 "-in",
-                str(payload_path),
+                str(message_path),
                 "-out",
                 signatured_path,
             ]
@@ -49,16 +48,15 @@ def get_token_ssh(webapi_uri, username, private_key):
             raise IOError("unable to sign authentication payload")
 
         with open(signatured_path, "rb") as fp:
-            b64_payload_sig = base64.b64encode(fp.read()).decode("ascii")
+            b64_signature = base64.b64encode(fp.read())
 
         req = requests.post(
             url=f"{webapi_uri}/auth/ssh_authorize",
-            json={
-                "username": username,
-                "payload": payload,
-                "signed_payload": b64_payload_sig,
+            headers={
+                "Content-type": "application/json",
+                "X-SSHAuth-Message": message,
+                "X-SSHAuth-Signature": b64_signature,
             },
-            headers={"Content-type": "application/json"},
         )
         req.raise_for_status()
         return req.json().get("access_token"), req.json().get("refresh_token")

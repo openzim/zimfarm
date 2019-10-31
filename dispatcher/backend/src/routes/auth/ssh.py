@@ -4,10 +4,10 @@ import pathlib
 import logging
 import tempfile
 import datetime
+import binascii
 import subprocess
 from uuid import uuid4
 
-import jsonschema
 from flask import request, jsonify
 
 from routes import errors
@@ -15,6 +15,7 @@ from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
 
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
+MESSAGE_VALIDITY = 60  # number of seconds before a message expire
 
 logger = logging.getLogger(__name__)
 
@@ -22,65 +23,80 @@ logger = logging.getLogger(__name__)
 def asymmetric_key_auth():
     """ authenticate using signed message and generate tokens
 
-        - decode standard message: username:timestamp
+        - message in X-SSHAuth-Message HTTP header
+        - base64 signature in X-SSHAuth-Signature HTTP header
+        - decode standard message: username:timestamp(ISO)
+        - verify timestamp is less than a minute old
+        - verify username matches our database
         - verify signature of message with username's public keys
-        - generate tokens if OK """
+        - generate tokens"""
 
-    schema = {
-        "type": "object",
-        "properties": {
-            "username": {"type": "string", "minLength": 1},
-            "payload": {"type": "string", "minLength": 1},
-            "signed_payload": {"type": "string", "minLength": 1},
-        },
-        "required": ["username", "payload", "signed_payload"],
-        "additionalProperties": False,
-    }
+    # check the message's validity
     try:
-        request_json = request.get_json()
-        jsonschema.validate(request_json, schema)
-    except jsonschema.ValidationError as error:
-        raise errors.BadRequest(error.message)
+        message = request.headers["X-SSHAuth-Message"]
+        signature = base64.b64decode(request.headers["X-SSHAuth-Signature"])
+        username, timestamp = message.split(":", 1)
+        timestamp = datetime.datetime.fromisoformat(timestamp)
+    except KeyError as exc:
+        raise errors.BadRequest("Missing header for `{}`".format("".join(exc.args[:1])))
+    except binascii.Error:
+        raise errors.BadRequest("Invalid signature format (not base64)")
+    except Exception as exc:
+        logger.error(f"Invalid message format: {exc}")
+        logger.exception(exc)
+        raise errors.BadRequest("Invalid message format")
 
-    user = Users().find_one({"username": request_json["username"]})
+    if (datetime.datetime.now() - timestamp).total_seconds() > MESSAGE_VALIDITY:
+        raise errors.Unauthorized(
+            f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
+        )
+
+    user = Users().find_one({"username": username})
     if user is None:
-        raise errors.Unauthorized()  # we shall never get there
+        raise errors.Unauthorized("User not found")  # we shall never get there
 
+    # check that the message was signed with a known private key
+    authenticated = False
     with tempfile.TemporaryDirectory() as tmp_dirname:
         tmp_dir = pathlib.Path(tmp_dirname)
-        payload_path = tmp_dir.joinpath("payload.txt")
-        signatured_path = tmp_dir.joinpath(f"{payload_path.name}.sig")
+        message_path = tmp_dir.joinpath("message")
+        signatured_path = tmp_dir.joinpath(f"{message_path.name}.sig")
 
-        with open(payload_path, "w", encoding="utf-8") as fp:
-            fp.write(request_json["payload"])
+        with open(message_path, "w", encoding="ASCII") as fp:
+            fp.write(message)
 
         with open(signatured_path, "wb") as fp:
-            fp.write(base64.b64decode(request_json["signed_payload"]))
+            fp.write(signature)
 
         for ssh_key in user.get("ssh_keys", []):
-            if not ssh_key.get("pkcs8"):
+            pkcs8_data = ssh_key.get("pkcs8_key")
+            if not pkcs8_data:  # User record has no PKCS8 version
                 continue
+
             pkcs8_key = tmp_dir.joinpath("pubkey")
             with open(pkcs8_key, "w") as fp:
-                fp.write(ssh_key.get("pkcs8"))
+                fp.write(pkcs8_data)
 
             pkey_util = subprocess.run(
                 [
-                    "OPENSSL_BIN",
+                    OPENSSL_BIN,
                     "pkeyutl",
                     "-verify",
                     "-pubin",
                     "-inkey",
                     str(pkcs8_key),
                     "-in",
-                    str(payload_path),
+                    str(message_path),
                     "-sigfile",
                     signatured_path,
                 ]
             )
-            if pkey_util.returncode != 0:
-                logger.debug(f"{pkey_util.returncode} {pkey_util.stderr}")
-                raise errors.Unauthorized()
+            if pkey_util.returncode == 0:  # signature verified
+                authenticated = True
+                break
+
+    if not authenticated:
+        raise errors.Unauthorized("Could not find matching key for signature")
 
     # we're now authenticated ; generate tokens
     access_token = AccessToken.encode(user)
