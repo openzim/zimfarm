@@ -123,7 +123,7 @@ def token():
 
 class Blueprint(flask.Blueprint):
     def __init__(self):
-        super().__init__("auth", __name__, url_prefix="/api/auth")
+        super().__init__("auth", __name__, url_prefix="/auth")
         self.add_url_rule(
             "/authorize", "auth_with_credentials", credentials, methods=["POST"]
         )
