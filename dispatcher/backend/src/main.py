@@ -40,7 +40,7 @@ flask.register_blueprint(tags.Blueprint())
 
 errors.register_handlers(flask)
 
-logger.info(f"started broadcaster at {BROADCASTER.address}")
+logger.info(f"connecter broadcaster to {BROADCASTER.uri}")
 
 
 if __name__ == "__main__":
