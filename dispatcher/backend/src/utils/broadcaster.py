@@ -15,12 +15,21 @@ logger = logging.getLogger(__name__)
 
 class MessageBroadcaster:
     def __init__(self, uri):
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.PUB)
         self.uri = uri
-        self.socket.bind(uri)
+        try:
+            context = zmq.Context()
+            self.socket = context.socket(zmq.PUB)
+            self.socket.connect(uri)
+        except zmq.error.ZMQError:
+            self.dummy = True
+            logger.error("Unable to connect to zmq relay. faking it.")
+        else:
+            self.dummy = False
 
     def send(self, key, payload):
+        if self.dummy:
+            logger.debug(f"[DUMMY] {key} {payload}")
+            return
         try:
             self.socket.send_string(f"{key} {json.dumps(payload, cls=Encoder)}")
         except Exception as exc:
