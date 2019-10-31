@@ -8,11 +8,18 @@ from common import mongo
 class Initializer:
     @staticmethod
     def create_initial_user():
+        print("Running pre-start initialization...")
+        mongo.Users().initialize()
+        mongo.Schedules().initialize()
+        mongo.Tasks().initialize()
+        mongo.RequestedTasks().initialize()
+
         username = os.getenv("INIT_USERNAME", "admin")
         password = os.getenv("INIT_PASSWORD", "admin_pass")
 
         users = mongo.Users()
         if users.find_one() is None:
+            print(f"creating initial user `{username}`")
             document = {
                 "username": username,
                 "password_hash": generate_password_hash(password),
@@ -26,11 +33,3 @@ class Initializer:
                 },
             }
             users.insert_one(document)
-
-
-if __name__ == "__main__":
-    print("Running pre-start initialization...")
-    mongo.Users().initialize()
-    mongo.Schedules().initialize()
-    mongo.Tasks().initialize()
-    Initializer.create_initial_user()
