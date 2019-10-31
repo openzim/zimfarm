@@ -8,7 +8,7 @@ from common.entities import TaskStatus
 
 class Client(MongoClient):
     def __init__(self):
-        super().__init__(host=os.getenv('MONGO_HOSTNAME', 'mongo'))
+        super().__init__(os.getenv('MONGODB_URI', 'mongodb://localhost:27017/'))
 
 
 class Database(BaseDatabase):

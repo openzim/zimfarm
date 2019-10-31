@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import os
 import json
 import logging
 
@@ -10,6 +11,12 @@ import zmq
 from utils.json import Encoder
 
 logger = logging.getLogger(__name__)
+
+SOCKET_IP = os.getenv("SOCKET_IP", "*")
+try:
+    SOCKET_PORT = int(os.getenv("SOCKET_PORT", 5676))
+except Exception:
+    SOCKET_PORT = 5676
 
 
 class MessageBroadcaster:
@@ -45,4 +52,4 @@ class MessageBroadcaster:
         self.send("task-event", payload)
 
 
-BROADCASTER = MessageBroadcaster(ip_addr="*", port=5676)
+BROADCASTER = MessageBroadcaster(ip_addr=SOCKET_IP, port=SOCKET_PORT)
