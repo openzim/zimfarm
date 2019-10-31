@@ -15,7 +15,7 @@ from routes import (
     requested_tasks,
 )
 from utils.json import Encoder
-from prestart import Initializer
+from utils.database import Initializer
 from utils.broadcaster import BROADCASTER
 
 
@@ -45,6 +45,4 @@ logger.info(f"started broadcaster at {BROADCASTER.address}")
 
 if __name__ == "__main__":
     Initializer.create_initial_user()
-
-    is_debug = os.getenv("DEBUG", False)
-    flask.run(host="0.0.0.0", debug=is_debug, port=80, threaded=True)
+    flask.run(host="0.0.0.0", debug=os.getenv("DEBUG", False), port=80, threaded=True)
