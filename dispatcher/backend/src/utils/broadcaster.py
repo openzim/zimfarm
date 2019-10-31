@@ -12,19 +12,13 @@ from utils.json import Encoder
 
 logger = logging.getLogger(__name__)
 
-SOCKET_IP = os.getenv("SOCKET_IP", "*")
-try:
-    SOCKET_PORT = int(os.getenv("SOCKET_PORT", 5676))
-except Exception:
-    SOCKET_PORT = 5676
-
 
 class MessageBroadcaster:
-    def __init__(self, ip_addr, port):
+    def __init__(self, uri):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
-        self.address = f"{ip_addr}:{port}"
-        self.socket.bind(f"tcp://{self.address}")
+        self.uri = uri
+        self.socket.bind(uri)
 
     def send(self, key, payload):
         try:
@@ -52,4 +46,4 @@ class MessageBroadcaster:
         self.send("task-event", payload)
 
 
-BROADCASTER = MessageBroadcaster(ip_addr=SOCKET_IP, port=SOCKET_PORT)
+BROADCASTER = MessageBroadcaster(os.getenv("SOCKET_URI", "tcp://localhost:5000"))
