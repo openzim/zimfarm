@@ -6,7 +6,7 @@ from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
 
 from utils.token import AccessToken, AccessControl
-from .errors import Unauthorized, NotEnoughPrivilege
+from .errors import Unauthorized, BadRequest
 
 
 def authenticate2(f):
@@ -67,7 +67,7 @@ def bson_object_id(keys: list):
                     object_id = ObjectId(object_id)
                     kwargs[key] = object_id
                 except InvalidId:
-                    raise errors.BadRequest(message="Invalid ObjectID")
+                    raise BadRequest(message="Invalid ObjectID")
             return f(*args, **kwargs)
         return wrapper
     return decorate

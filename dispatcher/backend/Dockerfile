@@ -22,5 +22,5 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]
 
 CMD ["uwsgi", "--master", "--processes", "5", "--http", ":80", \
-     "--module", "main:flask", "--buffer-size", "65535", \
+     "--module", "main:app", "--buffer-size", "65535", \
      "--logformat", "[%(ctime)] %(addr) %(method) %(uri) => %(rsize) bytes in %(msecs) msecs (%(proto) %(status))"]
