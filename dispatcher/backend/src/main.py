@@ -2,6 +2,7 @@ import os
 import logging
 
 from flask import Flask
+from flask_cors import CORS
 
 from routes import (
     auth,
@@ -21,6 +22,7 @@ from utils.broadcaster import BROADCASTER
 
 flask = Flask(__name__)
 flask.json_encoder = Encoder
+cors = CORS(flask, resources={r"/*": {"origins": "*"}})
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
