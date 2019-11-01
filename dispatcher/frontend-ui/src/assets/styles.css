@@ -1,0 +1,38 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "Roboto", "Oxygen",
+        "Ubuntu", "Cantarell", "Fira Sans",
+        "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+header {
+	overflow: hidden;
+    overflow-x: hidden;
+	background-color: #EEEEEE;
+	top: 0;
+	height: 3em;
+	width: 100%;
+	z-index: 1000;
+	box-shadow: 0 .05rem .25rem 0 rgba(0,0,0,.3);
+	box-sizing: border-box;
+	overflow-x: auto;
+	display: flex;
+	align-items: center;enter;
+	padding-left: env(safe-area-inset-left);
+	padding-right: env(safe-area-inset-right);
+	text-align: left;
+	margin-bottom: 1rem;
+}
+
+header img {
+	margin: .2rem .5rem;
+	margin-right: .5rem;
+	max-height: 2.6rem;
+}
+
+header label {
+	font-size: 1.5rem;
+	font-weight: 500;
+	margin-bottom: 0;
+}
