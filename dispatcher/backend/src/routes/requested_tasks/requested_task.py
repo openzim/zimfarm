@@ -4,6 +4,7 @@ import datetime
 import pytz
 import pymongo
 import trafaret as t
+from bson import ObjectId
 from flask import request, jsonify
 
 from common.entities import TaskStatus
@@ -105,13 +106,13 @@ class RequestedTasksRoute(BaseRoute):
             request_json_args = {}
 
         # unpack query parameter
-        skip, limit = request_args["skip"], request_args["limit"]
+        skip, limit = int(request_args["skip"]), int(request_args["limit"])
         schedule_id = request_args.get("schedule_id")
 
         # get requested tasks from database
         query = {}
         if schedule_id:
-            query["schedule_id"] = schedule_id
+            query["schedule_id"] = ObjectId(schedule_id)
 
         # matching request (mostly for workers)
         if "matching" in request_json_args:
