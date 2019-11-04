@@ -132,10 +132,6 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if schedule is None:
             raise ScheduleNotFound()
         else:
-            from utils.zmq import socket
-
-            name = schedule["name"]
-            socket.send_string(f"tasks {name}")
             return jsonify(schedule)
 
     @authenticate
