@@ -57,6 +57,7 @@ class RequestedTasksRoute(BaseRoute):
                 "status": TaskStatus.requested,
                 "timestamp": {TaskStatus.requested: now},
                 "events": [{"code": TaskStatus.requested, "timestamp": now}],
+                "config": config,
             }
             rt_id = RequestedTasks().insert_one(document).inserted_id
             document.update({"_id": str(rt_id)})
@@ -116,50 +117,38 @@ class RequestedTasksRoute(BaseRoute):
 
         # matching request (mostly for workers)
         if "matching" in request_json_args:
-            # matching_args = matchingValidator.check(requested_task)
             matching_query = {
-                "resources.cpu": {"$lte": request_json_args["matching"]["cpu"]},
-                "resources.memory": {"$lte": request_json_args["matching"]["memory"]},
-                "resources.disk": {"$lte": request_json_args["matching"]["disk"]},
+                "config.resources.cpu": {"$lte": request_json_args["matching"]["cpu"]},
+                "config.resources.memory": {
+                    "$lte": request_json_args["matching"]["memory"]
+                },
+                "config.resources.disk": {
+                    "$lte": request_json_args["matching"]["disk"]
+                },
             }
         else:
             matching_query = {}
 
-        pipeline = [
-            {
-                "$lookup": {
-                    "from": "schedules",
-                    "localField": "schedule_id",
-                    "foreignField": "_id",
-                    "as": "schedule",
-                }
-            },
-            {"$match": query},
-            {
-                "$replaceRoot": {
-                    "newRoot": {
-                        "$mergeObjects": [{"$arrayElemAt": ["$schedule", 0]}, "$$ROOT"]
-                    }
-                }
-            },
-            {
-                "$project": {
+        query.update(matching_query)
+
+        cursor = (
+            RequestedTasks()
+            .find(
+                query,
+                {
                     "_id": 1,
                     "status": 1,
                     "schedule_id": 1,
                     "schedule_name": 1,
-                    "resources": 1,
                     "config.task_name": 1,
+                    "config.resources": 1,
                     "timestamp.requested": 1,
-                }
-            },
-            {"$match": matching_query},
-            {"$sort": {"timestamp.requested": pymongo.DESCENDING}},
-            {"$limit": limit},
-            {"$skip": skip},
-        ]
-
-        cursor = RequestedTasks().aggregate(pipeline)
+                },
+            )
+            .sort("timestamp.requested", pymongo.DESCENDING)
+            .skip(skip)
+            .limit(limit)
+        )
         count = RequestedTasks().count_documents(query)
 
         return jsonify(
@@ -182,13 +171,6 @@ class RequestedTaskRoute(BaseRoute):
         if requested_task is None:
             raise TaskNotFound()
 
-        schedule = Schedules().find_one({"_id": requested_task["schedule_id"]})
-        requested_task.update(
-            {
-                "resources": schedule["resources"],
-                "config": {"task_name": schedule["config"]["task_name"]},
-            }
-        )
         return jsonify(requested_task)
 
 

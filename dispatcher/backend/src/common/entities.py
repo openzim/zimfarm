@@ -7,6 +7,7 @@ class TaskStatus:
     scraper_completed = "scraper_completed"
     scraper_killed = "scraper_killed"
     failed = "failed"
+    cancel_requested = "cancel_requested"
     canceled = "canceled"
     succeeded = "succeeded"
 

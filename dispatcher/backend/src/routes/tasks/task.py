@@ -13,7 +13,7 @@ from flask import request, jsonify
 from common.entities import TaskStatus
 from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
-from common.mongo import RequestedTasks, Tasks
+from common.mongo import RequestedTasks, Tasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
@@ -82,8 +82,9 @@ class TaskRoute(BaseRoute):
         task = Tasks().find_one({"_id": task_id})
         if task is None:
             raise TaskNotFound()
-        else:
-            return jsonify(task)
+
+        task["schedule"] = Schedules().find_one({"_id": task["schedule_id"]})
+        return jsonify(task)
 
     @authenticate
     @url_object_id("task_id")
