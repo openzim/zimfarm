@@ -21,6 +21,7 @@ def task_event_handler(task_id, event, payload):
         TaskStatus.started: task_started_event_handler,
         TaskStatus.succeeded: task_suceeded_event_handler,
         TaskStatus.failed: task_failed_event_handler,
+        TaskStatus.cancel_requested: task_cancel_requested_event_handler,
         TaskStatus.canceled: task_canceled_event_handler,
         TaskStatus.scraper_started: task_scraper_started_event_handler,
         TaskStatus.scraper_completed: task_scraper_completed_event_handler,
@@ -73,6 +74,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
     add_to_update_if_present("stderr", "container.stderr")
     add_to_update_if_present("timeout", "container.timeout")
     add_to_update_if_present("log", "container.log")
+    add_to_update_if_present("task_log", "debug.log")
     add_to_update_if_present("task_name", "debug.task_name")
     add_to_update_if_present("task_args", "debug.task_args")
     add_to_update_if_present("task_kwargs", "debug.task_kwargs")
@@ -159,7 +161,7 @@ def task_suceeded_event_handler(task_id, payload):
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task Succeeded: {task_id}, {timestamp}")
 
-    save_event(task_id, TaskStatus.succeeded, timestamp)
+    save_event(task_id, TaskStatus.succeeded, timestamp, task_log=payload.get("log"))
 
 
 def task_failed_event_handler(task_id, payload):
@@ -172,18 +174,30 @@ def task_failed_event_handler(task_id, payload):
         timestamp,
         exception=payload.get("exception"),
         traceback=payload.get("traceback"),
+        task_log=payload.get("log"),
     )
 
 
-def task_canceled_event_handler(task_id, payload):
-    terminated = payload.get("terminated", False)
-    logger.info(f"Task Cancelled: {task_id}, terminated: {terminated}")
+def task_cancel_requested_event_handler(task_id, payload):
+    requested_by = payload.get("canceled_by"),
+    logger.info(f"Task Cancellation Requested: {task_id}, by: {requested_by}")
 
     save_event(
         task_id,
         TaskStatus.canceled,
         get_timestamp_from_event(payload),
-        canceled_by=payload.get("canceled_by"),
+        canceled_by=requested_by,
+    )
+
+
+def task_canceled_event_handler(task_id, payload):
+    logger.info(f"Task Cancelled: {task_id}")
+
+    save_event(
+        task_id,
+        TaskStatus.canceled,
+        get_timestamp_from_event(payload),
+        task_log=payload.get("log"),
     )
 
 
@@ -191,7 +205,7 @@ def task_scraper_started_event_handler(task_id, payload):
     timestamp = get_timestamp_from_event(payload)
     image = payload.get("image")
     command = payload.get("command")
-    log = payload.get("log")
+    log = payload.get("log")  # log is a docker json file. `cat x.log | jq -j '.log'`
     logger.info(f"Task Container Started: {task_id}, {command}")
 
     save_event(
@@ -207,9 +221,6 @@ def task_scraper_started_event_handler(task_id, payload):
 def task_scraper_completed_event_handler(task_id, payload):
     timestamp = get_timestamp_from_event(payload)
     exit_code = payload.get("exit_code")
-    stdout = payload.get("stdout")
-    stderr = payload.get("stderr")
-    log = payload.get("log")
     logger.info(f"Task Container Finished: {task_id}, {exit_code}")
 
     save_event(
@@ -217,9 +228,6 @@ def task_scraper_completed_event_handler(task_id, payload):
         TaskStatus.scraper_completed,
         timestamp,
         exit_code=exit_code,
-        stdout=stdout,
-        stderr=stderr,
-        log=log,
     )
 
 
