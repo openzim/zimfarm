@@ -68,6 +68,9 @@ class WorkerManager(BaseWorker):
             )
         )
 
+        # register stop/^C
+        self.register_signals()
+
         self.sync_tasks_and_containers()
         self.poll()
 
@@ -218,11 +221,6 @@ class WorkerManager(BaseWorker):
         socket.connect(self.socket_uri)
         for event in self.events:
             socket.setsockopt_string(zmq.SUBSCRIBE, event)
-
-        logger.info("registering signals")
-
-        signal.signal(signal.SIGINT, self.exit_gracefully)
-        signal.signal(signal.SIGTERM, self.exit_gracefully)
 
         while not self.should_stop:
             try:

@@ -5,6 +5,7 @@
 import os
 import sys
 import argparse
+import traceback
 
 from common import logger
 from task.worker import TaskWorker
@@ -15,10 +16,7 @@ def main():
     parser = argparse.ArgumentParser(prog=TASK_WORKER)
 
     parser.add_argument(
-        "--task-id",
-        help="task-id to attempt to process",
-        required=True,
-        dest="task_id",
+        "--task-id", help="task-id to attempt to process", required=True, dest="task_id"
     )
 
     parser.add_argument(
@@ -54,11 +52,26 @@ def main():
             workdir=args.workdir,
             task_id=args.task_id,
         )
+    except Exception as exc:
+        logger.critical(f"Unhandled exception during init: {exc}")
+        sys.exit(1)
+
+    try:
         sys.exit(worker.run())
     except Exception as exc:
         logger.error(f"Unhandled exception: {exc}")
         logger.exception(exc)
         logger.error("exiting.")
+        try:
+            logger.info("Trying to upload exception details")
+            tbe = traceback.TracebackException.from_exception(exc)
+            worker.shutdown(
+                "failed",
+                exception="".join(tbe.format_exception_only()),
+                traceback="".join(tbe.format()),
+            )
+        except Exception:
+            logger.error("Could not submit failure details")
         sys.exit(1)
 
 

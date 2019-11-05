@@ -11,25 +11,30 @@ from docker.types import Mount
 from common import logger
 from common.constants import (
     DEFAULT_CPU_SHARE,
-    CONTAINER_SCRAPER_PREFIX,
+    CONTAINER_SCRAPER_IDENT,
     ZIMFARM_DISK_SPACE,
     ZIMFARM_CPUS,
     ZIMFARM_MEMORY,
-    CONTAINER_TASK_PREFIX,
+    CONTAINER_TASK_IDENT,
     USE_PUBLIC_DNS,
-    CONTAINER_DNSCACHE_PREFIX,
+    CONTAINER_DNSCACHE_IDENT,
     TASK_WORKER_IMAGE,
     DOCKER_SOCKET,
     PRIVATE_KEY,
+    UPLOAD_URI,
 )
 from common.utils import short_id
+from common.offliners import mount_point_for, command_for
+
+RUNNING_STATUSES = ("created", "running", "restarting", "paused")
+STOPPED_STATUSES = ("exited", "dead", "removing")
 
 
 def query_containers_resources(docker_api):
     cpu_shares = 0
     memory = 0
     disk = 0
-    for container in docker_api.containers(filters={"name": CONTAINER_SCRAPER_PREFIX}):
+    for container in docker_api.containers(filters={"name": CONTAINER_SCRAPER_IDENT}):
         inspect_data = docker_api.inspect_container(container["Id"])
         cpu_shares += inspect_data["HostConfig"]["CpuShares"] or DEFAULT_CPU_SHARE
         memory += inspect_data["HostConfig"]["Memory"]
@@ -86,9 +91,11 @@ def query_container_stats(workdir):
     }
 
 
-def query_host_mounts(docker_client, workdir):
-    keys = [DOCKER_SOCKET, PRIVATE_KEY, workdir]
-    own_name = os.getenv("HOSTNAME", "zimfarm_worker-manager")
+def query_host_mounts(docker_client, workdir=None):
+    keys = [DOCKER_SOCKET, PRIVATE_KEY]
+    if workdir:
+        keys.append(workdir)
+    own_name = os.getenv("HOSTNAME")
     mounts = {}
     for mount in docker_client.api.inspect_container(own_name)["Mounts"]:
         dest = pathlib.Path(mount["Destination"])
@@ -98,16 +105,26 @@ def query_host_mounts(docker_client, workdir):
     return mounts
 
 
+# def get_logs_host_dir(docker_client):
+#     own_name = os.getenv("HOSTNAME")
+#     return pathlib.Path(docker_client.api.inspect_container(own_name)["LogPath"]).parent
+
+
 def task_container_name(task_id):
-    return f"{CONTAINER_TASK_PREFIX}{short_id(task_id)}"
+    return f"{short_id(task_id)}_{CONTAINER_TASK_IDENT}"
 
 
 def dnscache_container_name(task_id):
-    return f"{CONTAINER_DNSCACHE_PREFIX}{short_id(task_id)}"
+    return f"{short_id(task_id)}_{CONTAINER_DNSCACHE_IDENT}"
 
 
-def create_volume(docker_client, task_id):
-    pass
+def scraper_container_name(task_id, task_name):
+    return f"{short_id(task_id)}_{CONTAINER_SCRAPER_IDENT}_{task_name}"
+
+
+def upload_container_name(task_id, filename):
+    ident = "zimup" if filename.endswith(".zim") else "logup"
+    return f"{short_id(task_id)}_{ident}_{filename}"
 
 
 def get_ip_address(docker_client, name):
@@ -119,7 +136,7 @@ def start_dnscache(docker_client, name):
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
     image = docker_client.images.pull("openzim/dnscache", tag="latest")
     return docker_client.containers.run(
-        image, detach=True, name=name, environment=environment
+        image, detach=True, name=name, environment=environment, remove=True
     )
 
 
@@ -128,41 +145,49 @@ def stop_container(docker_client, name, timeout):
     container.stop(timeout=timeout)
 
 
-def start_scraper(
-    docker_client,
-    name,
-    task,
-    image,
-    tag,
-    command,
-    mounts,
-    environment,
-    mem_limit,
-    cpu_shares,
-):
-    docker_image = docker_client.images.pull(image, tag=tag)
+def start_scraper(docker_client, task, dns, host_workdir):
+    config = task["config"]
+    offliner = config["task_name"]
+    container_name = scraper_container_name(task["_id"], offliner)
+
+    # remove container should it exists (should not)
+    try:
+        docker_client.containers.get(container_name).remove()
+    except docker.errors.NotFound:
+        pass
+
+    docker_image = docker_client.images.pull(
+        config["image"]["name"], tag=config["image"]["tag"]
+    )
+
+    # where to mount volume inside scraper
+    mount_point = mount_point_for(offliner)
+
+    # mounts will be attached to host's fs, not this one
+    mounts = [Mount(str(mount_point), host_workdir, type="bind")]
+
+    command = command_for(offliner, config["flags"], mount_point)
+    cpu_shares = config["resources"]["cpu"] * DEFAULT_CPU_SHARE
+    mem_limit = config["resources"]["memory"]
+
     return docker_client.containers.run(
         image=docker_image,
         command=command,
-        auto_remove=False,
         cpu_shares=cpu_shares,
+        mem_limit=mem_limit,
+        dns=dns,
         detach=True,
-        environment=environment,
         labels={
+            "zimscraper": "yes",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_id": task["schedule_id"],
             "schedule_name": task["schedule_name"],
-            "resources_cpu": task["resouces"]["cpu"],
-            "resources_memory": task["resouces"]["memory"],
-            "resources_disk": task["resouces"]["disk"],
         },
-        mem_limit=mem_limit,
         mem_swappiness=0,
-        mounts=[],
-        name=name,
-        dns=[get_ip_address(docker_client, dnscache_container_name(task["_id"]))],
-        remove=False,
+        mounts=mounts,
+        name=container_name,
+        remove=False,  # scaper container will be removed once log&zim handled
     )
 
 
@@ -183,9 +208,6 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
 
     # mounts will be attached to host's fs, not this one
     host_mounts = query_host_mounts(docker_client, workdir)
-    # host_task_workdir = str(
-    #     host_mounts.get(workdir, pathlib.Path("/tmp")).joinpath(task["_id"])
-    # )
     host_task_workdir = str(host_mounts.get(workdir, pathlib.Path("/tmp")))
     host_docker_socket = str(host_mounts.get(DOCKER_SOCKET))
     host_private_key = str(host_mounts.get(PRIVATE_KEY))
@@ -228,3 +250,71 @@ def stop_task_worker(docker_client, task_id, timeout: int = 20):
         return False
     else:
         return True
+
+
+def start_uploader(
+    docker_client, task, username, host_workdir, upload_dir, filename, delete
+):
+    container_name = upload_container_name(task["_id"], filename)
+
+    # remove container should it exists (should not)
+    try:
+        docker_client.containers.get(container_name).remove()
+    except docker.errors.NotFound:
+        pass
+
+    docker_image = docker_client.images.pull("openzim/uploader", tag="latest")
+
+    # in container paths
+    workdir = pathlib.Path("/data")
+    filepath = workdir.joinpath(filename)
+
+    host_mounts = query_host_mounts(docker_client)
+    host_private_key = str(host_mounts[PRIVATE_KEY])
+    mounts = [
+        Mount(str(workdir), host_workdir, type="bind", read_only=not delete),
+        Mount(str(PRIVATE_KEY), host_private_key, type="bind", read_only=True),
+    ]
+
+    command = [
+        "uploader",
+        "--file",
+        str(filepath),
+        "--upload-uri",
+        f"{UPLOAD_URI}/{upload_dir}/",
+        "--username",
+        username,
+    ]
+    if delete:
+        command.append(["--delete"])
+
+    return docker_client.containers.run(
+        image=docker_image,
+        command=command,
+        detach=True,
+        labels={
+            "zimuploader": "yes",
+            "task_id": task["_id"],
+            "tid": short_id(task["_id"]),
+            "schedule_id": task["schedule_id"],
+            "schedule_name": task["schedule_name"],
+            "filename": filename,
+        },
+        mem_swappiness=0,
+        mounts=mounts,
+        name=container_name,
+        remove=False,  # scaper container will be removed once log&zim handled
+    )
+
+
+def get_container_logs(docker_client, container_name, tail="all"):
+    try:
+        return (
+            docker_client.containers.get(container_name)
+            .logs(stdout=True, stderr=True, tail=tail)
+            .decode("UTF-8")
+        )
+    except docker.errors.NotFound:
+        return f"Container `{container_name}` gone. Can't get logs"
+    except Exception as exc:
+        return f"Unable to get logs for `{container_name}`: {exc}"
