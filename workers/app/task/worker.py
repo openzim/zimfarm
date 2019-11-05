@@ -2,67 +2,42 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import os
+import sys
 import time
-import datetime
+import signal
+import shutil
 import pathlib
+import datetime
 
 import requests
 import humanfriendly
 
 from common import logger
 from common.worker import BaseWorker
-from common.docker import query_container_stats
+from common.docker import (
+    query_host_mounts,
+    query_container_stats,
+    dnscache_container_name,
+    start_dnscache,
+    get_ip_address,
+    start_scraper,
+    start_uploader,
+    RUNNING_STATUSES,
+    get_container_logs,
+    task_container_name,
+)
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
-ZIM_PATH = pathlib.Path(os.getenv("ZIM_PATH", "/zim-files"))
-WORKER_NAME = os.getenv("WORKER_NAME")
+PENDING = "pending"
+UPLOADING = "uploading"
+UPLOADED = "uploaded"
+FAILED = "failed"
 
-
-class Monitor:
-
-    PENDING = "pending"
-    UPLOADING = "uploading"
-    FAILED_UPLOADING = "failed"
-    UPLOADED = "uploaded"
-
-    def __init__(self, task_id):
-        self.task_id = task_id
-
-        self.dnscache = None
-        self.scraper = None
-        self.upload = None
-
-        self.files = []
-
-    @property
-    def scraper_alive(self):
-        pass
-
-    @property
-    def is_working(self):
-        return self.scraper_alive or self.is_uploading
-
-    @property
-    def is_uploading(self):
-        pass
-
-    def refresh_files_list(self):
-        for fpath in ZIM_PATH.glob("*.zim"):
-            if fpath.name not in self.files.keys():
-                self.files.update({fpath.name: self.PENDING})
-
-    def update(self):
-        # update scraper
-        self.scraper.reload()
-        self.dnscache.reload()
-        self.refresh_files_list()
+started = "started"
+scraper_started = "scraper_started"
 
 
 class TaskWorker(BaseWorker):
-
-    RUNNING = "running"
-
     def __init__(self, **kwargs):
 
         # print config
@@ -101,113 +76,357 @@ class TaskWorker(BaseWorker):
         )
 
         self.task = None
-        self._stop_requested = False
+        self.should_stop = False
+        self.task_wordir = None
+        self.host_task_workdir = None  # path on host for task_dir
 
         self.dnscache = None  # dnscache container
+        self.dns = None  # list of DNS IPs or None
 
-        self.zim_files = []
+        self.zim_files = {}  # ZIM files registry
+        self.uploader = None  # zim-files uploader container
 
-    def stop(self):
-        # received TERM signal, gotta clean every thing up quick
-        self._stop_requested = True
+        self.scraper = None  # scraper container
+        self.log_uploader = None  # scraper log uploader container
+        self.host_logsdir = None  # path on host where logs are stored
+
+        # register stop/^C
+        self.register_signals()
 
     def get_task(self):
+        logger.info(f"Fetching task details for {self.task_id}")
         success, status_code, response = self.query_api("GET", f"/tasks/{self.task_id}")
         if success and status_code == requests.codes.OK:
             self.task = response
-            return True
+            return
 
         if status_code == requests.codes.NOT_FOUND:
             logger.warning(f"task #{self.task_id} doesn't exist")
         else:
             logger.warning(f"couldn't retrieve task detail for #{self.task_id}")
-        return False
 
     def mark_task_started(self):
+        logger.info(f"Updating task-status={started}")
         success, status_code, response = self.query_api(
-            "PATCH",
-            f"/tasks/{self.task_id}",
-            payload={"event": "started", "payload": {}},
+            "PATCH", f"/tasks/{self.task_id}", payload={"event": started, "payload": {}}
         )
         if success and status_code == requests.codes.OK:
             return
-        logger.warning(f"couldn't update task status")
+        logger.warning(f"couldn't set task status={started}")
+
+    def mark_scraper_started(self):
+        logger.info(f"Updating task-status={scraper_started}")
+        success, status_code, response = self.query_api(
+            "PATCH",
+            f"/tasks/{self.task_id}",
+            payload={
+                "event": scraper_started,
+                "payload": {
+                    "image": self.scraper.image,
+                    "command": self.scraper.attrs["Config"]["Cmd"],
+                    "log": pathlib.Path(self.scraper.attrs["LogPath"]).name,
+                },
+            },
+        )
+        if success and status_code == requests.codes.OK:
+            return
+        logger.warning(f"couldn't set task status={scraper_started}")
+
+    def mark_task_completed(self, status, exception=None, traceback=None):
+        logger.info(f"Updating task-status={status}")
+        event_payload = {}
+        if exception:
+            event_payload["exception"] = exception
+        if traceback:
+            event_payload["traceback"] = traceback
+
+        event_payload["log"] = get_container_logs(
+            self.docker, task_container_name(self.task_id), tail=2000
+        )
+
+        success, status_code, response = self.query_api(
+            "PATCH",
+            f"/tasks/{self.task_id}",
+            payload={"event": status, "payload": event_payload},
+        )
+        if success and status_code == requests.codes.OK:
+            return
+        logger.warning(
+            f"couldn't set task status={status} HTTP {status_code}: {response}"
+        )
+
+    def mark_file_created(self, filename, filesize):
+        logger.info(f"ZIM file created: {filename}, {filesize}")
+        success, status_code, response = self.query_api(
+            "PATCH",
+            f"/tasks/{self.task_id}",
+            payload={
+                "event": "created_file",
+                "payload": {"file": {"name": filename, "size": filesize}},
+            },
+        )
+        if success and status_code == requests.codes.OK:
+            return
+        logger.warning(f"couldn't send file-created event")
+
+    def mark_file_uploaded(self, filename):
+        logger.info(f"Updating file-status=uploaded for {filename}")
+        success, status_code, response = self.query_api(
+            "PATCH",
+            f"/tasks/{self.task_id}",
+            payload={"event": "uploaded_file", "payload": {"filename": filename}},
+        )
+        if success and status_code == requests.codes.OK:
+            return
+        logger.warning(f"couldn't update file upload status")
+
+    def setup_workdir(self):
+        logger.info("Setting-up workdir")
+        folder_name = f"{self.task_id}"
+        host_mounts = query_host_mounts(self.docker, self.workdir)
+
+        self.task_wordir = self.workdir.joinpath(folder_name)
+        self.task_wordir.mkdir(exist_ok=True)
+        self.host_task_workdir = host_mounts[self.workdir].joinpath(folder_name)
+
+    def cleanup_workdir(self):
+        logger.info(f"Removing task workdir {self.workdir}")
+        zim_files = [(f.name, f.stat().st_size) for f in self.task_wordir.glob("*.zim")]
+        if zim_files:
+            logger.error(f"ZIM files exists ; __NOT__ removing: {zim_files}")
+            return False
+        try:
+            shutil.rmtree(self.task_wordir)
+        except Exception as exc:
+            logger.error(f"Failed to remove workdir: {exc}")
 
     def start_dnscache(self):
-        # self.dnscache = start_dnscache_container(self.task_id)
-        pass
+        logger.info(f"Starting DNS cache")
+        dnscache_name = dnscache_container_name(self.task_id)
+        self.dnscache = start_dnscache(self.docker, dnscache_name)
+        self.dns = [get_ip_address(self.docker, dnscache_name)]
+        logger.debug("DNS Cache started using IPs: {self.dns}")
 
-    def start_redis(self):
-        # self.redis = start_redis_container(self.task_id)
-        pass
-
-    def setup_volume(self):
-        pass
+    def stop_dnscache(self, timeout=None):
+        logger.info("Stopping and removing DNS cache")
+        if self.dnscache:
+            self.dnscache.stop(timeout=timeout)
 
     def start_scraper(self):
-        pass
+        logger.info("Starting scraper. Expects files at: {self.host_task_workdir} ")
+        self.scraper = start_scraper(
+            self.docker, self.task, self.dns, self.host_task_workdir
+        )
 
-    def list_and_upload_zim_files(self):
-        pass
+    def stop_scraper(self, timeout=None):
+        logger.info("Stopping and removing scraper")
+        if self.scraper:
+            self.scraper.stop(timeout=timeout)
+            self.scraper.remove()
 
-    def start_upload(self, fname):
-        upload_uri = "sftp://url/{warehouse_path}/"
+    def update(self):
+        # update scraper
+        self.scraper.reload()
+        self.dnscache.reload()
+        self.uploader.reload()
+        self.refresh_files_list()
 
-    def check_status(self):
-        pass
+    def stop(self, timeout=1):
+        """ stopping everything before exit (on term or end of task) """
+        logger.info("Stopping all containers and actions")
+        self.should_stop = True
+        self.stop_scraper(timeout)
+        self.stop_dnscache(timeout)
+        self.stop_uploader(timeout)
 
-    def immediate_shutdown(self):
-        # PATCH url to set shutdown requested
-        # docker kill for all running containers
-        # scraper_log upload
-        # clean-up volume
-        pass
+    def exit_gracefully(self, signum, frame):
+        signame = signal.strsignal(signum)
+        logger.info(f"received exit signal ({signame}), shutting down…")
+        self.stop()
+        self.cleanup_workdir()
+        self.mark_task_completed("canceled")
+        sys.exit(1)
 
-    def shutdown(self):
-        # stop dnscache
-        # clean-up volume
-        pass
+    def shutdown(self, status, **kwargs):
+        logger.info("Shutting down task-worker")
+        self.stop()
+        self.cleanup_workdir()
+        self.mark_task_completed(status, **kwargs)
+
+    @property
+    def scraper_running(self):
+        """ wether scraper container is still running or not """
+        if not self.scraper:
+            return False
+        self.scraper.reload()
+        return self.scraper.status in RUNNING_STATUSES
+
+    @property
+    def uploader_running(self):
+        if not self.uploader:
+            return False
+        self.uploader.reload()
+        return self.uploader.status in RUNNING_STATUSES
+
+    def refresh_files_list(self):
+        for fpath in self.task_wordir.glob("*.zim"):
+            if fpath.name not in self.files.keys():
+                # append file to our watchlist
+                self.zim_files.update({fpath.name: PENDING})
+                # inform API about new file
+                self.mark_file_created(self, fpath.name, fpath.stat().st_size)
+
+    @property
+    def pending_zim_files(self):
+        """ shortcut list of watched file in PENDING status """
+        return filter(lambda x: x[1] == PENDING, self.zim_files.items())
+
+    def start_uploader(self, upload_dir, filename, delete):
+        logger.info(f"Starting uploader for /{upload_dir}/{filename} – delete={delete}")
+        self.uploader = start_uploader(
+            self.docker,
+            self.task,
+            self.username,
+            self.host_workdir,
+            upload_dir,
+            filename,
+            delete,
+        )
+
+    def stop_uploader(self, timeout=None):
+        logger.info("Stopping and removing uploader")
+        if self.uploader:
+            self.uploader.stop(timeout=timeout)
+            self.uploader.remove()
+
+    def upload_files(self):
+        """ manages self.zim_files
+
+            - list files in folder to upload list
+            - upload files one by one using dedicated uploader containers """
+        # check files in workdir and update our list of files to upload
+        self.refresh_files_list(self)
+
+        # check if uploader running
+        if self.uploader:
+            self.uploader.reload()
+
+        if self.uploader and self.uploader.status in RUNNING_STATUSES:
+            # still running, nothing to do
+            return
+
+        # not running but _was_ running
+        elif self.uploader:
+            # find file
+            zim_file = self.uploader.labels["filename"]
+            # get result of container
+            if self.uploader.attrs["State"]["ExitCode"] == 0:
+                self[zim_file] = UPLOADED
+                self.mark_file_uploaded(zim_file)
+            else:
+                self[zim_file] = FAILED
+            self.uploader.remove()
+            self.uploader = None
+
+        # start an uploader instance
+        if self.uploader is None and self.pending_zim_files() and not self.should_stop:
+            try:
+                zim_file, _ = self.pending_zim_files().pop()
+            except Exception:
+                # no more pending files,
+                pass
+            else:
+                self.start_uploader("zim", zim_file, delete=True)
+                self.zim_files[zim_file] = UPLOADING
+
+    def upload_log(self):
+        if not self.scraper:
+            # no more scraper, can't do.
+            return
+
+        log_path = pathlib.Path(self.scraper.attrs["LogPath"])
+        host_logsdir = log_path.parent
+        filename = log_path.name
+
+        if self.log_uploader:
+            self.log_uploader.reload()
+
+            if self.log_uploader.status in RUNNING_STATUSES:
+                # still uploading
+                return
+            else:
+                self.log_uploader = None
+
+        self.log_uploader = start_uploader(
+            self.docker,
+            self.task,
+            self.username,
+            host_logsdir,
+            "logs",
+            filename,
+            delete=False,
+        )
+
+    def handle_stopped_scraper(self):
+        self.scraper.reload()
+        exit_code = self.scraper.attrs["State"]["ExitCode"]
+        self.mark_scraper_completed(exit_code)
+        self.upload_log()
+        logger.info("Waiting for scraper log to finish uploading")
+        if self.log_uploader:
+            exit_code = self.log_uploader.wait()["StatusCode"]
+            logger.info(f"Scraper log upload complete: {exit_code}")
+
+    def sleep(self):
+        time.sleep(1)
 
     def run(self):
 
         # get task detail from URL
         self.get_task()
         if self.task is None:
-            logger.error("couldn't get task, exiting.")
-            return
+            logger.critical("Can't do much without task detail. exitting.")
+            return 1
         self.mark_task_started()
 
-        # prepare folder
-        self.setup_volume()
+        # prepare sub folder
+        self.setup_workdir()
 
         # start our DNS cache
         self.start_dnscache()
 
         # start scraper
         self.start_scraper()
+        self.mark_scraper_started()
 
         last_check = datetime.datetime.now()
 
-        while True:
-            if self._stop_requested:
-                self.immediate_shutdown()
-                return
-
+        while not self.should_stop and self.scraper_running:
             now = datetime.datetime.now()
             if (now - last_check).total_seconds() < SLEEP_INTERVAL:
-                time.sleep(1)
+                self.sleep()
                 continue
 
-            # self.monitor.update()
+            self.upload_log()
 
-            # self.fetch_and_upload_scraper_log()
+            self.upload_files()
 
-            # self.list_and_upload_zim_files()
+        # scraper is done. check files so upload can continue
+        self.handle_stopped_scraper()
 
-            # if not self.monitor.working:
-            #     break
-            # else:
-            #     pass
+        self.upload_files()
+        if self.pending_zim_files:
+            nb_pending = len(self.pending_zim_files)
+            logger.info(f"{nb_pending} ZIM files to upload")
+
+        # monitor upload of files
+        while not self.should_stop and self.pending_zim_files:
+            now = datetime.datetime.now()
+            if (now - last_check).total_seconds() < SLEEP_INTERVAL:
+                self.sleep()
+                continue
+
+        logger.info("No ZIM file to upload.")
 
         # done with processing, cleaning-up and exiting
-        self.shutdown()
+        self.shutdown("succeeded")

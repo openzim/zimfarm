@@ -4,6 +4,7 @@
 
 import os
 import sys
+import signal
 import pathlib
 import datetime
 
@@ -53,7 +54,6 @@ class BaseWorker:
             logger.info("\tprivate key is available and readable")
 
     def check_auth(self):
-        logger.debug("check_auth()")
         self.access_token = self.refresh_token = None
         self.authenticated_on = datetime.datetime(2019, 1, 1)
 
@@ -87,7 +87,11 @@ class BaseWorker:
             sys.exit(1)
         else:
             logger.info("\tdocker API access successful")
-            # self.docker_api = docker.APIClient(base_url=f"unix://{DOCKER_SOCKET}")
+
+    def register_signals(self):
+        logger.info("registering exit signals")
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def authenticate(self, force=False):
         # our access token should grant us access for 60mn
@@ -131,3 +135,7 @@ class BaseWorker:
                 break
 
         return success, status_code, response
+
+    def exit_gracefully(self, signum, frame):
+        # to be overriden
+        pass

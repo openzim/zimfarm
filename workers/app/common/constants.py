@@ -66,13 +66,26 @@ except Exception:
 USE_PUBLIC_DNS = bool(os.getenv("USE_PUBLIC_DNS", False))
 
 # docker container names
-CONTAINER_TASK_PREFIX = "zimtask_"
-CONTAINER_SCRAPER_PREFIX = "zimscraper_"
-CONTAINER_DNSCACHE_PREFIX = "dnscache_"
+CONTAINER_TASK_IDENT = "zimtask"
+CONTAINER_SCRAPER_IDENT = "zimscraper"
+CONTAINER_DNSCACHE_IDENT = "dnscache"
 
 # dispatcher-related
 AUTH_EXPIRY = os.getenv("AUTH_EXPIRY", 60 * 59)  # seconds after which to re-auth
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org")
 DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5676")
-ALL_OFFLINERS = ["mwoffliner", "youtube", "ted", "gutenberg"]
+UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://warehouse.farm.openzim.org")
+
+OFFLINER_MWOFFLINER = "mwoffliner"
+OFFLINER_YOUTUBE = "youtube"
+OFFLINER_TED = "ted"
+OFFLINER_PHET = "phet"
+OFFLINER_GUTENBERG = "gutenberg"
+
+ALL_OFFLINERS = [
+    OFFLINER_MWOFFLINER,
+    OFFLINER_YOUTUBE,
+    OFFLINER_PHET,
+    OFFLINER_GUTENBERG,
+]
 SUPPORTED_OFFLINERS = os.getenv("OFFLINERS", "").split() or ALL_OFFLINERS
