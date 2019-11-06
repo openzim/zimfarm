@@ -22,7 +22,7 @@ def get_token_ssh(webapi_uri, username, private_key):
         - send message and signature as headers
         - server validates signature and checks timestamp is recent then auths """
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     message = f"{username}:{now.isoformat()}"
 
     with tempfile.TemporaryDirectory() as tmp_dirname:

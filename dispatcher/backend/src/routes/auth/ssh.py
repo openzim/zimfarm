@@ -25,7 +25,7 @@ def asymmetric_key_auth():
 
         - message in X-SSHAuth-Message HTTP header
         - base64 signature in X-SSHAuth-Signature HTTP header
-        - decode standard message: username:timestamp(ISO)
+        - decode standard message: username:timestamp(UTC ISO)
         - verify timestamp is less than a minute old
         - verify username matches our database
         - verify signature of message with username's public keys
@@ -46,7 +46,7 @@ def asymmetric_key_auth():
         logger.exception(exc)
         raise errors.BadRequest("Invalid message format")
 
-    if (datetime.datetime.now() - timestamp).total_seconds() > MESSAGE_VALIDITY:
+    if (datetime.datetime.utcnow() - timestamp).total_seconds() > MESSAGE_VALIDITY:
         raise errors.Unauthorized(
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
