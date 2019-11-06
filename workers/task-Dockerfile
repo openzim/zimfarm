@@ -10,11 +10,14 @@ WORKDIR /usr/src
 COPY task-requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
+RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+RUN echo "UTC" > /etc/timezone
+
 COPY app app
 RUN ln -s /usr/src/app/task_worker.py /usr/local/bin/task-worker
 RUN chmod +x /usr/local/bin/task-worker
 
-ENV WEB_API_URI http://192.168.5.80/api
+ENV WEB_API_URI https://api.farm.openzim.org
 ENV WORKDIR /data
 VOLUME /var/run/docker.sock
 VOLUME /data
