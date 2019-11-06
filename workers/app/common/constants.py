@@ -74,7 +74,7 @@ CONTAINER_DNSCACHE_IDENT = "dnscache"
 AUTH_EXPIRY = os.getenv("AUTH_EXPIRY", 60 * 59)  # seconds after which to re-auth
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org")
 DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5676")
-UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://warehouse.farm.openzim.org")
+UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://warehouse.farm.openzim.org:1522")
 
 OFFLINER_MWOFFLINER = "mwoffliner"
 OFFLINER_YOUTUBE = "youtube"

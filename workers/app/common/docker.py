@@ -164,7 +164,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
     mount_point = mount_point_for(offliner)
 
     # mounts will be attached to host's fs, not this one
-    mounts = [Mount(str(mount_point), host_workdir, type="bind")]
+    mounts = [Mount(str(mount_point), str(host_workdir), type="bind")]
 
     command = command_for(offliner, config["flags"], mount_point)
     cpu_shares = config["resources"]["cpu"] * DEFAULT_CPU_SHARE
@@ -204,6 +204,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
     if tag == "local":
         docker_image = docker_client.images.get(TASK_WORKER_IMAGE)
     else:
+        logger.debug(f"pulling image {image}:{tag}")
         docker_image = docker_client.images.pull(image, tag=tag)
 
     # mounts will be attached to host's fs, not this one
@@ -216,11 +217,12 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         Mount(str(DOCKER_SOCKET), host_docker_socket, type="bind", read_only=True),
         Mount(str(PRIVATE_KEY), host_private_key, type="bind", read_only=True),
     ]
+    command = ["task-worker", "--task-id", task["_id"]]
 
-    logger.debug(f"docker run {container_name}")
+    logger.debug(f"running {command}")
     return docker_client.containers.run(
         image=docker_image,
-        command=["task-worker", "--task-id", task["_id"]],
+        command=command,
         detach=True,
         environment={
             "USERNAME": username,
@@ -272,7 +274,7 @@ def start_uploader(
     host_mounts = query_host_mounts(docker_client)
     host_private_key = str(host_mounts[PRIVATE_KEY])
     mounts = [
-        Mount(str(workdir), host_workdir, type="bind", read_only=not delete),
+        Mount(str(workdir), str(host_workdir), type="bind", read_only=not delete),
         Mount(str(PRIVATE_KEY), host_private_key, type="bind", read_only=True),
     ]
 
@@ -286,12 +288,13 @@ def start_uploader(
         username,
     ]
     if delete:
-        command.append(["--delete"])
+        command.append("--delete")
 
     return docker_client.containers.run(
         image=docker_image,
         command=command,
         detach=True,
+        environment={"RSA_KEY": str(PRIVATE_KEY)},
         labels={
             "zimuploader": "yes",
             "task_id": task["_id"],
