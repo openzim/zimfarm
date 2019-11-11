@@ -154,7 +154,7 @@ def extract_pubkey(private_key):
 
 
 def upload_file(
-    src_path, upload_uri, username, private_key, host_pub_md5, delete=False
+    src_path, upload_uri, username, private_key, host_pub_md5, move=False, delete=False
 ):
     logger.info(f"Starting upload of {src_path}")
     public_key = extract_pubkey(private_key)
@@ -162,12 +162,24 @@ def upload_file(
     # parse upload-uri so we can specify a temporary filename and rename upon success
     try:
         uri = urllib.parse.urlparse(upload_uri)
+        uri_path = pathlib.Path(uri.path)
     except Exception as exc:
         logger.error(f"invalid upload URI: `{upload_uri}` ({exc}).")
         return 1
 
-    temp_fname = f"{src_path.name}.tmp"
-    full_upload_uri = f"{upload_uri}{temp_fname}"
+    if move:
+        if uri.path.endswith("/"):
+            final_fname = src_path.name
+            temp_fname = f"{src_path.name}.tmp"
+            upload_path = uri.path
+            full_upload_uri = f"{upload_uri}{temp_fname}"
+        else:
+            final_fname = uri_path.name
+            temp_fname = f"{final_fname}.tmp"
+            upload_path = f"{uri_path.parent}/"
+            full_upload_uri = f"{uri.scheme}://{uri.netloc}/{upload_path}/{temp_fname}"
+    else:
+        full_upload_uri = upload_uri
 
     args = [
         str(CURL_BIN_PATH),
@@ -184,8 +196,17 @@ def upload_file(
         "20",
         "--stderr",
         "-",
-        "--quote",
-        f"-rename {uri.path}{temp_fname} {uri.path}{src_path.name}",
+    ]
+
+    if move:
+        args += ["--quote", f"*rm {upload_path}{temp_fname}"]
+        args += ["--quote", f"*rm {upload_path}{final_fname}"]
+        args += [
+            "--quote",
+            f"-rename {upload_path}{temp_fname} {upload_path}{final_fname}",
+        ]
+
+    args += [
         "--hostpubmd5",
         host_pub_md5,
         "--pubkey",
@@ -200,6 +221,8 @@ def upload_file(
     ]
 
     logger.info("Executing: {args}\n".format(args=" ".join(args)))
+
+    sys.exit(1)
 
     curl = subprocess.run(args=args, capture_output=True, text=True)
 
@@ -256,6 +279,13 @@ def main():
     )
 
     parser.add_argument(
+        "--move",
+        help="whether to upload to a temp location and move to final one on success",
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
         "--delete",
         help="whether to delete source file upon success",
         action="store_true",
@@ -301,9 +331,9 @@ def main():
         logger.error(f"invalid upload URI: `{args.upload_uri}` ({exc}).")
         sys.exit(1)
     else:
-        if not url.path.endswith("/"):
+        if not url.path.endswith("/") and not pathlib.Path(url.path).suffix:
             logger.error(
-                f"invalid upload URI: `{args.upload_uri}` (missing trailing /)."
+                f"/!\\ your upload_uri doesn't end with a slash and has no file extension: `{args.upload_uri}`."
             )
             sys.exit(1)
 
@@ -317,6 +347,7 @@ def main():
             username=args.username,
             private_key=private_key,
             host_pub_md5=host_pub_md5,
+            move=args.move,
             delete=args.delete,
         )
     )
