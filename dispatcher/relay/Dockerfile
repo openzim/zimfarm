@@ -15,6 +15,6 @@ COPY relay.py /usr/local/bin/zimfarm-relay
 EXPOSE 5000
 ENV INTERNAL_SOCKET_PORT "5000"
 ENV SOCKET_PORT "6000"
-ENV EVENTS "requested-task,requested-tasks,cancel-task,task-event"
+ENV EVENTS "requested-task,requested-tasks,cancel-task,task-event,dispatcher-started"
 
 CMD ["zimfarm-relay"]

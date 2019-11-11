@@ -22,7 +22,7 @@ except Exception:
 try:
     SOCKET_PORT = int(os.getenv("SOCKET_PORT"))
 except Exception:
-    SOCKET_PORT = 5676
+    SOCKET_PORT = 6000
 try:
     EVENTS = os.getenv("EVENTS").split(",")
 except Exception:
