@@ -47,7 +47,8 @@ app.register_blueprint(tags.Blueprint())
 
 errors.register_handlers(app)
 
-logger.info(f"connecter broadcaster to {BROADCASTER.uri}")
+logger.info(f"connected broadcaster to {BROADCASTER.uri}")
+BROADCASTER.broadcast_dispatcher_started()
 
 
 if __name__ == "__main__":
