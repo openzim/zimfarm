@@ -17,9 +17,8 @@ COPY app app
 RUN ln -s /usr/src/app/worker_manager.py /usr/local/bin/worker-manager
 RUN chmod +x /usr/local/bin/worker-manager
 
-ENV WEB_API_URI http://192.168.5.80/api
 ENV WEB_API_URI https://api.farm.openzim.org
-ENV SOCKET_URI tcp://192.168.5.80:5676
+ENV SOCKET_URI tcp://tcp.farm.openzim.org:32029
 ENV WORKDIR /data
 VOLUME /var/run/docker.sock
 VOLUME /data

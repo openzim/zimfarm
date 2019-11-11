@@ -11,7 +11,7 @@ import logging
 
 import zmq
 
-SOCKET_URI = os.getenv("SOCKET_URI", "tcp://localhost:5000")
+SOCKET_URI = os.getenv("SOCKET_URI", "tcp://192.168.1.13:5000")
 EVENTS = os.getenv("EVENTS", "requested-task,task-event").split(",")
 
 logger = logging.getLogger("emitter")

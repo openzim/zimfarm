@@ -90,6 +90,7 @@ class TaskWorker(BaseWorker):
         self.scraper = None  # scraper container
         self.log_uploader = None  # scraper log uploader container
         self.host_logsdir = None  # path on host where logs are stored
+        self.scraper_succeeded = None  # whether scraper succeeded
 
         # register stop/^C
         self.register_signals()
@@ -270,6 +271,27 @@ class TaskWorker(BaseWorker):
         self.cleanup_workdir()
         self.mark_task_completed(status, **kwargs)
 
+    def start_uploader(self, upload_dir, filename, move, delete):
+        logger.info(
+            f"Starting uploader for /{upload_dir}/{filename} – move={move}, delete={delete}"
+        )
+        self.uploader = start_uploader(
+            self.docker,
+            self.task,
+            self.username,
+            self.host_task_workdir,
+            upload_dir,
+            filename,
+            move,
+            delete,
+        )
+
+    def stop_uploader(self, timeout=None):
+        logger.info("Stopping and removing uploader")
+        if self.uploader:
+            self.uploader.stop(timeout=timeout)
+            self.uploader.remove()
+
     @property
     def scraper_running(self):
         """ wether scraper container is still running or not """
@@ -298,24 +320,6 @@ class TaskWorker(BaseWorker):
         """ shortcut list of watched file in PENDING status """
         return list(filter(lambda x: x[1] == PENDING, self.zim_files.items()))
 
-    def start_uploader(self, upload_dir, filename, delete):
-        logger.info(f"Starting uploader for /{upload_dir}/{filename} – delete={delete}")
-        self.uploader = start_uploader(
-            self.docker,
-            self.task,
-            self.username,
-            self.host_task_workdir,
-            upload_dir,
-            filename,
-            delete,
-        )
-
-    def stop_uploader(self, timeout=None):
-        logger.info("Stopping and removing uploader")
-        if self.uploader:
-            self.uploader.stop(timeout=timeout)
-            self.uploader.remove()
-
     def upload_files(self):
         """ manages self.zim_files
 
@@ -342,6 +346,7 @@ class TaskWorker(BaseWorker):
                 self.mark_file_uploaded(zim_file)
             else:
                 self[zim_file] = FAILED
+                logger.error(f"ZIM Uploader:: {self.uploader.logs()}")
             self.uploader.remove()
             self.uploader = None
 
@@ -354,7 +359,10 @@ class TaskWorker(BaseWorker):
                 pass
             else:
                 self.start_uploader(
-                    f"zim{self.task['config']['warehouse_path']}", zim_file, delete=True
+                    f"zim{self.task['config']['warehouse_path']}",
+                    zim_file,
+                    move=True,
+                    delete=True,
                 )
                 self.zim_files[zim_file] = UPLOADING
 
@@ -383,6 +391,7 @@ class TaskWorker(BaseWorker):
             host_logsdir,
             "logs",
             filename,
+            move=False,
             delete=False,
         )
 
@@ -390,11 +399,14 @@ class TaskWorker(BaseWorker):
         self.scraper.reload()
         exit_code = self.scraper.attrs["State"]["ExitCode"]
         self.mark_scraper_completed(exit_code)
+        self.scraper_succeeded = exit_code == 0
         self.upload_log()
         logger.info("Waiting for scraper log to finish uploading")
         if self.log_uploader:
             exit_code = self.log_uploader.wait()["StatusCode"]
             logger.info(f"Scraper log upload complete: {exit_code}")
+            if exit_code != 0:
+                logger.error(f"Log Uploader:: {self.log_uploader.logs()}")
 
     def sleep(self):
         time.sleep(1)
@@ -449,4 +461,4 @@ class TaskWorker(BaseWorker):
         self.upload_files()  # make sure we submit upload status for last one
 
         # done with processing, cleaning-up and exiting
-        self.shutdown("succeeded")
+        self.shutdown("succeeded" if self.scraper_succeeded else "failed")
