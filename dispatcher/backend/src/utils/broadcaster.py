@@ -36,6 +36,9 @@ class MessageBroadcaster:
             logger.error(f"unable to brodcast on `{key}` with payload={payload}")
             logger.exception(exc)
 
+    def broadcast_dispatcher_started(self):
+        self.send("dispatcher-started", {})
+
     def broadcast_requested_task(self, task):
         self.send("requested-task", task)
 

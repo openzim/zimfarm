@@ -58,7 +58,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
 
     # update task status, timestamp and other fields
     task_updates = {f"timestamp.{code}": timestamp}
-    if "scraper_" not in code:
+    if "scraper_" not in code and "file" not in code:
         task_updates["status"] = code
 
     def add_to_update_if_present(payload_key, update_key):
@@ -245,7 +245,7 @@ def task_created_file_event_handler(task_id, payload):
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task created file: {task_id}, {file['name']}, {file['size']}")
 
-    save_event(task_id, TaskStatus.succeeded, timestamp, file=file)
+    save_event(task_id, TaskStatus.created_file, timestamp, file=file)
 
 
 def task_uploaded_file_event_handler(task_id, payload):
@@ -253,7 +253,7 @@ def task_uploaded_file_event_handler(task_id, payload):
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task uploaded file: {task_id}, {file['name']}")
 
-    save_event(task_id, TaskStatus.succeeded, timestamp, file=file)
+    save_event(task_id, TaskStatus.uploaded_file, timestamp, file=file)
 
 
 def handle_others(self, event):

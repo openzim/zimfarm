@@ -93,11 +93,11 @@ class RequestedTasksRoute(BaseRoute):
         if request_json:
             matchingValidator = t.Dict(
                 {
-                    t.Key("cpu"): t.Int(gt=0),
-                    t.Key("memory"): t.Int(gt=0),
-                    t.Key("disk"): t.Int(gt=0),
+                    t.Key("cpu"): t.Int(gte=0),
+                    t.Key("memory"): t.Int(gte=0),
+                    t.Key("disk"): t.Int(gte=0),
                     t.Key("offliners", optional=True): t.List(
-                        t.Enum("mwoffliner", "youtube", "gutenberg", "ted")
+                        t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
                     ),
                 }
             )
