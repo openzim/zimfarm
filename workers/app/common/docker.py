@@ -255,7 +255,7 @@ def stop_task_worker(docker_client, task_id, timeout: int = 20):
 
 
 def start_uploader(
-    docker_client, task, username, host_workdir, upload_dir, filename, delete
+    docker_client, task, username, host_workdir, upload_dir, filename, move, delete
 ):
     container_name = upload_container_name(task["_id"], filename)
 
@@ -283,10 +283,12 @@ def start_uploader(
         "--file",
         str(filepath),
         "--upload-uri",
-        f"{UPLOAD_URI}/{upload_dir}/",
+        f"{UPLOAD_URI}/{upload_dir}/{filepath.name}",
         "--username",
         username,
     ]
+    if move:
+        command.append("--move")
     if delete:
         command.append("--delete")
 

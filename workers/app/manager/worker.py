@@ -28,6 +28,7 @@ class WorkerManager(BaseWorker):
     def __init__(self, **kwargs):
         # include our class config values in the config print
         kwargs.update({k: getattr(self, k) for k in self.config_keys})
+        kwargs.update({"OFFLINERS": SUPPORTED_OFFLINERS})
         self.print_config(**kwargs)
 
         # set data holders
