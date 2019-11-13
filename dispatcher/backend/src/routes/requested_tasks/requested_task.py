@@ -79,8 +79,8 @@ class RequestedTasksRoute(BaseRoute):
         request_args = request.args.to_dict()
         validator = t.Dict(
             {
-                t.Key("skip", default=0): t.Int(gte=0),
-                t.Key("limit", default=10): t.Int(gt=0, lte=200),
+                t.Key("skip", default=0): t.ToInt(gte=0),
+                t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
                 t.Key("schedule_id", optional=True): ObjectIdValidator,
             }
         )
@@ -93,9 +93,9 @@ class RequestedTasksRoute(BaseRoute):
         if request_json:
             matchingValidator = t.Dict(
                 {
-                    t.Key("cpu"): t.Int(gte=0),
-                    t.Key("memory"): t.Int(gte=0),
-                    t.Key("disk"): t.Int(gte=0),
+                    t.Key("cpu"): t.ToInt(gte=0),
+                    t.Key("memory"): t.ToInt(gte=0),
+                    t.Key("disk"): t.ToInt(gte=0),
                     t.Key("offliners", optional=True): t.List(
                         t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
                     ),
@@ -107,7 +107,7 @@ class RequestedTasksRoute(BaseRoute):
             request_json_args = {}
 
         # unpack query parameter
-        skip, limit = int(request_args["skip"]), int(request_args["limit"])
+        skip, limit = request_args["skip"], request_args["limit"]
         schedule_id = request_args.get("schedule_id")
 
         # get requested tasks from database
