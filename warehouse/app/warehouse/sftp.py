@@ -11,6 +11,7 @@ from paramiko import sftp, SFTPServer, SFTPAttributes, SFTPHandle
 
 logger = logging.getLogger(__name__)
 
+ZIMFARM_WEBAPI = os.getenv('ZIMFARM_WEBAPI')
 
 class Server(paramiko.ServerInterface):
     def __init__(self):
@@ -25,7 +26,7 @@ class Server(paramiko.ServerInterface):
         return "publickey"
 
     def check_auth_publickey(self, username, key: paramiko.PKey):
-        url = 'https://farm.openzim.org/api/auth/validate/ssh_key'
+        url = ZIMFARM_WEBAPI + '/auth/validate/ssh_key'
         data = {
             'username': username,
             'key': key.get_base64()

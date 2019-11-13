@@ -17,4 +17,6 @@ EXPOSE 22
 
 COPY ./app /usr/src/app
 
+ENV ZIMFARM_WEBAPI https://api.farm.openzim.org
+
 ENTRYPOINT ["python3", "app/main.py"]
