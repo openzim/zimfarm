@@ -35,8 +35,8 @@ class TasksRoute(BaseRoute):
         request_args["status"] = request.args.getlist("status")
         validator = t.Dict(
             {
-                t.Key("skip", default=0): t.Int(gte=0),
-                t.Key("limit", default=100): t.Int(gt=0, lte=200),
+                t.Key("skip", default=0): t.ToInt(gte=0),
+                t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
                 t.Key("status", optional=True): t.List(t.Enum(*TaskStatus.all())),
                 t.Key("schedule_id", optional=True): ObjectIdValidator,
             }
@@ -52,9 +52,9 @@ class TasksRoute(BaseRoute):
         if statuses:
             query = {"status": {"$in": statuses}}
         else:
-            query = {"status": {"$nin": ["sent", "received"]}}
+            query = {"status": {"$nin": [TaskStatus.requested, TaskStatus.reserved]}}
         if schedule_id:
-            query["schedule._id"] = schedule_id
+            query["schedule_id"] = schedule_id
 
         count = Tasks().count_documents(query)
         projection = {"_id": 1, "status": 1, "timestamp.requested": 1, "schedule": 1}

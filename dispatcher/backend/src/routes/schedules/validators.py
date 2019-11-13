@@ -87,9 +87,9 @@ youtube_flags_validator = t.Dict(
 )
 
 resources_validator = t.Dict(
-    t.Key("cpu", optional=False, trafaret=t.Int(gte=0)),
-    t.Key("memory", optional=False, trafaret=t.Int(gte=0)),
-    t.Key("disk", optional=False, trafaret=t.Int(gte=0)),
+    t.Key("cpu", optional=False, trafaret=t.ToInt(gte=0)),
+    t.Key("memory", optional=False, trafaret=t.ToInt(gte=0)),
+    t.Key("disk", optional=False, trafaret=t.ToInt(gte=0)),
 )
 
 config_validator = ConfigValidator(
