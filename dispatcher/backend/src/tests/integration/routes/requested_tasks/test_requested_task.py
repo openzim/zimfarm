@@ -1,5 +1,6 @@
 import json
 
+from bson import ObjectId
 import pytest
 
 
@@ -84,14 +85,13 @@ class TestRequestedTaskCreate:
         response = client.post(url, headers=headers,
                                data=json.dumps({'schedule_names': [schedule["name"]]}))
         assert response.status_code == 201
-        data = json.loads(response.data)
-        database.requested_tasks.delete_one({'_id': data["requested"][0]["_id"]})
 
-        # send_task.assert_called_with(schedule['name'])
+        data = json.loads(response.data)
+        database.requested_tasks.delete_one({'_id': ObjectId(data["requested"][0]["_id"])})
 
     def test_create_with_wrong_schedule(self, client, access_token, schedule):
         url = '/requested-tasks/'
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
         response = client.post(url, headers=headers,
-                               data=json.dumps({'schedule_names': [schedule["name"]]}))
+                               data=json.dumps({'schedule_names': ["hello"]}))
         assert response.status_code == 404
