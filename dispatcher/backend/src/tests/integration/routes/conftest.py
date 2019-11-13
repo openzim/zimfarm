@@ -18,7 +18,7 @@ def make_config():
     def _make_config(sub_domain: str = 'en', format: str = 'nopic',
                      queue: str = 'offliner_default') -> dict:
         return {
-            'task_name': 'offliner.mwoffliner',
+            'task_name': 'mwoffliner',
             'queue': queue,
             'image': {
                 'name': 'openzim/mwoffliner',

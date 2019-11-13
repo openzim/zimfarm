@@ -23,7 +23,7 @@ def make_mwoffliner_flags(**kwargs):
 
 def make_mwoffliner_config(**kwargs):
     config = {
-        'task_name': 'offliner.mwoffliner',
+        'task_name': 'mwoffliner',
         'queue': 'medium',
         'warehouse_path': '/wikipedia',
         'image': {
@@ -38,7 +38,7 @@ def make_mwoffliner_config(**kwargs):
 
 def make_phet_config(**kwargs):
     config = {
-        'task_name': 'offliner.phet',
+        'task_name': 'phet',
         'queue': 'small',
         'warehouse_path': '/phet',
         'image': {
@@ -181,7 +181,7 @@ class TestConfigValidator:
             config_validator.check(config)
 
     @pytest.mark.parametrize('data', [
-        {'task_name': 'offliner.unknown'}, {'queue': 'minuscule'},
+        {'task_name': 'unknown'}, {'queue': 'minuscule'},
         {'warehouse_path': '/wikipedia/subdir'}, {'warehouse_path': '/bad_path'},
         {'image': {'name': 'unknown_offliner', 'tag': '1.0'}}, {'image': {'name': 'unknown_offliner'}},
         {'flags': make_mwoffliner_flags(mwUrl='bad_url')}
