@@ -1,5 +1,4 @@
 import json
-from unittest.mock import patch
 
 import pytest
 from bson import ObjectId
@@ -8,61 +7,49 @@ from common.entities import TaskStatus
 
 
 class TestTaskCreate:
-    @pytest.fixture(scope='session')
-    def send_task(self):
-        with patch('utils.celery.Celery.send_task_from_schedule') as mocked_send_task:
-            yield mocked_send_task
-
     @pytest.fixture()
-    def schedule(self, make_schedule):
-        schedule = make_schedule('wikipedia_en')
-        return schedule
+    def requested_task(self, make_requested_task):
+        requested_task = make_requested_task()
+        return requested_task
 
-    def test_create_from_schedule(self, client, access_token, schedule, send_task):
-        url = '/api/tasks/'
+    def test_create_from_schedule(self, client, access_token, requested_task):
+        url = '/tasks/{}'.format(str(requested_task["_id"]))
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
-        data = json.dumps({'schedule_names': [schedule.get('name')]})
-        response = client.post(url, headers=headers, data=data)
-        assert response.status_code == 200
+        response = client.post(url, headers=headers,
+                               query_string={"worker_name": "zimfarm_worker.com"})
+        assert response.status_code == 201
 
-        send_task.assert_called_with(schedule['name'])
+        # send_task.assert_called_with(schedule['name'])
 
-    @pytest.mark.parametrize('body', [
-        None, '', '[]', '{"test": 123}'
-    ])
-    def test_create_with_bad_body(self, client, access_token, body):
-        url = '/api/tasks/'
-        response = client.post(url, headers={'Authorization': access_token}, data=body)
+    def test_create_with_missing_worker(self, client, access_token, requested_task):
+        url = '/tasks/{}'.format(str(requested_task["_id"]))
+        response = client.post(url, headers={'Authorization': access_token})
         assert response.status_code == 400
 
 
 class TestTaskList:
-    url = '/api/tasks/'
+    url = '/tasks/'
 
     def _assert_task(self, task, item):
-        assert set(item.keys()) == {'_id', 'status', 'schedule'}
+        assert set(item.keys()) == {'_id', 'timestamp', 'status'}
         assert item['_id'] == str(task['_id'])
         assert item['status'] == task['status']
-        assert item['schedule']['_id'] == str(task['schedule']['_id'])
-        assert item['schedule']['name'] == task['schedule']['name']
+        # assert item['schedule_id'] == str(task['schedule']['_id'])
+        # assert item['schedule_name'] == task['schedule']['name']
 
     @pytest.mark.parametrize('query_param',
                              [{'schedule_id': 'a'}, {'schedule_id': 123}])
-    def test_bad_rquest(self, client, access_token, query_param):
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+    def test_bad_rquest(self, client, query_param):
+        headers = {'Content-Type': 'application/json'}
         response = client.get(self.url,
                               headers=headers,
                               query_string=query_param)
         assert response.status_code == 400
 
-    def test_unauthorized(self, client, tasks):
-        response = client.get(self.url)
-        assert response.status_code == 401
+    def test_list(self, client, tasks):
+        tasks = [task for task in tasks if task['status'] not in [TaskStatus.requested, TaskStatus.reserved]]
 
-    def test_list(self, client, access_token, tasks):
-        tasks = [task for task in tasks if task['status'] not in [TaskStatus.sent, TaskStatus.received]]
-
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        headers = {'Content-Type': 'application/json'}
         response = client.get(self.url, headers=headers)
         assert response.status_code == 200
 
@@ -77,9 +64,9 @@ class TestTaskList:
             item = items[index]
             self._assert_task(task, item)
 
-    def test_list_pagination(self, client, access_token, tasks):
-        url = '/api/tasks/?limit={}&skip={}'.format(10, 5)
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+    def test_list_pagination(self, client, tasks):
+        url = '/tasks/?limit={}&skip={}'.format(10, 5)
+        headers = {'Content-Type': 'application/json'}
         response = client.get(url, headers=headers)
         assert response.status_code == 200
 
@@ -87,13 +74,13 @@ class TestTaskList:
         assert data['meta']['limit'] == 10
         assert data['meta']['skip'] == 5
 
-    @pytest.mark.parametrize('statuses', [[TaskStatus.succeeded], [TaskStatus.succeeded, TaskStatus.received]])
-    def test_status(self, client, access_token, tasks, statuses):
-        url = f'/api/tasks/?'
+    @pytest.mark.parametrize('statuses', [[TaskStatus.succeeded], [TaskStatus.succeeded, TaskStatus.started]])
+    def test_status(self, client, tasks, statuses):
+        url = f'/tasks/?'
         for status in statuses:
             url += f'status={status}&'
 
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        headers = {'Content-Type': 'application/json'}
         response = client.get(url, headers=headers)
         assert response.status_code == 200
 
@@ -105,7 +92,7 @@ class TestTaskList:
             task = tasks[ObjectId(item['_id'])]
             self._assert_task(task, item)
 
-    def test_schedule_id(self, client, access_token, make_task):
+    def test_schedule_id(self, client, make_task):
         """Test list tasks with schedule id as filter"""
 
         # generate tasks with two schedule ids
@@ -116,7 +103,7 @@ class TestTaskList:
             make_task(schedule_id=another_schedule_id)
 
         # make request
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+        headers = {'Content-Type': 'application/json'}
         response = client.get(self.url, headers=headers, query_string={'schedule_id': schedule_id})
         assert response.status_code == 200
 
@@ -126,62 +113,52 @@ class TestTaskList:
 
 
 class TestTaskGet:
-    def test_unauthorized(self, client, task):
-        url = '/api/tasks/{}'.format(task['_id'])
-        response = client.get(url)
-        assert response.status_code == 401
-
-    def test_not_found(self, client, access_token):
-        url = '/api/tasks/task_id'
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+    def test_not_found(self, client):
+        url = '/tasks/task_id'
+        headers = {'Content-Type': 'application/json'}
         response = client.get(url, headers=headers)
         assert response.status_code == 404
 
-    def test_get(self, client, access_token, task):
-        url = '/api/tasks/{}'.format(task['_id'])
-        headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
+    def test_get(self, client, task):
+        url = '/tasks/{}'.format(task['_id'])
+        headers = {'Content-Type': 'application/json'}
         response = client.get(url, headers=headers)
         assert response.status_code == 200
 
         data = json.loads(response.data)
         assert data['_id'] == str(task['_id'])
         assert data['status'] == task['status']
-        assert data['schedule']['_id'] == str(task['schedule']['_id'])
-        assert data['schedule']['name'] == task['schedule']['name']
+        assert data['schedule_id'] == str(task['schedule_id'])
+        assert data['schedule_name'] == task['schedule_name']
         assert 'timestamp' in data
         assert 'events' in data
 
 
 class TestTaskCancel:
     def test_unauthorized(self, client, task):
-        url = '/api/tasks/{}/cancel'.format(task['_id'])
+        url = '/tasks/{}/cancel'.format(task['_id'])
         response = client.post(url)
         assert response.status_code == 401
 
     def test_not_found(self, client, access_token):
-        url = '/api/tasks/task_id/cancel'
+        url = '/tasks/task_id/cancel'
         headers = {'Authorization': access_token, 'Content-Type': 'application/json'}
         response = client.post(url, headers=headers)
         assert response.status_code == 404
 
-    @pytest.fixture(scope='session')
-    def celery_ctrl(self):
-        with patch('utils.celery.Celery.control') as mocked_celery_control:
-            yield mocked_celery_control
-
-    def test_wrong_statuses(self, client, access_token, tasks, celery_ctrl):
+    def test_wrong_statuses(self, client, access_token, tasks):
         for task in filter(lambda x: x['status'] not in TaskStatus.incomplete(), tasks):
-            url = '/api/tasks/{}/cancel'.format(task['_id'])
+            url = '/tasks/{}/cancel'.format(task['_id'])
             headers = {'Authorization': access_token,
                        'Content-Type': 'application/json'}
             response = client.post(url, headers=headers)
             assert response.status_code == 404
 
-    def test_cancel_task(self, client, access_token, tasks, celery_ctrl):
+    def test_cancel_task(self, client, access_token, tasks):
         for task in filter(lambda x: x['status'] in TaskStatus.incomplete(), tasks):
-            url = '/api/tasks/{}/cancel'.format(task['_id'])
+            url = '/tasks/{}/cancel'.format(task['_id'])
             headers = {'Authorization': access_token,
                        'Content-Type': 'application/json'}
             response = client.post(url, headers=headers)
             assert response.status_code == 200
-            celery_ctrl.revoke.assert_called_with(str(task['_id']), terminate=True)
+            # celery_ctrl.revoke.assert_called_with(str(task['_id']), terminate=True)

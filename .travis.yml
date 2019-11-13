@@ -21,7 +21,7 @@ matrix:
         - cd dispatcher/backend/src
         - export PYTHONPATH=$PWD
         - export MONGO_HOSTNAME=localhost
-        - python prestart.py
+        - python -c "from utils.database import Initializer; Initializer.create_initial_user()"
       script: pytest tests/integration --cov=./
       after_success:
         - codecov
