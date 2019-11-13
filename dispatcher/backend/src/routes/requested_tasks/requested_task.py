@@ -36,7 +36,7 @@ class RequestedTasksRoute(BaseRoute):
             raise InvalidRequestJSON()
 
         # verify requested names exists
-        if not Schedules().count_documents({"name": {"$in": schedule_names}}) == len(
+        if not Schedules().count_documents({"name": {"$in": schedule_names}}) >= len(
             schedule_names
         ):
             raise NotFound()
