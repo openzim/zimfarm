@@ -17,7 +17,6 @@ from common.dispatcher import get_token_ssh, query_api
 
 
 class BaseWorker:
-
     def print_config(self, **kwargs):
         # log configuration values
         config_str = "configuration:"

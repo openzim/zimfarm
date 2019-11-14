@@ -16,7 +16,7 @@ class Warehouse:
         pass
 
     def start(self):
-        self.logger.info('Welcome to Zimfarm warehouse')
+        self.logger.info("Welcome to Zimfarm warehouse")
 
         self._configure_root_dir()
         key = self._get_private_key()
@@ -28,26 +28,30 @@ class Warehouse:
                 thread = Thread(client, address, key)
                 thread.start()
             except Exception as e:
-                self.logger.error('Failed to accept incoming connection: %s', e)
+                self.logger.error("Failed to accept incoming connection: %s", e)
 
     def _get_private_key(self) -> paramiko.RSAKey:
         try:
-            path = os.getenv('RSA_KEY')
+            path = os.getenv("RSA_KEY")
             if path is None:
-                raise errors.MissingEnvironmentalVariable('RSA_KEY')
+                raise errors.MissingEnvironmentalVariable("RSA_KEY")
 
             key = paramiko.RSAKey(filename=path)
-            self.logger.info('Using private key -- {}'.format(path))
+            self.logger.info("Using private key -- {}".format(path))
             return key
-        except (errors.MissingEnvironmentalVariable, FileNotFoundError, paramiko.SSHException) as e:
+        except (
+            errors.MissingEnvironmentalVariable,
+            FileNotFoundError,
+            paramiko.SSHException,
+        ) as e:
             self.logger.error(e)
             sys.exit(1)
 
     def _bind_socket(self) -> socket.socket:
         try:
-            port = os.getenv('PORT', 22)
+            port = os.getenv("PORT", 22)
             if port is None:
-                raise errors.MissingEnvironmentalVariable('PORT')
+                raise errors.MissingEnvironmentalVariable("PORT")
         except errors.MissingEnvironmentalVariable as e:
             self.logger.error(e)
             sys.exit(1)
@@ -55,18 +59,22 @@ class Warehouse:
         try:
             port = int(port)
         except ValueError:
-            self.logger.error('Socket binding failed -- {} cannot be converted to integer'.format(port))
+            self.logger.error(
+                "Socket binding failed -- {} cannot be converted to integer".format(
+                    port
+                )
+            )
             sys.exit(1)
 
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.bind(('', port))
+            sock.bind(("", port))
             sock.listen(10)
-            self.logger.info('Listening on port {}'.format(port))
+            self.logger.info("Listening on port {}".format(port))
             return sock
         except Exception as e:
-            self.logger.error('Socket binding failed -- {}'.format(e))
+            self.logger.error("Socket binding failed -- {}".format(e))
             sys.exit(1)
 
     @staticmethod
@@ -74,9 +82,9 @@ class Warehouse:
         """Create root dir if not exist and set root in `sftp.Handler`
         :return:
         """
-        root = os.getenv('ROOT_PATH', '/files')
+        root = os.getenv("ROOT_PATH", "/files")
 
-        for subdir_name in ('zim', 'logs'):
+        for subdir_name in ("zim", "logs"):
             subdir = os.path.join(root, subdir_name)
             if os.path.exists(subdir):
                 if not os.path.isdir(subdir):
