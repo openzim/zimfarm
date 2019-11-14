@@ -222,8 +222,6 @@ def upload_file(
 
     logger.info("Executing: {args}\n".format(args=" ".join(args)))
 
-    sys.exit(1)
-
     curl = subprocess.run(args=args, capture_output=True, text=True)
 
     if curl.returncode == 0:
