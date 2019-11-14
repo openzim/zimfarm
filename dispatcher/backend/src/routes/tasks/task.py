@@ -49,10 +49,9 @@ class TasksRoute(BaseRoute):
         schedule_id = request_args.get("schedule_id")
 
         # get tasks from database
+        query = {}
         if statuses:
-            query = {"status": {"$in": statuses}}
-        else:
-            query = {"status": {"$nin": [TaskStatus.requested, TaskStatus.reserved]}}
+            query["status"] = {"$in": statuses}
         if schedule_id:
             query["schedule_id"] = schedule_id
 
