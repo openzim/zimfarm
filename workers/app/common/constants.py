@@ -30,6 +30,7 @@ OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
 
 # task-related
 CANCELED = "canceled"
+CANCEL_REQUESTED = "cancel_requested"
 
 # docker resources
 DEFAULT_CPU_SHARE = 1024

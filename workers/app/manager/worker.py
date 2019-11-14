@@ -16,7 +16,7 @@ import humanfriendly
 from common import logger
 from common.worker import BaseWorker
 from common.docker import query_host_stats, stop_task_worker, start_task_worker
-from common.constants import CANCELED, SUPPORTED_OFFLINERS
+from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
 class WorkerManager(BaseWorker):
@@ -110,11 +110,11 @@ class WorkerManager(BaseWorker):
 
     def check_cancellation(self):
         for task_id, task in self.tasks.items():
-            if task["status"] == CANCELED:
+            if task["status"] in [CANCELED, CANCEL_REQUESTED]:
                 continue  # already handling cancellation
 
             self.update_task_data(task_id)
-            if task["status"] == CANCELED:
+            if task["status"] in [CANCELED, CANCEL_REQUESTED]:
                 self.cancel_and_remove_task(task_id)
 
     def cancel_and_remove_task(self, task_id):

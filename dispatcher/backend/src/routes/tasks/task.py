@@ -195,7 +195,7 @@ class TaskCancelRoute(BaseRoute):
             username = None
 
         result = task_event_handler(
-            task["_id"], TaskStatus.canceled, {"canceled_by": username}
+            task["_id"], TaskStatus.cancel_requested, {"canceled_by": username}
         )
 
         # broadcast cancel-request to worker
