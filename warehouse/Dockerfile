@@ -6,7 +6,7 @@ COPY ./app/requirements.txt /usr/src/app/requirements.txt
 
 RUN pip3 install -r ./app/requirements.txt
 RUN mkdir /files
-RUN ssh-keygen -t rsa -N "" -f server.key
+RUN ssh-keygen -t RSA -m PEM -N "" -f server.key
 
 ENV RSA_KEY server.key
 ENV PORT 22
