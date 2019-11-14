@@ -52,5 +52,5 @@ def main():
         public_server.send_string(received_string)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

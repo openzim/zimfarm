@@ -11,7 +11,8 @@ from paramiko import sftp, SFTPServer, SFTPAttributes, SFTPHandle
 
 logger = logging.getLogger(__name__)
 
-ZIMFARM_WEBAPI = os.getenv('ZIMFARM_WEBAPI')
+ZIMFARM_WEBAPI = os.getenv("ZIMFARM_WEBAPI")
+
 
 class Server(paramiko.ServerInterface):
     def __init__(self):
@@ -26,14 +27,11 @@ class Server(paramiko.ServerInterface):
         return "publickey"
 
     def check_auth_publickey(self, username, key: paramiko.PKey):
-        url = ZIMFARM_WEBAPI + '/auth/validate/ssh_key'
-        data = {
-            'username': username,
-            'key': key.get_base64()
-        }
+        url = ZIMFARM_WEBAPI + "/auth/validate/ssh_key"
+        data = {"username": username, "key": key.get_base64()}
         data = json.dumps(data).encode()
-        headers = {'content-type': 'application/json'}
-        request = urllib.request.Request(url, data, headers, method='POST')
+        headers = {"content-type": "application/json"}
+        request = urllib.request.Request(url, data, headers, method="POST")
 
         try:
             urllib.request.urlopen(request)
@@ -49,7 +47,7 @@ class Server(paramiko.ServerInterface):
 
 
 class Handler(paramiko.SFTPServerInterface):
-    root: str = ''
+    root: str = ""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -129,17 +127,17 @@ class Handler(paramiko.SFTPServerInterface):
         # set mode
         if flags & os.O_WRONLY:
             if flags & os.O_APPEND:
-                mode = 'ab'
+                mode = "ab"
             else:
-                mode = 'wb'
+                mode = "wb"
         elif flags & os.O_RDWR:
             if flags & os.O_APPEND:
-                mode = 'a+b'
+                mode = "a+b"
             else:
-                mode = 'r+b'
+                mode = "r+b"
         else:
             # O_RDONLY (== 0)
-            mode = 'rb'
+            mode = "rb"
 
         # open file object
         try:

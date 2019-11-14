@@ -67,7 +67,7 @@ def main():
             webapi_uri=args.webapi_uri,
             socket_uri=args.socket_uri,
             workdir=args.workdir,
-            worker_name=args.worker_name
+            worker_name=args.worker_name,
         )
         sys.exit(manager.run())
     except Exception as exc:

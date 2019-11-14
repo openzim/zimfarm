@@ -3,4 +3,4 @@ class MissingEnvironmentalVariable(Exception):
         self.variable_name = variable_name
 
     def __str__(self):
-        return 'Missing Environmental Variable {}'.format(self.variable_name)
+        return "Missing Environmental Variable {}".format(self.variable_name)

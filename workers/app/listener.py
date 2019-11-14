@@ -19,6 +19,7 @@ if not logger.hasHandlers():
     handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s"))
     logger.addHandler(handler)
 
+
 def main():
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
@@ -34,5 +35,5 @@ def main():
         logger.info(f"[INCOMING] {received_string}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
