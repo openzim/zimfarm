@@ -182,7 +182,7 @@ def task_cancel_requested_event_handler(task_id, payload):
 
     save_event(
         task_id,
-        TaskStatus.canceled,
+        TaskStatus.cancel_requested,
         get_timestamp_from_event(payload),
         canceled_by=requested_by,
     )
