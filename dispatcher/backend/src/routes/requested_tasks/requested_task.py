@@ -36,16 +36,18 @@ class RequestedTasksRoute(BaseRoute):
             raise InvalidRequestJSON()
 
         # verify requested names exists
-        if not Schedules().count_documents({"name": {"$in": schedule_names}}) >= len(
-            schedule_names
-        ):
+        if not Schedules().count_documents(
+            {"name": {"$in": schedule_names}, "enabled": True}
+        ) >= len(schedule_names):
             raise NotFound()
 
         now = datetime.datetime.now(tz=pytz.utc)
         requested_tasks = []
         for schedule_name in schedule_names:
 
-            schedule = Schedules().find_one({"name": schedule_name}, {"config": 1})
+            schedule = Schedules().find_one(
+                {"name": schedule_name, "enabled": True}, {"config": 1}
+            )
             config = schedule.get("config")
 
             if not config:
