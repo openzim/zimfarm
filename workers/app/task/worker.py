@@ -337,7 +337,7 @@ class TaskWorker(BaseWorker):
             return
 
         # not running but _was_ running
-        elif self.uploader:
+        if self.uploader:
             # find file
             zim_file = self.uploader.labels["filename"]
             # get result of container
@@ -356,7 +356,7 @@ class TaskWorker(BaseWorker):
                 zim_file, _ = self.pending_zim_files.pop()
             except Exception:
                 # no more pending files,
-                pass
+                logger.debug("failed to get ZIM file: pending_zim_files empty")
             else:
                 self.start_uploader(
                     f"zim{self.task['config']['warehouse_path']}",
@@ -381,8 +381,7 @@ class TaskWorker(BaseWorker):
             if self.log_uploader.status in RUNNING_STATUSES:
                 # still uploading
                 return
-            else:
-                self.log_uploader = None
+            self.log_uploader = None
 
         self.log_uploader = start_uploader(
             self.docker,

@@ -121,12 +121,11 @@ class TaskRoute(BaseRoute):
             try:
                 Tasks().delete_one({"_id": task_id})
             except Exception:
-                pass
+                logger.debug(f"unable to revert deletion of task #{task_id}")
             raise exc
 
         try:
             RequestedTasks().delete_one({"_id": task_id})
-            pass
         except Exception as exc:
             logger.exception(exc)  # and pass
 

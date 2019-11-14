@@ -4,7 +4,7 @@ JS_PATH=/usr/share/nginx/html/environ.js
 echo "dump ZIMFARM_* environ variables to $JS_PATH"
 
 json_output="environ = {\n"
-envs_output=`env`
+envs_output=$(env)
 envLines=(${envs_output/\\n/ })
 for envLine in "${envLines[@]}"; do
 	lineElems=(${envLine/=/ })
