@@ -147,14 +147,14 @@ class TestMWOfflinerFlagsValidator:
             mwoffliner_flags_validator.check(flags)
 
     @pytest.mark.parametrize(
-        "format, expected",
+        "mwformat, expected",
         [
             (["nopic", "nopic"], ["nopic"]),
             (["novid", "novid", "novid", "nopic"], ["novid", "nopic"]),
         ],
     )
-    def test_duplicated_formats(self, format, expected):
-        flags = make_mwoffliner_flags(format=format)
+    def test_duplicated_formats(self, mwformat, expected):
+        flags = make_mwoffliner_flags(format=mwformat)
         result = mwoffliner_flags_validator.check(flags)
         assert set(result["format"]) == set(expected)
 

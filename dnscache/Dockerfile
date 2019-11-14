@@ -2,7 +2,7 @@ FROM alpine:edge
 
 RUN apk update && apk --no-cache add dnsmasq
 
-RUN echo -e "# CloudFlare\nnameserver 1.1.1.1\n# Google DNS\nnameserver 8.8.8.8\n# OpenDNS\n# nameserver 208.67.222.222\n# nameserver 208.67.220.220" > /etc/resolv.dnsmasq.public
+RUN printf "# CloudFlare\nnameserver 1.1.1.1\n# Google DNS\nnameserver 8.8.8.8\n# OpenDNS\n# nameserver 208.67.222.222\n# nameserver 208.67.220.220" > /etc/resolv.dnsmasq.public
 RUN ln -sf /etc/resolv.conf /etc/resolv.dnsmasq
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
