@@ -13,22 +13,23 @@ def authenticate2(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
-            if 'token' in request.headers:
-                token = request.headers['token']
-            elif 'Authorization' in request.headers:
-                token = request.headers['Authorization']
-                token_parts = token.split(' ')
+            if "token" in request.headers:
+                token = request.headers["token"]
+            elif "Authorization" in request.headers:
+                token = request.headers["Authorization"]
+                token_parts = token.split(" ")
                 if len(token_parts) > 1:
                     token = token_parts[1]
             else:
                 token = None
             payload = AccessToken.decode(token)
-            kwargs['token'] = AccessToken.Payload(payload)
+            kwargs["token"] = AccessToken.Payload(payload)
             return f(*args, **kwargs)
         except jwt_exceptions.ExpiredSignatureError:
-            raise Unauthorized('token expired')
+            raise Unauthorized("token expired")
         except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
-            raise Unauthorized('token invalid')
+            raise Unauthorized("token invalid")
+
     return wrapper
 
 
@@ -36,22 +37,23 @@ def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
-            token = request.headers.get('Authorization', '')
-            token_parts = token.split(' ')
+            token = request.headers.get("Authorization", "")
+            token_parts = token.split(" ")
             if len(token_parts) > 1:
                 token = token_parts[1]
-            kwargs['token'] = AccessControl.decode(token)
+            kwargs["token"] = AccessControl.decode(token)
 
             try:
                 response = f(*args, **kwargs)
             except TypeError:
-                kwargs.pop('token')
+                kwargs.pop("token")
                 response = f(*args, **kwargs)
             return response
         except jwt_exceptions.ExpiredSignatureError:
-            raise Unauthorized('token expired')
+            raise Unauthorized("token expired")
         except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
-            raise Unauthorized('token invalid')
+            raise Unauthorized("token invalid")
+
     return wrapper
 
 
@@ -69,7 +71,9 @@ def bson_object_id(keys: list):
                 except InvalidId:
                     raise BadRequest(message="Invalid ObjectID")
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorate
 
 
@@ -87,5 +91,7 @@ def url_object_id(names: Union[list, str]):
                 except InvalidId:
                     pass
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorate

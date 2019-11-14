@@ -152,9 +152,7 @@ def task_reserved_event_handler(task_id, payload):
 def task_started_event_handler(task_id, payload):
     logger.info(f"Task Started: {task_id}")
 
-    save_event(
-        task_id, TaskStatus.started, get_timestamp_from_event(payload)
-    )
+    save_event(task_id, TaskStatus.started, get_timestamp_from_event(payload))
 
 
 def task_suceeded_event_handler(task_id, payload):
@@ -179,7 +177,7 @@ def task_failed_event_handler(task_id, payload):
 
 
 def task_cancel_requested_event_handler(task_id, payload):
-    requested_by = payload.get("canceled_by"),
+    requested_by = (payload.get("canceled_by"),)
     logger.info(f"Task Cancellation Requested: {task_id}, by: {requested_by}")
 
     save_event(
@@ -223,12 +221,7 @@ def task_scraper_completed_event_handler(task_id, payload):
     exit_code = payload.get("exit_code")
     logger.info(f"Task Container Finished: {task_id}, {exit_code}")
 
-    save_event(
-        task_id,
-        TaskStatus.scraper_completed,
-        timestamp,
-        exit_code=exit_code,
-    )
+    save_event(task_id, TaskStatus.scraper_completed, timestamp, exit_code=exit_code)
 
 
 def task_scraper_killed_event_handler(task_id, payload):
