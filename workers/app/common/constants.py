@@ -16,7 +16,7 @@ WORKER_MANAGER = "worker-manager"
 TASK_WORKER = "task-worker"
 
 # images
-TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/task_worker:latest")
+TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager

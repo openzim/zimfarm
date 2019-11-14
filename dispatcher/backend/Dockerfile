@@ -1,8 +1,5 @@
 FROM python:3.8-buster
 
-RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-RUN echo "UTC" > /etc/timezone
-
 RUN pip install -U pip
 RUN pip install uwsgi==2.0.18
 
