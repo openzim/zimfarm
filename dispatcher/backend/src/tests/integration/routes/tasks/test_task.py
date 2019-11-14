@@ -12,7 +12,7 @@ class TestTaskCreate:
         requested_task = make_requested_task()
         return requested_task
 
-    def test_create_from_schedule(self, client, access_token, requested_task):
+    def test_create_from_schedule(self, database, client, access_token, requested_task):
         url = "/tasks/{}".format(str(requested_task["_id"]))
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         response = client.post(
@@ -20,7 +20,10 @@ class TestTaskCreate:
         )
         assert response.status_code == 201
 
-        # send_task.assert_called_with(schedule['name'])
+        data = json.loads(response.data)
+        database.tasks.delete_one(
+            {"_id": ObjectId(data["_id"])}
+        )
 
     def test_create_with_missing_worker(self, client, access_token, requested_task):
         url = "/tasks/{}".format(str(requested_task["_id"]))
@@ -45,12 +48,6 @@ class TestTaskList:
         assert response.status_code == 400
 
     def test_list(self, client, tasks):
-        tasks = [
-            task
-            for task in tasks
-            if task["status"] not in [TaskStatus.requested, TaskStatus.reserved]
-        ]
-
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers)
         assert response.status_code == 200
@@ -171,4 +168,3 @@ class TestTaskCancel:
             }
             response = client.post(url, headers=headers)
             assert response.status_code == 200
-            # celery_ctrl.revoke.assert_called_with(str(task['_id']), terminate=True)

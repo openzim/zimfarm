@@ -177,7 +177,7 @@ def task_failed_event_handler(task_id, payload):
 
 
 def task_cancel_requested_event_handler(task_id, payload):
-    requested_by = (payload.get("canceled_by"),)
+    requested_by = payload.get("canceled_by")
     logger.info(f"Task Cancellation Requested: {task_id}, by: {requested_by}")
 
     save_event(
