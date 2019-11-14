@@ -7,4 +7,4 @@ class ObjectIdValidator(t.String):
         try:
             return ObjectId(value)
         except InvalidId:
-            self._failure('Invalid Mongo ObjectId')
+            self._failure("Invalid Mongo ObjectId")

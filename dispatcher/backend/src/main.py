@@ -31,6 +31,7 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s"))
 logger.addHandler(handler)
 
+
 @app.route("/")
 def home():
     return Response("zimfarm API")
