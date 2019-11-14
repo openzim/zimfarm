@@ -8,7 +8,7 @@ from flask.json import JSONEncoder
 class Encoder(JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
-            return o.isoformat() + 'Z'
+            return o.isoformat() + "Z"
         elif isinstance(o, UUID):
             return str(o)
         elif isinstance(o, ObjectId):

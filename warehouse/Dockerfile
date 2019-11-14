@@ -1,7 +1,8 @@
 FROM python:latest
 
 WORKDIR /usr/src
-COPY ./app /usr/src/app
+
+COPY ./app/requirements.txt /usr/src/app/requirements.txt
 
 RUN pip3 install -r ./app/requirements.txt
 RUN mkdir /files
@@ -13,5 +14,9 @@ ENV ROOT_PATH /files
 ENV LOG_PATH /warehouse.log
 
 EXPOSE 22
+
+COPY ./app /usr/src/app
+
+ENV ZIMFARM_WEBAPI https://api.farm.openzim.org
 
 ENTRYPOINT ["python3", "app/main.py"]
