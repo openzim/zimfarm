@@ -147,7 +147,7 @@ class TestMWOfflinerFlagsValidator:
             mwoffliner_flags_validator.check(flags)
 
     @pytest.mark.parametrize(
-        "format, expected",
+        "mwformat, expected",
         [
             (["nopic", "nopic"], ["nopic"]),
             (["novid", "novid", "novid", "nopic"], ["novid", "nopic"]),
