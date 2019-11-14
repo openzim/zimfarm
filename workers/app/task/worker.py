@@ -345,7 +345,7 @@ class TaskWorker(BaseWorker):
                 self.zim_files[zim_file] = UPLOADED
                 self.mark_file_uploaded(zim_file)
             else:
-                self[zim_file] = FAILED
+                self.zim_files[zim_file] = FAILED
                 logger.error(f"ZIM Uploader:: {self.uploader.logs()}")
             self.uploader.remove()
             self.uploader = None
