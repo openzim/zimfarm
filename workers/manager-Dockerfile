@@ -5,9 +5,6 @@ WORKDIR /usr/src
 COPY manager-requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-RUN echo "UTC" > /etc/timezone
-
 COPY app app
 RUN ln -s /usr/src/app/worker_manager.py /usr/local/bin/worker-manager
 RUN chmod +x /usr/local/bin/worker-manager
