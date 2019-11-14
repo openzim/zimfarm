@@ -16,34 +16,34 @@ def register_handlers(app: Flask):
     app.errorhandler(http.HTTPBase)(http.handler)
 
     @app.errorhandler(trafaret.dataerror.DataError)
-    def handler(e):
+    def handler_dataerror(e):
         print(e.error)
-        response = jsonify({'message': e.as_dict()})
+        response = jsonify({"message": e.as_dict()})
         response.status_code = 400
         return response
 
     @app.errorhandler(jwt_exceptions.ExpiredSignature)
-    def handler(_):
-        response = jsonify({'error': 'token expired'})
+    def handler_expiredsig(_):
+        response = jsonify({"error": "token expired"})
         response.status_code = 401
         return response
 
     @app.errorhandler(jwt_exceptions.InvalidTokenError)
-    def handler(_):
-        response = jsonify({'error': 'token invalid'})
+    def handler_invalidtoken(_):
+        response = jsonify({"error": "token invalid"})
         response.status_code = 401
         return response
 
 
 # 400
 class BadRequest(Exception):
-    def __init__(self, message: str=None):
+    def __init__(self, message: str = None):
         self.message = message
 
     @staticmethod
     def handler(e):
         if isinstance(e, BadRequest) and e.message is not None:
-            response = jsonify({'error': e.message})
+            response = jsonify({"error": e.message})
             response.status_code = 400
             return response
         else:
@@ -66,13 +66,13 @@ class OfflinerConfigNotValid(Exception):
 
 # 401
 class Unauthorized(Exception):
-    def __init__(self, message: str=None):
+    def __init__(self, message: str = None):
         self.message = message
 
     @staticmethod
     def handler(e):
         if isinstance(e, Unauthorized) and e.message is not None:
-            response = jsonify({'error': e.message})
+            response = jsonify({"error": e.message})
             response.status_code = 401
             return response
         else:
@@ -81,18 +81,18 @@ class Unauthorized(Exception):
 
 class NotEnoughPrivilege(Unauthorized):
     def __init__(self):
-        super().__init__('you are not authorized to perform this operation')
+        super().__init__("you are not authorized to perform this operation")
 
 
 # 404
 class NotFound(Exception):
-    def __init__(self, message: str=None):
+    def __init__(self, message: str = None):
         self.message = message
 
     @staticmethod
     def handler(e):
         if isinstance(e, NotFound) and e.message is not None:
-            response = jsonify({'error': e.message})
+            response = jsonify({"error": e.message})
             response.status_code = 404
             return response
         else:

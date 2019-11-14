@@ -1,5 +1,0 @@
-celery==4.3.0
-docker==4.0.1
-paramiko==2.5.0
-cryptography==2.7
-aiodocker==0.14.0

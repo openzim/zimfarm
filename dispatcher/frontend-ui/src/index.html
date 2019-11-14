@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Zimfarm</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<link rel="icon" type="image/x-icon" href="assets/favicon.svg">
+	<link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon" />
+	<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+	<link rel="apple-touch-icon" sizes="57x57" href="assets/apple-touch-icon-57x57.png" />
+	<link rel="apple-touch-icon" sizes="72x72" href="assets/apple-touch-icon-72x72.png" />
+	<link rel="apple-touch-icon" sizes="76x76" href="assets/apple-touch-icon-76x76.png" />
+	<link rel="apple-touch-icon" sizes="114x114" href="assets/apple-touch-icon-114x114.png" />
+	<link rel="apple-touch-icon" sizes="120x120" href="assets/apple-touch-icon-120x120.png" />
+	<link rel="apple-touch-icon" sizes="144x144" href="assets/apple-touch-icon-144x144.png" />
+	<link rel="apple-touch-icon" sizes="152x152" href="assets/apple-touch-icon-152x152.png" />
+	<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon-180x180.png" />
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+	<header>
+		<img src="assets/favicon.svg"><label>Zimfarm</label>
+	</header>
+	<div id="app" class="container">
+		<div v-if="loading">
+			<div  class="spinner-border" role="status">
+				<span class="sr-only">Loading</span>
+			</div>
+			<span>Fetching data…</span>
+		</div>
+		<nav><label>Filters:</label>
+			<select v-model="selectedCategories" @change="loadSchedules">
+				<option value="" selected="selected">Categories</option>
+				<option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+			</select>
+			<select v-model="selectedLanguages" @change="loadSchedules">
+				<option value="" selected="selected">Language</option>
+				<option v-for="language in languages" :key="language.code" :value="language.code">{{ language.name_en }}</option>
+			</select>
+			<select v-model="selectedTags" @change="loadSchedules">
+				<option value="" selected="selected">Tags</option>
+				<option v-for="tag in tags" :key="tag" :value="tag">{{ tag }}</option>
+			</select>
+		</nav>
+		<table v-if="schedules.length" class="table table-striped table-hover">
+			<thead class="thead-dark">
+				<tr><th>Name</th><th>Category</th><th>Language</th><th>Task</th></tr>
+			</thead>
+			<tbody>
+				<tr v-for="schedule in schedules" :key="schedule._id">
+					<td>{{ schedule.name }}</td>
+					<td>{{ schedule.category }}</td>
+					<td>{{ schedule.language.name_en }}</td>
+					<td>{{ schedule.config.task_name }}</td>
+				</tr>
+		</table>
+	</div>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script> -->
+	<script type="application/javascript" src="environ.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>

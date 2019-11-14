@@ -4,7 +4,7 @@ from .schedule import ScheduleRoute, SchedulesRoute, SchedulesBackupRoute
 
 class Blueprint(BaseBlueprint):
     def __init__(self):
-        super().__init__('schedules', __name__, url_prefix='/api/schedules')
+        super().__init__("schedules", __name__, url_prefix="/schedules")
 
         self.register_route(SchedulesRoute())
         self.register_route(ScheduleRoute())

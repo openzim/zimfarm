@@ -4,17 +4,17 @@ from flask import request, Response, Blueprint
 
 
 class BaseRoute:
-    rule = ''
-    name = ''
+    rule = ""
+    name = ""
     methods = []
 
     def __call__(self, *args, **kwargs):
         handlers = {
-            'GET': self.get,
-            'POST': self.post,
-            'PUT': self.put,
-            'PATCH': self.patch,
-            'DELETE': self.delete
+            "GET": self.get,
+            "POST": self.post,
+            "PUT": self.put,
+            "PATCH": self.patch,
+            "DELETE": self.delete,
         }
         handler = handlers[request.method]
         return handler(*args, **kwargs)

@@ -1,6 +1,8 @@
 # ZIM Farm
 
-backend: [![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm)
+[![CodeFactor](https://www.codefactor.io/repository/github/openzim/zimfarm/badge)](https://www.codefactor.io/repository/github/openzim/zimfarm)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm) (backend)
 
 The ZIM farm (zimfarm) is a half-decentralised software solution to
 build [ZIM files](http://www.openzim.org/) efficiently. This means scrapping Web contents,
@@ -11,11 +13,11 @@ ZIM files repository.
 
 The whole zimfarm system works as a task scheduler and is made of two components:
 
-* The **dispatcher**, the central node, which takes and dispatches zim file generation
+* The [**dispatcher**](http://hub.docker.com/r/openzim/zimfarm-dispatcher), the central node, which takes and dispatches zim file generation
   tasks. It is managed by the openZIM project admin and
   hosted somewhere on the Internet.
 
-* The **workers**, task executers, which are hosted by
+* The [**workers**](http://hub.docker.com/r/openzim/zimfarm-worker-manager), task executers, which are hosted by
   openZIM volunteers in different places around the world through Internet.
 
 To get a new ZIM file the typical workflow is:
@@ -25,50 +27,15 @@ To get a new ZIM file the typical workflow is:
 3. A worker pulls the task.
 4. Worker generates the ZIM file and upload it.
 
-## Run the dispatcher
 
-1. Make sure docker and docker-compose are installed on your system
-2. Clone this repo
-3. Make sure you are in master branch
-4. Open a terminal session change directory to root of dispatcher folder
-5. Run `docker-compose up --build`
-6. Wait for docker to do its job
-7. Go to `http://localhost:8080` with your Web browser
-
-## Run worker
-
-Refer to [worker](https://github.com/openzim/zimfarm/tree/master/worker)
+Refer to [workers](https://github.com/openzim/zimfarm/tree/master/workers) to run a worker.
 
 ## Architecture
 
 The whole system is built by reusing the best of free software
-libraries components. The whole ZIM farm solutioon itself is made
+libraries components. The whole ZIM farm solution itself is made
 available using Docker images.
 
 Actually, we use even more Docker images, as the ZIM file are produced
 in dedicated custom Docker images the worker has to "invoke" depending
 of the properties of the task he has to accomplish.
-
-### Softwares
-
-Dispatcher:
-- proxy: nginx
-  - frontend: angular 2, Node.js
-  - backend: flask, celery, sqlite, python
-- messaging queue: RabbitMQ
-
-Worker:
-- python
-- docker
-
-### Example of API request
-
-Login and get a token:
-```
-$ curl -i -X POST -H "username: foo" -H "password: bar" "https://farm.openzim.org/api/auth/login"
-```
-
-Request a creation of ZIM file::
-```
-curl -i -X POST -H "Content-Type: application/json; charset=utf-8" -H "token: eyJ0eXAiOiJK..." --data "[{ \"mwUrl\": \"https://bm.wikipedia.org/\", \"adminEmail\": \"foo@bar.org\", \"verbose\": true }]" "https://farm.openzim.org/api/task/mwoffliner"
-```

@@ -4,7 +4,7 @@ from routes.tasks.task import TasksRoute, TaskRoute, TaskCancelRoute
 
 class Blueprint(BaseBlueprint):
     def __init__(self):
-        super().__init__('tasks', __name__, url_prefix='/api/tasks')
+        super().__init__("tasks", __name__, url_prefix="/tasks")
 
         self.register_route(TasksRoute())
         self.register_route(TaskRoute())

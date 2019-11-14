@@ -20,10 +20,10 @@ def ssh_key():
         "type": "object",
         "properties": {
             "username": {"type": "string", "minLength": 1},
-            "key": {"type": "string", "minLength": 1}
+            "key": {"type": "string", "minLength": 1},
         },
         "required": ["username", "key"],
-        "additionalProperties": False
+        "additionalProperties": False,
     }
     try:
         request_json = request.get_json()
@@ -33,17 +33,21 @@ def ssh_key():
 
     # compute fingerprint
     try:
-        key = request_json['key']
+        key = request_json["key"]
         rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
         fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
     except (binascii.Error, paramiko.SSHException):
-        raise errors.BadRequest('Invalid RSA key')
+        raise errors.BadRequest("Invalid RSA key")
 
     # database
-    username = request_json['username']
-    user = Users().update_one({'username': username,
-                               'ssh_keys': {'$elemMatch': {'fingerprint': fingerprint}}},
-                              {'$set': {'ssh_keys.$.last_used': datetime.now()}})
+    username = request_json["username"]
+    user = Users().update_one(
+        {
+            "username": username,
+            "ssh_keys": {"$elemMatch": {"fingerprint": fingerprint}},
+        },
+        {"$set": {"ssh_keys.$.last_used": datetime.now()}},
+    )
 
     if user.matched_count == 0:
         raise errors.Unauthorized()
