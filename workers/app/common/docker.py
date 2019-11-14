@@ -41,7 +41,7 @@ def query_containers_resources(docker_api):
         try:
             disk += int(container["Labels"].get("resources_disk", 0))
         except Exception:
-            pass  # improper label
+            disk += 0  # improper label
 
     return {"cpu_shares": cpu_shares, "memory": memory, "disk": disk}
 
@@ -209,7 +209,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
 
     # mounts will be attached to host's fs, not this one
     host_mounts = query_host_mounts(docker_client, workdir)
-    host_task_workdir = str(host_mounts.get(workdir, pathlib.Path("/tmp")))
+    host_task_workdir = str(host_mounts.get(workdir))
     host_docker_socket = str(host_mounts.get(DOCKER_SOCKET))
     host_private_key = str(host_mounts.get(PRIVATE_KEY))
     mounts = [

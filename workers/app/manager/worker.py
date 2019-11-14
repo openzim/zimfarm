@@ -122,8 +122,9 @@ class WorkerManager(BaseWorker):
         self.tasks.pop(task_id, None)
 
     def update_task_data(self, task_id):
-        logger.debug(f"update_task_data: {task_id}")
         """ request task object from server and update locally """
+
+        logger.debug(f"update_task_data: {task_id}")
         success, status_code, response = self.query_api("GET", f"/tasks/{task_id}")
         if success and status_code == requests.codes.OK:
             self.tasks[task_id] = response

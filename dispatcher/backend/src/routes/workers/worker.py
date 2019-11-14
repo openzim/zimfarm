@@ -7,7 +7,7 @@ from flask import jsonify
 from common.mongo import Workers
 
 
-def list():
+def list_workers():
     """ list of workers """
 
     # get aggregation project stage
