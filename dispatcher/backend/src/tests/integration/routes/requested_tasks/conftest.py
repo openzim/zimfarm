@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 import pytest
@@ -82,4 +83,4 @@ def requested_task(make_requested_task):
 
 @pytest.fixture()
 def schedule(make_schedule):
-    return make_schedule(name="wikipedia_fr_test")
+    return make_schedule(name=uuid.uuid4().hex)

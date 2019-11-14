@@ -29,6 +29,7 @@ class TaskStatus:
             cls.scraper_completed,
             cls.scraper_killed,
             cls.failed,
+            cls.cancel_requested,
             cls.canceled,
         ]
 
