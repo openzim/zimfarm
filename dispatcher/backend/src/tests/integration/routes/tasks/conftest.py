@@ -10,9 +10,10 @@ from common.mongo import Tasks, RequestedTasks
 @pytest.fixture()
 def make_event():
     def _make_event(code: str, timestamp: datetime, **kwargs):
-        event = {'code': code, 'timestamp': timestamp}
+        event = {"code": code, "timestamp": timestamp}
         event.update(kwargs)
         return event
+
     return _make_event
 
 
@@ -21,8 +22,12 @@ def make_task(database, make_event):
     task_ids = []
     tasks = Tasks(database=database)
 
-    def _make_task(schedule_id=ObjectId(), schedule_name='', status=TaskStatus.succeeded,
-                   hostname='zimfarm_worker.com'):
+    def _make_task(
+        schedule_id=ObjectId(),
+        schedule_name="",
+        status=TaskStatus.succeeded,
+        hostname="zimfarm_worker.com",
+    ):
         print("schedule_id", schedule_id)
         if status == TaskStatus.requested:
             events = [TaskStatus.requested]
@@ -31,51 +36,58 @@ def make_task(database, make_event):
         elif status == TaskStatus.started:
             events = [TaskStatus.requested, TaskStatus.reserved, TaskStatus.started]
         elif status == TaskStatus.succeeded:
-            events = [TaskStatus.requested, TaskStatus.reserved, TaskStatus.started, TaskStatus.succeeded]
+            events = [
+                TaskStatus.requested,
+                TaskStatus.reserved,
+                TaskStatus.started,
+                TaskStatus.succeeded,
+            ]
         else:
-            events = [TaskStatus.requested, TaskStatus.reserved, TaskStatus.started, TaskStatus.failed]
+            events = [
+                TaskStatus.requested,
+                TaskStatus.reserved,
+                TaskStatus.started,
+                TaskStatus.failed,
+            ]
 
         timestamp = {event: datetime.now() for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
         container = {
-            'command': 'mwoffliner --mwUrl=https://example.com',
-            'image': {'name': 'mwoffliner', 'tag': '1.8.0'},
-            'exit_code': 0,
-            'stderr': 'example_stderr',
-            'stdout': 'example_stdout'
+            "command": "mwoffliner --mwUrl=https://example.com",
+            "image": {"name": "mwoffliner", "tag": "1.8.0"},
+            "exit_code": 0,
+            "stderr": "example_stderr",
+            "stdout": "example_stdout",
         }
-        debug = {
-            'args': [],
-            'kwargs': {}
-        }
+        debug = {"args": [], "kwargs": {}}
 
         if status == TaskStatus.failed:
-            debug['exception'] = 'example_exception'
-            debug['traceback'] = 'example_traceback'
+            debug["exception"] = "example_exception"
+            debug["traceback"] = "example_traceback"
             files = {}
         else:
-            files = {'mwoffliner_1．zim': {'name': 'mwoffliner_1.zim', 'size': 1000}}
+            files = {"mwoffliner_1．zim": {"name": "mwoffliner_1.zim", "size": 1000}}
 
         task = {
-            '_id': ObjectId(),
-            'status': status,
-            'worker': hostname,
-            'schedule_id': schedule_id,
-            'schedule_name': schedule_name,
-            'timestamp': timestamp,
-            'events': events,
-            'container': container,
-            'debug': debug,
-            'files': files
+            "_id": ObjectId(),
+            "status": status,
+            "worker": hostname,
+            "schedule_id": schedule_id,
+            "schedule_name": schedule_name,
+            "timestamp": timestamp,
+            "events": events,
+            "container": container,
+            "debug": debug,
+            "files": files,
         }
 
         tasks.insert_one(task)
-        task_ids.append(task['_id'])
+        task_ids.append(task["_id"])
         return task
 
     yield _make_task
 
-    tasks.delete_many({'_id': {'$in': task_ids}})
+    tasks.delete_many({"_id": {"$in": task_ids}})
 
 
 @pytest.fixture()
@@ -102,39 +114,43 @@ def make_requested_task(database, make_event):
     requested_task_ids = []
     requested_tasks = RequestedTasks(database=database)
 
-    def _make_requested_task(schedule_id=ObjectId(), schedule_name='',
-                             status=TaskStatus.requested,
-                             hostname='zimfarm_worker.com'):
+    def _make_requested_task(
+        schedule_id=ObjectId(),
+        schedule_name="",
+        status=TaskStatus.requested,
+        hostname="zimfarm_worker.com",
+    ):
         events = [TaskStatus.requested]
         timestamp = {event: datetime.now() for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
 
-        config = {"config": {"flags":
-                  {"api-key": "aaaaaa",
-                   "id": "abcde",
-                   "type": "channel"},
-                  "image": {"name": "openzim/youtube", "tag": "latest"},
-                  "queue": "small",
-                  "task_name": "youtube",
-                  "warehouse_path": "/other"}}
+        config = {
+            "config": {
+                "flags": {"api-key": "aaaaaa", "id": "abcde", "type": "channel"},
+                "image": {"name": "openzim/youtube", "tag": "latest"},
+                "queue": "small",
+                "task_name": "youtube",
+                "warehouse_path": "/other",
+            }
+        }
 
         requested_task = {
-            '_id': ObjectId(),
-            'status': status,
-            'schedule_id': schedule_id,
-            'schedule_name': schedule_name,
-            'timestamp': timestamp,
-            'events': events,
+            "_id": ObjectId(),
+            "status": status,
+            "schedule_id": schedule_id,
+            "schedule_name": schedule_name,
+            "timestamp": timestamp,
+            "events": events,
             "config": config,
         }
 
         requested_tasks.insert_one(requested_task)
-        requested_task_ids.append(requested_task['_id'])
+        requested_task_ids.append(requested_task["_id"])
         return requested_task
 
     yield _make_requested_task
 
-    requested_tasks.delete_many({'_id': {'$in': requested_task_ids}})
+    requested_tasks.delete_many({"_id": {"$in": requested_task_ids}})
 
 
 @pytest.fixture()
