@@ -132,11 +132,22 @@ def get_ip_address(docker_client, name):
     return docker_client.api.inspect_container(name)["NetworkSettings"]["IPAddress"]
 
 
-def start_dnscache(docker_client, name):
+def start_dnscache(docker_client, task):
+    name = dnscache_container_name(task["_id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
     image = docker_client.images.pull("openzim/dnscache", tag="latest")
     return docker_client.containers.run(
-        image, detach=True, name=name, environment=environment, remove=True
+        image,
+        detach=True,
+        name=name,
+        environment=environment,
+        remove=True,
+        labels={
+            "task_id": task["_id"],
+            "tid": short_id(task["_id"]),
+            "schedule_id": task["schedule_id"],
+            "schedule_name": task["schedule_name"],
+        },
     )
 
 
