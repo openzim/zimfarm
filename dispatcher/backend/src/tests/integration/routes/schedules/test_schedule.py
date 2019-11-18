@@ -139,6 +139,7 @@ class TestScheduleList:
             assert isinstance(item["language"]["code"], str)
             assert isinstance(item["language"]["name_en"], str)
             assert isinstance(item["language"]["name_native"], str)
+            assert isinstance(item["config"]["task_name"], str)
 
     @pytest.mark.parametrize(
         "skip, limit, expected",
