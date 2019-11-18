@@ -17,7 +17,6 @@ from common.worker import BaseWorker
 from common.docker import (
     query_host_mounts,
     query_container_stats,
-    dnscache_container_name,
     start_dnscache,
     get_ip_address,
     start_scraper,
@@ -220,9 +219,8 @@ class TaskWorker(BaseWorker):
 
     def start_dnscache(self):
         logger.info(f"Starting DNS cache")
-        dnscache_name = dnscache_container_name(self.task_id)
-        self.dnscache = start_dnscache(self.docker, dnscache_name)
-        self.dns = [get_ip_address(self.docker, dnscache_name)]
+        self.dnscache = start_dnscache(self.docker, self.task)
+        self.dns = [get_ip_address(self.docker, self.dnscache.name)]
         logger.debug(f"DNS Cache started using IPs: {self.dns}")
 
     def stop_dnscache(self, timeout=None):

@@ -58,11 +58,11 @@ except Exception:
 try:
     ZIMFARM_MEMORY = humanfriendly.parse_size(os.getenv("ZIMFARM_MEMORY"))
 except Exception:
-    physical_cpu = psutil.virtual_memory().total
+    physical_mem = psutil.virtual_memory().total
     if ZIMFARM_MEMORY:
-        ZIMFARM_MEMORY = min([ZIMFARM_MEMORY, physical_cpu])
+        ZIMFARM_MEMORY = min([ZIMFARM_MEMORY, physical_mem])
     else:
-        ZIMFARM_MEMORY = physical_cpu
+        ZIMFARM_MEMORY = physical_mem
 
 USE_PUBLIC_DNS = bool(os.getenv("USE_PUBLIC_DNS", False))
 

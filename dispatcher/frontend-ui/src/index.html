@@ -45,20 +45,23 @@
 		</nav>
 		<table v-if="schedules.length" class="table table-striped table-hover">
 			<thead class="thead-dark">
-				<tr><th>Name</th><th>Category</th><th>Language</th><th>Task</th></tr>
+				<tr><th>Name</th><th>Category</th><th>Language</th><th>Offliner</th><th>Last Task</th></tr>
 			</thead>
 			<tbody>
 				<tr v-for="schedule in schedules" :key="schedule._id">
-					<td>{{ schedule.name }}</td>
+					<td><a :href="api_url + '/schedules/' + schedule.name">{{ schedule.name }}</a></td>
 					<td>{{ schedule.category }}</td>
 					<td>{{ schedule.language.name_en }}</td>
 					<td>{{ schedule.config.task_name }}</td>
+					<td v-if="schedule.most_recent_task"><code>{{ schedule.most_recent_task.status }}</code>, <a :href="api_url + '/tasks/' + schedule.most_recent_task._id">{{ schedule.most_recent_task.on }}</a></td>
+					<td v-else>-</td>
 				</tr>
 		</table>
 	</div>
 	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 	<!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script> -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
 	<script type="application/javascript" src="environ.js"></script>
 	<script src="app.js"></script>
 </body>
