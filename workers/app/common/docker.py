@@ -132,11 +132,22 @@ def get_ip_address(docker_client, name):
     return docker_client.api.inspect_container(name)["NetworkSettings"]["IPAddress"]
 
 
-def start_dnscache(docker_client, name):
+def start_dnscache(docker_client, task):
+    name = dnscache_container_name(task["_id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
     image = docker_client.images.pull("openzim/dnscache", tag="latest")
     return docker_client.containers.run(
-        image, detach=True, name=name, environment=environment, remove=True
+        image,
+        detach=True,
+        name=name,
+        environment=environment,
+        remove=True,
+        labels={
+            "task_id": task["_id"],
+            "tid": short_id(task["_id"]),
+            "schedule_id": task["schedule_id"],
+            "schedule_name": task["schedule_name"],
+        },
     )
 
 
@@ -229,6 +240,9 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
             "WORKER_NAME": worker_name,
+            "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
+            "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
+            "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
         },
         labels={
             "zimtask": "yes",

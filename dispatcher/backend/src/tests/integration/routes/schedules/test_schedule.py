@@ -135,13 +135,11 @@ class TestScheduleList:
         for item in response_json["items"]:
             assert isinstance(item["_id"], str)
             assert isinstance(item["category"], str)
-            assert isinstance(item["enabled"], bool)
             assert isinstance(item["name"], str)
-            assert isinstance(item["config"]["queue"], str)
             assert isinstance(item["language"]["code"], str)
             assert isinstance(item["language"]["name_en"], str)
             assert isinstance(item["language"]["name_native"], str)
-            assert isinstance(item["tags"], list)
+            assert isinstance(item["config"]["task_name"], str)
 
     @pytest.mark.parametrize(
         "skip, limit, expected",

@@ -23,6 +23,7 @@ def command_for(offliner, flags, mount_point):
     """ command:list to be passed to docker run
 
         for an offliner,  flags:dict and a mount_point:Path (task volume) """
+    use_equals = True
     if offliner == OFFLINER_PHET:
         return ["/bin/bash", "-c", "cd /phet && npm i && npm start"]
     if offliner == OFFLINER_GUTENBERG:
@@ -41,10 +42,11 @@ def command_for(offliner, flags, mount_point):
     if offliner == OFFLINER_YOUTUBE:
         cmd = "youtube2zim"
         flags["output"] = str(mount_point)
-    return [cmd] + compute_flags(flags)
+        use_equals = False
+    return [cmd] + compute_flags(flags, use_equals=use_equals)
 
 
-def compute_flags(flags):
+def compute_flags(flags, use_equals=True):
     """ flat list of params from dict of flags """
     params: [str] = []
     for key, value in flags.items():
@@ -52,7 +54,15 @@ def compute_flags(flags):
             params.append(f"--{key}")
         elif isinstance(value, list):
             for item in value:
-                params.append(f'--{key}="{item}"')
+                if use_equals:
+                    params.append(f'--{key}="{item}"')
+                else:
+                    params.append(f"--{key}")
+                    params.append(f"{item}")
         else:
-            params.append(f'--{key}="{value}"')
+            if use_equals:
+                params.append(f'--{key}="{value}"')
+            else:
+                params.append(f"--{key}")
+                params.append(f"{value}")
     return params

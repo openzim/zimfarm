@@ -54,13 +54,11 @@ class SchedulesRoute(BaseRoute):
         # get schedules from database
         projection = {
             "_id": 1,
-            "category": 1,
-            "enabled": 1,
             "name": 1,
-            "config": 1,
+            "category": 1,
             "language": 1,
+            "config.task_name": 1,
             "most_recent_task": 1,
-            "tags": 1,
         }
         cursor = Schedules().find(query, projection).skip(skip).limit(limit)
         count = Schedules().count_documents(query)

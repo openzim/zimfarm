@@ -4,6 +4,7 @@ try { var zimfarm_webapi = environ.ZIMFARM_WEBAPI; } catch { var zimfarm_webapi 
 var app = new Vue({
 	el: "#app",
 	data: {
+		api_url: zimfarm_webapi,
 		loading: false,
 		schedules: [],
 		languages: [],
@@ -64,6 +65,9 @@ var app = new Vue({
 		    	parent.schedules = [];
 			    for (var i=0; i<response.data.items.length; i++){
 			    	var schedule = response.data.items[i];
+			    	if (schedule["most_recent_task"]) {
+			    		schedule["most_recent_task"]["on"] = moment(schedule["most_recent_task"]["updated_at"]).fromNow()
+			    	}
 			    	parent.schedules.push(schedule);
 			    }
 	        })
