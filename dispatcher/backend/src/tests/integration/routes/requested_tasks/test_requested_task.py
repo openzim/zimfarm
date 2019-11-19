@@ -46,6 +46,68 @@ class TestRequestedTaskList:
             item = items[index]
             self._assert_requested_task(task, item)
 
+    @pytest.mark.parametrize(
+        "matching, expected",
+        [
+            [{"cpu": 3, "memory": 1024, "disk": 1024}, 25],
+            [
+                {
+                    "cpu": 3,
+                    "memory": 1024,
+                    "disk": 1024,
+                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                },
+                25,
+            ],
+            [
+                {
+                    "cpu": 2,
+                    "memory": 1024,
+                    "disk": 1024,
+                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                },
+                0,
+            ],
+            [
+                {
+                    "cpu": 3,
+                    "memory": 1023,
+                    "disk": 1024,
+                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                },
+                0,
+            ],
+            [
+                {
+                    "cpu": 3,
+                    "memory": 1024,
+                    "disk": 1023,
+                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                },
+                0,
+            ],
+            [
+                {
+                    "cpu": 3,
+                    "memory": 1024,
+                    "disk": 1024,
+                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg"],
+                },
+                0,
+            ],
+        ],
+    )
+    def test_list_matching(self, client, requested_tasks, matching, expected):
+
+        headers = {"Content-Type": "application/json"}
+        response = client.get(
+            self.url, headers=headers, data=json.dumps({"matching": matching})
+        )
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        items = data["items"]
+        assert len(items) == expected
+
     def test_list_pagination(self, client, requested_tasks):
         url = "/requested-tasks/?limit={}&skip={}".format(10, 5)
         headers = {"Content-Type": "application/json"}
