@@ -34,13 +34,12 @@ def make_requested_task(database, make_event):
         events = [make_event(event, timestamp[event]) for event in events]
 
         config = {
-            "config": {
-                "flags": {"api-key": "aaaaaa", "id": "abcde", "type": "channel"},
-                "image": {"name": "openzim/youtube", "tag": "latest"},
-                "queue": "small",
-                "task_name": "youtube",
-                "warehouse_path": "/other",
-            }
+            "flags": {"api-key": "aaaaaa", "id": "abcde", "type": "channel"},
+            "image": {"name": "openzim/youtube", "tag": "latest"},
+            "queue": "small",
+            "task_name": "youtube",
+            "warehouse_path": "/other",
+            "resources": {"cpu": 3, "memory": 1024, "disk": 1024},
         }
 
         requested_task = {

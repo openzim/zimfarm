@@ -118,18 +118,17 @@ class RequestedTasksRoute(BaseRoute):
             query["schedule_id"] = ObjectId(schedule_id)
 
         # matching request (mostly for workers)
+        matching_query = {}
         if "matching" in request_json_args:
-            matching_query = {
-                "config.resources.cpu": {"$lte": request_json_args["matching"]["cpu"]},
-                "config.resources.memory": {
-                    "$lte": request_json_args["matching"]["memory"]
-                },
-                "config.resources.disk": {
-                    "$lte": request_json_args["matching"]["disk"]
-                },
-            }
-        else:
-            matching_query = {}
+            for res_key in ("cpu", "memory", "disk"):
+                if res_key in request_json_args["matching"]:
+                    matching_query[f"config.resources.{res_key}"] = {
+                        "$lte": request_json_args["matching"][res_key]
+                    }
+            if "offliners" in request_json_args["matching"]:
+                matching_query["config.task_name"] = {
+                    "$in": request_json_args["matching"]["offliners"]
+                }
 
         query.update(matching_query)
 
