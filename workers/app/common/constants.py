@@ -89,4 +89,10 @@ ALL_OFFLINERS = [
     OFFLINER_PHET,
     OFFLINER_GUTENBERG,
 ]
-SUPPORTED_OFFLINERS = os.getenv("OFFLINERS", "").split(",") or ALL_OFFLINERS
+SUPPORTED_OFFLINERS = [
+    offliner
+    for offliner in (
+        list(filter(bool, os.getenv("OFFLINERS", "").split(","))) or ALL_OFFLINERS
+    )
+    if offliner in ALL_OFFLINERS
+]
