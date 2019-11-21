@@ -20,8 +20,7 @@ matrix:
       before_script:
         - cd dispatcher/backend/src
         - export PYTHONPATH=$PWD
-        - export MONGO_HOSTNAME=localhost
         - python -c "from utils.database import Initializer; Initializer.create_initial_user()"
-      script: pytest tests/ --cov=./
+      script: pytest -c tests/integration/pytest.ini tests/ --cov=./
       after_success:
         - codecov
