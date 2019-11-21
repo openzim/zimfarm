@@ -1,4 +1,5 @@
 from flask import request, jsonify
+import trafaret
 
 from common.mongo import Schedules
 from routes.base import BaseRoute
@@ -13,10 +14,17 @@ class tagsRoute(BaseRoute):
         """return a list of tags"""
 
         # unpack url parameters
-        skip = request.args.get("skip", default=0, type=int)
-        limit = request.args.get("limit", default=20, type=int)
-        skip = 0 if skip < 0 else skip
-        limit = 20 if limit <= 0 else limit
+        request_args = request.args.to_dict()
+        validator = trafaret.Dict(
+            {
+                trafaret.Key("skip", default=0): trafaret.ToInt(gte=0),
+                trafaret.Key("limit", default=20): trafaret.ToInt(gt=0, lte=200),
+            }
+        )
+        request_args = validator.check(request_args)
+
+        # unpack query parameter
+        skip, limit = request_args["skip"], request_args["limit"]
 
         base_pipeline = [
             {"$project": {"_id": 0, "tags": 1}},

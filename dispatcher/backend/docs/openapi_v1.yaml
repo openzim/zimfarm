@@ -1,0 +1,1658 @@
+openapi: 3.0.0
+servers:
+  - description: production server
+    url: https://api.farm.openzim.org/v1
+  - description: dev server
+    url: http://localhost/v1
+info:
+  description: |
+    Zimfarm is OpenZIM's creation farm.
+    OpenZIM periodically publishes updated ZIM files for a large variety of content.
+
+    This API provides public access to the scheduled ZIM files to create as well as tracking of its tasks.
+
+    This API is also used by _workers_ to fetch, process and update those tasks.
+  version: 1.0.0
+  title: Zimfarm API
+  contact:
+    email: dev@kiwix.org
+    url: https://kiwix.org
+  license:
+    name: GNU General Public License v3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
+
+tags:
+- name: auth
+  description: Authentication-refated calls
+- name: public
+  description: Read-only operations for all
+- name: restricted
+  description: Secured user-only write calls
+- name: workers
+  description: worker-centric calls
+
+paths:
+  /auth/authorize:
+    post:
+      tags:
+        - auth
+      summary: get token using credentials
+      operationId: authWithCredentials
+      description: Authenticate using username and password and receive tokens
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  $ref: '#/components/schemas/Username'
+                password:
+                  type: string
+                  format: password
+      responses:
+        200:
+          description: Token information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+  /auth/ssh_authorize:
+    post:
+      tags:
+        - auth
+      summary: get token using SSH key
+      operationId: authWithSSH
+      description: Authenticate using an RSA private key and receive tokens
+      parameters:
+        - in: header
+          name: X-SSHAuth-Message
+          description: Message for signature verification. Username and current datetime (UTC)
+          required: true
+          schema:
+            type: string
+            format: "username:ISO datetime"
+            example: "john:2019-11-19T15:36:06.563000Z"
+        - in: header
+          name: X-SSHAuth-Signature
+          description: Base64 encoded version of the signed message using the RSA key
+          required: true
+          schema:
+            type: string
+            format: base64
+            example: aXQncyBhbiBleGFtcGxlLCBub3QgYSByZWFsIHNpZ25hdHVyZQ==
+      responses:
+        200:
+          description: Token information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/test:
+    get:
+      tags:
+      - auth
+      summary: test token
+      operationId: testToken
+      description: Validate proper authentication without requesting data
+      security:
+        - token: []
+        - oauth2: []
+      responses:
+        204:
+          description: Authenticated
+        401:
+          description: Unauthorized
+  /auth/token:
+    post:
+      tags:
+        - auth
+      summary: refresh tokens
+      operationId: refreshToken
+      description: Refresh tokens by providing existing valid `refresh-token`
+      parameters:
+        - in: header
+          name: refresh-token
+          description: Valid refresh-token
+          required: true
+          schema:
+            type: string
+            example: aea891db-090b-60a3-8ea8-57c0928b42e6
+      responses:
+        200:
+          description: Token information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+  /auth/validate/ssh_key:
+    post:
+      tags:
+        - auth
+      summary: verify public key
+      operationId: validateKey
+      description: Checks that provided RSA public key is valid for User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - key
+              properties:
+                username:
+                  $ref: '#/components/schemas/Username'
+                key:
+                  type: string
+                  format: base64 encoded RSA public key text
+                  example: QUFBQUIzTnphQzF5YzJFQUFBQURBUUFCQUFBQkFRRERJUlNhbStHY0tBQW5tMGpGL1ZCMTJydFhDenBGRTFnc1Q5Q25GdzVkWWJQb2NudWdkbDY0UVpxNjVSdGN5T1BJVEJ0Yk1SOUw2ZEowejI2b21mZFhYd2VFcE5JR0N0SmRtNldzWTNrc0JyNHAvREhFRUVzSDkraGR3RVovQzd3YXlpbDZ3dUlwY3BMNXJLZ2xIRnlZVVJsNDQ5Nis0c0RjMG1YbllGdmVSMkdHRmNsdmwvcTdEejNla1RaNXV4THBhRFl4Y3NrZm5LVm1PQW82b04yYzRhbmtkZ2ozRkxmemRQeHFlakovUmRXVFF4dEtGQmt5VEZ0Wmt2SW9Ub2NXRENISWw0K1k1RExOYzlFTm1TZnlDbFdsYVRxaVlBZm4rY3QvZXNrZHFxK0dHY0pkVnAwREFSWUdMb3NNV3JQbm01WWdRL3EwOHEzcmNIZ1NzOG1I
+      responses:
+        200:
+          description: Public key is valid for User
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+
+  /schedules:
+    get:
+      tags:
+      - public
+      summary: list schedules
+      operationId: listSchedules
+      description: Query the Schedules database
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - in: query
+        name: category
+        description: Categories to filter results by (union of, if several)
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+          example:
+            - other
+            - wikipedia
+      - in: query
+        name: tag
+        description: Tags to filter results by (intersection of, if several)
+        required: false
+        schema:
+          $ref: '#/components/schemas/ScheduleTags'
+      - in: query
+        name: lang
+        description: Language code to filter results by (union of, if several)
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            format: ISO 639-1
+          example:
+            - fr
+            - bm
+      - in: query
+        name: name
+        description: Name to filter results by (direct match or regex)
+        required: false
+        schema:
+          type: string
+        example: wikipedia_.+_football
+      responses:
+        200:
+          description: List of Schedules matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScheduleItem'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+    post:
+      tags:
+      - restricted
+      summary: create schedule
+      operationId: addSchedules
+      description: Create a new Schedule
+      security:
+        - token: []
+        - oauth2: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+      responses:
+        201:
+          description: Schedule Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    $ref: '#/components/schemas/MongoId'
+        401:
+          description: Unauthorized
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+  /schedules/backup:
+    get:
+      tags:
+      - public
+      summary: dump schedules
+      operationId: dumpSchedules
+      description: Dump all Schedules (without `most_recent_task`) in a single request
+      responses:
+        200:
+          description: Complete list of Schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schedule'
+  /schedules/{scheduleName}:
+    get:
+      tags:
+      - public
+      summary: list schedules
+      operationId: getSchedule
+      description: Retrieve a Schedule's details
+      parameters:
+        - in: path
+          required: true
+          name: scheduleName
+          schema:
+            $ref: '#/components/schemas/ScheduleName'
+      responses:
+        200:
+          description: Schedule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+      - restricted
+      summary: update schedule
+      operationId: editSchedule
+      description: Update a Schedule's details
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+        - in: path
+          required: true
+          name: scheduleName
+          schema:
+            $ref: '#/components/schemas/ScheduleName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/ScheduleName'
+                language:
+                  $ref: '#/components/schemas/Language'
+                category:
+                  $ref: '#/components/schemas/ScheduleCategory'
+                tags:
+                  $ref: '#/components/schemas/ScheduleTags'
+                enabled:
+                  type: boolean
+                config:
+                  $ref: '#/components/schemas/Config'
+      responses:
+        200:
+          description: Updated
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+      - restricted
+      summary: delete schedule
+      operationId: deleteSchedule
+      description: Remove a Schedule
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+        - in: path
+          required: true
+          name: scheduleName
+          schema:
+            $ref: '#/components/schemas/ScheduleName'
+      responses:
+        200:
+          description: Deleted
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /requested-tasks:
+    get:
+      tags:
+      - public
+      summary: list requested-tasks
+      operationId: listRequestedTasks
+      description: Query the RequestedTasks database
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - in: query
+        name: schedule_name
+        description: filter results by Schedule
+        required: false
+        schema:
+          $ref: '#/components/schemas/ScheduleName'
+      - in: query
+        name: matching
+        description: matching request to filter requested tasks based on worker capability
+        required: false
+        schema:
+          $ref: '#/components/schemas/Matching'
+      responses:
+        200:
+          description: List of RequestedTask matching criteria
+          content:
+            application/json:
+              schema:
+                    type: object
+                    properties:
+                      meta:
+                        $ref: '#/components/schemas/MetaProperty'
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RequestedTask'
+        400:
+          description: Bad Request (invalid input)
+    post:
+      tags:
+      - restricted
+      summary: create requested-task
+      operationId: addRequestedTask
+      description: Request new Task from one or many Schedules
+      security:
+        - token: []
+        - oauth2: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - schedule_names
+              properties:
+                schedule_names:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ScheduleName'
+                  example:
+                    - wikipedia_fr_all
+                    - gutenberg_mul_all
+      responses:
+        201:
+          description: Tasks Requested
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - requested
+                properties:
+                  requested:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MongoId'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found (at least one, so none requested)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /requested-tasks/{taskId}:
+    get:
+      tags:
+      - public
+      summary: get requested-tasks details
+      operationId: getRequestedTask
+      description: Retrieve a RequestedTask details
+      parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: RequestedTask Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestedTask'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+      - restricted
+      summary: delete requested task
+      operationId: deleteRequestedTask
+      description: Remove a RequestedTask
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: RequestedTask Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                    format: int32
+                    example: 1
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks:
+    get:
+      tags:
+      - public
+      summary: list tasks
+      operationId: listTasks
+      description: Query the Tasks database
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of Tasks matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskItem'
+        400:
+          description: Bad Request (invalid input)
+  /tasks/{taskId}:
+    get:
+      tags:
+      - public
+      summary: get task detail
+      operationId: getTask
+      description: Retrieve a Task's details
+      parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Task record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+      - workers
+      summary: create task
+      operationId: addTask
+      description: Turn a RequestedTask into a Task
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        201:
+          description: Task Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    $ref: '#/components/schemas/MongoId'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        423:
+          description: "Unable to create Task: created by another worker"
+    patch:
+      tags:
+      - workers
+      summary: update task
+      operationId: editTask
+      description: Update a Task's details
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - payload
+              properties:
+                event:
+                  $ref: '#/components/schemas/TaskStatus'
+                payload:
+                  type: object
+                  description: event-related payload
+                  example:
+                    task_log: agbcdls213821983hjhkj-json.log
+      responses:
+        204:
+          description: Task Updated
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /tasks/{taskId}/cancel:
+    post:
+      tags:
+      - restricted
+      summary: cancel task
+      operationId: cancelTask
+      description: Request cancellation of a Task. Actual cancellation is asyncrhonous.
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: string
+      responses:
+        204:
+          description: Cancelation Requested
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /languages:
+    get:
+      tags:
+      - public
+      summary: list languages
+      operationId: listLanguages
+      description: Query the list of Languages used by Schedules
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of Languages matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Language'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+  /tags:
+    get:
+      tags:
+      - public
+      summary: list tags
+      operationId: listTags
+      description: Query the Tags in use by Schedules
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of Tags matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    $ref: '#/components/schemas/ScheduleTags'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+
+  /workers:
+    get:
+      tags:
+      - public
+      summary: list workers
+      operationId: listWorkers
+      description: Query the Workers database
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - in: query
+        name: status
+        description: status (online, offline) to filter results on
+        required: false
+        schema:
+          type: string
+          example: online
+      responses:
+        200:
+          description: List of Workers matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Worker'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+
+  /users/:
+    get:
+      tags:
+      - restricted
+      summary: list users
+      operationId: listUsers
+      description: Query the Users database
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      responses:
+        200:
+          description: List of Users matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserItem'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+    post:
+      tags:
+      - restricted
+      summary: create user
+      operationId: addUser
+      description: |
+        Create a new User with specific scope and credentials.
+        SSH Authentication requires an additional key upload step.
+        API user needs the `users.create` scope for this endpoint.
+      security:
+        - token: []
+        - oauth2: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPayload'
+            examples:
+              username:
+                summary: John Doe
+                value: {"username": "john", "password": "my-long-password", "email": "john@kiwix.org", "scope": {"schedules": {"read": true}}}
+      responses:
+        201:
+          description: User Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    $ref: '#/components/schemas/MongoId'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+  /users/{username}:
+    get:
+      tags:
+      - public
+      summary: get user details
+      operationId: getUser
+      description: Retrieve a User's details
+      parameters:
+      - in: path
+        required: true
+        name: username
+        schema:
+          $ref: '#/components/schemas/Username'
+      responses:
+        200:
+          description: User Record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    $ref: '#/components/schemas/MongoId'
+                  username:
+                    $ref: '#/components/schemas/Username'
+                  email:
+                    $ref: '#/components/schemas/UserEmail'
+                  scope:
+                    $ref: '#/components/schemas/Scope'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+    delete:
+      tags:
+      - restricted
+      summary: delete user
+      operationId: deleteUser
+      description: Remove a User
+      parameters:
+      - in: path
+        required: true
+        name: username
+        schema:
+          $ref: '#/components/schemas/Username'
+      security:
+        - token: []
+        - oauth2: []
+      responses:
+        200:
+          description: User Deleted
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/{username}/keys:
+    get:
+      tags:
+      - restricted
+      summary: get user's SSH keys
+      operationId: getUserKeys
+      description: Retrieve the list of registered SSH keys for User
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        required: true
+        name: username
+        schema:
+          $ref: '#/components/schemas/Username'
+      responses:
+        200:
+          description: List of SSH Keys for User
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - added
+                    - fingerprint
+                    - key
+                    - last_used
+                    - name
+                    - pkcs8_key
+                    - type
+                  properties:
+                    added:
+                      type: string
+                      format: date-time
+                      example: "2019-05-15T09:43:37.216000Z"
+                    fingerprint:
+                      type: string
+                      example: c470c5ba0110ce26fec082d233930fad
+                    key:
+                      type: string
+                      example: AAAAB3NzaC1yc2EAAAADAQABAAABAQDDIRSam+GcKAAnm0jF\/VB12rtXCzpFE1gsT9CnFw5dYbP
+                    last_used:
+                      type: string
+                      format: date-time
+                      example: "2019-08-12T08:22:10.519000Z"
+                    name:
+                      type: string
+                      example: my-key
+                    pkcs8_key:
+                      type: string
+                      example: -----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhk
+                    type:
+                      type: string
+                      enum:
+                        - RSA
+                      example: RSA
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+      - restricted
+      summary: add SSH Key
+      operationId: addUserKeys
+      description: Upload a new SSH Public Key for User
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        required: true
+        name: username
+        schema:
+          $ref: '#/components/schemas/Username'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - key
+              properties:
+                name:
+                  type: string
+                  example: my-key
+                key:
+                  type: string
+                  description: Content part of an RSA _Public_ Key
+                  example: AAAAB3NzaC1yc2EAAAADAQABAAABAQDDIRSam+GcKAAnm0jF\/VB12rtXCzpFE1gsT9CnFw5dYbP
+      responses:
+        201:
+          description: SSH Key Uploaded
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    token:
+      type: apiKey
+      description: API Token
+      name: token
+      in: header
+    oauth:
+      type: oauth2
+      description: OAuth2
+      flows:
+        password:
+          tokenUrl: https://api.farm.openzim.org/auth/oauth2
+          refreshUrl: https://api.farm.openzim.org/auth/oauth2
+  parameters:
+    SkipParameter:
+      in: query
+      name: skip
+      description: number of records to skip for pagination (yay)
+      required: false
+      schema:
+        $ref: '#/components/schemas/SkipProperty'
+    LimitParameter:
+      in: query
+      name: limit
+      description: maximum number of records to return
+      required: false
+      schema:
+        $ref: '#/components/schemas/LimitProperty'
+  schemas:
+    Language:
+      type: object
+      required:
+      - code
+      - name_en
+      - name_native
+      properties:
+        code:
+          type: string
+          format: ISO 639-1 language code
+          example: fr
+        name_en:
+          type: string
+          example: French
+        name_native:
+          type: string
+          example: Français
+    UserItem:
+      type: object
+      required:
+      - _id
+      - username
+      - email
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        username:
+          $ref: '#/components/schemas/Username'
+        email:
+          $ref: '#/components/schemas/UserEmail'
+    UserPayload:
+      type: object
+      required:
+      - username
+      - password
+      - email
+      - scope
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        password:
+          type: string
+          format: password
+        email:
+          $ref: '#/components/schemas/UserEmail'
+        scope:
+          $ref: '#/components/schemas/Scope'
+    Scope:
+      type: object
+      properties:
+        schedules:
+          $ref: '#/components/schemas/ScopeItem'
+        tasks:
+          $ref: '#/components/schemas/ScopeItem'
+        users:
+          $ref: '#/components/schemas/ScopeItem'
+    ScopeItem:
+      type: object
+      properties:
+        read:
+          type: boolean
+          example: true
+        create:
+          type: boolean
+          example: true
+        update:
+          type: boolean
+          example: true
+        delete:
+          type: boolean
+          example: false
+        reset_password:
+          type: boolean
+          example: false
+
+    Worker:
+      type: object
+      required:
+      - _id
+      - hostname
+      - status
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        hostname:
+          type: string
+          example: mwoffliner1
+        status:
+          type: string
+          example: online
+    ScheduleItem:
+      type: object
+      required:
+        - _id
+        - config
+        - language
+        - name
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        config:
+          type: object
+          required:
+            - task_name
+          properties:
+            task_name:
+              type: string
+        language:
+          $ref: '#/components/schemas/Language'
+        name:
+          type: string
+        most_recent_task:
+          type: object
+          required:
+            - _id
+            - status
+            - updated_at
+          properties:
+            _id:
+              $ref: '#/components/schemas/MongoId'
+            status:
+              $ref: '#/components/schemas/TaskStatus'
+            updated_at:
+              type: string
+              format: date-time
+    ScheduleCategory:
+      type: string
+      example: wikipedia
+      enum:
+        - gutenberg
+        - other
+        - phet
+        - psiram
+        - stack_exchange
+        - ted
+        - vikidia
+        - wikibooks
+        - wikinews
+        - wikipedia
+        - wikiquote
+        - wikisource
+        - wikispecies
+        - wikiversity
+        - wikivoyage
+        - wiktionary
+    Schedule:
+      type: object
+      required:
+        - _id
+        - category
+        - config
+        - enabled
+        - language
+        - name
+        - tags
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        category:
+          $ref: '#/components/schemas/ScheduleCategory'
+        config:
+          $ref: '#/components/schemas/Config'
+        enabled:
+          type: boolean
+          example: true
+        language:
+          $ref: '#/components/schemas/Language'
+        name:
+          $ref: '#/components/schemas/ScheduleName'
+        most_recent_task:
+          type: object
+          required:
+            - _id
+            - status
+            - updated_at
+          properties:
+            _id:
+              $ref: '#/components/schemas/MongoId'
+            status:
+              $ref: '#/components/schemas/TaskStatus'
+            updated_at:
+              type: string
+              format: date-time
+        tags:
+          $ref: '#/components/schemas/ScheduleTags'
+    ScheduleName:
+      type: string
+      example: wikipedia_fr_all
+    Config:
+      type: object
+      required:
+        - flags
+        - image
+        - resources
+        - task_name
+        - warehouse_path
+      properties:
+        flags:
+          type: object
+        image:
+          $ref: '#/components/schemas/ConfigImage'
+        resources:
+          $ref: '#/components/schemas/ConfigResources'
+        task_name:
+          type: string
+          example: mwoffliner
+        warehouse_path:
+          type: string
+          example: /wikipedia
+    ConfigImage:
+      type: object
+      required:
+        - name
+        - tag
+      properties:
+        name:
+          type: string
+          example: openzim/mwoffliner
+        tag:
+          type: string
+          example: latest
+    ConfigResources:
+      type: object
+      required:
+        - cpu
+        - memory
+        - disk
+      properties:
+        cpu:
+          type: integer
+          format: int32
+          example: 3
+          description: number of CPU cores required to run it
+        memory:
+          type: integer
+          format: int32
+          example: 1024
+          description: RAM (in bytes) required to run it
+        disk:
+          type: integer
+          format: int32
+          description: Disk space (in bytes) required to run it
+    Matching:
+      type: object
+      required:
+        - cpu
+        - memory
+        - disk
+      properties:
+        cpu:
+          type: integer
+          format: int32
+          example: 3
+          description: number of CPU cores required to run it
+        memory:
+          type: integer
+          format: int32
+          example: 1024
+          description: RAM (in bytes) required to run it
+        disk:
+          type: integer
+          format: int32
+          example: 1024
+          description: Disk space (in bytes) required to run it
+        offliners:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offliner'
+          example:
+            - "youtube"
+            - "mwoffliner"
+          description: list of offliners supported
+    Offliner:
+      type: string
+      enum:
+        - mwoffliner
+        - youtube
+        - gutenberg
+        - phet
+      example: mwoffliner
+    TaskItem:
+      type: object
+      required:
+        - _id
+        - status
+        - timestamp
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        timestamp:
+          $ref: '#/components/schemas/TaskTimestamp'
+    RequestedTask:
+      type: object
+      required:
+        - _id
+        - status
+        - schedule_id
+        - schedule_name
+        - config
+        - timestamp
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        schedule_id:
+          $ref: '#/components/schemas/MongoId'
+        schedule_name:
+          $ref: '#/components/schemas/ScheduleName'
+        config:
+          type: object
+          required:
+            - task_name
+            - image
+            - resources
+          properties:
+            task_name:
+              type: string
+              example: mwoffliner
+            image:
+              $ref: '#/components/schemas/ConfigImage'
+            resources:
+              $ref: '#/components/schemas/ConfigResources'
+        timestamp:
+          type: object
+          required:
+            - requested
+          properties:
+            requested:
+              type: string
+              format: date-time
+              example: "2019-11-19T15:36:06.563000Z"
+    Task:
+      type: object
+      required:
+        - _id
+        - config
+        - status
+        - events
+        - schedule
+        - schedule_id
+        - schedule_name
+        - timestamp
+        - worker
+      properties:
+        _id:
+          $ref: '#/components/schemas/MongoId'
+        config:
+          $ref: '#/components/schemas/Config'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        schedule_id:
+          $ref: '#/components/schemas/MongoId'
+        schedule_name:
+          $ref: '#/components/schemas/ScheduleName'
+        timestamp:
+          $ref: '#/components/schemas/TaskTimestamp'
+        worker:
+          type: string
+          example: worker-name
+        container:
+          type: object
+          properties:
+            command:
+              type: array
+              items:
+                type: string
+              example:
+                - mwoffliner
+                - mwUrl
+                - http://fr.wikipedia.org
+            exit_code:
+              type: integer
+              format: int32
+              example: 1
+            image:
+              type: string
+              example: openzim/mwoffliner:latest
+            log:
+              type: string
+              example: "das878sd7sa87f8f78dsf7dsds.log"
+        debug:
+          type: object
+          properties:
+            exception:
+              type: string
+              example: "SyntaxError at line 1"
+            traceback:
+              type: string
+              example: null
+            log:
+              type: string
+              example: "[2019-11-18 15:49:30,337: INFO] starting zimfarm task-worker"
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Not Found
+    InputError:
+      type: object
+      properties:
+        message:
+          oneOf:
+            - type: object
+              example: {"schedule_id": "Invalid Mongo ObjectId"}
+            - type: string
+              example: Invalid signature format (not base64)
+    Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJkaXNwYXRjaGVyIiwiZXhwIj
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          format: int32
+          example: 3600
+        refresh_token:
+          type: string
+          example: aea891db-090b-4cbb-6qer-57c0928b42e6
+    MetaProperty:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        skip:
+          type: integer
+          example: 0
+    LimitProperty:
+      type: integer
+      format: int32
+      minimum: 0
+      example: 10
+      default: 10
+    SkipProperty:
+      type: integer
+      format: int32
+      minimum: 0
+      example: 0
+      default: 0
+    MongoId:
+      type: string
+      format: uuid
+      example: 5dbc599b3b61e21c362703e4
+    Username:
+      type: string
+      example: john
+    UserEmail:
+      type: string
+      format: email
+      example: john@doe.org
+    ScheduleTags:
+      type: array
+      items:
+        type: string
+      example:
+        - selection
+        - full
+        - top
+    TaskStatus:
+      type: string
+      example: canceled
+      enum:
+        - started
+        - scraper_started
+        - scraper_completed
+        - scraper_killed
+        - failed
+        - cancel_requested
+        - canceled
+        - succeeded
+        - created_file
+        - uploaded_file
+    SingleTimestamp:
+      type: string
+      format: date-time
+      example: "2019-11-19T15:36:06.563000Z"
+    Event:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/TaskStatus'
+        timestamp:
+          $ref: '#/components/schemas/SingleTimestamp'
+    TaskTimestamp:
+      type: object
+      required:
+        - requested
+      properties:
+        requested:
+          $ref: '#/components/schemas/SingleTimestamp'
+        reserved:
+          $ref: '#/components/schemas/SingleTimestamp'
+        started:
+          $ref: '#/components/schemas/SingleTimestamp'
+        scraper_started:
+          $ref: '#/components/schemas/SingleTimestamp'
+        scraper_completed:
+          $ref: '#/components/schemas/SingleTimestamp'
+        scraper_killed:
+          $ref: '#/components/schemas/SingleTimestamp'
+        failed:
+          $ref: '#/components/schemas/SingleTimestamp'
+        cancel_requested:
+          $ref: '#/components/schemas/SingleTimestamp'
+        canceled:
+          $ref: '#/components/schemas/SingleTimestamp'
+        succeeded:
+          $ref: '#/components/schemas/SingleTimestamp'

@@ -3,12 +3,11 @@ import base64
 import binascii
 import tempfile
 import subprocess
+from http import HTTPStatus
 from datetime import datetime
-from typing import Union
 
 import jsonschema
 import paramiko
-from bson import ObjectId
 from flask import request, jsonify, Response
 
 from routes import authenticate2, url_object_id, errors
@@ -17,16 +16,14 @@ from utils.token import AccessToken
 
 
 @authenticate2
-@url_object_id("user")
-def list(token: AccessToken.Payload, user: Union[ObjectId, str]):
+@url_object_id("username")
+def list(username: str, token: AccessToken.Payload):
     # if user in url is not user in token, check user permission
-    if user != token.user_id and user != token.username:
+    if username != token.username:
         if not token.get_permission("users", "ssh_keys.read"):
             raise errors.NotEnoughPrivilege()
 
-    user = Users().find_one(
-        {"$or": [{"_id": user}, {"username": user}]}, {"ssh_keys": 1}
-    )
+    user = Users().find_one({"username": username}, {"ssh_keys": 1})
     if user is None:
         raise errors.NotFound()
 
@@ -35,10 +32,10 @@ def list(token: AccessToken.Payload, user: Union[ObjectId, str]):
 
 
 @authenticate2
-@url_object_id(["user"])
-def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
+@url_object_id(["username"])
+def add(token: AccessToken.Payload, username: str):
     # if user in url is not user in token, not allowed to add ssh keys
-    if user != token.user_id and user != token.username:
+    if username != token.username:
         raise errors.NotEnoughPrivilege()
 
     # validate request json
@@ -71,8 +68,7 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
         raise errors.BadRequest("Invalid RSA key")
 
     # get existing ssh key fingerprints
-    filter = {"$or": [{"_id": user}, {"username": user}]}
-    user = Users().find_one(filter, {"ssh_keys.fingerprint": 1})
+    user = Users().find_one({"username": username}, {"ssh_keys.fingerprint": 1})
     if user is None:
         raise errors.NotFound()
 
@@ -104,21 +100,20 @@ def add(token: AccessToken.Payload, user: Union[ObjectId, str]):
 
     Users().update_one(filter, {"$push": {"ssh_keys": ssh_key}})
 
-    return Response()
+    return Response(status=HTTPStatus.CREATED)
 
 
 @authenticate2
-@url_object_id("user")
-def delete(token: AccessToken.Payload, user: Union[ObjectId, str], fingerprint: str):
+@url_object_id("username")
+def delete(token: AccessToken.Payload, username: str, fingerprint: str):
     # if user in url is not user in token, check user permission
-    if user != token.user_id and user != token.username:
+    if username != token.username:
         if not token.get_permission("users", "ssh_keys.delete"):
             raise errors.NotEnoughPrivilege()
 
     # database
     result = Users().update_one(
-        {"$or": [{"_id": user}, {"username": user}]},
-        {"$pull": {"ssh_keys": {"fingerprint": fingerprint}}},
+        {"username": username}, {"$pull": {"ssh_keys": {"fingerprint": fingerprint}}}
     )
 
     if result.modified_count > 0:

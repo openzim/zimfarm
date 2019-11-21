@@ -4,16 +4,16 @@ body {
         "Segoe UI", "Roboto", "Oxygen",
         "Ubuntu", "Cantarell", "Fira Sans",
         "Droid Sans", "Helvetica Neue", sans-serif;
+    background-color: #fafafa;
 }
 
 header {
 	overflow: hidden;
-	background-color: #EEEEEE;
+	background-color: #004c8a;
 	top: 0;
-	height: 3em;
+	height: 3.5em;
 	width: 100%;
 	z-index: 1000;
-	box-shadow: 0 .05rem .25rem 0 rgba(0,0,0,.3);
 	box-sizing: border-box;
 	overflow-x: auto;
 	display: flex;
@@ -22,16 +22,55 @@ header {
 	padding-right: env(safe-area-inset-right);
 	text-align: left;
 	margin-bottom: 1rem;
+
+	color: #fafafa;
+	white-space: nowrap;
+	line-height: 2rem;
 }
 
-header img {
-	margin: .2rem .5rem;
-	margin-right: .5rem;
-	max-height: 2.6rem;
+header .branding {
+	display: flex;
+	padding: 0 1rem;
+	height: 2.5rem;
 }
 
-header label {
-	font-size: 1.5rem;
-	font-weight: 500;
-	margin-bottom: 0;
+header .branding .icon {
+	padding: 0.4rem;
+	background: 	rgba(255, 255, 255, 0.15);
+	margin-right: 0.5rem;
+	border-radius: 4px;
+	display: inline-flex;
+
+	width: 2.5rem;
+	height: 2.5rem;
+}
+
+header .branding .icon img {	
+	border-style: none;
+	vertical-align: middle;
+}
+
+header .branding label {
+	color: #fafafa;
+	font-size: 1.1rem;
+	font-weight: 400;
+	font-family: Metropolis,"Avenir Next","Helvetica Neue",Arial,sans-serif;
+	letter-spacing: .01em;
+	line-height: 2.5rem;
+	text-decoration: none;
+}
+
+
+header .menu a {
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	padding: .75rem 1rem;
+	color:	#fafafa;
+	opacity: .65;
+}
+
+header .menu a:active, header .menu a.active {
+	background: rgba(255,255,255,.15);
+	opacity: 1;
 }

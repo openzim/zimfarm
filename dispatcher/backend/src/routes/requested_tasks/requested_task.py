@@ -1,11 +1,11 @@
 import logging
 import datetime
+from http import HTTPStatus
 
 import pytz
 import pymongo
 import trafaret as t
-from bson import ObjectId
-from flask import request, jsonify
+from flask import request, jsonify, make_response
 
 from common.entities import TaskStatus
 from common.mongo import RequestedTasks, Schedules
@@ -13,7 +13,6 @@ from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from common.validators import ObjectIdValidator
 from utils.broadcaster import BROADCASTER
 
 logger = logging.getLogger(__name__)
@@ -70,67 +69,49 @@ class RequestedTasksRoute(BaseRoute):
         elif len(requested_tasks) == 1:
             BROADCASTER.broadcast_requested_task(requested_tasks[0])
 
-        response = jsonify({"requested": requested_tasks})
-        response.status_code = 201
-        return response
+        return make_response(
+            jsonify({"requested": [rt["_id"] for rt in requested_tasks]}),
+            HTTPStatus.CREATED,
+        )
 
     def get(self, *args, **kwargs):
         """ list of requested tasks """
 
         # validate query parameter
         request_args = request.args.to_dict()
+        request_args["matching_offliners"] = request.args.getlist("matching_offliners")
+
         validator = t.Dict(
             {
                 t.Key("skip", default=0): t.ToInt(gte=0),
                 t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
-                t.Key("schedule_id", optional=True): ObjectIdValidator,
+                t.Key("schedule_name", optional=True): t.String(),
+                t.Key("matching_cpu", optional=True): t.ToInt(gte=0),
+                t.Key("matching_memory", optional=True): t.ToInt(gte=0),
+                t.Key("matching_disk", optional=True): t.ToInt(gte=0),
+                t.Key("matching_offliners", optional=True): t.List(
+                    t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
+                ),
             }
         )
         request_args = validator.check(request_args)
 
-        try:
-            request_json = request.get_json()
-        except Exception:
-            request_json = None
-        if request_json:
-            matchingValidator = t.Dict(
-                {
-                    t.Key("cpu"): t.ToInt(gte=0),
-                    t.Key("memory"): t.ToInt(gte=0),
-                    t.Key("disk"): t.ToInt(gte=0),
-                    t.Key("offliners", optional=True): t.List(
-                        t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
-                    ),
-                }
-            )
-            validator = t.Dict({t.Key("matching", optional=True): matchingValidator})
-            request_json_args = validator.check(request_json)
-        else:
-            request_json_args = {}
-
         # unpack query parameter
         skip, limit = request_args["skip"], request_args["limit"]
-        schedule_id = request_args.get("schedule_id")
+        schedule_name = request_args.get("schedule_name")
 
         # get requested tasks from database
         query = {}
-        if schedule_id:
-            query["schedule_id"] = ObjectId(schedule_id)
+        if schedule_name:
+            query["schedule_name"] = schedule_name
 
-        # matching request (mostly for workers)
-        matching_query = {}
-        if "matching" in request_json_args:
-            for res_key in ("cpu", "memory", "disk"):
-                if res_key in request_json_args["matching"]:
-                    matching_query[f"config.resources.{res_key}"] = {
-                        "$lte": request_json_args["matching"][res_key]
-                    }
-            if "offliners" in request_json_args["matching"]:
-                matching_query["config.task_name"] = {
-                    "$in": request_json_args["matching"]["offliners"]
-                }
-
-        query.update(matching_query)
+        for res_key in ("cpu", "memory", "disk"):
+            key = f"matching_{res_key}"
+            if key in request_args:
+                query[f"config.resources.{res_key}"] = {"$lte": request_args[key]}
+        matching_offliners = request_args.get("matching_offliners")
+        if matching_offliners:
+            query["config.task_name"] = {"$in": matching_offliners}
 
         cursor = (
             RequestedTasks()

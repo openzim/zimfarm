@@ -55,7 +55,7 @@ class TestRequestedTaskList:
                     "cpu": 3,
                     "memory": 1024,
                     "disk": 1024,
-                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                    "offliners": ["mwoffliner", "phet", "gutenberg", "youtube"],
                 },
                 25,
             ],
@@ -64,7 +64,7 @@ class TestRequestedTaskList:
                     "cpu": 2,
                     "memory": 1024,
                     "disk": 1024,
-                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                    "offliners": ["mwoffliner", "phet", "gutenberg", "youtube"],
                 },
                 0,
             ],
@@ -73,7 +73,7 @@ class TestRequestedTaskList:
                     "cpu": 3,
                     "memory": 1023,
                     "disk": 1024,
-                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                    "offliners": ["mwoffliner", "phet", "gutenberg", "youtube"],
                 },
                 0,
             ],
@@ -82,7 +82,7 @@ class TestRequestedTaskList:
                     "cpu": 3,
                     "memory": 1024,
                     "disk": 1023,
-                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg", "youtube"],
+                    "offliners": ["mwoffliner", "phet", "gutenberg", "youtube"],
                 },
                 0,
             ],
@@ -91,7 +91,7 @@ class TestRequestedTaskList:
                     "cpu": 3,
                     "memory": 1024,
                     "disk": 1024,
-                    "offliners": ["mwoffliner", "phet", "ted", "gutenberg"],
+                    "offliners": ["mwoffliner", "phet", "gutenberg"],
                 },
                 0,
             ],
@@ -99,10 +99,15 @@ class TestRequestedTaskList:
     )
     def test_list_matching(self, client, requested_tasks, matching, expected):
 
+        url = f"{self.url}?"
+        for key, value in matching.items():
+            if isinstance(value, list):
+                for lvalue in value:
+                    url += f"matching_{key}={lvalue}&"
+            else:
+                url += f"matching_{key}={value}&"
         headers = {"Content-Type": "application/json"}
-        response = client.get(
-            self.url, headers=headers, data=json.dumps({"matching": matching})
-        )
+        response = client.get(url, headers=headers)
         assert response.status_code == 200
         data = json.loads(response.data)
         items = data["items"]
@@ -158,9 +163,7 @@ class TestRequestedTaskCreate:
         assert response.status_code == 201
 
         data = json.loads(response.data)
-        database.requested_tasks.delete_one(
-            {"_id": ObjectId(data["requested"][0]["_id"])}
-        )
+        database.requested_tasks.delete_one({"_id": ObjectId(data["requested"][0])})
 
     def test_create_with_wrong_schedule(self, client, access_token, schedule):
         url = "/requested-tasks/"

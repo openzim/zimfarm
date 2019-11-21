@@ -17,10 +17,24 @@
 	<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon-180x180.png" />
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 	<link rel="stylesheet" href="assets/styles.css">
+	<!-- <script src="https://kit.fontawesome.com/05f4a9aa69.js" crossorigin="anonymous"></script> -->
 </head>
 <body>
 	<header>
-		<img src="assets/favicon.svg"><label>Zimfarm</label>
+		<div class="branding">
+			<div class="icon"><img src="assets/favicon.svg" /></div>
+			<label>Zimfarm</label>
+		</div>
+		<nav class="menu">
+			<!-- <a href="/" >Pipeline</a> -->
+			<a href="/" class="active">Schedules</a>
+			<!-- <a href="/workers">Workers</a>
+			<a href="/users">Users</a>
+			<a href="/stats">Stats</a> -->
+		</nav>
+		<!-- <nav>
+			<span class="settings"></span><i class="fas fa-user-cog"></i>
+		</nav> -->
 	</header>
 	<div id="app" class="container">
 		<div v-if="loading">

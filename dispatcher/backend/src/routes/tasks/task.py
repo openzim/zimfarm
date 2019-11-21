@@ -4,11 +4,12 @@
 
 import logging
 import datetime
+from http import HTTPStatus
 
 import pytz
 import pymongo
 import trafaret as t
-from flask import request, jsonify
+from flask import request, jsonify, make_response, Response
 
 from common.entities import TaskStatus
 from utils.broadcaster import BROADCASTER
@@ -56,7 +57,7 @@ class TasksRoute(BaseRoute):
             query["schedule_id"] = schedule_id
 
         count = Tasks().count_documents(query)
-        projection = {"_id": 1, "status": 1, "timestamp.requested": 1}
+        projection = {"_id": 1, "status": 1, "timestamp": 1}
         cursor = (
             Tasks()
             .find(query, projection)
@@ -131,9 +132,9 @@ class TaskRoute(BaseRoute):
 
         BROADCASTER.broadcast_updated_task(task_id, TaskStatus.reserved, payload)
 
-        response = jsonify(Tasks().find_one({"_id": task_id}))
-        response.status_code = 201
-        return response
+        return make_response(
+            jsonify(Tasks().find_one({"_id": task_id})), HTTPStatus.CREATED
+        )
 
     @authenticate
     @url_object_id("task_id")
@@ -160,15 +161,13 @@ class TaskRoute(BaseRoute):
         except t.DataError as e:
             raise InvalidRequestJSON(str(e.error))
 
-        result = task_event_handler(
-            task["_id"], request_json["event"], request_json["payload"]
-        )
+        task_event_handler(task["_id"], request_json["event"], request_json["payload"])
 
         BROADCASTER.broadcast_updated_task(
             task_id, request_json["event"], request_json["payload"]
         )
 
-        return jsonify(result or {})
+        return Response(status=HTTPStatus.NO_CONTENT)
 
 
 class TaskCancelRoute(BaseRoute):
@@ -192,11 +191,11 @@ class TaskCancelRoute(BaseRoute):
             logger.exception(exc)
             username = None
 
-        result = task_event_handler(
+        task_event_handler(
             task["_id"], TaskStatus.cancel_requested, {"canceled_by": username}
         )
 
         # broadcast cancel-request to worker
         BROADCASTER.broadcast_cancel_task(task_id)
 
-        return jsonify(result)
+        return Response(status=HTTPStatus.NO_CONTENT)
