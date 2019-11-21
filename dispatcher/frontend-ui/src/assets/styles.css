@@ -48,6 +48,7 @@ header .branding .icon {
 header .branding .icon img {	
 	border-style: none;
 	vertical-align: middle;
+	width: 2rem;
 }
 
 header .branding label {

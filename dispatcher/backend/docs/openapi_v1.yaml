@@ -2,8 +2,6 @@ openapi: 3.0.0
 servers:
   - description: production server
     url: https://api.farm.openzim.org/v1
-  - description: dev server
-    url: http://localhost/v1
 info:
   description: |
     Zimfarm is OpenZIM's creation farm.
