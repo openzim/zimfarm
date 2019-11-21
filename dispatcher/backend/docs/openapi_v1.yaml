@@ -1099,9 +1099,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-
-
 components:
   securitySchemes:
     token:
@@ -1422,7 +1419,7 @@ components:
         _id:
           $ref: '#/components/schemas/MongoId'
         status:
-          $ref: '#components/schemas/TaskStatus'
+          $ref: '#/components/schemas/TaskStatus'
         timestamp:
           $ref: '#/components/schemas/TaskTimestamp'
     RequestedTask:
@@ -1439,10 +1436,6 @@ components:
           $ref: '#/components/schemas/MongoId'
         status:
           $ref: '#/components/schemas/TaskStatus'
-          example: requested
-          enum:
-            - requested
-            - reserved
         schedule_id:
           $ref: '#/components/schemas/MongoId'
         schedule_name:
