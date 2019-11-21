@@ -163,7 +163,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         matched_count = Schedules().update_one(query, {"$set": update}).matched_count
 
         if matched_count:
-            return Response("", HTTPStatus.NO_CONTENT)
+            return Response(status=HTTPStatus.NO_CONTENT)
         else:
             raise ScheduleNotFound()
 
@@ -177,4 +177,4 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if result.deleted_count == 0:
             raise ScheduleNotFound()
         else:
-            return "", HTTPStatus.NO_CONTENT
+            return Response(status=HTTPStatus.NO_CONTENT)
