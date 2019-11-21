@@ -2,9 +2,10 @@ from uuid import UUID, uuid4
 from datetime import datetime, timedelta
 
 import flask
-from flask import request, jsonify
+from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
+from .. import API_PATH, authenticate2
 from . import validate, ssh
 from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
@@ -121,15 +122,21 @@ def token():
     return response
 
 
+@authenticate2
+def test(token: AccessToken.Payload):
+    return Response(None, 204)
+
+
 class Blueprint(flask.Blueprint):
     def __init__(self):
-        super().__init__("auth", __name__, url_prefix="/auth")
+        super().__init__("auth", __name__, url_prefix=f"{API_PATH}/auth")
         self.add_url_rule(
             "/authorize", "auth_with_credentials", credentials, methods=["POST"]
         )
         self.add_url_rule(
             "/ssh_authorize", "auth_with_ssh", ssh.asymmetric_key_auth, methods=["POST"]
         )
+        self.add_url_rule("/test", "test_auth", test, methods=["GET"])
         self.add_url_rule("/token", "auth_with_token", token, methods=["POST"])
         self.add_url_rule("/oauth2", "oauth2", OAuth2(), methods=["POST"])
         self.add_url_rule(

@@ -8,6 +8,8 @@ from bson.objectid import ObjectId, InvalidId
 from utils.token import AccessToken, AccessControl
 from .errors import Unauthorized, BadRequest
 
+API_PATH = "/v1"
+
 
 def authenticate2(f):
     @wraps(f)
