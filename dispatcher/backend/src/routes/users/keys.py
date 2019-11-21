@@ -3,6 +3,7 @@ import base64
 import binascii
 import tempfile
 import subprocess
+from http import HTTPStatus
 from datetime import datetime
 
 import jsonschema
@@ -99,7 +100,7 @@ def add(token: AccessToken.Payload, username: str):
 
     Users().update_one(filter, {"$push": {"ssh_keys": ssh_key}})
 
-    return Response()
+    return Response(status=HTTPStatus.CREATED)
 
 
 @authenticate2
