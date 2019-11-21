@@ -4,10 +4,42 @@ import pytest
 from bson import ObjectId
 from pymongo import MongoClient
 from pymongo.database import Database
+from flask.testing import FlaskClient
 
-from common import mongo
 from main import app
+from common import mongo
+from routes import API_PATH
 from utils.token import AccessControl
+
+# monley-patching FlaskClient to prefix test URLs with proper API_PATH
+original_get = FlaskClient.get
+def rewritten_get(self, url, *args, **kwargs):
+    url = f"{API_PATH}{url}"
+    return original_get(self, url, *args, **kwargs)
+
+
+original_post = FlaskClient.post
+def rewritten_post(self, url, *args, **kwargs):
+    url = f"{API_PATH}{url}"
+    return original_post(self, url, *args, **kwargs)
+
+
+original_patch = FlaskClient.patch
+def rewritten_patch(self, url, *args, **kwargs):
+    url = f"{API_PATH}{url}"
+    return original_patch(self, url, *args, **kwargs)
+
+
+original_delete = FlaskClient.delete
+def rewritten_delete(self, url, *args, **kwargs):
+    url = f"{API_PATH}{url}"
+    return original_delete(self, url, *args, **kwargs)
+
+
+FlaskClient.get = rewritten_get
+FlaskClient.post = rewritten_post
+FlaskClient.patch = rewritten_patch
+FlaskClient.delete = rewritten_delete
 
 
 @pytest.fixture(scope="session")
