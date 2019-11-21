@@ -167,4 +167,4 @@ class TestTaskCancel:
                 "Content-Type": "application/json",
             }
             response = client.post(url, headers=headers)
-            assert response.status_code == 200
+            assert response.status_code == 204
