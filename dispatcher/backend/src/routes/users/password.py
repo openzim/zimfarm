@@ -1,6 +1,3 @@
-from typing import Union
-
-from bson import ObjectId
 from flask import request, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -10,11 +7,11 @@ from common.mongo import Users
 
 
 @authenticate2
-@url_object_id(["user"])
-def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
+@url_object_id(["username"])
+def update(token: AccessToken.Payload, username: str):
+    query = {"username": username}
     request_json = request.get_json()
-    filter = {"$or": [{"_id": user}, {"username": user}]}
-    if user == token.user_id or user == token.username:
+    if username == token.username:
         # user is trying to set their own password
 
         # get current password
@@ -23,7 +20,7 @@ def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
             raise errors.BadRequest()
 
         # get current password hash
-        user = Users().find_one(filter, {"password_hash": 1})
+        user = Users().find_one(query, {"password_hash": 1})
         if user is None:
             raise errors.NotFound()
 
@@ -46,7 +43,7 @@ def update(token: AccessToken.Payload, user: Union[ObjectId, str]):
     matched_count = (
         Users()
         .update_one(
-            filter, {"$set": {"password_hash": generate_password_hash(password_new)}}
+            query, {"$set": {"password_hash": generate_password_hash(password_new)}}
         )
         .matched_count
     )

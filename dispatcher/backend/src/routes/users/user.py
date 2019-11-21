@@ -75,16 +75,16 @@ def create(token: AccessToken.Payload):
 
 
 @authenticate2
-@url_object_id("user")
-def get(token: AccessToken.Payload, user: Union[ObjectId, str]):
+@url_object_id("username")
+def get(token: AccessToken.Payload, username: str):
     # if user in url is not user in token, check user permission
-    if user != token.user_id and user != token.username:
+    if username != token.username:
         if not token.get_permission("users", "read"):
             raise errors.NotEnoughPrivilege()
 
     # find user based on _id or username
     user = Users().find_one(
-        {"$or": [{"_id": user}, {"username": user}]},
+        {"username": username},
         {"_id": 1, "username": 1, "email": 1, "scope": 1},
     )
 
@@ -94,16 +94,16 @@ def get(token: AccessToken.Payload, user: Union[ObjectId, str]):
 
 
 @authenticate2
-@url_object_id("user")
-def delete(token: AccessToken.Payload, user: Union[ObjectId, str]):
+@url_object_id("username")
+def delete(token: AccessToken.Payload, username: str):
     # if user in url is not user in token, check user permission
-    if user != token.user_id and user != token.username:
+    if username != token.username:
         if not token.get_permission("users", "delete"):
             raise errors.NotEnoughPrivilege()
 
     # delete user
     deleted_count = (
-        Users().delete_one({"$or": [{"_id": user}, {"username": user}]}).deleted_count
+        Users().delete_one({"username": username}).deleted_count
     )
     if deleted_count == 0:
         raise errors.NotFound()
