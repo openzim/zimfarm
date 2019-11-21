@@ -7,9 +7,11 @@ COPY requirements.txt /usr/src/
 RUN pip install -r /usr/src/requirements.txt
 
 COPY src /usr/src/
+COPY docs /usr/src/docs
 WORKDIR /usr/src/
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENV DOCS_DIR /usr/src/docs
 
 ENTRYPOINT ["entrypoint.sh"]
 
