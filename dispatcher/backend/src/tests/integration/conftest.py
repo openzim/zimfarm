@@ -13,24 +13,32 @@ from utils.token import AccessControl
 
 # monley-patching FlaskClient to prefix test URLs with proper API_PATH
 original_get = FlaskClient.get
+
+
 def rewritten_get(self, url, *args, **kwargs):
     url = f"{API_PATH}{url}"
     return original_get(self, url, *args, **kwargs)
 
 
 original_post = FlaskClient.post
+
+
 def rewritten_post(self, url, *args, **kwargs):
     url = f"{API_PATH}{url}"
     return original_post(self, url, *args, **kwargs)
 
 
 original_patch = FlaskClient.patch
+
+
 def rewritten_patch(self, url, *args, **kwargs):
     url = f"{API_PATH}{url}"
     return original_patch(self, url, *args, **kwargs)
 
 
 original_delete = FlaskClient.delete
+
+
 def rewritten_delete(self, url, *args, **kwargs):
     url = f"{API_PATH}{url}"
     return original_delete(self, url, *args, **kwargs)

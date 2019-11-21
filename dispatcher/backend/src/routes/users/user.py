@@ -84,8 +84,7 @@ def get(token: AccessToken.Payload, username: str):
 
     # find user based on _id or username
     user = Users().find_one(
-        {"username": username},
-        {"_id": 1, "username": 1, "email": 1, "scope": 1},
+        {"username": username}, {"_id": 1, "username": 1, "email": 1, "scope": 1}
     )
 
     if user is None:
@@ -102,9 +101,7 @@ def delete(token: AccessToken.Payload, username: str):
             raise errors.NotEnoughPrivilege()
 
     # delete user
-    deleted_count = (
-        Users().delete_one({"username": username}).deleted_count
-    )
+    deleted_count = Users().delete_one({"username": username}).deleted_count
     if deleted_count == 0:
         raise errors.NotFound()
     else:

@@ -20,7 +20,7 @@ info:
   license:
     name: GNU General Public License v3.0
     url: https://www.gnu.org/licenses/gpl-3.0.en.html
-    
+
 tags:
 - name: auth
   description: Authentication-refated calls
@@ -116,7 +116,7 @@ paths:
       - auth
       summary: test token
       operationId: testToken
-      description: Validate proper authentication without requesting data 
+      description: Validate proper authentication without requesting data
       security:
         - token: []
         - oauth2: []
@@ -1337,7 +1337,7 @@ components:
           example: mwoffliner
         warehouse_path:
           type: string
-          example: /wikipedia 
+          example: /wikipedia
     ConfigImage:
       type: object
       required:
@@ -1397,7 +1397,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Offliner'
-          example: 
+          example:
             - "youtube"
             - "mwoffliner"
           description: list of offliners supported
@@ -1602,7 +1602,7 @@ components:
       type: array
       items:
         type: string
-      example: 
+      example:
         - selection
         - full
         - top

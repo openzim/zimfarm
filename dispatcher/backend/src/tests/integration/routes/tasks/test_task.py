@@ -21,9 +21,7 @@ class TestTaskCreate:
         assert response.status_code == 201
 
         data = json.loads(response.data)
-        database.tasks.delete_one(
-            {"_id": ObjectId(data["_id"])}
-        )
+        database.tasks.delete_one({"_id": ObjectId(data["_id"])})
 
     def test_create_with_missing_worker(self, client, access_token, requested_task):
         url = "/tasks/{}".format(str(requested_task["_id"]))

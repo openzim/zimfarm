@@ -1,5 +1,5 @@
 from flask import request, jsonify
-import trafaret as t
+import trafaret
 
 from common.mongo import Schedules
 from routes.base import BaseRoute
@@ -15,10 +15,10 @@ class tagsRoute(BaseRoute):
 
         # unpack url parameters
         request_args = request.args.to_dict()
-        validator = t.Dict(
+        validator = trafaret.Dict(
             {
-                t.Key("skip", default=0): t.ToInt(gte=0),
-                t.Key("limit", default=20): t.ToInt(gt=0, lte=200),
+                trafaret.Key("skip", default=0): trafaret.ToInt(gte=0),
+                trafaret.Key("limit", default=20): trafaret.ToInt(gt=0, lte=200),
             }
         )
         request_args = validator.check(request_args)
