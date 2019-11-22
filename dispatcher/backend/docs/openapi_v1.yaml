@@ -309,11 +309,7 @@ paths:
       operationId: getSchedule
       description: Retrieve a Schedule's details
       parameters:
-        - in: path
-          required: true
-          name: scheduleName
-          schema:
-            $ref: '#/components/schemas/ScheduleName'
+        - $ref: '#/components/parameters/ScheduleNameParameter'
       responses:
         200:
           description: Schedule details
@@ -343,11 +339,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-        - in: path
-          required: true
-          name: scheduleName
-          schema:
-            $ref: '#/components/schemas/ScheduleName'
+        - $ref: '#/components/parameters/ScheduleNameParameter'
       requestBody:
         content:
           application/json:
@@ -393,11 +385,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-        - in: path
-          required: true
-          name: scheduleName
-          schema:
-            $ref: '#/components/schemas/ScheduleName'
+        - $ref: '#/components/parameters/ScheduleNameParameter'
       responses:
         200:
           description: Schedule Deleted
@@ -543,11 +531,7 @@ paths:
       operationId: getRequestedTask
       description: Retrieve a RequestedTask details
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         200:
           description: RequestedTask Created
@@ -577,11 +561,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         200:
           description: RequestedTask Deleted
@@ -637,11 +617,7 @@ paths:
       operationId: getTask
       description: Retrieve a Task's details
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         200:
           description: Task record
@@ -671,11 +647,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         201:
           description: Task Created
@@ -712,11 +684,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       requestBody:
         content:
           application/json:
@@ -761,11 +729,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         204:
           description: Cancelation Requested
@@ -953,16 +917,15 @@ paths:
   /users/{username}:
     get:
       tags:
-      - public
+      - restricted
       summary: get user details
       operationId: getUser
       description: Retrieve a User's details
+      security:
+        - token: []
+        - ouath: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       responses:
         200:
           description: User Record
@@ -992,11 +955,7 @@ paths:
       operationId: deleteUser
       description: Remove a User
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       security:
         - token: []
         - oauth: []
@@ -1022,11 +981,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       responses:
         200:
           description: List of SSH Keys for User
@@ -1088,11 +1043,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       requestBody:
         content:
           application/json:
@@ -1137,11 +1088,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       - in: path
         required: true
         name: fingerprint
@@ -1170,11 +1117,7 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       requestBody:
         content:
           application/json:
@@ -1239,6 +1182,24 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/LimitProperty'
+    ScheduleNameParameter:
+      in: path
+      required: true
+      name: scheduleName
+      schema:
+        $ref: '#/components/schemas/ScheduleName'
+    UsernameParameter:
+      in: path
+      required: true
+      name: username
+      schema:
+        $ref: '#/components/schemas/Username'
+    TaskIdParameter:
+      in: path
+      name: taskId
+      required: true
+      schema:
+        type: string
   schemas:
     Language:
       type: object
@@ -1295,26 +1256,39 @@ components:
         tasks:
           $ref: '#/components/schemas/ScopeItem'
         users:
-          $ref: '#/components/schemas/ScopeItem'
+          type: object
+          properties:
+            read:
+              $ref: '#/components/schemas/BooleanProperty'
+            create:
+              $ref: '#/components/schemas/BooleanProperty'
+            update:
+              $ref: '#/components/schemas/BooleanProperty'
+            delete:
+              $ref: '#/components/schemas/BooleanProperty'
+            reset_password:
+              $ref: '#/components/schemas/BooleanProperty'
+            keys:
+              type: object
+              properties:
+                read:
+                  $ref: '#/components/schemas/BooleanProperty'
+                delete:
+                  $ref: '#/components/schemas/BooleanProperty'
     ScopeItem:
       type: object
       properties:
         read:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/BooleanProperty'
         create:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/BooleanProperty'
         update:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/BooleanProperty'
         delete:
-          type: boolean
-          example: false
-        reset_password:
-          type: boolean
-          example: false
-
+          $ref: '#/components/schemas/BooleanProperty'
+    BooleanProperty:
+      type: boolean
+      example: true
     Worker:
       type: object
       required:
