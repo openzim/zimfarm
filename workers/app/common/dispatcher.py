@@ -71,6 +71,9 @@ def query_api(token, method, url, payload=None, params=None, headers={}):
     except Exception as exp:
         return (False, 599, "ConnectionError -- {}".format(exp))
 
+    if req.status_code == requests.codes.NO_CONTENT:
+        return True, req.status_code, ""
+
     try:
         resp = req.json() if req.text else {}
     except json.JSONDecodeError:
@@ -86,7 +89,11 @@ def query_api(token, method, url, payload=None, params=None, headers={}):
             "ResponseError -- {} -- {}".format(str(exp), req.text),
         )
 
-    if req.status_code in (requests.codes.OK, requests.codes.CREATED):
+    if req.status_code in (
+        requests.codes.OK,
+        requests.codes.CREATED,
+        requests.codes.ACCEPTED,
+    ):
         return True, req.status_code, resp
 
     return (False, req.status_code, resp["error"] if "error" in resp else str(resp))
