@@ -89,17 +89,16 @@ class WorkerManager(BaseWorker):
         self.last_poll = datetime.datetime.now()
 
         host_stats = query_host_stats(self.docker.api, self.workdir)
-        matching = {
-            "cpu": host_stats["cpu"]["available"],
-            "memory": host_stats["memory"]["available"],
-            "disk": host_stats["disk"]["available"],
-            "offliners": SUPPORTED_OFFLINERS,
-        }
         success, status_code, response = self.query_api(
             "GET",
             "/requested-tasks/",
-            payload={"matching": matching},
-            params={"limit": 20},
+            params={
+                "limit": 20,
+                "matching_cpu": host_stats["cpu"]["available"],
+                "matching_memory": host_stats["memory"]["available"],
+                "matching_disk": host_stats["disk"]["available"],
+                "matching_offliners": SUPPORTED_OFFLINERS,
+            },
         )
         logger.info(f"polling result: {success}, HTTP {status_code}")
         logger.info(response)
