@@ -57,10 +57,8 @@ class BaseWorker:
         self.authenticated_on = datetime.datetime(2019, 1, 1)
 
         logger.info(f"testing authentication with {self.webapi_uri}…")
-        success, status_code, response = self.query_api(
-            "GET", "/auth/test", params={"limit": 1}
-        )
-        if success and "items" in response and "meta" in response:
+        success, _, _ = self.query_api("GET", "/auth/test")
+        if success:
             logger.info("\tauthentication successful")
         else:
             logger.critical("\tauthentication failed.")
