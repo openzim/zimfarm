@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask import request, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -52,4 +54,4 @@ def update(token: AccessToken.Payload, username: str):
     if matched_count == 0:
         raise errors.NotFound()
     else:
-        return Response()
+        return Response(status=HTTPStatus.NO_CONTENT)

@@ -9,7 +9,7 @@ COPY app app
 RUN ln -s /usr/src/app/task_worker.py /usr/local/bin/task-worker
 RUN chmod +x /usr/local/bin/task-worker
 
-ENV WEB_API_URI https://api.farm.openzim.org
+ENV WEB_API_URI https://api.farm.openzim.org/v1
 ENV WORKDIR /data
 VOLUME /var/run/docker.sock
 VOLUME /data

@@ -1,4 +1,6 @@
-from flask import Flask, Response, jsonify
+from http import HTTPStatus
+
+from flask import Flask, Response, jsonify, make_response
 from jwt import exceptions as jwt_exceptions
 
 from errors import oauth2, http
@@ -18,21 +20,19 @@ def register_handlers(app: Flask):
     @app.errorhandler(trafaret.dataerror.DataError)
     def handler_dataerror(e):
         print(e.error)
-        response = jsonify({"message": e.as_dict()})
-        response.status_code = 400
-        return response
+        return make_response(jsonify({"message": e.as_dict()}), HTTPStatus.BAD_REQUEST)
 
     @app.errorhandler(jwt_exceptions.ExpiredSignature)
     def handler_expiredsig(_):
-        response = jsonify({"error": "token expired"})
-        response.status_code = 401
-        return response
+        return make_response(
+            jsonify({"error": "token expired"}), HTTPStatus.UNAUTHORIZED
+        )
 
     @app.errorhandler(jwt_exceptions.InvalidTokenError)
     def handler_invalidtoken(_):
-        response = jsonify({"error": "token invalid"})
-        response.status_code = 401
-        return response
+        return make_response(
+            jsonify({"error": "token invalid"}), HTTPStatus.UNAUTHORIZED
+        )
 
 
 # 400
@@ -43,11 +43,9 @@ class BadRequest(Exception):
     @staticmethod
     def handler(e):
         if isinstance(e, BadRequest) and e.message is not None:
-            response = jsonify({"error": e.message})
-            response.status_code = 400
-            return response
+            return make_response(jsonify({"error": e.message}), HTTPStatus.BAD_REQUEST)
         else:
-            return Response(status=400)
+            return Response(status=HTTPStatus.BAD_REQUEST)
 
 
 class OfflinerConfigNotValid(Exception):
@@ -57,11 +55,9 @@ class OfflinerConfigNotValid(Exception):
     @staticmethod
     def handler(e):
         if isinstance(e, OfflinerConfigNotValid):
-            response = jsonify(e.errors)
-            response.status_code = 400
-            return response
+            return make_response(jsonify(e.errors), HTTPStatus.BAD_REQUEST)
         else:
-            return Response(status=400)
+            return Response(status=HTTPStatus.BAD_REQUEST)
 
 
 # 401
@@ -72,11 +68,9 @@ class Unauthorized(Exception):
     @staticmethod
     def handler(e):
         if isinstance(e, Unauthorized) and e.message is not None:
-            response = jsonify({"error": e.message})
-            response.status_code = 401
-            return response
+            return make_response(jsonify({"error": e.message}), HTTPStatus.UNAUTHORIZED)
         else:
-            return Response(status=401)
+            return Response(status=HTTPStatus.UNAUTHORIZED)
 
 
 class NotEnoughPrivilege(Unauthorized):
@@ -92,15 +86,13 @@ class NotFound(Exception):
     @staticmethod
     def handler(e):
         if isinstance(e, NotFound) and e.message is not None:
-            response = jsonify({"error": e.message})
-            response.status_code = 404
-            return response
+            return make_response(jsonify({"error": e.message}), HTTPStatus.NOT_FOUND)
         else:
-            return Response(status=404)
+            return Response(status=HTTPStatus.NOT_FOUND)
 
 
 # 500
 class InternalError(Exception):
     @staticmethod
     def handler(e):
-        return Response(status=500)
+        return Response(status=HTTPStatus.INTERNAL_SERVER_ERROR)

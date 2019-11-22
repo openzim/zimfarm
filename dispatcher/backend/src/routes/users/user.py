@@ -1,6 +1,5 @@
-from typing import Union
+from http import HTTPStatus
 
-from bson import ObjectId
 from flask import request, jsonify, Response
 from jsonschema import validate, ValidationError
 from pymongo.errors import DuplicateKeyError
@@ -105,4 +104,4 @@ def delete(token: AccessToken.Payload, username: str):
     if deleted_count == 0:
         raise errors.NotFound()
     else:
-        return Response()
+        return Response(status=HTTPStatus.NO_CONTENT)

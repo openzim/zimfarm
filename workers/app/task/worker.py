@@ -106,44 +106,38 @@ class TaskWorker(BaseWorker):
         else:
             logger.warning(f"couldn't retrieve task detail for #{self.task_id}")
 
+    def patch_task(self, payload):
+        success, status_code, response = self.query_api(
+            "PATCH", f"/tasks/{self.task_id}", payload=payload
+        )
+        if not success or status_code != requests.codes.NO_CONTENT:
+            logger.warning(
+                f"couldn't patch task status={payload['event']} HTTP {status_code}: {response}"
+            )
+
     def mark_task_started(self):
         logger.info(f"Updating task-status={started}")
-        success, status_code, response = self.query_api(
-            "PATCH", f"/tasks/{self.task_id}", payload={"event": started, "payload": {}}
-        )
-        if success and status_code == requests.codes.OK:
-            return
-        logger.warning(f"couldn't set task status={started}")
+        self.patch_task({"event": started, "payload": {}})
 
     def mark_scraper_started(self):
         logger.info(f"Updating task-status={scraper_started}")
         self.scraper.reload()
-        success, status_code, response = self.query_api(
-            "PATCH",
-            f"/tasks/{self.task_id}",
-            payload={
+        self.patch_task(
+            {
                 "event": scraper_started,
                 "payload": {
                     "image": self.scraper.image.tags[-1],
                     "command": self.scraper.attrs["Config"]["Cmd"],
                     "log": pathlib.Path(self.scraper.attrs["LogPath"]).name,
                 },
-            },
+            }
         )
-        if success and status_code == requests.codes.OK:
-            return
-        logger.warning(f"couldn't set task status={scraper_started}")
 
     def mark_scraper_completed(self, exit_code):
         logger.info(f"Updating task-status={scraper_completed}")
-        success, status_code, response = self.query_api(
-            "PATCH",
-            f"/tasks/{self.task_id}",
-            payload={"event": scraper_completed, "payload": {"exit_code": exit_code}},
+        self.patch_task(
+            {"event": scraper_completed, "payload": {"exit_code": exit_code}}
         )
-        if success and status_code == requests.codes.OK:
-            return
-        logger.warning(f"couldn't set task status={scraper_completed}")
 
     def mark_task_completed(self, status, exception=None, traceback=None):
         logger.info(f"Updating task-status={status}")
@@ -157,42 +151,21 @@ class TaskWorker(BaseWorker):
             self.docker, task_container_name(self.task_id), tail=2000
         )
 
-        success, status_code, response = self.query_api(
-            "PATCH",
-            f"/tasks/{self.task_id}",
-            payload={"event": status, "payload": event_payload},
-        )
-        if success and status_code == requests.codes.OK:
-            return
-        logger.warning(
-            f"couldn't set task status={status} HTTP {status_code}: {response}"
-        )
+        self.patch_task({"event": status, "payload": event_payload})
 
     def mark_file_created(self, filename, filesize):
         human_fsize = humanfriendly.format_size(filesize, binary=True)
         logger.info(f"ZIM file created: {filename}, {human_fsize}")
-        success, status_code, response = self.query_api(
-            "PATCH",
-            f"/tasks/{self.task_id}",
-            payload={
+        self.patch_task(
+            {
                 "event": "created_file",
                 "payload": {"file": {"name": filename, "size": filesize}},
-            },
+            }
         )
-        if success and status_code == requests.codes.OK:
-            return
-        logger.warning(f"couldn't send file-created event")
 
     def mark_file_uploaded(self, filename):
         logger.info(f"Updating file-status=uploaded for {filename}")
-        success, status_code, response = self.query_api(
-            "PATCH",
-            f"/tasks/{self.task_id}",
-            payload={"event": "uploaded_file", "payload": {"filename": filename}},
-        )
-        if success and status_code == requests.codes.OK:
-            return
-        logger.warning(f"couldn't update file upload status")
+        self.patch_task({"event": "uploaded_file", "payload": {"filename": filename}})
 
     def setup_workdir(self):
         logger.info("Setting-up workdir")

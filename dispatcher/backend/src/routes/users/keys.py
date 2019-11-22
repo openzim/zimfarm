@@ -117,6 +117,6 @@ def delete(token: AccessToken.Payload, username: str, fingerprint: str):
     )
 
     if result.modified_count > 0:
-        return Response()
+        Response(status=HTTPStatus.NO_CONTENT)
     else:
         raise errors.NotFound()
