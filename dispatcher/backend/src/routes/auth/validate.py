@@ -1,6 +1,7 @@
 import base64
 import binascii
 from datetime import datetime
+from http import HTTPStatus
 
 import paramiko
 import jsonschema
@@ -52,4 +53,4 @@ def ssh_key():
     if user.matched_count == 0:
         raise errors.Unauthorized()
     else:
-        return Response()
+        return Response(status=HTTPStatus.NO_CONTENT)
