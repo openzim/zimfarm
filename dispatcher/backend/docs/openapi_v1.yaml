@@ -4,8 +4,8 @@ servers:
     url: https://api.farm.openzim.org/v1
 info:
   description: |
-    Zimfarm is OpenZIM's creation farm.
-    OpenZIM periodically publishes updated ZIM files for a large variety of content.
+    Zimfarm is openZIM's automated & distributed ZIM files creation engine.
+    openZIM periodically publishes updated ZIM files for a large variety of content.
 
     This API provides public access to the scheduled ZIM files to create as well as tracking of its tasks.
 
