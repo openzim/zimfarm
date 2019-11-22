@@ -433,11 +433,40 @@ paths:
         schema:
           $ref: '#/components/schemas/ScheduleName'
       - in: query
-        name: matching
-        description: matching request to filter requested tasks based on worker capability
+        name: matching_cpu
         required: false
         schema:
-          $ref: '#/components/schemas/Matching'
+          type: integer
+          format: int32
+          example: 3
+          description: number of CPU cores required to run it
+      - in: query
+        name: matching_memory
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: RAM (in bytes) required to run it
+      - in: query
+        name: matching_disk
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: Disk space (in bytes) required to run it
+      - in: query
+        name: matching_offliners
+        required: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offliner'
+          example:
+            - "youtube"
+            - "mwoffliner"
+          description: list of offliners supported
       responses:
         200:
           description: List of RequestedTask matching criteria
@@ -1369,36 +1398,6 @@ components:
           type: integer
           format: int32
           description: Disk space (in bytes) required to run it
-    Matching:
-      type: object
-      required:
-        - cpu
-        - memory
-        - disk
-      properties:
-        cpu:
-          type: integer
-          format: int32
-          example: 3
-          description: number of CPU cores required to run it
-        memory:
-          type: integer
-          format: int32
-          example: 1024
-          description: RAM (in bytes) required to run it
-        disk:
-          type: integer
-          format: int32
-          example: 1024
-          description: Disk space (in bytes) required to run it
-        offliners:
-          type: array
-          items:
-            $ref: '#/components/schemas/Offliner'
-          example:
-            - "youtube"
-            - "mwoffliner"
-          description: list of offliners supported
     Offliner:
       type: string
       enum:
