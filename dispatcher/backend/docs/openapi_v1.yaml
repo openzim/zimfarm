@@ -48,6 +48,7 @@ paths:
                 password:
                   type: string
                   format: password
+                  minLength: 6
       responses:
         200:
           description: Token information
@@ -174,6 +175,7 @@ paths:
                 key:
                   type: string
                   format: base64 encoded RSA public key text
+                  minLength: 1
                   example: QUFBQUIzTnphQzF5YzJFQUFBQURBUUFCQUFBQkFRRERJUlNhbStHY0tBQW5tMGpGL1ZCMTJydFhDenBGRTFnc1Q5Q25GdzVkWWJQb2NudWdkbDY0UVpxNjVSdGN5T1BJVEJ0Yk1SOUw2ZEowejI2b21mZFhYd2VFcE5JR0N0SmRtNldzWTNrc0JyNHAvREhFRUVzSDkraGR3RVovQzd3YXlpbDZ3dUlwY3BMNXJLZ2xIRnlZVVJsNDQ5Nis0c0RjMG1YbllGdmVSMkdHRmNsdmwvcTdEejNla1RaNXV4THBhRFl4Y3NrZm5LVm1PQW82b04yYzRhbmtkZ2ozRkxmemRQeHFlakovUmRXVFF4dEtGQmt5VEZ0Wmt2SW9Ub2NXRENISWw0K1k1RExOYzlFTm1TZnlDbFdsYVRxaVlBZm4rY3QvZXNrZHFxK0dHY0pkVnAwREFSWUdMb3NNV3JQbm01WWdRL3EwOHEzcmNIZ1NzOG1I
       responses:
         204:
@@ -345,6 +347,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
                 name:
                   $ref: '#/components/schemas/ScheduleName'
@@ -690,6 +693,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required:
                 - event
                 - payload
@@ -698,6 +702,7 @@ paths:
                   $ref: '#/components/schemas/TaskStatus'
                 payload:
                   type: object
+                  additionalProperties: true
                   description: event-related payload
                   example:
                     task_log: agbcdls213821983hjhkj-json.log
@@ -1049,6 +1054,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required:
                 - name
                 - key
@@ -1056,9 +1062,11 @@ paths:
                 name:
                   type: string
                   example: my-key
+                  minLength: 1
                 key:
                   type: string
                   description: Content part of an RSA _Public_ Key
+                  minLength: 1
                   example: AAAAB3NzaC1yc2EAAAADAQABAAABAQDDIRSam+GcKAAnm0jF\/VB12rtXCzpFE1gsT9CnFw5dYbP
       responses:
         201:
@@ -1134,7 +1142,7 @@ paths:
                   type: string
                   format: password
                   description: New password
-                  minLength: 1
+                  minLength: 6
                   example: my-super-password
       responses:
         204:
@@ -1233,6 +1241,7 @@ components:
           $ref: '#/components/schemas/UserEmail'
     UserPayload:
       type: object
+      additionalProperties: false
       required:
       - username
       - password
@@ -1244,6 +1253,7 @@ components:
         password:
           type: string
           format: password
+          minLength: 6
         email:
           $ref: '#/components/schemas/UserEmail'
         scope:
@@ -1361,6 +1371,7 @@ components:
         - wiktionary
     Schedule:
       type: object
+      additionalProperties: false
       required:
         - _id
         - category
@@ -1649,6 +1660,7 @@ components:
     Username:
       type: string
       example: john
+      minLength: 1
     UserEmail:
       type: string
       format: email
