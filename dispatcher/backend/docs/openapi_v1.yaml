@@ -117,7 +117,7 @@ paths:
       description: Validate proper authentication without requesting data
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       responses:
         204:
           description: Authenticated
@@ -261,7 +261,7 @@ paths:
       description: Create a new Schedule
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       requestBody:
         content:
           application/json:
@@ -341,7 +341,7 @@ paths:
       description: Update a Schedule's details
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
         - in: path
           required: true
@@ -391,7 +391,7 @@ paths:
       description: Remove a Schedule
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
         - in: path
           required: true
@@ -491,7 +491,7 @@ paths:
       description: Request new Task from one or many Schedules
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       requestBody:
         content:
           application/json:
@@ -575,7 +575,7 @@ paths:
       description: Remove a RequestedTask
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         name: taskId
@@ -669,7 +669,7 @@ paths:
       description: Turn a RequestedTask into a Task
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         name: taskId
@@ -710,7 +710,7 @@ paths:
       description: Update a Task's details
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         name: taskId
@@ -759,7 +759,7 @@ paths:
       description: Request cancellation of a Task. Actual cancellation is asyncrhonous.
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         name: taskId
@@ -885,7 +885,7 @@ paths:
       description: Query the Users database
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - $ref: '#/components/parameters/SkipParameter'
       - $ref: '#/components/parameters/LimitParameter'
@@ -922,7 +922,7 @@ paths:
         API user needs the `users.create` scope for this endpoint.
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       requestBody:
         content:
           application/json:
@@ -999,7 +999,7 @@ paths:
           $ref: '#/components/schemas/Username'
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       responses:
         200:
           description: User Deleted
@@ -1020,7 +1020,7 @@ paths:
       description: Retrieve the list of registered SSH keys for User
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         required: true
@@ -1086,7 +1086,7 @@ paths:
       description: Upload a new SSH Public Key for User
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         required: true
@@ -1135,7 +1135,7 @@ paths:
       description: Remove SSH Key from User
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         required: true
@@ -1168,7 +1168,7 @@ paths:
       description: Change password for User
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - in: path
         required: true
@@ -1222,8 +1222,8 @@ components:
       description: OAuth2
       flows:
         password:
-          tokenUrl: https://api.farm.openzim.org/auth/oauth2
-          refreshUrl: https://api.farm.openzim.org/auth/oauth2
+          tokenUrl: https://api.farm.openzim.org/v1/auth/oauth2
+          refreshUrl: https://api.farm.openzim.org/v1/auth/oauth2
   parameters:
     SkipParameter:
       in: query
