@@ -4,8 +4,8 @@ servers:
     url: https://api.farm.openzim.org/v1
 info:
   description: |
-    Zimfarm is OpenZIM's creation farm.
-    OpenZIM periodically publishes updated ZIM files for a large variety of content.
+    Zimfarm is openZIM's automated & distributed ZIM files creation engine.
+    openZIM periodically publishes updated ZIM files for a large variety of content.
 
     This API provides public access to the scheduled ZIM files to create as well as tracking of its tasks.
 
@@ -176,7 +176,7 @@ paths:
                   format: base64 encoded RSA public key text
                   example: QUFBQUIzTnphQzF5YzJFQUFBQURBUUFCQUFBQkFRRERJUlNhbStHY0tBQW5tMGpGL1ZCMTJydFhDenBGRTFnc1Q5Q25GdzVkWWJQb2NudWdkbDY0UVpxNjVSdGN5T1BJVEJ0Yk1SOUw2ZEowejI2b21mZFhYd2VFcE5JR0N0SmRtNldzWTNrc0JyNHAvREhFRUVzSDkraGR3RVovQzd3YXlpbDZ3dUlwY3BMNXJLZ2xIRnlZVVJsNDQ5Nis0c0RjMG1YbllGdmVSMkdHRmNsdmwvcTdEejNla1RaNXV4THBhRFl4Y3NrZm5LVm1PQW82b04yYzRhbmtkZ2ozRkxmemRQeHFlakovUmRXVFF4dEtGQmt5VEZ0Wmt2SW9Ub2NXRENISWw0K1k1RExOYzlFTm1TZnlDbFdsYVRxaVlBZm4rY3QvZXNrZHFxK0dHY0pkVnAwREFSWUdMb3NNV3JQbm01WWdRL3EwOHEzcmNIZ1NzOG1I
       responses:
-        200:
+        204:
           description: Public key is valid for User
         400:
           description: Bad Request (invalid input)
@@ -187,7 +187,7 @@ paths:
         401:
           description: Unauthorized
 
-  /schedules:
+  /schedules/:
     get:
       tags:
       - public
@@ -285,7 +285,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputError'
-  /schedules/backup:
+  /schedules/backup/:
     get:
       tags:
       - public
@@ -400,7 +400,7 @@ paths:
             $ref: '#/components/schemas/ScheduleName'
       responses:
         200:
-          description: Deleted
+          description: Schedule Deleted
         400:
           description: Bad Request (invalid input)
           content:
@@ -416,7 +416,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /requested-tasks:
+  /requested-tasks/:
     get:
       tags:
       - public
@@ -603,7 +603,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /tasks:
+  /tasks/:
     get:
       tags:
       - public
@@ -779,7 +779,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
 
-  /languages:
+  /languages/:
     get:
       tags:
       - public
@@ -809,7 +809,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputError'
-  /tags:
+  /tags/:
     get:
       tags:
       - public
@@ -838,7 +838,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InputError'
 
-  /workers:
+  /workers/:
     get:
       tags:
       - public
@@ -1011,7 +1011,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /users/{username}/keys:
+  /users/{username}/keys/:
     get:
       tags:
       - restricted
@@ -1112,6 +1112,90 @@ paths:
       responses:
         201:
           description: SSH Key Uploaded
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/{username}/keys/{fingerprint}:
+    delete:
+      tags:
+      - restricted
+      summary: delete key
+      operationId: deleteUserKey
+      description: Remove SSH Key from User
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        required: true
+        name: username
+        schema:
+          $ref: '#/components/schemas/Username'
+      - in: path
+        required: true
+        name: fingerprint
+        schema:
+          type: string
+          description: SSH fingerprint of the key
+      responses:
+        204:
+          description: SSH Key Deleted
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/{username}/password:
+    patch:
+      tags:
+      - restricted
+      summary: update password
+      operationId: updateUserPassword
+      description: Change password for User
+      security:
+        - token: []
+        - oauth2: []
+      parameters:
+      - in: path
+        required: true
+        name: username
+        schema:
+          $ref: '#/components/schemas/Username'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new
+              properties:
+                current:
+                  type: string
+                  format: password
+                  description: Current password (required if updating own password)
+                new:
+                  type: string
+                  format: password
+                  description: New password
+                  minLength: 1
+                  example: my-super-password
+      responses:
+        204:
+          description: Password Changed
         400:
           description: Bad Request (invalid input)
           content:
