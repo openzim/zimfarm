@@ -464,14 +464,14 @@ paths:
           content:
             application/json:
               schema:
-                    type: object
-                    properties:
-                      meta:
-                        $ref: '#/components/schemas/MetaProperty'
-                      items:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/RequestedTask'
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RequestedTask'
         400:
           description: Bad Request (invalid input)
     post:
