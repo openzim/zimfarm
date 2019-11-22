@@ -17,10 +17,10 @@ class Blueprint(flask.Blueprint):
         )
 
         self.add_url_rule(
-            "/<string:username>/keys", "list_ssh_keys", keys.list, methods=["GET"]
+            "/<string:username>/keys/", "list_ssh_keys", keys.list, methods=["GET"]
         )
         self.add_url_rule(
-            "/<string:username>/keys", "add_ssh_keys", keys.add, methods=["POST"]
+            "/<string:username>/keys/", "add_ssh_keys", keys.add, methods=["POST"]
         )
         self.add_url_rule(
             "/<string:username>/keys/<string:fingerprint>",

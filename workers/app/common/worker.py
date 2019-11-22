@@ -58,7 +58,7 @@ class BaseWorker:
 
         logger.info(f"testing authentication with {self.webapi_uri}…")
         success, status_code, response = self.query_api(
-            "GET", "/users/", params={"limit": 1}
+            "GET", "/auth/test", params={"limit": 1}
         )
         if success and "items" in response and "meta" in response:
             logger.info("\tauthentication successful")

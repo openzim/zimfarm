@@ -4,8 +4,8 @@ servers:
     url: https://api.farm.openzim.org/v1
 info:
   description: |
-    Zimfarm is OpenZIM's creation farm.
-    OpenZIM periodically publishes updated ZIM files for a large variety of content.
+    Zimfarm is openZIM's automated & distributed ZIM files creation engine.
+    openZIM periodically publishes updated ZIM files for a large variety of content.
 
     This API provides public access to the scheduled ZIM files to create as well as tracking of its tasks.
 
@@ -48,6 +48,7 @@ paths:
                 password:
                   type: string
                   format: password
+                  minLength: 6
       responses:
         200:
           description: Token information
@@ -117,7 +118,7 @@ paths:
       description: Validate proper authentication without requesting data
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       responses:
         204:
           description: Authenticated
@@ -174,9 +175,10 @@ paths:
                 key:
                   type: string
                   format: base64 encoded RSA public key text
+                  minLength: 1
                   example: QUFBQUIzTnphQzF5YzJFQUFBQURBUUFCQUFBQkFRRERJUlNhbStHY0tBQW5tMGpGL1ZCMTJydFhDenBGRTFnc1Q5Q25GdzVkWWJQb2NudWdkbDY0UVpxNjVSdGN5T1BJVEJ0Yk1SOUw2ZEowejI2b21mZFhYd2VFcE5JR0N0SmRtNldzWTNrc0JyNHAvREhFRUVzSDkraGR3RVovQzd3YXlpbDZ3dUlwY3BMNXJLZ2xIRnlZVVJsNDQ5Nis0c0RjMG1YbllGdmVSMkdHRmNsdmwvcTdEejNla1RaNXV4THBhRFl4Y3NrZm5LVm1PQW82b04yYzRhbmtkZ2ozRkxmemRQeHFlakovUmRXVFF4dEtGQmt5VEZ0Wmt2SW9Ub2NXRENISWw0K1k1RExOYzlFTm1TZnlDbFdsYVRxaVlBZm4rY3QvZXNrZHFxK0dHY0pkVnAwREFSWUdMb3NNV3JQbm01WWdRL3EwOHEzcmNIZ1NzOG1I
       responses:
-        200:
+        204:
           description: Public key is valid for User
         400:
           description: Bad Request (invalid input)
@@ -187,7 +189,7 @@ paths:
         401:
           description: Unauthorized
 
-  /schedules:
+  /schedules/:
     get:
       tags:
       - public
@@ -261,7 +263,7 @@ paths:
       description: Create a new Schedule
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       requestBody:
         content:
           application/json:
@@ -285,7 +287,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputError'
-  /schedules/backup:
+  /schedules/backup/:
     get:
       tags:
       - public
@@ -309,11 +311,7 @@ paths:
       operationId: getSchedule
       description: Retrieve a Schedule's details
       parameters:
-        - in: path
-          required: true
-          name: scheduleName
-          schema:
-            $ref: '#/components/schemas/ScheduleName'
+        - $ref: '#/components/parameters/ScheduleNameParameter'
       responses:
         200:
           description: Schedule details
@@ -341,18 +339,15 @@ paths:
       description: Update a Schedule's details
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-        - in: path
-          required: true
-          name: scheduleName
-          schema:
-            $ref: '#/components/schemas/ScheduleName'
+        - $ref: '#/components/parameters/ScheduleNameParameter'
       requestBody:
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
                 name:
                   $ref: '#/components/schemas/ScheduleName'
@@ -391,16 +386,12 @@ paths:
       description: Remove a Schedule
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-        - in: path
-          required: true
-          name: scheduleName
-          schema:
-            $ref: '#/components/schemas/ScheduleName'
+        - $ref: '#/components/parameters/ScheduleNameParameter'
       responses:
         200:
-          description: Deleted
+          description: Schedule Deleted
         400:
           description: Bad Request (invalid input)
           content:
@@ -416,7 +407,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /requested-tasks:
+  /requested-tasks/:
     get:
       tags:
       - public
@@ -433,11 +424,40 @@ paths:
         schema:
           $ref: '#/components/schemas/ScheduleName'
       - in: query
-        name: matching
-        description: matching request to filter requested tasks based on worker capability
+        name: matching_cpu
         required: false
         schema:
-          $ref: '#/components/schemas/Matching'
+          type: integer
+          format: int32
+          example: 3
+          description: number of CPU cores required to run it
+      - in: query
+        name: matching_memory
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: RAM (in bytes) required to run it
+      - in: query
+        name: matching_disk
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: Disk space (in bytes) required to run it
+      - in: query
+        name: matching_offliners
+        required: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offliner'
+          example:
+            - "youtube"
+            - "mwoffliner"
+          description: list of offliners supported
       responses:
         200:
           description: List of RequestedTask matching criteria
@@ -462,7 +482,7 @@ paths:
       description: Request new Task from one or many Schedules
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       requestBody:
         content:
           application/json:
@@ -514,11 +534,7 @@ paths:
       operationId: getRequestedTask
       description: Retrieve a RequestedTask details
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         200:
           description: RequestedTask Created
@@ -546,13 +562,9 @@ paths:
       description: Remove a RequestedTask
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         200:
           description: RequestedTask Deleted
@@ -574,7 +586,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /tasks:
+  /tasks/:
     get:
       tags:
       - public
@@ -608,11 +620,7 @@ paths:
       operationId: getTask
       description: Retrieve a Task's details
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         200:
           description: Task record
@@ -640,13 +648,9 @@ paths:
       description: Turn a RequestedTask into a Task
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         201:
           description: Task Created
@@ -681,18 +685,15 @@ paths:
       description: Update a Task's details
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       requestBody:
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required:
                 - event
                 - payload
@@ -701,6 +702,7 @@ paths:
                   $ref: '#/components/schemas/TaskStatus'
                 payload:
                   type: object
+                  additionalProperties: true
                   description: event-related payload
                   example:
                     task_log: agbcdls213821983hjhkj-json.log
@@ -730,13 +732,9 @@ paths:
       description: Request cancellation of a Task. Actual cancellation is asyncrhonous.
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-      - in: path
-        name: taskId
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/TaskIdParameter'
       responses:
         204:
           description: Cancelation Requested
@@ -750,7 +748,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
 
-  /languages:
+  /languages/:
     get:
       tags:
       - public
@@ -780,7 +778,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputError'
-  /tags:
+  /tags/:
     get:
       tags:
       - public
@@ -809,7 +807,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InputError'
 
-  /workers:
+  /workers/:
     get:
       tags:
       - public
@@ -856,7 +854,7 @@ paths:
       description: Query the Users database
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
       - $ref: '#/components/parameters/SkipParameter'
       - $ref: '#/components/parameters/LimitParameter'
@@ -893,7 +891,7 @@ paths:
         API user needs the `users.create` scope for this endpoint.
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       requestBody:
         content:
           application/json:
@@ -924,16 +922,15 @@ paths:
   /users/{username}:
     get:
       tags:
-      - public
+      - restricted
       summary: get user details
       operationId: getUser
       description: Retrieve a User's details
+      security:
+        - token: []
+        - ouath: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       responses:
         200:
           description: User Record
@@ -963,14 +960,10 @@ paths:
       operationId: deleteUser
       description: Remove a User
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       responses:
         200:
           description: User Deleted
@@ -982,7 +975,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /users/{username}/keys:
+  /users/{username}/keys/:
     get:
       tags:
       - restricted
@@ -991,13 +984,9 @@ paths:
       description: Retrieve the list of registered SSH keys for User
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       responses:
         200:
           description: List of SSH Keys for User
@@ -1057,18 +1046,15 @@ paths:
       description: Upload a new SSH Public Key for User
       security:
         - token: []
-        - oauth2: []
+        - oauth: []
       parameters:
-      - in: path
-        required: true
-        name: username
-        schema:
-          $ref: '#/components/schemas/Username'
+      - $ref: '#/components/parameters/UsernameParameter'
       requestBody:
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required:
                 - name
                 - key
@@ -1076,13 +1062,91 @@ paths:
                 name:
                   type: string
                   example: my-key
+                  minLength: 1
                 key:
                   type: string
                   description: Content part of an RSA _Public_ Key
+                  minLength: 1
                   example: AAAAB3NzaC1yc2EAAAADAQABAAABAQDDIRSam+GcKAAnm0jF\/VB12rtXCzpFE1gsT9CnFw5dYbP
       responses:
         201:
           description: SSH Key Uploaded
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/{username}/keys/{fingerprint}:
+    delete:
+      tags:
+      - restricted
+      summary: delete key
+      operationId: deleteUserKey
+      description: Remove SSH Key from User
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/UsernameParameter'
+      - in: path
+        required: true
+        name: fingerprint
+        schema:
+          type: string
+          description: SSH fingerprint of the key
+      responses:
+        204:
+          description: SSH Key Deleted
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/{username}/password:
+    patch:
+      tags:
+      - restricted
+      summary: update password
+      operationId: updateUserPassword
+      description: Change password for User
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/UsernameParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new
+              properties:
+                current:
+                  type: string
+                  format: password
+                  description: Current password (required if updating own password)
+                new:
+                  type: string
+                  format: password
+                  description: New password
+                  minLength: 6
+                  example: my-super-password
+      responses:
+        204:
+          description: Password Changed
         400:
           description: Bad Request (invalid input)
           content:
@@ -1109,8 +1173,8 @@ components:
       description: OAuth2
       flows:
         password:
-          tokenUrl: https://api.farm.openzim.org/auth/oauth2
-          refreshUrl: https://api.farm.openzim.org/auth/oauth2
+          tokenUrl: https://api.farm.openzim.org/v1/auth/oauth2
+          refreshUrl: https://api.farm.openzim.org/v1/auth/oauth2
   parameters:
     SkipParameter:
       in: query
@@ -1126,6 +1190,24 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/LimitProperty'
+    ScheduleNameParameter:
+      in: path
+      required: true
+      name: scheduleName
+      schema:
+        $ref: '#/components/schemas/ScheduleName'
+    UsernameParameter:
+      in: path
+      required: true
+      name: username
+      schema:
+        $ref: '#/components/schemas/Username'
+    TaskIdParameter:
+      in: path
+      name: taskId
+      required: true
+      schema:
+        type: string
   schemas:
     Language:
       type: object
@@ -1159,6 +1241,7 @@ components:
           $ref: '#/components/schemas/UserEmail'
     UserPayload:
       type: object
+      additionalProperties: false
       required:
       - username
       - password
@@ -1170,6 +1253,7 @@ components:
         password:
           type: string
           format: password
+          minLength: 6
         email:
           $ref: '#/components/schemas/UserEmail'
         scope:
@@ -1182,26 +1266,39 @@ components:
         tasks:
           $ref: '#/components/schemas/ScopeItem'
         users:
-          $ref: '#/components/schemas/ScopeItem'
+          type: object
+          properties:
+            read:
+              $ref: '#/components/schemas/BooleanProperty'
+            create:
+              $ref: '#/components/schemas/BooleanProperty'
+            update:
+              $ref: '#/components/schemas/BooleanProperty'
+            delete:
+              $ref: '#/components/schemas/BooleanProperty'
+            reset_password:
+              $ref: '#/components/schemas/BooleanProperty'
+            keys:
+              type: object
+              properties:
+                read:
+                  $ref: '#/components/schemas/BooleanProperty'
+                delete:
+                  $ref: '#/components/schemas/BooleanProperty'
     ScopeItem:
       type: object
       properties:
         read:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/BooleanProperty'
         create:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/BooleanProperty'
         update:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/BooleanProperty'
         delete:
-          type: boolean
-          example: false
-        reset_password:
-          type: boolean
-          example: false
-
+          $ref: '#/components/schemas/BooleanProperty'
+    BooleanProperty:
+      type: boolean
+      example: true
     Worker:
       type: object
       required:
@@ -1274,6 +1371,7 @@ components:
         - wiktionary
     Schedule:
       type: object
+      additionalProperties: false
       required:
         - _id
         - category
@@ -1369,36 +1467,6 @@ components:
           type: integer
           format: int32
           description: Disk space (in bytes) required to run it
-    Matching:
-      type: object
-      required:
-        - cpu
-        - memory
-        - disk
-      properties:
-        cpu:
-          type: integer
-          format: int32
-          example: 3
-          description: number of CPU cores required to run it
-        memory:
-          type: integer
-          format: int32
-          example: 1024
-          description: RAM (in bytes) required to run it
-        disk:
-          type: integer
-          format: int32
-          example: 1024
-          description: Disk space (in bytes) required to run it
-        offliners:
-          type: array
-          items:
-            $ref: '#/components/schemas/Offliner'
-          example:
-            - "youtube"
-            - "mwoffliner"
-          description: list of offliners supported
     Offliner:
       type: string
       enum:
@@ -1592,6 +1660,7 @@ components:
     Username:
       type: string
       example: john
+      minLength: 1
     UserEmail:
       type: string
       format: email
