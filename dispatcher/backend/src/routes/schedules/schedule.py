@@ -6,6 +6,7 @@ import trafaret as t
 from flask import request, jsonify, Response
 
 from common.mongo import Schedules
+from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
@@ -129,8 +130,9 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         schedule = Schedules().find_one(query)
         if schedule is None:
             raise ScheduleNotFound()
-        else:
-            return jsonify(schedule)
+
+        schedule["config"].update(command_information_for(schedule["config"]))
+        return jsonify(schedule)
 
     @authenticate
     def patch(self, schedule: str, *args, **kwargs):

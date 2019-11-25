@@ -24,7 +24,6 @@ from common.constants import (
     UPLOAD_URI,
 )
 from common.utils import short_id
-from common.offliners import mount_point_for, command_for
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused")
 STOPPED_STATUSES = ("exited", "dead", "removing")
@@ -105,11 +104,6 @@ def query_host_mounts(docker_client, workdir=None):
     return mounts
 
 
-# def get_logs_host_dir(docker_client):
-#     own_name = os.getenv("HOSTNAME")
-#     return pathlib.Path(docker_client.api.inspect_container(own_name)["LogPath"]).parent
-
-
 def task_container_name(task_id):
     return f"{short_id(task_id)}_{CONTAINER_TASK_IDENT}"
 
@@ -167,17 +161,18 @@ def start_scraper(docker_client, task, dns, host_workdir):
     except docker.errors.NotFound:
         pass
 
+    logger.debug(f'pulling image {config["image"]["name"]}:{config["image"]["tag"]}')
     docker_image = docker_client.images.pull(
         config["image"]["name"], tag=config["image"]["tag"]
     )
 
     # where to mount volume inside scraper
-    mount_point = mount_point_for(offliner)
+    mount_point = config["mount_point"]
 
     # mounts will be attached to host's fs, not this one
     mounts = [Mount(str(mount_point), str(host_workdir), type="bind")]
 
-    command = command_for(offliner, config["flags"], mount_point)
+    command = config["str_command"]
     cpu_shares = config["resources"]["cpu"] * DEFAULT_CPU_SHARE
     mem_limit = config["resources"]["memory"]
 
@@ -243,6 +238,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
             "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
+            "DEBUG": os.getenv("DEBUG"),
         },
         labels={
             "zimtask": "yes",
