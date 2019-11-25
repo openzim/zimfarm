@@ -7,71 +7,37 @@ body {
     background-color: #fafafa;
 }
 
-header {
-	overflow: hidden;
-	background-color: #004c8a;
-	top: 0;
-	height: 3.5em;
-	width: 100%;
-	z-index: 1000;
-	box-sizing: border-box;
-	overflow-x: auto;
-	display: flex;
-	align-items: center;enter;
-	padding-left: env(safe-area-inset-left);
-	padding-right: env(safe-area-inset-right);
-	text-align: left;
-	margin-bottom: 1rem;
-
-	color: #fafafa;
-	white-space: nowrap;
-	line-height: 2rem;
+.navbar {
+    background-color: #004c8a;
+    margin-bottom: 1rem;
 }
 
-header .branding {
-	display: flex;
-	padding: 0 1rem;
-	height: 2.5rem;
+.branding .icon {
+    padding: 0.4rem;
+    background: rgba(255, 255, 255, 0.15);
+    margin-right: 0.5rem;
+    border-radius: 4px;
+    display: inline-flex;
+
+    width: 2.5rem;
+    height: 2.5rem;
+    position: absolute;
 }
 
-header .branding .icon {
-	padding: 0.4rem;
-	background: 	rgba(255, 255, 255, 0.15);
-	margin-right: 0.5rem;
-	border-radius: 4px;
-	display: inline-flex;
-
-	width: 2.5rem;
-	height: 2.5rem;
+.branding .icon img {
+    border-style: none;
+    vertical-align: middle;
+    width: 2rem;
 }
 
-header .branding .icon img {	
-	border-style: none;
-	vertical-align: middle;
-	width: 2rem;
-}
-
-header .branding label {
-	color: #fafafa;
-	font-size: 1.1rem;
-	font-weight: 400;
-	font-family: Metropolis,"Avenir Next","Helvetica Neue",Arial,sans-serif;
-	letter-spacing: .01em;
-	line-height: 2.5rem;
-	text-decoration: none;
-}
-
-
-header .menu a {
-	position: relative;
-	display: inline-block;
-	text-align: center;
-	padding: .75rem 1rem;
-	color:	#fafafa;
-	opacity: .65;
-}
-
-header .menu a:active, header .menu a.active {
-	background: rgba(255,255,255,.15);
-	opacity: 1;
+.branding label {
+    margin-left: 3rem;
+    margin-bottom: 0;
+    color: #fafafa;
+    font-size: 1.5rem;
+    font-weight: 400;
+    font-family: Metropolis,"Avenir Next","Helvetica Neue",Arial,sans-serif;
+    letter-spacing: .01em;
+    line-height: 2.5rem;
+    text-decoration: none;
 }
