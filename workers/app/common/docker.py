@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import os
+import time
 import pathlib
 
 import docker
@@ -27,28 +28,106 @@ from common.utils import short_id
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused")
 STOPPED_STATUSES = ("exited", "dead", "removing")
+RETRIES = 3  # retry attempts in case of API error
 
 
-def query_containers_resources(docker_api):
+def retried_docker_call(docker_method, *args, **kwargs):
+    attempt = 0
+    while True:
+        try:
+            attempt += 1
+            return docker_method(*args, **kwargs)
+        except docker.errors.APIError as exc:
+            if exc.is_server_error() and attempt <= RETRIES:
+                logger.debug(
+                    f"Docker API Error for {docker_method} (attempt {attempt})"
+                )
+                time.sleep(2)
+                continue
+            raise exc
+
+
+# following functions are proxies to API using retried calls
+# to prevent failures due to HTTP 500 fromt the API.
+# > docker sometimes have difficulties responding and requires a retry
+# def inspect_container(docker_client, *args, **kwargs):
+#     """ container="" """
+#     return retried_docker_call(docker_client.api.inspect_container, *args, **kwargs)
+
+
+# def list_containers_raw(docker_client, *args, **kwargs):
+#     """ quiet=False, all=False, trunc=False, latest=False, since=None,
+#         before=None, limit=-1, size=False, filters=None """
+#     return retried_docker_call(docker_client.api.containers, *args, **kwargs)
+
+
+def get_image(docker_client, *args, **kwargs):
+    """ name="" """
+    return retried_docker_call(docker_client.images.get, *args, **kwargs)
+
+
+def pull_image(docker_client, *args, **kwargs):
+    """ repository="", tag=None """
+    return retried_docker_call(docker_client.images.pull, *args, **kwargs)
+
+
+def run_container(docker_client, *args, **kwargs):
+    """ image, command=None
+        https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run """
+    return retried_docker_call(docker_client.containers.run, *args, **kwargs)
+
+
+def get_container(docker_client, *args, **kwargs):
+    """ id_or_name="" """
+    container = retried_docker_call(docker_client.containers.get, *args, **kwargs)
+    # save a very frequent call to reload()
+    container.reload()
+    return container
+
+
+def list_containers(docker_client, *args, **kwargs):
+    """ all=False, since="Id or name", before="Id or name", limit=None, filters={} """
+    return retried_docker_call(docker_client.containers.list, *args, **kwargs)
+
+
+def remove_container(docker_client, *args, **kwargs):
+    """ container="", v=False, link=False, force=False """
+    return retried_docker_call(docker_client.api.remove_container, *args, **kwargs)
+
+
+def stop_container(docker_client, *args, **kwargs):
+    """ container="", timeout=None """
+    return retried_docker_call(docker_client.api.stop, *args, **kwargs)
+
+
+def container_logs(docker_client, *args, **kwargs):
+    """ container, stdout=True, stderr=True, stream=False, timestamps=False,
+        tail='all', since=None, follow=None, until=None """
+    return retried_docker_call(docker_client.api.logs, *args, **kwargs)
+
+
+def query_containers_resources(docker_client):
     cpu_shares = 0
     memory = 0
     disk = 0
-    for container in docker_api.containers(filters={"name": CONTAINER_SCRAPER_IDENT}):
-        inspect_data = docker_api.inspect_container(container["Id"])
-        cpu_shares += inspect_data["HostConfig"]["CpuShares"] or DEFAULT_CPU_SHARE
-        memory += inspect_data["HostConfig"]["Memory"]
+    for container in list_containers(
+        docker_client, filters={"name": CONTAINER_SCRAPER_IDENT}
+    ):
+        container.reload()
+        cpu_shares += container.attrs["HostConfig"]["CpuShares"] or DEFAULT_CPU_SHARE
+        memory += container.attrs["HostConfig"]["Memory"]
         try:
-            disk += int(container["Labels"].get("resources_disk", 0))
+            disk += int(container.labels.get("resources_disk", 0))
         except Exception:
             disk += 0  # improper label
 
     return {"cpu_shares": cpu_shares, "memory": memory, "disk": disk}
 
 
-def query_host_stats(docker_api, workdir):
+def query_host_stats(docker_client, workdir):
 
     # query cpu and ram usage in our containers
-    stats = query_containers_resources(docker_api)
+    stats = query_containers_resources(docker_client)
 
     # disk space
     workir_fs_stats = os.statvfs(workdir)
@@ -94,9 +173,9 @@ def query_host_mounts(docker_client, workdir=None):
     keys = [DOCKER_SOCKET, PRIVATE_KEY]
     if workdir:
         keys.append(workdir)
-    own_name = os.getenv("HOSTNAME")
+    container = get_container(docker_client, os.getenv("HOSTNAME"))
     mounts = {}
-    for mount in docker_client.api.inspect_container(own_name)["Mounts"]:
+    for mount in container.attrs["Mounts"]:
         dest = pathlib.Path(mount["Destination"])
         if dest in keys:
             key = keys[keys.index(dest)]
@@ -123,15 +202,21 @@ def upload_container_name(task_id, filename):
 
 def get_ip_address(docker_client, name):
     """ IP Address (first) of a named container """
-    return docker_client.api.inspect_container(name)["NetworkSettings"]["IPAddress"]
+    return get_container(docker_client, name).attrs["NetworkSettings"]["IPAddress"]
+
+
+def get_label_value(docker_client, name, label):
+    """ direct access to a single label value """
+    return get_container(docker_client, name).attrs["Config"]["Labels"].get(label)
 
 
 def start_dnscache(docker_client, task):
     name = dnscache_container_name(task["_id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
-    image = docker_client.images.pull("openzim/dnscache", tag="latest")
-    return docker_client.containers.run(
-        image,
+    image = pull_image(docker_client, "openzim/dnscache", tag="latest")
+    return run_container(
+        docker_client,
+        image=image,
         detach=True,
         name=name,
         environment=environment,
@@ -145,11 +230,6 @@ def start_dnscache(docker_client, task):
     )
 
 
-def stop_container(docker_client, name, timeout):
-    container = docker_client.get(name)
-    container.stop(timeout=timeout)
-
-
 def start_scraper(docker_client, task, dns, host_workdir):
     config = task["config"]
     offliner = config["task_name"]
@@ -157,13 +237,13 @@ def start_scraper(docker_client, task, dns, host_workdir):
 
     # remove container should it exists (should not)
     try:
-        docker_client.containers.get(container_name).remove()
+        remove_container(docker_client, container_name)
     except docker.errors.NotFound:
         pass
 
     logger.debug(f'pulling image {config["image"]["name"]}:{config["image"]["tag"]}')
-    docker_image = docker_client.images.pull(
-        config["image"]["name"], tag=config["image"]["tag"]
+    docker_image = pull_image(
+        docker_client, config["image"]["name"], tag=config["image"]["tag"]
     )
 
     # where to mount volume inside scraper
@@ -176,7 +256,8 @@ def start_scraper(docker_client, task, dns, host_workdir):
     cpu_shares = config["resources"]["cpu"] * DEFAULT_CPU_SHARE
     mem_limit = config["resources"]["memory"]
 
-    return docker_client.containers.run(
+    return run_container(
+        docker_client,
         image=docker_image,
         command=command,
         cpu_shares=cpu_shares,
@@ -202,16 +283,16 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
 
     # remove container should it exists (should not)
     try:
-        docker_client.containers.get(container_name).remove()
+        remove_container(docker_client, container_name)
     except docker.errors.NotFound:
         pass
 
     image, tag = TASK_WORKER_IMAGE.rsplit(":", 1)
     if tag == "local":
-        docker_image = docker_client.images.get(TASK_WORKER_IMAGE)
+        docker_image = get_image(docker_client, TASK_WORKER_IMAGE)
     else:
         logger.debug(f"pulling image {image}:{tag}")
-        docker_image = docker_client.images.pull(image, tag=tag)
+        docker_image = pull_image(docker_client, image, tag=tag)
 
     # mounts will be attached to host's fs, not this one
     host_mounts = query_host_mounts(docker_client, workdir)
@@ -226,7 +307,8 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
     command = ["task-worker", "--task-id", task["_id"]]
 
     logger.debug(f"running {command}")
-    return docker_client.containers.run(
+    return run_container(
+        docker_client,
         image=docker_image,
         command=command,
         detach=True,
@@ -257,7 +339,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
 def stop_task_worker(docker_client, task_id, timeout: int = 20):
     container_name = task_container_name(task_id)
     try:
-        docker_client.containers.get(container_name).stop(timeout=timeout)
+        stop_container(docker_client, container_name, timeout=timeout)
     except docker.errors.NotFound:
         return False
     else:
@@ -271,11 +353,11 @@ def start_uploader(
 
     # remove container should it exists (should not)
     try:
-        docker_client.containers.get(container_name).remove()
+        remove_container(docker_client, container_name)
     except docker.errors.NotFound:
         pass
 
-    docker_image = docker_client.images.pull("openzim/uploader", tag="latest")
+    docker_image = pull_image(docker_client, "openzim/uploader", tag="latest")
 
     # in container paths
     workdir = pathlib.Path("/data")
@@ -302,7 +384,8 @@ def start_uploader(
     if delete:
         command.append("--delete")
 
-    return docker_client.containers.run(
+    return run_container(
+        docker_client,
         image=docker_image,
         command=command,
         detach=True,
@@ -324,11 +407,9 @@ def start_uploader(
 
 def get_container_logs(docker_client, container_name, tail="all"):
     try:
-        return (
-            docker_client.containers.get(container_name)
-            .logs(stdout=True, stderr=True, tail=tail)
-            .decode("UTF-8")
-        )
+        return container_logs(
+            docker_client, container_name, stdout=True, stderr=True, tail=tail
+        ).decode("UTF-8")
     except docker.errors.NotFound:
         return f"Container `{container_name}` gone. Can't get logs"
     except Exception as exc:
