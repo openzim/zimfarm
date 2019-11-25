@@ -1,8 +1,9 @@
 from uuid import uuid4
 
 from bson import ObjectId
-
 import pytest
+
+from utils.offliners import command_information_for
 
 ONE_GiB = 2 ** 30
 ONE_MiB = 1048576
@@ -255,6 +256,7 @@ class TestSchedulePost:
 
         response_json = response.get_json()
         document["_id"] = response_json["_id"]
+        document["config"].update(command_information_for(document["config"]))
         assert response.get_json() == document
 
         # remove from DB to prevent count mismatch on other tests
@@ -366,6 +368,7 @@ class TestScheduleGet:
         assert response.status_code == 200
 
         schedule["_id"] = str(schedule["_id"])
+        schedule["config"].update(command_information_for(schedule["config"]))
         assert response.get_json() == schedule
 
     def test_get_schedule_with_name(self, client, schedule):
@@ -375,6 +378,7 @@ class TestScheduleGet:
         assert response.status_code == 200
 
         schedule["_id"] = str(schedule["_id"])
+        schedule["config"].update(command_information_for(schedule["config"]))
         assert response.get_json() == schedule
 
 

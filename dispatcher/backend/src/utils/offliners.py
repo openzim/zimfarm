@@ -4,17 +4,12 @@
 
 import pathlib
 
-from common.constants import (
-    OFFLINER_PHET,
-    OFFLINER_GUTENBERG,
-    OFFLINER_MWOFFLINER,
-    OFFLINER_YOUTUBE,
-)
+from common.entities import Offliner
 
 
 def mount_point_for(offliner):
     """ Path to mount task volume in scraper """
-    if offliner == OFFLINER_PHET:
+    if offliner == Offliner.phet:
         return pathlib.Path("/phet/dist")
     return pathlib.Path("/output")
 
@@ -23,10 +18,9 @@ def command_for(offliner, flags, mount_point):
     """ command:list to be passed to docker run
 
         for an offliner,  flags:dict and a mount_point:Path (task volume) """
-    use_equals = True
-    if offliner == OFFLINER_PHET:
+    if offliner == Offliner.phet:
         return ["/bin/bash", "-c", "cd /phet && npm i && npm start"]
-    if offliner == OFFLINER_GUTENBERG:
+    if offliner == Offliner.gutenberg:
         return [
             "gutenberg2zim",
             "--complete",
@@ -36,14 +30,13 @@ def command_for(offliner, flags, mount_point):
             str(mount_point),
         ]
 
-    if offliner == OFFLINER_MWOFFLINER:
+    if offliner == Offliner.mwoffliner:
         cmd = "mwoffliner"
         flags["outputDirectory"] = str(mount_point)
-    if offliner == OFFLINER_YOUTUBE:
+    if offliner == Offliner.youtube:
         cmd = "youtube2zim"
         flags["output"] = str(mount_point)
-        use_equals = False
-    return [cmd] + compute_flags(flags, use_equals=use_equals)
+    return [cmd] + compute_flags(flags)
 
 
 def compute_flags(flags, use_equals=True):
@@ -66,3 +59,13 @@ def compute_flags(flags, use_equals=True):
                 params.append(f"--{key}")
                 params.append(f"{value}")
     return params
+
+
+def command_information_for(config):
+    info = {}
+    info["mount_point"] = str(mount_point_for(config["task_name"]))
+    info["command"] = command_for(
+        config["task_name"], config["flags"], info["mount_point"]
+    )
+    info["str_command"] = " ".join(info["command"])
+    return info

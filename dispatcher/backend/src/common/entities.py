@@ -95,3 +95,14 @@ class ScheduleQueue:
     @classmethod
     def all(cls):
         return [cls.small, cls.medium, cls.large, cls.debug]
+
+
+class Offliner:
+    mwoffliner = "mwoffliner"
+    youtube = "youtube"
+    gutenberg = "gutenberg"
+    phet = "phet"
+
+    @classmethod
+    def all(cls):
+        return [cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet]
