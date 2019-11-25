@@ -9,6 +9,7 @@ from flask import request, jsonify, make_response
 
 from common.entities import TaskStatus
 from common.mongo import RequestedTasks, Schedules
+from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
@@ -52,6 +53,9 @@ class RequestedTasksRoute(BaseRoute):
             if not config:
                 continue
 
+            # build and save command-information to config
+            config.update(command_information_for(config))
+
             document = {
                 "schedule_id": schedule["_id"],
                 "schedule_name": schedule_name,
@@ -60,6 +64,7 @@ class RequestedTasksRoute(BaseRoute):
                 "events": [{"code": TaskStatus.requested, "timestamp": now}],
                 "config": config,
             }
+
             rt_id = RequestedTasks().insert_one(document).inserted_id
             document.update({"_id": str(rt_id)})
             requested_tasks.append(document)

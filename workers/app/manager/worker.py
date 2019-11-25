@@ -15,7 +15,13 @@ import humanfriendly
 
 from common import logger
 from common.worker import BaseWorker
-from common.docker import query_host_stats, stop_task_worker, start_task_worker
+from common.docker import (
+    query_host_stats,
+    stop_task_worker,
+    start_task_worker,
+    get_label_value,
+    list_containers,
+)
 from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
@@ -49,7 +55,7 @@ class WorkerManager(BaseWorker):
         self.check_docker()
 
         # display resources
-        host_stats = query_host_stats(self.docker.api, self.workdir)
+        host_stats = query_host_stats(self.docker, self.workdir)
         logger.info(
             "Host hardware resources:"
             "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
@@ -88,7 +94,7 @@ class WorkerManager(BaseWorker):
         logger.info("manual polling…")
         self.last_poll = datetime.datetime.now()
 
-        host_stats = query_host_stats(self.docker.api, self.workdir)
+        host_stats = query_host_stats(self.docker, self.workdir)
         success, status_code, response = self.query_api(
             "GET",
             "/requested-tasks/",
@@ -138,11 +144,9 @@ class WorkerManager(BaseWorker):
 
     def sync_tasks_and_containers(self):
         container_task_ids = [
-            self.docker.api.inspect_container(container.id)["Config"]["Labels"][
-                "task_id"
-            ]
-            for container in self.docker.containers.list(
-                filters={"label": ["zimtask=yes"]}
+            get_label_value(self.docker, container.name, "task_id")
+            for container in list_containers(
+                self.docker, filters={"label": ["zimtask=yes"]}
             )
         ]
         matching = list(set(container_task_ids) & set(self.tasks.keys()))

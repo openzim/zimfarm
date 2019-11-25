@@ -1,6 +1,6 @@
 import trafaret as t
 
-from common.entities import ScheduleCategory, ScheduleQueue
+from common.entities import ScheduleCategory, ScheduleQueue, Offliner
 
 
 class ConfigValidator(t.Dict):
@@ -94,7 +94,7 @@ resources_validator = t.Dict(
 
 config_validator = ConfigValidator(
     {
-        t.Key("task_name"): t.Enum("mwoffliner", "phet", "gutenberg", "youtube"),
+        t.Key("task_name"): t.Enum(*Offliner.all()),
         t.Key("queue"): t.Enum(*ScheduleQueue.all()),
         t.Key("warehouse_path"): t.Enum(*ScheduleCategory.all_warehouse_paths()),
         t.Key("image"): t.Dict(
@@ -121,13 +121,13 @@ config_validator = ConfigValidator(
 
 
 def get_flags_validator(task_name):
-    if task_name == "phet":
+    if task_name == Offliner.phet:
         return phet_flags_validator
-    if task_name == "gutenberg":
+    if task_name == Offliner.gutenberg:
         return gutenberg_flags_validator
-    if task_name == "mwoffliner":
+    if task_name == Offliner.mwoffliner:
         return mwoffliner_flags_validator
-    if task_name == "youtube":
+    if task_name == Offliner.youtube:
         return youtube_flags_validator
     return t.Dict()
 
