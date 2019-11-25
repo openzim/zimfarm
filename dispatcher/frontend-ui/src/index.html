@@ -16,26 +16,45 @@
 	<link rel="apple-touch-icon" sizes="152x152" href="assets/apple-touch-icon-152x152.png" />
 	<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon-180x180.png" />
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-	<link rel="stylesheet" href="assets/styles.css">
-	<!-- <script src="https://kit.fontawesome.com/05f4a9aa69.js" crossorigin="anonymous"></script> -->
+	<link rel="stylesheet" href="assets/icons/css/icons.css" />
+	<link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
-	<header>
-		<div class="branding">
-			<div class="icon"><img src="assets/favicon.svg" /></div>
+	<nav class="navbar navbar-expand-md navbar-dark ">
+		<a class="navbar-brand branding">
+		  	<div class="icon"><img src="assets/favicon.svg" /></div>
 			<label>Zimfarm</label>
+		</a>
+		<button class="navbar-toggler" type="button"
+				data-toggle="collapse" 
+				data-target="#navbarSupportedContent" 
+				aria-controls="navbarSupportedContent" 
+				aria-expanded="false" 
+				aria-label="Toggle navigation">
+		<span class="navbar-toggler-icon"></span>
+		</button>
+
+		<div class="collapse navbar-collapse" id="navbarSupportedContent">
+			<ul class="navbar-nav mr-auto">
+				<li class="nav-item disabled">
+					<a class="nav-link" href="/">Pipeline</a>
+				</li>
+				<li class="nav-item active">
+					<a class="nav-link" href="/schedules">Schedules <span class="sr-only">(current)</span></a>
+				</li>
+				<li class="nav-item disabled">
+					<a class="nav-link" href="/workers">Workers</a>
+				</li>
+				<li class="nav-item disabled">
+					<a class="nav-link" href="/users">Users</a>
+				</li>
+				<li class="nav-item disabled">
+					<a class="nav-link" href="/stats">Stats</a>
+				</li>
+			</ul>
+			<a class="btn btn-sm btn-light" href="/sign-in"><i class="icons icon-login"></i> Sign-in</a>
 		</div>
-		<nav class="menu">
-			<!-- <a href="/" >Pipeline</a> -->
-			<a href="/" class="active">Schedules</a>
-			<!-- <a href="/workers">Workers</a>
-			<a href="/users">Users</a>
-			<a href="/stats">Stats</a> -->
-		</nav>
-		<!-- <nav>
-			<span class="settings"></span><i class="fas fa-user-cog"></i>
-		</nav> -->
-	</header>
+	</nav>
 	<div id="app" class="container">
 		<div v-if="loading">
 			<div  class="spinner-border" role="status">
@@ -43,6 +62,7 @@
 			</div>
 			<span>Fetching data…</span>
 		</div>
+
 		<nav><label>Filters:</label>
 			<select v-model="selectedCategories" @change="loadSchedules">
 				<option value="" selected="selected">Categories</option>
@@ -57,7 +77,7 @@
 				<option v-for="tag in tags" :key="tag" :value="tag">{{ tag }}</option>
 			</select>
 		</nav>
-		<table v-if="schedules.length" class="table table-striped table-hover">
+		<table v-if="schedules.length" class="table table-responsive table-striped table-hover">
 			<thead class="thead-dark">
 				<tr><th>Name</th><th>Category</th><th>Language</th><th>Offliner</th><th>Last Task</th></tr>
 			</thead>
@@ -70,6 +90,7 @@
 					<td v-if="schedule.most_recent_task"><code>{{ schedule.most_recent_task.status }}</code>, <a :href="api_url + '/tasks/' + schedule.most_recent_task._id">{{ schedule.most_recent_task.on }}</a></td>
 					<td v-else>-</td>
 				</tr>
+			</tbody>
 		</table>
 	</div>
 	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -78,5 +99,8 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
 	<script type="application/javascript" src="environ.js"></script>
 	<script src="app.js"></script>
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html>

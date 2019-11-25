@@ -1,4 +1,4 @@
-try { var zimfarm_webapi = environ.ZIMFARM_WEBAPI; } catch { var zimfarm_webapi = "https://api.farm.openzim.org"; }
+try { var zimfarm_webapi = environ.ZIMFARM_WEBAPI; } catch { var zimfarm_webapi = "https://api.farm.openzim.org/v1"; }
 
 
 var app = new Vue({
@@ -34,7 +34,7 @@ var app = new Vue({
 
 			// download tags
 			this.loading = true;
-			axios.get(zimfarm_webapi + '/tags/', {params: {limit: 1000}})
+			axios.get(zimfarm_webapi + '/tags/', {params: {limit: 200}})
 		    .then(function (response) {
 			    for (var i=0; i<response.data.items.length; i++){
 			    	parent.tags.push(response.data.items[i]);

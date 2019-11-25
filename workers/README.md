@@ -50,7 +50,7 @@ docker run \
 	--env DEBUG=$ZIMFARM_DEBUG \
 	--env WORKER_NAME=$ZIMFARM_WORKER_NAME \
 	--env SOCKET_URI="tcp://tcp.farm.openzim.org:32029" \
-	--env WEB_API_URI="https://api.farm.openzim.org" \
+	--env WEB_API_URI="https://api.farm.openzim.org/v1" \
 	--env UPLOAD_URI="sftp://warehouse.farm.openzim.org:1522" \
 	--env USE_PUBLIC_DNS="yes" \
 	--env OFFLINERS=$ZIMFARM_OFFLINERS \
