@@ -48,7 +48,7 @@ def main():
 
     while True:
         received_string = private_server.recv_string()
-        logger.info(f"[FORWARDING] {received_string}")
+        logger.info(f"[FORWARDING] {received_string[:150]}")
         public_server.send_string(received_string)
 
 
