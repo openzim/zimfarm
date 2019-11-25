@@ -1,3 +1,3 @@
 environ = {
-    "ZIMFARM_WEBAPI": "https://api.farm.openzim.org"
+    "ZIMFARM_WEBAPI": "https://api.farm.openzim.org/v1"
 }
