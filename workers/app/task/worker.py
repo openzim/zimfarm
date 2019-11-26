@@ -102,9 +102,9 @@ class TaskWorker(BaseWorker):
             return
 
         if status_code == requests.codes.NOT_FOUND:
-            logger.warning(f"task #{self.task_id} doesn't exist")
+            logger.warning(f"task {self.task_id} doesn't exist")
         else:
-            logger.warning(f"couldn't retrieve task detail for #{self.task_id}")
+            logger.warning(f"couldn't retrieve task detail for {self.task_id}")
 
     def patch_task(self, payload):
         success, status_code, response = self.query_api(
