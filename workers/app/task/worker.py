@@ -9,6 +9,7 @@ import shutil
 import pathlib
 import datetime
 
+import docker
 import requests
 import humanfriendly
 
@@ -24,6 +25,7 @@ from common.docker import (
     RUNNING_STATUSES,
     get_container_logs,
     task_container_name,
+    remove_container,
 )
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
@@ -102,9 +104,9 @@ class TaskWorker(BaseWorker):
             return
 
         if status_code == requests.codes.NOT_FOUND:
-            logger.warning(f"task #{self.task_id} doesn't exist")
+            logger.warning(f"task {self.task_id} doesn't exist")
         else:
-            logger.warning(f"couldn't retrieve task detail for #{self.task_id}")
+            logger.warning(f"couldn't retrieve task detail for {self.task_id}")
 
     def patch_task(self, payload):
         success, status_code, response = self.query_api(
@@ -352,6 +354,11 @@ class TaskWorker(BaseWorker):
             if self.log_uploader.status in RUNNING_STATUSES:
                 # still uploading
                 return
+            time.sleep(2)  # in case it was shutting down
+            try:
+                remove_container(self.docker, self.log_uploader.name)
+            except docker.errors.NotFound:
+                pass
             self.log_uploader = None
 
         self.log_uploader = start_uploader(
@@ -377,6 +384,11 @@ class TaskWorker(BaseWorker):
             logger.info(f"Scraper log upload complete: {exit_code}")
             if exit_code != 0:
                 logger.error(f"Log Uploader:: {self.log_uploader.logs()}")
+            else:
+                try:
+                    remove_container(self.docker, self.log_uploader.name)
+                except docker.errors.NotFound:
+                    pass
 
     def sleep(self):
         time.sleep(1)

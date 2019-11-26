@@ -44,7 +44,7 @@ def main():
 
     args = parser.parse_args()
 
-    logger.info(f"starting zimfarm {TASK_WORKER} for #{args.task_id}.")
+    logger.info(f"starting zimfarm {TASK_WORKER} for {args.task_id}.")
     try:
         worker = TaskWorker(
             username=args.username,
