@@ -21,12 +21,13 @@ from common.docker import (
     start_task_worker,
     get_label_value,
     list_containers,
+    remove_container,
 )
 from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
 class WorkerManager(BaseWorker):
-    poll_interval = os.getenv("POLL_INTERVAL", 60)  # seconds between each manual poll
+    poll_interval = os.getenv("POLL_INTERVAL", 600)  # seconds between each manual poll
     sleep_interval = os.getenv("SLEEP_INTERVAL", 5)  # seconds to sleep while idle
     events = ["requested-task", "requested-tasks", "cancel-task"]
     config_keys = ["poll_interval", "sleep_interval", "events"]
@@ -91,7 +92,7 @@ class WorkerManager(BaseWorker):
         time.sleep(self.sleep_interval)
 
     def poll(self, task_id=None):
-        logger.info("manual polling…")
+        logger.debug("polling…")
         self.last_poll = datetime.datetime.now()
 
         host_stats = query_host_stats(self.docker, self.workdir)
@@ -106,10 +107,13 @@ class WorkerManager(BaseWorker):
                 "matching_offliners": SUPPORTED_OFFLINERS,
             },
         )
-        logger.info(f"polling result: {success}, HTTP {status_code}")
-        logger.info(response)
-
         if success and response["items"]:
+            logger.info(
+                "API is offering {nb} task(s): {ids}".format(
+                    nb=len(response["items"]),
+                    ids=[task["_id"] for task in response["items"]],
+                )
+            )
             self.start_task(random.choice(response["items"]))
             self.poll()
 
@@ -136,39 +140,53 @@ class WorkerManager(BaseWorker):
             return True
 
         if status_code == requests.codes.NOT_FOUND:
-            logger.warning(f"task is gone #{task_id}. cancelling it")
+            logger.warning(f"task {task_id} is gone. cancelling it")
             self.cancel_and_remove_task(task_id)
         else:
-            logger.warning(f"couldn't retrieve task detail for #{task_id}")
+            logger.warning(f"couldn't retrieve task detail for {task_id}")
         return success
 
     def sync_tasks_and_containers(self):
-        container_task_ids = [
+        # list of completed containers (successfuly ran)
+        completed_containers = list_containers(
+            self.docker, all=True, filters={"label": ["zimtask=yes"], "exited": 0}
+        )
+
+        # list of running containers
+        running_containers = list_containers(
+            self.docker, filters={"label": ["zimtask=yes"]}
+        )
+
+        # list of task_ids for running containers
+        running_task_ids = [
             get_label_value(self.docker, container.name, "task_id")
-            for container in list_containers(
-                self.docker, filters={"label": ["zimtask=yes"]}
-            )
+            for container in running_containers
         ]
-        matching = list(set(container_task_ids) & set(self.tasks.keys()))
 
-        # remove gone containers
-        gone_ids = [task_id for task_id in self.tasks.keys() if task_id not in matching]
-        for task_id in gone_ids:
-            self.tasks.pop(task_id, None)
+        # remove completed containers
+        for container in completed_containers:
+            logger.info(f"container {container.name} exited successfuly, removing.")
+            remove_container(self.docker, container.name)
 
-        # add not-registered containers
-        for task_id in container_task_ids:
-            if task_id not in matching:
+        # make sure we are tracking task for all running containers
+        for task_id in running_task_ids:
+            if task_id not in self.tasks.keys():
                 logger.info("found running container for {task_id}.")
                 self.update_task_data(task_id)
 
+        # filter our tasks register of gone containers
+        for task_id in self.tasks.keys():
+            if task_id not in running_task_ids:
+                logger.info("task {task_id} is not running anymore, unwatching.")
+                self.tasks.pop(task_id, None)
+
     def stop_task_worker(self, task_id):
-        logger.debug(f"stop_task_worker #{task_id}")
+        logger.debug(f"stop_task_worker: {task_id}")
         stop_task_worker(self.docker, task_id, timeout=20)
 
     def start_task(self, requested_task):
         task_id = requested_task["_id"]
-        logger.debug(f"start_task() {task_id}")
+        logger.debug(f"start_task: {task_id}")
 
         success, status_code, response = self.query_api(
             "POST", f"/tasks/{task_id}", params={"worker_name": self.worker_name}
@@ -177,13 +195,13 @@ class WorkerManager(BaseWorker):
             self.update_task_data(task_id)
             self.start_task_worker(requested_task)
         elif status_code == requests.codes.LOCKED:
-            logger.warning(f"task #{task_id} belongs to another worker. skipping")
+            logger.warning(f"task {task_id} belongs to another worker. skipping")
         else:
-            logger.warning(f"couldn't request task #{task_id}")
+            logger.warning(f"couldn't request task: {task_id}")
             logger.warning(f"HTTP {status_code}: {response}")
 
     def start_task_worker(self, requested_task):
-        logger.debug(f"start_task_worker #{requested_task['_id']}")
+        logger.debug(f"start_task_worker: {requested_task['_id']}")
         start_task_worker(
             self.docker,
             requested_task,
@@ -197,7 +215,8 @@ class WorkerManager(BaseWorker):
         try:
             key, data = received_string.split(" ", 1)
             payload = json.loads(data)
-            logger.info(f"received: {key} – {payload}")
+            logger.info(f"received {key} - {data[:100]}")
+            logger.debug(f"received: {key} – {json.dumps(payload, indent=4)}")
         except Exception as exc:
             logger.exception(exc)
             logger.info(received_string)
