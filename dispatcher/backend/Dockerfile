@@ -12,9 +12,11 @@ WORKDIR /usr/src/
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENV DOCS_DIR /usr/src/docs
+ENV MONGODB_URI mongodb://localhost
+ENV SOCKET_URI tcp://localhost:5000
+ENV INIT_PASSWORD admin
 
 ENTRYPOINT ["entrypoint.sh"]
 
-CMD ["uwsgi", "--master", "--processes", "5", "--http", ":80", \
-     "--module", "main:app", "--buffer-size", "65535", \
-     "--logformat", "[%(ctime)] %(addr) %(method) %(uri) => %(rsize) bytes in %(msecs) msecs (%(proto) %(status))"]
+COPY uwsgi.ini /etc/uwsgi.ini
+CMD ["uwsgi", "--ini", "/etc/uwsgi.ini"]
