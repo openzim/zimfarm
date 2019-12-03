@@ -1488,6 +1488,10 @@ components:
           $ref: '#/components/schemas/TaskStatus'
         timestamp:
           $ref: '#/components/schemas/TaskTimestamp'
+        worker:
+          $ref: '#/components/schemas/WorkerName'
+        schedule_name:
+          $ref: '#/components/schemas/ScheduleName'
     RequestedTask:
       type: object
       required:
@@ -1561,8 +1565,7 @@ components:
         timestamp:
           $ref: '#/components/schemas/TaskTimestamp'
         worker:
-          type: string
-          example: worker-name
+          $ref: '#/components/schemas/WorkerName'
         container:
           type: object
           properties:
@@ -1698,6 +1701,9 @@ components:
           $ref: '#/components/schemas/TaskStatus'
         timestamp:
           $ref: '#/components/schemas/SingleTimestamp'
+    WorkerName:
+      type: string
+      example: worker-name
     TaskTimestamp:
       type: object
       required:

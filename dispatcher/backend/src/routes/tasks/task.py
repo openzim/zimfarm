@@ -57,7 +57,13 @@ class TasksRoute(BaseRoute):
             query["schedule_id"] = schedule_id
 
         count = Tasks().count_documents(query)
-        projection = {"_id": 1, "status": 1, "timestamp": 1}
+        projection = {
+            "_id": 1,
+            "schedule_name": 1,
+            "status": 1,
+            "timestamp": 1,
+            "worker": 1,
+        }
         cursor = (
             Tasks()
             .find(query, projection)
