@@ -1,6 +1,6 @@
 FROM node:alpine as builder
 
-RUN apk add yarn
+RUN apk --no-cache add yarn
 WORKDIR /app
 ADD package.json yarn.lock /app/
 RUN yarn install
