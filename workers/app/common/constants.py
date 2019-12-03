@@ -20,10 +20,10 @@ TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
-DOCKER_SOCKET = docker_socket = pathlib.Path(
+DOCKER_SOCKET = pathlib.Path(
     os.getenv("DOCKER_SOCKET", "/var/run/docker.sock")
 )
-PRIVATE_KEY = docker_socket = pathlib.Path(
+PRIVATE_KEY = pathlib.Path(
     os.getenv("PRIVATE_KEY", "/etc/ssh/keys/zimfarm")
 )
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")

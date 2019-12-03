@@ -41,6 +41,13 @@ class RequestedTasksRoute(BaseRoute):
         ) >= len(schedule_names):
             raise NotFound()
 
+        try:
+            username = kwargs["token"].username
+        except Exception as exc:
+            logger.error("unable to retrieve username from token")
+            logger.exception(exc)
+            username = None
+
         now = datetime.datetime.now(tz=pytz.utc)
         requested_tasks = []
         for schedule_name in schedule_names:
@@ -62,6 +69,7 @@ class RequestedTasksRoute(BaseRoute):
                 "status": TaskStatus.requested,
                 "timestamp": {TaskStatus.requested: now},
                 "events": [{"code": TaskStatus.requested, "timestamp": now}],
+                "requested_by": username,
                 "config": config,
             }
 
@@ -130,6 +138,7 @@ class RequestedTasksRoute(BaseRoute):
                     "config.task_name": 1,
                     "config.resources": 1,
                     "timestamp.requested": 1,
+                    "requested_by": 1,
                 },
             )
             .sort("timestamp.requested", pymongo.DESCENDING)
