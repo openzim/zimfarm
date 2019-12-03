@@ -33,7 +33,13 @@ class TestTaskList:
     url = "/tasks/"
 
     def _assert_task(self, task, item):
-        assert set(item.keys()) == {"_id", "timestamp", "status"}
+        assert set(item.keys()) == {
+            "_id",
+            "timestamp",
+            "status",
+            "schedule_name",
+            "worker",
+        }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
 
