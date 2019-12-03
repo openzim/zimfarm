@@ -41,3 +41,33 @@ body {
     line-height: 2.5rem;
     text-decoration: none;
 }
+
+.schedule-failed {
+    color: #721c24;
+}
+
+.schedule-suceedeed {
+    color: #155724;
+}
+
+.sidenav {
+    line-height: 1rem;
+    max-width: 14rem;
+    min-width: 10rem;
+    width: 20%;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    padding-right: .1rem;
+}
+
+table td { padding: .5rem; }
+
+.dropdown-menu {
+    font-size: .9rem;
+    padding: .2rem 0;
+}
+
+.dropdown-item {
+    padding: .25rem .5rem;
+}
