@@ -3,10 +3,10 @@
 <template>
   <div class="container">
     <nav class="row">
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <input type="text" class="form-control" v-model="selectedName" @change="loadSchedules" placeholder="Name…" />
       </div>
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <multiselect v-model="selectedCategoriesOptions"
                      :options="categoriesOptions"
                      :multiple="true"
@@ -21,7 +21,7 @@
 
         </multiselect>
       </div>
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <multiselect v-model="selectedLanguagesOptions"
                      :options="languagesOptions"
                      :multiple="true"
@@ -36,7 +36,7 @@
 
         </multiselect>
       </div>
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <multiselect v-model="selectedTagsOptions"
                      :options="tagsOptions"
                      :multiple="true"
@@ -246,6 +246,9 @@
   }
   .container input[type=text] {
     height: 100%;
+  }
+  .col-sm-12 {
+    margin-bottom: .25rem;
   }
 </style>
 
