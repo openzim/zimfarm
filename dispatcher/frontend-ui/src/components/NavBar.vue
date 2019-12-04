@@ -3,7 +3,7 @@
     <header>
         <nav class="navbar navbar-expand-md navbar-dark ">
             <a class="navbar-brand branding">
-                <div class="icon"><img src="../assets/logo.svg" />
+                <div class="icon"><img :src="publicPath + 'assets/logo.svg'" />
                 <Loading/></div>
                 <label>Zimfarm</label>
             </a>
@@ -45,9 +45,11 @@
 <script>
   import Loading from './Loading.vue'
   import UserButton from './UserButton.vue'
+  import ZimfarmMixins from './Mixins.js'
 
   export default {
     name: 'NavBar',
+    mixins: [ZimfarmMixins],
     components: {Loading, UserButton},
   }
 </script>

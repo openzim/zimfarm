@@ -9,7 +9,7 @@
 <template>
   <div class="container text-center">
     <form class="form-signin" @submit.prevent="authenticate">
-      <img src="../assets/logo.svg"/>
+      <img :src="publicPath + 'assets/logo.svg'" />
       <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
       <label for="inputUsername" class="sr-only">Username</label>
       <input type="text" id="inputUsername" class="form-control" v-model="username" placeholder="Username" required autofocus>
@@ -34,9 +34,11 @@
   import moment from 'moment';
 
   import Constants from '../constants.js'
+  import ZimfarmMixins from './Mixins.js'
 
   export default {
     name: 'SignIn',
+    mixins: [ZimfarmMixins],
     data: function() {
       return {
         username: null, // user's username
