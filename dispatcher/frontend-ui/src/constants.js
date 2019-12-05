@@ -16,6 +16,10 @@ function duration_between(start, end) { // display a duration between two dateti
   return duration(diff);
 }
 
+function from_now(datetime) {
+  return moment(datetime).fromNow();
+}
+
 function params_serializer(params) { // turn javascript params object into querystring
   return querystring.stringify(params);
 }
@@ -24,11 +28,46 @@ function now() {
   return moment();
 }
 
+function image_human(config) {
+  return config.image.name + ":" + config.image.tag;
+}
+
+function build_docker_command(name, config) {
+  let mounts = ["-v", "/my-path:" + config.mount_point + ":rw"];
+  let mem_params = ["--memory-swappiness", "0", "--memory", config.resources.memory];
+  let cpu_params = ["--cpu-shares", config.resources.cpu * DEFAULT_CPU_SHARE];
+  let docker_base = ["docker", "run"].concat(mounts).concat(["--name", config.task_name + "_" + name, "--detach"]).concat(cpu_params).concat(mem_params);
+  let scraper_command = config.str_command;
+  let args = docker_base.concat([image_human(config)]).concat([scraper_command]);
+  return args.join(" ");
+}
+
+function trim_command(command, columns=70) {  // trim a string to espaced version (at most columns)
+  // don't bother if command is not that long
+  if (command.length <= columns)
+    return command;
+
+  // first line is considered already filled with PS1 (35 chars)
+  let sep = "\\\n";
+  let first_line_cols = 34;
+  let new_command = command.substr(0, first_line_cols) + sep;
+  let remaining = command.substr(first_line_cols);
+  while (remaining.length) {
+    new_command += remaining.substr(0, columns);
+    if (remaining.length > columns)
+      new_command += sep;  // don't add sep on last line
+    remaining = remaining.substr(columns);
+  }
+  return new_command; // remove trailing sep
+}
+
+var DEFAULT_CPU_SHARE = 1024;
+
 export default {
   zimfarm_webapi: window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1",
   zimfarm_logs_url:  window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org",
   kiwix_download_url:  window.environ.KIWIX_DOWNLOAD_URL || process.env.KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
-  DEFAULT_CPU_SHARE: 1024,  // used to generate docker cpu-shares
+  DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   standardHTTPError: function(response) {
     let statuses = {
       // 1××: Informational
@@ -113,4 +152,8 @@ export default {
   duration_between: duration_between,
   params_serializer:params_serializer,
   now: now,
+  image_human: image_human,
+  build_docker_command: build_docker_command,
+  trim_command: trim_command,
+  from_now: from_now,
 };

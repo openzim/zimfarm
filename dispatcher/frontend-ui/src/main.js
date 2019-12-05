@@ -16,11 +16,12 @@ Vue.use(VueCookie);
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faSpinner, faUser, faUserCircle, faKey, faTimes,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
-         faCarrot, faHdd, faMicrochip, faMemory } from '@fortawesome/free-solid-svg-icons'
+         faCarrot, faHdd, faMicrochip, faMemory, faCopy } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
 library.add(faUser);
+library.add(faCopy);
 library.add(faTimes);
 library.add(faCarrot);
 library.add(faMemory);
