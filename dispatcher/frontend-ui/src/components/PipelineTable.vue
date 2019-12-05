@@ -10,16 +10,16 @@
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
       <thead v-if="selectedTable == 'todo'">
-        <tr><th>Schedule</th><th v-tooltip="'Requested-on'">On</th><th v-tooltip="'Requested-by'">By</th></tr>
+        <tr><th>Schedule</th><th>Requested</th><th v-tooltip="'Requested-by'">By</th></tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
-        <tr><th>Schedule</th><th v-tooltip="'Started-on'">On</th><th>Worker</th></tr>
+        <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
       </thead>
       <thead v-if="selectedTable == 'done'">
-        <tr><th>Schedule</th><th v-tooltip="'Completed-on'">On</th><th>Worker</th><th>Duration</th></tr>
+        <tr><th>Schedule</th><th>Completed</th><th>Worker</th><th>Duration</th></tr>
       </thead>
       <thead v-if="selectedTable == 'failed'">
-        <tr><th>Schedule</th><th v-tooltip="'Stopped-on'">On</th><th>Worker</th><th>Duration</th><th>Status</th></tr>
+        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th></tr>
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task._id">
