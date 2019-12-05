@@ -6,7 +6,7 @@
   - displays result as an AlertFeedback -->
 
 <template>
-  <button class="btn btn-sm btn-primary" @click.prevent="fire" :disabled="!$store.getters.username">
+  <button class="btn btn-sm btn-primary" @click.prevent="fire" :disabled="!$store.getters.username" v-if="$store.getters.username">
     <font-awesome-icon icon="spinner" size="sm" spin v-show="should_display_loader" /> {{ button_text }}
   </button>
 </template>
