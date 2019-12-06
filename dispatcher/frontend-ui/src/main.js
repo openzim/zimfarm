@@ -12,6 +12,14 @@ Vue.use(VueRouter);
 Vue.use(VueClipboard);
 Vue.use(VueCookie);
 
+// Bootstrap
+import BootstrapVue from 'bootstrap-vue'
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+Vue.use(BootstrapVue)
+
+import '../public/assets/styles.css'
+
 // Font Awesome
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faSpinner, faUser, faUserCircle, faKey, faTimes,
