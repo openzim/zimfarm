@@ -15,6 +15,8 @@ class TestRequestedTaskList:
             "schedule_name",
             "timestamp",
             "config",
+            "requested_by",
+            "priority",
         }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]

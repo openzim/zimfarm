@@ -5,7 +5,7 @@ from http import HTTPStatus
 import pytz
 import pymongo
 import trafaret as t
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, Response
 
 from common.entities import TaskStatus
 from common.mongo import RequestedTasks, Schedules
@@ -28,12 +28,18 @@ class RequestedTasksRoute(BaseRoute):
     def post(self, *args, **kwargs):
         """ Create requested task from a list of schedule_names """
 
-        request_json = request.get_json()
-        if not request_json:
-            raise InvalidRequestJSON()
-        schedule_names = request_json.get("schedule_names", [])
-        if not isinstance(schedule_names, list):
-            raise InvalidRequestJSON()
+        validator = t.Dict(
+            t.Key("schedule_names", optional=False, trafaret=t.List(t.String)),
+            t.Key("priority", optional=True, trafaret=t.ToInt(gte=0)),
+        )
+
+        try:
+            request_json = validator.check(request.get_json())
+        except t.DataError as e:
+            raise InvalidRequestJSON(str(e.error))
+
+        schedule_names = request_json["schedule_names"]
+        priority = request_json.get("priority", 0)
 
         # verify requested names exists
         if not Schedules().count_documents(
@@ -70,6 +76,7 @@ class RequestedTasksRoute(BaseRoute):
                 "timestamp": {TaskStatus.requested: now},
                 "events": [{"code": TaskStatus.requested, "timestamp": now}],
                 "requested_by": username,
+                "priority": priority,
                 "config": config,
             }
 
@@ -139,6 +146,7 @@ class RequestedTasksRoute(BaseRoute):
                     "config.resources": 1,
                     "timestamp.requested": 1,
                     "requested_by": 1,
+                    "priority": 1,
                 },
             )
             .sort("timestamp.requested", pymongo.DESCENDING)
@@ -158,7 +166,7 @@ class RequestedTasksRoute(BaseRoute):
 class RequestedTaskRoute(BaseRoute):
     rule = "/<string:requested_task_id>"
     name = "requested_task"
-    methods = ["GET"]
+    methods = ["GET", "PATCH", "DELETE"]
 
     @url_object_id("requested_task_id")
     def get(self, requested_task_id: str, *args, **kwargs):
@@ -169,11 +177,27 @@ class RequestedTaskRoute(BaseRoute):
 
         return jsonify(requested_task)
 
+    @url_object_id("requested_task_id")
+    def patch(self, requested_task_id: str, *args, **kwargs):
 
-class RequestedTaskDeleteRoute(BaseRoute):
-    rule = "/<string:requested_task_id>"
-    name = "requested_task_delete"
-    methods = ["DELETE"]
+        requested_task = RequestedTasks().count_documents({"_id": requested_task_id})
+        if not requested_task:
+            raise TaskNotFound()
+
+        validator = t.Dict(t.Key("priority", optional=False, trafaret=t.ToInt(gte=0)))
+
+        try:
+            request_json = validator.check(request.get_json())
+        except t.DataError as e:
+            raise InvalidRequestJSON(str(e.error))
+
+        update = RequestedTasks().update_one(
+            {"_id": requested_task_id},
+            {"$set": {"priority": request_json.get("priority", 0)}},
+        )
+        if update.modified_count:
+            return Response(status=HTTPStatus.ACCEPTED)
+        return Response(status=HTTPStatus.OK)
 
     @authenticate
     @url_object_id("requested_task_id")

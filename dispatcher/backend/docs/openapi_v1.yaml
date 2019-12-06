@@ -498,6 +498,8 @@ paths:
                   example:
                     - wikipedia_fr_all
                     - gutenberg_mul_all
+                priority:
+                  $ref: '#/components/schemas/Priority'
       responses:
         201:
           description: Tasks Requested
@@ -554,6 +556,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+      - restricted
+      summary: update requested task
+      operationId: editRequestedTask
+      description: Change a RequestedTask's priority
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/TaskIdParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - priority
+              properties:
+                priority:
+                  $ref: '#/components/schemas/Priority'
+      responses:
+        200:
+          description: RequestedTask not updated
+        202:
+          description: RequestedTask updated
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       tags:
       - restricted
@@ -596,6 +632,18 @@ paths:
       parameters:
       - $ref: '#/components/parameters/SkipParameter'
       - $ref: '#/components/parameters/LimitParameter'
+      - in: query
+        name: status
+        description: filter by task status
+        required: false
+        schema:
+        $ref: '#/components/schemas/TaskStatus'
+      - in: query
+        name: schedule_name
+        description: filter by tasks' schedule_name
+        required: false
+        schema:
+          $ref: '#/components/schemas/ScheduleName'
       responses:
         200:
           description: List of Tasks matching criteria
@@ -1729,3 +1777,8 @@ components:
           $ref: '#/components/schemas/SingleTimestamp'
         succeeded:
           $ref: '#/components/schemas/SingleTimestamp'
+    Priority:
+      type: Number
+      format: Int32
+      description: Positive int priority for requested-task. Default priority is 0.
+      example: 5

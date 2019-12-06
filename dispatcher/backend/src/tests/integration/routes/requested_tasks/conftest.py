@@ -28,6 +28,8 @@ def make_requested_task(database, make_event):
         schedule_name="",
         status=TaskStatus.requested,
         hostname="zimfarm_worker.com",
+        requested_by="someone",
+        priority=0,
     ):
         events = [TaskStatus.requested]
         timestamp = {event: datetime.now() for event in events}
@@ -50,6 +52,8 @@ def make_requested_task(database, make_event):
             "timestamp": timestamp,
             "events": events,
             "config": config,
+            "priority": priority,
+            "requested_by": requested_by,
         }
 
         requested_tasks.insert_one(requested_task)

@@ -97,20 +97,20 @@ class TestTaskList:
             task = tasks[ObjectId(item["_id"])]
             self._assert_task(task, item)
 
-    def test_schedule_id(self, client, make_task):
-        """Test list tasks with schedule id as filter"""
+    def test_schedule_name(self, client, make_task):
+        """Test list tasks with schedule_name as filter"""
 
         # generate tasks with two schedule ids
-        schedule_id, another_schedule_id = ObjectId(), ObjectId()
+        schedule_name, another_schedule_name = str(ObjectId()), str(ObjectId())
         for _ in range(5):
-            make_task(schedule_id=schedule_id)
+            make_task(schedule_name=schedule_name)
         for _ in range(10):
-            make_task(schedule_id=another_schedule_id)
+            make_task(schedule_name=another_schedule_name)
 
         # make request
         headers = {"Content-Type": "application/json"}
         response = client.get(
-            self.url, headers=headers, query_string={"schedule_id": schedule_id}
+            self.url, headers=headers, query_string={"schedule_name": schedule_name}
         )
         assert response.status_code == 200
 
