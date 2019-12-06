@@ -186,9 +186,3 @@
     },
   }
 </script>
-
-<style type="text/css" scoped>
-  th {
-    white-space: nowrap;
-  }
-</style>
