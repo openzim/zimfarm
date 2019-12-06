@@ -59,6 +59,7 @@
           msg = "Your token is still valid for " + minutes + " minutes though";
         }
         parent.$store.dispatch('clearAuthentication');
+        parent.$cookie.delete('token_data');
         parent.$root.$emit('feedback-message', 'info', "<strong>Signed-out!</strong><br />" + msg);
       }
     },

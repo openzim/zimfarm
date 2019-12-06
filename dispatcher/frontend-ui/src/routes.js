@@ -32,6 +32,12 @@ export default [
     props: true,
   },
   {
+    path: '/pipeline/:_id/:selectedTab',
+    name: 'task-detail-tab',
+    component: TaskView,
+    props: true,
+  },
+  {
     path: '/sign-in',
     name: 'sign-in',
     component: SignIn,
@@ -39,6 +45,12 @@ export default [
   {
     path: '/schedules/:schedule_name',
     name: 'schedule-detail',
+    component: ScheduleView,
+    props: true,
+  },
+  {
+    path: '/schedules/:schedule_name/:selectedTab',
+    name: 'schedule-detail-tab',
     component: ScheduleView,
     props: true,
   },

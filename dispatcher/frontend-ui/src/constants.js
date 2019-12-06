@@ -61,6 +61,10 @@ function trim_command(command, columns=70) {  // trim a string to espaced versio
   return new_command; // remove trailing sep
 }
 
+function short_id(id) {  // short id of tasks (last chars)
+  return id.substr(id.length - 5);
+}
+
 var DEFAULT_CPU_SHARE = 1024;
 
 export default {
@@ -68,6 +72,8 @@ export default {
   zimfarm_logs_url:  window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org",
   kiwix_download_url:  window.environ.KIWIX_DOWNLOAD_URL || process.env.KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
+  DEFAULT_FIRE_PRIORITY: 5,
+  running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   standardHTTPError: function(response) {
     let statuses = {
       // 1××: Informational
@@ -144,6 +150,10 @@ export default {
       599: "Network Connect Timeout Error",
     };
 
+    if (response === undefined) { // no response
+                                  //usually due to browser blocking failed OPTION preflight request
+      return "Cross-Origin Request Blocked: preflight request failed."
+    }
     let status_text = response.statusText ? response.statusText : statuses[response.status];
     return response.status + ": " + status_text + ".";
   },
@@ -156,4 +166,5 @@ export default {
   build_docker_command: build_docker_command,
   trim_command: trim_command,
   from_now: from_now,
+  short_id: short_id,
 };

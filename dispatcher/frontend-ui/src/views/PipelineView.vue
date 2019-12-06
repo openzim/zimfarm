@@ -1,7 +1,7 @@
 <!-- Pipeline View showing a list of tasks -->
 
 <template>
-  <div class="container-fluid">
+  <div class="container">
     <TasksList :filter="filter" />
   </div>
 </template>

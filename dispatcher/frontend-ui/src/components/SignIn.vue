@@ -75,7 +75,7 @@
               // save to cookie
               parent.$cookie.set('token_data', JSON.stringify(token_data), {expires: '1h'});
               // redirect
-              parent.$router.go(-1);
+              parent.$router.back();
             })
             .catch(function (error) {
               parent.error = Constants.standardHTTPError(error.response);

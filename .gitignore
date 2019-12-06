@@ -129,3 +129,5 @@ worker/dist/
 worker/temp/
 .pytest_cache
 .reg
+
+environ.js

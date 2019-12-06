@@ -10,7 +10,7 @@
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
       <thead v-if="selectedTable == 'todo'">
-        <tr><th>Schedule</th><th>Requested</th><th v-tooltip="'Requested-by'">By</th></tr>
+        <tr><th>Schedule</th><th>Requested</th><th>By</th><th v-show="$store.getters.isLoggedIn">Remove</th></tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
         <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
@@ -26,7 +26,10 @@
           <td v-if="selectedTable != 'todo'">
             <router-link :to="{name: 'task-detail', params: {_id: task._id}}">{{ task.schedule_name }}</router-link>
           </td>
-          <td v-else>{{ task.schedule_name }}</td>
+          <td v-else>
+            {{ task.schedule_name }}
+            <span class="text-warning" v-if="task.priority > 0"> <font-awesome-icon size="sm" icon="fire" /></span>
+          </td>
           <td v-if="selectedTable == 'todo'"
               v-tooltip="{content: datetime(task.requested_on), delay: 10}">{{ task.requested_since }}</td>
           <td v-if="selectedTable == 'todo'">{{ task.requested_by }}</td>
@@ -37,6 +40,7 @@
           <td v-if="selectedTable != 'todo'">{{ task.worker }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'">{{ task.status }}</td>
+          <td v-if="selectedTable == 'todo'" v-show="$store.getters.isLoggedIn"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
         </tr>
       </tbody>
     </table>
@@ -50,11 +54,12 @@
   import Constants from '../constants.js'
   import ZimfarmMixins from './Mixins.js'
   import ErrorMessage from './ErrorMessage.vue'
+  import RemoveRequestedTaskButton from './RemoveRequestedTaskButton.vue'
 
   export default {
     name: 'PipelineTable',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage},
+    components: {ErrorMessage, RemoveRequestedTaskButton},
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
