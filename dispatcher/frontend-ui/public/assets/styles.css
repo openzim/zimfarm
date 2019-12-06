@@ -58,6 +58,7 @@ h2 {  /* Task/Schedule ID/title */
 
 table td { padding: .5rem; }
 table th { white-space: nowrap; }
+table caption { caption-side: top; }
 
 /* Tabs in schedule/task
 

@@ -5,7 +5,7 @@
 <template>
   <div>
     <table class="table table-responsive-sm table-striped" v-if="!error">
-      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="loadData">
+      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
@@ -67,8 +67,6 @@
       return {
         tasks: [], // list of tasks returned by API
         meta: {}, // API query metadata (count, skip, limit)
-        selectedLimit: 50, // user-defined nb of tasks to retrieve/display
-        limits: [10, 50, 100, 200], // hard-coded options for above
         error: false, // error string to display on API error
       };
     },
@@ -78,6 +76,10 @@
       }
     },
     methods: {
+      limitChanged() {
+        this.saveLimitPreference(this.selectedLimit);
+        this.loadData();
+      },
       datetime: function(date) { // datetime formatter shortcut
         return Constants.datetime(date);
       },

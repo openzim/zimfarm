@@ -53,7 +53,7 @@
       </div>
     </nav>
     <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover table-bordered">
-      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="loadSchedules">
+      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
@@ -96,11 +96,9 @@
     name: 'SchedulesList',
     mixins: [ZimfarmMixins],
     components: {Multiselect},
-    data: function () {
+    data() {
       return {
         error: null,  // API originated error message
-        selectedLimit: 20, // selected number of results to display
-        limits: [10, 20, 50, 200],  // hard-coded options for limit
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
         categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
@@ -145,10 +143,14 @@
       selectedTags: function() { return this.selectedTagsOptions.map((x) => x.value); },
     },
     methods: {
-      datetime: function (date) { // shortcut to datetime formatter
+      datetime(date) { // shortcut to datetime formatter
         return Constants.datetime(date);
       },
-      loadMetaData: function () {  // load languages and tags metadata from API then launch loadSchedules
+      limitChanged() {
+        this.saveLimitPreference(this.selectedLimit);
+        this.loadSchedules();
+      },
+      loadMetaData() {  // load languages and tags metadata from API then launch loadSchedules
         let parent = this;
         parent.error = null;
 
@@ -185,7 +187,7 @@
           // metadata loaded, load schedules
           this.loadSchedules();
       },
-      loadSchedules: function () {  // load filtered schedules from API
+      loadSchedules() {  // load filtered schedules from API
         let parent = this;
 
         this.toggleLoader("fetching schedules…");

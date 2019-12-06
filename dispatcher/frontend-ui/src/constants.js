@@ -73,6 +73,8 @@ export default {
   kiwix_download_url:  window.environ.KIWIX_DOWNLOAD_URL || process.env.KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
+  DEFAULT_LIMIT: 20,
+  LIMIT_CHOICES: [10, 20, 50, 100, 200, 500],
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   contact_email: "contact@kiwix.org",
   standardHTTPError: function(response) {
