@@ -1,6 +1,7 @@
 
 import PipelineView from './views/PipelineView.vue'
 import SignIn from './components/SignIn.vue'
+import ChangePassword from './components/ChangePassword.vue'
 import NotFound from './components/NotFound.vue'
 import SchedulesList from './components/SchedulesList.vue'
 import ScheduleView from './views/ScheduleView.vue'
@@ -43,19 +44,24 @@ export default [
     component: SignIn,
   },
   {
-    path: '/schedules/:schedule_name',
+    path: '/change-password',
+    name: 'change-password',
+    component: ChangePassword,
+  },
+  {
+    path: '/recipes/:schedule_name',
     name: 'schedule-detail',
     component: ScheduleView,
     props: true,
   },
   {
-    path: '/schedules/:schedule_name/:selectedTab',
+    path: '/recipes/:schedule_name/:selectedTab',
     name: 'schedule-detail-tab',
     component: ScheduleView,
     props: true,
   },
   {
-    path: '/schedules',
+    path: '/recipes',
     name: 'schedules-list',
     component: SchedulesList,
   },

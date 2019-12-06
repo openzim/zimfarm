@@ -74,6 +74,7 @@ export default {
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
+  contact_email: "contact@kiwix.org",
   standardHTTPError: function(response) {
     let statuses = {
       // 1××: Informational
