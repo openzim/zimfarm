@@ -76,7 +76,7 @@
       <div v-if="selectedTab == 'debug'" class="tab-content">
         <table class="table table-responsive-sm table-striped table-in-tab">
           <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
-          <tr v-if="command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
+          <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
           <tr v-if="task_container.exit_code"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
           <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
@@ -149,7 +149,7 @@
       pipe_duration() { return Constants.duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },
-      command() { return this.task.container.command.join(" "); },
+      command() { return this.task_container.command; },
       trimmed_command() { return Constants.trim_command(this.command); },
     },
     methods: {

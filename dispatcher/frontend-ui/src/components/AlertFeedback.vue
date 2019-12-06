@@ -60,7 +60,7 @@
     width: auto;
     right: .75rem;
     box-sizing: border-box;
-    padding: .5rem;
+    padding: .8rem;
   }
   @media (max-width: 575.98px) {
     .alertbox {
