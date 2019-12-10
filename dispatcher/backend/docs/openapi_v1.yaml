@@ -413,16 +413,11 @@ paths:
       - public
       summary: list requested-tasks
       operationId: listRequestedTasks
-      description: Query the RequestedTasks database
+      description: Query the RequestedTasks database (sorted by priority)
       parameters:
       - $ref: '#/components/parameters/SkipParameter'
       - $ref: '#/components/parameters/LimitParameter'
-      - in: query
-        name: schedule_name
-        description: filter results by Schedule
-        required: false
-        schema:
-          $ref: '#/components/schemas/ScheduleName'
+      - $ref: '#/components/parameters/ScheduleNameQueryParameter'
       - in: query
         name: matching_cpu
         required: false
@@ -458,6 +453,18 @@ paths:
             - "youtube"
             - "mwoffliner"
           description: list of offliners supported
+      - in: query
+        name: priority
+        required: false
+        description: filter to this or higher priority
+        schema:
+          $ref: '#/components/schemas/Priority'
+      - in: query
+        name: worker
+        required: false
+        description: filter to this or unassigned worker
+        schema:
+          $ref: '#/components/schemas/WorkerName'
       responses:
         200:
           description: List of RequestedTask matching criteria
@@ -498,6 +505,8 @@ paths:
                   example:
                     - wikipedia_fr_all
                     - gutenberg_mul_all
+                priority:
+                  $ref: '#/components/schemas/Priority'
       responses:
         201:
           description: Tasks Requested
@@ -554,6 +563,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+      - restricted
+      summary: update requested task
+      operationId: editRequestedTask
+      description: Change a RequestedTask's priority
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/TaskIdParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - priority
+              properties:
+                priority:
+                  $ref: '#/components/schemas/Priority'
+      responses:
+        200:
+          description: RequestedTask not updated
+        202:
+          description: RequestedTask updated
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       tags:
       - restricted
@@ -596,6 +639,8 @@ paths:
       parameters:
       - $ref: '#/components/parameters/SkipParameter'
       - $ref: '#/components/parameters/LimitParameter'
+      - $ref: '#/components/parameters/StatusParameter'
+      - $ref: '#/components/parameters/ScheduleNameQueryParameter'
       responses:
         200:
           description: List of Tasks matching criteria
@@ -844,7 +889,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputError'
-
+  /workers/{name}/check-in:
+    put:
+      tags:
+      - workers
+      summary: list workers
+      operationId: checkWorkerIn
+      description: Check a worker in with its resources details
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+        - in: path
+          required: true
+          name: name
+          schema:
+            $ref: '#/components/schemas/WorkerName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - username
+                - cpu
+                - memory
+                - disk
+                - offliners
+              properties:
+                username:
+                  $ref: '#/components/schemas/Username'
+                cpu:
+                  $ref: '#/components/schemas/Cpu'
+                memory:
+                  $ref: '#/components/schemas/Memory'
+                disk:
+                  $ref: '#/components/schemas/Disk'
+                offliners:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Offliner'
+                  example:
+                    - "youtube"
+                    - "mwoffliner"
+      responses:
+        204:
+          description: Worker checked-in
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
   /users/:
     get:
       tags:
@@ -939,8 +1038,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  _id:
-                    $ref: '#/components/schemas/MongoId'
                   username:
                     $ref: '#/components/schemas/Username'
                   email:
@@ -1196,6 +1293,13 @@ components:
       name: scheduleName
       schema:
         $ref: '#/components/schemas/ScheduleName'
+    ScheduleNameQueryParameter:
+      in: query
+      required: false
+      name: schedule_name
+      description: filter by schedule_name
+      schema:
+        $ref: '#/components/schemas/ScheduleName'
     UsernameParameter:
       in: path
       required: true
@@ -1208,6 +1312,13 @@ components:
       required: true
       schema:
         type: string
+    StatusParameter:
+      in: query
+      name: status
+      description: only those matching this statuses
+      required: false
+      schema:
+        $ref: '#/components/schemas/TaskStatus'
   schemas:
     Language:
       type: object
@@ -1229,12 +1340,9 @@ components:
     UserItem:
       type: object
       required:
-      - _id
       - username
       - email
       properties:
-        _id:
-          $ref: '#/components/schemas/MongoId'
         username:
           $ref: '#/components/schemas/Username'
         email:
@@ -1302,28 +1410,43 @@ components:
     Worker:
       type: object
       required:
-      - _id
-      - hostname
+      - name
+      - username
+      - resources
+      - offliners
+      - last_seen
       - status
       properties:
-        _id:
-          $ref: '#/components/schemas/MongoId'
-        hostname:
+        name:
+          $ref: '#/components/schemas/WorkerName'
+        username:
+          $ref: '#/components/schemas/Username'
+        resources:
+          $ref: '#/components/schemas/ConfigResources'
+        offliners:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offliner'
+          example:
+            - mwoffliner
+            - youtube
+        last_seen:
           type: string
-          example: mwoffliner1
+          format: date-time
         status:
           type: string
+          enum:
+            - online
+            - offline
           example: online
     ScheduleItem:
       type: object
       required:
-        - _id
         - config
         - language
         - name
+        - category
       properties:
-        _id:
-          $ref: '#/components/schemas/MongoId'
         config:
           type: object
           required:
@@ -1331,6 +1454,8 @@ components:
           properties:
             task_name:
               type: string
+        category:
+          $ref: '#/components/schemas/ScheduleCategory'
         language:
           $ref: '#/components/schemas/Language'
         name:
@@ -1373,7 +1498,6 @@ components:
       type: object
       additionalProperties: false
       required:
-        - _id
         - category
         - config
         - enabled
@@ -1381,8 +1505,6 @@ components:
         - name
         - tags
       properties:
-        _id:
-          $ref: '#/components/schemas/MongoId'
         category:
           $ref: '#/components/schemas/ScheduleCategory'
         config:
@@ -1454,19 +1576,25 @@ components:
         - disk
       properties:
         cpu:
-          type: integer
-          format: int32
-          example: 3
-          description: number of CPU cores required to run it
+          $ref: '#/components/schemas/Cpu'
         memory:
-          type: integer
-          format: int32
-          example: 1024
-          description: RAM (in bytes) required to run it
+          $ref: '#/components/schemas/Memory'
         disk:
-          type: integer
-          format: int32
-          description: Disk space (in bytes) required to run it
+          $ref: '#/components/schemas/Disk'
+    Cpu:
+      type: integer
+      format: int32
+      example: 3
+      description: number of CPU cores required to run it
+    Memory:
+      type: integer
+      format: int32
+      example: 1024
+      description: RAM (in bytes) required to run it
+    Disk:
+      type: integer
+      format: int32
+      description: Disk space (in bytes) required to run it
     Offliner:
       type: string
       enum:
@@ -1497,17 +1625,16 @@ components:
       required:
         - _id
         - status
-        - schedule_id
         - schedule_name
         - config
         - timestamp
+        - priority
+        - worker
       properties:
         _id:
           $ref: '#/components/schemas/MongoId'
         status:
           $ref: '#/components/schemas/TaskStatus'
-        schedule_id:
-          $ref: '#/components/schemas/MongoId'
         schedule_name:
           $ref: '#/components/schemas/ScheduleName'
         config:
@@ -1533,6 +1660,12 @@ components:
               type: string
               format: date-time
               example: "2019-11-19T15:36:06.563000Z"
+        priority:
+          type: integer
+          format: Int32
+          example: 0
+        worker:
+          $ref: '#/components/schemas/WorkerName'
     Task:
       type: object
       required:
@@ -1541,7 +1674,6 @@ components:
         - status
         - events
         - schedule
-        - schedule_id
         - schedule_name
         - timestamp
         - worker
@@ -1558,8 +1690,6 @@ components:
             $ref: '#/components/schemas/Event'
         schedule:
           $ref: '#/components/schemas/Schedule'
-        schedule_id:
-          $ref: '#/components/schemas/MongoId'
         schedule_name:
           $ref: '#/components/schemas/ScheduleName'
         timestamp:
@@ -1613,7 +1743,7 @@ components:
         message:
           oneOf:
             - type: object
-              example: {"schedule_id": "Invalid Mongo ObjectId"}
+              example: {"schedule_name": "required field"}
             - type: string
               example: Invalid signature format (not base64)
     Token:
@@ -1729,3 +1859,8 @@ components:
           $ref: '#/components/schemas/SingleTimestamp'
         succeeded:
           $ref: '#/components/schemas/SingleTimestamp'
+    Priority:
+      type: number
+      format: Int32
+      description: Positive int priority for requested_task. Default priority is 0.
+      example: 5

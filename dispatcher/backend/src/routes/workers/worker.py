@@ -2,46 +2,116 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import logging
+import datetime
+from http import HTTPStatus
+
 import pymongo
 import trafaret as t
-from flask import request, jsonify
+from flask import request, jsonify, Response
 
+from errors.http import InvalidRequestJSON
+from routes import authenticate, url_object_id
 from common.mongo import Workers
+from routes.base import BaseRoute
+from utils.broadcaster import BROADCASTER
+
+logger = logging.getLogger(__name__)
+OFFLINE_DELAY = 20 * 60
 
 
-def list_workers():
-    """ list of workers """
+class WorkersRoute(BaseRoute):
+    rule = "/"
+    name = "workers-list"
+    methods = ["GET"]
 
-    request_args = request.args.to_dict()
-    request_args["status"] = request.args.getlist("status")
-    validator = t.Dict(
-        {
-            t.Key("skip", default=0): t.ToInt(gte=0),
-            t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
-            t.Key("status", optional=True): t.List(t.Enum("online", "offline")),
+    def get(self, *args, **kwargs):
+        """ list of workers with checked-in data """
+
+        now = datetime.datetime.now()
+
+        def add_status(worker):
+            not_seen_since = now - worker["last_seen"]
+            worker["status"] = (
+                "online"
+                if not_seen_since.total_seconds() < OFFLINE_DELAY
+                else "offline"
+            )
+            return worker
+
+        request_args = request.args.to_dict()
+        validator = t.Dict(
+            {
+                t.Key("skip", default=0): t.ToInt(gte=0),
+                t.Key("limit", default=20): t.ToInt(gt=0, lte=200),
+            }
+        )
+        request_args = validator.check(request_args)
+        skip, limit = request_args["skip"], request_args["limit"]
+
+        query = {}
+        count = Workers().count_documents(query)
+        projection = {
+            "_id": 0,
+            "name": 1,
+            "username": 1,
+            "offliners": 1,
+            "resources": 1,
+            "last_seen": 1,
         }
-    )
-    request_args = validator.check(request_args)
+        cursor = (
+            Workers()
+            .find(query, projection)
+            .sort("name", pymongo.ASCENDING)
+            .skip(skip)
+            .limit(limit)
+        )
+        workers = list(map(add_status, cursor))
 
-    # unpack query parameter
-    skip, limit = request_args["skip"], request_args["limit"]
-    statuses = request_args.get("status")
+        return jsonify(
+            {"meta": {"skip": skip, "limit": limit, "count": count}, "items": workers}
+        )
 
-    query = {}
-    if statuses:
-        query["status"] = {"$in": statuses}
 
-    count = Workers().count_documents(query)
-    projection = {"_id": 1, "status": 1, "hostname": 1}
-    cursor = (
-        Workers()
-        .find(query, projection)
-        .sort("status", pymongo.DESCENDING)
-        .skip(skip)
-        .limit(limit)
-    )
-    workers = [worker for worker in cursor]
+class WorkerCheckinRoute(BaseRoute):
+    rule = "/<string:name>/check-in"
+    name = "worker-checkin"
+    methods = ["PUT"]
 
-    return jsonify(
-        {"meta": {"skip": skip, "limit": limit, "count": count}, "items": workers}
-    )
+    @authenticate
+    @url_object_id("name")
+    def put(self, name: str, *args, **kwargs):
+
+        validator = t.Dict(
+            {
+                t.Key("username", optional=False): t.String(),
+                t.Key("cpu", optional=False): t.ToInt(gte=0),
+                t.Key("memory", optional=False): t.ToInt(gte=0),
+                t.Key("disk", optional=False): t.ToInt(gte=0),
+                t.Key("offliners", optional=False): t.List(
+                    t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
+                ),
+            }
+        )
+
+        try:
+            request_json = validator.check(request.get_json())
+        except t.DataError as e:
+            raise InvalidRequestJSON(str(e.error))
+
+        document = {
+            "name": name,
+            "username": request_json["username"],
+            "resources": {
+                "cpu": request_json["cpu"],
+                "memory": request_json["memory"],
+                "disk": request_json["disk"],
+            },
+            "offliners": request_json["offliners"],
+            "last_seen": datetime.datetime.now(),
+        }
+        Workers().replace_one({"name": name}, document, upsert=True)
+
+        BROADCASTER.broadcast_worker_checkin(document)
+
+        return Response(status=HTTPStatus.NO_CONTENT)

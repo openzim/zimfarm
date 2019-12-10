@@ -18,7 +18,6 @@ from common.mongo import RequestedTasks, Tasks, Schedules
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
-from common.validators import ObjectIdValidator
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ class TasksRoute(BaseRoute):
                 t.Key("skip", default=0): t.ToInt(gte=0),
                 t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
                 t.Key("status", optional=True): t.List(t.Enum(*TaskStatus.all())),
-                t.Key("schedule_id", optional=True): ObjectIdValidator,
+                t.Key("schedule_name", optional=True): t.String(),
             }
         )
         request_args = validator.check(request_args)
@@ -47,14 +46,14 @@ class TasksRoute(BaseRoute):
         # unpack query parameter
         skip, limit = request_args["skip"], request_args["limit"]
         statuses = request_args.get("status")
-        schedule_id = request_args.get("schedule_id")
+        schedule_name = request_args.get("schedule_name")
 
         # get tasks from database
         query = {}
         if statuses:
             query["status"] = {"$in": statuses}
-        if schedule_id:
-            query["schedule_id"] = schedule_id
+        if schedule_name:
+            query["schedule_name"] = schedule_name
 
         count = Tasks().count_documents(query)
         projection = {
@@ -63,6 +62,7 @@ class TasksRoute(BaseRoute):
             "status": 1,
             "timestamp": 1,
             "worker": 1,
+            "config.resources": 1,
         }
         cursor = (
             Tasks()
@@ -89,7 +89,6 @@ class TaskRoute(BaseRoute):
         if task is None:
             raise TaskNotFound()
 
-        task["schedule"] = Schedules().find_one({"_id": task["schedule_id"]})
         return jsonify(task)
 
     @authenticate

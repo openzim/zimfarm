@@ -39,10 +39,9 @@ class Tasks(BaseCollection):
     _name = "tasks"
     schema = {
         "bsonType": "object",
-        "required": ["schedule_id", "schedule_name"],
+        "required": ["schedule_name"],
         "properties": {
             "status": {"enum": TaskStatus.all()},
-            "schedule_id": {"bsonType": "objectId"},
             "schedule_name": {"bsonType": "string"},
         },
     }
@@ -54,7 +53,6 @@ class Tasks(BaseCollection):
 
     def initialize(self):
         self.create_index("status", name="status")
-        self.create_index("schedule_id", name="schedule_id")
         self.create_index("schedule_name", name="schedule_name")
         self.create_index("timestamp.requested", name="timestamp.requested")
         self.create_index("timestamp.started", name="timestamp.started")
@@ -70,10 +68,9 @@ class RequestedTasks(BaseCollection):
     _name = "requested_tasks"
     schema = {
         "bsonType": "object",
-        "required": ["schedule_id", "schedule_name"],
+        "required": ["schedule_name"],
         "properties": {
             "status": {"enum": TaskStatus.all()},
-            "schedule_id": {"bsonType": "objectId"},
             "schedule_name": {"bsonType": "string"},
         },
     }
@@ -85,7 +82,6 @@ class RequestedTasks(BaseCollection):
 
     def initialize(self):
         self.create_index("status", name="status")
-        self.create_index("schedule_id", name="schedule_id")
         self.create_index("schedule_name", name="schedule_name")
         self.create_index("timestamp.requested", name="timestamp.requested")
 

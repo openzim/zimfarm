@@ -1,11 +1,11 @@
-import flask
-
 from routes import API_PATH
-from . import worker
+from routes.base import BaseBlueprint
+from routes.workers.worker import WorkersRoute, WorkerCheckinRoute
 
 
-class Blueprint(flask.Blueprint):
+class Blueprint(BaseBlueprint):
     def __init__(self):
         super().__init__("workers", __name__, url_prefix=f"{API_PATH}/workers")
 
-        self.add_url_rule("/", "list_workers", worker.list_workers, methods=["GET"])
+        self.register_route(WorkersRoute())
+        self.register_route(WorkerCheckinRoute())

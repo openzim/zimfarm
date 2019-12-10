@@ -17,7 +17,7 @@
     components: {NavBar, AlertFeedback},
 
     methods: {
-      loadTokenFromCookie: function() {
+      loadTokenFromCookie() {
         // already authenticated
         if (this.$store.getters.username)
           return;
@@ -54,7 +54,7 @@
 
       },
     },
-    beforeMount: function() {
+    beforeMount() {
       this.loadTokenFromCookie();
     },
     watch: {

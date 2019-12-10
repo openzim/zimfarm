@@ -28,14 +28,14 @@
     name: 'UsersView',
     mixins: [ZimfarmMixins],
     components: {ErrorMessage},
-    data: function () {
+    data() {
       return {
         error: null,  // API generated error message
         users: [],  // list of users returned by API
       };
     },
     methods: {
-      loadUsersList: function() {  // load users list from API
+      loadUsersList() {  // load users list from API
         let parent = this;
 
         parent.toggleLoader("fetching workers…");
@@ -55,7 +55,7 @@
           });
       },
     },
-    mounted: function() {
+    mounted() {
       this.loadUsersList();
     },
   }

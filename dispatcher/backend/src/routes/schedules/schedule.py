@@ -1,9 +1,7 @@
-import json
-from datetime import datetime
 from http import HTTPStatus
 
 import trafaret as t
-from flask import request, jsonify, Response
+from flask import request, jsonify, Response, make_response
 
 from common.mongo import Schedules
 from utils.offliners import command_information_for
@@ -54,7 +52,7 @@ class SchedulesRoute(BaseRoute):
 
         # get schedules from database
         projection = {
-            "_id": 1,
+            "_id": 0,
             "name": 1,
             "category": 1,
             "language": 1,
@@ -64,21 +62,6 @@ class SchedulesRoute(BaseRoute):
         cursor = Schedules().find(query, projection).skip(skip).limit(limit)
         count = Schedules().count_documents(query)
         schedules = [schedule for schedule in cursor]
-
-        # task this month
-        utc_now = datetime.utcnow()
-        first_day_this_month = datetime(year=utc_now.year, month=utc_now.month, day=1)
-        for schedule in schedules:
-            most_recent_task_updated_at = schedule.get("most_recent_task", {}).get(
-                "updated_at"
-            )
-            if (
-                most_recent_task_updated_at
-                and most_recent_task_updated_at > first_day_this_month
-            ):
-                schedule["task_this_month"] = schedule["most_recent_task"]
-            else:
-                schedule["task_this_month"] = None
 
         return jsonify(
             {"meta": {"skip": skip, "limit": limit, "count": count}, "items": schedules}
@@ -100,8 +83,9 @@ class SchedulesRoute(BaseRoute):
             )
 
         schedule_id = Schedules().insert_one(document).inserted_id
+        print("schedule_id", schedule_id)
 
-        return Response(json.dumps({"_id": str(schedule_id)}), HTTPStatus.CREATED)
+        return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)
 
 
 class SchedulesBackupRoute(BaseRoute):
@@ -119,15 +103,15 @@ class SchedulesBackupRoute(BaseRoute):
 
 
 class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
-    rule = "/<string:schedule>"
+    rule = "/<string:schedule_name>"
     name = "schedule"
     methods = ["GET", "PATCH", "DELETE"]
 
-    def get(self, schedule: str, *args, **kwargs):
+    def get(self, schedule_name: str, *args, **kwargs):
         """Get schedule object."""
 
-        query = self.get_schedule_query(schedule)
-        schedule = Schedules().find_one(query)
+        query = {"name": schedule_name}
+        schedule = Schedules().find_one(query, {"_id": 0})
         if schedule is None:
             raise ScheduleNotFound()
 
@@ -135,7 +119,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         return jsonify(schedule)
 
     @authenticate
-    def patch(self, schedule: str, *args, **kwargs):
+    def patch(self, schedule_name: str, *args, **kwargs):
         """Update all properties of a schedule but _id and most_recent_task"""
 
         validator = t.Dict(
@@ -161,7 +145,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
                     "Schedule with name `{}` already exists".format(update["name"])
                 )
 
-        query = self.get_schedule_query(schedule)
+        query = {"name": schedule_name}
         matched_count = Schedules().update_one(query, {"$set": update}).matched_count
 
         if matched_count:
@@ -170,10 +154,10 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise ScheduleNotFound()
 
     @authenticate
-    def delete(self, schedule: str, *args, **kwargs):
+    def delete(self, schedule_name: str, *args, **kwargs):
         """Delete a schedule."""
 
-        query = self.get_schedule_query(schedule)
+        query = {"name": schedule_name}
         result = Schedules().delete_one(query)
 
         if result.deleted_count == 0:

@@ -5,38 +5,42 @@
 <template>
   <div>
     <table class="table table-responsive-sm table-striped" v-if="!error">
-      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="loadData">
+      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
       <thead v-if="selectedTable == 'todo'">
-        <tr><th>Schedule</th><th v-tooltip="'Requested-on'">On</th><th v-tooltip="'Requested-by'">By</th></tr>
+        <tr><th>Schedule</th><th>Requested</th><th>By</th><th v-show="$store.getters.isLoggedIn">Remove</th></tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
-        <tr><th>Schedule</th><th v-tooltip="'Started-on'">On</th><th>Worker</th></tr>
+        <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
       </thead>
       <thead v-if="selectedTable == 'done'">
-        <tr><th>Schedule</th><th v-tooltip="'Completed-on'">On</th><th>Worker</th><th>Duration</th></tr>
+        <tr><th>Schedule</th><th>Completed</th><th>Worker</th><th>Duration</th></tr>
       </thead>
       <thead v-if="selectedTable == 'failed'">
-        <tr><th>Schedule</th><th v-tooltip="'Stopped-on'">On</th><th>Worker</th><th>Duration</th><th>Status</th></tr>
+        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th></tr>
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task._id">
           <td v-if="selectedTable != 'todo'">
             <router-link :to="{name: 'task-detail', params: {_id: task._id}}">{{ task.schedule_name }}</router-link>
           </td>
-          <td v-else>{{ task.schedule_name }}</td>
+          <td v-else>
+            {{ task.schedule_name }}
+            <span class="text-warning" v-if="task.priority > 0"> <font-awesome-icon size="sm" icon="fire" /></span>
+          </td>
           <td v-if="selectedTable == 'todo'"
-              v-tooltip="{content: datetime(task.requested_on), delay: 10}">{{ task.requested_since }}</td>
+              v-tooltip="{content: format_dt(task.requested_on), delay: 10}">{{ task.requested_since }}</td>
           <td v-if="selectedTable == 'todo'">{{ task.requested_by }}</td>
           <td v-if="selectedTable == 'doing'"
-              v-tooltip="{content: datetime(task.started_on), delay: 10}">{{ task.started_since }}</td>
+              v-tooltip="{content: format_dt(task.started_on), delay: 10}">{{ task.started_since }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'"
-              v-tooltip="{content: datetime(task.completed_on), delay: 10}">{{ task.completed_since }}</td>
+              v-tooltip="{content: format_dt(task.completed_on), delay: 10}">{{ task.completed_since }}</td>
           <td v-if="selectedTable != 'todo'">{{ task.worker }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'">{{ task.status }}</td>
+          <td v-if="selectedTable == 'todo'" v-show="$store.getters.isLoggedIn"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
         </tr>
       </tbody>
     </table>
@@ -50,38 +54,38 @@
   import Constants from '../constants.js'
   import ZimfarmMixins from './Mixins.js'
   import ErrorMessage from './ErrorMessage.vue'
+  import RemoveRequestedTaskButton from './RemoveRequestedTaskButton.vue'
 
   export default {
     name: 'PipelineTable',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage},
+    components: {ErrorMessage, RemoveRequestedTaskButton},
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
-    data: function () {
+    data() {
       return {
         tasks: [], // list of tasks returned by API
         meta: {}, // API query metadata (count, skip, limit)
-        selectedLimit: 50, // user-defined nb of tasks to retrieve/display
-        limits: [10, 50, 100, 200], // hard-coded options for above
         error: false, // error string to display on API error
       };
     },
     computed: {
-      total_results: function() { // total (non-paginated) tasks for query from API
+      total_results() { // total (non-paginated) tasks for query from API
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       }
     },
     methods: {
-      datetime: function(date) { // datetime formatter shortcut
-        return Constants.datetime(date);
+      limitChanged() {
+        this.saveLimitPreference(this.selectedLimit);
+        this.loadData();
       },
-      resetData: function() { // reset data holders
+      resetData() { // reset data holders
         this.error = null;
         this.tasks = [];
         this.meta = {};
       },
-      loadGenericData: function(url, params, item_transform) {
+      loadGenericData(url, params, item_transform) {
         let parent = this;
         parent.toggleLoader("fetching tasks…");
 
@@ -102,7 +106,7 @@
               parent.toggleLoader(false);
           });
       },
-      loadData: function() {
+      loadData() {
         if (this.selectedTable == 'todo') {
           this.loadGenericData('/requested-tasks/',
                                {limit: this.selectedLimit},
@@ -129,7 +133,7 @@
                                function (item) {
                                 item["completed_on"] = moment(item["timestamp"]["succeeded"])
                                 item["completed_since"] = item["completed_on"].fromNow();
-                                item["duration"] = Constants.duration_between(item.timestamp.started, item["completed_on"]);
+                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item["completed_on"]);
                                 return item;
                                });
         }
@@ -142,20 +146,19 @@
                                 let event_ts = item.timestamp.canceled ? item.timestamp.canceled : item.timestamp.failed;
                                 item["completed_on"] = moment(event_ts);
                                 item["completed_since"] = item["completed_on"].fromNow();
-                                item["duration"] = Constants.duration_between(item.timestamp.started, item["completed_on"]);
+                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item["completed_on"]);
                                 return item;
                                });
         }
       },
     },
-    mounted: function() {
+    mounted() {
       this.loadData();
     },
     watch: {
-      selectedTable: function() {
+      selectedTable() {
         this.loadData();
       },
     }
   };
 </script>
-

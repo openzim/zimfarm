@@ -12,6 +12,8 @@
     "@fortawesome/free-solid-svg-icons": "^5.11.2",
     "@fortawesome/vue-fontawesome": "^0.1.8",
     "axios": "^0.19.0",
+    "bootstrap": "^4.4.1",
+    "bootstrap-vue": "^2.1.0",
     "core-js": "^3.3.2",
     "filesize": "^6.0.1",
     "moment": "^2.24.0",

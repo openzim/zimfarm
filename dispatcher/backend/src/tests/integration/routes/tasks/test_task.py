@@ -43,10 +43,8 @@ class TestTaskList:
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
 
-    @pytest.mark.parametrize(
-        "query_param", [{"schedule_id": "a"}, {"schedule_id": 123}]
-    )
-    def test_bad_rquest(self, client, query_param):
+    @pytest.mark.parametrize("query_param", [{"schedule_id": "a"}, {"status": 123}])
+    def test_bad_request(self, client, query_param):
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers, query_string=query_param)
         assert response.status_code == 400
@@ -97,20 +95,20 @@ class TestTaskList:
             task = tasks[ObjectId(item["_id"])]
             self._assert_task(task, item)
 
-    def test_schedule_id(self, client, make_task):
-        """Test list tasks with schedule id as filter"""
+    def test_schedule_name(self, client, make_task):
+        """Test list tasks with schedule_name as filter"""
 
         # generate tasks with two schedule ids
-        schedule_id, another_schedule_id = ObjectId(), ObjectId()
+        schedule_name, another_schedule_name = str(ObjectId()), str(ObjectId())
         for _ in range(5):
-            make_task(schedule_id=schedule_id)
+            make_task(schedule_name=schedule_name)
         for _ in range(10):
-            make_task(schedule_id=another_schedule_id)
+            make_task(schedule_name=another_schedule_name)
 
         # make request
         headers = {"Content-Type": "application/json"}
         response = client.get(
-            self.url, headers=headers, query_string={"schedule_id": schedule_id}
+            self.url, headers=headers, query_string={"schedule_name": schedule_name}
         )
         assert response.status_code == 200
 
@@ -135,7 +133,6 @@ class TestTaskGet:
         data = json.loads(response.data)
         assert data["_id"] == str(task["_id"])
         assert data["status"] == task["status"]
-        assert data["schedule_id"] == str(task["schedule_id"])
         assert data["schedule_name"] == task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data

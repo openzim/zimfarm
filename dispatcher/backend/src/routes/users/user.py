@@ -27,7 +27,7 @@ def list(token: AccessToken.Payload):
     count = Users().count_documents(query)
     cursor = (
         Users()
-        .find(query, {"_id": 1, "username": 1, "email": 1})
+        .find(query, {"_id": 0, "username": 1, "email": 1})
         .skip(skip)
         .limit(limit)
     )
@@ -83,7 +83,7 @@ def get(token: AccessToken.Payload, username: str):
 
     # find user based on _id or username
     user = Users().find_one(
-        {"username": username}, {"_id": 1, "username": 1, "email": 1, "scope": 1}
+        {"username": username}, {"_id": 0, "username": 1, "email": 1, "scope": 1}
     )
 
     if user is None:

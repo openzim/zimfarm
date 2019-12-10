@@ -93,7 +93,7 @@ class BaseWorker:
     def authenticate(self, force=False):
         # our access token should grant us access for 60mn
         if force or (
-            self.authenticated_on + datetime.timedelta(AUTH_EXPIRY)
+            self.authenticated_on + datetime.timedelta(seconds=AUTH_EXPIRY)
             <= datetime.datetime.now()
         ):
             try:
@@ -105,7 +105,7 @@ class BaseWorker:
             except Exception as exc:
                 logger.error(f"authenticate() failure: {exc}")
                 logger.exception(exc)
-            return False
+                return False
         return True
 
     def query_api(self, method, path, payload=None, params=None, headers={}):

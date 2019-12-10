@@ -112,7 +112,7 @@ def _update_schedule_most_recent_task_status(task_id):
             {"$match": {"_id": task_id}},
             {
                 "$project": {
-                    "schedule_id": 1,
+                    "schedule_name": 1,
                     "last_event": {"$arrayElemAt": ["$events", -1]},
                 }
             },
@@ -124,7 +124,7 @@ def _update_schedule_most_recent_task_status(task_id):
         return
 
     # update schedule most recent task
-    schedule_id = task["schedule_id"]
+    schedule_name = task["schedule_name"]
     last_event_code = task["last_event"]["code"]
     last_event_timestamp = task["last_event"]["timestamp"]
     if "container" in last_event_code:
@@ -137,7 +137,7 @@ def _update_schedule_most_recent_task_status(task_id):
             "updated_at": last_event_timestamp,
         }
     }
-    Schedules().update_one({"_id": schedule_id}, {"$set": schedule_updates})
+    Schedules().update_one({"name": schedule_name}, {"$set": schedule_updates})
 
 
 def task_reserved_event_handler(task_id, payload):

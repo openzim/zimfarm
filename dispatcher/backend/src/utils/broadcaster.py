@@ -57,5 +57,8 @@ class MessageBroadcaster:
             payload = {"_id": task_id, "event": event}
         self.send("task-event", payload)
 
+    def broadcast_worker_checkin(self, payload):
+        self.send("worker-checkin", payload)
+
 
 BROADCASTER = MessageBroadcaster(os.getenv("SOCKET_URI", "tcp://localhost:5000"))

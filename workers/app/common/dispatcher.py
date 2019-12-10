@@ -96,4 +96,12 @@ def query_api(token, method, url, payload=None, params=None, headers={}):
     ):
         return True, req.status_code, resp
 
-    return (False, req.status_code, resp["error"] if "error" in resp else str(resp))
+    if "error" in resp:
+        content = resp["error"]
+        if "error_description" in resp:
+            content += "\n"
+            content += resp["error_description"]
+    else:
+        content = str(resp)
+
+    return (False, req.status_code, content)

@@ -4,81 +4,89 @@
 
 <template>
   <div class="container">
-    <BackButton class="mb-2" />
-    <h1><code>#{{ short_id }}</code></h1>
-    <div v-if="!error">
+    <ScheduleActionButton v-if="task" :name="schedule_name" />
+    <h2 class="row">
+      <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
+      <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
+    </h2>
+
+    <div v-if="!error && task">
       <ul class="nav nav-tabs">
-        <li class="nav-item"><a href="#" class="nav-link" :class="{ active: selectedTab == 'details'}" @click.prevent="selectedTab='details'">Task</a></li>
-        <li class="nav-item"><a href="#" class="nav-link" :class="{ active: selectedTab == 'container'}" @click.prevent="selectedTab='container'">Container</a></li>
-        <li class="nav-item"><a href="#" class="nav-link" :class="{ active: selectedTab == 'debug'}" @click.prevent="selectedTab='debug'">Debug</a></li>
+        <li class="nav-item" :class="{ active: selectedTab == 'details'}">
+          <router-link class="nav-link"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'details'}"
+                       :to="{name: 'task-detail', params: {_id: _id}}">
+            Task
+          </router-link>
+        </li>
+        <li class="nav-item" :class="{ active: selectedTab == 'debug'}">
+          <router-link class="nav-link"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'debug'}"
+                       :to="{name: 'task-detail-tab', params: {_id: _id, selectedTab: 'debug'}}">
+            Debug
+          </router-link>
+        </li>
       </ul>
 
-      <div v-if=" selectedTab == 'details'" class="details">
-        <table class="table table-responsive-sm table-striped">
+      <div v-if=" selectedTab == 'details'" class="tab-content">
+        <table class="table table-responsive-sm table-striped table-in-tab">
           <tr><th>ID</th><td><code>{{ this._id }}</code></td></tr>
-          <tr><th>Schedule</th><td><router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">{{ task.schedule_name}}</router-link> <FireScheduleButton :name="task.schedule_name" /></td></tr>
+          <tr>
+            <th>Recipe</th>
+            <td><router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">
+              {{ task.schedule_name}}
+              </router-link>
+            </td>
+          </tr>
           <tr><th>Status</th><td><code>{{ task.status }}</code></td></tr>
           <tr><th>Worker</th><td>{{ task.worker }}</td></tr>
-          <tr><th>Duration</th><td>{{ task_duration }}</td></tr>
+          <tr><th>Started On</th><td>{{ started_on|datetime }}, after <strong>{{ pipe_duration }} in pipe</strong></td></tr>
+          <tr><th>Duration</th><td>{{ task_duration }}<span v-if="is_running"> (<strong>Ongoing</strong>)</span></td></tr>
+          <tr>
+            <th>Events</th>
+            <td>
+              <table class="table table-responsive-sm table-striped table-sm">
+              <tbody>
+              <tr v-for="event in task.events" v-bind:key="event.code">
+                <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | datetime }}</td>
+              </tr>
+              </tbody>
+            </table>
+            </td>
+          </tr>
+          <tr v-if="task.files">
+            <th>Files</th>
+            <td>
+              <table class="table table-responsive-sm table-striped table-sm">
+                <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th></tr></thead>
+                <tr v-for="file in task.files" :key="file.name">
+                  <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
+                  <td>{{ file.size | filesize }}</td>
+                  <td v-tooltip="format_dt(file.created_timestamp)">{{ file | created_after(task) }}</td>
+                  <td v-tooltip="format_dt(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
+                  <td v-else>-</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
         </table>
-        <h3>Events</h3>
-        <ul>
-          <li v-for="event in task.events" v-bind:key="event.code"><code>{{ event.code }}</code>: {{ event.timestamp | datetime }}</li>
-        </ul>
-        <div v-if="task.files">
-          <h3>Files</h3>
-          <table class="table table-responsive-sm table-striped">
-            <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th></tr></thead>
-            <tr v-for="file in task.files" :key="file.name">
-              <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
-              <td>{{ file.size | filesize }}</td>
-              <td v-tooltip="datetime(file.created_timestamp)">{{ file | created_after(task) }}</td>
-              <td v-tooltip="datetime(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
-              <td v-else>-</td>
-            </tr>
-          </table>
-        </div>
       </div>
-      <div v-if="selectedTab == 'container'" class="details">
-        <div v-if="task.container">
-          <div v-if="task.container.image">
-            <h3>Image</h3>
-            <p>{{ task.container.image }}</p>
-          </div>
-          <div v-if="task.container.command">
-            <h3>Command</h3>
-            <code>{{ task.container.command }}</code>
-          </div>
-          <div v-if="task.container.exit_code">
-            <h3>Exit-code</h3>
-            <code>{{ task.container.exit_code }}</code>
-          </div>
-          <div v-if="task.container.log">
-            <h3>Log</h3>
-            <a target="_blank" :href="zimfarm_logs_url + '/' + task.container.log">{{ task.container.log }}</a>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="selectedTab == 'debug'" class="details">
-        <div v-if="task.debug">
-          <div v-if="task.debug.exception">
-            <h3>Exception</h3>
-            <pre>{{ task.debug.exception }}</pre>
-          </div>
-          <div v-if="task.debug.traceback">
-            <h3>Traceback</h3>
-            <pre>{{ task.debug.traceback }}</pre>
-          </div>
-          <div v-if="task.debug.log">
-            <h3>Task worker Log</h3>
-            <pre>{{ task.debug.log }}</pre>
-          </div>
-        </div>
+      <div v-if="selectedTab == 'debug'" class="tab-content">
+        <table class="table table-responsive-sm table-striped table-in-tab">
+          <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
+          <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
+          <tr v-if="task_container.exit_code"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
+          <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
+          <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
+          <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
+          <tr v-if="task_debug.log"><th>Task-worker Log</th><td><pre>{{ task_debug.log }}</pre></td></tr>
+        </table>
       </div>
 
     </div>
-    <ErrorMessage v-bind:message="error" v-else />
+    <ErrorMessage v-bind:message="error" v-if="error" />
   </div>
 </template>
 
@@ -86,49 +94,75 @@
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
-  import BackButton from '../components/BackButton.vue'
-  import FireScheduleButton from '../components/FireScheduleButton.vue'
+  import ScheduleActionButton from '../components/ScheduleActionButton.vue'
 
 
   export default {
     name: 'TaskView',
     mixins: [ZimfarmMixins],
-    components: {FireScheduleButton, ErrorMessage, BackButton},
+    components: {ScheduleActionButton, ErrorMessage},
     props: {
       _id: String,
+      selectedTab: {
+        type: String,
+        default: 'details',  // currently selected tab: details, container, debug
+      }
     },
     data() {
       return {
-        task: {}, // the retrieved task from API
+        task: null, // the retrieved task from API
         error: false, // error message to display on API error
-        selectedTab: 'details',  // currently selected tab: details, container, debug
       };
     },
     filters: {
       created_after(value, task) {
-        return Constants.duration_between(task.timestamp.scraper_started, value.created_timestamp);
+        return Constants.format_duration_between(task.timestamp.scraper_started, value.created_timestamp);
       },
       upload_duration(value) {
-        return Constants.duration_between(value.created_timestamp, value.uploaded_timestamp);
+        return Constants.format_duration_between(value.created_timestamp, value.uploaded_timestamp);
       }
     },
     computed: {
-      short_id() {
-        return this._id.substr(this._id.length - 5);
-      },
-      task_duration() {
+      short_id() { return Constants.short_id(this._id); },
+      is_running() { return ["failed", "canceled", "succeeded"].indexOf(this.task.status) == -1; },
+      schedule_name() { return this.task ? this.task.schedule_name : null; },
+      task_container() { return this.task.container || {}; },
+      task_debug() { return this.task.debug || {}; },
+      task_duration() {  // duration of a task
         if (!this.task.events)
           return '';
-        let last = this.task.events[this.task.events.length - 1].timestamp;
+
         let first = this.task.timestamp.started;
-        return Constants.duration_between(first, last);
+        if (!first)  // probably in reserved state, hence not yet started
+          return 0;
+
+        // if task is running (non-complete status) then it's started-to now
+        if (this.is_running) {
+          return Constants.format_duration_between(first, Constants.now());
+        }
+
+        // if task is not running, it's started to last status
+        let last = this.task.events[this.task.events.length - 1].timestamp;
+        return Constants.format_duration_between(first, last);
       },
+      started_on() { return this.task.timestamp.started || null; },
+      pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },
+      command() { return '"' + this.task_container.command.join('" "') + '"'; },
+      trimmed_command() { return Constants.trim_command(this.command); },
     },
     methods: {
-      datetime(value) {  // shortcut datetime formatter
-        return Constants.datetime(value);
+      copyCommand() {
+        let parent = this;
+        this.$copyText(this.command).then(function () {
+            parent.$root.$emit('feedback-message', 'info', "Command copied to Clipboard!");
+          }, function () {
+            parent.$root.$emit('feedback-message',
+                         'warning',
+                         "Unable to copy command to clipboard 😞. " +
+                         "Please copy it manually.");
+          });
       }
     },
     mounted() {
@@ -149,12 +183,3 @@
     },
   }
 </script>
-
-<style type="text/css" scoped>
-  .details {
-    background-color: white;
-    padding: .5rem;
-    border: 1px solid #dee2e6;
-    border-top: 0;
-  }
-</style>

@@ -6,7 +6,6 @@ import os
 import json
 import time
 import signal
-import random
 import datetime
 
 import zmq
@@ -76,6 +75,8 @@ class WorkerManager(BaseWorker):
             )
         )
 
+        self.check_in()
+
         # register stop/^C
         self.register_signals()
 
@@ -100,7 +101,8 @@ class WorkerManager(BaseWorker):
             "GET",
             "/requested-tasks/",
             params={
-                "limit": 20,
+                "limit": 1,
+                "worker": self.worker_name,
                 "matching_cpu": host_stats["cpu"]["available"],
                 "matching_memory": host_stats["memory"]["available"],
                 "matching_disk": host_stats["disk"]["available"],
@@ -114,8 +116,31 @@ class WorkerManager(BaseWorker):
                     ids=[task["_id"] for task in response["items"]],
                 )
             )
-            self.start_task(random.choice(response["items"]))
+            self.start_task(response["items"].pop())
             self.poll()
+
+    def check_in(self):
+        """ inform backend that we started a manager, sending resources info """
+        logger.info(f"checking-in with the API…")
+
+        host_stats = query_host_stats(self.docker, self.workdir)
+        success, status_code, response = self.query_api(
+            "PUT",
+            f"/workers/{self.worker_name}/check-in",
+            payload={
+                "username": self.username,
+                "cpu": host_stats["cpu"]["total"],
+                "memory": host_stats["memory"]["total"],
+                "disk": host_stats["disk"]["total"],
+                "offliners": SUPPORTED_OFFLINERS,
+            },
+        )
+        if not success:
+            logger.error("\tunable to check-in with the API.")
+            logger.debug(status_code)
+            logger.debug(response)
+            raise SystemExit()
+        logger.info("\tchecked-in!")
 
     def check_cancellation(self):
         for task_id, task in self.tasks.items():
@@ -175,7 +200,7 @@ class WorkerManager(BaseWorker):
                 self.update_task_data(task_id)
 
         # filter our tasks register of gone containers
-        for task_id in self.tasks.keys():
+        for task_id in list(self.tasks.keys()):
             if task_id not in running_task_ids:
                 logger.info("task {task_id} is not running anymore, unwatching.")
                 self.tasks.pop(task_id, None)

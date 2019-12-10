@@ -134,7 +134,6 @@ class TestScheduleList:
         assert "items" in response_json
         assert len(response_json["items"]) == 20
         for item in response_json["items"]:
-            assert isinstance(item["_id"], str)
             assert isinstance(item["category"], str)
             assert isinstance(item["name"], str)
             assert isinstance(item["language"]["code"], str)
@@ -243,24 +242,22 @@ class TestSchedulePost:
         ],
     )
     def test_create_schedule(self, database, client, access_token, document):
-
         url = "/schedules/"
         response = client.post(
             url, json=document, headers={"Authorization": access_token}
         )
         assert response.status_code == 201
+        schedule_id = response.get_json()["_id"]
 
         url = "/schedules/{}".format(document["name"])
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 200
 
-        response_json = response.get_json()
-        document["_id"] = response_json["_id"]
         document["config"].update(command_information_for(document["config"]))
         assert response.get_json() == document
 
         # remove from DB to prevent count mismatch on other tests
-        database.schedules.delete_one({"_id": ObjectId(document["_id"])})
+        database.schedules.delete_one({"_id": ObjectId(schedule_id)})
 
     @pytest.mark.parametrize(
         "key", ["name", "category", "enabled", "tags", "language", "config"]
@@ -361,23 +358,13 @@ class TestSchedulePost:
 
 
 class TestScheduleGet:
-    def test_get_schedule_with_id(self, client, schedule):
-
-        url = "/schedules/{}".format(schedule["_id"])
-        response = client.get(url)
-        assert response.status_code == 200
-
-        schedule["_id"] = str(schedule["_id"])
-        schedule["config"].update(command_information_for(schedule["config"]))
-        assert response.get_json() == schedule
-
     def test_get_schedule_with_name(self, client, schedule):
 
         url = "/schedules/{}".format(schedule["name"])
         response = client.get(url)
         assert response.status_code == 200
 
-        schedule["_id"] = str(schedule["_id"])
+        del schedule["_id"]
         schedule["config"].update(command_information_for(schedule["config"]))
         assert response.get_json() == schedule
 
@@ -406,7 +393,9 @@ class TestSchedulePatch:
     @pytest.mark.parametrize("update", good_patch_updates)
     def test_patch_schedule_via_id_with(self, client, access_token, update, schedule):
 
-        self._patch_schedule_via_key_with(client, access_token, update, schedule, "_id")
+        self._patch_schedule_via_key_with(
+            client, access_token, update, schedule, "name"
+        )
 
     @pytest.mark.parametrize("update", good_patch_updates)
     def test_patch_schedule_via_name_with(self, client, access_token, update, schedule):
@@ -430,7 +419,7 @@ class TestSchedulePatch:
         self, client, access_token, update, schedule
     ):
         self._patch_schedule_via_id_with_errors(
-            client, access_token, update, schedule, "_id"
+            client, access_token, update, schedule, "name"
         )
 
     @pytest.mark.parametrize("update", bad_patch_updates)
@@ -459,11 +448,10 @@ class TestSchedulePatch:
 
 
 class TestScheduleDelete:
-    @pytest.mark.parametrize("key", ["_id", "name"])
-    def test_delete_schedule(self, client, access_token, schedule, key):
+    def test_delete_schedule(self, client, access_token, schedule):
         """Test delete schedule with id or name"""
 
-        url = "/schedules/{}".format(schedule[key])
+        url = "/schedules/{}".format(schedule["name"])
         response = client.delete(url, headers={"Authorization": access_token})
         assert response.status_code == 204
 
