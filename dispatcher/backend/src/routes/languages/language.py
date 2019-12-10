@@ -1,3 +1,4 @@
+import trafaret as t
 from flask import request, jsonify
 
 from common.mongo import Schedules
@@ -12,11 +13,15 @@ class LanguagesRoute(BaseRoute):
     def get(self, *args, **kwargs):
         """return a list of languages"""
 
-        # unpack url parameters
-        skip = request.args.get("skip", default=0, type=int)
-        limit = request.args.get("limit", default=20, type=int)
-        skip = 0 if skip < 0 else skip
-        limit = 20 if limit <= 0 else limit
+        request_args = request.args.to_dict()
+        validator = t.Dict(
+            {
+                t.Key("skip", default=0): t.ToInt(gte=0),
+                t.Key("limit", default=20): t.ToInt(gt=0, lte=500),
+            }
+        )
+        request_args = validator.check(request_args)
+        skip, limit = request_args["skip"], request_args["limit"]
 
         group = {
             "$group": {
