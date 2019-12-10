@@ -28,7 +28,6 @@ def make_task(database, make_event):
         status=TaskStatus.succeeded,
         hostname="zimfarm_worker.com",
     ):
-        print("schedule_id", schedule_id)
         if status == TaskStatus.requested:
             events = [TaskStatus.requested]
         elif status == TaskStatus.reserved:
@@ -72,7 +71,6 @@ def make_task(database, make_event):
             "_id": ObjectId(),
             "status": status,
             "worker": hostname,
-            "schedule_id": schedule_id,
             "schedule_name": schedule_name,
             "timestamp": timestamp,
             "events": events,
@@ -137,7 +135,6 @@ def make_requested_task(database, make_event):
         requested_task = {
             "_id": ObjectId(),
             "status": status,
-            "schedule_id": schedule_id,
             "schedule_name": schedule_name,
             "timestamp": timestamp,
             "events": events,

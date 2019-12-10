@@ -8,10 +8,10 @@ import trafaret as t
 from flask import request, jsonify, make_response, Response
 
 from common.entities import TaskStatus
-from common.mongo import RequestedTasks, Schedules
+from common.mongo import RequestedTasks, Schedules, Workers
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id
+from routes import authenticate, url_object_id, auth_info_if_supplied
 from routes.base import BaseRoute
 from routes.errors import NotFound
 from utils.broadcaster import BROADCASTER
@@ -31,6 +31,7 @@ class RequestedTasksRoute(BaseRoute):
         validator = t.Dict(
             t.Key("schedule_names", optional=False, trafaret=t.List(t.String)),
             t.Key("priority", optional=True, trafaret=t.ToInt(gte=0)),
+            t.Key("worker", optional=True, trafaret=t.String()),
         )
 
         try:
@@ -40,6 +41,7 @@ class RequestedTasksRoute(BaseRoute):
 
         schedule_names = request_json["schedule_names"]
         priority = request_json.get("priority", 0)
+        worker = request_json.get("worker")
 
         # verify requested names exists
         if not Schedules().count_documents(
@@ -70,15 +72,18 @@ class RequestedTasksRoute(BaseRoute):
             config.update(command_information_for(config))
 
             document = {
-                "schedule_id": schedule["_id"],
                 "schedule_name": schedule_name,
                 "status": TaskStatus.requested,
                 "timestamp": {TaskStatus.requested: now},
                 "events": [{"code": TaskStatus.requested, "timestamp": now}],
                 "requested_by": username,
                 "priority": priority,
+                "worker": worker,
                 "config": config,
             }
+
+            if worker:
+                document["worker"] = worker
 
             rt_id = RequestedTasks().insert_one(document).inserted_id
             document.update({"_id": str(rt_id)})
@@ -94,6 +99,7 @@ class RequestedTasksRoute(BaseRoute):
             HTTPStatus.CREATED,
         )
 
+    @auth_info_if_supplied
     def get(self, *args, **kwargs):
         """ list of requested tasks """
 
@@ -105,6 +111,8 @@ class RequestedTasksRoute(BaseRoute):
             {
                 t.Key("skip", default=0): t.ToInt(gte=0),
                 t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
+                t.Key("priority", optional=True): t.ToInt(gte=0, lte=10),
+                t.Key("worker", optional=True): t.String(),
                 t.Key("schedule_name", optional=True): t.String(),
                 t.Key("matching_cpu", optional=True): t.ToInt(gte=0),
                 t.Key("matching_memory", optional=True): t.ToInt(gte=0),
@@ -119,11 +127,27 @@ class RequestedTasksRoute(BaseRoute):
         # unpack query parameter
         skip, limit = request_args["skip"], request_args["limit"]
         schedule_name = request_args.get("schedule_name")
+        priority = request_args.get("priority")
+        worker = request_args.get("worker")
+        token = kwargs.get("token")
+
+        # record we've seen a worker, if applicable
+        if token and worker:
+            Workers().update_one(
+                {"name": worker, "username": token.username},
+                {"$set": {"last_seen": datetime.datetime.now()}},
+            )
 
         # get requested tasks from database
         query = {}
         if schedule_name:
             query["schedule_name"] = schedule_name
+
+        if priority:
+            query["priority"] = {"$gte": priority}
+
+        if worker:
+            query["worker"] = {"$in": [None, worker]}
 
         for res_key in ("cpu", "memory", "disk"):
             key = f"matching_{res_key}"
@@ -140,16 +164,21 @@ class RequestedTasksRoute(BaseRoute):
                 {
                     "_id": 1,
                     "status": 1,
-                    "schedule_id": 1,
                     "schedule_name": 1,
                     "config.task_name": 1,
                     "config.resources": 1,
                     "timestamp.requested": 1,
                     "requested_by": 1,
                     "priority": 1,
+                    "worker": 1,
                 },
             )
-            .sort("timestamp.requested", pymongo.DESCENDING)
+            .sort(
+                [
+                    ("priority", pymongo.DESCENDING),
+                    ("timestamp.requested", pymongo.DESCENDING),
+                ]
+            )
             .skip(skip)
             .limit(limit)
         )

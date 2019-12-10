@@ -35,6 +35,34 @@ def authenticate2(f):
     return wrapper
 
 
+def auth_info_if_supplied(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        kwargs["token"] = None
+        try:
+            if "token" in request.headers:
+                token = request.headers["token"]
+            elif "Authorization" in request.headers:
+                token = request.headers["Authorization"]
+                token_parts = token.split(" ")
+                if len(token_parts) > 1:
+                    token = token_parts[1]
+            else:
+                token = None
+            if token:
+                payload = AccessToken.decode(token)
+                kwargs["token"] = AccessToken.Payload(payload)
+
+        except jwt_exceptions.ExpiredSignatureError:
+            kwargs["token"] = None
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
+            kwargs["token"] = None
+        finally:
+            return f(*args, **kwargs)
+
+    return wrapper
+
+
 def authenticate(f):
     @wraps(f)
     def wrapper(*args, **kwargs):

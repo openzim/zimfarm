@@ -62,6 +62,7 @@ class TasksRoute(BaseRoute):
             "status": 1,
             "timestamp": 1,
             "worker": 1,
+            "config.resources": 1,
         }
         cursor = (
             Tasks()
@@ -88,7 +89,6 @@ class TaskRoute(BaseRoute):
         if task is None:
             raise TaskNotFound()
 
-        task["schedule"] = Schedules().find_one({"_id": task["schedule_id"]})
         return jsonify(task)
 
     @authenticate

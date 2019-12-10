@@ -43,10 +43,8 @@ class TestTaskList:
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
 
-    @pytest.mark.parametrize(
-        "query_param", [{"schedule_id": "a"}, {"schedule_id": 123}]
-    )
-    def test_bad_rquest(self, client, query_param):
+    @pytest.mark.parametrize("query_param", [{"schedule_id": "a"}, {"status": 123}])
+    def test_bad_request(self, client, query_param):
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers, query_string=query_param)
         assert response.status_code == 400
@@ -135,7 +133,6 @@ class TestTaskGet:
         data = json.loads(response.data)
         assert data["_id"] == str(task["_id"])
         assert data["status"] == task["status"]
-        assert data["schedule_id"] == str(task["schedule_id"])
         assert data["schedule_name"] == task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data
