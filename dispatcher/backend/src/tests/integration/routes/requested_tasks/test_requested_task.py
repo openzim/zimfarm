@@ -40,7 +40,11 @@ class TestRequestedTaskList:
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
-        requested_tasks.sort(key=lambda task: task["_id"], reverse=True)
+        # sorted by priority, timestamp.requested
+        requested_tasks.sort(
+            key=lambda task: (task["priority"], task["timestamp"]["requested"]),
+            reverse=True,
+        )
         assert len(items) == len(requested_tasks)
         for index, task in enumerate(requested_tasks):
             item = items[index]
