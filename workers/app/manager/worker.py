@@ -140,8 +140,7 @@ class WorkerManager(BaseWorker):
             logger.debug(status_code)
             logger.debug(response)
             raise SystemExit()
-        else:
-            logger.info("\tchecked-in!")
+        logger.info("\tchecked-in!")
 
     def check_cancellation(self):
         for task_id, task in self.tasks.items():
