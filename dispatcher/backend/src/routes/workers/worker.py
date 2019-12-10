@@ -39,10 +39,15 @@ class WorkersRoute(BaseRoute):
             )
             return worker
 
-        skip = request.args.get("skip", default=0, type=int)
-        limit = request.args.get("limit", default=20, type=int)
-        skip = 0 if skip < 0 else skip
-        limit = 20 if limit <= 0 else limit
+        request_args = request.args.to_dict()
+        validator = t.Dict(
+            {
+                t.Key("skip", default=0): t.ToInt(gte=0),
+                t.Key("limit", default=20): t.ToInt(gt=0, lte=200),
+            }
+        )
+        request_args = validator.check(request_args)
+        skip, limit = request_args["skip"], request_args["limit"]
 
         query = {}
         count = Workers().count_documents(query)

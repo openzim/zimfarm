@@ -28,6 +28,14 @@ def rewritten_post(self, url, *args, **kwargs):
     return original_post(self, url, *args, **kwargs)
 
 
+original_put = FlaskClient.put
+
+
+def rewritten_put(self, url, *args, **kwargs):
+    url = f"{API_PATH}{url}"
+    return original_put(self, url, *args, **kwargs)
+
+
 original_patch = FlaskClient.patch
 
 
@@ -46,6 +54,7 @@ def rewritten_delete(self, url, *args, **kwargs):
 
 FlaskClient.get = rewritten_get
 FlaskClient.post = rewritten_post
+FlaskClient.put = rewritten_put
 FlaskClient.patch = rewritten_patch
 FlaskClient.delete = rewritten_delete
 
