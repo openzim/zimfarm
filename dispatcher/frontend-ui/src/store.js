@@ -36,16 +36,15 @@ const store = new Vuex.Store({
     }
   },
   getters: {
-    loadingStatus: state => {
-      return {should_display: state.loading, text: state.loading_text};
+    loadingStatus(state) { return {should_display: state.loading, text: state.loading_text};},
+    username(state) { return state.token.username || null },
+    access_token(state) { return state.token.access_token || null },
+    token_expiry(state) { return moment(state.token.expires_on) || null },
+    token_expired(state) { return moment().isAfter(state.token.expires_on) },
+    isLoggedIn(state) {
+      // TODO: improv.
+      try { return Boolean(state.token.username.length); } catch { return false; }
     },
-    username: state => { return state.token.username || null },
-    access_token: state => { return state.token.access_token || null },
-    token_expiry: state => { return moment(state.token.expires_on) || null },
-    token_expired: state => { return moment().isAfter(state.token.expires_on) },
-    isLoggedIn: function() {
-
-    }
   }
 })
 

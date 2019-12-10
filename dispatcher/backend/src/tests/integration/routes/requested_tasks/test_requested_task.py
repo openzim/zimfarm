@@ -11,18 +11,18 @@ class TestRequestedTaskList:
         assert set(item.keys()) == {
             "_id",
             "status",
-            "schedule_id",
             "schedule_name",
             "timestamp",
             "config",
+            "requested_by",
+            "priority",
         }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
-        assert item["schedule_id"] == str(task["schedule_id"])
         assert item["schedule_name"] == task["schedule_name"]
 
     @pytest.mark.parametrize(
-        "query_param", [{"schedule_id": "a"}, {"schedule_id": 123}]
+        "query_param", [{"matching_cpu": "-2"}, {"matching_memory": -1}]
     )
     def test_bad_rquest(self, client, query_param):
         headers = {"Content-Type": "application/json"}
@@ -40,9 +40,20 @@ class TestRequestedTaskList:
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
-        requested_tasks.sort(key=lambda task: task["_id"], reverse=True)
-        assert len(items) == len(requested_tasks)
-        for index, task in enumerate(requested_tasks):
+        # items ordering is done by mongo and not important to us
+        # but we need to match our requests with result to test resulting data
+        sorted_requested_tasks = list(
+            map(
+                lambda item: [
+                    r for r in requested_tasks if str(r["_id"]) == item["_id"]
+                ][-1],
+                items,
+            )
+        )
+        assert len(items) == len(sorted_requested_tasks)
+        # assert sorting
+        assert str(sorted_requested_tasks[0]["_id"]) == items[0]["_id"]
+        for index, task in enumerate(sorted_requested_tasks):
             item = items[index]
             self._assert_requested_task(task, item)
 
@@ -140,7 +151,6 @@ class TestRequestedTaskGet:
         data = json.loads(response.data)
         assert data["_id"] == str(requested_task["_id"])
         assert data["status"] == requested_task["status"]
-        assert data["schedule_id"] == str(requested_task["schedule_id"])
         assert data["schedule_name"] == requested_task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data

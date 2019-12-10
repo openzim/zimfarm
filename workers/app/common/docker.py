@@ -224,7 +224,6 @@ def start_dnscache(docker_client, task):
         labels={
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
-            "schedule_id": task["schedule_id"],
             "schedule_name": task["schedule_name"],
         },
     )

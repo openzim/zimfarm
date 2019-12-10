@@ -3,7 +3,7 @@
     <header>
         <nav class="navbar navbar-expand-md navbar-dark ">
             <a class="navbar-brand branding">
-                <div class="icon"><img src="../assets/logo.svg" />
+                <div class="icon"><img :src="publicPath + 'assets/logo.svg'" />
                 <Loading/></div>
                 <label>Zimfarm</label>
             </a>
@@ -23,12 +23,12 @@
                         <router-link class="nav-link" :to="{ name: 'pipeline' }">Pipeline</router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'schedules-list' }">Schedules</router-link>
+                        <router-link class="nav-link" :to="{ name: 'schedules-list' }">Recipes</router-link>
                     </li>
                     <li class="nav-item disabled">
-                        <router-link class="nav-link" :to="{ name: 'workers-list' }">Workers</router-link>
+                        <router-link class="nav-link" :to="{ name: 'workers' }">Workers</router-link>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" v-show="$store.getters.isLoggedIn">
                         <router-link class="nav-link" :to="{ name: 'users-list' }">Users</router-link>
                     </li>
                     <li class="nav-item disabled">
@@ -45,9 +45,11 @@
 <script>
   import Loading from './Loading.vue'
   import UserButton from './UserButton.vue'
+  import ZimfarmMixins from './Mixins.js'
 
   export default {
     name: 'NavBar',
+    mixins: [ZimfarmMixins],
     components: {Loading, UserButton},
   }
 </script>

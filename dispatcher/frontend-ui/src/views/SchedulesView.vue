@@ -3,10 +3,10 @@
 <template>
   <div class="container">
     <nav class="row">
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <input type="text" class="form-control" v-model="selectedName" @change="loadSchedules" placeholder="Name…" />
       </div>
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <multiselect v-model="selectedCategoriesOptions"
                      :options="categoriesOptions"
                      :multiple="true"
@@ -21,7 +21,7 @@
 
         </multiselect>
       </div>
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <multiselect v-model="selectedLanguagesOptions"
                      :options="languagesOptions"
                      :multiple="true"
@@ -36,7 +36,7 @@
 
         </multiselect>
       </div>
-      <div class="col">
+      <div class="col-sm-12 col-md-6 col-lg">
         <multiselect v-model="selectedTagsOptions"
                      :options="tagsOptions"
                      :multiple="true"
@@ -52,8 +52,8 @@
         </multiselect>
       </div>
     </nav>
-    <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover">
-      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="loadSchedules">
+    <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover table-bordered">
+      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
@@ -74,7 +74,7 @@
             <code :class="schedule.class_attr">{{ schedule.most_recent_task.status }}</code>
           </td>
           <td colspan="2" v-else>-</td>
-          <td v-if="schedule.most_recent_task" v-tooltip="datetime(schedule.most_recent_task.updated_at)">
+          <td v-if="schedule.most_recent_task" v-tooltip="format_dt(schedule.most_recent_task.updated_at)">
             <router-link :to="{name: 'task-detail', params: {_id: schedule.most_recent_task._id}}">
               {{ schedule.most_recent_task.on }}
             </router-link>
@@ -93,14 +93,12 @@
   import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
-    name: 'SchedulesList',
+    name: 'SchedulesView',
     mixins: [ZimfarmMixins],
     components: {Multiselect},
-    data: function () {
+    data() {
       return {
         error: null,  // API originated error message
-        selectedLimit: 20, // selected number of results to display
-        limits: [10, 20, 50, 200],  // hard-coded options for limit
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
         categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
@@ -116,39 +114,40 @@
       };
     },
     computed: {
-      total_results: function() {
+      total_results() {
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       },
-      categoriesOptions: function() {
+      categoriesOptions() {
         let options = [];
         for (var i=0; i<this.categories.length; i++){
           options.push({name: this.categories[i], value: this.categories[i]});
         }
         return options;
       },
-      selectedCategories: function() { return this.selectedCategoriesOptions.map((x) => x.value); },
-      languagesOptions: function() {
+      selectedCategories() { return this.selectedCategoriesOptions.map((x) => x.value); },
+      languagesOptions() {
         let options = [];
         for (var i=0; i<this.languages.length; i++){
           options.push({name: this.languages[i].name_en, value: this.languages[i].code});
         }
         return options;
       },
-      selectedLanguages: function() { return this.selectedLanguagesOptions.map((x) => x.value); },
-      tagsOptions: function() {
+      selectedLanguages() { return this.selectedLanguagesOptions.map((x) => x.value); },
+      tagsOptions() {
         let options = [];
         for (var i=0; i<this.tags.length; i++){
           options.push({name: this.tags[i], value: this.tags[i]});
         }
         return options;
       },
-      selectedTags: function() { return this.selectedTagsOptions.map((x) => x.value); },
+      selectedTags() { return this.selectedTagsOptions.map((x) => x.value); },
     },
     methods: {
-      datetime: function (date) { // shortcut to datetime formatter
-        return Constants.datetime(date);
+      limitChanged() {
+        this.saveLimitPreference(this.selectedLimit);
+        this.loadSchedules();
       },
-      loadMetaData: function () {  // load languages and tags metadata from API then launch loadSchedules
+      loadMetaData() {  // load languages and tags metadata from API then launch loadSchedules
         let parent = this;
         parent.error = null;
 
@@ -185,7 +184,7 @@
           // metadata loaded, load schedules
           this.loadSchedules();
       },
-      loadSchedules: function () {  // load filtered schedules from API
+      loadSchedules() {  // load filtered schedules from API
         let parent = this;
 
         this.toggleLoader("fetching schedules…");
@@ -246,6 +245,9 @@
   }
   .container input[type=text] {
     height: 100%;
+  }
+  .col-sm-12 {
+    margin-bottom: .25rem;
   }
 </style>
 

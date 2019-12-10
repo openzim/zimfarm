@@ -1,8 +1,9 @@
 
 import PipelineView from './views/PipelineView.vue'
-import SignIn from './components/SignIn.vue'
-import NotFound from './components/NotFound.vue'
-import SchedulesList from './components/SchedulesList.vue'
+import SignIn from './views/SignIn.vue'
+import ChangePassword from './views/ChangePassword.vue'
+import NotFound from './views/NotFound.vue'
+import SchedulesView from './views/SchedulesView.vue'
 import ScheduleView from './views/ScheduleView.vue'
 import UsersView from './views/UsersView.vue'
 import WorkersView from './views/WorkersView.vue'
@@ -32,20 +33,37 @@ export default [
     props: true,
   },
   {
+    path: '/pipeline/:_id/:selectedTab',
+    name: 'task-detail-tab',
+    component: TaskView,
+    props: true,
+  },
+  {
     path: '/sign-in',
     name: 'sign-in',
     component: SignIn,
   },
   {
-    path: '/schedules/:schedule_name',
+    path: '/change-password',
+    name: 'change-password',
+    component: ChangePassword,
+  },
+  {
+    path: '/recipes/:schedule_name',
     name: 'schedule-detail',
     component: ScheduleView,
     props: true,
   },
   {
-    path: '/schedules',
+    path: '/recipes/:schedule_name/:selectedTab',
+    name: 'schedule-detail-tab',
+    component: ScheduleView,
+    props: true,
+  },
+  {
+    path: '/recipes',
     name: 'schedules-list',
-    component: SchedulesList,
+    component: SchedulesView,
   },
   {
     path: '/users/:username',
@@ -60,7 +78,7 @@ export default [
   },
   {
     path: '/workers',
-    name: 'workers-list',
+    name: 'workers',
     component: WorkersView,
   },
   {

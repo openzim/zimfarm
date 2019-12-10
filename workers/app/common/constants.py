@@ -20,12 +20,8 @@ TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
-DOCKER_SOCKET = pathlib.Path(
-    os.getenv("DOCKER_SOCKET", "/var/run/docker.sock")
-)
-PRIVATE_KEY = pathlib.Path(
-    os.getenv("PRIVATE_KEY", "/etc/ssh/keys/zimfarm")
-)
+DOCKER_SOCKET = pathlib.Path(os.getenv("DOCKER_SOCKET", "/var/run/docker.sock"))
+PRIVATE_KEY = pathlib.Path(os.getenv("PRIVATE_KEY", "/etc/ssh/keys/zimfarm"))
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
 
 # task-related
@@ -72,7 +68,10 @@ CONTAINER_SCRAPER_IDENT = "zimscraper"
 CONTAINER_DNSCACHE_IDENT = "dnscache"
 
 # dispatcher-related
-AUTH_EXPIRY = os.getenv("AUTH_EXPIRY", 60 * 59)  # seconds after which to re-auth
+try:
+    AUTH_EXPIRY = int(os.getenv("AUTH_EXPIRY", "").strip())
+except Exception:
+    AUTH_EXPIRY = 60 * 59  # seconds after which to re-auth
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
 DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5000")
 UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://warehouse.farm.openzim.org:1522")
