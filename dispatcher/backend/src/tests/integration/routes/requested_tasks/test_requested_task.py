@@ -40,15 +40,20 @@ class TestRequestedTaskList:
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
-        # sorted by priority, timestamp.requested
-        requested_tasks.sort(
-            key=lambda task: task["timestamp"]["requested"], reverse=True
+        # items ordering is done by mongo and not important to us
+        # but we need to match our requests with result to test resulting data
+        sorted_requested_tasks = list(
+            map(
+                lambda item: [
+                    r for r in requested_tasks if str(r["_id"]) == item["_id"]
+                ][-1],
+                items,
+            )
         )
-        requested_tasks.sort(key=lambda task: task["priority"], reverse=True)
-        assert len(items) == len(requested_tasks)
-        # make sure sorting is properly assumed
-        assert str(requested_tasks[0]["_id"]) == items[0]["_id"]
-        for index, task in enumerate(requested_tasks):
+        assert len(items) == len(sorted_requested_tasks)
+        # assert sorting
+        assert str(sorted_requested_tasks[0]["_id"]) == items[0]["_id"]
+        for index, task in enumerate(sorted_requested_tasks):
             item = items[index]
             self._assert_requested_task(task, item)
 
