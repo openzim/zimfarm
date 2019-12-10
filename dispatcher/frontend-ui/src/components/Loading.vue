@@ -16,10 +16,10 @@
   export default {
     name: 'Loading',
     computed: {
-      should_display: function() {
+      should_display() {
         return this.$store.getters.loadingStatus.should_display;
       },
-      loading_text: function() {
+      loading_text() {
         return this.$store.getters.loadingStatus.text;
       }
     }

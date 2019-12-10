@@ -12,7 +12,7 @@
       has_history() { return window.history.length > 1; }
     },
     methods: {
-      goBack: function() {
+      goBack() {
         this.$router.back();
       }
     }

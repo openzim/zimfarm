@@ -26,7 +26,7 @@
                         <router-link class="nav-link" :to="{ name: 'schedules-list' }">Recipes</router-link>
                     </li>
                     <li class="nav-item disabled">
-                        <router-link class="nav-link" :to="{ name: 'workers-list' }">Workers</router-link>
+                        <router-link class="nav-link" :to="{ name: 'workers' }">Workers</router-link>
                     </li>
                     <li class="nav-item" v-show="$store.getters.isLoggedIn">
                         <router-link class="nav-link" :to="{ name: 'users-list' }">Users</router-link>

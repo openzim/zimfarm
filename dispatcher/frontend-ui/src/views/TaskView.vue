@@ -64,8 +64,8 @@
                 <tr v-for="file in task.files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
                   <td>{{ file.size | filesize }}</td>
-                  <td v-tooltip="datetime(file.created_timestamp)">{{ file | created_after(task) }}</td>
-                  <td v-tooltip="datetime(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
+                  <td v-tooltip="format_dt(file.created_timestamp)">{{ file | created_after(task) }}</td>
+                  <td v-tooltip="format_dt(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
                   <td v-else>-</td>
                 </tr>
               </table>
@@ -116,10 +116,10 @@
     },
     filters: {
       created_after(value, task) {
-        return Constants.duration_between(task.timestamp.scraper_started, value.created_timestamp);
+        return Constants.format_duration_between(task.timestamp.scraper_started, value.created_timestamp);
       },
       upload_duration(value) {
-        return Constants.duration_between(value.created_timestamp, value.uploaded_timestamp);
+        return Constants.format_duration_between(value.created_timestamp, value.uploaded_timestamp);
       }
     },
     computed: {
@@ -138,24 +138,21 @@
 
         // if task is running (non-complete status) then it's started-to now
         if (this.is_running) {
-          return Constants.duration_between(first, Constants.now());
+          return Constants.format_duration_between(first, Constants.now());
         }
 
         // if task is not running, it's started to last status
         let last = this.task.events[this.task.events.length - 1].timestamp;
-        return Constants.duration_between(first, last);
+        return Constants.format_duration_between(first, last);
       },
       started_on() { return this.task.timestamp.started || null; },
-      pipe_duration() { return Constants.duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
+      pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },
-      command() { return this.task_container.command; },
+      command() { return '"' + this.task_container.command.join('" "') + '"'; },
       trimmed_command() { return Constants.trim_command(this.command); },
     },
     methods: {
-      datetime(value) {  // shortcut datetime formatter
-        return Constants.datetime(value);
-      },
       copyCommand() {
         let parent = this;
         this.$copyText(this.command).then(function () {

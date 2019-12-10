@@ -63,9 +63,9 @@
           <tr>
             <th>Resources</th>
             <td>
-              <span class="badge badge-light mr-2" v-tooltip="'CPU'"><font-awesome-icon icon="microchip" /> {{ cpu_human }}</span>
-              <span class="badge badge-light mr-2" v-tooltip="'Memory'"><font-awesome-icon icon="memory" /> {{ memory_human }}</span>
-              <span class="badge badge-light mr-2" v-tooltip="'Disk'"><font-awesome-icon icon="hdd" /> {{ disk_human }}</span>
+              <ResourceBadge kind="cpu" :value="config.resources.cpu" />
+              <ResourceBadge kind="memory" :value="config.resources.memory" />
+              <ResourceBadge kind="disk" :value="config.resources.disk" />
             </td>
           </tr>
           <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
@@ -78,17 +78,17 @@
 
 <script>
   import moment from 'moment';
-  import filesize from 'filesize';
 
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import ScheduleActionButton from '../components/ScheduleActionButton.vue'
+  import ResourceBadge from '../components/ResourceBadge.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage},
+    components: {ScheduleActionButton, ErrorMessage, ResourceBadge},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug
@@ -109,15 +109,12 @@
       last_run() { return this.schedule.most_recent_task; },
       config() { return this.schedule.config; },
       offliner() { return this.config.task_name; },
-      cpu_human() { return this.config.resources.cpu; },
-      memory_human() { return filesize(this.config.resources.memory); },
-      disk_human() { return filesize(this.config.resources.disk); },
       image_human() { return Constants.image_human(this.config); },
       warehouse_path() { return this.config.warehouse_path; },
       command() { return Constants.build_docker_command(this.name, this.config); },
       trimmed_command() { return Constants.trim_command(this.command); },
       requested_id() { return (this.requested) ? this.requested._id : null; },
-      requested_time() { return Constants.datetime(this.requested.timestamp.requested); },
+      requested_time() { return this.format_dt(this.requested.timestamp.requested); },
       requested_since() { return Constants.from_now(this.requested_time); }
     },
     methods: {

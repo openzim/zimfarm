@@ -66,7 +66,7 @@
   export default {
     name: 'UserButton',
     methods: {
-      copyToken: function () {
+      copyToken() {
         let parent = this;
         this.$copyText(this.$store.getters.access_token).then(function () {
             parent.$root.$emit('feedback-message', 'info', "Token copied to Clipboard!");
@@ -77,7 +77,7 @@
                          "Copy it manually:<br /><input type=\"text\" value=\"" + parent.$store.getters.access_token + "\" />");
           });
       },
-      signOut: function() {
+      signOut() {
         let parent = this;
         let msg = "";
         if (Constants.now().isAfter(this.$store.getters.token_expiry)) {

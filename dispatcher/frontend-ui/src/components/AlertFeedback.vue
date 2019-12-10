@@ -12,21 +12,21 @@
 <script type="text/javascript">
   export default {
     name: 'AlertFeedback',
-    data: function () {
+    data() {
       return {
         level: null,  // bootstrap-alert-like class to use: info, success, warning, danger
         message: null,  // message to display
       };
     },
     computed: { // actual bootstrap class from level
-      alertClass: function() { return 'alert-' + this.level; }
+      alertClass() { return 'alert-' + this.level; }
     },
     methods: {
-      dismiss: function() { // remove alert
+      dismiss() { // remove alert
         this.level = this.message = null;
       },
     },
-    beforeMount: function(){
+    beforeMount(){
       let parent = this;
       this.$root.$on('feedback-message', function (level, message) {
         parent.level = level;

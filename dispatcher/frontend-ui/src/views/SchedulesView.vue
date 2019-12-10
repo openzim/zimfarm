@@ -74,7 +74,7 @@
             <code :class="schedule.class_attr">{{ schedule.most_recent_task.status }}</code>
           </td>
           <td colspan="2" v-else>-</td>
-          <td v-if="schedule.most_recent_task" v-tooltip="datetime(schedule.most_recent_task.updated_at)">
+          <td v-if="schedule.most_recent_task" v-tooltip="format_dt(schedule.most_recent_task.updated_at)">
             <router-link :to="{name: 'task-detail', params: {_id: schedule.most_recent_task._id}}">
               {{ schedule.most_recent_task.on }}
             </router-link>
@@ -93,7 +93,7 @@
   import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
-    name: 'SchedulesList',
+    name: 'SchedulesView',
     mixins: [ZimfarmMixins],
     components: {Multiselect},
     data() {
@@ -114,38 +114,35 @@
       };
     },
     computed: {
-      total_results: function() {
+      total_results() {
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       },
-      categoriesOptions: function() {
+      categoriesOptions() {
         let options = [];
         for (var i=0; i<this.categories.length; i++){
           options.push({name: this.categories[i], value: this.categories[i]});
         }
         return options;
       },
-      selectedCategories: function() { return this.selectedCategoriesOptions.map((x) => x.value); },
-      languagesOptions: function() {
+      selectedCategories() { return this.selectedCategoriesOptions.map((x) => x.value); },
+      languagesOptions() {
         let options = [];
         for (var i=0; i<this.languages.length; i++){
           options.push({name: this.languages[i].name_en, value: this.languages[i].code});
         }
         return options;
       },
-      selectedLanguages: function() { return this.selectedLanguagesOptions.map((x) => x.value); },
-      tagsOptions: function() {
+      selectedLanguages() { return this.selectedLanguagesOptions.map((x) => x.value); },
+      tagsOptions() {
         let options = [];
         for (var i=0; i<this.tags.length; i++){
           options.push({name: this.tags[i], value: this.tags[i]});
         }
         return options;
       },
-      selectedTags: function() { return this.selectedTagsOptions.map((x) => x.value); },
+      selectedTags() { return this.selectedTagsOptions.map((x) => x.value); },
     },
     methods: {
-      datetime(date) { // shortcut to datetime formatter
-        return Constants.datetime(date);
-      },
       limitChanged() {
         this.saveLimitPreference(this.selectedLimit);
         this.loadSchedules();

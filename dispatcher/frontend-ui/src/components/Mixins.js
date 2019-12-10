@@ -14,6 +14,7 @@ export default {
     },
   },
   methods: {
+    format_dt(dt) { return Constants.format_dt(dt); },
     toggleLoader(text) { // shortcut to store's loader status changer
       let payload = text ? {status: true, text: text} : {status: false};
       this.$store.dispatch('setLoading', payload);

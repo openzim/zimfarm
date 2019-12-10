@@ -1,23 +1,25 @@
 import moment from 'moment'
 import querystring from 'querystring'
 
-function datetime(value) { // display a datetime in a standard format
+function format_dt(value) { // display a datetime in a standard format
   if (!value)
     return '';
-  return moment(value).format("LLL");
+  let mom = moment(value);
+  return mom.isValid() ? mom.format("LLL") : value;
 }
 
-function duration(diff) { // display a duration in a standard format
+function format_duration(diff) { // display a duration in a standard format
   return moment.duration(diff).locale("en").humanize();
 }
 
-function duration_between(start, end) { // display a duration between two datetimes
+function format_duration_between(start, end) { // display a duration between two datetimes
   let diff = moment(end).diff(start);
-  return duration(diff);
+  return format_duration(diff);
 }
 
-function from_now(datetime) {
-  return moment(datetime).fromNow();
+function from_now(value) {
+  let mom = moment(value);
+  return mom.isValid() ? mom.fromNow() : value;
 }
 
 function params_serializer(params) { // turn javascript params object into querystring
@@ -77,7 +79,7 @@ export default {
   LIMIT_CHOICES: [10, 20, 50, 100, 200, 500],
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   contact_email: "contact@kiwix.org",
-  standardHTTPError: function(response) {
+  standardHTTPError(response) {
     let statuses = {
       // 1××: Informational
       100: "Continue",
@@ -160,9 +162,9 @@ export default {
     let status_text = response.statusText ? response.statusText : statuses[response.status];
     return response.status + ": " + status_text + ".";
   },
-  datetime: datetime,
-  duration: duration,
-  duration_between: duration_between,
+  format_dt: format_dt,
+  format_duration: format_duration,
+  format_duration_between: format_duration_between,
   params_serializer:params_serializer,
   now: now,
   image_human: image_human,

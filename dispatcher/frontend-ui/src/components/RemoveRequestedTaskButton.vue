@@ -29,10 +29,10 @@
     },
     computed: {
       short_id() { return Constants.short_id(this._id); },
-      should_display_loader: function() { return this.working; },
+      should_display_loader() { return this.working; },
     },
     methods: {
-      removeTask: function() {
+      removeTask() {
         let parent = this;
 
         parent.working = true;

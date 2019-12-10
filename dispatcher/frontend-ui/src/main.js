@@ -25,11 +25,12 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { faSpinner, faUser, faUserCircle, faKey, faTimes,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
-         faCalendarAlt, faStopCircle, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+         faCalendarAlt, faStopCircle, faTrashAlt, faPlug } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
 library.add(faUser);
+library.add(faPlug);
 library.add(faFire);
 library.add(faCopy);
 library.add(faTimes);
@@ -68,7 +69,8 @@ Vue.filter('filesize', function(value) {
     return '';
   return filesize(value);
 });
-Vue.filter('datetime', Constants.datetime);
+Vue.filter('format_dt', Constants.format_dt);
+Vue.filter('from_now', Constants.from_now);
 
 // router
 const router = new VueRouter({
@@ -83,7 +85,7 @@ new Vue({
   store: store,
   router: router,
   computed: {
-      axios: function () { // prefixed axios object with API url and token from store
+      axios() { // prefixed axios object with API url and token from store
         return axios.create({
             baseURL: Constants.zimfarm_webapi,
             headers: {'Authorization': "Token " + store.getters.access_token},

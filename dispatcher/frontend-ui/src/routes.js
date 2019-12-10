@@ -1,9 +1,9 @@
 
 import PipelineView from './views/PipelineView.vue'
-import SignIn from './components/SignIn.vue'
-import ChangePassword from './components/ChangePassword.vue'
-import NotFound from './components/NotFound.vue'
-import SchedulesList from './components/SchedulesList.vue'
+import SignIn from './views/SignIn.vue'
+import ChangePassword from './views/ChangePassword.vue'
+import NotFound from './views/NotFound.vue'
+import SchedulesView from './views/SchedulesView.vue'
 import ScheduleView from './views/ScheduleView.vue'
 import UsersView from './views/UsersView.vue'
 import WorkersView from './views/WorkersView.vue'
@@ -63,7 +63,7 @@ export default [
   {
     path: '/recipes',
     name: 'schedules-list',
-    component: SchedulesList,
+    component: SchedulesView,
   },
   {
     path: '/users/:username',
@@ -78,7 +78,7 @@ export default [
   },
   {
     path: '/workers',
-    name: 'workers-list',
+    name: 'workers',
     component: WorkersView,
   },
   {

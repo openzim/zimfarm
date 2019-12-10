@@ -31,12 +31,12 @@
             <span class="text-warning" v-if="task.priority > 0"> <font-awesome-icon size="sm" icon="fire" /></span>
           </td>
           <td v-if="selectedTable == 'todo'"
-              v-tooltip="{content: datetime(task.requested_on), delay: 10}">{{ task.requested_since }}</td>
+              v-tooltip="{content: format_dt(task.requested_on), delay: 10}">{{ task.requested_since }}</td>
           <td v-if="selectedTable == 'todo'">{{ task.requested_by }}</td>
           <td v-if="selectedTable == 'doing'"
-              v-tooltip="{content: datetime(task.started_on), delay: 10}">{{ task.started_since }}</td>
+              v-tooltip="{content: format_dt(task.started_on), delay: 10}">{{ task.started_since }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'"
-              v-tooltip="{content: datetime(task.completed_on), delay: 10}">{{ task.completed_since }}</td>
+              v-tooltip="{content: format_dt(task.completed_on), delay: 10}">{{ task.completed_since }}</td>
           <td v-if="selectedTable != 'todo'">{{ task.worker }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'">{{ task.status }}</td>
@@ -63,7 +63,7 @@
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
-    data: function () {
+    data() {
       return {
         tasks: [], // list of tasks returned by API
         meta: {}, // API query metadata (count, skip, limit)
@@ -71,7 +71,7 @@
       };
     },
     computed: {
-      total_results: function() { // total (non-paginated) tasks for query from API
+      total_results() { // total (non-paginated) tasks for query from API
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       }
     },
@@ -80,15 +80,12 @@
         this.saveLimitPreference(this.selectedLimit);
         this.loadData();
       },
-      datetime: function(date) { // datetime formatter shortcut
-        return Constants.datetime(date);
-      },
-      resetData: function() { // reset data holders
+      resetData() { // reset data holders
         this.error = null;
         this.tasks = [];
         this.meta = {};
       },
-      loadGenericData: function(url, params, item_transform) {
+      loadGenericData(url, params, item_transform) {
         let parent = this;
         parent.toggleLoader("fetching tasks…");
 
@@ -109,7 +106,7 @@
               parent.toggleLoader(false);
           });
       },
-      loadData: function() {
+      loadData() {
         if (this.selectedTable == 'todo') {
           this.loadGenericData('/requested-tasks/',
                                {limit: this.selectedLimit},
@@ -136,7 +133,7 @@
                                function (item) {
                                 item["completed_on"] = moment(item["timestamp"]["succeeded"])
                                 item["completed_since"] = item["completed_on"].fromNow();
-                                item["duration"] = Constants.duration_between(item.timestamp.started, item["completed_on"]);
+                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item["completed_on"]);
                                 return item;
                                });
         }
@@ -149,17 +146,17 @@
                                 let event_ts = item.timestamp.canceled ? item.timestamp.canceled : item.timestamp.failed;
                                 item["completed_on"] = moment(event_ts);
                                 item["completed_since"] = item["completed_on"].fromNow();
-                                item["duration"] = Constants.duration_between(item.timestamp.started, item["completed_on"]);
+                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item["completed_on"]);
                                 return item;
                                });
         }
       },
     },
-    mounted: function() {
+    mounted() {
       this.loadData();
     },
     watch: {
-      selectedTable: function() {
+      selectedTable() {
         this.loadData();
       },
     }

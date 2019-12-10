@@ -32,12 +32,12 @@
   import moment from 'moment';
 
   import Constants from '../constants.js'
-  import ZimfarmMixins from './Mixins.js'
+  import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
     name: 'SignIn',
     mixins: [ZimfarmMixins],
-    data: function() {
+    data() {
       return {
         username: null, // user's username
         password: null, // users's password
@@ -48,12 +48,12 @@
     },
     computed: {
       contact_email() { return Constants.contact_email; },
-      shouldDisplayButton: function() { // whether to display Sign-in button
+      shouldDisplayButton() { // whether to display Sign-in button
         return !this.working;
       }
     },
     methods: {
-      authenticate: function () { // request token on API using credentials
+      authenticate() { // request token on API using credentials
         let parent = this;
 
         parent.working = true;

@@ -22,12 +22,12 @@
 
 <script type="text/javascript">
   import Constants from '../constants.js'
-  import ZimfarmMixins from './Mixins.js'
+  import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
     name: 'ChangePassword',
     mixins: [ZimfarmMixins],
-    data: function() {
+    data() {
       return {
         current_password: null, // user's username
         new_password: null, // users's password
@@ -36,7 +36,7 @@
       };
     },
     methods: {
-      changePassword: function () { // request token on API using credentials
+      changePassword() { // request token on API using credentials
         let parent = this;
 
         if (!parent.$store.getters.username) {
@@ -51,8 +51,7 @@
         parent.$root.axios.patch('/users/' + parent.$store.getters.username + '/password', payload)
           .then(function () {
               parent.$root.$emit('feedback-message', 'success', "<strong>Changed!</strong><br />Your password has been updated.");
-              // redirect
-              parent.$router.back();
+              parent.$router.back();  // redirect
             })
             .catch(function (error) {
               parent.error = Constants.standardHTTPError(error.response);
@@ -68,9 +67,10 @@
         return !this.working;
       },
     },
-    // beforeMount() { // redirect to SignIn if not logged-in
-    //   if (!this.$store.)
-    // },
+    beforeMount() { // redirect to SignIn if not logged-in
+      if (!this.$store.getters.isLoggedIn)
+        this.$router.push({name: 'sign-in'});
+    },
   }
 </script>
 
