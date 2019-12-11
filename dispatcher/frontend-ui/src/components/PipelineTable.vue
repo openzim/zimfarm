@@ -68,6 +68,7 @@
         tasks: [], // list of tasks returned by API
         meta: {}, // API query metadata (count, skip, limit)
         error: false, // error string to display on API error
+        timer: null,  // auto-refresh timer
       };
     },
     computed: {
@@ -154,6 +155,10 @@
     },
     mounted() {
       this.loadData();
+      this.timer = setInterval(this.loadData, 60000);
+    },
+    beforeDestroy () {
+      clearInterval(this.timer)
     },
     watch: {
       selectedTable() {

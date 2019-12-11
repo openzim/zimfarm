@@ -25,7 +25,8 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { faSpinner, faUser, faUserCircle, faKey, faTimes,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
-         faCalendarAlt, faStopCircle, faTrashAlt, faPlug } from '@fortawesome/free-solid-svg-icons'
+         faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
+         faSkullCrossbones } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
@@ -46,6 +47,7 @@ library.add(faSignOutAlt);
 library.add(faUserCircle);
 library.add(faCalendarAlt);
 library.add(faArrowCircleLeft);
+library.add(faSkullCrossbones);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 // Multiselect for schedules filter
