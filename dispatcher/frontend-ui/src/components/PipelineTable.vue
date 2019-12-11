@@ -10,7 +10,7 @@
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
       <thead v-if="selectedTable == 'todo'">
-        <tr><th>Schedule</th><th>Requested</th><th>By</th><th v-show="$store.getters.isLoggedIn">Remove</th></tr>
+        <tr><th>Schedule</th><th>Requested</th><th>By</th><th>Worker</th><th v-show="$store.getters.isLoggedIn">Remove</th></tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
         <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
@@ -37,7 +37,7 @@
               v-tooltip="{content: format_dt(task.started_on), delay: 10}">{{ task.started_since }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'"
               v-tooltip="{content: format_dt(task.completed_on), delay: 10}">{{ task.completed_since }}</td>
-          <td v-if="selectedTable != 'todo'">{{ task.worker }}</td>
+          <td>{{ task.worker || 'n/a' }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'">{{ task.status }}</td>
           <td v-if="selectedTable == 'todo'" v-show="$store.getters.isLoggedIn"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
