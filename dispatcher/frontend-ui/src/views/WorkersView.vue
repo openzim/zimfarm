@@ -25,31 +25,43 @@
                   @click.prevent="toggle_workerslist">{{ toggle_text }}</b-button>
       </div>
     </div>
-    <table v-if="!error && workers" class="table table-responsive-sm">
+    <table v-if="!error && workers" class="table table-responsive-sm table-sm table-striped table-hover">
       <tbody>
-        <tr v-for="worker in workers" :key="worker.name" :class="(worker.status == 'online') ? 'alert-success' : 'alert-warning'">
-          <th>{{ worker.name }}</th>
-          <td colspan="2" v-if="worker.status == 'online' && worker.tasks">
-            <table class="table table-sm table-responsive-sm table-striped table-hover">
-              <tbody>
-                <tr>
-                  <th colspan="2" class="text-right">Worker Resources</th>
-                  <td><ResourceBadge kind="cpu" :value="worker.resources.cpu" /></td>
-                  <td><ResourceBadge kind="memory" :value="worker.resources.memory" /></td>
-                  <td><ResourceBadge kind="disk" :value="worker.resources.disk" /></td>
-                </tr>
-                <tr v-for="task in worker.tasks" :key="task._id">
-                  <td>{{ task.schedule_name }}</td>
-                  <td v-tooltip="format_dt(started_on(task))">{{ started_on(task)|from_now }}</td>
-                  <td><ResourceBadge kind="cpu" :value="task.config.resources.cpu" /></td>
-                  <td><ResourceBadge kind="memory" :value="task.config.resources.memory" /></td>
-                  <td><ResourceBadge kind="disk" :value="task.config.resources.disk" /></td>
-                </tr>
-              </tbody>
-            </table>
+        <tr v-for="row in rows" :key="row.id" >
+          <th v-if="row.kind == 'worker'"
+              :rowspan="row.rowspan"
+              class="bg-light"
+              :class="(row.status == 'online') ? 'text-success' : 'text-warning'">{{ row.worker.name }}</th>
+
+
+          <td v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" v-tooltip="format_dt(row.worker.last_seen)">
+            <font-awesome-icon icon="skull-crossbones" /> {{ row.worker.last_seen | from_now}}
           </td>
-          <td v-if="worker.status == 'offline' || !worker.tasks">{{ worker.status }}</td>
-          <td v-if="worker.status == 'offline' || !worker.tasks" v-tooltip="format_dt(worker.last_seen)">{{ worker.last_seen|from_now }}</td>
+          <th v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" class="text-right">Resources</th>
+          <th v-show="row.status == 'online'" v-if="row.kind == 'worker'" colspan="2" class="text-right">Resources</th>
+
+          <th v-if="row.kind == 'worker'" class="text-center">
+            <ResourceBadge kind="cpu" :value="row.worker.resources.cpu" />
+          </th>
+          <th v-if="row.kind == 'worker'" class="text-center">
+            <ResourceBadge kind="memory" :value="row.worker.resources.memory" />
+          </th>
+          <th v-if="row.kind == 'worker'" class="text-center">
+            <ResourceBadge kind="disk" :value="row.worker.resources.disk" />
+          </th>
+          <td v-if="row.kind == 'task'">
+            <router-link :to="{name: 'schedule-detail', params:{schedule_name: row.task.schedule_name}}">
+              {{ row.task.schedule_name }}
+            </router-link>
+          </td>
+          <td v-if="row.kind == 'task'" v-tooltip="format_dt(started_on(row.task))">
+            <router-link :to="{name: 'task-detail', params:{_id: row.task._id}}">
+              {{ started_on(row.task)|from_now }}
+            </router-link>
+          </td>
+          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.cpu }}</td>
+          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.memory|filesize }}</td>
+          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.disk|filesize }}</td>
         </tr>
       </tbody>
     </table>
@@ -76,9 +88,36 @@
         error: null,  // API generated error
         all_workers: [],  // list of workers as returned by API
         running_tasks: [],  // running tasks returned by API
+        timer: null,  // auto-refresh data timer
       };
     },
     computed: {
+      rows() {  // special list of `rows` to handle table with rowspans
+        let table_rows = [];
+        for (var i=0; i<this.workers.length; i++) {
+          let worker = this.workers[i];
+          let status = worker.status;
+          let rowspan = 1 + worker.tasks.length;
+          table_rows.push({
+              kind: "worker",
+              id: worker.name,
+              status: status,
+              rowspan: rowspan,
+              worker: worker,
+            });
+          for (var ii=0; ii<worker.tasks.length; ii++) {
+            let task = worker.tasks[ii];
+            table_rows.push({
+              kind: "task",
+              id:task._id,
+              status: status,
+              rowspan: 1,
+              task: task,
+            });
+          }
+        }
+        return table_rows;
+      },
       toggle_text() { return this.showing_all ? 'Show Onlines Only' : 'Show All'; },
       workers() { return this.showing_all ? this.all_workers : this.online_workers; },
       online_workers() { return this.all_workers.filter(function (worker) { return worker.status == "online"; }); },
@@ -189,7 +228,11 @@
     },
     mounted() {
       this.loadWorkersList();
+      this.timer = setInterval(this.loadWorkersList, 60000);
     },
+    beforeDestroy () {
+      clearInterval(this.timer)
+    }
   }
 </script>
 
