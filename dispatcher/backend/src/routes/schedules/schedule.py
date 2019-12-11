@@ -83,7 +83,6 @@ class SchedulesRoute(BaseRoute):
             )
 
         schedule_id = Schedules().insert_one(document).inserted_id
-        print("schedule_id", schedule_id)
 
         return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)
 
