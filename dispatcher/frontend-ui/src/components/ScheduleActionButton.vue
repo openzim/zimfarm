@@ -12,23 +12,30 @@
   - displays result as an AlertFeedback -->
 
 <template>
-  <div v-show="visible" class="btn-group" role="group">
-    <button v-if="can_request" class="btn btn-sm btn-info" @click.prevent="request_task">
+  <b-button-group v-show="visible">
+    <b-button v-if="can_request && !workers.length" size="sm" variant="info" @click.prevent="request_task(null)">
       <font-awesome-icon icon="calendar-alt" size="sm" /> Request
-    </button>
-    <button v-if="can_unrequest" class="btn btn-sm btn-secondary" @click.prevent="unrequest_task">
+    </b-button>
+    <b-dropdown v-if="can_request && workers.length" no-flip split size="sm" variant="info" @click.prevent="request_task(null)">
+      <template v-slot:button-content><font-awesome-icon icon="calendar-alt" size="sm" /> Request</template>
+      <b-dropdown-item v-for="worker in workers"
+                       v-bind:key="worker.name"
+                       @click.prevent="request_task(worker.name);"
+                       :variant="worker.status == 'online' ? 'success' : 'warning'">{{ worker.name }}</b-dropdown-item>
+    </b-dropdown>
+    <b-button v-if="can_unrequest" size="sm" variant="secondary" @click.prevent="unrequest_task">
       <font-awesome-icon icon="trash-alt" size="sm" /> Un-request
-    </button>
-    <button v-if="can_cancel" class="btn btn-sm btn-danger" @click.prevent="cancel_task">
+    </b-button>
+    <b-button v-if="can_cancel" size="sm" variant="danger" @click.prevent="cancel_task">
       <font-awesome-icon icon="stop-circle" size="sm" /> Cancel
-    </button>
-    <button v-if="can_fire" class="btn btn-sm btn-warning" @click.prevent="fire_task">
+    </b-button>
+    <b-button v-if="can_fire" size="sm" variant="warning" @click.prevent="fire_task">
       <font-awesome-icon icon="fire" size="sm" /> Fire
-    </button>
-    <button v-if="working" :disabled="working" class="btn btn-sm btn-secondary">
+    </b-button>
+    <b-button v-if="working" :disabled="working" size="sm" variant="secondary">
       <font-awesome-icon icon="spinner" size="sm" spin /> {{ working_text}}
-    </button>
-  </div>
+    </b-button>
+  </b-button-group>
 </template>
 
 <script type="text/javascript">
@@ -45,6 +52,7 @@
         working_text: null,  // describing text of working action (or null)
         task: null,  // existing task item (from /tasks/ for this schedule (or false)
         requested_task_id: null,  // existing requested-task _id for this schedule (or false)
+        workers: [],  // API-retrieved list of workers
       }
     },
     computed: {
@@ -90,12 +98,20 @@
           .catch(function() {
             parent.ready = false;
           });
+
+        parent.$root.axios.get('/workers/')
+        .then(function (response) {
+            parent.workers = response.data.items;
+          });
       },
-      request_task() {
+      request_task(worker_name) {
         let parent = this;
         parent.working_text = "Requesting task…";
 
-        parent.$root.axios.post('/requested-tasks/', {schedule_names: [parent.name]})
+        let params = {schedule_names: [parent.name]};
+        if (worker_name)
+          params.worker =  worker_name;
+        parent.$root.axios.post('/requested-tasks/', params)
           .then(function (response) {
             parent.requested_task_id = response.data.requested[0];
             let msg = "Schedule <em>" + parent.name + "</em> has been requested as <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
