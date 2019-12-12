@@ -1,6 +1,6 @@
 import trafaret as t
 
-from common.entities import ScheduleCategory, ScheduleQueue, Offliner
+from common.entities import ScheduleCategory, Offliner
 
 
 class ConfigValidator(t.Dict):
@@ -92,30 +92,32 @@ resources_validator = t.Dict(
     t.Key("disk", optional=False, trafaret=t.ToInt(gte=0)),
 )
 
+warehouse_path_validator = t.Enum(*ScheduleCategory.all_warehouse_paths())
+
+offliner_validator = t.Enum(*Offliner.all())
+
+image_validator = t.Dict(
+    t.Key(
+        "name",
+        trafaret=t.Enum(
+            "openzim/mwoffliner", "openzim/phet", "openzim/gutenberg", "openzim/youtube"
+        ),
+    ),
+    t.Key("tag", trafaret=t.String),
+)
+
 config_validator = ConfigValidator(
     {
-        t.Key("task_name"): t.Enum(*Offliner.all()),
-        t.Key("queue"): t.Enum(*ScheduleQueue.all()),
-        t.Key("warehouse_path"): t.Enum(*ScheduleCategory.all_warehouse_paths()),
-        t.Key("image"): t.Dict(
-            t.Key(
-                "name",
-                trafaret=t.Enum(
-                    "openzim/mwoffliner",
-                    "openzim/phet",
-                    "openzim/gutenberg",
-                    "openzim/youtube",
-                ),
-            ),
-            t.Key("tag", trafaret=t.String),
-        ),
+        t.Key("task_name"): offliner_validator,
+        t.Key("warehouse_path"): warehouse_path_validator,
+        t.Key("image"): image_validator,
+        t.Key("resources", optional=False): resources_validator,
         t.Key("flags"): t.Or(
             mwoffliner_flags_validator,
             phet_flags_validator,
             gutenberg_flags_validator,
             youtube_flags_validator,
         ),
-        t.Key("resources", optional=False): resources_validator,
     }
 )
 
@@ -140,9 +142,10 @@ language_validator = t.Dict(
 
 category_validator = t.Enum(*ScheduleCategory.all())
 
+name_validator = t.String(allow_blank=False, min_length=5)
 
 schedule_validator = t.Dict(
-    t.Key("name", optional=False, trafaret=t.String(allow_blank=False)),
+    t.Key("name", optional=False, trafaret=name_validator),
     t.Key("language", optional=False, trafaret=language_validator),
     t.Key("category", optional=False, trafaret=category_validator),
     t.Key("tags", optional=False, trafaret=t.List(t.String(allow_blank=False))),

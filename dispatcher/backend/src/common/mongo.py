@@ -98,7 +98,6 @@ class Schedules(BaseCollection):
         self.create_index("name", name="name", unique=True)
         self.create_index("category", name="category")
         self.create_index("enabled", name="enabled")
-        self.create_index("config.queue", name="config.queue")
         self.create_index("language.code", name="language.code")
 
 

@@ -28,7 +28,6 @@ def make_mwoffliner_flags(**kwargs):
 def make_mwoffliner_config(**kwargs):
     config = {
         "task_name": "mwoffliner",
-        "queue": "medium",
         "warehouse_path": "/wikipedia",
         "image": {"name": "openzim/mwoffliner", "tag": "1.8.0"},
         "flags": make_mwoffliner_flags(),
@@ -41,7 +40,6 @@ def make_mwoffliner_config(**kwargs):
 def make_phet_config(**kwargs):
     config = {
         "task_name": "phet",
-        "queue": "small",
         "warehouse_path": "/phet",
         "image": {"name": "openzim/phet", "tag": "latest"},
         "flags": {},
@@ -177,7 +175,7 @@ class TestConfigValidator:
         config_validator.check(config)
 
     @pytest.mark.parametrize(
-        "missing_key", ["task_name", "queue", "warehouse_path", "image", "flags"]
+        "missing_key", ["task_name", "warehouse_path", "image", "flags"]
     )
     def test_missing_required(self, missing_key):
         with pytest.raises(t.DataError):
@@ -195,7 +193,6 @@ class TestConfigValidator:
         "data",
         [
             {"task_name": "unknown"},
-            {"queue": "minuscule"},
             {"warehouse_path": "/wikipedia/subdir"},
             {"warehouse_path": "/bad_path"},
             {"image": {"name": "unknown_offliner", "tag": "1.0"}},

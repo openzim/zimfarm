@@ -126,7 +126,6 @@ def make_requested_task(database, make_event):
             "config": {
                 "flags": {"api-key": "aaaaaa", "id": "abcde", "type": "channel"},
                 "image": {"name": "openzim/youtube", "tag": "latest"},
-                "queue": "small",
                 "task_name": "youtube",
                 "warehouse_path": "/other",
             }

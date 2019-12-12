@@ -17,11 +17,10 @@ def make_language():
 @pytest.fixture(scope="module")
 def make_config():
     def _make_config(
-        sub_domain: str = "en", format: str = "nopic", queue: str = "offliner_default"
+        sub_domain: str = "en", format: str = "nopic",
     ) -> dict:
         return {
             "task_name": "mwoffliner",
-            "queue": queue,
             "image": {"name": "openzim/mwoffliner", "tag": "latest"},
             "flags": {
                 "mwUrl": "https://{}.wikipedia.org".format(sub_domain),
@@ -93,10 +92,10 @@ def schedules(make_schedule, make_config, make_language):
     schedules.append(make_schedule(tags=["all"], name="schedule_47"))
     schedules.append(make_schedule(tags=["all", "mini"], name="schedule_48"))
     schedules.append(make_schedule(tags=["mini", "nopic"], name="schedule_49"))
-    schedules.append(make_schedule(config=make_config(queue="small")))
+    schedules.append(make_schedule(config=make_config()))
     schedules.append(
         make_schedule(
-            config=make_config(queue="small"),
+            config=make_config(),
             name="youtube_fr_all_novid",
             language=make_language(code="fr"),
             category="other",

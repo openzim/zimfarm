@@ -24,25 +24,17 @@ good_patch_updates = [
     {"tags": ["full"]},
     {"tags": ["full", "small"]},
     {"tags": ["full", "small"], "category": "vikidia", "enabled": False},
+    {"task_name": "phet", "flags": {}},
+    {"flags": {"mwUrl": "https://fr.wikipedia.org", "adminEmail": "hello@test.de"}},
+    {"warehouse_path": "/phet"},
+    {"image": {"name": "openzim/phet", "tag": "latest"}},
+    {"resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB}},
     {
-        "config": {
-            "task_name": "phet",
-            "queue": "small",
-            "warehouse_path": "/phet",
-            "flags": {},
-            "image": {"name": "openzim/phet", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
-    },
-    {
-        "config": {
-            "task_name": "gutenberg",
-            "queue": "large",
-            "warehouse_path": "/gutenberg",
-            "flags": {},
-            "image": {"name": "openzim/gutenberg", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
+        "task_name": "gutenberg",
+        "warehouse_path": "/gutenberg",
+        "flags": {},
+        "image": {"name": "openzim/gutenberg", "tag": "latest"},
+        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
     {"name": "new_name"},
 ]
@@ -60,65 +52,41 @@ bad_patch_updates = [
     {"tags": "full,small"},
     {"name": ""},
     {"config": ""},
+    {"flags": {}},
     {
-        "config": {
-            "task_name": "hop",
-            "queue": "small",
-            "warehouse_path": "/phet",
-            "flags": {},
-            "image": {"name": "openzim/phet", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
+        "task_name": "hop",
+        "warehouse_path": "/phet",
+        "flags": {},
+        "image": {"name": "openzim/phet", "tag": "latest"},
+        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
     {
-        "config": {
-            "task_name": "phet",
-            "queue": "big",
-            "warehouse_path": "/phet",
-            "flags": {},
-            "image": {"name": "openzim/phet", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
+        "task_name": "phet",
+        "warehouse_path": "/ubuntu",
+        "flags": {},
+        "image": {"name": "openzim/phet", "tag": "latest"},
+        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
     {
-        "config": {
-            "task_name": "phet",
-            "queue": "small",
-            "warehouse_path": "/ubuntu",
-            "flags": {},
-            "image": {"name": "openzim/phet", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
+        "task_name": "phet",
+        "warehouse_path": "/phet",
+        "flags": {"mwUrl": "http://fr.wikipedia.org"},
+        "image": {"name": "openzim/phet", "tag": "latest"},
+        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
     {
-        "config": {
-            "task_name": "phet",
-            "queue": "small",
-            "warehouse_path": "/phet",
-            "flags": {"mwUrl": "http://fr.wikipedia.org"},
-            "image": {"name": "openzim/phet", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
+        "task_name": "phet",
+        "warehouse_path": "/phet",
+        "flags": {},
+        "image": {"name": "openzim/youtuba", "tag": "latest"},
+        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
     {
-        "config": {
-            "task_name": "phet",
-            "queue": "small",
-            "warehouse_path": "/phet",
-            "flags": {},
-            "image": {"name": "openzim/youtuba", "tag": "latest"},
-            "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
-    },
-    {
-        "config": {
-            "task_name": "gutenberg",
-            "queue": "small",
-            "warehouse_path": "/gutenberg",
-            "flags": {},
-            "image": {"name": "openzim/youtube", "tag": "latest"},
-            "resources": {"cpu": -1, "memory": MIN_RAM, "disk": ONE_GiB},
-        }
+        "task_name": "gutenberg",
+        "warehouse_path": "/gutenberg",
+        "flags": {},
+        "image": {"name": "openzim/youtube", "tag": "latest"},
+        "resources": {"cpu": -1, "memory": MIN_RAM, "disk": ONE_GiB},
     },
 ]
 
@@ -139,7 +107,6 @@ class TestScheduleList:
             assert isinstance(item["language"]["code"], str)
             assert isinstance(item["language"]["name_en"], str)
             assert isinstance(item["language"]["name_native"], str)
-            assert isinstance(item["config"]["task_name"], str)
 
     @pytest.mark.parametrize(
         "skip, limit, expected",
@@ -180,10 +147,7 @@ class TestScheduleList:
             ("tag=all", 2),
             ("tag=mini", 2),
             ("tag=all&tag=mini", 1),
-            ("queue=small", 2),
-            ("queue=offliner_default", 49),
-            ("queue=offliner_default&queue=small", 50),
-            ("name=youtube&lang=fr&category=other&tag=nopic&tag=novid&queue=small", 1),
+            ("name=youtube&lang=fr&category=other&tag=nopic&tag=novid", 1),
         ],
     )
     def test_list_schedules_with_filter(self, client, schedules, params, expected):
@@ -213,7 +177,6 @@ class TestSchedulePost:
                 },
                 "config": {
                     "task_name": "phet",
-                    "queue": "debug",
                     "warehouse_path": "/phet",
                     "flags": {},
                     "image": {"name": "openzim/phet", "tag": "latest"},
@@ -232,7 +195,6 @@ class TestSchedulePost:
                 },
                 "config": {
                     "task_name": "gutenberg",
-                    "queue": "debug",
                     "warehouse_path": "/gutenberg",
                     "flags": {},
                     "image": {"name": "openzim/gutenberg", "tag": "latest"},
@@ -246,6 +208,7 @@ class TestSchedulePost:
         response = client.post(
             url, json=document, headers={"Authorization": access_token}
         )
+        print(response.get_json())
         assert response.status_code == 201
         schedule_id = response.get_json()["_id"]
 
@@ -275,7 +238,6 @@ class TestSchedulePost:
             },
             "config": {
                 "task_name": "phet",
-                "queue": "debug",
                 "warehouse_path": "/phet",
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},
@@ -289,9 +251,7 @@ class TestSchedulePost:
         )
         assert response.status_code == 400
 
-    @pytest.mark.parametrize(
-        "key", ["task_name", "queue", "warehouse_path", "flags", "image"]
-    )
+    @pytest.mark.parametrize("key", ["warehouse_path", "flags", "image"])
     def test_create_schedule_missing_config_keys(self, client, access_token, key):
         schedule = {
             "name": "wikipedia_bm_test",
@@ -305,7 +265,6 @@ class TestSchedulePost:
             },
             "config": {
                 "task_name": "phet",
-                "queue": "debug",
                 "warehouse_path": "/phet",
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},
@@ -334,7 +293,6 @@ class TestSchedulePost:
             },
             "config": {
                 "task_name": "phet",
-                "queue": "debug",
                 "warehouse_path": "/phet",
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},

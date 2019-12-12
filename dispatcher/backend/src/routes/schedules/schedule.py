@@ -11,10 +11,15 @@ from routes.schedules.base import ScheduleQueryMixin
 from .. import authenticate
 from ..base import BaseRoute
 from .validators import (
-    config_validator,
+    get_flags_validator,
     language_validator,
     category_validator,
     schedule_validator,
+    warehouse_path_validator,
+    offliner_validator,
+    image_validator,
+    resources_validator,
+    name_validator,
 )
 
 
@@ -34,15 +39,12 @@ class SchedulesRoute(BaseRoute):
         categories = request.args.getlist("category")
         tags = request.args.getlist("tag")
         lang = request.args.getlist("lang")
-        queue = request.args.getlist("queue")
         name = request.args.get("name")
 
         # assemble filters
         query = {}
         if categories:
             query["category"] = {"$in": categories}
-        if queue:
-            query["config.queue"] = {"$in": queue}
         if lang:
             query["language.code"] = {"$in": lang}
         if tags:
@@ -121,13 +123,22 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
     def patch(self, schedule_name: str, *args, **kwargs):
         """Update all properties of a schedule but _id and most_recent_task"""
 
+        query = {"name": schedule_name}
+        schedule = Schedules().find_one(query, {"config.task_name": 1})
+        if not schedule:
+            raise ScheduleNotFound()
+
         validator = t.Dict(
-            t.Key("name", optional=True, trafaret=t.String(allow_blank=False)),
+            t.Key("name", optional=True, trafaret=name_validator),
             t.Key("language", optional=True, trafaret=language_validator),
             t.Key("category", optional=True, trafaret=category_validator),
             t.Key("tags", optional=True, trafaret=t.List(t.String(allow_blank=False))),
             t.Key("enabled", optional=True, trafaret=t.Bool()),
-            t.Key("config", optional=True, trafaret=config_validator),
+            t.Key("task_name", optional=True, trafaret=offliner_validator),
+            t.Key("warehouse_path", optional=True, trafaret=warehouse_path_validator),
+            t.Key("image", optional=True, trafaret=image_validator),
+            t.Key("resources", optional=True, trafaret=resources_validator),
+            t.Key("flags", optional=True, trafaret=t.Dict(allow_extra=["*"])),
         )
 
         try:
@@ -135,6 +146,18 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
                 raise t.DataError("Update can't be empty")
+
+            # ensure we test flags according to new task_name if present
+            if "task_name" in update:
+                if "flags" not in update:
+                    raise t.DataError("Can't update offliner without updating flags")
+                flags_validator = get_flags_validator(update["task_name"])
+            else:
+                flags_validator = get_flags_validator(schedule["config"]["task_name"])
+
+            if "flags" in update:
+                flags_validator.check(update["flags"])
+
         except t.DataError as e:
             raise InvalidRequestJSON(str(e.error))
 
@@ -144,8 +167,15 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
                     "Schedule with name `{}` already exists".format(update["name"])
                 )
 
-        query = {"name": schedule_name}
-        matched_count = Schedules().update_one(query, {"$set": update}).matched_count
+        config_keys = ["task_name", "warehouse_path", "image", "resources", "flags"]
+        mongo_update = {
+            f"config.{key}" if key in config_keys else key: value
+            for key, value in update.items()
+        }
+
+        matched_count = (
+            Schedules().update_one(query, {"$set": mongo_update}).matched_count
+        )
 
         if matched_count:
             return Response(status=HTTPStatus.NO_CONTENT)
