@@ -148,7 +148,6 @@ class TestMWOfflinerFlagsValidator:
     def test_duplicated_formats(self, mwformat, expected):
         flags = make_mwoffliner_flags(format=mwformat)
         result = MWOfflinerFlagsSchema().ingest(flags)
-        from pprint import pprint as pp ; pp(result)
         assert set(result["format"]) == set(expected)
 
 
