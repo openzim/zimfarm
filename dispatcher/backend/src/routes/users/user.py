@@ -4,6 +4,7 @@ from flask import request, jsonify, Response
 from jsonschema import validate, ValidationError
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
+from marshmallow import Schema, fields, validate as mm_validate
 
 from routes import authenticate2, url_object_id, errors
 from common.mongo import Users
@@ -16,11 +17,16 @@ def list(token: AccessToken.Payload):
     if not token.get_permission("users", "read"):
         raise errors.NotEnoughPrivilege()
 
-    # unpack url parameters
-    skip = request.args.get("skip", default=0, type=int)
-    limit = request.args.get("limit", default=20, type=int)
-    skip = 0 if skip < 0 else skip
-    limit = 20 if limit <= 0 else limit
+    class SkipLimitSchema(Schema):
+        skip = fields.Integer(
+            required=False, missing=0, validate=mm_validate.Range(min=0)
+        )
+        limit = fields.Integer(
+            required=False, missing=20, validate=mm_validate.Range(min=0)
+        )
+
+    request_args = SkipLimitSchema().load(request.args.to_dict())
+    skip, limit = request_args["skip"], request_args["limit"]
 
     # get users from database
     query = {}

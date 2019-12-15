@@ -3,7 +3,7 @@ import os
 from pymongo import MongoClient
 from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 
 
 class Client(MongoClient):

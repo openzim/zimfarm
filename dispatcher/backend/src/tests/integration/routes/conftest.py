@@ -16,9 +16,7 @@ def make_language():
 
 @pytest.fixture(scope="module")
 def make_config():
-    def _make_config(
-        sub_domain: str = "en", format: str = "nopic",
-    ) -> dict:
+    def _make_config(sub_domain: str = "en", format: str = "nopic") -> dict:
         return {
             "task_name": "mwoffliner",
             "image": {"name": "openzim/mwoffliner", "tag": "latest"},

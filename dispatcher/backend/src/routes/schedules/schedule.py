@@ -1,25 +1,27 @@
 from http import HTTPStatus
 
-import trafaret as t
 from flask import request, jsonify, Response, make_response
+from marshmallow import Schema, fields, validate
+from marshmallow.exceptions import ValidationError
 
 from common.mongo import Schedules
+from common.enum import ScheduleCategory
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
 from .. import authenticate
 from ..base import BaseRoute
-from .validators import (
-    get_flags_validator,
-    language_validator,
-    category_validator,
-    schedule_validator,
-    warehouse_path_validator,
-    offliner_validator,
-    image_validator,
-    resources_validator,
-    name_validator,
+from common.schemas import (
+    validate_name,
+    LanguageSchema,
+    ResourcesSchema,
+    validate_category,
+    validate_warehouse_path,
+    validate_offliner,
+    DockerImageSchema,
+    ScheduleConfigSchema,
+    ScheduleSchema,
 )
 
 
@@ -32,14 +34,34 @@ class SchedulesRoute(BaseRoute):
         """Return a list of schedules"""
 
         # unpack url parameters
-        skip = request.args.get("skip", default=0, type=int)
-        limit = request.args.get("limit", default=20, type=int)
-        skip = 0 if skip < 0 else skip
-        limit = 20 if limit <= 0 else limit
-        categories = request.args.getlist("category")
-        tags = request.args.getlist("tag")
-        lang = request.args.getlist("lang")
-        name = request.args.get("name")
+        class RequestArgsSchema(Schema):
+            skip = fields.Integer(
+                required=False, missing=0, validate=validate.Range(min=0)
+            )
+            limit = fields.Integer(
+                required=False, missing=20, validate=validate.Range(min=0)
+            )
+            category = fields.List(
+                fields.String(validate=validate.OneOf(ScheduleCategory.all())),
+                required=False,
+            )
+            tag = fields.List(fields.String(), required=False)
+            lang = fields.List(fields.String(), required=False)
+            name = fields.String(required=False, validate=validate.Length(min=5))
+
+        request_args = request.args.to_dict()
+        for key in ("category", "tag", "lang"):
+            request_args[key] = request.args.getlist(key)
+        request_args = RequestArgsSchema().load(request_args)
+
+        skip, limit, categories, tags, lang, name = (
+            request_args.get("skip"),
+            request_args.get("limit"),
+            request_args.get("category"),
+            request_args.get("tag"),
+            request_args.get("lang"),
+            request_args.get("name"),
+        )
 
         # assemble filters
         query = {}
@@ -74,9 +96,9 @@ class SchedulesRoute(BaseRoute):
         """create a new schedule"""
 
         try:
-            document = schedule_validator.check(request.get_json())
-        except t.DataError as e:
-            raise InvalidRequestJSON(str(e.error))
+            document = ScheduleSchema().load(request.get_json())
+        except ValidationError as e:
+            raise InvalidRequestJSON(str(e.messages))
 
         # make sure it's not a duplicate
         if Schedules().find_one({"name": document["name"]}, {"name": 1}):
@@ -128,38 +150,51 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if not schedule:
             raise ScheduleNotFound()
 
-        validator = t.Dict(
-            t.Key("name", optional=True, trafaret=name_validator),
-            t.Key("language", optional=True, trafaret=language_validator),
-            t.Key("category", optional=True, trafaret=category_validator),
-            t.Key("tags", optional=True, trafaret=t.List(t.String(allow_blank=False))),
-            t.Key("enabled", optional=True, trafaret=t.Bool()),
-            t.Key("task_name", optional=True, trafaret=offliner_validator),
-            t.Key("warehouse_path", optional=True, trafaret=warehouse_path_validator),
-            t.Key("image", optional=True, trafaret=image_validator),
-            t.Key("resources", optional=True, trafaret=resources_validator),
-            t.Key("flags", optional=True, trafaret=t.Dict(allow_extra=["*"])),
-        )
+        class UpdateSchema(Schema):
+            name = fields.String(required=False, validate=validate_name)
+            language = fields.Nested(LanguageSchema(), required=False)
+            category = fields.String(required=False, validate=validate_category)
+            tags = fields.List(fields.String(), required=False)
+            enabled = fields.Boolean(required=False, truthy={True}, falsy={False})
+            task_name = fields.String(required=False, validate=validate_offliner)
+            warehouse_path = fields.String(
+                required=False, validate=validate_warehouse_path
+            )
+            image = fields.Nested(DockerImageSchema, required=False)
+            resources = fields.Nested(ResourcesSchema, required=False)
+            flags = fields.Dict(required=False)
 
         try:
-            update = validator.check(request.get_json())
+            update = UpdateSchema().load(request.json)  # , partial=True
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
-                raise t.DataError("Update can't be empty")
+                raise ValidationError("Update can't be empty")
 
             # ensure we test flags according to new task_name if present
             if "task_name" in update:
                 if "flags" not in update:
-                    raise t.DataError("Can't update offliner without updating flags")
-                flags_validator = get_flags_validator(update["task_name"])
+                    raise ValidationError(
+                        "Can't update offliner without updating flags"
+                    )
+                flags_schema = ScheduleConfigSchema.get_offliner_schema(
+                    update["task_name"]
+                )
             else:
-                flags_validator = get_flags_validator(schedule["config"]["task_name"])
+                flags_schema = ScheduleConfigSchema.get_offliner_schema(
+                    schedule["config"]["task_name"]
+                )
 
             if "flags" in update:
-                flags_validator.check(update["flags"])
+                print("Schema:", flags_schema)
+                flags_schema().load(update["flags"])
+        except ValidationError as e:
+            print("ValidationError", e)
 
-        except t.DataError as e:
-            raise InvalidRequestJSON(str(e.error))
+            from pprint import pprint as pp
+
+            pp(request.json)
+
+            raise InvalidRequestJSON(str(e.messages))
 
         if "name" in update:
             if Schedules().count_documents({"name": update["name"]}):
@@ -172,6 +207,10 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             f"config.{key}" if key in config_keys else key: value
             for key, value in update.items()
         }
+
+        from pprint import pprint as pp
+
+        pp(mongo_update)
 
         matched_count = (
             Schedules().update_one(query, {"$set": mongo_update}).matched_count

@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from bson import ObjectId
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 from common.mongo import Tasks, RequestedTasks
 
 

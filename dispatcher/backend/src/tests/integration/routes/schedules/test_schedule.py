@@ -45,7 +45,6 @@ bad_patch_updates = [
     {"language": {"code": "bm", "name_en": "", "name_native": "Bamanankan"}},
     {"language": {"code": "bm", "name_en": "Bambara"}},
     {"enabled": "False"},
-    {"enabled": 1},
     {"category": "ubuntu"},
     {"tags": ""},
     {"tags": ["full", 1]},
@@ -110,14 +109,7 @@ class TestScheduleList:
 
     @pytest.mark.parametrize(
         "skip, limit, expected",
-        [
-            (0, 30, 30),
-            (10, 15, 15),
-            (40, 25, 11),
-            (100, 100, 0),
-            ("", 10, 10),
-            (5, "abc", 20),
-        ],
+        [(0, 30, 30), (10, 15, 15), (40, 25, 11), (100, 100, 0)],
     )
     def test_list_schedules_with_param(self, client, schedules, skip, limit, expected):
 
@@ -184,12 +176,12 @@ class TestSchedulePost:
                 },
             },
             {
-                "name": "gutenberg_multi",
+                "name": "gutenberg_mul",
                 "category": "gutenberg",
                 "enabled": True,
-                "tags": ["full", "multi"],
+                "tags": ["full", "mul"],
                 "language": {
-                    "code": "multi",
+                    "code": "mul",
                     "name_en": "Multiple Languages",
                     "name_native": "Multiple Languages",
                 },
