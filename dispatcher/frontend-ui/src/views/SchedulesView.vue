@@ -101,10 +101,6 @@
         error: null,  // API originated error message
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
-        categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
-                     "ted", "vikidia", "wikibooks", "wikinews", "wikipedia",
-                     "wikiquote", "wikisource", "wikispecies", "wikiversity",
-                     "wikivoyage", "wiktionary"],  // list of categories for fileering
         languages: [],  // list of languages for filtering
         tags: [],  // list of tags for filtering
         selectedName: "",  // entered regexp to match schedule names on
@@ -114,6 +110,7 @@
       };
     },
     computed: {
+      categories() { return Constants.categories; },
       total_results() {
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       },
@@ -153,7 +150,7 @@
 
         // download languages
         this.toggleLoader("fetching languages…");
-        parent.$root.axios.get('/languages/', {params: {limit: 1000}})
+        parent.$root.axios.get('/languages/', {params: {limit: 500}})
           .then(function (response) {
             for (var i=0; i<response.data.items.length; i++){
               parent.languages.push(response.data.items[i]);
@@ -233,7 +230,7 @@
           });
       },
     },
-    beforeMount(){
+    beforeMount() {
       this.loadMetaData();
     },
   }
