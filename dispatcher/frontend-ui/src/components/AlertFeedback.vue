@@ -55,7 +55,7 @@
     margin-right: 0;
 
     position: fixed;
-    z-index: 1100;
+    z-index: 900;
 
     width: auto;
     right: .75rem;
