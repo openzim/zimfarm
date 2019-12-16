@@ -123,7 +123,7 @@ class TestMWOfflinerFlagsValidator:
             {"mwPassword": 123},
             {"minifyHtml": "False"},
             {"publisher": 123},
-            {"requestTimeout": 1.23},
+            {"requestTimeout": "1.23"},
             {"useCache": "False"},
             {"speed": "zero"},
             {"verbose": "False"},
