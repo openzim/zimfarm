@@ -185,15 +185,8 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
                 )
 
             if "flags" in update:
-                print("Schema:", flags_schema)
                 flags_schema().load(update["flags"])
         except ValidationError as e:
-            print("ValidationError", e)
-
-            from pprint import pprint as pp
-
-            pp(request.json)
-
             raise InvalidRequestJSON(str(e.messages))
 
         if "name" in update:
@@ -207,10 +200,6 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             f"config.{key}" if key in config_keys else key: value
             for key, value in update.items()
         }
-
-        from pprint import pprint as pp
-
-        pp(mongo_update)
 
         matched_count = (
             Schedules().update_one(query, {"$set": mongo_update}).matched_count

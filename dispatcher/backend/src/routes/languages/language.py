@@ -18,7 +18,7 @@ class LanguagesRoute(BaseRoute):
                 required=False, missing=0, validate=validate.Range(min=0)
             )
             limit = fields.Integer(
-                required=False, missing=20, validate=validate.Range(min=0, max=200)
+                required=False, missing=20, validate=validate.Range(min=0, max=500)
             )
 
         request_args = SkipLimitSchema().load(request.args.to_dict())

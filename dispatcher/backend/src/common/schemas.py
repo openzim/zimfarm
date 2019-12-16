@@ -300,11 +300,11 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         },
     )
     requestTimeout = fields.Integer(
-        strict=True,
         metadata={
             "label": "Request Timeout",
             "description": "Request timeout (in seconds)",
         },
+        validate=validate.Range(min=1)
     )
     speed = fields.Float(
         metadata={
