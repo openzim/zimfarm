@@ -6,12 +6,13 @@ import flask
 from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
-from .. import API_PATH, authenticate2
-from . import validate, ssh
-from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
-from ..errors import BadRequest, Unauthorized
-from .oauth2 import OAuth2
+from common.mongo import Users, RefreshTokens
+from common.constants import REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY
+from routes import API_PATH, authenticate2
+from routes.auth import validate, ssh
+from routes.auth.oauth2 import OAuth2
+from routes.errors import BadRequest, Unauthorized
 
 
 def credentials():
@@ -52,7 +53,7 @@ def credentials():
         {
             "token": refresh_token,
             "user_id": user["_id"],
-            "expire_time": datetime.now() + timedelta(days=30),
+            "expire_time": datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 
@@ -60,7 +61,7 @@ def credentials():
     response_json = {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": timedelta(minutes=60).total_seconds(),
+        "expires_in": timedelta(hours=TOKEN_EXPIRY).total_seconds(),
         "refresh_token": refresh_token,
     }
     response = jsonify(response_json)
@@ -109,7 +110,7 @@ def refresh_token():
         {
             "token": refresh_token,
             "user_id": user["_id"],
-            "expire_time": datetime.now() + timedelta(days=30),
+            "expire_time": datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 
@@ -121,7 +122,7 @@ def refresh_token():
     response_json = {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": timedelta(minutes=60).total_seconds(),
+        "expires_in": timedelta(hours=TOKEN_EXPIRY).total_seconds(),
         "refresh_token": refresh_token,
     }
     response = jsonify(response_json)
