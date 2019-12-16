@@ -8,16 +8,8 @@
                 <label>Zimfarm</label>
             </a>
 
-            <button class="navbar-toggler" type="button"
-                    data-toggle="collapse"
-                    data-target="#navbarSupportedContent"
-                    aria-controls="navbarSupportedContent"
-                    aria-expanded="false"
-                    aria-label="Toggle menu">
-            <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+             <b-collapse id="nav-collapse" is-nav>
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
                         <router-link class="nav-link" :to="{ name: 'pipeline' }">Pipeline</router-link>
@@ -35,9 +27,8 @@
                         <span class="nav-link" href="/stats">Stats</span>
                     </li>
                 </ul>
-
                 <UserButton />
-            </div>
+            </b-collapse>
         </nav>
     </header>
 </template>

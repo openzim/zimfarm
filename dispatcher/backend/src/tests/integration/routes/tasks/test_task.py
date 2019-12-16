@@ -3,7 +3,7 @@ import json
 import pytest
 from bson import ObjectId
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 
 
 class TestTaskCreate:

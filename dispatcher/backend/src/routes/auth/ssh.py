@@ -1,4 +1,4 @@
-import os
+
 import base64
 import pathlib
 import logging
@@ -11,11 +11,9 @@ from uuid import uuid4
 from flask import request, jsonify
 
 from routes import errors
+from common.constants import OPENSSL_BIN, MESSAGE_VALIDITY
 from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
-
-OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
-MESSAGE_VALIDITY = 60  # number of seconds before a message expire
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ def asymmetric_key_auth():
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
 
-    user = Users().find_one({"username": username})
+    user = Users().find_one({"username": username}, {"username": 1, "scope": 1})
     if user is None:
         raise errors.Unauthorized("User not found")  # we shall never get there
 
@@ -107,7 +105,7 @@ def asymmetric_key_auth():
         {
             "token": refresh_token,
             "user_id": user["_id"],
-            "expire_time": datetime.datetime.now() + datetime.timedelta(days=30),
+            "expire_time": datetime.datetime.now() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 
@@ -115,7 +113,7 @@ def asymmetric_key_auth():
     response_json = {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": datetime.timedelta(minutes=60).total_seconds(),
+        "expires_in": datetime.timedelta(hours=TOKEN_EXPIRY).total_seconds(),
         "refresh_token": refresh_token,
     }
     response = jsonify(response_json)

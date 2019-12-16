@@ -18,8 +18,7 @@ class TestLanguagesList:
             assert isinstance(item["name_native"], str)
 
     @pytest.mark.parametrize(
-        "skip, limit, expected",
-        [(0, 1, 1), (1, 10, 2), (0, 100, 3)],
+        "skip, limit, expected", [(0, 1, 1), (1, 10, 2), (0, 100, 3)]
     )
     def test_list_languages_with_param(self, client, schedules, skip, limit, expected):
         """Test list languages with skip and limit"""
@@ -32,10 +31,7 @@ class TestLanguagesList:
         assert "items" in response_json
         assert len(response_json["items"]) == expected
 
-    @pytest.mark.parametrize(
-        "skip, limit",
-        [("", 10), (5, "abc")],
-    )
+    @pytest.mark.parametrize("skip, limit", [("", 10), (5, "abc")])
     def test_list_languages_with_bad_param(self, client, schedules, skip, limit):
         """Test list languages with skip and limit"""
 

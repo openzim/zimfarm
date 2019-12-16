@@ -77,7 +77,7 @@
               // save token to store
               parent.$store.dispatch('saveAuthenticationToken', token_data)
               // save to cookie
-              parent.$cookie.set('token_data', JSON.stringify(token_data), {expires: '1h'});
+              parent.$cookie.set('token_data', JSON.stringify(token_data), {expires: Constants.TOKEN_COOKIE_EXPIRY});
               // redirect
               parent.$router.back();
             })

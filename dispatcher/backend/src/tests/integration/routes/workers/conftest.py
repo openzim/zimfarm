@@ -1,4 +1,3 @@
-
 import datetime
 
 import pytest
@@ -22,11 +21,7 @@ def make_worker(database):
             "offliners": ["mwoffliner", "youtube"],
             "last_seen": last_seen,
             "status": "online",
-            "resources": {
-                "cpu": 3,
-                "memory": 1024,
-                "disk": 1024,
-            },
+            "resources": {"cpu": 3, "memory": 1024, "disk": 1024},
         }
         worker_id = database.workers.insert_one(document).inserted_id
         worker_ids.append(worker_id)

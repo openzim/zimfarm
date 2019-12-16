@@ -8,13 +8,14 @@ from http import HTTPStatus
 
 import pytz
 import pymongo
-import trafaret as t
 from flask import request, jsonify, make_response, Response
+from marshmallow import Schema, fields, validate
+from marshmallow.exceptions import ValidationError
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
-from common.mongo import RequestedTasks, Tasks, Schedules
+from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
@@ -31,17 +32,23 @@ class TasksRoute(BaseRoute):
         """Return a list of tasks"""
 
         # validate query parameter
+        class RequestArgsSchema(Schema):
+            skip = fields.Integer(
+                required=False, missing=0, validate=validate.Range(min=0)
+            )
+            limit = fields.Integer(
+                required=False, missing=100, validate=validate.Range(min=0, max=200)
+            )
+            status = fields.List(
+                fields.String(validate=validate.OneOf(TaskStatus.all())), required=False
+            )
+            schedule_name = fields.String(
+                required=False, validate=validate.Length(min=5)
+            )
+
         request_args = request.args.to_dict()
         request_args["status"] = request.args.getlist("status")
-        validator = t.Dict(
-            {
-                t.Key("skip", default=0): t.ToInt(gte=0),
-                t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
-                t.Key("status", optional=True): t.List(t.Enum(*TaskStatus.all())),
-                t.Key("schedule_name", optional=True): t.String(),
-            }
-        )
-        request_args = validator.check(request_args)
+        request_args = RequestArgsSchema().load(request_args)
 
         # unpack query parameter
         skip, limit = request_args["skip"], request_args["limit"]
@@ -99,8 +106,8 @@ class TaskRoute(BaseRoute):
         if requested_task is None:
             raise TaskNotFound()
 
-        validator = t.Dict({t.Key("worker_name"): t.String()})
-        request_args = validator.check(request.args.to_dict())
+        validator = Schema.from_dict({"worker_name": fields.String(required=True)})
+        request_args = validator().load(request.args.to_dict())
 
         now = datetime.datetime.now(tz=pytz.utc)
 
@@ -153,18 +160,19 @@ class TaskRoute(BaseRoute):
         events.remove(TaskStatus.requested)
         events.remove(TaskStatus.reserved)
 
-        validator = t.Dict(
-            t.Key("event", optional=False, trafaret=t.Enum(*events)),
-            t.Key("payload", optional=False, trafaret=t.Dict({}, allow_extra=["*"])),
+        validator = Schema.from_dict(
+            {
+                "event": fields.String(required=True, validate=validate.OneOf(events)),
+                "payload": fields.Dict(required=True),
+            }
         )
-
         try:
-            request_json = validator.check(request.get_json())
+            request_json = validator.load(request.get_json())
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
-                raise t.DataError("Update can't be empty")
-        except t.DataError as e:
-            raise InvalidRequestJSON(str(e.error))
+                raise ValidationError("Update can't be empty")
+        except ValidationError as e:
+            raise InvalidRequestJSON(e.messages)
 
         task_event_handler(task["_id"], request_json["event"], request_json["payload"])
 

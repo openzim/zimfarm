@@ -83,8 +83,8 @@
         if (Constants.now().isAfter(this.$store.getters.token_expiry)) {
           msg = "Your token already expired anyway 🤷🏾‍♂️";
         } else {
-          let minutes = (this.$store.getters.token_expiry.diff() / 1000 / 60).toFixed();
-          msg = "Your token is still valid for " + minutes + " minutes though";
+          let human_diff = Constants.format_duration(this.$store.getters.token_expiry.diff());
+          msg = "Your token is still valid for about " + human_diff + " though";
         }
         parent.$store.dispatch('clearAuthentication');
         parent.$cookie.delete('token_data');
