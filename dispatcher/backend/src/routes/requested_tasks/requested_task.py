@@ -4,10 +4,11 @@ from http import HTTPStatus
 
 import pytz
 import pymongo
-import trafaret as t
 from flask import request, jsonify, make_response, Response
+from marshmallow import Schema, fields, validate
+from marshmallow.exceptions import ValidationError
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus, Offliner
 from common.mongo import RequestedTasks, Schedules, Workers
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, TaskNotFound
@@ -28,16 +29,17 @@ class RequestedTasksRoute(BaseRoute):
     def post(self, *args, **kwargs):
         """ Create requested task from a list of schedule_names """
 
-        validator = t.Dict(
-            t.Key("schedule_names", optional=False, trafaret=t.List(t.String)),
-            t.Key("priority", optional=True, trafaret=t.ToInt(gte=0)),
-            t.Key("worker", optional=True, trafaret=t.String()),
-        )
+        class RequestArgsSchema(Schema):
+            schedule_names = fields.List(
+                fields.String(validate=validate.Length(min=5)), required=True
+            )
+            priority = fields.Integer(required=False, validate=validate.Range(min=0))
+            worker = fields.String(required=False, validate=validate.Length(min=5))
 
         try:
-            request_json = validator.check(request.get_json())
-        except t.DataError as e:
-            raise InvalidRequestJSON(str(e.error))
+            request_json = RequestArgsSchema().load(request.get_json())
+        except ValidationError as e:
+            raise InvalidRequestJSON(str(e.messages))
 
         schedule_names = request_json["schedule_names"]
         priority = request_json.get("priority", 0)
@@ -104,25 +106,36 @@ class RequestedTasksRoute(BaseRoute):
         """ list of requested tasks """
 
         # validate query parameter
+        class RequestArgsSchema(Schema):
+            skip = fields.Integer(
+                required=False, missing=0, validate=validate.Range(min=0)
+            )
+            limit = fields.Integer(
+                required=False, missing=100, validate=validate.Range(min=0, max=200)
+            )
+            priority = fields.Integer(
+                required=False, validate=validate.Range(min=0, max=10)
+            )
+            worker = fields.String(required=False)
+            schedule_name = fields.String(
+                required=False, validate=validate.Length(min=5)
+            )
+            matching_cpu = fields.Integer(
+                required=False, validate=validate.Range(min=0)
+            )
+            matching_memory = fields.Integer(
+                required=False, validate=validate.Range(min=0)
+            )
+            matching_disk = fields.Integer(
+                required=False, validate=validate.Range(min=0)
+            )
+            matching_offliners = fields.List(
+                fields.String(validate=validate.OneOf(Offliner.all())), required=False
+            )
+
         request_args = request.args.to_dict()
         request_args["matching_offliners"] = request.args.getlist("matching_offliners")
-
-        validator = t.Dict(
-            {
-                t.Key("skip", default=0): t.ToInt(gte=0),
-                t.Key("limit", default=100): t.ToInt(gt=0, lte=200),
-                t.Key("priority", optional=True): t.ToInt(gte=0, lte=10),
-                t.Key("worker", optional=True): t.String(),
-                t.Key("schedule_name", optional=True): t.String(),
-                t.Key("matching_cpu", optional=True): t.ToInt(gte=0),
-                t.Key("matching_memory", optional=True): t.ToInt(gte=0),
-                t.Key("matching_disk", optional=True): t.ToInt(gte=0),
-                t.Key("matching_offliners", optional=True): t.List(
-                    t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
-                ),
-            }
-        )
-        request_args = validator.check(request_args)
+        request_args = RequestArgsSchema().load(request_args)
 
         # unpack query parameter
         skip, limit = request_args["skip"], request_args["limit"]
@@ -213,12 +226,15 @@ class RequestedTaskRoute(BaseRoute):
         if not requested_task:
             raise TaskNotFound()
 
-        validator = t.Dict(t.Key("priority", optional=False, trafaret=t.ToInt(gte=0)))
+        class JsonRequestSchema(Schema):
+            priority = fields.Integer(
+                required=True, validate=validate.Range(min=0, max=10)
+            )
 
         try:
-            request_json = validator.check(request.get_json())
-        except t.DataError as e:
-            raise InvalidRequestJSON(str(e.error))
+            request_json = JsonRequestSchema().load(request.get_json())
+        except ValidationError as e:
+            raise InvalidRequestJSON(str(e.messages))
 
         update = RequestedTasks().update_one(
             {"_id": requested_task_id},

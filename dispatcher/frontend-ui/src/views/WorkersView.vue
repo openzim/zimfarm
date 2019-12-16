@@ -31,7 +31,7 @@
           <th v-if="row.kind == 'worker'"
               :rowspan="row.rowspan"
               class="bg-light"
-              :class="(row.status == 'online') ? 'text-success' : 'text-warning'">{{ row.worker.name }}</th>
+              :class="(row.status == 'online') ? 'text-success' : 'text-secondary'">{{ row.worker.name }}</th>
 
 
           <td v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" v-tooltip="format_dt(row.worker.last_seen)">

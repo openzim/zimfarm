@@ -8,7 +8,7 @@ import datetime
 import pytz
 from bson import ObjectId
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
 
 logger = logging.getLogger(__name__)

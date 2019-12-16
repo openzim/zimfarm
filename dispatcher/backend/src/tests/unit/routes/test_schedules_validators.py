@@ -1,11 +1,7 @@
 import pytest
-import trafaret as t
+from marshmallow.exceptions import ValidationError
 
-from routes.schedules.validators import (
-    mwoffliner_flags_validator,
-    config_validator,
-    phet_flags_validator,
-)
+from common.schemas import MWOfflinerFlagsSchema, ScheduleConfigSchema, PhetFlagsSchema
 
 
 def make_mwoffliner_flags(**kwargs):
@@ -28,7 +24,6 @@ def make_mwoffliner_flags(**kwargs):
 def make_mwoffliner_config(**kwargs):
     config = {
         "task_name": "mwoffliner",
-        "queue": "medium",
         "warehouse_path": "/wikipedia",
         "image": {"name": "openzim/mwoffliner", "tag": "1.8.0"},
         "flags": make_mwoffliner_flags(),
@@ -41,7 +36,6 @@ def make_mwoffliner_config(**kwargs):
 def make_phet_config(**kwargs):
     config = {
         "task_name": "phet",
-        "queue": "small",
         "warehouse_path": "/phet",
         "image": {"name": "openzim/phet", "tag": "latest"},
         "flags": {},
@@ -57,7 +51,7 @@ class TestMWOfflinerFlagsValidator:
             "mwUrl": "https://www.wikipedia.org",
             "adminEmail": "contact@kiwix.org",
         }
-        mwoffliner_flags_validator.check(flags)
+        MWOfflinerFlagsSchema().load(flags)
 
         flags = {
             "mwUrl": "https://en.wikipedia.org/",
@@ -81,7 +75,6 @@ class TestMWOfflinerFlagsValidator:
             "publisher": "Kiwix",
             "requestTimeout": 2,
             "useDownloadCache": True,
-            "skipCacheCleaning": False,
             "speed": 1.0,
             "verbose": False,
             "withoutZimFullTextIndex": False,
@@ -89,23 +82,23 @@ class TestMWOfflinerFlagsValidator:
             "getCategories": False,
             "noLocalParserFallback": True,
         }
-        mwoffliner_flags_validator.check(flags)
+        MWOfflinerFlagsSchema().load(flags)
 
         flags = make_mwoffliner_flags()
-        mwoffliner_flags_validator.check(flags)
+        MWOfflinerFlagsSchema().load(flags)
 
     @pytest.mark.parametrize("missing_key", ["mwUrl", "adminEmail"])
     def test_missing_required(self, missing_key):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             flags = make_mwoffliner_flags()
             flags.pop(missing_key)
-            mwoffliner_flags_validator.check(flags)
+            MWOfflinerFlagsSchema().load(flags)
 
     def test_extra_key(self):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             flags = make_mwoffliner_flags()
             flags["extra"] = "some_value"
-            mwoffliner_flags_validator.check(flags)
+            MWOfflinerFlagsSchema().load(flags)
 
     @pytest.mark.parametrize(
         "data",
@@ -130,9 +123,8 @@ class TestMWOfflinerFlagsValidator:
             {"mwPassword": 123},
             {"minifyHtml": "False"},
             {"publisher": 123},
-            {"requestTimeout": 1.23},
+            {"requestTimeout": "1.23"},
             {"useCache": "False"},
-            {"skipCacheCleaning": "False"},
             {"speed": "zero"},
             {"verbose": "False"},
             {"withoutZimFullTextIndex": "False"},
@@ -142,9 +134,9 @@ class TestMWOfflinerFlagsValidator:
         ],
     )
     def test_invalid_field(self, data):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             flags = make_mwoffliner_flags(**data)
-            mwoffliner_flags_validator.check(flags)
+            MWOfflinerFlagsSchema().load(flags)
 
     @pytest.mark.parametrize(
         "mwformat, expected",
@@ -155,47 +147,46 @@ class TestMWOfflinerFlagsValidator:
     )
     def test_duplicated_formats(self, mwformat, expected):
         flags = make_mwoffliner_flags(format=mwformat)
-        result = mwoffliner_flags_validator.check(flags)
+        result = MWOfflinerFlagsSchema().ingest(flags)
         assert set(result["format"]) == set(expected)
 
 
 class TestPhetFlagsValidator:
     def test_valid(self):
         flags = {}
-        phet_flags_validator.check(flags)
+        PhetFlagsSchema().load(flags)
 
     def test_invalid_mwoffliner(self):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             flags = make_mwoffliner_flags()
-            phet_flags_validator.check(flags)
+            PhetFlagsSchema().load(flags)
 
 
 class TestConfigValidator:
     @pytest.mark.parametrize("make_config", [make_mwoffliner_config, make_phet_config])
     def test_valid(self, make_config):
         config = make_config()
-        config_validator.check(config)
+        ScheduleConfigSchema().load(config)
 
     @pytest.mark.parametrize(
-        "missing_key", ["task_name", "queue", "warehouse_path", "image", "flags"]
+        "missing_key", ["task_name", "warehouse_path", "image", "flags"]
     )
     def test_missing_required(self, missing_key):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             config = make_mwoffliner_config()
             config.pop(missing_key)
-            config_validator.check(config)
+            ScheduleConfigSchema().load(config)
 
     def test_extra_key(self):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             config = make_mwoffliner_config()
             config["extra"] = "some_value"
-            config_validator.check(config)
+            ScheduleConfigSchema().load(config)
 
     @pytest.mark.parametrize(
         "data",
         [
             {"task_name": "unknown"},
-            {"queue": "minuscule"},
             {"warehouse_path": "/wikipedia/subdir"},
             {"warehouse_path": "/bad_path"},
             {"image": {"name": "unknown_offliner", "tag": "1.0"}},
@@ -204,6 +195,6 @@ class TestConfigValidator:
         ],
     )
     def test_invalid_field(self, data):
-        with pytest.raises(t.DataError):
+        with pytest.raises(ValidationError):
             flags = make_mwoffliner_flags(**data)
-            mwoffliner_flags_validator.check(flags)
+            MWOfflinerFlagsSchema().load(flags)

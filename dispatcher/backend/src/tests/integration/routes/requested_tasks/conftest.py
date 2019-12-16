@@ -4,7 +4,7 @@ from datetime import datetime
 import pytest
 from bson import ObjectId
 
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 from common.mongo import RequestedTasks
 
 
@@ -38,7 +38,6 @@ def make_requested_task(database, make_event):
         config = {
             "flags": {"api-key": "aaaaaa", "id": "abcde", "type": "channel"},
             "image": {"name": "openzim/youtube", "tag": "latest"},
-            "queue": "small",
             "task_name": "youtube",
             "warehouse_path": "/other",
             "resources": {"cpu": 3, "memory": 1024, "disk": 1024},

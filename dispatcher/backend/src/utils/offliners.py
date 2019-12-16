@@ -4,7 +4,7 @@
 
 import pathlib
 
-from common.entities import Offliner
+from common.enum import Offliner
 
 
 def mount_point_for(offliner):

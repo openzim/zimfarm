@@ -3,7 +3,7 @@ import os
 from pymongo import MongoClient
 from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
-from common.entities import TaskStatus
+from common.enum import TaskStatus
 
 
 class Client(MongoClient):
@@ -98,7 +98,6 @@ class Schedules(BaseCollection):
         self.create_index("name", name="name", unique=True)
         self.create_index("category", name="category")
         self.create_index("enabled", name="enabled")
-        self.create_index("config.queue", name="config.queue")
         self.create_index("language.code", name="language.code")
 
 

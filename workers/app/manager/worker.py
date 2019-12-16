@@ -26,7 +26,7 @@ from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
 class WorkerManager(BaseWorker):
-    poll_interval = os.getenv("POLL_INTERVAL", 600)  # seconds between each manual poll
+    poll_interval = os.getenv("POLL_INTERVAL", 300)  # seconds between each manual poll
     sleep_interval = os.getenv("SLEEP_INTERVAL", 5)  # seconds to sleep while idle
     events = ["requested-task", "requested-tasks", "cancel-task"]
     config_keys = ["poll_interval", "sleep_interval", "events"]
@@ -202,7 +202,7 @@ class WorkerManager(BaseWorker):
         # filter our tasks register of gone containers
         for task_id in list(self.tasks.keys()):
             if task_id not in running_task_ids:
-                logger.info("task {task_id} is not running anymore, unwatching.")
+                logger.info(f"task {task_id} is not running anymore, unwatching.")
                 self.tasks.pop(task_id, None)
 
     def stop_task_worker(self, task_id):
@@ -256,10 +256,13 @@ class WorkerManager(BaseWorker):
 
     def exit_gracefully(self, signum, frame):
         signame = signal.strsignal(signum)
-        logger.info(f"received exit signal ({signame}), stopping worker…")
         self.should_stop = True
-        for task_id in self.tasks.keys():
-            self.stop_task_worker(task_id)
+        if signum == signal.SIGQUIT:
+            logger.info(f"received exit signal ({signame}). stopping all task workers…")
+            for task_id in self.tasks.keys():
+                self.stop_task_worker(task_id)
+        else:
+            logger.info(f"received exit signal ({signame}).")
         logger.info("clean-up successful")
 
     def run(self):

@@ -16,6 +16,7 @@ from routes import (
     errors,
     tasks,
     requested_tasks,
+    offliners,
 )
 from utils.json import Encoder
 from utils.database import Initializer
@@ -69,6 +70,7 @@ app.register_blueprint(users.Blueprint())
 app.register_blueprint(workers.Blueprint())
 app.register_blueprint(languages.Blueprint())
 app.register_blueprint(tags.Blueprint())
+app.register_blueprint(offliners.Blueprint())
 
 errors.register_handlers(app)
 

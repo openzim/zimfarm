@@ -11,6 +11,11 @@ const store = new Vuex.Store({
     loading: false,
     loading_text: "",
     token: {},
+    languages: [],
+    tags: [],
+    offliners: [],
+    offliners_defs: {},
+    schedule: null,
   },
   mutations: {
     setLoading (state, payload) { // toggle GUI loader
@@ -22,7 +27,25 @@ const store = new Vuex.Store({
     },
     clearAuthentication(state) { // remove token data completely
       state.token = {};
-    }
+    },
+    saveLanguages(state, payload) {
+      state.languages = payload;
+    },
+    saveTags(state, payload) {
+      state.tags = payload;
+    },
+    saveOffliners(state, payload) {
+      state.offliners = payload;
+    },
+    saveOfflinersDefs(state, payload) {
+      state.offliners_defs = payload;
+    },
+    saveOfflinerDef(state, payload) {
+      state.offliners_defs[payload.name] = payload.def;
+    },
+    saveSchedule(state, payload) {
+      state.schedule = payload;
+    },
   },
   actions: {
     setLoading(context, payload) {
@@ -33,7 +56,28 @@ const store = new Vuex.Store({
     },
     clearAuthentication(context) {
       context.commit('clearAuthentication');
-    }
+    },
+    setLanguages(context, payload) {
+      context.commit('saveLanguages', payload);
+    },
+    setTags(context, payload) {
+      context.commit('saveTags', payload);
+    },
+    setOffliners(context, payload) {
+      context.commit('saveOffliners', payload);
+    },
+    setOfflinersDefs(context, payload) {
+      context.commit('saveOfflinersDefs', payload);
+    },
+    setOfflinerDef(context, payload) {
+      context.commit('saveOfflinerDef', payload);
+    },
+    setSchedule(context, payload) {
+      context.commit('saveSchedule', payload);
+    },
+    clearSchedule(context) {
+      context.commit('saveSchedule', null);
+    },
   },
   getters: {
     loadingStatus(state) { return {should_display: state.loading, text: state.loading_text};},
@@ -45,6 +89,12 @@ const store = new Vuex.Store({
       // TODO: improv.
       try { return Boolean(state.token.username.length); } catch { return false; }
     },
+    languages(state) { return state.languages; },
+    tags(state) { return state.tags; },
+    offliners(state) { return state.offliners; },
+    offliners_defs(state) { return state.offliners_defs; },
+    offliner_def: (state) => (offliner) => { return state.offliners_defs[offliner]; },
+    schedule(state) { return state.schedule; },
   }
 })
 

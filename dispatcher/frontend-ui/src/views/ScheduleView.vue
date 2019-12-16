@@ -7,7 +7,7 @@
     <ScheduleActionButton :name="schedule_name" />
     <h2><code>{{ schedule_name }}</code></h2>
 
-    <div v-if="!error && schedule">
+    <div v-if="!error && ready">
       <ul class="nav nav-tabs">
         <li class="nav-item" :class="{ active: selectedTab == 'details'}">
           <router-link class="nav-link"
@@ -23,6 +23,14 @@
                        :class="{ active: selectedTab == 'config'}"
                        :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'config'}}">
             Config
+          </router-link>
+        </li>
+        <li v-show="canEditSchedule" class="nav-item" :class="{ active: selectedTab == 'edit'}">
+          <router-link class="nav-link"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'edit'}"
+                       :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'edit'}}">
+            Edit
           </router-link>
         </li>
       </ul>
@@ -72,23 +80,27 @@
         </table>
       </div>
     </div>
+
+    <div v-if="selectedTab == 'edit' && canEditSchedule" class="tab-content edit-tab">
+      <ScheduleEditor :schedule_name="schedule_name"></ScheduleEditor>
+    </div>
+
     <ErrorMessage :message="error" v-if="error" />
   </div>
 </template>
 
 <script>
-  import moment from 'moment';
-
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import ScheduleActionButton from '../components/ScheduleActionButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
+  import ScheduleEditor from '../components/ScheduleEditor.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage, ResourceBadge},
+    components: {ScheduleActionButton, ErrorMessage, ResourceBadge, ScheduleEditor},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug
@@ -98,12 +110,14 @@
     },
     data() {
       return {
+        ready: false,  // whether we are ready to display
         error: null,  // API generated error message
-        schedule: null,  // schedule document returned by API
-        requested: null,
+        requested: null,  // task item from API if this is in todo
       };
     },
     computed: {
+      schedule() { return this.$store.getters.schedule || null; },
+      canEditSchedule() { return this.$store.getters.isLoggedIn; },
       name() { return this.schedule.name },
       language_name() { return this.schedule.language.name_en || null; },
       last_run() { return this.schedule.most_recent_task; },
@@ -118,6 +132,7 @@
       requested_since() { return Constants.from_now(this.requested_time); }
     },
     methods: {
+      filesize(value) { return Constants.filesize(parseInt(value)); },
       copyCommand() {
         let parent = this;
         this.$copyText(this.command).then(function () {
@@ -129,27 +144,18 @@
                          "Please copy it manually.");
           });
       },
+      setReady() { this.ready = true; },
+      setError(error) { this.error = error; },
     },
     mounted() {
       let parent = this;
 
-      parent.toggleLoader("fetching schedule…");
-      parent.$root.axios.get('/schedules/' + this.schedule_name)
-        .then(function (response) {
-            parent.error = null;
+      // redirect to details if tryng to access Edit tab without permission
+      if (this.selectedTab == 'edit' && !this.canEditSchedule) {
+        parent.$router.push({name: 'schedule-detail', params: {schedule_name: this.schedule_name}});
+      }
 
-            parent.schedule = response.data;
-            if (parent.schedule.most_recent_task) {
-              parent.schedule.most_recent_task.on = moment(parent.schedule.most_recent_task.updated_at).fromNow();
-            }
-        })
-        .catch(function (error) {
-          parent.error = Constants.standardHTTPError(error.response);
-        })
-        .then(function () {
-            parent.toggleLoader(false);
-        });
-
+      parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
       parent.$root.axios.get('/requested-tasks/')
         .then(function (response) {
             if (response.data.meta.count > 0) {
@@ -164,3 +170,10 @@
     },
   }
 </script>
+
+
+<style type="text/css" scoped>
+  .edit-tab {
+    padding: 1rem;
+  }
+</style>

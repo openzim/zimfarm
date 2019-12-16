@@ -1,5 +1,5 @@
 from flask import request, jsonify
-import trafaret
+from marshmallow import Schema, fields, validate
 
 from common.mongo import Schedules
 from routes.base import BaseRoute
@@ -13,17 +13,15 @@ class tagsRoute(BaseRoute):
     def get(self, *args, **kwargs):
         """return a list of tags"""
 
-        # unpack url parameters
-        request_args = request.args.to_dict()
-        validator = trafaret.Dict(
-            {
-                trafaret.Key("skip", default=0): trafaret.ToInt(gte=0),
-                trafaret.Key("limit", default=20): trafaret.ToInt(gt=0, lte=200),
-            }
-        )
-        request_args = validator.check(request_args)
+        class SkipLimitSchema(Schema):
+            skip = fields.Integer(
+                required=False, missing=0, validate=validate.Range(min=0)
+            )
+            limit = fields.Integer(
+                required=False, missing=20, validate=validate.Range(min=0, max=200)
+            )
 
-        # unpack query parameter
+        request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
 
         base_pipeline = [

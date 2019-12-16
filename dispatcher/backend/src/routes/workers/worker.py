@@ -7,12 +7,14 @@ import datetime
 from http import HTTPStatus
 
 import pymongo
-import trafaret as t
 from flask import request, jsonify, Response
+from marshmallow import Schema, fields, validate
+from marshmallow.exceptions import ValidationError
 
 from errors.http import InvalidRequestJSON
 from routes import authenticate, url_object_id
 from common.mongo import Workers
+from common.enum import Offliner
 from routes.base import BaseRoute
 from utils.broadcaster import BROADCASTER
 
@@ -39,14 +41,15 @@ class WorkersRoute(BaseRoute):
             )
             return worker
 
-        request_args = request.args.to_dict()
-        validator = t.Dict(
-            {
-                t.Key("skip", default=0): t.ToInt(gte=0),
-                t.Key("limit", default=20): t.ToInt(gt=0, lte=200),
-            }
-        )
-        request_args = validator.check(request_args)
+        class SkipLimitSchema(Schema):
+            skip = fields.Integer(
+                required=False, missing=0, validate=validate.Range(min=0)
+            )
+            limit = fields.Integer(
+                required=False, missing=20, validate=validate.Range(min=0, max=200)
+            )
+
+        request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
 
         query = {}
@@ -81,23 +84,19 @@ class WorkerCheckinRoute(BaseRoute):
     @authenticate
     @url_object_id("name")
     def put(self, name: str, *args, **kwargs):
-
-        validator = t.Dict(
-            {
-                t.Key("username", optional=False): t.String(),
-                t.Key("cpu", optional=False): t.ToInt(gte=0),
-                t.Key("memory", optional=False): t.ToInt(gte=0),
-                t.Key("disk", optional=False): t.ToInt(gte=0),
-                t.Key("offliners", optional=False): t.List(
-                    t.Enum("mwoffliner", "youtube", "gutenberg", "ted", "phet")
-                ),
-            }
-        )
+        class JsonRequestSchema(Schema):
+            username = fields.String(required=True)
+            cpu = fields.Integer(required=True, validate=validate.Range(min=0))
+            memory = fields.Integer(required=True, validate=validate.Range(min=0))
+            disk = fields.Integer(required=True, validate=validate.Range(min=0))
+            offliners = fields.List(
+                fields.String(validate=validate.OneOf(Offliner.all())), required=True
+            )
 
         try:
-            request_json = validator.check(request.get_json())
-        except t.DataError as e:
-            raise InvalidRequestJSON(str(e.error))
+            request_json = JsonRequestSchema().load(request.get_json())
+        except ValidationError as e:
+            raise InvalidRequestJSON(str(e.messages))
 
         document = {
             "name": name,

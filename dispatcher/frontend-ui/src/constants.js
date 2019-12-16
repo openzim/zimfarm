@@ -1,4 +1,5 @@
 import moment from 'moment'
+import filesize from 'filesize'
 import querystring from 'querystring'
 
 function format_dt(value) { // display a datetime in a standard format
@@ -67,6 +68,16 @@ function short_id(id) {  // short id of tasks (last chars)
   return id.substr(id.length - 5);
 }
 
+function filesize2(value) {
+  if (!value)
+    return '';
+  return filesize(value);
+}
+
+function duplicate(dict) {
+  return JSON.parse(JSON.stringify(dict));
+}
+
 var DEFAULT_CPU_SHARE = 1024;
 
 export default {
@@ -76,9 +87,63 @@ export default {
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
-  LIMIT_CHOICES: [10, 20, 50, 100, 200, 500],
+  LIMIT_CHOICES: [10, 20, 50, 100, 200],
+  TOKEN_COOKIE_EXPIRY: '1d',
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   contact_email: "contact@kiwix.org",
+  categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
+               "ted", "vikidia", "wikibooks", "wikinews", "wikipedia",
+               "wikiquote", "wikisource", "wikispecies", "wikiversity",
+               "wikivoyage", "wiktionary"],  // list of categories for fileering
+  warehouse_paths: ["/gutenberg", "/other", "/phet", "/psiram", "/stack_exchange",
+                    "/ted", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
+                    "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
+                    "/wikivoyage", "/wiktionary"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg"],
+  memory_values: [536870912, // 512MiB
+                  1073741824,  // 1GiB
+                  2147483648,  // 2GiB
+                  3221225472,  // 3GiB
+                  4294967296,  // 4GiB
+                  5368709120,  // 5GiB
+                  6442450944,  // 6GiB
+                  7516192768,  // 7GiB
+                  8589934592,  // 8GiB
+                  9663676416,  // 9GiB
+                  10737418240,  // 10GiB
+                  11811160064,  // 11GiB
+                  12884901888,  // 12GiB
+                  13958643712,  // 13GiB
+                  15032385536,  // 14GiB
+                  16106127360,  // 15GiB
+                  17179869184,  // 16GiB
+                  34359738368,  // 32GiB
+                  ],
+  disk_values: [536870912, // 512MiB
+                1073741824,  // 1GiB
+                2147483648,  // 2GiB
+                3221225472,  // 3GiB
+                4294967296,  // 4GiB
+                5368709120,  // 5GiB
+                16106127360,  // 15GiB
+                21474836480,  // 20GiB
+                32212254720,  // 30GiB
+                42949672960,  // 40GiB
+                53687091200,  // 50GiB
+                80530636800,  // 750GiB
+                107374182400,  // 100GiB
+                134217728000,  // 125GiB
+                161061273600,  // 150GiB
+                214748364800,  // 200GiB
+                268435456000,  // 250GiB
+                ],
+  yes_no(value, value_yes, value_no) {
+    if (!value_yes)
+      value_yes = "yes";
+    if (!value_no)
+      value_no = "no";
+    return value ? value_yes : value_no;
+  },
   standardHTTPError(response) {
     let statuses = {
       // 1××: Informational
@@ -172,4 +237,6 @@ export default {
   trim_command: trim_command,
   from_now: from_now,
   short_id: short_id,
+  filesize: filesize2,
+  duplicate: duplicate,
 };

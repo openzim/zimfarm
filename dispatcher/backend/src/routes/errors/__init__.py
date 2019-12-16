@@ -4,7 +4,7 @@ from flask import Flask, Response, jsonify, make_response
 from jwt import exceptions as jwt_exceptions
 
 from errors import oauth2, http
-import trafaret.dataerror
+import marshmallow.exceptions
 
 
 def register_handlers(app: Flask):
@@ -17,10 +17,9 @@ def register_handlers(app: Flask):
     app.errorhandler(oauth2.OAuth2Base)(oauth2.handler)
     app.errorhandler(http.HTTPBase)(http.handler)
 
-    @app.errorhandler(trafaret.dataerror.DataError)
-    def handler_dataerror(e):
-        print(e.error)
-        return make_response(jsonify({"message": e.as_dict()}), HTTPStatus.BAD_REQUEST)
+    @app.errorhandler(marshmallow.exceptions.ValidationError)
+    def handler_validationerror(e):
+        return make_response(jsonify({"message": e.messages}), HTTPStatus.BAD_REQUEST)
 
     @app.errorhandler(jwt_exceptions.ExpiredSignature)
     def handler_expiredsig(_):
