@@ -31,7 +31,9 @@ def credentials():
         raise BadRequest()
 
     # check user exists
-    user = Users().find_one({"username": username})
+    user = Users().find_one(
+        {"username": username}, {"username": 1, "scope": 1, "password_hash": 1}
+    )
     if user is None:
         raise Unauthorized()
 
@@ -94,7 +96,7 @@ def refresh_token():
 
     # check user exists
     user_id = old_token_document["user_id"]
-    user = Users().find_one({"_id": user_id}, {"password_hash": 0})
+    user = Users().find_one({"_id": user_id}, {"username": 1, "scope": 1})
     if user is None:
         raise Unauthorized()
 

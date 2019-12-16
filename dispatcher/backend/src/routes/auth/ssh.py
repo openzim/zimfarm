@@ -51,7 +51,7 @@ def asymmetric_key_auth():
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
 
-    user = Users().find_one({"username": username})
+    user = Users().find_one({"username": username}, {"username": 1, "scope": 1})
     if user is None:
         raise errors.Unauthorized("User not found")  # we shall never get there
 
