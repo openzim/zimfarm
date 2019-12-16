@@ -132,7 +132,7 @@
         <b-row>
           <b-col>
             <b-form-group label="Status:" label-for="es_enable" description="Disabled recipe can't be scheduled.">
-              <SwitchButton v-model="edit_enabled">Recipe is {{ edit_enabled|yes_no("enabled", "disabled") }}</SwitchButton>
+              <SwitchButton v-model="edit_enabled">{{ edit_enabled|yes_no("Enabled", "Disabled") }}</SwitchButton>
             </b-form-group>
           </b-col>
           <b-col>
