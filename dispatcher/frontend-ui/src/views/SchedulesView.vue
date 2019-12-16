@@ -101,8 +101,6 @@
         error: null,  // API originated error message
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
-        languages: [],  // list of languages for filtering
-        tags: [],  // list of tags for filtering
         selectedName: "",  // entered regexp to match schedule names on
         selectedCategoriesOptions: [],  // multiple-select value for selected languages to filter on (union)
         selectedLanguagesOptions: [],  // multiple-select value for selected languages to filter on (union)
@@ -110,7 +108,6 @@
       };
     },
     computed: {
-      categories() { return Constants.categories; },
       total_results() {
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       },
@@ -143,43 +140,6 @@
       limitChanged() {
         this.saveLimitPreference(this.selectedLimit);
         this.loadSchedules();
-      },
-      loadMetaData() {  // load languages and tags metadata from API then launch loadSchedules
-        let parent = this;
-        parent.error = null;
-
-        // download languages
-        this.toggleLoader("fetching languages…");
-        parent.$root.axios.get('/languages/', {params: {limit: 200}})
-          .then(function (response) {
-            for (var i=0; i<response.data.items.length; i++){
-              parent.languages.push(response.data.items[i]);
-            }
-          })
-          .catch(function (error) {
-            parent.error = Constants.standardHTTPError(error.response);
-            return;
-          }).then(function () {
-            parent.toggleLoader(false);
-          });
-
-        // download tags
-        this.toggleLoader("fetching tags…");
-        parent.$root.axios.get('/tags/', {params: {limit: 200}})
-          .then(function (response) {
-            for (var i=0; i<response.data.items.length; i++){
-              parent.tags.push(response.data.items[i]);
-            }
-          })
-          .catch(function (error) {
-            parent.error = Constants.standardHTTPError(error.response);
-            return;
-          }).then(function () {
-            parent.toggleLoader(false);
-          });
-
-          // metadata loaded, load schedules
-          this.loadSchedules();
       },
       loadSchedules() {  // load filtered schedules from API
         let parent = this;
@@ -231,7 +191,7 @@
       },
     },
     beforeMount() {
-      this.loadMetaData();
+      this.loadSchedules();
     },
   }
 </script>

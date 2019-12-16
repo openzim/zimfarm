@@ -88,6 +88,7 @@ export default {
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
   LIMIT_CHOICES: [10, 20, 50, 100, 200],
+  TOKEN_COOKIE_EXPIRY: '1d',
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",

@@ -67,6 +67,10 @@ import Tooltip from 'vue-directive-tooltip';
 import 'vue-directive-tooltip/dist/vueDirectiveTooltip.css';
 Vue.use(Tooltip);
 
+// Sugar extensions
+import Sugar from 'sugar'
+Sugar.extend({namespaces: [Array, Object]});
+
 // Own modules
 import App from './App.vue'
 import Constants from './constants.js'
@@ -92,13 +96,13 @@ new Vue({
   store: store,
   router: router,
   computed: {
-      axios() { // prefixed axios object with API url and token from store
-        return axios.create({
-            baseURL: Constants.zimfarm_webapi,
-            headers: {'Authorization': "Token " + store.getters.access_token},
-            paramsSerializer: Constants.params_serializer,
-          });
-      }
+    axios() { // prefixed axios object with API url and token from store
+      return axios.create({
+          baseURL: Constants.zimfarm_webapi,
+          headers: {'Authorization': "Token " + store.getters.access_token},
+          paramsSerializer: Constants.params_serializer,
+        });
+    },
   },
   render: h => h(App),
 }).$mount('#app')
