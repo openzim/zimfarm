@@ -39,7 +39,7 @@ class SchedulesRoute(BaseRoute):
                 required=False, missing=0, validate=validate.Range(min=0)
             )
             limit = fields.Integer(
-                required=False, missing=20, validate=validate.Range(min=0)
+                required=False, missing=20, validate=validate.Range(min=0, max=200)
             )
             category = fields.List(
                 fields.String(validate=validate.OneOf(ScheduleCategory.all())),

@@ -111,7 +111,7 @@ class RequestedTasksRoute(BaseRoute):
                 required=False, missing=0, validate=validate.Range(min=0)
             )
             limit = fields.Integer(
-                required=False, missing=100, validate=validate.Range(min=0)
+                required=False, missing=100, validate=validate.Range(min=0, max=200)
             )
             priority = fields.Integer(
                 required=False, validate=validate.Range(min=0, max=10)

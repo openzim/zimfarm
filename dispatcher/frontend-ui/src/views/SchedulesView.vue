@@ -150,7 +150,7 @@
 
         // download languages
         this.toggleLoader("fetching languages…");
-        parent.$root.axios.get('/languages/', {params: {limit: 500}})
+        parent.$root.axios.get('/languages/', {params: {limit: 200}})
           .then(function (response) {
             for (var i=0; i<response.data.items.length; i++){
               parent.languages.push(response.data.items[i]);

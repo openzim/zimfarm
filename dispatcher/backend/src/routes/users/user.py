@@ -22,7 +22,7 @@ def list(token: AccessToken.Payload):
             required=False, missing=0, validate=mm_validate.Range(min=0)
         )
         limit = fields.Integer(
-            required=False, missing=20, validate=mm_validate.Range(min=0)
+            required=False, missing=20, validate=mm_validate.Range(min=0, max=200)
         )
 
     request_args = SkipLimitSchema().load(request.args.to_dict())

@@ -21,7 +21,7 @@
       <b-dropdown-item v-for="worker in workers"
                        v-bind:key="worker.name"
                        @click.prevent="request_task(worker.name);"
-                       :variant="worker.status == 'online' ? 'success' : 'warning'">{{ worker.name }}</b-dropdown-item>
+                       :variant="worker.status == 'online' ? 'success' : 'secondary'">{{ worker.name }}</b-dropdown-item>
     </b-dropdown>
     <b-button v-if="can_unrequest" size="sm" variant="secondary" @click.prevent="unrequest_task">
       <font-awesome-icon icon="trash-alt" size="sm" /> Un-request
