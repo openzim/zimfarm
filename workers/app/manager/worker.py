@@ -26,7 +26,7 @@ from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
 class WorkerManager(BaseWorker):
-    poll_interval = os.getenv("POLL_INTERVAL", 600)  # seconds between each manual poll
+    poll_interval = os.getenv("POLL_INTERVAL", 300)  # seconds between each manual poll
     sleep_interval = os.getenv("SLEEP_INTERVAL", 5)  # seconds to sleep while idle
     events = ["requested-task", "requested-tasks", "cancel-task"]
     config_keys = ["poll_interval", "sleep_interval", "events"]
