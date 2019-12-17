@@ -63,7 +63,7 @@ class RequestedTasksRoute(BaseRoute):
         for schedule_name in schedule_names:
 
             # skip if already requested
-            if RequestedTasks.count_documents(
+            if RequestedTasks().count_documents(
                 {"schedule_name": schedule_name, "worker": worker}
             ):
                 continue

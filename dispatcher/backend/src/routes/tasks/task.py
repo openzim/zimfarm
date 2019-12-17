@@ -167,7 +167,7 @@ class TaskRoute(BaseRoute):
             }
         )
         try:
-            request_json = validator.load(request.get_json())
+            request_json = validator().load(request.get_json())
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
                 raise ValidationError("Update can't be empty")
