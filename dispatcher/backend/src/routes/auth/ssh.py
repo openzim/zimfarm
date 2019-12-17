@@ -1,4 +1,3 @@
-
 import base64
 import pathlib
 import logging
@@ -11,7 +10,12 @@ from uuid import uuid4
 from flask import request, jsonify
 
 from routes import errors
-from common.constants import OPENSSL_BIN, MESSAGE_VALIDITY
+from common.constants import (
+    OPENSSL_BIN,
+    MESSAGE_VALIDITY,
+    REFRESH_TOKEN_EXPIRY,
+    TOKEN_EXPIRY,
+)
 from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
 
@@ -49,9 +53,13 @@ def asymmetric_key_auth():
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
 
-    user = Users().find_one({"username": username}, {"username": 1, "scope": 1})
+    user = Users().find_one(
+        {"username": username}, {"username": 1, "scope": 1, "ssh_keys": 1}
+    )
     if user is None:
         raise errors.Unauthorized("User not found")  # we shall never get there
+    else:
+        ssh_keys = user.pop("ssh_keys", [])
 
     # check that the message was signed with a known private key
     authenticated = False
@@ -66,7 +74,7 @@ def asymmetric_key_auth():
         with open(signatured_path, "wb") as fp:
             fp.write(signature)
 
-        for ssh_key in user.get("ssh_keys", []):
+        for ssh_key in ssh_keys:
             pkcs8_data = ssh_key.get("pkcs8_key")
             if not pkcs8_data:  # User record has no PKCS8 version
                 continue
@@ -105,7 +113,8 @@ def asymmetric_key_auth():
         {
             "token": refresh_token,
             "user_id": user["_id"],
-            "expire_time": datetime.datetime.now() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
+            "expire_time": datetime.datetime.now()
+            + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 
