@@ -20,12 +20,6 @@ def validate_positive_integer(value):
         raise ValidationError("Can't be negative")
 
 
-def validate_name(value):
-    min_length = 5
-    if len(value) < min_length:
-        raise ValidationError(f"Can't be less than {min_length} chars long.")
-
-
 def validate_output(value):
     if value != "/output":
         raise ValidationError("Must be /output.")
@@ -89,7 +83,7 @@ class SerializableSchema(Schema):
         return cls().dump(cls().load(*args, **kwargs))
 
 
-name_schema = fields.String(required=True, validate=validate_name)
+name_schema = fields.String(required=True, validate=validate.Length(min=2))
 category_schema = StringEnum(required=True, validate=validate_category)
 warehouse_path_schema = StringEnum(required=True, validate=validate_warehouse_path)
 offliner_schema = StringEnum(required=True, validate=validate_offliner)
