@@ -62,6 +62,12 @@ class RequestedTasksRoute(BaseRoute):
         requested_tasks = []
         for schedule_name in schedule_names:
 
+            # skip if already requested
+            if RequestedTasks().count_documents(
+                {"schedule_name": schedule_name, "worker": worker}
+            ):
+                continue
+
             schedule = Schedules().find_one(
                 {"name": schedule_name, "enabled": True}, {"config": 1}
             )
