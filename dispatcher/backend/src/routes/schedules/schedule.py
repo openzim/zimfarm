@@ -13,7 +13,6 @@ from routes.schedules.base import ScheduleQueryMixin
 from .. import authenticate
 from ..base import BaseRoute
 from common.schemas import (
-    validate_name,
     LanguageSchema,
     ResourcesSchema,
     validate_category,
@@ -47,7 +46,7 @@ class SchedulesRoute(BaseRoute):
             )
             tag = fields.List(fields.String(), required=False)
             lang = fields.List(fields.String(), required=False)
-            name = fields.String(required=False, validate=validate.Length(min=5))
+            name = fields.String(required=False, validate=validate.Length(min=2))
 
         request_args = request.args.to_dict()
         for key in ("category", "tag", "lang"):
@@ -151,7 +150,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise ScheduleNotFound()
 
         class UpdateSchema(Schema):
-            name = fields.String(required=False, validate=validate_name)
+            name = fields.String(required=False, validate=validate.Length(min=2))
             language = fields.Nested(LanguageSchema(), required=False)
             category = fields.String(required=False, validate=validate_category)
             tags = fields.List(fields.String(), required=False)
