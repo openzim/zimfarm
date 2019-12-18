@@ -7,13 +7,15 @@ from datetime import datetime, timedelta
 import jwt
 from bson import ObjectId
 
+from common.constants import TOKEN_EXPIRY
+
 
 class AccessToken:
     secret = "".join(
         [random.choice(string.ascii_letters + string.digits) for _ in range(32)]
     )
     issuer = "dispatcher"
-    expire_time_delta = timedelta(days=1)
+    expire_time_delta = timedelta(hours=TOKEN_EXPIRY)
 
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
@@ -51,11 +53,11 @@ class AccessToken:
         issue_time = datetime.now()
         expire_time = issue_time + cls.expire_time_delta
         payload = {
-            "iss": cls.issuer,
-            "exp": expire_time,
-            "iat": issue_time,
-            "jti": uuid.uuid4(),
-            "user": user,
+            "iss": cls.issuer,  # issuer
+            "exp": expire_time,  # expiration date
+            "iat": issue_time,  # issue date
+            # "rti": uuid.uuid4(),  # identifier for this token?
+            "user": user,  # user payload (username, scope)
         }
         return jwt.encode(
             payload, key=cls.secret, algorithm="HS256", json_encoder=cls.JSONEncoder
@@ -64,6 +66,10 @@ class AccessToken:
     @classmethod
     def decode(cls, token: str) -> dict:
         return jwt.decode(token, cls.secret, algorithms=["HS256"])
+
+    @classmethod
+    def get_expiry(cls, token: str) -> datetime:
+        return datetime.fromtimestamp(cls.decode(token)["exp"])
 
 
 class LoadedAccessToken(AccessToken):
