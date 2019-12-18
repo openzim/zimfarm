@@ -10,8 +10,8 @@ from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
-from .. import authenticate
-from ..base import BaseRoute
+from routes import authenticate
+from routes.base import BaseRoute
 from common.schemas import (
     LanguageSchema,
     ResourcesSchema,

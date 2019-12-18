@@ -6,13 +6,19 @@ from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
 from marshmallow import Schema, fields, validate as mm_validate
 
-from routes import authenticate2, url_object_id, errors
 from common.mongo import Users
+from common.roles import get_role_for
+from routes import authenticate, url_object_id, errors
 from utils.token import AccessToken
 
 
-@authenticate2
-def list(token: AccessToken.Payload):
+def _add_role(user):
+    user.update({"role": get_role_for(user.get("scope"))})
+    return user
+
+
+@authenticate
+def list_all(*, token: AccessToken.Payload):
     # check user permission
     if not token.get_permission("users", "read"):
         raise errors.NotEnoughPrivilege()
@@ -37,14 +43,15 @@ def list(token: AccessToken.Payload):
         .skip(skip)
         .limit(limit)
     )
-    users = [user for user in cursor]
+    # users = [user for user in cursor]
+    users = list(map(_add_role, cursor))
 
     return jsonify(
         {"meta": {"skip": skip, "limit": limit, "count": count}, "items": users}
     )
 
 
-@authenticate2
+@authenticate
 def create(token: AccessToken.Payload):
     # check user permission
     if not token.get_permission("users", "create"):
@@ -79,7 +86,7 @@ def create(token: AccessToken.Payload):
         raise errors.BadRequest("User already exists")
 
 
-@authenticate2
+@authenticate
 @url_object_id("username")
 def get(token: AccessToken.Payload, username: str):
     # if user in url is not user in token, check user permission
@@ -89,15 +96,19 @@ def get(token: AccessToken.Payload, username: str):
 
     # find user based on _id or username
     user = Users().find_one(
-        {"username": username}, {"_id": 0, "username": 1, "email": 1, "scope": 1}
+        {"username": username},
+        {"_id": 0, "username": 1, "email": 1, "scope": 1, "ssh_keys": 1},
     )
 
     if user is None:
         raise errors.NotFound()
+
+    user["role"] = get_role_for(user.get("scope"))
+
     return jsonify(user)
 
 
-@authenticate2
+@authenticate
 @url_object_id("username")
 def delete(token: AccessToken.Payload, username: str):
     # if user in url is not user in token, check user permission

@@ -10,14 +10,14 @@ import jsonschema
 import paramiko
 from flask import request, jsonify, Response
 
-from routes import authenticate2, url_object_id, errors
+from routes import authenticate, url_object_id, errors
 from common.mongo import Users
 from utils.token import AccessToken
 
 
-@authenticate2
+@authenticate
 @url_object_id("username")
-def list(username: str, token: AccessToken.Payload):
+def list_all(username: str, token: AccessToken.Payload):
     # if user in url is not user in token, check user permission
     if username != token.username:
         if not token.get_permission("users", "ssh_keys.read"):
@@ -31,7 +31,7 @@ def list(username: str, token: AccessToken.Payload):
     return jsonify(ssh_keys)
 
 
-@authenticate2
+@authenticate
 @url_object_id(["username"])
 def add(token: AccessToken.Payload, username: str):
     # if user in url is not user in token, not allowed to add ssh keys
@@ -103,7 +103,7 @@ def add(token: AccessToken.Payload, username: str):
     return Response(status=HTTPStatus.CREATED)
 
 
-@authenticate2
+@authenticate
 @url_object_id("username")
 def delete(token: AccessToken.Payload, username: str, fingerprint: str):
     # if user in url is not user in token, check user permission

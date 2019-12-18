@@ -9,7 +9,7 @@ from flask.testing import FlaskClient
 from main import app
 from common import mongo
 from routes import API_PATH
-from utils.token import AccessControl
+from utils.token import LoadedAccessToken
 
 # monley-patching FlaskClient to prefix test URLs with proper API_PATH
 original_get = FlaskClient.get
@@ -68,7 +68,7 @@ def client():
 
 @pytest.fixture(scope="session")
 def access_token():
-    token = AccessControl(ObjectId(), "username", {}).encode()
+    token = LoadedAccessToken(ObjectId(), "username", {}).encode()
     yield "Bearer {}".format(token)
 
 

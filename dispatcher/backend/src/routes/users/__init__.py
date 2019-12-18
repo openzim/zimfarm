@@ -8,7 +8,7 @@ class Blueprint(flask.Blueprint):
     def __init__(self):
         super().__init__("users", __name__, url_prefix=f"{API_PATH}/users")
 
-        self.add_url_rule("/", "list_users", user.list, methods=["GET"])
+        self.add_url_rule("/", "list_users", user.list_all, methods=["GET"])
         self.add_url_rule("/", "create_user", user.create, methods=["POST"])
 
         self.add_url_rule("/<string:username>", "get_user", user.get, methods=["GET"])
@@ -17,7 +17,7 @@ class Blueprint(flask.Blueprint):
         )
 
         self.add_url_rule(
-            "/<string:username>/keys/", "list_ssh_keys", keys.list, methods=["GET"]
+            "/<string:username>/keys/", "list_ssh_keys", keys.list_all, methods=["GET"]
         )
         self.add_url_rule(
             "/<string:username>/keys/", "add_ssh_keys", keys.add, methods=["POST"]

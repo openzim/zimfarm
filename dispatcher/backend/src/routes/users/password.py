@@ -3,12 +3,12 @@ from http import HTTPStatus
 from flask import request, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from routes import authenticate2, url_object_id, errors
+from routes import authenticate, url_object_id, errors
 from utils.token import AccessToken
 from common.mongo import Users
 
 
-@authenticate2
+@authenticate
 @url_object_id(["username"])
 def update(token: AccessToken.Payload, username: str):
     query = {"username": username}

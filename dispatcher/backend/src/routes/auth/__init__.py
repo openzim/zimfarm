@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash
 from utils.token import AccessToken
 from common.mongo import Users, RefreshTokens
 from common.constants import REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY
-from routes import API_PATH, authenticate2
+from routes import API_PATH, authenticate
 from routes.auth import validate, ssh
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
@@ -131,7 +131,7 @@ def refresh_token():
     return response
 
 
-@authenticate2
+@authenticate
 def test(token: AccessToken.Payload):
     return Response(status=HTTPStatus.NO_CONTENT)
 
