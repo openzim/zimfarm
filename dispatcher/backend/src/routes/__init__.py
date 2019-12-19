@@ -6,7 +6,7 @@ from jwt import exceptions as jwt_exceptions
 from bson.objectid import ObjectId, InvalidId
 
 from utils.token import AccessToken
-from .errors import Unauthorized
+from .errors import Unauthorized, NotEnoughPrivilege
 
 API_PATH = "/v1"
 
@@ -39,6 +39,22 @@ def authenticate(f):
 
     return wrapper
 
+
+def require_perm(namespace: str, perm_name: str):
+
+    def decorate(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            token = kwargs.get("token")
+            if not token:
+                raise Unauthorized("token missing")
+            if not token.get_permission(namespace, perm_name):
+                raise NotEnoughPrivilege(f"{namespace}.{perm_name}")
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorate
 
 def auth_info_if_supplied(f):
     @wraps(f)

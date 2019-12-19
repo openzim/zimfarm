@@ -4,8 +4,8 @@ from datetime import datetime
 from http import HTTPStatus
 
 import paramiko
-import jsonschema
 from flask import request, Response
+from marshmallow import Schema, fields, validate, ValidationError
 
 from routes import errors
 from common.mongo import Users
@@ -17,20 +17,14 @@ def ssh_key():
     """
 
     # validate request json
-    schema = {
-        "type": "object",
-        "properties": {
-            "username": {"type": "string", "minLength": 1},
-            "key": {"type": "string", "minLength": 1},
-        },
-        "required": ["username", "key"],
-        "additionalProperties": False,
-    }
+    class KeySchema(Schema):
+        username = fields.String(required=True, validate=validate.Length(min=1))
+        key = fields.String(required=True, validate=validate.Length(min=1))
+
     try:
-        request_json = request.get_json()
-        jsonschema.validate(request_json, schema)
-    except jsonschema.ValidationError as error:
-        raise errors.BadRequest(error.message)
+        request_json = KeySchema().load(request.get_json())
+    except ValidationError as e:
+        raise errors.InvalidRequestJSON(e.messages)
 
     # compute fingerprint
     try:

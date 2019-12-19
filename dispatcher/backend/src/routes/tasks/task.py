@@ -9,15 +9,15 @@ from http import HTTPStatus
 import pytz
 import pymongo
 from flask import request, jsonify, make_response, Response
-from marshmallow import Schema, fields, validate
-from marshmallow.exceptions import ValidationError
+from marshmallow import Schema, fields, validate, ValidationError
 
 from common.enum import TaskStatus
+from utils.token import AccessToken
 from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id
+from routes import authenticate, url_object_id, require_perm
 from routes.base import BaseRoute
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class TasksRoute(BaseRoute):
     name = "tasks"
     methods = ["GET"]
 
-    def get(self, *args, **kwargs):
+    def get(self):
         """Return a list of tasks"""
 
         # validate query parameter
@@ -91,7 +91,7 @@ class TaskRoute(BaseRoute):
     methods = ["GET", "POST", "PATCH"]
 
     @url_object_id("task_id")
-    def get(self, task_id: str, *args, **kwargs):
+    def get(self, task_id: str):
         task = Tasks().find_one({"_id": task_id})
         if task is None:
             raise TaskNotFound()
@@ -99,9 +99,11 @@ class TaskRoute(BaseRoute):
         return jsonify(task)
 
     @authenticate
+    @require_perm("tasks", "create")
     @url_object_id("task_id")
-    def post(self, task_id: str, *args, **kwargs):
+    def post(self, task_id: str, token: AccessToken.Payload):
         """ create a task from a requested_task_id """
+
         requested_task = RequestedTasks().find_one({"_id": task_id})
         if requested_task is None:
             raise TaskNotFound()
@@ -149,8 +151,10 @@ class TaskRoute(BaseRoute):
         )
 
     @authenticate
+    @require_perm("tasks", "update")
     @url_object_id("task_id")
-    def patch(self, task_id: str, *args, **kwargs):
+    def patch(self, task_id: str, token: AccessToken.Payload):
+
         task = Tasks().find_one({"_id": task_id}, {"_id": 1})
         if task is None:
             raise TaskNotFound()
@@ -189,23 +193,18 @@ class TaskCancelRoute(BaseRoute):
     methods = ["POST"]
 
     @authenticate
+    @require_perm("tasks", "cancel")
     @url_object_id("task_id")
-    def post(self, task_id: str, *args, **kwargs):
+    def post(self, task_id: str, token: AccessToken.Payload):
+
         task = Tasks().find_one(
             {"status": {"$in": TaskStatus.incomplete()}, "_id": task_id}, {"_id": 1}
         )
         if task is None:
             raise TaskNotFound()
 
-        try:
-            username = kwargs["token"].username
-        except Exception as exc:
-            logger.error("unable to retrieve username from token")
-            logger.exception(exc)
-            username = None
-
         task_event_handler(
-            task["_id"], TaskStatus.cancel_requested, {"canceled_by": username}
+            task["_id"], TaskStatus.cancel_requested, {"canceled_by": token.username}
         )
 
         # broadcast cancel-request to worker

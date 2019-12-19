@@ -5,17 +5,17 @@ from http import HTTPStatus
 import pytz
 import pymongo
 from flask import request, jsonify, make_response, Response
-from marshmallow import Schema, fields, validate
-from marshmallow.exceptions import ValidationError
+from marshmallow import Schema, fields, validate, ValidationError
 
 from common.enum import TaskStatus, Offliner
 from common.mongo import RequestedTasks, Schedules, Workers
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id, auth_info_if_supplied
+from routes import authenticate, url_object_id, auth_info_if_supplied, require_perm
 from routes.base import BaseRoute
 from routes.errors import NotFound
 from utils.broadcaster import BROADCASTER
+from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,8 @@ class RequestedTasksRoute(BaseRoute):
     methods = ["POST", "GET"]
 
     @authenticate
-    def post(self, *args, **kwargs):
+    @require_perm("tasks", "request")
+    def post(self, token: AccessToken.Payload):
         """ Create requested task from a list of schedule_names """
 
         class RequestArgsSchema(Schema):
@@ -39,7 +40,7 @@ class RequestedTasksRoute(BaseRoute):
         try:
             request_json = RequestArgsSchema().load(request.get_json())
         except ValidationError as e:
-            raise InvalidRequestJSON(str(e.messages))
+            raise InvalidRequestJSON(e.messages)
 
         schedule_names = request_json["schedule_names"]
         priority = request_json.get("priority", 0)
@@ -50,13 +51,6 @@ class RequestedTasksRoute(BaseRoute):
             {"name": {"$in": schedule_names}, "enabled": True}
         ) >= len(schedule_names):
             raise NotFound()
-
-        try:
-            username = kwargs["token"].username
-        except Exception as exc:
-            logger.error("unable to retrieve username from token")
-            logger.exception(exc)
-            username = None
 
         now = datetime.datetime.now(tz=pytz.utc)
         requested_tasks = []
@@ -84,7 +78,7 @@ class RequestedTasksRoute(BaseRoute):
                 "status": TaskStatus.requested,
                 "timestamp": {TaskStatus.requested: now},
                 "events": [{"code": TaskStatus.requested, "timestamp": now}],
-                "requested_by": username,
+                "requested_by": token.username,
                 "priority": priority,
                 "worker": worker,
                 "config": config,
@@ -108,7 +102,7 @@ class RequestedTasksRoute(BaseRoute):
         )
 
     @auth_info_if_supplied
-    def get(self, *args, **kwargs):
+    def get(self, token: AccessToken.Payload = None):
         """ list of requested tasks """
 
         # validate query parameter
@@ -148,7 +142,6 @@ class RequestedTasksRoute(BaseRoute):
         schedule_name = request_args.get("schedule_name")
         priority = request_args.get("priority")
         worker = request_args.get("worker")
-        token = kwargs.get("token")
 
         # record we've seen a worker, if applicable
         if token and worker:
@@ -217,7 +210,7 @@ class RequestedTaskRoute(BaseRoute):
     methods = ["GET", "PATCH", "DELETE"]
 
     @url_object_id("requested_task_id")
-    def get(self, requested_task_id: str, *args, **kwargs):
+    def get(self, requested_task_id: str):
 
         requested_task = RequestedTasks().find_one({"_id": requested_task_id})
         if requested_task is None:
@@ -225,8 +218,10 @@ class RequestedTaskRoute(BaseRoute):
 
         return jsonify(requested_task)
 
+    @authenticate
+    @require_perm("tasks", "update")
     @url_object_id("requested_task_id")
-    def patch(self, requested_task_id: str, *args, **kwargs):
+    def patch(self, requested_task_id: str, token: AccessToken.Payload):
 
         requested_task = RequestedTasks().count_documents({"_id": requested_task_id})
         if not requested_task:
@@ -240,7 +235,7 @@ class RequestedTaskRoute(BaseRoute):
         try:
             request_json = JsonRequestSchema().load(request.get_json())
         except ValidationError as e:
-            raise InvalidRequestJSON(str(e.messages))
+            raise InvalidRequestJSON(e.messages)
 
         update = RequestedTasks().update_one(
             {"_id": requested_task_id},
@@ -251,8 +246,9 @@ class RequestedTaskRoute(BaseRoute):
         return Response(status=HTTPStatus.OK)
 
     @authenticate
+    @require_perm("tasks", "delete")
     @url_object_id("requested_task_id")
-    def delete(self, requested_task_id: str, *args, **kwargs):
+    def delete(self, requested_task_id: str, token: AccessToken.Payload):
 
         query = {"_id": requested_task_id}
         task = RequestedTasks().find_one(query, {"_id": 1})

@@ -406,7 +406,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
+  /schedules/{scheduleName}/clone:
+    post:
+      tags:
+      - restricted
+      summary: clone schedule
+      operationId: cloneSchedule
+      description: Clone a Schedule into another
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+        - $ref: '#/components/parameters/ScheduleNameParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  $ref: '#/components/schemas/ScheduleName'
+      responses:
+        201:
+          description: Schedule cloned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /requested-tasks/:
     get:
       tags:
@@ -1044,6 +1085,37 @@ paths:
                     $ref: '#/components/schemas/UserEmail'
                   scope:
                     $ref: '#/components/schemas/Scope'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+    patch:
+      tags:
+      - restricted
+      summary: update user details
+      operationId: updateUser
+      description: Change a User's details
+      security:
+        - token: []
+        - ouath: []
+      parameters:
+      - $ref: '#/components/parameters/UsernameParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                email:
+                  $ref: '#/components/schemas/Email'
+                role:
+                  $ref: '#/components/schemas/Role'
+      responses:
+        204:
+          description: User Updated
         400:
           description: Bad Request (invalid input)
           content:
@@ -1864,3 +1936,16 @@ components:
       format: Int32
       description: Positive int priority for requested_task. Default priority is 0.
       example: 5
+    Email:
+      type: string
+      format: email
+      example: user@kiwix.org
+    Role:
+      type: string
+      example: admin
+      enum:
+        - editor
+        - manager
+        - admin
+        - worker
+        - processor

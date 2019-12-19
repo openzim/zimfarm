@@ -8,8 +8,7 @@ from http import HTTPStatus
 
 import pymongo
 from flask import request, jsonify, Response
-from marshmallow import Schema, fields, validate
-from marshmallow.exceptions import ValidationError
+from marshmallow import Schema, fields, validate, ValidationError
 
 from errors.http import InvalidRequestJSON
 from routes import authenticate, url_object_id
@@ -96,7 +95,7 @@ class WorkerCheckinRoute(BaseRoute):
         try:
             request_json = JsonRequestSchema().load(request.get_json())
         except ValidationError as e:
-            raise InvalidRequestJSON(str(e.messages))
+            raise InvalidRequestJSON(e.messages)
 
         document = {
             "name": name,

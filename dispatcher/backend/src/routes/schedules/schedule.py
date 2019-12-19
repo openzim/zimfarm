@@ -1,16 +1,16 @@
 from http import HTTPStatus
 
 from flask import request, jsonify, Response, make_response
-from marshmallow import Schema, fields, validate
-from marshmallow.exceptions import ValidationError
+from marshmallow import Schema, fields, validate, ValidationError
 
 from common.mongo import Schedules
 from common.enum import ScheduleCategory
+from utils.token import AccessToken
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
-from routes import authenticate
+from routes import authenticate, require_perm
 from routes.base import BaseRoute
 from common.schemas import (
     LanguageSchema,
@@ -29,7 +29,7 @@ class SchedulesRoute(BaseRoute):
     name = "schedules"
     methods = ["GET", "POST"]
 
-    def get(self, *args, **kwargs):
+    def get(self):
         """Return a list of schedules"""
 
         # unpack url parameters
@@ -91,13 +91,14 @@ class SchedulesRoute(BaseRoute):
         )
 
     @authenticate
-    def post(self, *args, **kwargs):
+    @require_perm("schedules", "create")
+    def post(self, token: AccessToken.Payload):
         """create a new schedule"""
 
         try:
             document = ScheduleSchema().load(request.get_json())
         except ValidationError as e:
-            raise InvalidRequestJSON(str(e.messages))
+            raise InvalidRequestJSON(e.messages)
 
         # make sure it's not a duplicate
         if Schedules().find_one({"name": document["name"]}, {"name": 1}):
@@ -115,7 +116,7 @@ class SchedulesBackupRoute(BaseRoute):
     name = "schedules_backup"
     methods = ["GET"]
 
-    def get(self, *args, **kwargs):
+    def get(self):
         """Return all schedules backup"""
 
         projection = {"most_recent_task": 0}
@@ -129,7 +130,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
     name = "schedule"
     methods = ["GET", "PATCH", "DELETE"]
 
-    def get(self, schedule_name: str, *args, **kwargs):
+    def get(self, schedule_name: str):
         """Get schedule object."""
 
         query = {"name": schedule_name}
@@ -141,7 +142,8 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         return jsonify(schedule)
 
     @authenticate
-    def patch(self, schedule_name: str, *args, **kwargs):
+    @require_perm("schedules", "update")
+    def patch(self, schedule_name: str, token: AccessToken.Payload):
         """Update all properties of a schedule but _id and most_recent_task"""
 
         query = {"name": schedule_name}
@@ -164,7 +166,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             flags = fields.Dict(required=False)
 
         try:
-            update = UpdateSchema().load(request.json)  # , partial=True
+            update = UpdateSchema().load(request.get_json())  # , partial=True
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
                 raise ValidationError("Update can't be empty")
@@ -186,7 +188,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             if "flags" in update:
                 flags_schema().load(update["flags"])
         except ValidationError as e:
-            raise InvalidRequestJSON(str(e.messages))
+            raise InvalidRequestJSON(e.messages)
 
         if "name" in update:
             if Schedules().count_documents({"name": update["name"]}):
@@ -210,7 +212,8 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise ScheduleNotFound()
 
     @authenticate
-    def delete(self, schedule_name: str, *args, **kwargs):
+    @require_perm("schedules", "delete")
+    def delete(self, schedule_name: str, token: AccessToken.Payload):
         """Delete a schedule."""
 
         query = {"name": schedule_name}
@@ -220,3 +223,40 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise ScheduleNotFound()
         else:
             return Response(status=HTTPStatus.NO_CONTENT)
+
+
+class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
+    rule = "/<string:schedule_name>/clone"
+    name = "schedule-clone"
+    methods = ["POST"]
+
+    @authenticate
+    @require_perm("schedules", "create")
+    def post(self, schedule_name: str, token: AccessToken.Payload):
+        """Update all properties of a schedule but _id and most_recent_task"""
+
+        query = {"name": schedule_name}
+        schedule = Schedules().find_one(query)
+        if not schedule:
+            raise ScheduleNotFound()
+
+        class CloneSchema(Schema):
+            name = fields.String(required=True, validate=validate.Length(min=2))
+
+        request_json = CloneSchema().load(request.get_json())
+        new_schedule_name = request_json["name"]
+
+        # ensure it's not a duplicate
+        if Schedules().find_one({"name": new_schedule_name}, {"name": 1}):
+            raise BadRequest(
+                "schedule with name `{}` already exists".format(new_schedule_name)
+            )
+
+        schedule.pop("_id", None)
+        schedule.pop("most_recent_task", None)
+        schedule["name"] = new_schedule_name
+
+        # insert document
+        schedule_id = Schedules().insert_one(schedule).inserted_id
+
+        return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)

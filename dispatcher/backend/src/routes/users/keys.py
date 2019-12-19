@@ -6,9 +6,9 @@ import subprocess
 from http import HTTPStatus
 from datetime import datetime
 
-import jsonschema
 import paramiko
 from flask import request, jsonify, Response
+from marshmallow import Schema, fields, validate, ValidationError
 
 from routes.base import BaseRoute
 from routes import authenticate, url_object_id, errors
@@ -44,20 +44,14 @@ class KeysRoute(BaseRoute):
             raise errors.NotEnoughPrivilege()
 
         # validate request json
-        schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "minLength": 1},
-                "key": {"type": "string", "minLength": 1},
-            },
-            "required": ["name", "key"],
-            "additionalProperties": False,
-        }
+        class KeySchema(Schema):
+            name = fields.String(required=True, validate=validate.Length(min=1))
+            key = fields.String(required=True, validate=validate.Length(min=1))
+
         try:
-            request_json = request.get_json()
-            jsonschema.validate(request_json, schema)
-        except jsonschema.ValidationError as error:
-            raise errors.BadRequest(error.message)
+            request_json = KeySchema().load(request.get_json())
+        except ValidationError as e:
+            raise errors.InvalidRequestJSON(e.messages)
 
         # parse public key string
         key = request_json["key"]

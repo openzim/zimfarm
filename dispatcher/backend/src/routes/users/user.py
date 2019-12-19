@@ -7,7 +7,7 @@ from marshmallow import Schema, fields, validate as mm_validate, ValidationError
 
 from common.mongo import Users
 from common.roles import get_role_for, ROLES
-from routes import authenticate, url_object_id, errors
+from routes import authenticate, url_object_id, errors, require_perm
 from utils.token import AccessToken
 from routes.base import BaseRoute
 
@@ -18,10 +18,8 @@ class UsersRoute(BaseRoute):
     methods = ["GET", "POST"]
 
     @authenticate
+    @require_perm("users", "read")
     def get(self, token: AccessToken.Payload):
-        # check user permission
-        if not token.get_permission("users", "read"):
-            raise errors.NotEnoughPrivilege()
 
         class SkipLimitSchema(Schema):
             skip = fields.Integer(
@@ -56,10 +54,8 @@ class UsersRoute(BaseRoute):
         )
 
     @authenticate
+    @require_perm("users", "create")
     def post(self, token: AccessToken.Payload):
-        # check user permission
-        if not token.get_permission("users", "create"):
-            raise errors.NotEnoughPrivilege()
 
         # validate request json
         class UserCreateSchema(Schema):
@@ -72,8 +68,8 @@ class UsersRoute(BaseRoute):
 
         try:
             request_json = UserCreateSchema().load(request.get_json())
-        except ValidationError as error:
-            raise errors.InvalidRequestJSON(error.messages)
+        except ValidationError as e:
+            raise errors.InvalidRequestJSON(e.messages)
 
         # generate password hash
         password = request_json.pop("password")
@@ -116,10 +112,9 @@ class UserRoute(BaseRoute):
         return jsonify(user)
 
     @authenticate
+    @require_perm("users", "update")
     @url_object_id("username")
     def patch(self, token: AccessToken.Payload, username: str):
-        if not token.get_permission("users", "update"):
-            raise errors.NotEnoughPrivilege()
 
         # find user based on username
         query = {"username": username}
@@ -134,8 +129,8 @@ class UserRoute(BaseRoute):
 
         try:
             request_json = UpdateSchema().load(request.get_json())
-        except ValidationError as error:
-            raise errors.BadRequest(str(error.messages))
+        except ValidationError as e:
+            raise errors.BadRequest(e.messages)
 
         update = {}
         if "email" in request_json:
@@ -148,13 +143,9 @@ class UserRoute(BaseRoute):
         return Response(status=HTTPStatus.NO_CONTENT)
 
     @authenticate
+    @require_perm("users", "delete")
     @url_object_id("username")
     def delete(self, token: AccessToken.Payload, username: str):
-        # if user in url is not user in token, check user permission
-        if username != token.username:
-            if not token.get_permission("users", "delete"):
-                raise errors.NotEnoughPrivilege()
-
         # delete user
         deleted_count = Users().delete_one({"username": username}).deleted_count
         if deleted_count == 0:

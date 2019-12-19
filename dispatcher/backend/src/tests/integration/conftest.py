@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 
 from main import app
 from common import mongo
+from common.roles import ROLES
 from routes import API_PATH
 from utils.token import LoadedAccessToken
 
@@ -68,7 +69,7 @@ def client():
 
 @pytest.fixture(scope="session")
 def access_token():
-    token = LoadedAccessToken(ObjectId(), "username", {}).encode()
+    token = LoadedAccessToken(ObjectId(), "username", ROLES.get("admin")).encode()
     yield "Bearer {}".format(token)
 
 
