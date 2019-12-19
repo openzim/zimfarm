@@ -181,7 +181,6 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         fields.String(
             validate=validate.OneOf(
                 [
-                    ":full",
                     "nodet,nopic:mini",
                     "nodet:mini",
                     "nopic:nopic",
@@ -298,7 +297,7 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "label": "Request Timeout",
             "description": "Request timeout (in seconds)",
         },
-        validate=validate.Range(min=1)
+        validate=validate.Range(min=1),
     )
     speed = fields.Float(
         metadata={

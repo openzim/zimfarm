@@ -11,7 +11,7 @@ class Permissions:
 
 
 class TaskPermissions(Permissions):
-    names = ["request", "create", "update", "cancel", "delete"]
+    names = ["request", "unrequest", "create", "update", "cancel", "delete"]
 
 
 class SchedulePermissions(Permissions):
@@ -19,7 +19,7 @@ class SchedulePermissions(Permissions):
 
 
 class UserPermissions(Permissions):
-    names = ["read", "create", "update", "delete", "change_password"]
+    names = ["read", "create", "update", "delete", "change_password", "ssh_keys"]
 
 
 ROLES = {
@@ -29,16 +29,13 @@ ROLES = {
         "users": UserPermissions.get_all(),
     },
     "manager": {
-        "tasks": TaskPermissions.get(request=True, cancel=True),
+        "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
         "schedules": SchedulePermissions.get(create=True, update=True, delete=True),
         "users": UserPermissions.get(
             read=True, create=True, update=True, delete=True, change_password=True
         ),
     },
-    "editor": {
-        "tasks": TaskPermissions.get(),
-        "schedules": SchedulePermissions.get(create=True, update=True),
-    },
+    "editor": {"schedules": SchedulePermissions.get(create=True, update=True)},
     "worker": {"tasks": TaskPermissions.get(create=True, update=True, cancel=True)},
     "processor": {"tasks": TaskPermissions.get(update=True)},
 }
