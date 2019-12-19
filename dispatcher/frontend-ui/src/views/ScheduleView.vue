@@ -25,12 +25,20 @@
             Config
           </router-link>
         </li>
-        <li v-show="canEditSchedule" class="nav-item" :class="{ active: selectedTab == 'edit'}">
+        <li v-show="canUpdateSchedules" class="nav-item" :class="{ active: selectedTab == 'edit'}">
           <router-link class="nav-link"
                        active-class="dummy"
                        :class="{ active: selectedTab == 'edit'}"
                        :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'edit'}}">
             Edit
+          </router-link>
+        </li>
+        <li v-show="canDeleteSchedules" class="nav-item" :class="{ active: selectedTab == 'delete'}">
+          <router-link class="nav-link text-danger"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'delete'}"
+                       :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'delete'}}">
+            Delete
           </router-link>
         </li>
       </ul>
@@ -81,7 +89,7 @@
       </div>
     </div>
 
-    <div v-if="selectedTab == 'edit' && canEditSchedule" class="tab-content edit-tab">
+    <div v-if="selectedTab == 'edit' && canUpdateSchedules" class="tab-content edit-tab">
       <ScheduleEditor :schedule_name="schedule_name"></ScheduleEditor>
     </div>
 
@@ -117,7 +125,6 @@
     },
     computed: {
       schedule() { return this.$store.getters.schedule || null; },
-      canEditSchedule() { return this.$store.getters.isLoggedIn; },
       name() { return this.schedule.name },
       language_name() { return this.schedule.language.name_en || null; },
       last_run() { return this.schedule.most_recent_task; },
@@ -151,7 +158,7 @@
       let parent = this;
 
       // redirect to details if tryng to access Edit tab without permission
-      if (this.selectedTab == 'edit' && !this.canEditSchedule) {
+      if (this.selectedTab == 'edit' && !this.canUpdateSchedules) {
         parent.$router.push({name: 'schedule-detail', params: {schedule_name: this.schedule_name}});
       }
 

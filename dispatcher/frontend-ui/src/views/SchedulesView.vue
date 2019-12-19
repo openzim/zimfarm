@@ -51,6 +51,9 @@
 
         </multiselect>
       </div>
+      <div class="col-sm-12 col-md-12 col-lg">
+        <b-button size="sm"  variant="primary" v-show="canRequestTasks">Request selection (143)</b-button>
+      </div>
     </nav>
     <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover table-bordered">
       <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">

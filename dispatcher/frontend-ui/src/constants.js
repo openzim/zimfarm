@@ -80,15 +80,23 @@ function duplicate(dict) {
 
 var DEFAULT_CPU_SHARE = 1024;
 
+var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
+var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
+
 export default {
-  zimfarm_webapi: window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1",
-  zimfarm_logs_url:  window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org",
+  isProduction() {
+    return ZIMFARM_WEBAPI.indexOf("https://") == 0;
+  },
+  zimfarm_webapi: ZIMFARM_WEBAPI,
+  zimfarm_logs_url:  ZIMFARM_LOGS_URL,
   kiwix_download_url:  window.environ.KIWIX_DOWNLOAD_URL || process.env.KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
   LIMIT_CHOICES: [10, 20, 50, 100, 200],
-  TOKEN_COOKIE_EXPIRY: '1d',
+  ROLES: ["editor", "manager", "admin", "worker", "processor"],
+  TOKEN_COOKIE_EXPIRY: '30D',
+  TOKEN_COOKIE_NAME: "auth",
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
@@ -225,6 +233,12 @@ export default {
       return "Cross-Origin Request Blocked: preflight request failed."
     }
     let status_text = response.statusText ? response.statusText : statuses[response.status];
+    if (response.status == 400) {
+      if (response.data && response.data.error)
+        status_text += "<br />" + response.data.error;
+      if (response.data && response.data.error_description)
+        status_text += "<br />" + response.data.error_description;
+    }
     return response.status + ": " + status_text + ".";
   },
   format_dt: format_dt,

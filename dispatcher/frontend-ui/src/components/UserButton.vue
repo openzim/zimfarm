@@ -32,7 +32,7 @@
 </template2>
 
 <template>
-  <b-dropdown v-if="$store.getters.isLoggedIn" variant="light" size="sm" right>
+  <b-dropdown v-if="isLoggedIn" variant="light" size="sm" right>
 
     <template v-slot:button-content>
       <font-awesome-icon icon="user-circle" size="sm" /> {{ $store.getters.username }}
@@ -62,9 +62,11 @@
 
 <script type="text/javascript">
   import Constants from '../constants.js'
+  import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
     name: 'UserButton',
+    mixins: [ZimfarmMixins],
     methods: {
       copyToken() {
         let parent = this;

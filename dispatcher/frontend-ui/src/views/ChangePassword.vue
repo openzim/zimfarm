@@ -68,7 +68,7 @@
       },
     },
     beforeMount() { // redirect to SignIn if not logged-in
-      if (!this.$store.getters.isLoggedIn)
+      if (!this.isLoggedIn)
         this.$router.push({name: 'sign-in'});
     },
   }

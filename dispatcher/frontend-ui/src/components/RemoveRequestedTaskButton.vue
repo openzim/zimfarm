@@ -8,8 +8,7 @@
 <template>
   <button class="btn btn-sm btn-dark action-button"
           @click.prevent="removeTask"
-          :disabled="!$store.getters.isLoggedIn"
-          v-if="$store.getters.isLoggedIn">
+          v-if="canUnRequestTasks">
     <span v-show="!should_display_loader">
       <font-awesome-icon icon="times" size="sm" /> remove
     </span>
@@ -21,9 +20,11 @@
 
 <script type="text/javascript">
   import Constants from '../constants.js'
+  import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
     name: 'RemoveRequestedTaskButton',
+    mixins: [ZimfarmMixins],
     props: {
       _id: String
     },

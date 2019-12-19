@@ -10,7 +10,7 @@
         </select> out of <strong>{{ total_results }} results</strong>
       </caption>
       <thead v-if="selectedTable == 'todo'">
-        <tr><th>Schedule</th><th>Requested</th><th>By</th><th>Worker</th><th v-show="$store.getters.isLoggedIn">Remove</th></tr>
+        <tr><th>Schedule</th><th>Requested</th><th>By</th><th>Worker</th><th v-show="canUnRequestTasks">Remove</th></tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
         <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
@@ -40,7 +40,7 @@
           <td>{{ task.worker || 'n/a' }}</td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'">{{ task.status }}</td>
-          <td v-if="selectedTable == 'todo'" v-show="$store.getters.isLoggedIn"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
+          <td v-if="selectedTable == 'todo'" v-show="canUnRequestTasks"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
         </tr>
       </tbody>
     </table>

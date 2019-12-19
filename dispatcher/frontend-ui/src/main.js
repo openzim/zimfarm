@@ -33,13 +33,14 @@ import { faSpinner, faUser, faUserCircle, faKey, faTimes,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
          faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
-         faSkullCrossbones, faAsterisk } from '@fortawesome/free-solid-svg-icons'
+         faSkullCrossbones, faAsterisk, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
 library.add(faUser);
 library.add(faPlug);
 library.add(faFire);
+library.add(faCheck);
 library.add(faCopy);
 library.add(faTimes);
 library.add(faCarrot);
@@ -71,6 +72,8 @@ Vue.use(Tooltip);
 import Sugar from 'sugar'
 Sugar.extend({namespaces: [Array, Object]});
 
+import moment from 'moment';
+
 // Own modules
 import App from './App.vue'
 import Constants from './constants.js'
@@ -96,12 +99,26 @@ new Vue({
   store: store,
   router: router,
   computed: {
+    token_expired() {
+      let expiry = this.$store.getters.token_expiry;
+      return (!expiry) ? true : moment().isAfter(expiry);
+    },
+    isLoggedIn() {
+      try {
+        return Boolean(this.$store.getters.username !== null && !this.token_expired);
+      } catch { return false; }
+    },
     axios() { // prefixed axios object with API url and token from store
       return axios.create({
           baseURL: Constants.zimfarm_webapi,
           headers: {'Authorization': "Token " + store.getters.access_token},
           paramsSerializer: Constants.params_serializer,
         });
+    },
+  },
+  methods: {
+    has_perm(namespace, perm_name) {
+      try { return Boolean(this.$store.getters.permissions[namespace][perm_name]); } catch { return false; }
     },
   },
   render: h => h(App),

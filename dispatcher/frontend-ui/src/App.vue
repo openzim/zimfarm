@@ -9,6 +9,7 @@
 <script type="text/javascript">
   import axios from 'axios'
   import moment from 'moment';
+  import jwt from 'jsonwebtoken';
 
   import Constants from './constants.js'
   import ZimfarmMixins from './components/Mixins.js'
@@ -22,26 +23,27 @@
     methods: {
       loadTokenFromCookie() {
         // already authenticated
-        if (this.$store.getters.username)
+        if (this.$root.isLoggedIn)
           return;
-        let cookie_token = this.$cookie.get('token_data');
+        let cookie_value = this.$cookie.get(Constants.TOKEN_COOKIE_NAME);
 
         // no cookie
-        if (!cookie_token)
+        if (!cookie_value)
           return;
 
         let token_data;
         try {
-           token_data = JSON.parse(cookie_token);
+           token_data = JSON.parse(cookie_value);
+           token_data.payload = jwt.decode(token_data.access_token);
         } catch {
           // incorrect cookie payload
-          this.$cookie.delete('token_data');
+          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
           return;
         }
 
-        let expiry = moment(token_data.expires_on);
+        let expiry = moment(token_data.payload.exp * 1000);
         if (moment().isAfter(expiry)) {
-          this.$cookie.delete('token_data');
+          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
           return;
         }
 

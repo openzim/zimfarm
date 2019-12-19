@@ -42,7 +42,7 @@
           </tr>
           <tr><th>Status</th><td><code>{{ task.status }}</code></td></tr>
           <tr><th>Worker</th><td>{{ task.worker }}</td></tr>
-          <tr><th>Started On</th><td>{{ started_on|datetime }}, after <strong>{{ pipe_duration }} in pipe</strong></td></tr>
+          <tr><th>Started On</th><td>{{ started_on|format_dt }}, after <strong>{{ pipe_duration }} in pipe</strong></td></tr>
           <tr><th>Duration</th><td>{{ task_duration }}<span v-if="is_running"> (<strong>Ongoing</strong>)</span></td></tr>
           <tr>
             <th>Events</th>
@@ -50,7 +50,7 @@
               <table class="table table-responsive-sm table-striped table-sm">
               <tbody>
               <tr v-for="event in task.events" v-bind:key="event.code">
-                <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | datetime }}</td>
+                <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | format_dt }}</td>
               </tr>
               </tbody>
             </table>

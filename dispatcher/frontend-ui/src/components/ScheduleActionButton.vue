@@ -13,26 +13,42 @@
 
 <template>
   <b-button-group v-show="visible">
-    <b-button v-if="can_request && !workers.length" size="sm" variant="info" @click.prevent="request_task(null)">
+    <b-button v-show="canRequestTasks"
+              v-if="can_request && !workers.length"
+              size="sm" variant="info"
+              @click.prevent="request_task(null)">
       <font-awesome-icon icon="calendar-alt" size="sm" /> Request
     </b-button>
-    <b-dropdown v-if="can_request && workers.length" no-flip split size="sm" variant="info" @click.prevent="request_task(null)">
+    <b-dropdown v-show="canRequestTasks"
+                v-if="can_request && workers.length"
+                no-flip split size="sm" variant="info"
+                @click.prevent="request_task(null)">
       <template v-slot:button-content><font-awesome-icon icon="calendar-alt" size="sm" /> Request</template>
       <b-dropdown-item v-for="worker in workers"
                        v-bind:key="worker.name"
                        @click.prevent="request_task(worker.name);"
                        :variant="worker.status == 'online' ? 'success' : 'secondary'">{{ worker.name }}</b-dropdown-item>
     </b-dropdown>
-    <b-button v-if="can_unrequest" size="sm" variant="secondary" @click.prevent="unrequest_task">
+    <b-button v-show="canUnRequestTasks"
+              v-if="can_unrequest"
+              size="sm" variant="secondary"
+              @click.prevent="unrequest_task">
       <font-awesome-icon icon="trash-alt" size="sm" /> Un-request
     </b-button>
-    <b-button v-if="can_cancel" size="sm" variant="danger" @click.prevent="cancel_task">
+    <b-button v-show="canCancelTasks"
+              v-if="can_cancel"
+              size="sm" variant="danger"
+              @click.prevent="cancel_task">
       <font-awesome-icon icon="stop-circle" size="sm" /> Cancel
     </b-button>
-    <b-button v-if="can_fire" size="sm" variant="warning" @click.prevent="fire_task">
+    <b-button v-show="canRequestTasks"
+              v-if="can_fire"
+              size="sm" variant="warning"
+              @click.prevent="fire_task">
       <font-awesome-icon icon="fire" size="sm" /> Fire
     </b-button>
-    <b-button v-if="working" :disabled="working" size="sm" variant="secondary">
+    <b-button v-if="working"
+              :disabled="working" size="sm" variant="secondary">
       <font-awesome-icon icon="spinner" size="sm" spin /> {{ working_text}}
     </b-button>
   </b-button-group>
@@ -40,9 +56,11 @@
 
 <script type="text/javascript">
   import Constants from '../constants.js'
+  import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
     name: 'ScheduleActionButton',
+    mixins: [ZimfarmMixins],
     props: {
       name: String,
     },
@@ -57,7 +75,7 @@
     },
     computed: {
       task_id() { return this.task ? this.task._id : this.task; },
-      visible() { return this.ready && this.$store.getters.isLoggedIn; },
+      visible() { return (this.ready && (this.canRequestTasks || this.canUnRequestTasks || this.canCancelTasks)); },
       working() { return Boolean(this.working_text); },
       is_running() { return this.task_id === null ? null : Boolean(this.task_id); },
       is_scheduled() { return this.requested_task_id === null ? null : Boolean(this.requested_task_id); },
