@@ -19,6 +19,11 @@ const store = new Vuex.Store({
     offliners_defs: {},
     
     schedule: null,
+
+    selectedLanguagesOptions: [],
+    selectedCategoriesOptions: [],
+    selectedTagsOptions: [],
+    selectedName: "",
   },
   mutations: {
     setLoading (state, payload) { // toggle GUI loader
@@ -48,6 +53,18 @@ const store = new Vuex.Store({
     },
     saveSchedule(state, payload) {
       state.schedule = payload;
+    },
+    SET_SELECTED_LANGUAGES_OPTIONS(state, payload) {
+      state.selectedLanguagesOptions = payload;
+    },
+    SET_SELECTED_CATEGORIES_OPTIONS(state, payload) {
+      state.selectedCategoriesOptions = payload;
+    },
+    SET_SELECTED_TAGS_OPTIONS(state, payload) {
+      state.selectedTagsOptions = payload;
+    },
+    SET_SELECTED_NAME(state, payload) {
+      state.selectedName = payload;
     },
   },
   actions: {

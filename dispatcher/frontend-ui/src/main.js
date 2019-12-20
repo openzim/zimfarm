@@ -29,7 +29,7 @@ import '../public/assets/styles.css'
 
 // Font Awesome
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faSpinner, faUser, faUserCircle, faKey, faTimes,
+import { faSpinner, faUser, faUserCircle, faKey, faTimes, faTimesCircle,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
          faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
@@ -44,6 +44,7 @@ library.add(faFire);
 library.add(faCheck);
 library.add(faCopy);
 library.add(faTimes);
+library.add(faTimesCircle);
 library.add(faCarrot);
 library.add(faMemory);
 library.add(faWrench);

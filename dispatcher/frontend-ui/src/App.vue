@@ -71,10 +71,7 @@
               parent.$store.dispatch('setLanguages', languages);
             })
             .catch(function (error) {
-              console.log(error);
-              parent.$root.$emit('feedback-message',
-                           'danger',
-                           "<strong>Unable to fecth languages</strong><br />" + Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fecth languages",  Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -95,9 +92,7 @@
               parent.$store.dispatch('setTags', tags);
             })
             .catch(function (error) {
-              parent.$root.$emit('feedback-message',
-                           'danger',
-                           "<strong>Unable to fecth tags</strong><br />" + Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fecth tags", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -119,9 +114,7 @@
               parent.loadOfflinersDefs();
             })
             .catch(function (error) {
-              parent.$root.$emit('feedback-message',
-                           'danger',
-                           "<strong>Unable to fecth offliners</strong><br />" + Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fecth offliners", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
