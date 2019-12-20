@@ -94,6 +94,10 @@ export default {
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
   LIMIT_CHOICES: [10, 20, 50, 100, 200],
+  MAX_SCHEDULES_IN_SELECTION_REQUEST: 200,
+  ALERT_DEFAULT_DURATION: 5,
+  ALERT_LONG_DURATION: 10,
+  ALERT_PERMANENT_DURATION: true,
   ROLES: ["editor", "manager", "admin", "worker", "processor"],
   TOKEN_COOKIE_EXPIRY: '30D',
   TOKEN_COOKIE_NAME: "auth",
@@ -235,9 +239,9 @@ export default {
     let status_text = response.statusText ? response.statusText : statuses[response.status];
     if (response.status == 400) {
       if (response.data && response.data.error)
-        status_text += "<br />" + response.data.error;
+        status_text += "<br />" + JSON.stringify(response.data.error);
       if (response.data && response.data.error_description)
-        status_text += "<br />" + response.data.error_description;
+        status_text += "<br />" + JSON.stringify(response.data.error_description);
       if (response.data && response.data.message)
         status_text += "<br />" + JSON.stringify(response.data.message);
     }

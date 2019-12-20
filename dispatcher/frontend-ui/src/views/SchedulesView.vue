@@ -55,7 +55,12 @@
     <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover table-bordered">
       <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
-        </select> out of <strong>{{ total_results }} results</strong> <b-button style="float:right;" size="sm" variant="primary" v-show="canRequestTasks">Request those <strong>143 recipes</strong></b-button>
+        </select> out of <strong>{{ total_results }} results</strong>
+        <RequestSelectionButton :for_name="selectedName"
+                                :for_categories="selectedCategories"
+                                :for_languages="selectedLanguages"
+                                :for_tags="selectedTags"
+                                :count="meta.count" />
       </caption>
       <thead class="thead-dark">
         <tr><th>Name</th><th>Category</th><th>Language</th><th>Offliner</th><th colspan="2">Last Task</th></tr>
@@ -90,11 +95,12 @@
 
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
+  import RequestSelectionButton from '../components/RequestSelectionButton.vue'
 
   export default {
     name: 'SchedulesView',
     mixins: [ZimfarmMixins],
-    components: {Multiselect},
+    components: {Multiselect, RequestSelectionButton},
     data() {
       return {
         error: null,  // API originated error message
@@ -107,6 +113,7 @@
       };
     },
     computed: {
+      selection() { return this.schedules.map(function (schedule){ return schedule.name; }); },
       total_results() {
         return (this.meta && this.meta.count) ? this.meta.count : 0;
       },
@@ -143,7 +150,7 @@
       loadSchedules() {  // load filtered schedules from API
         let parent = this;
 
-        this.toggleLoader("fetching schedules…");
+        this.toggleLoader("fetching recipes…");
 
         // prepare params for filering
         let params = {limit: parent.selectedLimit};

@@ -86,6 +86,6 @@ export default {
     alertWarning(title, text, duration) { this.alert('warning', title, text, duration); },
     alertDanger(title, text, duration) { this.alert('danger', title, text, duration); },
     alertAccessRefused(perm_name) { this.alertWarning("Access Refused", "You don't have <code>" + perm_name + "</code> permission."); },
-    alertError(text, duration) { this.alertDanger("Error", text, duration); },
+    alertError(text) { this.alertDanger("Error", text, Constants.ALERT_PERMANENT_DURATION); },
   }
 }

@@ -14,6 +14,8 @@
 </template>
 
 <script type="text/javascript">
+  import Constants from '../constants.js'
+
   export default {
     name: 'AlertFeedback',
     data() {
@@ -37,9 +39,13 @@
       this.$root.$on('feedback-message', function (level, message, duration) {
         parent.level = level;
         parent.message = message;
-        parent.auto_dismiss = (duration === true) ? false : true;
         // if dismissCountDown is not a number, it won't trigger countDownChanged
-        parent.dismissCountDown = (duration === true) ? true: 5;
+        if (duration === undefined)
+            duration = Constants.ALERT_DEFAULT_DURATION;
+        if (duration === true)
+            duration = Constants.ALERT_PERMANENT_DURATION;
+        parent.dismissCountDown = duration;
+        parent.auto_dismiss = (duration === true) ? false : true;
       });
     }
   }
