@@ -23,13 +23,13 @@ class TaskStatus:
             cls.requested,
             cls.reserved,
             cls.started,
-            cls.succeeded,
             cls.scraper_started,
             cls.scraper_completed,
             cls.scraper_killed,
-            cls.failed,
             cls.cancel_requested,
             cls.canceled,
+            cls.succeeded,
+            cls.failed,
         ]
 
     @classmethod

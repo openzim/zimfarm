@@ -74,7 +74,12 @@ class TasksRoute(BaseRoute):
         cursor = (
             Tasks()
             .find(query, projection)
-            .sort("timestamp.requested", pymongo.DESCENDING)
+            .sort(
+                [
+                    (f"timestamp.{status}", pymongo.DESCENDING)
+                    for status in sorted(TaskStatus.all(), reverse=True)
+                ]
+            )
             .skip(skip)
             .limit(limit)
         )

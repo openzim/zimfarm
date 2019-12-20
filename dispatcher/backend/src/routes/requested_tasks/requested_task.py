@@ -188,6 +188,7 @@ class RequestedTasksRoute(BaseRoute):
             .sort(
                 [
                     ("priority", pymongo.DESCENDING),
+                    ("timestamp.reserved", pymongo.DESCENDING),
                     ("timestamp.requested", pymongo.DESCENDING),
                 ]
             )

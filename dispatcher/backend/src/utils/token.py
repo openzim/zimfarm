@@ -54,9 +54,9 @@ class AccessToken:
         expire_time = issue_time + cls.expire_time_delta
         payload = {
             "iss": cls.issuer,  # issuer
-            "exp": expire_time,  # expiration date
-            "iat": issue_time,  # issue date
-            # "rti": uuid.uuid4(),  # identifier for this token?
+            "exp": expire_time,  # expiration time
+            "iat": issue_time,  # issued at
+            # "jti": uuid.uuid4(),  # JWT ID
             "user": user,  # user payload (username, scope)
         }
         return jwt.encode(
