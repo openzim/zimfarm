@@ -34,8 +34,8 @@
             <router-link :to="{name: 'task-detail', params: {_id: task._id}}">{{ task.schedule_name }}</router-link>
           </td>
           <td v-else>
-            {{ task.schedule_name }}
-            <span class="text-warning" v-if="task.priority > 0"> <font-awesome-icon size="sm" icon="fire" /></span>
+            <router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">{{ task.schedule_name }}</router-link>
+            <span class="text-warning" v-if="task.priority > 0">&nbsp;<font-awesome-icon size="sm" icon="fire" /></span>
           </td>
           <td v-if="selectedTable == 'todo'"
               v-tooltip="{content: format_dt(task.timestamp.requested), delay: 10}">{{ task.timestamp.requested | from_now }}</td>
@@ -44,7 +44,7 @@
               <ResourceBadge kind="memory" :value="task.config.resources.memory" />
               <ResourceBadge kind="disk" :value="task.config.resources.disk" /></td>
           <td v-if="selectedTable == 'doing'"
-              v-tooltip="{content: format_dt(task.timestamp.started), delay: 10}">{{ task.timestamp.started | from_now }}</td>
+              v-tooltip="{content: format_dt(task.timestamp.reserved), delay: 10}">{{ task.timestamp.reserved | from_now }}</td>
           <td v-if="selectedTable == 'done'"
               v-tooltip="{content: format_dt(task.timestamp.succeeded), delay: 10}">{{ task.timestamp.succeeded | from_now }}</td>
           <td v-if="selectedTable == 'failed'"
