@@ -4,7 +4,7 @@
 
 <template>
   <div>
-    <table class="table table-responsive-sm table-striped" v-if="!error">
+    <table class="table table-responsive-md table-striped" v-if="!error">
       <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>

@@ -25,7 +25,7 @@
                   @click.prevent="toggle_workerslist">{{ toggle_text }}</b-button>
       </div>
     </div>
-    <table v-if="!error && workers" class="table table-responsive-sm table-sm table-striped table-hover">
+    <table v-if="!error && workers" class="table table-responsive-md table-sm table-striped table-hover">
       <tbody>
         <tr v-for="row in rows" :key="row.id" >
           <th v-if="row.kind == 'worker'"

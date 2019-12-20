@@ -12,7 +12,7 @@
   - displays result as an AlertFeedback -->
 
 <template>
-  <b-button-group v-show="visible">
+  <b-button-group v-show="visible" class="action-button">
 
     <b-dropdown v-show="canRequestTasks"
                 v-if="can_select_worker"
@@ -231,5 +231,8 @@
 </script>
 
 <style type="text/css" scoped>
-  div { float: right; }
+  .action-button {
+    margin-left: auto;
+    margin-right: 1rem;
+  }
 </style>

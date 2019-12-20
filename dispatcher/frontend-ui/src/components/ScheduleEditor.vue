@@ -153,7 +153,7 @@
 
     <b-row><b-col><h2><code>{{ edit_task_name}}</code> command flags</h2></b-col></b-row>
 
-    <table class="table table-striped table-hover table-sm table-responsive-sm">
+    <table class="table table-striped table-hover table-sm table-responsive-md">
       <tbody>
       <tr v-for="field in edit_flags_fields" :key="field.data_key">
         <th>{{ field.label }}<sup v-if="field.required">&nbsp;<font-awesome-icon icon="asterisk" color="red" size="xs" /></sup></th>

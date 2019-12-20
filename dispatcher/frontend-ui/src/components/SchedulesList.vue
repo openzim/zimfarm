@@ -52,7 +52,7 @@
         </multiselect>
       </div>
     </nav>
-    <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover table-bordered">
+    <table v-if="schedules.length" class="table table-responsive-md table-striped table-hover table-bordered">
       <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>

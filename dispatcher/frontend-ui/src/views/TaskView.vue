@@ -4,12 +4,12 @@
 
 <template>
   <div class="container">
-    <ScheduleActionButton v-if="task" :name="schedule_name" />
     <h2 class="row">
       <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
       <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
     </h2>
 
+    <div class="row"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
     <div v-if="!error && task">
       <ul class="nav nav-tabs">
         <li class="nav-item" :class="{ active: selectedTab == 'details'}">
@@ -31,7 +31,7 @@
       </ul>
 
       <div v-if=" selectedTab == 'details'" class="tab-content">
-        <table class="table table-responsive-sm table-striped table-in-tab">
+        <table class="table table-responsive-md table-striped table-in-tab">
           <tr><th>ID</th><td><code>{{ this._id }}</code></td></tr>
           <tr>
             <th>Recipe</th>
@@ -47,7 +47,7 @@
           <tr>
             <th>Events</th>
             <td>
-              <table class="table table-responsive-sm table-striped table-sm">
+              <table class="table table-responsive-md table-striped table-sm">
               <tbody>
               <tr v-for="event in task.events" v-bind:key="event.code">
                 <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | format_dt }}</td>
@@ -59,7 +59,7 @@
           <tr v-if="task.files">
             <th>Files</th>
             <td>
-              <table class="table table-responsive-sm table-striped table-sm">
+              <table class="table table-responsive-md table-striped table-sm">
                 <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th></tr></thead>
                 <tr v-for="file in task.files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
@@ -74,7 +74,7 @@
         </table>
       </div>
       <div v-if="selectedTab == 'debug'" class="tab-content">
-        <table class="table table-responsive-sm table-striped table-in-tab">
+        <table class="table table-responsive table-striped table-in-tab">
           <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
           <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
           <tr v-if="task_container.exit_code"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
