@@ -68,10 +68,6 @@ CONTAINER_SCRAPER_IDENT = "zimscraper"
 CONTAINER_DNSCACHE_IDENT = "dnscache"
 
 # dispatcher-related
-try:
-    AUTH_EXPIRY = int(os.getenv("AUTH_EXPIRY", "").strip())
-except Exception:
-    AUTH_EXPIRY = 86300  # seconds after which to re-auth (~a day)
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
 DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5000")
 UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://warehouse.farm.openzim.org:1522")
