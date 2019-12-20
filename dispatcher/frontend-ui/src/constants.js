@@ -45,23 +45,56 @@ function build_docker_command(name, config) {
   return args.join(" ");
 }
 
-function trim_command(command, columns=70) {  // trim a string to espaced version (at most columns)
+function trim_command(command, columns=79) {  // trim a string to espaced version (at most columns)
+
+  let parts;
+  if (typeof(command) == "object" && Object.isArray(command)) {
+    parts = command.map(function(part) { return part.replace(/^--/, ""); });
+    command = parts.join(" ");
+  } else {
+    parts = command.split(" --");
+  }
   // don't bother if command is not that long
   if (command.length <= columns)
     return command;
 
-  // first line is considered already filled with PS1 (35 chars)
   let sep = "\\\n";
-  let first_line_cols = 34;
-  let new_command = command.substr(0, first_line_cols) + sep;
-  let remaining = command.substr(first_line_cols);
-  while (remaining.length) {
-    new_command += remaining.substr(0, columns);
-    if (remaining.length > columns)
-      new_command += sep;  // don't add sep on last line
-    remaining = remaining.substr(columns);
-  }
-  return new_command; // remove trailing sep
+  // first line is considered already filled with PS1 (35 chars)
+  let lines = [];
+  let line = "";
+  parts.forEach(function (part) {
+    part = "--" + part + " ";
+    // current line and part won't fit. let's flush to new line
+    if (line.length + part.length >= columns) {
+      lines.push(line);
+      line = "";
+    }
+    // part alone can't fit a line
+    if (part.length >= columns) {
+      let sublines = [];
+      let part_remaining = part;
+      while (part_remaining.length) {
+        sublines.push(part_remaining.substr(0, columns));
+        part_remaining = part_remaining.substr(columns);
+      }
+      // add lines from those subparts to main
+      lines = lines.concat(sublines);
+    }
+    // if we can fit, add to current line
+    if (line.length + part.length <= columns) {
+      line += part;
+    }
+  });
+
+  // remove -- from beggining
+  let first_line = lines[0];
+  lines[0] = first_line.substr(2);
+  // remove extra space at end
+  let last_line = lines[lines.length - 1];
+  lines[lines.length - 1] = last_line.substr(0, last_line.length -1);
+
+  let new_command = lines.join(sep);
+  return new_command;
 }
 
 function short_id(id) {  // short id of tasks (last chars)

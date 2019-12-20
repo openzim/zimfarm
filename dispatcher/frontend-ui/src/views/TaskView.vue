@@ -149,7 +149,7 @@
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },
-      command() { return '"' + this.task_container.command.join('" "') + '"'; },
+      command() { return this.task_container.command.join(" "); },
       trimmed_command() { return Constants.trim_command(this.command); },
     },
     methods: {
