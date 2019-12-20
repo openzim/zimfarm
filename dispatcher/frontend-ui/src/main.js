@@ -33,7 +33,8 @@ import { faSpinner, faUser, faUserCircle, faKey, faTimes,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
          faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
-         faSkullCrossbones, faAsterisk, faCheck } from '@fortawesome/free-solid-svg-icons'
+         faSkullCrossbones, faAsterisk, faCheck,
+         faExclamationTriangle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
@@ -57,6 +58,7 @@ library.add(faUserCircle);
 library.add(faCalendarAlt);
 library.add(faArrowCircleLeft);
 library.add(faSkullCrossbones);
+library.add(faExclamationTriangle);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 // Multiselect for schedules filter
@@ -85,6 +87,7 @@ Vue.filter('filesize', Constants.filesize);
 Vue.filter('format_dt', Constants.format_dt);
 Vue.filter('from_now', Constants.from_now);
 Vue.filter('yes_no', Constants.yes_no);
+Vue.filter('short_id', Constants.short_id);
 
 // router
 const router = new VueRouter({

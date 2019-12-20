@@ -17,7 +17,7 @@
                        active-class="dummy"
                        :class="{ active: selectedTab == 'details'}"
                        :to="{name: 'task-detail', params: {_id: _id}}">
-            Task
+            Info
           </router-link>
         </li>
         <li class="nav-item" :class="{ active: selectedTab == 'debug'}">
@@ -134,7 +134,7 @@
 
         let first = this.task.timestamp.started;
         if (!first)  // probably in reserved state, hence not yet started
-          return 0;
+          return "not actually started";
 
         // if task is running (non-complete status) then it's started-to now
         if (this.is_running) {
@@ -145,7 +145,7 @@
         let last = this.task.events[this.task.events.length - 1].timestamp;
         return Constants.format_duration_between(first, last);
       },
-      started_on() { return this.task.timestamp.started || null; },
+      started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },

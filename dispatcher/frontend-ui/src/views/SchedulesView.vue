@@ -51,14 +51,11 @@
 
         </multiselect>
       </div>
-      <div class="col-sm-12 col-md-12 col-lg">
-        <b-button size="sm"  variant="primary" v-show="canRequestTasks">Request selection (143)</b-button>
-      </div>
     </nav>
     <table v-if="schedules.length" class="table table-responsive-sm table-striped table-hover table-bordered">
       <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
-        </select> out of <strong>{{ total_results }} results</strong>
+        </select> out of <strong>{{ total_results }} results</strong> <b-button style="float:right;" size="sm" variant="primary" v-show="canRequestTasks">Request those <strong>143 recipes</strong></b-button>
       </caption>
       <thead class="thead-dark">
         <tr><th>Name</th><th>Category</th><th>Language</th><th>Offliner</th><th colspan="2">Last Task</th></tr>
@@ -74,12 +71,12 @@
           <td>{{ schedule.language.name_en }}</td>
           <td>{{ schedule.config.task_name }}</td>
           <td v-if="schedule.most_recent_task">
-            <code :class="schedule.class_attr">{{ schedule.most_recent_task.status }}</code>
+            <code :class="{'schedule-suceedeed': schedule.most_recent_task.status == 'succeeded', 'schedule-failed': schedule.most_recent_task.status == 'failed'}">{{ schedule.most_recent_task.status }}</code>
           </td>
           <td colspan="2" v-else>-</td>
           <td v-if="schedule.most_recent_task" v-tooltip="format_dt(schedule.most_recent_task.updated_at)">
             <router-link :to="{name: 'task-detail', params: {_id: schedule.most_recent_task._id}}">
-              {{ schedule.most_recent_task.on }}
+              {{ schedule.most_recent_task.updated_at | from_now }}
             </router-link>
           </td>
         </tr>
@@ -89,7 +86,6 @@
 </template>
 
 <script type="text/javascript">
-  import moment from 'moment';
   import Multiselect from 'vue-multiselect'
 
   import Constants from '../constants.js'
@@ -169,20 +165,7 @@
           .then(function (response) {
                 parent.schedules = [];
                 parent.meta = response.data.meta;
-
-                for (var i=0; i<response.data.items.length; i++){
-                  var schedule = response.data.items[i];
-                  if (schedule["most_recent_task"]) {
-
-                    schedule["most_recent_task"]["on"] = moment(schedule["most_recent_task"]["updated_at"]).fromNow()
-                    if (schedule["most_recent_task"]["status"] == "succeeded") {
-                      schedule["class_attr"] = "schedule-suceedeed";
-                    } else if (schedule["most_recent_task"]["status"] == "failed") {
-                      schedule["class_attr"] = "schedule-failed";
-                    }
-                  }
-                  parent.schedules.push(schedule);
-                }
+                parent.schedules = response.data.items;
           })
           .catch(function (error) {
             parent.schedules = [];

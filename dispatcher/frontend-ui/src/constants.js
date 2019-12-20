@@ -238,6 +238,8 @@ export default {
         status_text += "<br />" + response.data.error;
       if (response.data && response.data.error_description)
         status_text += "<br />" + response.data.error_description;
+      if (response.data && response.data.message)
+        status_text += "<br />" + JSON.stringify(response.data.message);
     }
     return response.status + ": " + status_text + ".";
   },

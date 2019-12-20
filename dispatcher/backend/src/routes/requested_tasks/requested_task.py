@@ -46,10 +46,10 @@ class RequestedTasksRoute(BaseRoute):
         priority = request_json.get("priority", 0)
         worker = request_json.get("worker")
 
-        # verify requested names exists
+        # raise 404 if nothing to schedule
         if not Schedules().count_documents(
             {"name": {"$in": schedule_names}, "enabled": True}
-        ) >= len(schedule_names):
+        ):
             raise NotFound()
 
         now = datetime.datetime.now(tz=pytz.utc)
@@ -65,11 +65,11 @@ class RequestedTasksRoute(BaseRoute):
             schedule = Schedules().find_one(
                 {"name": schedule_name, "enabled": True}, {"config": 1}
             )
-            config = schedule.get("config")
-
-            if not config:
+            # schedule might be disabled
+            if not schedule:
                 continue
 
+            config = schedule["config"]
             # build and save command-information to config
             config.update(command_information_for(config))
 
@@ -246,7 +246,7 @@ class RequestedTaskRoute(BaseRoute):
         return Response(status=HTTPStatus.OK)
 
     @authenticate
-    @require_perm("tasks", "delete")
+    @require_perm("tasks", "unrequest")
     @url_object_id("requested_task_id")
     def delete(self, requested_task_id: str, token: AccessToken.Payload):
 

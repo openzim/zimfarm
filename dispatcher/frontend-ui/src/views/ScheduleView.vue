@@ -14,15 +14,15 @@
                        active-class="dummy"
                        :class="{ active: selectedTab == 'details'}"
                        :to="{name: 'schedule-detail', params: {schedule_name: schedule_name}}">
-            Schedule
+            Info
           </router-link>
         </li>
         <li class="nav-item" :class="{ active: selectedTab == 'config'}">
-          <router-link class="nav-link"
+          <router-link class="nav-link schedule-config-tab"
                        active-class="dummy"
                        :class="{ active: selectedTab == 'config'}"
                        :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'config'}}">
-            Config
+            <span>Config</span>
           </router-link>
         </li>
         <li v-show="canUpdateSchedules" class="nav-item" :class="{ active: selectedTab == 'edit'}">
@@ -33,12 +33,20 @@
             Edit
           </router-link>
         </li>
+        <li v-show="canCreateSchedules" class="nav-item" :class="{ active: selectedTab == 'clone'}">
+          <router-link class="nav-link text-info"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'clone'}"
+                       :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'clone'}}">
+            Clone
+          </router-link>
+        </li>
         <li v-show="canDeleteSchedules" class="nav-item" :class="{ active: selectedTab == 'delete'}">
-          <router-link class="nav-link text-danger"
+          <router-link class="nav-link text-danger schedule-delete-tab"
                        active-class="dummy"
                        :class="{ active: selectedTab == 'delete'}"
                        :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'delete'}}">
-            Delete
+            <span>Delete</span>
           </router-link>
         </li>
       </ul>
@@ -58,14 +66,14 @@
             <th>Last run</th>
             <td v-if="last_run">
               <code>{{ last_run.status }}</code>,
-              <router-link :to="{name: 'task-detail', params: {_id: last_run._id}}">{{ last_run.on }}</router-link>
+              <router-link :to="{name: 'task-detail', params: {_id: last_run._id}}">{{ last_run.updated_at | from_now }}</router-link>
             </td>
             <td v-else><code>none</code> 🙁</td>
           </tr>
           <tr>
             <th>Requested</th>
             <td v-if="requested === null"><font-awesome-icon icon="spinner" spin /></td>
-            <td v-else-if="requested"><router-link :to="{ name: 'task-detail', params: {_id: requested_id}}"><code>{{ requested_id }}</code></router-link>, {{ requested_since }}</td>
+            <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }}</td>
             <td v-else><code>no</code></td>
           </tr>
         </table>
@@ -93,6 +101,14 @@
       <ScheduleEditor :schedule_name="schedule_name"></ScheduleEditor>
     </div>
 
+    <div v-if="selectedTab == 'clone' && canCreateSchedules" class="tab-content edit-tab">
+      <CloneSchedule :from="schedule_name" />
+    </div>
+
+    <div v-if="selectedTab == 'delete' && canDeleteSchedules" class="tab-content edit-tab">
+      <DeleteItem kind="schedule" :name="schedule_name" />
+    </div>
+
     <ErrorMessage :message="error" v-if="error" />
   </div>
 </template>
@@ -104,11 +120,14 @@
   import ScheduleActionButton from '../components/ScheduleActionButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
   import ScheduleEditor from '../components/ScheduleEditor.vue'
+  import DeleteItem from '../components/DeleteItem.vue'
+  import CloneSchedule from '../components/CloneSchedule.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage, ResourceBadge, ScheduleEditor},
+    components: {ScheduleActionButton, ErrorMessage, ResourceBadge,
+                 ScheduleEditor, DeleteItem, CloneSchedule},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug
@@ -135,8 +154,6 @@
       command() { return Constants.build_docker_command(this.name, this.config); },
       trimmed_command() { return Constants.trim_command(this.command); },
       requested_id() { return (this.requested) ? this.requested._id : null; },
-      requested_time() { return this.format_dt(this.requested.timestamp.requested); },
-      requested_since() { return Constants.from_now(this.requested_time); }
     },
     methods: {
       filesize(value) { return Constants.filesize(parseInt(value)); },
@@ -182,5 +199,11 @@
 <style type="text/css" scoped>
   .edit-tab {
     padding: 1rem;
+  }
+
+  @media (max-width: 500px) {
+    .schedule-config-tab span, .schedule-delete-tab span { display: none; }
+    .schedule-config-tab:after { content: "Conf"; }
+    .schedule-delete-tab:after { content: "Del"; }
   }
 </style>

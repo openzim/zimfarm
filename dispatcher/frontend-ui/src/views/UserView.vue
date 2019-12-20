@@ -81,7 +81,7 @@
       </div>
 
       <div v-if="selectedTab == 'delete'" class="tab-content">
-        <DeleteUser :username="username" />
+        <DeleteItem kind="user" :name="username" />
       </div>
     </div>
 
@@ -93,13 +93,13 @@
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
-  import DeleteUser from '../components/DeleteUser.vue'
+  import DeleteItem from '../components/DeleteItem.vue'
   import UpdateUser from '../components/UpdateUser.vue'
 
   export default {
     name: 'UserView',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage, DeleteUser, UpdateUser},
+    components: {ErrorMessage, DeleteItem, UpdateUser},
     props: {
       username: String,
       selectedTab: {  // currently selected tab: details, container, debug

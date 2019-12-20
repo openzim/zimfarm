@@ -164,9 +164,6 @@
           .then(function (response) {
               // parent.error = null;
               let schedule = response.data;
-              if (schedule.most_recent_task) {
-                schedule.most_recent_task.on = moment(schedule.most_recent_task.updated_at).fromNow();
-              }
               parent.$store.dispatch('setSchedule', schedule);
 
               if (on_success) { on_success(); }
