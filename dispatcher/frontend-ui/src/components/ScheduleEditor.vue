@@ -410,22 +410,17 @@
         parent.toggleLoader("commiting updates…");
         parent.$root.axios.patch('/schedules/' + this.schedule_name, parent.payload)
         .then(function () {
-            let msg = "Recipe updated successfuly.";
-            parent.$root.$emit('feedback-message', 'success', "<strong>Updated!</strong><br />" + msg);
+            parent.alertSuccess("Updated!", "Recipe updated successfuly.");
             if (parent.payload.name !== undefined) {  // named changed so we need to redirect
-              parent.$router.push({name: 'schedule-detail-tab',
-                                   params: {schedule_name: parent.payload.name, selectedTab: 'edit'}});
+              parent.redirectTo('schedule-detail-tab', {schedule_name: parent.payload.name, selectedTab: 'edit'});
             }
             parent.loadSchedule(true);
         })
         .catch(function (error) {
           if (error.response.status == 400) {
-            let msg = "";
-            msg += "<br />" + error.response.data.error;
-            msg += "<br />" + error.response.data.error_description;
-            parent.$root.$emit('feedback-message', 'warning', Constants.standardHTTPError(error.response) + msg);
+            parent.alertWarning("Error!", Constants.standardHTTPError(error.response));
           } else {
-            parent.$root.$emit('feedback-message', 'danger', Constants.standardHTTPError(error.response));
+            parent.alertError(Constants.standardHTTPError(error.response));
           }
         })
         .then(function () {
@@ -443,7 +438,7 @@
         parent.$root.$emit('load-schedule', parent.schedule_name, force, function() {
           parent.reset_form();
         }, function(error) {
-          parent.$root.$emit('feedback-message', 'danger', "<strong>Schedule not retrieved</strong><br />" + error);
+          parent.alertError(Constants.standardHTTPError(error.response));
         });
       },
     },

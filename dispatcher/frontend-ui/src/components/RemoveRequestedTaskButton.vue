@@ -41,12 +41,10 @@
           .then(function () {
             let msg = "Requested Task <code>" + Constants.short_id(parent._id) + "</code> has been removed.";
 
-            parent.$root.$emit('feedback-message', 'success', "<strong>Un-scheduled!</strong><br />" + msg);
+            parent.alertSuccess("Un-scheduled!", msg);
           })
           .catch(function (error) {
-            parent.$root.$emit('feedback-message',
-                               'danger',
-                               "<strong>Not Un-scheduled!</strong><br />" + Constants.standardHTTPError(error.response));
+            parent.alertError(Constants.standardHTTPError(error.response));
           })
           .then(function () {
             parent.working = false;

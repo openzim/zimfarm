@@ -110,12 +110,11 @@
                    // should any fail, don't set ready=true > nothing displayed
         let parent = this;
 
+        parent.requested_task = {};
         parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: [parent.name]}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
               parent.requested_task = response.data.items[0];
-            } else {
-              parent.requested_task = {};  // we have no req ID
             }
 
             // once requested-tasks is ran, look for running ones

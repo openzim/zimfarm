@@ -71,12 +71,11 @@
       copyToken() {
         let parent = this;
         this.$copyText(this.$store.getters.access_token).then(function () {
-            parent.$root.$emit('feedback-message', 'info', "Token copied to Clipboard!");
+            parent.alertInfo("Token copied to Clipboard!");
           }, function () {
-            parent.$root.$emit('feedback-message',
-                         'warning',
-                         "Unable to copy token to clipboard 😞<br />" +
-                         "Copy it manually:<br /><input type=\"text\" value=\"" + parent.$store.getters.access_token + "\" />");
+            parent.alertWarning(
+              "Unable to copy token to clipboard 😞",
+              "Copy it manually:<br /><input type=\"text\" value=\"" + parent.$store.getters.access_token + "\" />");
           });
       },
       signOut() {
@@ -90,7 +89,7 @@
         }
         parent.$store.dispatch('clearAuthentication');
         parent.$cookie.delete('token_data');
-        parent.$root.$emit('feedback-message', 'info', "<strong>Signed-out!</strong><br />" + msg);
+        parent.alertInfo("Signed-out!", msg);
       }
     },
   }

@@ -127,7 +127,7 @@
     mounted() {
       if (!this.canReadUsers) {
         this.alertAccessRefused("users.read");
-        this.$router.push({name: 'home'});
+        this.redirectTo('home');
         return;
       }
       this.loadUsersList();

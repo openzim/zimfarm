@@ -70,7 +70,7 @@
             </td>
             <td v-else><code>none</code> 🙁</td>
           </tr>
-          <tr>
+          <tr v-if="!canRequestTasks">
             <th>Requested</th>
             <td v-if="requested === null"><font-awesome-icon icon="spinner" spin /></td>
             <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }} <b-badge pill variant="warning" v-if="requested.priority"><font-awesome-icon icon="fire" size="sm" /> {{ requested.priority }}</b-badge></td>
@@ -160,12 +160,10 @@
       copyCommand() {
         let parent = this;
         this.$copyText(this.command).then(function () {
-            parent.$root.$emit('feedback-message', 'info', "Command copied to Clipboard!");
+            parent.alertInfo("Command copied to Clipboard!");
           }, function () {
-            parent.$root.$emit('feedback-message',
-                         'warning',
-                         "Unable to copy command to clipboard 😞. " +
-                         "Please copy it manually.");
+            parent.alertWarning("Unable to copy command to clipboard 😞. ",
+                                "Please copy it manually.");
           });
       },
       setReady() { this.ready = true; },
@@ -176,11 +174,12 @@
 
       // redirect to details if tryng to access Edit tab without permission
       if (this.selectedTab == 'edit' && !this.canUpdateSchedules) {
-        parent.$router.push({name: 'schedule-detail', params: {schedule_name: this.schedule_name}});
+        parent.redirectTo('schedule-detail', {schedule_name: this.schedule_name});
       }
 
       parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
-      parent.$root.axios.get('/requested-tasks/')
+      parent.requested = null;
+      parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
               parent.requested = response.data.items[0];

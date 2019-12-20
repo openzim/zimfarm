@@ -156,12 +156,10 @@
       copyCommand() {
         let parent = this;
         this.$copyText(this.command).then(function () {
-            parent.$root.$emit('feedback-message', 'info', "Command copied to Clipboard!");
+            parent.alertInfo("Command copied to Clipboard!");
           }, function () {
-            parent.$root.$emit('feedback-message',
-                         'warning',
-                         "Unable to copy command to clipboard 😞. " +
-                         "Please copy it manually.");
+            parent.alertWarning("Unable to copy command to clipboard 😞. ",
+                                "Please copy it manually.");
           });
       }
     },

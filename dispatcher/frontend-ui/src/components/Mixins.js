@@ -79,7 +79,10 @@ export default {
     },
 
     alert(level, title, text, duration) {
-      this.$root.$emit('feedback-message', level, "<strong>" + title + "</strong><br />" + text, duration);
+      let message = "<strong>" + title + "</strong>";
+      if (text)
+        message += "<br />" + text;
+      this.$root.$emit('feedback-message', level, message, duration);
     },
     alertInfo(title, text, duration) { this.alert('info', title, text, duration); },
     alertSuccess(title, text, duration) { this.alert('success', title, text, duration); },

@@ -54,7 +54,7 @@
           console.debug("token has expired, logging-out");
           let msg = "Your token expired " + this.$store.getters.token_expiry.fromNow() + ". You can sign back in at any time.";
           this.$store.dispatch('clearAuthentication');
-          this.$root.$emit('feedback-message', 'info', "<strong>Signed-out!</strong><br />" + msg);
+          this.alertInfo("Signed-out!", msg);
         }
       },
       loadLanguages() {
