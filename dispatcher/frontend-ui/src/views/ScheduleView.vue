@@ -73,7 +73,7 @@
           <tr>
             <th>Requested</th>
             <td v-if="requested === null"><font-awesome-icon icon="spinner" spin /></td>
-            <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }}</td>
+            <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }} <b-badge pill variant="warning" v-if="requested.priority"><font-awesome-icon icon="fire" size="sm" /> {{ requested.priority }}</b-badge></td>
             <td v-else><code>no</code></td>
           </tr>
         </table>

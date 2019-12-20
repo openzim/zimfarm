@@ -33,18 +33,18 @@ import { faSpinner, faUser, faUserCircle, faKey, faTimes, faTimesCircle,
          faWrench, faSignInAlt, faSignOutAlt, faArrowCircleLeft,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
          faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
-         faSkullCrossbones, faAsterisk, faCheck,
-         faExclamationTriangle } from '@fortawesome/free-solid-svg-icons'
+         faSkullCrossbones, faAsterisk, faCheck, faPlusCircle,
+         faExclamationTriangle, faServer, faSortAmountUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
 library.add(faUser);
 library.add(faPlug);
 library.add(faFire);
-library.add(faCheck);
 library.add(faCopy);
+library.add(faCheck);
+library.add(faServer);
 library.add(faTimes);
-library.add(faTimesCircle);
 library.add(faCarrot);
 library.add(faMemory);
 library.add(faWrench);
@@ -53,9 +53,12 @@ library.add(faAsterisk);
 library.add(faTrashAlt);
 library.add(faMicrochip);
 library.add(faSignInAlt);
+library.add(faSortAmountUp);
 library.add(faStopCircle);
 library.add(faSignOutAlt);
 library.add(faUserCircle);
+library.add(faPlusCircle);
+library.add(faTimesCircle);
 library.add(faCalendarAlt);
 library.add(faArrowCircleLeft);
 library.add(faSkullCrossbones);
