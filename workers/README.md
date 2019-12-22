@@ -73,5 +73,5 @@ docker ps --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "schedule_name"}}\
 ``` sh
 #!/bin/sh
 
-docker system prune -af
+docker system prune --volumes -af
 ```
