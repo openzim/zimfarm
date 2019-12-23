@@ -9,6 +9,7 @@
 <script type="text/javascript">
   import axios from 'axios'
   import moment from 'moment';
+  import jwt from 'jsonwebtoken';
 
   import Constants from './constants.js'
   import ZimfarmMixins from './components/Mixins.js'
@@ -22,26 +23,27 @@
     methods: {
       loadTokenFromCookie() {
         // already authenticated
-        if (this.$store.getters.username)
+        if (this.$root.isLoggedIn)
           return;
-        let cookie_token = this.$cookie.get('token_data');
+        let cookie_value = this.$cookie.get(Constants.TOKEN_COOKIE_NAME);
 
         // no cookie
-        if (!cookie_token)
+        if (!cookie_value)
           return;
 
         let token_data;
         try {
-           token_data = JSON.parse(cookie_token);
+           token_data = JSON.parse(cookie_value);
+           token_data.payload = jwt.decode(token_data.access_token);
         } catch {
           // incorrect cookie payload
-          this.$cookie.delete('token_data');
+          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
           return;
         }
 
-        let expiry = moment(token_data.expires_on);
+        let expiry = moment(token_data.payload.exp * 1000);
         if (moment().isAfter(expiry)) {
-          this.$cookie.delete('token_data');
+          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
           return;
         }
 
@@ -52,7 +54,7 @@
           console.debug("token has expired, logging-out");
           let msg = "Your token expired " + this.$store.getters.token_expiry.fromNow() + ". You can sign back in at any time.";
           this.$store.dispatch('clearAuthentication');
-          this.$root.$emit('feedback-message', 'info', "<strong>Signed-out!</strong><br />" + msg);
+          this.alertInfo("Signed-out!", msg);
         }
       },
       loadLanguages() {
@@ -69,10 +71,7 @@
               parent.$store.dispatch('setLanguages', languages);
             })
             .catch(function (error) {
-              console.log(error);
-              parent.$root.$emit('feedback-message',
-                           'danger',
-                           "<strong>Unable to fecth languages</strong><br />" + Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fecth languages",  Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -93,9 +92,7 @@
               parent.$store.dispatch('setTags', tags);
             })
             .catch(function (error) {
-              parent.$root.$emit('feedback-message',
-                           'danger',
-                           "<strong>Unable to fecth tags</strong><br />" + Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fecth tags", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -117,9 +114,7 @@
               parent.loadOfflinersDefs();
             })
             .catch(function (error) {
-              parent.$root.$emit('feedback-message',
-                           'danger',
-                           "<strong>Unable to fecth offliners</strong><br />" + Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fecth offliners", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -162,9 +157,6 @@
           .then(function (response) {
               // parent.error = null;
               let schedule = response.data;
-              if (schedule.most_recent_task) {
-                schedule.most_recent_task.on = moment(schedule.most_recent_task.updated_at).fromNow();
-              }
               parent.$store.dispatch('setSchedule', schedule);
 
               if (on_success) { on_success(); }

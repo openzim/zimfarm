@@ -99,7 +99,7 @@ class WorkerManager(BaseWorker):
         host_stats = query_host_stats(self.docker, self.workdir)
         success, status_code, response = self.query_api(
             "GET",
-            "/requested-tasks/",
+            "/requested-tasks/worker",
             params={
                 "limit": 1,
                 "worker": self.worker_name,

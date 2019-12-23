@@ -1,6 +1,11 @@
 from routes import API_PATH
 from routes.base import BaseBlueprint
-from .schedule import ScheduleRoute, SchedulesRoute, SchedulesBackupRoute
+from .schedule import (
+    ScheduleRoute,
+    SchedulesRoute,
+    SchedulesBackupRoute,
+    ScheduleCloneRoute,
+)
 
 
 class Blueprint(BaseBlueprint):
@@ -9,4 +14,5 @@ class Blueprint(BaseBlueprint):
 
         self.register_route(SchedulesRoute())
         self.register_route(ScheduleRoute())
+        self.register_route(ScheduleCloneRoute())
         self.register_route(SchedulesBackupRoute())

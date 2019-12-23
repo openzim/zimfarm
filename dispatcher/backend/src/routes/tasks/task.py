@@ -9,16 +9,17 @@ from http import HTTPStatus
 import pytz
 import pymongo
 from flask import request, jsonify, make_response, Response
-from marshmallow import Schema, fields, validate
-from marshmallow.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from common.enum import TaskStatus
+from utils.token import AccessToken
 from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id
+from routes import authenticate, url_object_id, require_perm
 from routes.base import BaseRoute
+from common.schemas.parameters import TasksSchema, TaskCreateSchema, TasKUpdateSchema
 
 logger = logging.getLogger(__name__)
 
@@ -28,27 +29,12 @@ class TasksRoute(BaseRoute):
     name = "tasks"
     methods = ["GET"]
 
-    def get(self, *args, **kwargs):
+    def get(self):
         """Return a list of tasks"""
-
-        # validate query parameter
-        class RequestArgsSchema(Schema):
-            skip = fields.Integer(
-                required=False, missing=0, validate=validate.Range(min=0)
-            )
-            limit = fields.Integer(
-                required=False, missing=100, validate=validate.Range(min=0, max=200)
-            )
-            status = fields.List(
-                fields.String(validate=validate.OneOf(TaskStatus.all())), required=False
-            )
-            schedule_name = fields.String(
-                required=False, validate=validate.Length(min=5)
-            )
 
         request_args = request.args.to_dict()
         request_args["status"] = request.args.getlist("status")
-        request_args = RequestArgsSchema().load(request_args)
+        request_args = TasksSchema().load(request_args)
 
         # unpack query parameter
         skip, limit = request_args["skip"], request_args["limit"]
@@ -74,7 +60,12 @@ class TasksRoute(BaseRoute):
         cursor = (
             Tasks()
             .find(query, projection)
-            .sort("timestamp.requested", pymongo.DESCENDING)
+            .sort(
+                [
+                    (f"timestamp.{status}", pymongo.DESCENDING)
+                    for status in sorted(TaskStatus.all(), reverse=True)
+                ]
+            )
             .skip(skip)
             .limit(limit)
         )
@@ -91,7 +82,7 @@ class TaskRoute(BaseRoute):
     methods = ["GET", "POST", "PATCH"]
 
     @url_object_id("task_id")
-    def get(self, task_id: str, *args, **kwargs):
+    def get(self, task_id: str):
         task = Tasks().find_one({"_id": task_id})
         if task is None:
             raise TaskNotFound()
@@ -99,15 +90,16 @@ class TaskRoute(BaseRoute):
         return jsonify(task)
 
     @authenticate
+    @require_perm("tasks", "create")
     @url_object_id("task_id")
-    def post(self, task_id: str, *args, **kwargs):
+    def post(self, task_id: str, token: AccessToken.Payload):
         """ create a task from a requested_task_id """
+
         requested_task = RequestedTasks().find_one({"_id": task_id})
         if requested_task is None:
             raise TaskNotFound()
 
-        validator = Schema.from_dict({"worker_name": fields.String(required=True)})
-        request_args = validator().load(request.args.to_dict())
+        request_args = TaskCreateSchema().load(request.args.to_dict())
 
         now = datetime.datetime.now(tz=pytz.utc)
 
@@ -149,25 +141,16 @@ class TaskRoute(BaseRoute):
         )
 
     @authenticate
+    @require_perm("tasks", "update")
     @url_object_id("task_id")
-    def patch(self, task_id: str, *args, **kwargs):
+    def patch(self, task_id: str, token: AccessToken.Payload):
+
         task = Tasks().find_one({"_id": task_id}, {"_id": 1})
         if task is None:
             raise TaskNotFound()
 
-        # only applies to reserved tasks
-        events = TaskStatus.all() + TaskStatus.file_events()
-        events.remove(TaskStatus.requested)
-        events.remove(TaskStatus.reserved)
-
-        validator = Schema.from_dict(
-            {
-                "event": fields.String(required=True, validate=validate.OneOf(events)),
-                "payload": fields.Dict(required=True),
-            }
-        )
         try:
-            request_json = validator().load(request.get_json())
+            request_json = TasKUpdateSchema().load(request.get_json())
             # empty dict passes the validator but troubles mongo
             if not request.get_json():
                 raise ValidationError("Update can't be empty")
@@ -189,23 +172,18 @@ class TaskCancelRoute(BaseRoute):
     methods = ["POST"]
 
     @authenticate
+    @require_perm("tasks", "cancel")
     @url_object_id("task_id")
-    def post(self, task_id: str, *args, **kwargs):
+    def post(self, task_id: str, token: AccessToken.Payload):
+
         task = Tasks().find_one(
             {"status": {"$in": TaskStatus.incomplete()}, "_id": task_id}, {"_id": 1}
         )
         if task is None:
             raise TaskNotFound()
 
-        try:
-            username = kwargs["token"].username
-        except Exception as exc:
-            logger.error("unable to retrieve username from token")
-            logger.exception(exc)
-            username = None
-
         task_event_handler(
-            task["_id"], TaskStatus.cancel_requested, {"canceled_by": username}
+            task["_id"], TaskStatus.cancel_requested, {"canceled_by": token.username}
         )
 
         # broadcast cancel-request to worker

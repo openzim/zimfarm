@@ -6,6 +6,7 @@ import NotFound from './views/NotFound.vue'
 import SchedulesView from './views/SchedulesView.vue'
 import ScheduleView from './views/ScheduleView.vue'
 import UsersView from './views/UsersView.vue'
+import UserView from './views/UserView.vue'
 import WorkersView from './views/WorkersView.vue'
 import TaskView from './views/TaskView.vue'
 
@@ -68,7 +69,13 @@ export default [
   {
     path: '/users/:username',
     name: 'user-detail',
-    component: UsersView,
+    component: UserView,
+    props: true,
+  },
+  {
+    path: '/users/:username/:selectedTab',
+    name: 'user-detail-tab',
+    component: UserView,
     props: true,
   },
   {

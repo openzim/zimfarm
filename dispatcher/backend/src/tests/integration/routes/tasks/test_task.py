@@ -6,6 +6,16 @@ from bson import ObjectId
 from common.enum import TaskStatus
 
 
+def _find_match(sequence, column, item):
+    return list(
+        filter(lambda sq_item: str(sq_item[column]) == str(item[column]), sequence)
+    ).pop()
+
+
+def _find_matches(sequencea, sequenceb, column):
+    return [(item, _find_match(sequenceb, "_id", item)) for item in sequencea]
+
+
 class TestTaskCreate:
     @pytest.fixture()
     def requested_task(self, make_requested_task):
@@ -55,15 +65,15 @@ class TestTaskList:
         assert response.status_code == 200
 
         data = json.loads(response.data)
-        assert data["meta"]["limit"] == 100
+        assert data["meta"]["limit"] == 20
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
-        tasks.sort(key=lambda task: task["_id"], reverse=True)
-        assert len(items) == len(tasks)
-        for index, task in enumerate(tasks):
-            item = items[index]
-            self._assert_task(task, item)
+        assert len(items) == data["meta"]["limit"]
+        matches = _find_matches(items, tasks, "_id")
+        assert len(items) == len(matches)
+        for m_item, m_task in matches:
+            self._assert_task(m_task, m_item)
 
     def test_list_pagination(self, client, tasks):
         url = "/tasks/?limit={}&skip={}".format(10, 5)

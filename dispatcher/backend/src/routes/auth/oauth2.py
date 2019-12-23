@@ -7,7 +7,7 @@ from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
 from common.mongo import Users, RefreshTokens
-from utils.token import AccessControl
+from utils.token import LoadedAccessToken
 from errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 
 
@@ -83,7 +83,7 @@ class OAuth2:
             raise InvalidGrant("Username or password is invalid.")
 
         # generate token
-        access_token = AccessControl(
+        access_token = LoadedAccessToken(
             user["_id"], user["username"], user.get("scope", {})
         ).encode()
         refresh_token = OAuth2.generate_refresh_token(user["_id"])
@@ -114,7 +114,7 @@ class OAuth2:
             raise InvalidGrant("Refresh token is invalid.")
 
         # generate token
-        access_token = AccessControl(
+        access_token = LoadedAccessToken(
             user["_id"], user["username"], user.get("scope", {})
         ).encode()
         refresh_token = OAuth2.generate_refresh_token(user["_id"])
@@ -156,7 +156,7 @@ class OAuth2:
             {
                 "access_token": access_token,
                 "token_type": "bearer",
-                "expires_in": int(AccessControl.expire_time_delta.total_seconds()),
+                "expires_in": int(LoadedAccessToken.expire_time_delta.total_seconds()),
                 "refresh_token": refresh_token,
             }
         )

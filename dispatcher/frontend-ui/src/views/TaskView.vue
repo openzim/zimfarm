@@ -4,12 +4,12 @@
 
 <template>
   <div class="container">
-    <ScheduleActionButton v-if="task" :name="schedule_name" />
     <h2 class="row">
       <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
       <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
     </h2>
 
+    <div class="row"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
     <div v-if="!error && task">
       <ul class="nav nav-tabs">
         <li class="nav-item" :class="{ active: selectedTab == 'details'}">
@@ -17,7 +17,7 @@
                        active-class="dummy"
                        :class="{ active: selectedTab == 'details'}"
                        :to="{name: 'task-detail', params: {_id: _id}}">
-            Task
+            Info
           </router-link>
         </li>
         <li class="nav-item" :class="{ active: selectedTab == 'debug'}">
@@ -31,7 +31,7 @@
       </ul>
 
       <div v-if=" selectedTab == 'details'" class="tab-content">
-        <table class="table table-responsive-sm table-striped table-in-tab">
+        <table class="table table-responsive-md table-striped table-in-tab">
           <tr><th>ID</th><td><code>{{ this._id }}</code></td></tr>
           <tr>
             <th>Recipe</th>
@@ -42,15 +42,15 @@
           </tr>
           <tr><th>Status</th><td><code>{{ task.status }}</code></td></tr>
           <tr><th>Worker</th><td>{{ task.worker }}</td></tr>
-          <tr><th>Started On</th><td>{{ started_on|datetime }}, after <strong>{{ pipe_duration }} in pipe</strong></td></tr>
+          <tr><th>Started On</th><td>{{ started_on|format_dt }}, after <strong>{{ pipe_duration }} in pipe</strong></td></tr>
           <tr><th>Duration</th><td>{{ task_duration }}<span v-if="is_running"> (<strong>Ongoing</strong>)</span></td></tr>
           <tr>
             <th>Events</th>
             <td>
-              <table class="table table-responsive-sm table-striped table-sm">
+              <table class="table table-responsive-md table-striped table-sm">
               <tbody>
               <tr v-for="event in task.events" v-bind:key="event.code">
-                <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | datetime }}</td>
+                <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | format_dt }}</td>
               </tr>
               </tbody>
             </table>
@@ -59,7 +59,7 @@
           <tr v-if="task.files">
             <th>Files</th>
             <td>
-              <table class="table table-responsive-sm table-striped table-sm">
+              <table class="table table-responsive-md table-striped table-sm">
                 <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th></tr></thead>
                 <tr v-for="file in task.files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
@@ -74,7 +74,7 @@
         </table>
       </div>
       <div v-if="selectedTab == 'debug'" class="tab-content">
-        <table class="table table-responsive-sm table-striped table-in-tab">
+        <table class="table table-responsive table-striped table-in-tab">
           <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
           <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
           <tr v-if="task_container.exit_code"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
@@ -134,7 +134,7 @@
 
         let first = this.task.timestamp.started;
         if (!first)  // probably in reserved state, hence not yet started
-          return 0;
+          return "not actually started";
 
         // if task is running (non-complete status) then it's started-to now
         if (this.is_running) {
@@ -145,23 +145,21 @@
         let last = this.task.events[this.task.events.length - 1].timestamp;
         return Constants.format_duration_between(first, last);
       },
-      started_on() { return this.task.timestamp.started || null; },
+      started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },
-      command() { return '"' + this.task_container.command.join('" "') + '"'; },
+      command() { return this.task_container.command.join(" "); },
       trimmed_command() { return Constants.trim_command(this.command); },
     },
     methods: {
       copyCommand() {
         let parent = this;
         this.$copyText(this.command).then(function () {
-            parent.$root.$emit('feedback-message', 'info', "Command copied to Clipboard!");
+            parent.alertInfo("Command copied to Clipboard!");
           }, function () {
-            parent.$root.$emit('feedback-message',
-                         'warning',
-                         "Unable to copy command to clipboard 😞. " +
-                         "Please copy it manually.");
+            parent.alertWarning("Unable to copy command to clipboard 😞. ",
+                                "Please copy it manually.");
           });
       }
     },

@@ -29,7 +29,7 @@
 </template>
 
 <script type="text/javascript">
-  import moment from 'moment';
+  import jwt from 'jsonwebtoken';
 
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
@@ -59,30 +59,36 @@
         parent.working = true;
         parent.error = null;
 
-        let now = moment();
-        let expires_on = moment();
-        let payload = {username: this.username, password: this.password};
+        let params = {username: this.username, password: this.password};
 
-        parent.$root.axios.post('/auth/authorize', Constants.params_serializer(payload))
+        parent.$root.axios.post('/auth/authorize', Constants.params_serializer(params))
           .then(function (response) {
               // prepare our token structure
-              expires_on.add(response.data.expires_in, 'seconds');
+              let access_token = response.data.access_token;
+              let refresh_token = response.data.refresh_token;
               let token_data = {
-                username: parent.username,
-                access_token: response.data.access_token,
-                authenticated_on: now.toDate(),
-                expires_on: expires_on.toDate(),
-                refresh_token: response.data.refresh_token
+                access_token: access_token,
+                payload: jwt.decode(access_token),
+                refresh_token: refresh_token,
               }
               // save token to store
-              parent.$store.dispatch('saveAuthenticationToken', token_data)
+              parent.$store.dispatch('saveAuthenticationToken', token_data);
+
               // save to cookie
-              parent.$cookie.set('token_data', JSON.stringify(token_data), {expires: Constants.TOKEN_COOKIE_EXPIRY});
+              let cookie_data = {"access_token": access_token, "refresh_token": refresh_token};
+              parent.$cookie.set(Constants.TOKEN_COOKIE_NAME,
+                                 JSON.stringify(cookie_data),
+                                 {expires: Constants.TOKEN_COOKIE_EXPIRY,
+                                  secure: Constants.isProduction()});
+
               // redirect
               parent.$router.back();
             })
             .catch(function (error) {
-              parent.error = Constants.standardHTTPError(error.response);
+              if (error.response)
+                parent.error = Constants.standardHTTPError(error.response);
+              else
+                parent.error = error;
             })
             .then(function () {
               parent.working = false;

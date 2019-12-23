@@ -14,24 +14,38 @@
 </template>
 
 <script type="text/javascript">
+  import Constants from '../constants.js'
+
   export default {
     name: 'AlertFeedback',
     data() {
       return {
         level: null,  // bootstrap-alert-like class to use: info, success, warning, danger
         message: null,  // message to display
+        auto_dismiss: true,  // whether to automatically hide or not
         dismissCountDown: 0,  // live-updating counter
       };
     },
     methods: {
-      countDownChanged(dismissCountDown) { this.dismissCountDown = dismissCountDown; },
+      countDownChanged(dismissCountDown) {
+        if (!this.auto_dismiss)
+          return;
+
+        this.dismissCountDown = dismissCountDown;
+      },
     },
     beforeMount(){
       let parent = this;
-      this.$root.$on('feedback-message', function (level, message) {
+      this.$root.$on('feedback-message', function (level, message, duration) {
         parent.level = level;
         parent.message = message;
-        parent.dismissCountDown = 5;
+        // if dismissCountDown is not a number, it won't trigger countDownChanged
+        if (duration === undefined)
+            duration = Constants.ALERT_DEFAULT_DURATION;
+        if (duration === true)
+            duration = Constants.ALERT_PERMANENT_DURATION;
+        parent.dismissCountDown = duration;
+        parent.auto_dismiss = (duration === true) ? false : true;
       });
     }
   }

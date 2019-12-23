@@ -45,23 +45,56 @@ function build_docker_command(name, config) {
   return args.join(" ");
 }
 
-function trim_command(command, columns=70) {  // trim a string to espaced version (at most columns)
+function trim_command(command, columns=79) {  // trim a string to espaced version (at most columns)
+
+  let parts;
+  if (typeof(command) == "object" && Object.isArray(command)) {
+    parts = command.map(function(part) { return part.replace(/^--/, ""); });
+    command = parts.join(" ");
+  } else {
+    parts = command.split(" --");
+  }
   // don't bother if command is not that long
   if (command.length <= columns)
     return command;
 
-  // first line is considered already filled with PS1 (35 chars)
   let sep = "\\\n";
-  let first_line_cols = 34;
-  let new_command = command.substr(0, first_line_cols) + sep;
-  let remaining = command.substr(first_line_cols);
-  while (remaining.length) {
-    new_command += remaining.substr(0, columns);
-    if (remaining.length > columns)
-      new_command += sep;  // don't add sep on last line
-    remaining = remaining.substr(columns);
-  }
-  return new_command; // remove trailing sep
+  // first line is considered already filled with PS1 (35 chars)
+  let lines = [];
+  let line = "";
+  parts.forEach(function (part) {
+    part = "--" + part + " ";
+    // current line and part won't fit. let's flush to new line
+    if (line.length + part.length >= columns) {
+      lines.push(line);
+      line = "";
+    }
+    // part alone can't fit a line
+    if (part.length >= columns) {
+      let sublines = [];
+      let part_remaining = part;
+      while (part_remaining.length) {
+        sublines.push(part_remaining.substr(0, columns));
+        part_remaining = part_remaining.substr(columns);
+      }
+      // add lines from those subparts to main
+      lines = lines.concat(sublines);
+    }
+    // if we can fit, add to current line
+    if (line.length + part.length <= columns) {
+      line += part;
+    }
+  });
+
+  // remove -- from beggining
+  let first_line = lines[0];
+  lines[0] = first_line.substr(2);
+  // remove extra space at end
+  let last_line = lines[lines.length - 1];
+  lines[lines.length - 1] = last_line.substr(0, last_line.length -1);
+
+  let new_command = lines.join(sep);
+  return new_command;
 }
 
 function short_id(id) {  // short id of tasks (last chars)
@@ -80,15 +113,27 @@ function duplicate(dict) {
 
 var DEFAULT_CPU_SHARE = 1024;
 
+var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
+var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
+
 export default {
-  zimfarm_webapi: window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1",
-  zimfarm_logs_url:  window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org",
+  isProduction() {
+    return ZIMFARM_WEBAPI.indexOf("https://") == 0;
+  },
+  zimfarm_webapi: ZIMFARM_WEBAPI,
+  zimfarm_logs_url:  ZIMFARM_LOGS_URL,
   kiwix_download_url:  window.environ.KIWIX_DOWNLOAD_URL || process.env.KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
   LIMIT_CHOICES: [10, 20, 50, 100, 200],
-  TOKEN_COOKIE_EXPIRY: '1d',
+  MAX_SCHEDULES_IN_SELECTION_REQUEST: 200,
+  ALERT_DEFAULT_DURATION: 5,
+  ALERT_LONG_DURATION: 10,
+  ALERT_PERMANENT_DURATION: true,
+  ROLES: ["editor", "manager", "admin", "worker", "processor"],
+  TOKEN_COOKIE_EXPIRY: '30D',
+  TOKEN_COOKIE_NAME: "auth",
   running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
@@ -225,6 +270,14 @@ export default {
       return "Cross-Origin Request Blocked: preflight request failed."
     }
     let status_text = response.statusText ? response.statusText : statuses[response.status];
+    if (response.status == 400) {
+      if (response.data && response.data.error)
+        status_text += "<br />" + JSON.stringify(response.data.error);
+      if (response.data && response.data.error_description)
+        status_text += "<br />" + JSON.stringify(response.data.error_description);
+      if (response.data && response.data.message)
+        status_text += "<br />" + JSON.stringify(response.data.message);
+    }
     return response.status + ": " + status_text + ".";
   },
   format_dt: format_dt,

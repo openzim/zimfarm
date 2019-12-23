@@ -6,7 +6,7 @@ from common.enum import Offliner
 from routes import url_object_id
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from common.schemas import ScheduleConfigSchema
+from common.schemas.models import ScheduleConfigSchema
 
 
 class offlinersRoute(BaseRoute):
