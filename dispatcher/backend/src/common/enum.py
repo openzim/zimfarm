@@ -36,6 +36,15 @@ class TaskStatus:
     def file_events(cls):
         return [cls.created_file, cls.uploaded_file]
 
+    @classmethod
+    def all_events(cls):
+        return list(
+            filter(
+                lambda x: x not in (cls.requested, cls.reserved),
+                cls.all() + cls.file_events(),
+            )
+        )
+
 
 class ScheduleCategory:
     gutenberg = "gutenberg"

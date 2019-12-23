@@ -8,12 +8,13 @@ from datetime import datetime
 
 import paramiko
 from flask import request, jsonify, Response
-from marshmallow import Schema, fields, validate, ValidationError
+from marshmallow import ValidationError
 
 from routes.base import BaseRoute
 from routes import authenticate, url_object_id, errors
 from common.mongo import Users
 from utils.token import AccessToken
+from common.schemas.parameters import KeySchema
 
 
 class KeysRoute(BaseRoute):
@@ -42,11 +43,6 @@ class KeysRoute(BaseRoute):
         # if user in url is not user in token, not allowed to add ssh keys
         if username != token.username:
             raise errors.NotEnoughPrivilege()
-
-        # validate request json
-        class KeySchema(Schema):
-            name = fields.String(required=True, validate=validate.Length(min=1))
-            key = fields.String(required=True, validate=validate.Length(min=1))
 
         try:
             request_json = KeySchema().load(request.get_json())

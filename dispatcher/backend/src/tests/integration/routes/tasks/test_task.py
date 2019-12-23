@@ -65,11 +65,11 @@ class TestTaskList:
         assert response.status_code == 200
 
         data = json.loads(response.data)
-        assert data["meta"]["limit"] == 100
+        assert data["meta"]["limit"] == 20
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
-        assert len(items) == len(tasks)
+        assert len(items) == data["meta"]["limit"]
         matches = _find_matches(items, tasks, "_id")
         assert len(items) == len(matches)
         for m_item, m_task in matches:

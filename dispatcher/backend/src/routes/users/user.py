@@ -10,6 +10,11 @@ from common.roles import get_role_for, ROLES
 from routes import authenticate, url_object_id, errors, require_perm
 from utils.token import AccessToken
 from routes.base import BaseRoute
+from common.schemas.parameters import (
+    SkipLimitSchema,
+    UserCreateSchema,
+    UserUpdateSchema,
+)
 
 
 class UsersRoute(BaseRoute):
@@ -20,14 +25,6 @@ class UsersRoute(BaseRoute):
     @authenticate
     @require_perm("users", "read")
     def get(self, token: AccessToken.Payload):
-
-        class SkipLimitSchema(Schema):
-            skip = fields.Integer(
-                required=False, missing=0, validate=mm_validate.Range(min=0)
-            )
-            limit = fields.Integer(
-                required=False, missing=20, validate=mm_validate.Range(min=0, max=200)
-            )
 
         request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
@@ -56,15 +53,6 @@ class UsersRoute(BaseRoute):
     @authenticate
     @require_perm("users", "create")
     def post(self, token: AccessToken.Payload):
-
-        # validate request json
-        class UserCreateSchema(Schema):
-            username = fields.String(required=True, validate=mm_validate.Length(min=1))
-            password = fields.String(required=True, validate=mm_validate.Length(min=1))
-            email = fields.Email(required=False)
-            role = fields.String(
-                required=True, validate=mm_validate.OneOf(ROLES.keys())
-            )
 
         try:
             request_json = UserCreateSchema().load(request.get_json())
@@ -121,14 +109,8 @@ class UserRoute(BaseRoute):
         if Users().count_documents(query) != 1:
             raise errors.NotFound()
 
-        class UpdateSchema(Schema):
-            email = fields.Email(required=False)
-            role = fields.String(
-                required=False, validate=mm_validate.OneOf(ROLES.keys())
-            )
-
         try:
-            request_json = UpdateSchema().load(request.get_json())
+            request_json = UserUpdateSchema().load(request.get_json())
         except ValidationError as e:
             raise errors.BadRequest(e.messages)
 

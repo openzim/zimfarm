@@ -1,7 +1,8 @@
 import pytest
 from marshmallow.exceptions import ValidationError
 
-from common.schemas import MWOfflinerFlagsSchema, ScheduleConfigSchema, PhetFlagsSchema
+from common.schemas.models import ScheduleConfigSchema
+from common.schemas.offliners import MWOfflinerFlagsSchema, PhetFlagsSchema
 
 
 def make_mwoffliner_flags(**kwargs):

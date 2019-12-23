@@ -1,10 +1,9 @@
 from http import HTTPStatus
 
 from flask import request, jsonify, Response, make_response
-from marshmallow import Schema, fields, validate, ValidationError
+from marshmallow import ValidationError
 
 from common.mongo import Schedules
-from common.enum import ScheduleCategory
 from utils.token import AccessToken
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, ScheduleNotFound
@@ -12,16 +11,11 @@ from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
 from routes import authenticate, require_perm
 from routes.base import BaseRoute
-from common.schemas import (
-    LanguageSchema,
-    ResourcesSchema,
-    validate_category,
-    validate_warehouse_path,
-    validate_offliner,
-    DockerImageSchema,
+from common.schemas.models import (
     ScheduleConfigSchema,
     ScheduleSchema,
 )
+from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 
 
 class SchedulesRoute(BaseRoute):
@@ -32,26 +26,10 @@ class SchedulesRoute(BaseRoute):
     def get(self):
         """Return a list of schedules"""
 
-        # unpack url parameters
-        class RequestArgsSchema(Schema):
-            skip = fields.Integer(
-                required=False, missing=0, validate=validate.Range(min=0)
-            )
-            limit = fields.Integer(
-                required=False, missing=20, validate=validate.Range(min=0, max=200)
-            )
-            category = fields.List(
-                fields.String(validate=validate.OneOf(ScheduleCategory.all())),
-                required=False,
-            )
-            tag = fields.List(fields.String(), required=False)
-            lang = fields.List(fields.String(), required=False)
-            name = fields.String(required=False, validate=validate.Length(min=2))
-
         request_args = request.args.to_dict()
         for key in ("category", "tag", "lang"):
             request_args[key] = request.args.getlist(key)
-        request_args = RequestArgsSchema().load(request_args)
+        request_args = SchedulesSchema().load(request_args)
 
         skip, limit, categories, tags, lang, name = (
             request_args.get("skip"),
@@ -151,20 +129,6 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if not schedule:
             raise ScheduleNotFound()
 
-        class UpdateSchema(Schema):
-            name = fields.String(required=False, validate=validate.Length(min=2))
-            language = fields.Nested(LanguageSchema(), required=False)
-            category = fields.String(required=False, validate=validate_category)
-            tags = fields.List(fields.String(), required=False)
-            enabled = fields.Boolean(required=False, truthy={True}, falsy={False})
-            task_name = fields.String(required=False, validate=validate_offliner)
-            warehouse_path = fields.String(
-                required=False, validate=validate_warehouse_path
-            )
-            image = fields.Nested(DockerImageSchema, required=False)
-            resources = fields.Nested(ResourcesSchema, required=False)
-            flags = fields.Dict(required=False)
-
         try:
             update = UpdateSchema().load(request.get_json())  # , partial=True
             # empty dict passes the validator but troubles mongo
@@ -239,9 +203,6 @@ class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
         schedule = Schedules().find_one(query)
         if not schedule:
             raise ScheduleNotFound()
-
-        class CloneSchema(Schema):
-            name = fields.String(required=True, validate=validate.Length(min=2))
 
         request_json = CloneSchema().load(request.get_json())
         new_schedule_name = request_json["name"]

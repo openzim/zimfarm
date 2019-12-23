@@ -5,9 +5,9 @@ from http import HTTPStatus
 import pytz
 import pymongo
 from flask import request, jsonify, make_response, Response
-from marshmallow import Schema, fields, validate, ValidationError
+from marshmallow import ValidationError
 
-from common.enum import TaskStatus, Offliner
+from common.enum import TaskStatus
 from common.mongo import RequestedTasks, Schedules, Workers
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, TaskNotFound
@@ -16,43 +16,21 @@ from routes.base import BaseRoute
 from routes.errors import NotFound
 from utils.broadcaster import BROADCASTER
 from utils.token import AccessToken
+from common.schemas.parameters import (
+    RequestedTaskSchema,
+    NewRequestedTaskSchema,
+    UpdateRequestedTaskSchema,
+)
 
 logger = logging.getLogger(__name__)
+
 
 def list_of_requested_tasks(token: AccessToken.Payload = None):
     """ list of requested tasks  """
 
-    # validate query parameter
-    class RequestArgsSchema(Schema):
-        skip = fields.Integer(
-            required=False, missing=0, validate=validate.Range(min=0)
-        )
-        limit = fields.Integer(
-            required=False, missing=100, validate=validate.Range(min=0, max=200)
-        )
-        priority = fields.Integer(
-            required=False, validate=validate.Range(min=0, max=10)
-        )
-        worker = fields.String(required=False)
-        schedule_name = fields.String(
-            required=False, validate=validate.Length(min=5)
-        )
-        matching_cpu = fields.Integer(
-            required=False, validate=validate.Range(min=0)
-        )
-        matching_memory = fields.Integer(
-            required=False, validate=validate.Range(min=0)
-        )
-        matching_disk = fields.Integer(
-            required=False, validate=validate.Range(min=0)
-        )
-        matching_offliners = fields.List(
-            fields.String(validate=validate.OneOf(Offliner.all())), required=False
-        )
-
     request_args = request.args.to_dict()
     request_args["matching_offliners"] = request.args.getlist("matching_offliners")
-    request_args = RequestArgsSchema().load(request_args)
+    request_args = RequestedTaskSchema().load(request_args)
 
     # unpack query parameter
     skip, limit = request_args["skip"], request_args["limit"]
@@ -132,15 +110,8 @@ class RequestedTasksRoute(BaseRoute):
     def post(self, token: AccessToken.Payload):
         """ Create requested task from a list of schedule_names """
 
-        class RequestArgsSchema(Schema):
-            schedule_names = fields.List(
-                fields.String(validate=validate.Length(min=5)), required=True
-            )
-            priority = fields.Integer(required=False, validate=validate.Range(min=0))
-            worker = fields.String(required=False, validate=validate.Length(min=5))
-
         try:
-            request_json = RequestArgsSchema().load(request.get_json())
+            request_json = NewRequestedTaskSchema().load(request.get_json())
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
@@ -244,13 +215,8 @@ class RequestedTaskRoute(BaseRoute):
         if not requested_task:
             raise TaskNotFound()
 
-        class JsonRequestSchema(Schema):
-            priority = fields.Integer(
-                required=True, validate=validate.Range(min=0, max=10)
-            )
-
         try:
-            request_json = JsonRequestSchema().load(request.get_json())
+            request_json = UpdateRequestedTaskSchema().load(request.get_json())
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
