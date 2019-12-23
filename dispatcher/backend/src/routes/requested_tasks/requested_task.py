@@ -186,7 +186,6 @@ class RequestedTasksForWorkers(BaseRoute):
     methods = ["GET"]
 
     @authenticate
-    @require_perm("tasks", "read")
     def get(self, token: AccessToken.Payload):
         """ list of requested tasks to be retrieved by workers, auth-only """
         return list_of_requested_tasks(token)
