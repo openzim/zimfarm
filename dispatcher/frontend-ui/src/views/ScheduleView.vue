@@ -4,8 +4,8 @@
 
 <template>
   <div class="container">
-    <ScheduleActionButton :name="schedule_name" />
-    <h2><code>{{ schedule_name }}</code></h2>
+    <div class="row"><ScheduleActionButton :name="schedule_name" /></div>
+    <div class="row"><div class="col"><h2><code>{{ schedule_name }}</code></h2></div></div>
 
     <div v-if="!error && ready">
       <ul class="nav nav-tabs">
