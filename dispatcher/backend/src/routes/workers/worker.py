@@ -8,15 +8,14 @@ from http import HTTPStatus
 
 import pymongo
 from flask import request, jsonify, Response
-from marshmallow import Schema, fields, validate
-from marshmallow.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from errors.http import InvalidRequestJSON
 from routes import authenticate, url_object_id
 from common.mongo import Workers
-from common.enum import Offliner
 from routes.base import BaseRoute
 from utils.broadcaster import BROADCASTER
+from common.schemas.parameters import SkipLimitSchema, WorkerCheckInSchema
 
 logger = logging.getLogger(__name__)
 OFFLINE_DELAY = 20 * 60
@@ -40,14 +39,6 @@ class WorkersRoute(BaseRoute):
                 else "offline"
             )
             return worker
-
-        class SkipLimitSchema(Schema):
-            skip = fields.Integer(
-                required=False, missing=0, validate=validate.Range(min=0)
-            )
-            limit = fields.Integer(
-                required=False, missing=20, validate=validate.Range(min=0, max=200)
-            )
 
         request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
@@ -84,19 +75,10 @@ class WorkerCheckinRoute(BaseRoute):
     @authenticate
     @url_object_id("name")
     def put(self, name: str, *args, **kwargs):
-        class JsonRequestSchema(Schema):
-            username = fields.String(required=True)
-            cpu = fields.Integer(required=True, validate=validate.Range(min=0))
-            memory = fields.Integer(required=True, validate=validate.Range(min=0))
-            disk = fields.Integer(required=True, validate=validate.Range(min=0))
-            offliners = fields.List(
-                fields.String(validate=validate.OneOf(Offliner.all())), required=True
-            )
-
         try:
-            request_json = JsonRequestSchema().load(request.get_json())
+            request_json = WorkerCheckInSchema().load(request.get_json())
         except ValidationError as e:
-            raise InvalidRequestJSON(str(e.messages))
+            raise InvalidRequestJSON(e.messages)
 
         document = {
             "name": name,

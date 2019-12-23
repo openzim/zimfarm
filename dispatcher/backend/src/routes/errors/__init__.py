@@ -73,8 +73,12 @@ class Unauthorized(Exception):
 
 
 class NotEnoughPrivilege(Unauthorized):
-    def __init__(self):
-        super().__init__("you are not authorized to perform this operation")
+    def __init__(self, permission):
+        super().__init__(
+            "you needs {} permission to perform this operation".format(
+                permission if permission else "a"
+            )
+        )
 
 
 # 404

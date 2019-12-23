@@ -14,18 +14,18 @@
                        active-class="dummy"
                        :class="{ active: selectedTab == 'details'}"
                        :to="{name: 'schedule-detail', params: {schedule_name: schedule_name}}">
-            Schedule
+            Info
           </router-link>
         </li>
         <li class="nav-item" :class="{ active: selectedTab == 'config'}">
-          <router-link class="nav-link"
+          <router-link class="nav-link schedule-config-tab"
                        active-class="dummy"
                        :class="{ active: selectedTab == 'config'}"
                        :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'config'}}">
-            Config
+            <span>Config</span>
           </router-link>
         </li>
-        <li v-show="canEditSchedule" class="nav-item" :class="{ active: selectedTab == 'edit'}">
+        <li v-show="canUpdateSchedules" class="nav-item" :class="{ active: selectedTab == 'edit'}">
           <router-link class="nav-link"
                        active-class="dummy"
                        :class="{ active: selectedTab == 'edit'}"
@@ -33,10 +33,26 @@
             Edit
           </router-link>
         </li>
+        <li v-show="canCreateSchedules" class="nav-item" :class="{ active: selectedTab == 'clone'}">
+          <router-link class="nav-link text-info"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'clone'}"
+                       :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'clone'}}">
+            Clone
+          </router-link>
+        </li>
+        <li v-show="canDeleteSchedules" class="nav-item" :class="{ active: selectedTab == 'delete'}">
+          <router-link class="nav-link text-danger schedule-delete-tab"
+                       active-class="dummy"
+                       :class="{ active: selectedTab == 'delete'}"
+                       :to="{name: 'schedule-detail-tab', params: {schedule_name: schedule_name, selectedTab: 'delete'}}">
+            <span>Delete</span>
+          </router-link>
+        </li>
       </ul>
 
       <div v-if="selectedTab == 'details'" class="tab-content">
-        <table class="table table-responsive-sm table-striped table-in-tab">
+        <table class="table table-responsive-md table-striped table-in-tab">
           <tr><th>Category</th><td>{{ schedule.category }}</td></tr>
           <tr><th>Language</th><td>{{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code>)</td></tr>
           <tr><th>Enabled</th><td><code>{{ schedule.enabled }}</code></td></tr>
@@ -50,21 +66,21 @@
             <th>Last run</th>
             <td v-if="last_run">
               <code>{{ last_run.status }}</code>,
-              <router-link :to="{name: 'task-detail', params: {_id: last_run._id}}">{{ last_run.on }}</router-link>
+              <router-link :to="{name: 'task-detail', params: {_id: last_run._id}}">{{ last_run.updated_at | from_now }}</router-link>
             </td>
             <td v-else><code>none</code> 🙁</td>
           </tr>
-          <tr>
+          <tr v-if="!canRequestTasks">
             <th>Requested</th>
             <td v-if="requested === null"><font-awesome-icon icon="spinner" spin /></td>
-            <td v-else-if="requested"><router-link :to="{ name: 'task-detail', params: {_id: requested_id}}"><code>{{ requested_id }}</code></router-link>, {{ requested_since }}</td>
+            <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }} <b-badge pill variant="warning" v-if="requested.priority"><font-awesome-icon icon="fire" size="sm" /> {{ requested.priority }}</b-badge></td>
             <td v-else><code>no</code></td>
           </tr>
         </table>
       </div>
 
       <div v-if="selectedTab == 'config'" class="tab-content">
-        <table class="table table-responsive-sm table-striped table-in-tab">
+        <table class="table table-responsive-md table-striped table-in-tab">
           <tr><th>Offliner</th><td><code>{{ offliner }}</code></td></tr>
           <tr><th>Warehouse path</th><td><code>{{ warehouse_path }}</code></td></tr>
           <tr><th>Image</th><td><a target="_blank" :href="'https://hub.docker.com/r/' + config.image.name"><code>{{ image_human }}</code></a></td></tr>
@@ -81,8 +97,16 @@
       </div>
     </div>
 
-    <div v-if="selectedTab == 'edit' && canEditSchedule" class="tab-content edit-tab">
+    <div v-if="selectedTab == 'edit' && canUpdateSchedules" class="tab-content edit-tab">
       <ScheduleEditor :schedule_name="schedule_name"></ScheduleEditor>
+    </div>
+
+    <div v-if="selectedTab == 'clone' && canCreateSchedules" class="tab-content edit-tab">
+      <CloneSchedule :from="schedule_name" />
+    </div>
+
+    <div v-if="selectedTab == 'delete' && canDeleteSchedules" class="tab-content edit-tab">
+      <DeleteItem kind="schedule" :name="schedule_name" />
     </div>
 
     <ErrorMessage :message="error" v-if="error" />
@@ -96,11 +120,14 @@
   import ScheduleActionButton from '../components/ScheduleActionButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
   import ScheduleEditor from '../components/ScheduleEditor.vue'
+  import DeleteItem from '../components/DeleteItem.vue'
+  import CloneSchedule from '../components/CloneSchedule.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage, ResourceBadge, ScheduleEditor},
+    components: {ScheduleActionButton, ErrorMessage, ResourceBadge,
+                 ScheduleEditor, DeleteItem, CloneSchedule},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug
@@ -117,7 +144,6 @@
     },
     computed: {
       schedule() { return this.$store.getters.schedule || null; },
-      canEditSchedule() { return this.$store.getters.isLoggedIn; },
       name() { return this.schedule.name },
       language_name() { return this.schedule.language.name_en || null; },
       last_run() { return this.schedule.most_recent_task; },
@@ -128,20 +154,16 @@
       command() { return Constants.build_docker_command(this.name, this.config); },
       trimmed_command() { return Constants.trim_command(this.command); },
       requested_id() { return (this.requested) ? this.requested._id : null; },
-      requested_time() { return this.format_dt(this.requested.timestamp.requested); },
-      requested_since() { return Constants.from_now(this.requested_time); }
     },
     methods: {
       filesize(value) { return Constants.filesize(parseInt(value)); },
       copyCommand() {
         let parent = this;
         this.$copyText(this.command).then(function () {
-            parent.$root.$emit('feedback-message', 'info', "Command copied to Clipboard!");
+            parent.alertInfo("Command copied to Clipboard!");
           }, function () {
-            parent.$root.$emit('feedback-message',
-                         'warning',
-                         "Unable to copy command to clipboard 😞. " +
-                         "Please copy it manually.");
+            parent.alertWarning("Unable to copy command to clipboard 😞. ",
+                                "Please copy it manually.");
           });
       },
       setReady() { this.ready = true; },
@@ -151,12 +173,13 @@
       let parent = this;
 
       // redirect to details if tryng to access Edit tab without permission
-      if (this.selectedTab == 'edit' && !this.canEditSchedule) {
-        parent.$router.push({name: 'schedule-detail', params: {schedule_name: this.schedule_name}});
+      if (this.selectedTab == 'edit' && !this.canUpdateSchedules) {
+        parent.redirectTo('schedule-detail', {schedule_name: this.schedule_name});
       }
 
       parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
-      parent.$root.axios.get('/requested-tasks/')
+      parent.requested = null;
+      parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
               parent.requested = response.data.items[0];
@@ -175,5 +198,11 @@
 <style type="text/css" scoped>
   .edit-tab {
     padding: 1rem;
+  }
+
+  @media (max-width: 500px) {
+    .schedule-config-tab span, .schedule-delete-tab span { display: none; }
+    .schedule-config-tab:after { content: "Conf"; }
+    .schedule-delete-tab:after { content: "Del"; }
   }
 </style>

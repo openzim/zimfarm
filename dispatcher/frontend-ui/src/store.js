@@ -10,12 +10,20 @@ const store = new Vuex.Store({
   state: {
     loading: false,
     loading_text: "",
+
     token: {},
+    
     languages: [],
     tags: [],
     offliners: [],
     offliners_defs: {},
+    
     schedule: null,
+
+    selectedLanguagesOptions: [],
+    selectedCategoriesOptions: [],
+    selectedTagsOptions: [],
+    selectedName: "",
   },
   mutations: {
     setLoading (state, payload) { // toggle GUI loader
@@ -45,6 +53,18 @@ const store = new Vuex.Store({
     },
     saveSchedule(state, payload) {
       state.schedule = payload;
+    },
+    SET_SELECTED_LANGUAGES_OPTIONS(state, payload) {
+      state.selectedLanguagesOptions = payload;
+    },
+    SET_SELECTED_CATEGORIES_OPTIONS(state, payload) {
+      state.selectedCategoriesOptions = payload;
+    },
+    SET_SELECTED_TAGS_OPTIONS(state, payload) {
+      state.selectedTagsOptions = payload;
+    },
+    SET_SELECTED_NAME(state, payload) {
+      state.selectedName = payload;
     },
   },
   actions: {
@@ -81,19 +101,22 @@ const store = new Vuex.Store({
   },
   getters: {
     loadingStatus(state) { return {should_display: state.loading, text: state.loading_text};},
-    username(state) { return state.token.username || null },
+    username(state) { try { return state.token.payload.user.username } catch { return null; } },
     access_token(state) { return state.token.access_token || null },
-    token_expiry(state) { return moment(state.token.expires_on) || null },
-    token_expired(state) { return moment().isAfter(state.token.expires_on) },
-    isLoggedIn(state) {
-      // TODO: improv.
-      try { return Boolean(state.token.username.length); } catch { return false; }
+    token_expiry(state) {
+      try{
+        return moment(state.token.payload.exp * 1000);
+      } catch { return null; }
     },
+    permissions(state) {
+      try { return state.token.payload.user.scope } catch { return {}; }
+    },
+    
     languages(state) { return state.languages; },
     tags(state) { return state.tags; },
     offliners(state) { return state.offliners; },
     offliners_defs(state) { return state.offliners_defs; },
-    offliner_def: (state) => (offliner) => { return state.offliners_defs[offliner]; },
+    
     schedule(state) { return state.schedule; },
   }
 })

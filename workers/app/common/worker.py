@@ -8,11 +8,12 @@ import signal
 import pathlib
 import datetime
 
+import jwt
 import docker
 import requests
 
 from common import logger
-from common.constants import AUTH_EXPIRY, DOCKER_SOCKET, PRIVATE_KEY
+from common.constants import DOCKER_SOCKET, PRIVATE_KEY
 from common.dispatcher import get_token_ssh, query_api
 
 
@@ -53,8 +54,9 @@ class BaseWorker:
             logger.info("\tprivate key is available and readable")
 
     def check_auth(self):
-        self.access_token = self.refresh_token = None
+        self.access_token = self.refresh_token = self.token_payload = None
         self.authenticated_on = datetime.datetime(2019, 1, 1)
+        self.authentication_expires_on = datetime.datetime(2019, 1, 1)
 
         logger.info(f"testing authentication with {self.webapi_uri}…")
         success, _, _ = self.query_api("GET", "/auth/test")
@@ -94,15 +96,16 @@ class BaseWorker:
 
     def authenticate(self, force=False):
         # our access token should grant us access for 60mn
-        if force or (
-            self.authenticated_on + datetime.timedelta(seconds=AUTH_EXPIRY)
-            <= datetime.datetime.now()
-        ):
+        if force or self.authentication_expires_on <= datetime.datetime.now():
             try:
                 self.access_token, self.refresh_token = get_token_ssh(
                     self.webapi_uri, self.username, PRIVATE_KEY
                 )
+                self.token_payload = jwt.decode(self.access_token, verify=False)
                 self.authenticated_on = datetime.datetime.now()
+                self.authentication_expires_on = datetime.datetime.fromtimestamp(
+                    self.token_payload["exp"]
+                )
                 return True
             except Exception as exc:
                 logger.error(f"authenticate() failure: {exc}")

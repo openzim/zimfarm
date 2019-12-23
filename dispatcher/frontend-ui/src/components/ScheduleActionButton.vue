@@ -12,27 +12,53 @@
   - displays result as an AlertFeedback -->
 
 <template>
-  <b-button-group v-show="visible">
-    <b-button v-if="can_request && !workers.length" size="sm" variant="info" @click.prevent="request_task(null)">
-      <font-awesome-icon icon="calendar-alt" size="sm" /> Request
-    </b-button>
-    <b-dropdown v-if="can_request && workers.length" no-flip split size="sm" variant="info" @click.prevent="request_task(null)">
-      <template v-slot:button-content><font-awesome-icon icon="calendar-alt" size="sm" /> Request</template>
-      <b-dropdown-item v-for="worker in workers"
+  <b-button-group v-show="visible" class="action-button">
+
+    <b-dropdown v-show="canRequestTasks"
+                v-if="can_select_worker"
+                variant="dark" size="sm" right no-flip>
+      <template v-slot:button-content>
+        <font-awesome-icon icon="server" size="sm" /> {{ selected_worker }}
+      </template>
+
+      <b-dropdown-item v-for="worker in all_workers"
                        v-bind:key="worker.name"
-                       @click.prevent="request_task(worker.name);"
+                       @click.prevent="change_worker(worker.name);"
                        :variant="worker.status == 'online' ? 'success' : 'secondary'">{{ worker.name }}</b-dropdown-item>
     </b-dropdown>
-    <b-button v-if="can_unrequest" size="sm" variant="secondary" @click.prevent="unrequest_task">
+
+    <b-button v-show="canRequestTasks"
+              v-if="can_request"
+              size="sm" variant="info"
+              @click.prevent="request_task(cleaned_selected_worker)">
+      <font-awesome-icon icon="plus-circle" size="sm" /> Request
+    </b-button>
+    <b-button v-show="canUnRequestTasks"
+              v-if="can_unrequest"
+              size="sm" variant="secondary"
+              @click.prevent="unrequest_task">
       <font-awesome-icon icon="trash-alt" size="sm" /> Un-request
     </b-button>
-    <b-button v-if="can_cancel" size="sm" variant="danger" @click.prevent="cancel_task">
+    <b-button v-show="canCancelTasks"
+              v-if="can_cancel"
+              size="sm" variant="danger"
+              @click.prevent="cancel_task">
       <font-awesome-icon icon="stop-circle" size="sm" /> Cancel
     </b-button>
-    <b-button v-if="can_fire" size="sm" variant="warning" @click.prevent="fire_task">
-      <font-awesome-icon icon="fire" size="sm" /> Fire
+    <b-button v-show="canRequestTasks"
+              v-if="can_fire"
+              size="sm" variant="warning"
+              @click.prevent="request_task(cleaned_selected_worker, true)">
+      <font-awesome-icon icon="sort-amount-up" size="sm" /> Request
     </b-button>
-    <b-button v-if="working" :disabled="working" size="sm" variant="secondary">
+    <b-button v-show="canRequestTasks"
+              v-if="can_fire_existing"
+              size="sm" variant="warning"
+              @click.prevent="fire_existing_task()">
+      <font-awesome-icon icon="sort-amount-up" size="sm" /> Prioritize
+    </b-button>
+    <b-button v-if="working"
+              :disabled="working" size="sm" variant="secondary">
       <font-awesome-icon icon="spinner" size="sm" spin /> {{ working_text}}
     </b-button>
   </b-button-group>
@@ -40,9 +66,13 @@
 
 <script type="text/javascript">
   import Constants from '../constants.js'
+  import ZimfarmMixins from '../components/Mixins.js'
+
+  let any_worker_name = "Any";
 
   export default {
     name: 'ScheduleActionButton',
+    mixins: [ZimfarmMixins],
     props: {
       name: String,
     },
@@ -51,34 +81,40 @@
         ready: false,
         working_text: null,  // describing text of working action (or null)
         task: null,  // existing task item (from /tasks/ for this schedule (or false)
-        requested_task_id: null,  // existing requested-task _id for this schedule (or false)
+        requested_task: {},  // existing requested-task _id for this schedule (or false)
         workers: [],  // API-retrieved list of workers
+        selected_worker: any_worker_name,  // name of selected worker
       }
     },
     computed: {
       task_id() { return this.task ? this.task._id : this.task; },
-      visible() { return this.ready && this.$store.getters.isLoggedIn; },
+      visible() { return (this.ready && (this.canRequestTasks || this.canUnRequestTasks || this.canCancelTasks)); },
       working() { return Boolean(this.working_text); },
       is_running() { return this.task_id === null ? null : Boolean(this.task_id); },
       is_scheduled() { return this.requested_task_id === null ? null : Boolean(this.requested_task_id); },
       can_request() { return !this.working && !this.is_running && !this.is_scheduled; },
-      can_fire() { return !this.working && (this.can_request || this.is_scheduled) },
+      can_fire() { return !this.working && this.can_request; },
+      can_fire_existing() { return (!this.working && this.is_scheduled && !this.requested_task.priority); },
       can_cancel() { return !this.working && this.is_running && this.task_id; },
       can_unrequest() { return !this.working && this.is_scheduled; },
+      can_select_worker() { return (this.can_request || this.can_fire ) && this.workers.length > 0; },
       should_display_loader() { return this.working; },
+      all_workers() { return this.workers.add({name: any_worker_name, status:"offline"}, 0); },
+      cleaned_selected_worker() { return this.selected_worker == any_worker_name ? null : this.selected_worker; },
+      requested_task_id() { return this.requested_task._id },
     },
     methods: {
+      change_worker(worker_name) { this.selected_worker = worker_name; },
       loadData() { // look for req task and task for our schedule
                    // update our IDs based on response
                    // should any fail, don't set ready=true > nothing displayed
         let parent = this;
 
+        parent.requested_task = {};
         parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: [parent.name]}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
-              parent.requested_task_id = response.data.items[0]._id;
-            } else {
-              parent.requested_task_id = false;  // we have no req ID
+              parent.requested_task = response.data.items[0];
             }
 
             // once requested-tasks is ran, look for running ones
@@ -104,69 +140,50 @@
             parent.workers = response.data.items;
           });
       },
-      request_task(worker_name) {
+      request_task(worker_name, priority) {
+
         let parent = this;
         parent.working_text = "Requesting task…";
 
         let params = {schedule_names: [parent.name]};
+        if (priority)
+          params.priority = Constants.DEFAULT_FIRE_PRIORITY;
         if (worker_name)
           params.worker =  worker_name;
         parent.$root.axios.post('/requested-tasks/', params)
           .then(function (response) {
-            parent.requested_task_id = response.data.requested[0];
+            parent.requested_task = {_id: response.data.requested[0], priority: priority || 0};
             let msg = "Schedule <em>" + parent.name + "</em> has been requested as <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
 
-            parent.$root.$emit('feedback-message', 'success', "<strong>Scheduled!</strong><br />" + msg);
+            parent.alertSuccess("Scheduled!", msg);
           })
           .catch(function (error) {
-            parent.$root.$emit('feedback-message',
-                               'danger',
-                               "<strong>Not Scheduled!</strong><br />" + Constants.standardHTTPError(error.response));
+            parent.alertError(Constants.standardHTTPError(error.response));
           })
           .then(function () {
             parent.working_text = null;
             parent.loadData();
           });
       },
-      fire_task() {
+      fire_existing_task() {  // increase priority of existing request
         let parent = this;
+        if (!parent.requested_task_id)
+          return;
+
         parent.working_text = "Firing it up…";
+        parent.$root.axios.patch('/requested-tasks/' + parent.requested_task_id, {priority: Constants.DEFAULT_FIRE_PRIORITY})
+        .then(function () {
+          let msg = "Added priority to request <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
 
-        if (parent.requested_task_id) {  // increase priority of existing request
-          parent.$root.axios.patch('/requested-tasks/' + parent.requested_task_id, {priority: Constants.DEFAULT_FIRE_PRIORITY})
-          .then(function () {
-            let msg = "Added priority to request <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
-
-            parent.$root.$emit('feedback-message', 'success', "<strong>Fired!</strong><br />" + msg);
-          })
-          .catch(function (error) {
-            parent.$root.$emit('feedback-message',
-                               'danger',
-                               "<strong>Not Fired!</strong><br />" + Constants.standardHTTPError(error.response));
-          })
-          .then(function () {
-            parent.working_text = null;
-            parent.loadData();
-          });
-
-        } else {  // create a request with higher priority
-          parent.$root.axios.post('/requested-tasks/', {schedule_names: [parent.name], priority: Constants.DEFAULT_FIRE_PRIORITY})
-          .then(function (response) {
-            parent.requested_task_id = response.data.requested[0];
-            let msg = "Recipe <em>" + parent.name + "</em> has been requested with priority as <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
-
-            parent.$root.$emit('feedback-message', 'success', "<strong>Fired!</strong><br />" + msg);
-          })
-          .catch(function (error) {
-            parent.$root.$emit('feedback-message',
-                               'danger',
-                               "<strong>Not Scheduled!</strong><br />" + Constants.standardHTTPError(error.response));
-          })
-          .then(function () {
-            parent.working_text = null;
-            parent.loadData();
-          });
-        }
+          parent.alertSuccess("Prioritized!", msg);
+        })
+        .catch(function (error) {
+          parent.alertError(Constants.standardHTTPError(error.response));
+        })
+        .then(function () {
+          parent.working_text = null;
+          parent.loadData();
+        });
       },
       cancel_task() {
         let parent = this;
@@ -177,12 +194,10 @@
             let msg = "Requested Task <code>" + Constants.short_id(parent.task_id) + "</code> has been marked for cancelation.";
             parent.task = null;
 
-            parent.$root.$emit('feedback-message', 'success', "<strong>Canceling!</strong><br />" + msg);
+            parent.alertSuccess("Canceling!", msg);
           })
           .catch(function (error) {
-            parent.$root.$emit('feedback-message',
-                               'danger',
-                               "<strong>Not Canceling!</strong><br />" + Constants.standardHTTPError(error.response));
+            parent.alertError(Constants.standardHTTPError(error.response));
           })
           .then(function () {
             parent.working_text = null;
@@ -196,14 +211,12 @@
         parent.$root.axios.delete('/requested-tasks/' + parent.requested_task_id)
           .then(function () {
             let msg = "Requested Task <code>" + Constants.short_id(parent.requested_task_id) + "</code> has been removed.";
-            parent.requested_task_id = null;
+            parent.requested_task = {};
 
-            parent.$root.$emit('feedback-message', 'success', "<strong>Un-scheduled!</strong><br />" + msg);
+            parent.alertSuccess("Un-scheduled!", msg);
           })
           .catch(function (error) {
-            parent.$root.$emit('feedback-message',
-                               'danger',
-                               "<strong>Not Un-scheduled!</strong><br />" + Constants.standardHTTPError(error.response));
+            parent.alertError(Constants.standardHTTPError(error.response));
           })
           .then(function () {
             parent.working_text = null;
@@ -218,5 +231,8 @@
 </script>
 
 <style type="text/css" scoped>
-  div { float: right; }
+  .action-button {
+    margin-left: auto;
+    margin-right: 1rem;
+  }
 </style>

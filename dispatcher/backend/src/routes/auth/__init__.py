@@ -8,11 +8,27 @@ from werkzeug.security import check_password_hash
 
 from utils.token import AccessToken
 from common.mongo import Users, RefreshTokens
-from common.constants import REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY
-from routes import API_PATH, authenticate2
+from common.constants import REFRESH_TOKEN_EXPIRY
+from routes import API_PATH, authenticate
 from routes.auth import validate, ssh
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
+
+
+def create_refresh_token(username):
+    token = uuid4()
+    RefreshTokens().insert_one(
+        {
+            "token": token,
+            "username": username,
+            "expire_time": datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRY),
+        }
+    )
+
+    # delete old refresh token from database
+    RefreshTokens().delete_many({"expire_time": {"$lte": datetime.now()}})
+
+    return token
 
 
 def credentials():
@@ -46,22 +62,14 @@ def credentials():
 
     # generate token
     access_token = AccessToken.encode(user)
-    refresh_token = uuid4()
-
-    # store refresh token in database
-    RefreshTokens().insert_one(
-        {
-            "token": refresh_token,
-            "user_id": user["_id"],
-            "expire_time": datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRY),
-        }
-    )
+    access_expires = AccessToken.get_expiry(access_token)
+    refresh_token = create_refresh_token(user["username"])
 
     # send response
     response_json = {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": timedelta(hours=TOKEN_EXPIRY).total_seconds(),
+        "expires_in": access_expires,
         "refresh_token": refresh_token,
     }
     response = jsonify(response_json)
@@ -83,9 +91,8 @@ def refresh_token():
         raise BadRequest()
 
     # check token exists in database and get expire time and user id
-    collection = RefreshTokens()
-    old_token_document = collection.find_one(
-        {"token": UUID(old_token)}, {"expire_time": 1, "user_id": 1}
+    old_token_document = RefreshTokens().find_one(
+        {"token": UUID(old_token)}, {"expire_time": 1, "username": 1}
     )
     if old_token_document is None:
         raise Unauthorized()
@@ -96,33 +103,22 @@ def refresh_token():
         raise Unauthorized("token expired")
 
     # check user exists
-    user_id = old_token_document["user_id"]
-    user = Users().find_one({"_id": user_id}, {"username": 1, "scope": 1})
+    username = old_token_document["username"]
+    user = Users().find_one({"name": username}, {"username": 1, "scope": 1})
     if user is None:
         raise Unauthorized()
 
     # generate token
     access_token = AccessToken.encode(user)
-    refresh_token = uuid4()
-
-    # store refresh token in database
-    RefreshTokens().insert_one(
-        {
-            "token": refresh_token,
-            "user_id": user["_id"],
-            "expire_time": datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRY),
-        }
-    )
-
+    refresh_token = create_refresh_token(user["username"])
     # delete old refresh token from database
-    collection.delete_one({"token": UUID(old_token)})
-    collection.delete_many({"expire_time": {"$lte": datetime.now()}})
+    RefreshTokens().delete_one({"token": UUID(old_token)})
 
     # send response
     response_json = {
         "access_token": access_token,
         "token_type": "bearer",
-        "expires_in": timedelta(hours=TOKEN_EXPIRY).total_seconds(),
+        "expires_in": AccessToken.get_expiry(access_token),
         "refresh_token": refresh_token,
     }
     response = jsonify(response_json)
@@ -131,7 +127,7 @@ def refresh_token():
     return response
 
 
-@authenticate2
+@authenticate
 def test(token: AccessToken.Payload):
     return Response(status=HTTPStatus.NO_CONTENT)
 

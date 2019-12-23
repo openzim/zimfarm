@@ -406,7 +406,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
+  /schedules/{scheduleName}/clone:
+    post:
+      tags:
+      - restricted
+      summary: clone schedule
+      operationId: cloneSchedule
+      description: Clone a Schedule into another
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+        - $ref: '#/components/parameters/ScheduleNameParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name:
+                  $ref: '#/components/schemas/ScheduleName'
+      responses:
+        201:
+          description: Schedule cloned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /requested-tasks/:
     get:
       tags:
@@ -535,6 +576,83 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /requested-tasks/worker:
+    get:
+      tags:
+      - workers
+      summary: list requested-tasks (worker endpoint)
+      operationId: listRequestedTasksForWorker
+      description: Query the RequestedTasks database (sorted by priority)
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - $ref: '#/components/parameters/ScheduleNameQueryParameter'
+      - in: query
+        name: matching_cpu
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 3
+          description: number of CPU cores required to run it
+      - in: query
+        name: matching_memory
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: RAM (in bytes) required to run it
+      - in: query
+        name: matching_disk
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: Disk space (in bytes) required to run it
+      - in: query
+        name: matching_offliners
+        required: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offliner'
+          example:
+            - "youtube"
+            - "mwoffliner"
+          description: list of offliners supported
+      - in: query
+        name: priority
+        required: false
+        description: filter to this or higher priority
+        schema:
+          $ref: '#/components/schemas/Priority'
+      - in: query
+        name: worker
+        required: false
+        description: filter to this or unassigned worker
+        schema:
+          $ref: '#/components/schemas/WorkerName'
+      responses:
+        200:
+          description: List of RequestedTask matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RequestedTask'
+        400:
+          description: Bad Request (invalid input)
   /requested-tasks/{taskId}:
     get:
       tags:
@@ -1044,6 +1162,37 @@ paths:
                     $ref: '#/components/schemas/UserEmail'
                   scope:
                     $ref: '#/components/schemas/Scope'
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
+    patch:
+      tags:
+      - restricted
+      summary: update user details
+      operationId: updateUser
+      description: Change a User's details
+      security:
+        - token: []
+        - ouath: []
+      parameters:
+      - $ref: '#/components/parameters/UsernameParameter'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                email:
+                  $ref: '#/components/schemas/Email'
+                role:
+                  $ref: '#/components/schemas/Role'
+      responses:
+        204:
+          description: User Updated
         400:
           description: Bad Request (invalid input)
           content:
@@ -1864,3 +2013,16 @@ components:
       format: Int32
       description: Positive int priority for requested_task. Default priority is 0.
       example: 5
+    Email:
+      type: string
+      format: email
+      example: user@kiwix.org
+    Role:
+      type: string
+      example: admin
+      enum:
+        - editor
+        - manager
+        - admin
+        - worker
+        - processor

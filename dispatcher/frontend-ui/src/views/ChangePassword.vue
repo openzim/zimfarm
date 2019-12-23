@@ -50,7 +50,7 @@
         let payload = {current: parent.current_password, new: parent.new_password};
         parent.$root.axios.patch('/users/' + parent.$store.getters.username + '/password', payload)
           .then(function () {
-              parent.$root.$emit('feedback-message', 'success', "<strong>Changed!</strong><br />Your password has been updated.");
+              parent.alertSuccess("Changed!", "Your password has been updated.");
               parent.$router.back();  // redirect
             })
             .catch(function (error) {
@@ -68,8 +68,8 @@
       },
     },
     beforeMount() { // redirect to SignIn if not logged-in
-      if (!this.$store.getters.isLoggedIn)
-        this.$router.push({name: 'sign-in'});
+      if (!this.isLoggedIn)
+        this.redirectTo('sign-in');
     },
   }
 </script>

@@ -1,8 +1,8 @@
 from flask import request, jsonify
-from marshmallow import Schema, fields, validate
 
 from common.mongo import Schedules
 from routes.base import BaseRoute
+from common.schemas.parameters import SkipLimitSchema
 
 
 class tagsRoute(BaseRoute):
@@ -12,14 +12,6 @@ class tagsRoute(BaseRoute):
 
     def get(self, *args, **kwargs):
         """return a list of tags"""
-
-        class SkipLimitSchema(Schema):
-            skip = fields.Integer(
-                required=False, missing=0, validate=validate.Range(min=0)
-            )
-            limit = fields.Integer(
-                required=False, missing=20, validate=validate.Range(min=0, max=200)
-            )
 
         request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
