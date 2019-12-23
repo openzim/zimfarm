@@ -36,7 +36,7 @@ class TestRequestedTaskList:
         assert response.status_code == 200
 
         data = json.loads(response.data)
-        assert data["meta"]["limit"] == 100
+        assert data["meta"]["limit"] == 20
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
@@ -60,7 +60,7 @@ class TestRequestedTaskList:
     @pytest.mark.parametrize(
         "matching, expected",
         [
-            [{"cpu": 3, "memory": 1024, "disk": 1024}, 25],
+            [{"cpu": 3, "memory": 1024, "disk": 1024}, 20],
             [
                 {
                     "cpu": 3,
@@ -68,7 +68,7 @@ class TestRequestedTaskList:
                     "disk": 1024,
                     "offliners": ["mwoffliner", "phet", "gutenberg", "youtube"],
                 },
-                25,
+                20,
             ],
             [
                 {

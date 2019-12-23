@@ -3,7 +3,6 @@ from marshmallow import fields, Schema
 from common.schemas.fields import (
     skip_field,
     limit_field_20_200,
-    limit_field_100_200,
     limit_field_20_500,
     worker_field,
     priority_field,
@@ -42,7 +41,7 @@ class SkipLimitSchema(Schema):
 # requested-tasks
 class RequestedTaskSchema(Schema):
     skip = skip_field
-    limit = limit_field_100_200
+    limit = limit_field_20_200
 
     worker = worker_field
     priority = priority_field

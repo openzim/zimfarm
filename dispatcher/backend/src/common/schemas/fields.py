@@ -28,9 +28,6 @@ limit_field_20_500 = fields.Integer(
 limit_field_20_200 = fields.Integer(
     required=False, missing=20, validate=validate.Range(min=0, max=200)
 )
-limit_field_100_200 = fields.Integer(
-    required=False, missing=100, validate=validate.Range(min=0, max=200)
-)
 priority_field = fields.Integer(required=False, validate=validate_priority)
 worker_field = fields.String(required=False, validate=validate_worker_name)
 schedule_name_field = fields.String(validate=validate_schedule_name)
