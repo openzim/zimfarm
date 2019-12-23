@@ -19,6 +19,108 @@ from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
 
+def list_of_requested_tasks(token: AccessToken.Payload = None):
+    """ list of requested tasks  """
+
+    # validate query parameter
+    class RequestArgsSchema(Schema):
+        skip = fields.Integer(
+            required=False, missing=0, validate=validate.Range(min=0)
+        )
+        limit = fields.Integer(
+            required=False, missing=100, validate=validate.Range(min=0, max=200)
+        )
+        priority = fields.Integer(
+            required=False, validate=validate.Range(min=0, max=10)
+        )
+        worker = fields.String(required=False)
+        schedule_name = fields.String(
+            required=False, validate=validate.Length(min=5)
+        )
+        matching_cpu = fields.Integer(
+            required=False, validate=validate.Range(min=0)
+        )
+        matching_memory = fields.Integer(
+            required=False, validate=validate.Range(min=0)
+        )
+        matching_disk = fields.Integer(
+            required=False, validate=validate.Range(min=0)
+        )
+        matching_offliners = fields.List(
+            fields.String(validate=validate.OneOf(Offliner.all())), required=False
+        )
+
+    request_args = request.args.to_dict()
+    request_args["matching_offliners"] = request.args.getlist("matching_offliners")
+    request_args = RequestArgsSchema().load(request_args)
+
+    # unpack query parameter
+    skip, limit = request_args["skip"], request_args["limit"]
+    schedule_name = request_args.get("schedule_name")
+    priority = request_args.get("priority")
+    worker = request_args.get("worker")
+
+    # record we've seen a worker, if applicable
+    if token and worker:
+        Workers().update_one(
+            {"name": worker, "username": token.username},
+            {"$set": {"last_seen": datetime.datetime.now()}},
+        )
+
+    # get requested tasks from database
+    query = {}
+    if schedule_name:
+        query["schedule_name"] = schedule_name
+
+    if priority:
+        query["priority"] = {"$gte": priority}
+
+    if worker:
+        query["worker"] = {"$in": [None, worker]}
+
+    for res_key in ("cpu", "memory", "disk"):
+        key = f"matching_{res_key}"
+        if key in request_args:
+            query[f"config.resources.{res_key}"] = {"$lte": request_args[key]}
+    matching_offliners = request_args.get("matching_offliners")
+    if matching_offliners:
+        query["config.task_name"] = {"$in": matching_offliners}
+
+    cursor = (
+        RequestedTasks()
+        .find(
+            query,
+            {
+                "_id": 1,
+                "status": 1,
+                "schedule_name": 1,
+                "config.task_name": 1,
+                "config.resources": 1,
+                "timestamp.requested": 1,
+                "requested_by": 1,
+                "priority": 1,
+                "worker": 1,
+            },
+        )
+        .sort(
+            [
+                ("priority", pymongo.DESCENDING),
+                ("timestamp.reserved", pymongo.DESCENDING),
+                ("timestamp.requested", pymongo.DESCENDING),
+            ]
+        )
+        .skip(skip)
+        .limit(limit)
+    )
+    count = RequestedTasks().count_documents(query)
+
+    return jsonify(
+        {
+            "meta": {"skip": skip, "limit": limit, "count": count},
+            "items": [task for task in cursor],
+        }
+    )
+
 
 class RequestedTasksRoute(BaseRoute):
     rule = "/"
@@ -103,106 +205,20 @@ class RequestedTasksRoute(BaseRoute):
 
     @auth_info_if_supplied
     def get(self, token: AccessToken.Payload = None):
-        """ list of requested tasks """
+        """ list of requested tasks for API users, no-auth """
+        return list_of_requested_tasks(token)
 
-        # validate query parameter
-        class RequestArgsSchema(Schema):
-            skip = fields.Integer(
-                required=False, missing=0, validate=validate.Range(min=0)
-            )
-            limit = fields.Integer(
-                required=False, missing=100, validate=validate.Range(min=0, max=200)
-            )
-            priority = fields.Integer(
-                required=False, validate=validate.Range(min=0, max=10)
-            )
-            worker = fields.String(required=False)
-            schedule_name = fields.String(
-                required=False, validate=validate.Length(min=5)
-            )
-            matching_cpu = fields.Integer(
-                required=False, validate=validate.Range(min=0)
-            )
-            matching_memory = fields.Integer(
-                required=False, validate=validate.Range(min=0)
-            )
-            matching_disk = fields.Integer(
-                required=False, validate=validate.Range(min=0)
-            )
-            matching_offliners = fields.List(
-                fields.String(validate=validate.OneOf(Offliner.all())), required=False
-            )
 
-        request_args = request.args.to_dict()
-        request_args["matching_offliners"] = request.args.getlist("matching_offliners")
-        request_args = RequestArgsSchema().load(request_args)
+class RequestedTasksForWorkers(BaseRoute):
+    rule = "/worker"
+    name = "requested_tasks_workers"
+    methods = ["GET"]
 
-        # unpack query parameter
-        skip, limit = request_args["skip"], request_args["limit"]
-        schedule_name = request_args.get("schedule_name")
-        priority = request_args.get("priority")
-        worker = request_args.get("worker")
-
-        # record we've seen a worker, if applicable
-        if token and worker:
-            Workers().update_one(
-                {"name": worker, "username": token.username},
-                {"$set": {"last_seen": datetime.datetime.now()}},
-            )
-
-        # get requested tasks from database
-        query = {}
-        if schedule_name:
-            query["schedule_name"] = schedule_name
-
-        if priority:
-            query["priority"] = {"$gte": priority}
-
-        if worker:
-            query["worker"] = {"$in": [None, worker]}
-
-        for res_key in ("cpu", "memory", "disk"):
-            key = f"matching_{res_key}"
-            if key in request_args:
-                query[f"config.resources.{res_key}"] = {"$lte": request_args[key]}
-        matching_offliners = request_args.get("matching_offliners")
-        if matching_offliners:
-            query["config.task_name"] = {"$in": matching_offliners}
-
-        cursor = (
-            RequestedTasks()
-            .find(
-                query,
-                {
-                    "_id": 1,
-                    "status": 1,
-                    "schedule_name": 1,
-                    "config.task_name": 1,
-                    "config.resources": 1,
-                    "timestamp.requested": 1,
-                    "requested_by": 1,
-                    "priority": 1,
-                    "worker": 1,
-                },
-            )
-            .sort(
-                [
-                    ("priority", pymongo.DESCENDING),
-                    ("timestamp.reserved", pymongo.DESCENDING),
-                    ("timestamp.requested", pymongo.DESCENDING),
-                ]
-            )
-            .skip(skip)
-            .limit(limit)
-        )
-        count = RequestedTasks().count_documents(query)
-
-        return jsonify(
-            {
-                "meta": {"skip": skip, "limit": limit, "count": count},
-                "items": [task for task in cursor],
-            }
-        )
+    @authenticate
+    @require_perm("tasks", "read")
+    def get(self, token: AccessToken.Payload):
+        """ list of requested tasks to be retrieved by workers, auth-only """
+        return list_of_requested_tasks(token)
 
 
 class RequestedTaskRoute(BaseRoute):

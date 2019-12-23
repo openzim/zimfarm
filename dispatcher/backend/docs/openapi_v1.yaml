@@ -576,6 +576,83 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /requested-tasks/worker:
+    get:
+      tags:
+      - workers
+      summary: list requested-tasks (worker endpoint)
+      operationId: listRequestedTasksForWorker
+      description: Query the RequestedTasks database (sorted by priority)
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/SkipParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - $ref: '#/components/parameters/ScheduleNameQueryParameter'
+      - in: query
+        name: matching_cpu
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 3
+          description: number of CPU cores required to run it
+      - in: query
+        name: matching_memory
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: RAM (in bytes) required to run it
+      - in: query
+        name: matching_disk
+        required: false
+        schema:
+          type: integer
+          format: int32
+          example: 1024
+          description: Disk space (in bytes) required to run it
+      - in: query
+        name: matching_offliners
+        required: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offliner'
+          example:
+            - "youtube"
+            - "mwoffliner"
+          description: list of offliners supported
+      - in: query
+        name: priority
+        required: false
+        description: filter to this or higher priority
+        schema:
+          $ref: '#/components/schemas/Priority'
+      - in: query
+        name: worker
+        required: false
+        description: filter to this or unassigned worker
+        schema:
+          $ref: '#/components/schemas/WorkerName'
+      responses:
+        200:
+          description: List of RequestedTask matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RequestedTask'
+        400:
+          description: Bad Request (invalid input)
   /requested-tasks/{taskId}:
     get:
       tags:
