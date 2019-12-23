@@ -4,12 +4,11 @@
 
 <template>
   <div class="container">
+    <div class="row"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
     <h2 class="row">
       <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
       <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
     </h2>
-
-    <div class="row"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
     <div v-if="!error && task">
       <ul class="nav nav-tabs">
         <li class="nav-item" :class="{ active: selectedTab == 'details'}">
