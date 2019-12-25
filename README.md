@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/openzim/zimfarm.svg?branch=master)](https://travis-ci.com/openzim/zimfarm)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/zimfarm/badge)](https://www.codefactor.io/repository/github/openzim/zimfarm)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm) (backend)
+[![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm)
 
 The ZIM farm (zimfarm) is a half-decentralised software solution to
 build [ZIM files](http://www.openzim.org/) efficiently. This means scrapping Web contents,
