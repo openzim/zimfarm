@@ -221,7 +221,14 @@ def task_scraper_completed_event_handler(task_id, payload):
     exit_code = payload.get("exit_code")
     logger.info(f"Task Container Finished: {task_id}, {exit_code}")
 
-    save_event(task_id, TaskStatus.scraper_completed, timestamp, exit_code=exit_code)
+    save_event(
+        task_id,
+        TaskStatus.scraper_completed,
+        timestamp,
+        exit_code=exit_code,
+        stdout=payload.get("stdout"),
+        stderr=payload.get("stderr"),
+    )
 
 
 def task_scraper_killed_event_handler(task_id, payload):

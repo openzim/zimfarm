@@ -34,7 +34,8 @@ import { faSpinner, faUser, faUserCircle, faKey, faTimes, faTimesCircle,
          faCarrot, faHdd, faMicrochip, faMemory, faCopy, faFire,
          faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
          faSkullCrossbones, faAsterisk, faCheck, faPlusCircle,
-         faExclamationTriangle, faServer, faSortAmountUp } from '@fortawesome/free-solid-svg-icons'
+         faExclamationTriangle, faServer, faSortAmountUp,
+         faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
 library.add(faHdd);
@@ -60,6 +61,7 @@ library.add(faUserCircle);
 library.add(faPlusCircle);
 library.add(faTimesCircle);
 library.add(faCalendarAlt);
+library.add(faExternalLinkAlt);
 library.add(faArrowCircleLeft);
 library.add(faSkullCrossbones);
 library.add(faExclamationTriangle);

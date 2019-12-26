@@ -31,7 +31,7 @@
 
       <div v-if=" selectedTab == 'details'" class="tab-content">
         <table class="table table-responsive-md table-striped table-in-tab">
-          <tr><th>ID</th><td><code>{{ this._id }}</code></td></tr>
+          <tr><th>ID</th><td><code>{{ _id }}</code>, <a target="_blank" :href="webapi_url + '/tasks/' + _id">document <font-awesome-icon icon="external-link-alt" size="sm" /></a></td></tr>
           <tr>
             <th>Recipe</th>
             <td><router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">
@@ -76,7 +76,9 @@
         <table class="table table-responsive table-striped table-in-tab">
           <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
           <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
-          <tr v-if="task_container.exit_code"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
+          <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
+          <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
+          <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
           <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
           <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
@@ -148,6 +150,7 @@
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
       kiwix_download_url() { return Constants.kiwix_download_url; },
+      webapi_url() { return Constants.zimfarm_webapi; },
       command() { return this.task_container.command.join(" "); },
       trimmed_command() { return Constants.trim_command(this.command); },
     },
@@ -178,5 +181,23 @@
             parent.toggleLoader(false);
         });
     },
+    updated(){
+      // scroll stdout and stderr to bottom
+      let element;
+      ["stdout", "stderr"].forEach(function(item) {
+        console.log(item);
+        element = this.$el.querySelector("." + item);
+        if (element)
+          element.scrollTop = element.scrollHeight;
+      }.bind(this));
+
+    }
   }
 </script>
+
+<style type="text/css">
+  .stdout, .stderr {
+    max-height: 9rem;
+    overflow: scroll;
+  }
+</style>

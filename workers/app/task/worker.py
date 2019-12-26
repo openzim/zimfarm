@@ -135,10 +135,13 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def mark_scraper_completed(self, exit_code):
+    def mark_scraper_completed(self, exit_code, stdout, stderr):
         logger.info(f"Updating task-status={scraper_completed}")
         self.patch_task(
-            {"event": scraper_completed, "payload": {"exit_code": exit_code}}
+            {
+                "event": scraper_completed,
+                "payload": {"exit_code": exit_code, "stdout": stdout, "stderr": stderr},
+            }
         )
 
     def mark_task_completed(self, status, exception=None, traceback=None):
@@ -375,7 +378,9 @@ class TaskWorker(BaseWorker):
     def handle_stopped_scraper(self):
         self.scraper.reload()
         exit_code = self.scraper.attrs["State"]["ExitCode"]
-        self.mark_scraper_completed(exit_code)
+        stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
+        stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
+        self.mark_scraper_completed(exit_code, stdout, stderr)
         self.scraper_succeeded = exit_code == 0
         self.upload_log()
         logger.info("Waiting for scraper log to finish uploading")
