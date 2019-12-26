@@ -84,7 +84,7 @@
     data() {
       return {
         ready: false,
-        showing_all: true,  // toggle switch for list of workers
+        showing_all: null,  // toggle switch for list of workers
         error: null,  // API generated error
         all_workers: [],  // list of workers as returned by API
         running_tasks: [],  // running tasks returned by API
@@ -169,10 +169,22 @@
       },
     },
     methods: {
+      getOnlinesOnlyPreference() {   // retrieve onlines-only value from cookie
+        let value = JSON.parse(this.$cookie.get('onlines-only'));
+        if (value === null)
+          value = false; // default state
+        return value;
+      },
+      saveOnlinesOnlyPreference(value) {  // save onlines-only pref into cookie
+        this.$cookie.set('onlines-only', JSON.stringify(value));
+      },
       started_on(task) {
         return task.timestamp.started || "not started";
       },
-      toggle_workerslist() { this.showing_all = !this.showing_all; },
+      toggle_workerslist() {
+        this.showing_all = !this.showing_all;
+        this.saveOnlinesOnlyPreference(!this.showing_all);
+      },
       addToWorker(task) {
         for (var i=0; i<this.all_workers.length; i++){
           if (this.all_workers[i].name == task.worker) {
@@ -227,6 +239,7 @@
       },
     },
     mounted() {
+      this.showing_all = !this.getOnlinesOnlyPreference();
       this.loadWorkersList();
       this.timer = setInterval(this.loadWorkersList, 60000);
     },
