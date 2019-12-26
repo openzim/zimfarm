@@ -85,6 +85,7 @@ function trim_command(command, columns=79) {  // trim a string to espaced versio
       line += part;
     }
   });
+  lines.push(line);
 
   // remove -- from beggining
   let first_line = lines[0];
