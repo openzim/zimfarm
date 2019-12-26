@@ -17,14 +17,6 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 Vue.use(BootstrapVue)
 
-// matomo (stats.kiwix.org)
-import VueMatomo from 'vue-matomo'
-Vue.use(VueMatomo, {
-  host: 'https://stats.kiwix.org',
-  siteId: 8,
-  router: router,
-});
-
 import '../public/assets/styles.css'
 
 // Font Awesome
@@ -103,6 +95,15 @@ const router = new VueRouter({
   linkExactActiveClass: "exact-active",
   routes:routes,
 })
+
+// matomo (stats.kiwix.org)
+import VueMatomo from 'vue-matomo'
+Vue.use(VueMatomo, {
+  host: 'https://stats.kiwix.org',
+  trackerFileName: 'matomo',
+  siteId: 8,
+  router: router,
+});
 
 new Vue({
   store: store,
