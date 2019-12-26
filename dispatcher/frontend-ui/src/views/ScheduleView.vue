@@ -92,7 +92,7 @@
               <ResourceBadge kind="disk" :value="config.resources.disk" />
             </td>
           </tr>
-          <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code>{{ command }}</code></td></tr>
+          <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
         </table>
       </div>
     </div>

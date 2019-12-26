@@ -75,7 +75,7 @@
       <div v-if="selectedTab == 'debug'" class="tab-content">
         <table class="table table-responsive table-striped table-in-tab">
           <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
-          <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><pre>{{ trimmed_command }}</pre></td></tr>
+          <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
           <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>

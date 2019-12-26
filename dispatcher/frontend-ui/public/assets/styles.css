@@ -114,3 +114,5 @@ as the tab has a border right above
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+
+.command { word-wrap: anywhere; }
