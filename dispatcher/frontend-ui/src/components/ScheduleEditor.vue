@@ -181,6 +181,7 @@
             v-model="edit_flags[field.data_key]"
             :style="{backgroundColor: field.bind_color ? edit_flags[field.data_key]: ''}"
             size="sm"
+            :step="field.step"
             :type="field.component_type">
               <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.text }}</option>
            </component>
@@ -242,6 +243,7 @@
           let options = null;
           let component_type = null;
           let bind_color = null;
+          let step = null;
 
           if (field.type == "hex-color") {
             bind_color = true;
@@ -260,11 +262,13 @@
           if (field.type == "integer") {
             component = "b-form-input";
             component_type = "number";
+            step = 1;
           }
 
           if (field.type == "float") {
             component = "b-form-input";
             component_type = "number";
+            step = 0.1
           }
 
           if (field.type == "list-of-string-enum") {
@@ -298,6 +302,7 @@
             component_type: component_type,
             options: options,
             bind_color: bind_color,
+            step: step,
           });
 
         }
