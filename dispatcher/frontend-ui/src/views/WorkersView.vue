@@ -185,7 +185,7 @@
         let parent = this;
 
         parent.toggleLoader("fetching tasks…");
-        parent.$root.axios.get('/tasks/', {params: {status: Constants.running_statuses}})
+        parent.$root.axios.get('/tasks/', {params: {status: Constants.running_statuses, limit:200}})
           .then(function (response) {
             parent.error = null;
             parent.running_tasks = [];

@@ -158,6 +158,11 @@
       <tr v-for="field in edit_flags_fields" :key="field.data_key">
         <th>{{ field.label }}<sup v-if="field.required">&nbsp;<font-awesome-icon icon="asterisk" color="red" size="xs" /></sup></th>
         <td>
+           <SwitchButton
+                v-if="field.component == 'switchbutton'"
+                :name="'es_flags_' + field.data_key"
+                v-model="edit_flags[field.data_key]">{{ edit_flags[field.data_key]|yes_no("Enabled", "Not set") }}
+            </SwitchButton>
           <multiselect v-if="field.component == 'multiselect'"
             v-model="edit_flags[field.data_key]"
             :options="field.options"
@@ -168,7 +173,7 @@
             :closeOnSelect="true"
             :placeholder="field.placeholder"
             size="sm"></multiselect>
-          <component v-else
+          <component v-if="field.component != 'multiselect' && field.component != 'switchbutton'"
             :is="field.component"
             :name="'es_flags_' + field.data_key"
             :required="field.required"
@@ -268,7 +273,7 @@
           }
 
           if (field.type == "boolean") {
-            component = "b-form-select";
+            component = "switchbutton";
             options = [{text: "True", value: true}, {text: "Not set", value: undefined}];
           }
 
