@@ -11,10 +11,7 @@ from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
 from routes import authenticate, require_perm
 from routes.base import BaseRoute
-from common.schemas.models import (
-    ScheduleConfigSchema,
-    ScheduleSchema,
-)
+from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 
 

@@ -1,4 +1,3 @@
-
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, ListOfStringEnum

@@ -41,7 +41,6 @@ def authenticate(f):
 
 
 def require_perm(namespace: str, perm_name: str):
-
     def decorate(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -55,6 +54,7 @@ def require_perm(namespace: str, perm_name: str):
         return wrapper
 
     return decorate
+
 
 def auth_info_if_supplied(f):
     @wraps(f)
