@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import copy
 import pathlib
 
 from common.enum import Offliner
@@ -11,6 +12,8 @@ def mount_point_for(offliner):
     """ Path to mount task volume in scraper """
     if offliner == Offliner.phet:
         return pathlib.Path("/phet/dist")
+    if offliner == Offliner.sotoki:
+        return pathlib.Path("/work")
     return pathlib.Path("/output")
 
 
@@ -29,7 +32,11 @@ def command_for(offliner, flags, mount_point):
             "--one-language-one-zim",
             str(mount_point),
         ]
-
+    if offliner == Offliner.sotoki:
+        command_flags = copy.deepcopy(flags)
+        domain = command_flags.pop("domain")
+        publisher = command_flags.pop("publisher", "Kiwix")
+        return ["sotoki", domain, publisher] + compute_flags(command_flags)
     if offliner == Offliner.mwoffliner:
         cmd = "mwoffliner"
         flags["outputDirectory"] = str(mount_point)

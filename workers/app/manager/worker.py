@@ -10,9 +10,9 @@ import datetime
 
 import zmq
 import requests
-import humanfriendly
 
 from common import logger
+from common.utils import format_size
 from common.worker import BaseWorker
 from common.docker import (
     query_host_stats,
@@ -22,7 +22,7 @@ from common.docker import (
     list_containers,
     remove_container,
 )
-from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
+from common.constants import CANCELED, CANCELING, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
 class WorkerManager(BaseWorker):
@@ -61,17 +61,11 @@ class WorkerManager(BaseWorker):
             "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
             "\n\tRAM : {mem_total} (total) ;  {mem_avail} (avail)"
             "\n\tDisk: {disk_avail} (avail)".format(
-                mem_total=humanfriendly.format_size(
-                    host_stats["memory"]["total"], binary=True
-                ),
-                mem_avail=humanfriendly.format_size(
-                    host_stats["memory"]["available"], binary=True
-                ),
+                mem_total=format_size(host_stats["memory"]["total"]),
+                mem_avail=format_size(host_stats["memory"]["available"]),
                 cpu_total=host_stats["cpu"]["total"],
                 cpu_avail=host_stats["cpu"]["available"],
-                disk_avail=humanfriendly.format_size(
-                    host_stats["disk"]["available"], binary=True
-                ),
+                disk_avail=format_size(host_stats["disk"]["available"]),
             )
         )
 
@@ -93,6 +87,8 @@ class WorkerManager(BaseWorker):
         time.sleep(self.sleep_interval)
 
     def poll(self, task_id=None):
+        self.check_cancellation()  # update our tasks register
+
         logger.debug("polling…")
         self.last_poll = datetime.datetime.now()
 
@@ -117,7 +113,13 @@ class WorkerManager(BaseWorker):
                 )
             )
             self.start_task(response["items"].pop())
+            # we need to allow the task to start, its container to start and
+            # eventually its scraper to start we docker can report to us
+            # the assigned resources (on the scraper) _before_ polling again
+            time.sleep(40)
             self.poll()
+        elif not success:
+            logger.warning(f"poll failed with HTTP {status_code}: {response}")
 
     def check_in(self):
         """ inform backend that we started a manager, sending resources info """
@@ -143,15 +145,24 @@ class WorkerManager(BaseWorker):
         logger.info("\tchecked-in!")
 
     def check_cancellation(self):
-        for task_id, task in self.tasks.items():
-            if task["status"] in [CANCELED, CANCEL_REQUESTED]:
+        for task_id in list(self.tasks.keys()):
+            if self.tasks.get(task_id, {}).get("status") in [CANCELED, CANCELING]:
                 continue  # already handling cancellation
 
             self.update_task_data(task_id)
-            if task["status"] in [CANCELED, CANCEL_REQUESTED]:
+            if self.tasks.get(task_id, {}).get("status") in [
+                CANCELED,
+                CANCELING,
+                CANCEL_REQUESTED,
+            ]:
                 self.cancel_and_remove_task(task_id)
 
     def cancel_and_remove_task(self, task_id):
+        logger.debug(f"canceling task: {task_id}")
+        try:
+            self.tasks[task_id]["status"] = CANCELING
+        except KeyError:
+            pass
         self.stop_task_worker(task_id)
         self.tasks.pop(task_id, None)
 
@@ -196,7 +207,7 @@ class WorkerManager(BaseWorker):
         # make sure we are tracking task for all running containers
         for task_id in running_task_ids:
             if task_id not in self.tasks.keys():
-                logger.info("found running container for {task_id}.")
+                logger.info(f"found running container for {task_id}.")
                 self.update_task_data(task_id)
 
         # filter our tasks register of gone containers
@@ -247,7 +258,7 @@ class WorkerManager(BaseWorker):
             logger.info(received_string)
 
         if key == "cancel-task":
-            self.cancel_and_remove_task(data)
+            self.cancel_and_remove_task(payload)
         elif key in ("requested-task", "requested-tasks"):
             # incoming task. wait <nb-running> x <sleep_itvl> seconds before polling
             # to allow idle workers to pick this up first
@@ -283,7 +294,6 @@ class WorkerManager(BaseWorker):
 
             if self.should_poll:
                 self.sync_tasks_and_containers()
-                self.check_cancellation()  # update our tasks register
                 self.poll()
             else:
                 self.sleep()

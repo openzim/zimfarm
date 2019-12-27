@@ -44,8 +44,13 @@
             duration = Constants.ALERT_DEFAULT_DURATION;
         if (duration === true)
             duration = Constants.ALERT_PERMANENT_DURATION;
-        parent.dismissCountDown = duration;
-        parent.auto_dismiss = (duration === true) ? false : true;
+
+        // parent.dismissCountDown = duration;
+        // parent.auto_dismiss = (duration === true) ? false : true;
+
+        // using only permenent alerts for now
+        parent.dismissCountDown = Constants.ALERT_PERMANENT_DURATION;
+        parent.auto_dismiss = false;
       });
     }
   }

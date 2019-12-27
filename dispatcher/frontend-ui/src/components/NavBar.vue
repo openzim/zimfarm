@@ -26,6 +26,9 @@
                     <li class="nav-item disabled">
                         <span class="nav-link" href="/stats">Stats</span>
                     </li>
+                    <li class="nav-item">
+                        <router-link class="nav-link" :to="{ name: 'about' }">About</router-link>
+                    </li>
                 </ul>
                 <UserButton />
             </b-collapse>

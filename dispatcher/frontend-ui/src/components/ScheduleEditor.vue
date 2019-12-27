@@ -87,7 +87,8 @@
           <b-form-select id="es_category"
                          v-model="edit_schedule.config.task_name"
                          :options="offlinersOptions"
-                         size="sm"></b-form-select>
+                         size="sm"
+                         @change="offliner_changed"></b-form-select>
         </b-form-group>
       </b-col>
       <b-col>
@@ -158,6 +159,11 @@
       <tr v-for="field in edit_flags_fields" :key="field.data_key">
         <th>{{ field.label }}<sup v-if="field.required">&nbsp;<font-awesome-icon icon="asterisk" color="red" size="xs" /></sup></th>
         <td>
+           <SwitchButton
+                v-if="field.component == 'switchbutton'"
+                :name="'es_flags_' + field.data_key"
+                v-model="edit_flags[field.data_key]">{{ edit_flags[field.data_key]|yes_no("Enabled", "Not set") }}
+            </SwitchButton>
           <multiselect v-if="field.component == 'multiselect'"
             v-model="edit_flags[field.data_key]"
             :options="field.options"
@@ -168,7 +174,7 @@
             :closeOnSelect="true"
             :placeholder="field.placeholder"
             size="sm"></multiselect>
-          <component v-else
+          <component v-if="field.component != 'multiselect' && field.component != 'switchbutton'"
             :is="field.component"
             :name="'es_flags_' + field.data_key"
             :required="field.required"
@@ -176,6 +182,7 @@
             v-model="edit_flags[field.data_key]"
             :style="{backgroundColor: field.bind_color ? edit_flags[field.data_key]: ''}"
             size="sm"
+            :step="field.step"
             :type="field.component_type">
               <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.text }}</option>
            </component>
@@ -237,6 +244,7 @@
           let options = null;
           let component_type = null;
           let bind_color = null;
+          let step = null;
 
           if (field.type == "hex-color") {
             bind_color = true;
@@ -255,11 +263,13 @@
           if (field.type == "integer") {
             component = "b-form-input";
             component_type = "number";
+            step = 1;
           }
 
           if (field.type == "float") {
             component = "b-form-input";
             component_type = "number";
+            step = 0.1
           }
 
           if (field.type == "list-of-string-enum") {
@@ -268,7 +278,7 @@
           }
 
           if (field.type == "boolean") {
-            component = "b-form-select";
+            component = "switchbutton";
             options = [{text: "True", value: true}, {text: "Not set", value: undefined}];
           }
 
@@ -293,6 +303,7 @@
             component_type: component_type,
             options: options,
             bind_color: bind_color,
+            step: step,
           });
 
         }
@@ -376,12 +387,17 @@
         return payload;
       },
       memoryOptions() {
-        return Constants.memory_values.map(function (value) { return {text: Constants.filesize(value), value: value}; });
+        let values = Constants.memory_values;
+        if (values.indexOf(this.edit_schedule.config.resources.memory) == -1)
+          values.push(this.edit_schedule.config.resources.memory);
+        values.sort(function (a, b) { return a - b;});
+        return values.map(function (value) { return {text: Constants.filesize(value), value: value}; });
       },
       diskOptions() {
         let values = Constants.disk_values;
-        if (values.indexOf(this.edit_disk) == -1)
-          values.push(this.edit_disk);
+        if (values.indexOf(this.edit_schedule.config.resources.disk) == -1)
+          values.push(this.edit_schedule.config.resources.disk);
+        values.sort(function (a, b) { return a - b;});
         return values.map(function (value) { return {text: Constants.filesize(value), value: value}; });
       },
       categoriesOptions() {
@@ -401,6 +417,9 @@
       },
     },
     methods: {
+      offliner_changed() { // assume flags are different so reset edit schedule
+        this.edit_flags = {};
+      },
       commit_form() {
         if (this.payload === null) {
           return;
@@ -413,8 +432,9 @@
             parent.alertSuccess("Updated!", "Recipe updated successfuly.");
             if (parent.payload.name !== undefined) {  // named changed so we need to redirect
               parent.redirectTo('schedule-detail-tab', {schedule_name: parent.payload.name, selectedTab: 'edit'});
-            }
-            parent.loadSchedule(true);
+              parent.loadSchedule(true, parent.payload.name);
+            } else
+              parent.loadSchedule(true);
         })
         .catch(function (error) {
           if (error.response.status == 400) {
@@ -433,13 +453,14 @@
         this.edit_schedule = Constants.duplicate(this.schedule);
         this.edit_flags = Constants.duplicate(this.schedule.config.flags);
       },
-      loadSchedule(force) {
+      loadSchedule(force, schedule_name) {
         let parent = this;
-        parent.$root.$emit('load-schedule', parent.schedule_name, force, function() {
-          parent.reset_form();
-        }, function(error) {
-          parent.alertError(Constants.standardHTTPError(error.response));
-        });
+        if (schedule_name === undefined || schedule_name === null)
+          schedule_name = parent.schedule_name;
+
+        parent.$root.$emit('load-schedule', schedule_name, force,
+            function() { parent.reset_form(); },
+            function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });
       },
     },
     mounted() {

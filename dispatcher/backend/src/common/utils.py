@@ -43,21 +43,22 @@ def get_timestamp_from_event(event: dict) -> datetime.datetime:
 def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwargs):
     """ save event and its accompagning data to database """
 
-    # insert event and sort by timestamp
-    Tasks().update_one(
-        {"_id": task_id},
-        {
-            "$push": {
-                "events": {
-                    "$each": [{"code": code, "timestamp": timestamp}],
-                    "$sort": {"timestamp": 1},
+    if "file" not in code:  # don't update timestamp for file events as not unique
+        task_updates = {f"timestamp.{code}": timestamp}
+        # insert event and sort by timestamp
+        Tasks().update_one(
+            {"_id": task_id},
+            {
+                "$push": {
+                    "events": {
+                        "$each": [{"code": code, "timestamp": timestamp}],
+                        "$sort": {"timestamp": 1},
+                    }
                 }
-            }
-        },
-    )
+            },
+        )
 
     # update task status, timestamp and other fields
-    task_updates = {f"timestamp.{code}": timestamp}
     if "scraper_" not in code and "file" not in code:
         task_updates["status"] = code
 
@@ -221,7 +222,14 @@ def task_scraper_completed_event_handler(task_id, payload):
     exit_code = payload.get("exit_code")
     logger.info(f"Task Container Finished: {task_id}, {exit_code}")
 
-    save_event(task_id, TaskStatus.scraper_completed, timestamp, exit_code=exit_code)
+    save_event(
+        task_id,
+        TaskStatus.scraper_completed,
+        timestamp,
+        exit_code=exit_code,
+        stdout=payload.get("stdout"),
+        stderr=payload.get("stderr"),
+    )
 
 
 def task_scraper_killed_event_handler(task_id, payload):
