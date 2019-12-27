@@ -87,7 +87,8 @@
           <b-form-select id="es_category"
                          v-model="edit_schedule.config.task_name"
                          :options="offlinersOptions"
-                         size="sm"></b-form-select>
+                         size="sm"
+                         @change="offliner_changed"></b-form-select>
         </b-form-group>
       </b-col>
       <b-col>
@@ -411,6 +412,9 @@
       },
     },
     methods: {
+      offliner_changed() { // assume flags are different so reset edit schedule
+        this.edit_flags = {};
+      },
       commit_form() {
         if (this.payload === null) {
           return;
@@ -423,8 +427,9 @@
             parent.alertSuccess("Updated!", "Recipe updated successfuly.");
             if (parent.payload.name !== undefined) {  // named changed so we need to redirect
               parent.redirectTo('schedule-detail-tab', {schedule_name: parent.payload.name, selectedTab: 'edit'});
-            }
-            parent.loadSchedule(true);
+              parent.loadSchedule(true, parent.payload.name);
+            } else
+              parent.loadSchedule(true);
         })
         .catch(function (error) {
           if (error.response.status == 400) {
@@ -443,13 +448,14 @@
         this.edit_schedule = Constants.duplicate(this.schedule);
         this.edit_flags = Constants.duplicate(this.schedule.config.flags);
       },
-      loadSchedule(force) {
+      loadSchedule(force, schedule_name) {
         let parent = this;
-        parent.$root.$emit('load-schedule', parent.schedule_name, force, function() {
-          parent.reset_form();
-        }, function(error) {
-          parent.alertError(Constants.standardHTTPError(error.response));
-        });
+        if (schedule_name === undefined || schedule_name === null)
+          schedule_name = parent.schedule_name;
+
+        parent.$root.$emit('load-schedule', schedule_name, force,
+            function() { parent.reset_form(); },
+            function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });
       },
     },
     mounted() {
