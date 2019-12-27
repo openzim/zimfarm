@@ -49,7 +49,8 @@
         // parent.auto_dismiss = (duration === true) ? false : true;
 
         // using only permenent alerts for now
-        parent.dismissCountDown = true;
+        parent.dismissCountDown = Constants.ALERT_PERMANENT_DURATION;
+        parent.auto_dismiss = false;
       });
     }
   }
