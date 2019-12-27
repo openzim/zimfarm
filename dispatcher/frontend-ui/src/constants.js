@@ -116,6 +116,8 @@ var DEFAULT_CPU_SHARE = 1024;
 
 var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
 var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
+var cancelable_statuses = ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"];
+var running_statuses = cancelable_statuses.concat(["cancel_requested"]);
 
 export default {
   isProduction() {
@@ -135,7 +137,8 @@ export default {
   ROLES: ["editor", "manager", "admin", "worker", "processor"],
   TOKEN_COOKIE_EXPIRY: '30D',
   TOKEN_COOKIE_NAME: "auth",
-  running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed", "cancel_requested"],
+  cancelable_statuses: cancelable_statuses,
+  running_statuses: running_statuses,
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
                "ted", "vikidia", "wikibooks", "wikinews", "wikipedia",
