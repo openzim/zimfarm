@@ -118,4 +118,4 @@ as the tab has a border right above
 .command { word-wrap: anywhere; }
 
 /* hide pipeline's content while loading/changing */
-table.loading tbody tr * { color: transparent; }
+table.loading tbody tr td, table.loading tbody tr th, table.loading tbody tr a { color: transparent; }
