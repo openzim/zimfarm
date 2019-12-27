@@ -117,6 +117,10 @@ class WorkerManager(BaseWorker):
                 )
             )
             self.start_task(response["items"].pop())
+            # we need to allow the task to start, its container to start and
+            # eventually its scraper to start we docker can report to us
+            # the assigned resources (on the scraper) _before_ polling again
+            time.sleep(40)
             self.poll()
         elif not success:
             logger.warning(f"poll failed with HTTP {status_code}: {response}")
