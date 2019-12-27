@@ -24,7 +24,7 @@ from common.constants import (
     PRIVATE_KEY,
     UPLOAD_URI,
 )
-from common.utils import short_id
+from common.utils import short_id, as_pos_int
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused")
 STOPPED_STATUSES = ("exited", "dead", "removing")
@@ -132,15 +132,15 @@ def query_host_stats(docker_client, workdir):
     # disk space
     workir_fs_stats = os.statvfs(workdir)
     disk_free = workir_fs_stats.f_bavail * workir_fs_stats.f_frsize
-    disk_avail = min([ZIMFARM_DISK_SPACE - stats["disk"], disk_free])
+    disk_avail = as_pos_int(min([ZIMFARM_DISK_SPACE - stats["disk"], disk_free]))
 
     # CPU cores
     cpu_used = stats["cpu_shares"] // DEFAULT_CPU_SHARE
-    cpu_avail = ZIMFARM_CPUS - cpu_used
+    cpu_avail = as_pos_int(ZIMFARM_CPUS - cpu_used)
 
     # RAM
     mem_used = stats["memory"]
-    mem_avail = ZIMFARM_MEMORY - mem_used
+    mem_avail = as_pos_int(ZIMFARM_MEMORY - mem_used)
 
     return {
         "cpu": {"total": ZIMFARM_CPUS, "available": cpu_avail},
