@@ -22,7 +22,7 @@ from common.docker import (
     list_containers,
     remove_container,
 )
-from common.constants import CANCELED, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
+from common.constants import CANCELED, CANCELING, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
 
 
 class WorkerManager(BaseWorker):
@@ -87,6 +87,8 @@ class WorkerManager(BaseWorker):
         time.sleep(self.sleep_interval)
 
     def poll(self, task_id=None):
+        self.check_cancellation()  # update our tasks register
+
         logger.debug("polling…")
         self.last_poll = datetime.datetime.now()
 
@@ -143,15 +145,24 @@ class WorkerManager(BaseWorker):
         logger.info("\tchecked-in!")
 
     def check_cancellation(self):
-        for task_id, task in self.tasks.items():
-            if task["status"] in [CANCELED, CANCEL_REQUESTED]:
+        for task_id in list(self.tasks.keys()):
+            if self.tasks.get(task_id, {}).get("status") in [CANCELED, CANCELING]:
                 continue  # already handling cancellation
 
             self.update_task_data(task_id)
-            if task["status"] in [CANCELED, CANCEL_REQUESTED]:
+            if self.tasks.get(task_id, {}).get("status") in [
+                CANCELED,
+                CANCELING,
+                CANCEL_REQUESTED,
+            ]:
                 self.cancel_and_remove_task(task_id)
 
     def cancel_and_remove_task(self, task_id):
+        logger.debug(f"canceling task: {task_id}")
+        try:
+            self.tasks[task_id]["status"] = CANCELING
+        except KeyError:
+            pass
         self.stop_task_worker(task_id)
         self.tasks.pop(task_id, None)
 
@@ -196,7 +207,7 @@ class WorkerManager(BaseWorker):
         # make sure we are tracking task for all running containers
         for task_id in running_task_ids:
             if task_id not in self.tasks.keys():
-                logger.info("found running container for {task_id}.")
+                logger.info(f"found running container for {task_id}.")
                 self.update_task_data(task_id)
 
         # filter our tasks register of gone containers
@@ -247,7 +258,7 @@ class WorkerManager(BaseWorker):
             logger.info(received_string)
 
         if key == "cancel-task":
-            self.cancel_and_remove_task(data)
+            self.cancel_and_remove_task(payload)
         elif key in ("requested-task", "requested-tasks"):
             # incoming task. wait <nb-running> x <sleep_itvl> seconds before polling
             # to allow idle workers to pick this up first
@@ -283,7 +294,6 @@ class WorkerManager(BaseWorker):
 
             if self.should_poll:
                 self.sync_tasks_and_containers()
-                self.check_cancellation()  # update our tasks register
                 self.poll()
             else:
                 self.sleep()
