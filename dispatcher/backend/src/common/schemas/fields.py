@@ -20,6 +20,11 @@ validate_status = validate.OneOf(TaskStatus.all())
 validate_event = validate.OneOf(TaskStatus.all_events())
 validate_worker_name = validate.Length(min=3)
 
+
+def validate_multiple_of_100(value):
+    return value % 100 == 0
+
+
 # reusable fields
 skip_field = fields.Integer(required=False, missing=0, validate=validate.Range(min=0))
 limit_field_20_500 = fields.Integer(

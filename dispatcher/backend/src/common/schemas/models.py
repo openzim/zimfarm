@@ -18,6 +18,7 @@ from common.schemas.offliners import (
     YoutubeFlagsSchema,
     PhetFlagsSchema,
     GutenbergFlagsSchema,
+    SotokiFlagsSchema,
 )
 
 
@@ -62,7 +63,8 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.youtube: YoutubeFlagsSchema,
             Offliner.gutenberg: GutenbergFlagsSchema,
             Offliner.phet: PhetFlagsSchema,
-        }.get(offliner)
+            Offliner.sotoki: SotokiFlagsSchema,
+        }.get(offliner, Schema)
 
     @validates_schema
     def validate(self, data, **kwargs):
