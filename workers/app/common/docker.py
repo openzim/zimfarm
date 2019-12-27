@@ -24,11 +24,12 @@ from common.constants import (
     PRIVATE_KEY,
     UPLOAD_URI,
 )
-from common.utils import short_id, as_pos_int
+from common.utils import short_id, as_pos_int, format_size
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused")
 STOPPED_STATUSES = ("exited", "dead", "removing")
 RETRIES = 3  # retry attempts in case of API error
+RESOURCES_DISK_LABEL = "resources_disk"
 
 
 def retried_docker_call(docker_method, *args, **kwargs):
@@ -117,7 +118,7 @@ def query_containers_resources(docker_client):
         cpu_shares += container.attrs["HostConfig"]["CpuShares"] or DEFAULT_CPU_SHARE
         memory += container.attrs["HostConfig"]["Memory"]
         try:
-            disk += int(container.labels.get("resources_disk", 0))
+            disk += int(container.labels.get(RESOURCES_DISK_LABEL, 0))
         except Exception:
             disk += 0  # improper label
 
@@ -254,6 +255,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
     command = config["str_command"]
     cpu_shares = config["resources"]["cpu"] * DEFAULT_CPU_SHARE
     mem_limit = config["resources"]["memory"]
+    disk_limit = config["resources"]["disk"]
 
     return run_container(
         docker_client,
@@ -268,6 +270,10 @@ def start_scraper(docker_client, task, dns, host_workdir):
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
+            RESOURCES_DISK_LABEL: str(disk_limit),
+            "human.cpu": str(config["resources"]["cpu"]),
+            "human.memory": format_size(mem_limit),
+            "human.disk": format_size(disk_limit),
         },
         mem_swappiness=0,
         mounts=mounts,

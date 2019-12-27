@@ -10,7 +10,7 @@ import psutil
 import humanfriendly
 
 from common import logger
-from common.utils import as_pos_int
+from common.utils import as_pos_int, format_size
 
 # worker names
 WORKER_MANAGER = "worker-manager"
@@ -40,7 +40,7 @@ try:
 except Exception as exc:
     ZIMFARM_DISK_SPACE = 2 ** 34  # 16GiB
     logger.error(
-        f"Incorrect or missing `ZIMFARM_DISK` env. defaulting to {humanfriendly.format_size(ZIMFARM_DISK_SPACE, binary=True)} ({exc})"
+        f"Incorrect or missing `ZIMFARM_DISK` env. defaulting to {format_size(ZIMFARM_DISK_SPACE)} ({exc})"
     )
 
 try:

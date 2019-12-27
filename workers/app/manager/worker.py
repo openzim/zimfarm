@@ -10,9 +10,9 @@ import datetime
 
 import zmq
 import requests
-import humanfriendly
 
 from common import logger
+from common.utils import format_size
 from common.worker import BaseWorker
 from common.docker import (
     query_host_stats,
@@ -61,17 +61,11 @@ class WorkerManager(BaseWorker):
             "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
             "\n\tRAM : {mem_total} (total) ;  {mem_avail} (avail)"
             "\n\tDisk: {disk_avail} (avail)".format(
-                mem_total=humanfriendly.format_size(
-                    host_stats["memory"]["total"], binary=True
-                ),
-                mem_avail=humanfriendly.format_size(
-                    host_stats["memory"]["available"], binary=True
-                ),
+                mem_total=format_size(host_stats["memory"]["total"]),
+                mem_avail=format_size(host_stats["memory"]["available"]),
                 cpu_total=host_stats["cpu"]["total"],
                 cpu_avail=host_stats["cpu"]["available"],
-                disk_avail=humanfriendly.format_size(
-                    host_stats["disk"]["available"], binary=True
-                ),
+                disk_avail=format_size(host_stats["disk"]["available"]),
             )
         )
 

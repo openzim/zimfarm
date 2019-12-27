@@ -11,9 +11,9 @@ import datetime
 
 import docker
 import requests
-import humanfriendly
 
 from common import logger
+from common.utils import format_size
 from common.worker import BaseWorker
 from common.docker import (
     query_host_mounts,
@@ -64,16 +64,10 @@ class TaskWorker(BaseWorker):
             "\n\tRAM  (avail): {mem_avail}"
             "\n\tCPUs: {cpu_total}"
             "\n\tDisk: {disk_avail}".format(
-                mem_total=humanfriendly.format_size(
-                    cont_stats["memory"]["total"], binary=True
-                ),
-                mem_avail=humanfriendly.format_size(
-                    cont_stats["memory"]["available"], binary=True
-                ),
+                mem_total=format_size(cont_stats["memory"]["total"]),
+                mem_avail=format_size(cont_stats["memory"]["available"]),
                 cpu_total=cont_stats["cpu"]["total"],
-                disk_avail=humanfriendly.format_size(
-                    cont_stats["disk"]["available"], binary=True
-                ),
+                disk_avail=format_size(cont_stats["disk"]["available"]),
             )
         )
 
@@ -159,7 +153,7 @@ class TaskWorker(BaseWorker):
         self.patch_task({"event": status, "payload": event_payload})
 
     def mark_file_created(self, filename, filesize):
-        human_fsize = humanfriendly.format_size(filesize, binary=True)
+        human_fsize = format_size(filesize)
         logger.info(f"ZIM file created: {filename}, {human_fsize}")
         self.patch_task(
             {
@@ -184,7 +178,7 @@ class TaskWorker(BaseWorker):
     def cleanup_workdir(self):
         logger.info(f"Removing task workdir {self.workdir}")
         zim_files = [
-            (f.name, humanfriendly.format_size(f.stat().st_size, binary=True))
+            (f.name, format_size(f.stat().st_size))
             for f in self.task_wordir.glob("*.zim")
         ]
         if zim_files:
