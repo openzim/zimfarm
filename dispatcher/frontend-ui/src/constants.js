@@ -85,6 +85,7 @@ function trim_command(command, columns=79) {  // trim a string to espaced versio
       line += part;
     }
   });
+  lines.push(line);
 
   // remove -- from beggining
   let first_line = lines[0];
@@ -115,6 +116,8 @@ var DEFAULT_CPU_SHARE = 1024;
 
 var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
 var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
+var cancelable_statuses = ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"];
+var running_statuses = cancelable_statuses.concat(["cancel_requested"]);
 
 export default {
   isProduction() {
@@ -134,7 +137,8 @@ export default {
   ROLES: ["editor", "manager", "admin", "worker", "processor"],
   TOKEN_COOKIE_EXPIRY: '30D',
   TOKEN_COOKIE_NAME: "auth",
-  running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
+  cancelable_statuses: cancelable_statuses,
+  running_statuses: running_statuses,
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
                "ted", "vikidia", "wikibooks", "wikinews", "wikipedia",
@@ -144,7 +148,7 @@ export default {
                     "/ted", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary"],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB
                   2147483648,  // 2GiB
@@ -170,12 +174,13 @@ export default {
                 3221225472,  // 3GiB
                 4294967296,  // 4GiB
                 5368709120,  // 5GiB
+                10737418240, // 10GiB
                 16106127360,  // 15GiB
                 21474836480,  // 20GiB
                 32212254720,  // 30GiB
                 42949672960,  // 40GiB
                 53687091200,  // 50GiB
-                80530636800,  // 750GiB
+                80530636800,  // 75GiB
                 107374182400,  // 100GiB
                 134217728000,  // 125GiB
                 161061273600,  // 150GiB

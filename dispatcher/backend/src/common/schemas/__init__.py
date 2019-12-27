@@ -1,5 +1,5 @@
-
 from marshmallow import Schema, fields
+
 
 class ListOfStringEnum(fields.List):
     pass

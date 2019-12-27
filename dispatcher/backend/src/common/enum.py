@@ -99,10 +99,11 @@ class DockerImageName:
     youtube = "openzim/youtube"
     gutenberg = "openzim/gutenberg"
     phet = "openzim/phet"
+    sotoki = "openzim/sotoki"
 
     @classmethod
     def all(cls) -> set:
-        return {cls.mwoffliner, cls.phet, cls.gutenberg}
+        return {cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet, cls.sotoki}
 
 
 class Offliner:
@@ -110,7 +111,8 @@ class Offliner:
     youtube = "youtube"
     gutenberg = "gutenberg"
     phet = "phet"
+    sotoki = "sotoki"
 
     @classmethod
     def all(cls):
-        return [cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet]
+        return [cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet, cls.sotoki]

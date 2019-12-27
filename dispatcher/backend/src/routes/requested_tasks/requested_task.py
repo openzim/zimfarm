@@ -29,13 +29,6 @@ def list_of_requested_tasks(token: AccessToken.Payload = None):
     """ list of requested tasks  """
 
     request_args = request.args.to_dict()
-    request_args["matching_offliners"] = request.args.getlist("matching_offliners")
-    request_args = RequestedTaskSchema().load(request_args)
-
-    # unpack query parameter
-    skip, limit = request_args["skip"], request_args["limit"]
-    schedule_name = request_args.get("schedule_name")
-    priority = request_args.get("priority")
     worker = request_args.get("worker")
 
     # record we've seen a worker, if applicable
@@ -44,6 +37,14 @@ def list_of_requested_tasks(token: AccessToken.Payload = None):
             {"name": worker, "username": token.username},
             {"$set": {"last_seen": datetime.datetime.now()}},
         )
+
+    request_args["matching_offliners"] = request.args.getlist("matching_offliners")
+    request_args = RequestedTaskSchema().load(request_args)
+
+    # unpack query parameter
+    skip, limit = request_args["skip"], request_args["limit"]
+    schedule_name = request_args.get("schedule_name")
+    priority = request_args.get("priority")
 
     # get requested tasks from database
     query = {}

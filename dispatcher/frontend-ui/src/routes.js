@@ -9,12 +9,18 @@ import UsersView from './views/UsersView.vue'
 import UserView from './views/UserView.vue'
 import WorkersView from './views/WorkersView.vue'
 import TaskView from './views/TaskView.vue'
+import About from './views/About.vue'
 
 export default [
   {
     path: '/',
     name: 'home',
     redirect: {name: 'pipeline'},
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: About,
   },
   {
     path: '/pipeline/filter-:filter',

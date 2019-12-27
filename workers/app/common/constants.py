@@ -10,6 +10,7 @@ import psutil
 import humanfriendly
 
 from common import logger
+from common.utils import as_pos_int, format_size
 
 # worker names
 WORKER_MANAGER = "worker-manager"
@@ -27,6 +28,7 @@ OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
 # task-related
 CANCELED = "canceled"
 CANCEL_REQUESTED = "cancel_requested"
+CANCELING = "canceling"
 
 # docker resources
 DEFAULT_CPU_SHARE = 1024
@@ -35,15 +37,15 @@ DEFAULT_CPU_SHARE = 1024
 ZIMFARM_CPUS, ZIMFARM_MEMORY, ZIMFARM_DISK_SPACE = None, None, None
 
 try:
-    ZIMFARM_DISK_SPACE = humanfriendly.parse_size(os.getenv("ZIMFARM_DISK"))
+    ZIMFARM_DISK_SPACE = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_DISK")))
 except Exception as exc:
     ZIMFARM_DISK_SPACE = 2 ** 34  # 16GiB
     logger.error(
-        f"Incorrect or missing `ZIMFARM_DISK` env. defaulting to {humanfriendly.format_size(ZIMFARM_DISK_SPACE, binary=True)} ({exc})"
+        f"Incorrect or missing `ZIMFARM_DISK` env. defaulting to {format_size(ZIMFARM_DISK_SPACE)} ({exc})"
     )
 
 try:
-    ZIMFARM_CPUS = int(os.getenv("ZIMFARM_CPUS"))
+    ZIMFARM_CPUS = as_pos_int(int(os.getenv("ZIMFARM_CPUS")))
 except Exception:
     physical_cpu = multiprocessing.cpu_count()
     if ZIMFARM_CPUS:
@@ -52,7 +54,7 @@ except Exception:
         ZIMFARM_CPUS = physical_cpu
 
 try:
-    ZIMFARM_MEMORY = humanfriendly.parse_size(os.getenv("ZIMFARM_MEMORY"))
+    ZIMFARM_MEMORY = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_MEMORY")))
 except Exception:
     physical_mem = psutil.virtual_memory().total
     if ZIMFARM_MEMORY:

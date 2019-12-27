@@ -118,7 +118,7 @@
             }
 
             // once requested-tasks is ran, look for running ones
-            parent.$root.axios.get('/tasks/', {params: {schedule_name: [parent.name], status: Constants.running_statuses}})
+            parent.$root.axios.get('/tasks/', {params: {schedule_name: [parent.name], status: Constants.cancelable_statuses}})
               .then(function (response) {
                 if (response.data.meta.count > 0) {
                   parent.task = response.data.items[0];
