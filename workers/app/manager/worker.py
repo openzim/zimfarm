@@ -118,6 +118,8 @@ class WorkerManager(BaseWorker):
             )
             self.start_task(response["items"].pop())
             self.poll()
+        elif not success:
+            logger.warning(f"poll failed with HTTP {status_code}: {response}")
 
     def check_in(self):
         """ inform backend that we started a manager, sending resources info """
