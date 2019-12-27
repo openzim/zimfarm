@@ -4,7 +4,9 @@
 
 <template>
   <div>
-    <table class="table table-responsive-md table-striped" v-if="!error">
+    <table class="table table-responsive-md table-striped"
+           v-if="!error"
+           :class="{'loading': loading}">
       <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
           <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
         </select> out of <strong>{{ total_results }} results</strong>
@@ -80,6 +82,7 @@
         meta: {}, // API query metadata (count, skip, limit)
         error: false, // error string to display on API error
         timer: null,  // auto-refresh timer
+        loading: false,
       };
     },
     computed: {
@@ -96,11 +99,12 @@
         this.error = null;
         this.tasks = [];
         this.meta = {};
+        this.loading = false;
       },
       loadGenericData(url, params, item_transform) {
         let parent = this;
         parent.toggleLoader("fetching tasks…");
-
+        parent.loading = true;
         parent.$root.axios.get(url, {params})
           .then(function (response) {
               parent.resetData();
@@ -108,6 +112,7 @@
               parent.tasks = response.data.items.map(item_transform);
           })
           .catch(function (error) {
+            parent.resetData();
             parent.error = Constants.standardHTTPError(error.response);
           })
           .then(function () {
