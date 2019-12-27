@@ -135,7 +135,7 @@ export default {
   ROLES: ["editor", "manager", "admin", "worker", "processor"],
   TOKEN_COOKIE_EXPIRY: '30D',
   TOKEN_COOKIE_NAME: "auth",
-  running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"],
+  running_statuses: ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed", "cancel_requested"],
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
                "ted", "vikidia", "wikibooks", "wikinews", "wikipedia",
