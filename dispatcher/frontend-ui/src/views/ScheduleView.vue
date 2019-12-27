@@ -53,6 +53,7 @@
 
       <div v-if="selectedTab == 'details'" class="tab-content">
         <table class="table table-responsive-md table-striped table-in-tab">
+          <tr><th>API</th><td><a target="_blank" :href="webapi_url + '/schedules/' + schedule_name">document <font-awesome-icon icon="external-link-alt" size="sm" /></a></td></tr>
           <tr><th>Category</th><td>{{ schedule.category }}</td></tr>
           <tr><th>Language</th><td>{{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code>)</td></tr>
           <tr><th>Enabled</th><td><code>{{ schedule.enabled }}</code></td></tr>
@@ -143,6 +144,7 @@
       };
     },
     computed: {
+      webapi_url() { return Constants.zimfarm_webapi; },
       schedule() { return this.$store.getters.schedule || null; },
       name() { return this.schedule.name },
       language_name() { return this.schedule.language.name_en || null; },
