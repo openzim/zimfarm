@@ -115,7 +115,7 @@ class BaseWorker:
 
     def query_api(self, method, path, payload=None, params=None, headers={}):
         if not self.authenticate():
-            return
+            return (False, 0, "")
 
         attempts = 0
         while attempts <= 1:
