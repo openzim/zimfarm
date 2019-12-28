@@ -101,6 +101,7 @@ import VueMatomo from 'vue-matomo'
 Vue.use(VueMatomo, {
   host: 'https://stats.kiwix.org',
   siteId: 8,
+  trackerFileName: 'matomo',
   router: router,
 });
 
