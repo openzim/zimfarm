@@ -43,8 +43,9 @@ def get_timestamp_from_event(event: dict) -> datetime.datetime:
 def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwargs):
     """ save event and its accompagning data to database """
 
+    task_updates = {}
     if "file" not in code:  # don't update timestamp for file events as not unique
-        task_updates = {f"timestamp.{code}": timestamp}
+        task_updates[f"timestamp.{code}"] = timestamp
         # insert event and sort by timestamp
         Tasks().update_one(
             {"_id": task_id},
