@@ -8146,10 +8146,10 @@ vue-loader@^15.7.2:
     vue-hot-reload-api "^2.3.0"
     vue-style-loader "^4.1.0"
 
-vue-matomo@^3.9.1-2:
-  version "3.12.0"
-  resolved "https://registry.yarnpkg.com/vue-matomo/-/vue-matomo-3.12.0.tgz#57bc12dd7c5fc90c6cd974105693634543567ae5"
-  integrity sha512-JiloyyLkzW/teGHd4ZhCez5iqzFAmjlD1xqPIrAZB/yiJelpyZES2kOSOSc3lmiUs2C+0BLWvOczZP2AGo+NKg==
+vue-matomo@^3.13.0-0:
+  version "3.13.0-0"
+  resolved "https://registry.yarnpkg.com/vue-matomo/-/vue-matomo-3.13.0-0.tgz#dea85b03aab1e5df376d12fcf811daa37d883c5c"
+  integrity sha512-1AMnnmWcW+u1QVKfO96pYvoWApNZUAivj4Oa4i6Vx6zgcwvwetjckKkq5nWdGav/bf27Zx8WyMVUBXUxz/hGJg==
 
 vue-multiselect@^2.1.6:
   version "2.1.6"
