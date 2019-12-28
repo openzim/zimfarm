@@ -100,7 +100,6 @@ const router = new VueRouter({
 import VueMatomo from 'vue-matomo'
 Vue.use(VueMatomo, {
   host: 'https://stats.kiwix.org',
-  trackerFileName: 'matomo',
   siteId: 8,
   router: router,
 });
