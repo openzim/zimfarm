@@ -71,7 +71,10 @@
                  :preserve-search="true"
                  :searchable="true"
                  :closeOnSelect="true"
+                 :taggable="true"
                  placeholder="Tags"
+                 tag-placeholder="Create as new tag"
+                 @tag="addTag"
                  size="sm"></multiselect>
         </b-form-group>
       </b-col>
@@ -417,6 +420,10 @@
       },
     },
     methods: {
+      addTag (new_tag) {
+        this.tags.push(new_tag);
+        this.edit_schedule.tags.append(new_tag);
+      },
       offliner_changed() { // assume flags are different so reset edit schedule
         this.edit_flags = {};
       },
