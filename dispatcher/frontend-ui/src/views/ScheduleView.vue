@@ -107,6 +107,7 @@
               <ResourceBadge kind="disk" :value="config.resources.disk" />
             </td>
           </tr>
+          <tr><th>Config</th><td><FlagsList :flags="config.flags" /></td></tr>
           <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
         </table>
       </div>
@@ -137,12 +138,13 @@
   import ScheduleEditor from '../components/ScheduleEditor.vue'
   import DeleteItem from '../components/DeleteItem.vue'
   import CloneSchedule from '../components/CloneSchedule.vue'
+  import FlagsList from '../components/FlagsList.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
     components: {ScheduleActionButton, ErrorMessage, ResourceBadge,
-                 ScheduleEditor, DeleteItem, CloneSchedule},
+                 ScheduleEditor, DeleteItem, CloneSchedule, FlagsList},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug

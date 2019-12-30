@@ -118,7 +118,7 @@
         }
         return table_rows;
       },
-      toggle_text() { return this.showing_all ? 'Show Onlines Only' : 'Show All'; },
+      toggle_text() { return this.showing_all ? 'Hide Offlines' : 'Show All'; },
       workers() { return this.showing_all ? this.all_workers : this.online_workers; },
       online_workers() { return this.all_workers.filter(function (worker) { return worker.status == "online"; }); },
       workers_names() {
