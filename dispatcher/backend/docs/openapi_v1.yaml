@@ -1769,6 +1769,8 @@ components:
           $ref: '#/components/schemas/WorkerName'
         schedule_name:
           $ref: '#/components/schemas/ScheduleName'
+        updated_at:
+          $ref: '#/components/schemas/SingleTimestamp'
     RequestedTask:
       type: object
       required:
@@ -1826,6 +1828,7 @@ components:
         - schedule_name
         - timestamp
         - worker
+        - updated_at
       properties:
         _id:
           $ref: '#/components/schemas/MongoId'
@@ -1845,6 +1848,8 @@ components:
           $ref: '#/components/schemas/TaskTimestamp'
         worker:
           $ref: '#/components/schemas/WorkerName'
+        updated_at:
+          $ref: '#/components/schemas/SingleTimestamp'
         container:
           type: object
           properties:

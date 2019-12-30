@@ -24,6 +24,12 @@ from common.schemas.parameters import TasksSchema, TaskCreateSchema, TasKUpdateS
 logger = logging.getLogger(__name__)
 
 
+def _add_updated_at(task, pop_events=True):
+    events = task.pop("events") if pop_events else task["events"]
+    task["updated_at"] = events[-1]["timestamp"]
+    return task
+
+
 class TasksRoute(BaseRoute):
     rule = "/"
     name = "tasks"
@@ -56,6 +62,7 @@ class TasksRoute(BaseRoute):
             "timestamp": 1,
             "worker": 1,
             "config.resources": 1,
+            "events": 1,  # will be popped-out
         }
         cursor = (
             Tasks()
@@ -69,7 +76,8 @@ class TasksRoute(BaseRoute):
             .skip(skip)
             .limit(limit)
         )
-        tasks = [task for task in cursor]
+
+        tasks = list(map(_add_updated_at, cursor))
 
         return jsonify(
             {"meta": {"skip": skip, "limit": limit, "count": count}, "items": tasks}
@@ -87,7 +95,7 @@ class TaskRoute(BaseRoute):
         if task is None:
             raise TaskNotFound()
 
-        return jsonify(task)
+        return jsonify(_add_updated_at(task, False))
 
     @authenticate
     @require_perm("tasks", "create")

@@ -49,6 +49,7 @@ class TestTaskList:
             "status",
             "schedule_name",
             "worker",
+            "updated_at",
         }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
