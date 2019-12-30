@@ -48,12 +48,12 @@
           <td v-if="selectedTable == 'doing'"
               v-tooltip="{content: format_dt(task.timestamp.reserved), delay: 10}">{{ task.timestamp.reserved | from_now }}</td>
           <td v-if="selectedTable == 'done'"
-              v-tooltip="{content: format_dt(task.timestamp.succeeded), delay: 10}">{{ task.timestamp.succeeded | from_now }}</td>
+              v-tooltip="{content: format_dt(task.updated_at), delay: 10}">{{ task.updated_at | from_now }}</td>
           <td v-if="selectedTable == 'failed'"
-              v-tooltip="{content: format_dt(task.timestamp.failed), delay: 10}">{{ task.timestamp.failed | from_now }}</td>
-          <td>{{ task.worker || 'n/a' }}</td>
+              v-tooltip="{content: format_dt(task.updated_at), delay: 10}">{{ task.updated_at | from_now }}</td>
+          <td><code v-if="task.worker">{{ task.worker }}</code><span v-else>n/a</span></td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
-          <td v-if="selectedTable == 'failed'">{{ task.status }}</td>
+          <td v-if="selectedTable == 'failed'"><code>{{ task.status }}</code></td>
           <td v-if="selectedTable == 'todo'" v-show="canUnRequestTasks"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
         </tr>
       </tbody>
@@ -136,7 +136,7 @@
                                {limit: this.selectedLimit,
                                 status: ["succeeded"]},
                                function (item) {
-                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item["timestamp"]["succeeded"]);
+                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item.updated_at);
                                 return item;
                                });
         }
@@ -145,9 +145,7 @@
                                {limit: this.selectedLimit,
                                 status: ["scraper_killed", "failed", "canceled"]},
                                function (item) {
-                                // TODO: make safer
-                                let event_ts = item.timestamp.canceled ? item.timestamp.canceled : item.timestamp.failed;
-                                item["duration"] = Constants.format_duration_between(item.timestamp.started, event_ts);
+                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item.updated_at);
                                 return item;
                                });
         }

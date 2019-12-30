@@ -143,7 +143,7 @@
         }
 
         // if task is not running, it's started to last status
-        let last = this.task.events[this.task.events.length - 1].timestamp;
+        let last = this.task.updated_at;
         return Constants.format_duration_between(first, last);
       },
       started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
