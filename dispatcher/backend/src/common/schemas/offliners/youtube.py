@@ -33,8 +33,8 @@ class YoutubeFlagsSchema(SerializableSchema):
 
     name = fields.String(
         metadata={
-            "label": "Name",
-            "description": "ZIM name",
+            "label": "ZIM Name",
+            "description": "Used as identifier and filename (date will be appended)",
             "placeholder": "mychannel_eng_all",
         },
         required=True,
@@ -112,6 +112,12 @@ class YoutubeFlagsSchema(SerializableSchema):
             "description": "ISO-639-3 (3 chars) language code of content",
         }
     )
+    locale = fields.String(
+        metadata={
+            "label": "Locale",
+            "description": "Locale name to use for translations (if avail) and time representations. Defaults to --language or English.",
+        }
+    )
     title = fields.String(
         metadata={
             "label": "Title",
@@ -131,6 +137,7 @@ class YoutubeFlagsSchema(SerializableSchema):
             "description": "List of Tags for the ZIM file. _videos:yes added automatically",
         }
     )
+
     profile = fields.Url(
         metadata={
             "label": "Profile Image",
