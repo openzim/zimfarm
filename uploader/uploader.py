@@ -11,6 +11,8 @@
         - specifying target name
         - --move not specifying target name
         - --move specifying target name
+        - with --cipher
+        - without --cipher
         - --delete
         - --compress
         - --bandwidth
@@ -78,6 +80,7 @@ def scp_upload_file(
     delete=False,
     compress=False,
     bandwidth=None,
+    cipher=None,
 ):
     def actual_upload(source_path, dest_uri):
         """ transfer a file via SCP and return subprocess """
@@ -90,6 +93,9 @@ def scp_upload_file(
             "-o",
             f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
         ]
+
+        if cipher:
+            args += ["-c", cipher]
 
         if compress:
             args += ["-C"]
@@ -168,6 +174,7 @@ def sftp_upload_file(
     delete=False,
     compress=False,
     bandwidth=None,
+    cipher=None,
 ):
     def actual_upload(source_path, sftp_uri, commands):
 
@@ -186,6 +193,9 @@ def sftp_upload_file(
             "-o",
             f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
         ]
+
+        if cipher:
+            args += ["-c", cipher]
 
         if compress:
             args += ["-C"]
@@ -265,6 +275,7 @@ def upload_file(
     delete=False,
     compress=False,
     bandwidth=None,
+    cipher=None,
 ):
     try:
         upload_uri = urllib.parse.urlparse(upload_uri)
@@ -288,7 +299,7 @@ def upload_file(
     filesize = src_path.stat().st_size
     started_on = datetime.datetime.now()
     returncode = method(
-        src_path, upload_uri, private_key, move, delete, compress, bandwidth
+        src_path, upload_uri, private_key, move, delete, compress, bandwidth, cipher
     )
     if returncode == 0:
         duration = (datetime.datetime.now() - started_on).total_seconds()
@@ -360,6 +371,10 @@ def main():
     )
 
     parser.add_argument(
+        "--cipher", help="Cipher to use with SSH. `aes128-ctr` recommended."
+    )
+
+    parser.add_argument(
         "--debug",
         help="change logging level to DEBUG",
         action="store_true",
@@ -417,6 +432,7 @@ def main():
             delete=args.delete,
             compress=args.compress,
             bandwidth=args.bandwidth,
+            cipher=args.cipher,
         )
     )
 
