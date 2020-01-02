@@ -8,6 +8,6 @@ RUN pip3 install humanfriendly==4.18
 
 COPY uploader.py /usr/local/bin/uploader
 RUN chmod +x /usr/local/bin/uploader
-RUN touch /tmp/marker
+RUN touch /usr/share/marker
 
 CMD ["uploader"]
