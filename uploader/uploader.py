@@ -116,7 +116,7 @@ def scp_upload_file(
             if delete:
                 remove_source_file(src_path)
         else:
-            logger.error(f"scp failed returning {scp.returncode}:: {scp.stdout[:100]}.")
+            logger.error(f"scp failed returning {scp.returncode}:: {scp.stdout}")
 
         return scp.returncode
 
@@ -138,7 +138,7 @@ def scp_upload_file(
     scp = actual_upload(src_path, rebuild_uri(upload_uri, path=dest_path))
 
     if scp.returncode != 0:
-        logger.critical(f"scp failed returning {scp.returncode}:: {scp.stdout[:100]}.")
+        logger.critical(f"scp failed returning {scp.returncode}:: {scp.stdout}")
         return scp.returncode
 
     logger.info(
@@ -153,7 +153,7 @@ def scp_upload_file(
         logger.info("Uploader ran successfuly.")
     else:
         logger.warning(
-            f"scp failed to transfer upload marker returning {scp.returncode}:: {scp.stdout[:100]}."
+            f"scp failed to transfer upload marker returning {scp.returncode}:: {scp.stdout}"
         )
         logger.warning(
             "actual file transferred properly though. You'd need to move it manually."
@@ -233,7 +233,7 @@ def sftp_upload_file(
         if delete:
             remove_source_file(src_path)
     else:
-        logger.error(f"sftp failed returning {sftp.returncode}:: {sftp.stdout[:100]}")
+        logger.error(f"sftp failed returning {sftp.returncode}:: {sftp.stdout}")
 
     return sftp.returncode
 
