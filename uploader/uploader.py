@@ -36,7 +36,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-HOST_KNOW_FILE = pathlib.Path("/tmp/know_hosts")
+TEMP_DIR = pathlib.Path(tempfile.mkdtemp())
+HOST_KNOW_FILE = TEMP_DIR.joinpath("known_hosts")
+MARKER_FILE = TEMP_DIR.joinpath("marker")
+MARKER_FILE.touch(exist_ok=True)
 SCP_BIN_PATH = pathlib.Path(os.getenv("SCP_BIN_PATH", "/usr/bin/scp"))
 SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
 
@@ -128,7 +131,6 @@ def scp_upload_file(
 
     temp_fname = f"{real_fname}.tmp"
     dest_path = f"{dest_folder}{temp_fname}"
-    marker_src_path = pathlib.Path("/tmp/marker")
     marker_dest_path = f"{dest_folder}{real_fname}.complete"
 
     scp = actual_upload(src_path, rebuild_uri(upload_uri, path=dest_path))
@@ -143,7 +145,7 @@ def scp_upload_file(
     if delete:
         remove_source_file(src_path)
 
-    scp = actual_upload(marker_src_path, rebuild_uri(upload_uri, path=marker_dest_path))
+    scp = actual_upload(MARKER_FILE, rebuild_uri(upload_uri, path=marker_dest_path))
 
     if scp.returncode == 0:
         logger.info("Uploader ran successfuly.")
