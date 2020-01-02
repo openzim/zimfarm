@@ -7,7 +7,7 @@ class TestUsersList:
         response = client.get(url)
         assert response.status_code == 401
 
-    def test_list_no_param(self, client, users, access_token):
+    def test_list_no_param(self, client, access_token, users):
 
         url = "/users/"
         response = client.get(url, headers={"Authorization": access_token})
@@ -15,7 +15,7 @@ class TestUsersList:
 
         response_json = response.get_json()
         assert "items" in response_json
-        assert len(response_json["items"]) == 5
+        assert len(response_json["items"]) == len(users)
         for item in response_json["items"]:
             assert set(item.keys()) == {
                 "username",
@@ -25,7 +25,7 @@ class TestUsersList:
     @pytest.mark.parametrize(
         "skip, limit, expected", [(0, 1, 1), (1, 10, 4), (0, 100, 5)]
     )
-    def test_list_with_param(self, client, users, access_token, skip, limit, expected):
+    def test_list_with_param(self, client, access_token, users, skip, limit, expected):
 
         url = "/users/?skip={}&limit={}".format(skip, limit)
         response = client.get(url, headers={"Authorization": access_token})
@@ -36,7 +36,7 @@ class TestUsersList:
         assert len(response_json["items"]) == expected
 
     @pytest.mark.parametrize("skip, limit", [("", 10), (5, "abc")])
-    def test_list_bad_param(self, client, schedules, access_token, skip, limit):
+    def test_list_bad_param(self, client, access_token, users, skip, limit):
 
         url = "/users/?skip={}&limit={}".format(skip, limit)
         response = client.get(url, headers={"Authorization": access_token})

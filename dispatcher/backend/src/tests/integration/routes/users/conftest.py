@@ -1,4 +1,3 @@
-
 from common.roles import ROLES
 
 import pytest
@@ -9,10 +8,7 @@ from bson import ObjectId
 def make_user(database):
     user_ids = []
 
-    def _make_user(
-        username: str = "some-user",
-        role: str = None,
-    ) -> dict:
+    def _make_user(username: str = "some-user", role: str = None,) -> dict:
         document = {
             "_id": ObjectId(),
             "username": username,
@@ -34,7 +30,7 @@ def user(make_user):
 
 
 @pytest.fixture(scope="module")
-def users(make_user, make_config, make_language):
+def users(make_user):
     users = []
     for index in range(5):
         username = "user_{}".format(index)
