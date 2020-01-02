@@ -58,7 +58,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="low-quality",
     )
     concurrency = fields.Integer(
-        strict=True,
         metadata={
             "label": "Concurrency",
             "description": "Number of concurrent threads to use",
