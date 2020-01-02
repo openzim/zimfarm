@@ -77,6 +77,20 @@
             <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }} <b-badge pill variant="warning" v-if="requested.priority"><font-awesome-icon icon="fire" size="sm" /> {{ requested.priority }}</b-badge></td>
             <td v-else><code>no</code></td>
           </tr>
+          <tr>
+            <th>History</th>
+            <td v-if="history_runs">
+              <table class="table table-sm table-striped">
+                <tbody>
+                <tr v-for="run in history_runs" :key="run._id">
+                  <td><code :class="status_class(run.status)">{{ run.status }}</code></td>
+                  <td><router-link :to="{name: 'task-detail', params: {_id: run._id}}">{{ run.updated_at | from_now }}</router-link></td>
+                </tr>
+              </tbody>
+              </table>
+            </td>
+            <td v-else><code>none</code> 🙁</td>
+          </tr>
         </table>
       </div>
 
@@ -93,6 +107,7 @@
               <ResourceBadge kind="disk" :value="config.resources.disk" />
             </td>
           </tr>
+          <tr><th>Config</th><td><FlagsList :flags="config.flags" /></td></tr>
           <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
         </table>
       </div>
@@ -123,12 +138,13 @@
   import ScheduleEditor from '../components/ScheduleEditor.vue'
   import DeleteItem from '../components/DeleteItem.vue'
   import CloneSchedule from '../components/CloneSchedule.vue'
+  import FlagsList from '../components/FlagsList.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
     components: {ScheduleActionButton, ErrorMessage, ResourceBadge,
-                 ScheduleEditor, DeleteItem, CloneSchedule},
+                 ScheduleEditor, DeleteItem, CloneSchedule, FlagsList},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug
@@ -141,6 +157,7 @@
         ready: false,  // whether we are ready to display
         error: null,  // API generated error message
         requested: null,  // task item from API if this is in todo
+        history_runs: [],
       };
     },
     computed: {
@@ -170,6 +187,13 @@
       },
       setReady() { this.ready = true; },
       setError(error) { this.error = error; },
+      status_class(status) {
+        if (status == "succeeded")
+          return {"schedule-suceedeed": true};
+        if (["failed", "canceled", "cancel_requested"].indexOf(status) != -1)
+          return {"schedule-failed": true};
+        return {};
+      },
     },
     mounted() {
       let parent = this;
@@ -191,6 +215,14 @@
         })
         .catch(function () {
           parent.requested = false;
+        })
+
+      parent.history_runs = [];
+      parent.$root.axios.get('/tasks/', {params: {schedule_name: parent.schedule_name}})
+        .then(function (response) {
+            parent.history_runs = response.data.items;
+        })
+        .catch(function () {
         })
     },
   }

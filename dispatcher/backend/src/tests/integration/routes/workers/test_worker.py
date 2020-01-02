@@ -48,7 +48,7 @@ class TestWorkersList:
 class TestWorkerCheckIn:
     name = "myworker"
 
-    def test_checkin(self, client, access_token, worker):
+    def test_checkin(self, database, client, access_token, worker):
         url = f"/workers/{self.name}/check-in"
         payload = {
             "username": "a-username",
@@ -61,6 +61,7 @@ class TestWorkerCheckIn:
             url, json=payload, headers={"Authorization": access_token}
         )
         assert response.status_code == 204
+        database.workers.delete_one({"username": payload["username"]})
 
     @pytest.mark.parametrize(
         "payload",
