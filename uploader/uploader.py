@@ -38,10 +38,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TEMP_DIR = pathlib.Path(tempfile.mkdtemp())
-HOST_KNOW_FILE = TEMP_DIR.joinpath("known_hosts")
-MARKER_FILE = TEMP_DIR.joinpath("marker")
-MARKER_FILE.touch(exist_ok=True)
+HOST_KNOW_FILE = pathlib.Path("/etc/ssh/known_hosts")
+MARKER_FILE = pathlib.Path("/usr/share/marker")
 SCP_BIN_PATH = pathlib.Path(os.getenv("SCP_BIN_PATH", "/usr/bin/scp"))
 SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
 
@@ -49,15 +47,13 @@ SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
 def ack_host_fingerprint(host, port):
     """ run/store ssh-keyscan to prevent need to manually confirm host fingerprint """
     keyscan = subprocess.run(
-        ["/usr/bin/ssh-keyscan", "-t", "rsa", "-p", str(port), host],
-        capture_output=True,
-        text=True,
+        ["/usr/bin/ssh-keyscan", "-p", str(port), host], capture_output=True, text=True,
     )
     if keyscan.returncode != 0:
         logger.error(f"unable to get remote host ({host}:{port}) public key")
         sys.exit(1)
 
-    with open(HOST_KNOW_FILE, "a+") as keyscan_output:
+    with open(HOST_KNOW_FILE, "w") as keyscan_output:
         keyscan_output.write(keyscan.stdout)
         keyscan_output.seek(0)
 
