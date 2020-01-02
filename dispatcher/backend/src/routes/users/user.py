@@ -3,7 +3,7 @@ from http import HTTPStatus
 from flask import request, jsonify, Response
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
-from marshmallow import Schema, fields, validate as mm_validate, ValidationError
+from marshmallow import ValidationError
 
 from common.mongo import Users
 from common.roles import get_role_for, ROLES

@@ -12,12 +12,15 @@ Files are uploaded via SFTP (pubkey authentication) or SCP using OpenSSH.
 * Use `sftp://` for SFTP upload
 
 ``` sh
-docker run -v ~/.ssh/id_rsa:/etc/ssh/keys/id_rsa:ro -v /path/:/path:rw \
-	openzim/uploader \
-	--file /path/my_file.zim \
-	--upload-uri sftp://uploader@warehouse.farm.openzim.org/zim/ \
+docker run \
+    -v ~/.ssh/id_rsa:/etc/ssh/keys/id_rsa:ro \
+    -v /path/:/path:rw \
+    openzim/uploader \
+    --file /path/my_file.zim \
+    --upload-uri sftp://uploader@warehouse.farm.openzim.org/zim/ \
     --move \
-	--delete
+    --cipher aes128-ctr \
+    --delete
 ```
 
 ### Parameters
@@ -27,3 +30,4 @@ docker run -v ~/.ssh/id_rsa:/etc/ssh/keys/id_rsa:ro -v /path/:/path:rw \
 * `--delete`: delete source file once uploaded successfuly.
 * `--compress`: enable transfer compression.
 * `--bandwidth`: enable bandwidth limit. Set it in Kbps.
+* `--cipher`: change default cipher. `aes128-ctr` is faster for instance.
