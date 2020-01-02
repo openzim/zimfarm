@@ -6,7 +6,6 @@ from common import mongo
 
 
 class Initializer:
-
     @staticmethod
     def initialize():
         print("Running pre-start initialization...")
