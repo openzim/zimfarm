@@ -22,11 +22,16 @@ class UserPermissions(Permissions):
     names = ["read", "create", "update", "delete", "change_password", "ssh_keys"]
 
 
+class ZimPermissions(Permissions):
+    names = ["upload"]
+
+
 ROLES = {
     "admin": {
         "tasks": TaskPermissions.get_all(),
         "schedules": SchedulePermissions.get_all(),
         "users": UserPermissions.get_all(),
+        "zim": ZimPermissions.get_all(),
     },
     "manager": {
         "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
@@ -36,7 +41,10 @@ ROLES = {
         ),
     },
     "editor": {"schedules": SchedulePermissions.get(create=True, update=True)},
-    "worker": {"tasks": TaskPermissions.get(create=True, update=True, cancel=True)},
+    "worker": {
+        "tasks": TaskPermissions.get(create=True, update=True, cancel=True),
+        "zim": ZimPermissions.get(upload=True),
+    },
     "processor": {"tasks": TaskPermissions.get(update=True)},
 }
 

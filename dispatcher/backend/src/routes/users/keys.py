@@ -103,7 +103,51 @@ class KeysRoute(BaseRoute):
 class KeyRoute(BaseRoute):
     rule = "/<string:username>/keys/<string:fingerprint>"
     name = "key"
-    methods = ["DELETE"]
+    methods = ["GET", "DELETE"]
+
+    @url_object_id("username")
+    @url_object_id("fingerprint")
+    def get(self, username: str, fingerprint: str):
+        # list of permission to test the matching user against
+        requested_permissions = request.args.getlist("with_permission") or []
+
+        query = {}
+        # request using `-` as username searchs on all users
+        if username != "-":
+            query.update({"username": username})
+
+        query.update({"ssh_keys.fingerprint": fingerprint})
+
+        # database
+        user = Users().find_one(
+            query,
+            {
+                "username": 1,
+                "scope": 1,
+                "ssh_keys.key": 1,
+                "ssh_keys.type": 1,
+                "ssh_keys.name": 1,
+            },
+        )
+
+        # no user means no matching SSH key for fingerprint
+        if not user:
+            raise errors.NotFound()
+
+        for permission in requested_permissions:
+            namespace, perm_name = permission.split(".", 1)
+            if not user.get("scope", {}).get(namespace, {}).get(perm_name):
+                raise errors.NotEnoughPrivilege(permission)
+
+        key = user["ssh_keys"][0]
+        payload = {
+            "username": user["username"],
+            "key": key["key"],
+            "type": key["type"],
+            "name": key["name"],
+        }
+
+        return jsonify(payload)
 
     @authenticate
     @url_object_id("username")
