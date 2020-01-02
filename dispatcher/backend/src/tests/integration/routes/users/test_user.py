@@ -8,13 +8,15 @@ class TestUsersList:
         assert response.status_code == 401
 
     def test_list_no_param(self, client, access_token, users):
-
         url = "/users/"
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 200
 
         response_json = response.get_json()
+        print(response_json)
         assert "items" in response_json
+        assert "meta" in response_json
+        assert response_json["meta"]["count"] == len(users)
         assert len(response_json["items"]) == len(users)
         for item in response_json["items"]:
             assert set(item.keys()) == {

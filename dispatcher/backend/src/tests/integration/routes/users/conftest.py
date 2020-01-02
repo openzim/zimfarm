@@ -8,7 +8,7 @@ from bson import ObjectId
 def make_user(database):
     user_ids = []
 
-    def _make_user(username: str = "some-user", role: str = None,) -> dict:
+    def _make_user(username: str = "some-user", role: str = None) -> dict:
         document = {
             "_id": ObjectId(),
             "username": username,
