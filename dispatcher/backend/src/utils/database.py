@@ -6,14 +6,17 @@ from common import mongo
 
 
 class Initializer:
+
     @staticmethod
-    def create_initial_user():
+    def initialize():
         print("Running pre-start initialization...")
         mongo.Users().initialize()
         mongo.Schedules().initialize()
         mongo.Tasks().initialize()
         mongo.RequestedTasks().initialize()
 
+    @staticmethod
+    def create_initial_user():
         username = os.getenv("INIT_USERNAME", "admin")
         password = os.getenv("INIT_PASSWORD", "admin_pass")
 
