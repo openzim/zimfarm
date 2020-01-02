@@ -11,7 +11,7 @@ RUN apt-get update -y \
 ADD rssh-2.3.4.tar.gz /usr/src/
 WORKDIR /usr/src/rssh-2.3.4
 RUN ./configure --prefix=/ && make && make install
-RUN echo "allowscp\nallowsftp" > /etc/rssh.conf
+RUN printf "allowscp\nallowsftp\n" > /etc/rssh.conf
 
 WORKDIR /
 # setup a chroot jail at /jail 
@@ -20,7 +20,7 @@ RUN tar xf jailkit-2.21.tar.gz
 RUN cd jailkit-2.21 && ./configure && make && make install
 # patch ini file
 RUN sed -i.bak -e '116d' /etc/jailkit/jk_init.ini
-RUN echo "\n[rssh]\npaths = /bin/rssh, /etc/rssh.conf\n" >> /etc/jailkit/jk_init.ini
+RUN printf "\n[rssh]\npaths = /bin/rssh, /etc/rssh.conf\n" >> /etc/jailkit/jk_init.ini
 RUN mkdir -p /jail
 RUN chown root:root /jail
 RUN jk_init -v -j /jail rssh ssh scp sftp

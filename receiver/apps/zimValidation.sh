@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 #
 # Author : Florent Kaisser
 #
@@ -13,10 +13,10 @@ ZIMCHECK_OPTION=$6
 OPTION=$7
 
 
-ZIMPATH=`echo $ZIMFILE | sed "s:$ZIMSRCDIR::"`
+ZIMPATH=$(echo $ZIMFILE | sed "s:$ZIMSRCDIR::")
 
 DESTFILE=$3$ZIMPATH
-DESTDIR=`dirname $DESTFILE`
+DESTDIR=$(dirname $DESTFILE)
 
 if [ "$OPTION" = "NO_QUARANTINE" ]
 then
@@ -24,11 +24,11 @@ then
  QUARFILE=$DESTFILE
 else
  QUARFILE=$4$ZIMPATH
- QUARDIR=`dirname $QUARFILE`
+ QUARDIR=$(dirname $QUARFILE)
 fi
 
 LOGFILE=$(echo "$5$ZIMPATH" | cut -f 1 -d '.').log
-LOGDIR=`dirname $5$ZIMPATH`
+LOGDIR=$(dirname $5$ZIMPATH)
 
 function moveZim () {
    mkdir -p $1
