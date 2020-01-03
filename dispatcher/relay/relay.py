@@ -4,6 +4,7 @@
 
 import os
 import logging
+import subprocess
 
 import zmq
 
@@ -14,6 +15,8 @@ if not logger.hasHandlers():
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s"))
     logger.addHandler(handler)
+
+BIND_TO_IP = bool(os.getenv("BIND_TO_IP", False))
 
 try:
     INTERNAL_PORT = int(os.getenv("INTERNAL_SOCKET_PORT"))
@@ -32,13 +35,20 @@ except Exception:
 
 def main():
     context = zmq.Context()
+    ip_address = (
+        subprocess.run(
+            ["/bin/hostname", "-i"], capture_output=True, text=True
+        ).stdout.strip()
+        if BIND_TO_IP
+        else "*"
+    )
 
-    public_uri = f"tcp://*:{SOCKET_PORT}"
+    public_uri = f"tcp://{ip_address}:{SOCKET_PORT}"
     logger.info(f"binding to {public_uri}")
     public_server = context.socket(zmq.PUB)
     public_server.bind(public_uri)
 
-    private_uri = f"tcp://*:{INTERNAL_PORT}"
+    private_uri = f"tcp://{ip_address}:{INTERNAL_PORT}"
     logger.info(f"binding to {private_uri}")
     private_server = context.socket(zmq.SUB)
     private_server.bind(private_uri)

@@ -320,11 +320,13 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "USERNAME": username,
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
+            "UPLOAD_URI": UPLOAD_URI,
             "WORKER_NAME": worker_name,
             "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
             "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
             "DEBUG": os.getenv("DEBUG"),
+            "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
         },
         labels={
             "zimtask": "yes",
