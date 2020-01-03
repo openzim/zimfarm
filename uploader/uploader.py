@@ -367,7 +367,7 @@ def main():
     )
 
     parser.add_argument(
-        "--cipher", help="Cipher to use with SSH. `aes128-ctr` recommended."
+        "--cipher", help="Cipher to use with SSH.", default="aes128-ctr"
     )
 
     parser.add_argument(
