@@ -72,7 +72,7 @@ CONTAINER_DNSCACHE_IDENT = "dnscache"
 # dispatcher-related
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
 DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5000")
-UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://warehouse.farm.openzim.org:1522")
+UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522")
 
 OFFLINER_MWOFFLINER = "mwoffliner"
 OFFLINER_YOUTUBE = "youtube"
