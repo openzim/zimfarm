@@ -18,6 +18,7 @@ WORKDIR /
 RUN wget https://olivier.sessink.nl/jailkit/jailkit-2.21.tar.gz
 RUN tar xf jailkit-2.21.tar.gz
 RUN cd jailkit-2.21 && ./configure && make && make install
+RUN rm -rf /jailkit-2.21 && rm -f jailkit-2.21.tar.gz
 # patch ini file
 RUN sed -i.bak -e '116d' /etc/jailkit/jk_init.ini
 RUN printf "\n[rssh]\npaths = /bin/rssh, /etc/rssh.conf\n" >> /etc/jailkit/jk_init.ini

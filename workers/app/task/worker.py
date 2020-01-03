@@ -252,8 +252,10 @@ class TaskWorker(BaseWorker):
             self.host_task_workdir,
             upload_dir,
             filename,
-            move,
-            delete,
+            move=True,
+            delete=True,
+            compress=False,
+            resume=False,
         )
 
     def stop_uploader(self, timeout=None):
@@ -329,10 +331,7 @@ class TaskWorker(BaseWorker):
                 logger.debug("failed to get ZIM file: pending_zim_files empty")
             else:
                 self.start_uploader(
-                    f"zim{self.task['config']['warehouse_path']}",
-                    zim_file,
-                    move=True,
-                    delete=True,
+                    f"zim{self.task['config']['warehouse_path']}", zim_file
                 )
                 self.zim_files[zim_file] = UPLOADING
 
@@ -367,6 +366,8 @@ class TaskWorker(BaseWorker):
             filename,
             move=False,
             delete=False,
+            compress=True,
+            resume=True,
         )
 
     def handle_stopped_scraper(self):

@@ -7,9 +7,21 @@ Running a working means running the `worker-manager` which itself fires `task-wo
 
 ## Requirements
 
-* A zimfarm user account (with appropriate scope)
+* A zimfarm user account (with appropriate `worker` role)
 * An RSA private key
+* Public key uploaded to user account
 
+``` bash
+# generate an RSA key pair (use empty passphrase)
+ssh-keygen -t rsa -f zimfarm_key
+# display its public key (you'll upload it right after)
+cat zimfarm_key.pub | cut -d " " -f 2
+# upload the public key, giving it a name. token can be copied from the Zimfarm UI
+curl -X POST https://api.farm.openzim.org/v1/users/<username>/keys \
+    -H 'Authorization: Bearer <token>' \
+    -H 'Content-Type: application/json; charset=utf-8' \
+    -d $'{"name": "<key-name>", "key": "<key-content>"}'
+```
 
 ## Sample startup script
 
@@ -21,6 +33,7 @@ ZIMFARM_WORKER_NAME="unknown"
 ZIMFARM_DEBUG=1
 ZIMFARM_MAX_RAM="2G"
 ZIMFARM_DISK="10G"
+ZIMFARM_CPU="3"
 ZIMFARM_ROOT=/tmp
 ZIMFARM_OFFLINERS="mwoffliner,phet,gutenberg,youtube"
 
@@ -46,6 +59,7 @@ docker run \
 	-v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/zimfarm:ro \
 	--env ZIMFARM_MEMORY=$ZIMFARM_MAX_RAM \
 	--env ZIMFARM_DISK=$ZIMFARM_DISK \
+    --env ZIMFARM_CPUS=$ZIMFARM_CPU \
 	--env USERNAME=$ZIMFARM_USERNAME \
 	--env DEBUG=$ZIMFARM_DEBUG \
 	--env WORKER_NAME=$ZIMFARM_WORKER_NAME \
