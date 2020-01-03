@@ -63,7 +63,8 @@ class KeysRoute(BaseRoute):
             raise errors.BadRequest("Invalid RSA key")
 
         # get existing ssh key fingerprints
-        user = Users().find_one({"username": username}, {"ssh_keys.fingerprint": 1})
+        query = {"username": username}
+        user = Users().find_one(query, {"ssh_keys.fingerprint": 1})
         if user is None:
             raise errors.NotFound()
 
@@ -95,7 +96,7 @@ class KeysRoute(BaseRoute):
         ssh_key.update({"pkcs8_key": keygen.stdout})
         os.unlink(fp.name)
 
-        Users().update_one(filter, {"$push": {"ssh_keys": ssh_key}})
+        Users().update_one(query, {"$push": {"ssh_keys": ssh_key}})
 
         return Response(status=HTTPStatus.CREATED)
 
