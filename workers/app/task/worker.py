@@ -219,7 +219,7 @@ class TaskWorker(BaseWorker):
         self.uploader.reload()
         self.refresh_files_list()
 
-    def stop(self, timeout=1):
+    def stop(self, timeout=5):
         """ stopping everything before exit (on term or end of task) """
         logger.info("Stopping all containers and actions")
         self.should_stop = True
@@ -241,9 +241,9 @@ class TaskWorker(BaseWorker):
         self.cleanup_workdir()
         self.mark_task_completed(status, **kwargs)
 
-    def start_uploader(self, upload_dir, filename, move, delete):
+    def start_uploader(self, upload_dir, filename):
         logger.info(
-            f"Starting uploader for /{upload_dir}/{filename} – move={move}, delete={delete}"
+            f"Starting uploader for /{upload_dir}/{filename}"
         )
         self.uploader = start_uploader(
             self.docker,
