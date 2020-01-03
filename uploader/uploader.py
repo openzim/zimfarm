@@ -293,7 +293,7 @@ def sftp_upload_file(
             )
             return 0
         # there's a different size file on destination, let's overwrite
-        elif existing_size:
+        if existing_size:
             put_cmd = "reput"  # change to APPEND mode
             filesize = filesize - existing_size  # used for stats
 
