@@ -44,6 +44,10 @@ SCP_BIN_PATH = pathlib.Path(os.getenv("SCP_BIN_PATH", "/usr/bin/scp"))
 SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
 
 
+def now():
+    return datetime.datetime.now()
+
+
 def ack_host_fingerprint(host, port):
     """ run/store ssh-keyscan to prevent need to manually confirm host fingerprint """
     keyscan = subprocess.run(
@@ -68,53 +72,62 @@ def remove_source_file(src_path):
         logger.info(":: success.")
 
 
+def scp_actual_upload(private_key, source_path, dest_uri, cipher, compress, bandwidth):
+    """ transfer a file via SCP and return subprocess """
+
+    args = [
+        str(SCP_BIN_PATH),
+        "-i",
+        str(private_key),
+        "-B",  # batch mode
+        "-q",  # quiet mode
+        "-o",
+        f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
+    ]
+
+    if cipher:
+        args += ["-c", cipher]
+
+    if compress:
+        args += ["-C"]
+
+    if bandwidth:
+        args += ["-l", str(bandwidth)]
+
+    args += [str(source_path), dest_uri.geturl()]
+
+    logger.info("Executing: {args}".format(args=" ".join(args)))
+
+    return subprocess.run(
+        args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
+
+
 def scp_upload_file(
     src_path,
     upload_uri,
+    filesize,
     private_key,
+    resume=False,
     move=False,
     delete=False,
     compress=False,
     bandwidth=None,
     cipher=None,
 ):
-    def actual_upload(source_path, dest_uri):
-        """ transfer a file via SCP and return subprocess """
-        args = [
-            str(SCP_BIN_PATH),
-            "-i",
-            str(private_key),
-            "-B",  # batch mode
-            "-q",  # quiet mode
-            "-o",
-            f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
-        ]
-
-        if cipher:
-            args += ["-c", cipher]
-
-        if compress:
-            args += ["-C"]
-
-        if bandwidth:
-            args += ["-l", str(bandwidth)]
-
-        args += [str(source_path), dest_uri.geturl()]
-
-        logger.info("Executing: {args}".format(args=" ".join(args)))
-
-        return subprocess.run(
-            args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        )
-
     # directly uploading final file to final destination
     if not move:
-        scp = actual_upload(src_path, upload_uri)
+        started_on = now()
+        scp = scp_actual_upload(
+            private_key, src_path, upload_uri, cipher, compress, bandwidth
+        )
+        ended_on = now()
 
         if scp.returncode == 0:
             logger.info("Uploader ran successfuly.")
             if delete:
                 remove_source_file(src_path)
+            display_stats(filesize, started_on, ended_on)
         else:
             logger.error(f"scp failed returning {scp.returncode}:: {scp.stdout}")
 
@@ -135,7 +148,16 @@ def scp_upload_file(
     dest_path = f"{dest_folder}{temp_fname}"
     marker_dest_path = f"{dest_folder}{real_fname}.complete"
 
-    scp = actual_upload(src_path, rebuild_uri(upload_uri, path=dest_path))
+    started_on = now()
+    scp = scp_actual_upload(
+        private_key,
+        src_path,
+        rebuild_uri(upload_uri, path=dest_path),
+        cipher,
+        compress,
+        bandwidth,
+    )
+    ended_on = now()
 
     if scp.returncode != 0:
         logger.critical(f"scp failed returning {scp.returncode}:: {scp.stdout}")
@@ -147,7 +169,14 @@ def scp_upload_file(
     if delete:
         remove_source_file(src_path)
 
-    scp = actual_upload(MARKER_FILE, rebuild_uri(upload_uri, path=marker_dest_path))
+    scp = scp_actual_upload(
+        private_key,
+        MARKER_FILE,
+        rebuild_uri(upload_uri, path=marker_dest_path),
+        cipher,
+        compress,
+        bandwidth,
+    )
 
     if scp.returncode == 0:
         logger.info("Uploader ran successfuly.")
@@ -158,55 +187,92 @@ def scp_upload_file(
         logger.warning(
             "actual file transferred properly though. You'd need to move it manually."
         )
+    display_stats(filesize, started_on, ended_on)
 
     return scp.returncode
+
+
+def get_batch_file(commands):
+    command_content = "\n".join(commands)
+    logger.debug(f"SFTP commands:\n{command_content}---")
+    batch_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False)
+    batch_file.write(command_content)
+    batch_file.close()
+    return batch_file.name
+
+
+def sftp_remote_file_exists(private_key, sftp_uri, fname):
+    args = [
+        str(SFTP_BIN_PATH),
+        "-i",
+        str(private_key),
+        "-b",
+        get_batch_file([f"ls -n {fname}"]),
+        "-o",
+        f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
+        sftp_uri.geturl(),
+    ]
+
+    logger.info("Executing: {args}".format(args=" ".join(args)))
+
+    sftp = subprocess.run(
+        args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    last_line = sftp.stdout.strip().split("\n")[-1]
+    if not last_line.endswith(fname) or last_line.startswith("sftp"):
+        return False
+
+    try:
+        remote_size = int(last_line.split()[4])
+    except Exception:
+        return False
+
+    return remote_size or sftp.returncode == 0
+
+
+def sftp_actual_upload(
+    private_key, source_path, sftp_uri, commands, cipher, compress, bandwidth
+):
+    args = [
+        str(SFTP_BIN_PATH),
+        "-i",
+        str(private_key),
+        "-b",
+        get_batch_file(commands),
+        "-o",
+        f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
+    ]
+
+    if cipher:
+        args += ["-c", cipher]
+
+    if compress:
+        args += ["-C"]
+
+    if bandwidth:
+        args += ["-l", str(bandwidth)]
+
+    args += [sftp_uri.geturl()]
+
+    logger.info("Executing: {args}".format(args=" ".join(args)))
+
+    return subprocess.run(
+        args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
 
 
 def sftp_upload_file(
     src_path,
     upload_uri,
+    filesize,
     private_key,
+    resume=False,
     move=False,
     delete=False,
     compress=False,
     bandwidth=None,
     cipher=None,
 ):
-    def actual_upload(source_path, sftp_uri, commands):
-
-        command_content = "\n".join(commands)
-        logger.debug(f"SFTP commands:\n---\n{command_content}\n---")
-        batch_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False)
-        batch_file.write(command_content)
-        batch_file.close()
-
-        args = [
-            str(SFTP_BIN_PATH),
-            "-i",
-            str(private_key),
-            "-b",
-            batch_file.name,
-            "-o",
-            f"GlobalKnownHostsFile {HOST_KNOW_FILE}",
-        ]
-
-        if cipher:
-            args += ["-c", cipher]
-
-        if compress:
-            args += ["-C"]
-
-        if bandwidth:
-            args += ["-l", str(bandwidth)]
-
-        args += [sftp_uri.geturl()]
-
-        logger.info("Executing: {args}".format(args=" ".join(args)))
-
-        return subprocess.run(
-            args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        )
-
     # we need to reconstruct the url but without an ending filename
     if not upload_uri.path.endswith("/"):
         uri_path = pathlib.Path(upload_uri.path)
@@ -216,20 +282,40 @@ def sftp_upload_file(
         final_fname = src_path.name
         sftp_uri = upload_uri
 
+    put_cmd = "put"  # default to overwritting
+    if resume:
+        # check if there's already a matching file on the remte
+        existing_size = sftp_remote_file_exists(private_key, sftp_uri, final_fname)
+        # if source and destination filesizes match, return as sftp would fail
+        if existing_size >= filesize:
+            logger.info(
+                "Nothing to upload (destination file bigger or same size as source file)"
+            )
+            return 0
+        # there's a different size file on destination, let's overwrite
+        elif existing_size:
+            put_cmd = "reput"  # change to APPEND mode
+            filesize = filesize - existing_size  # used for stats
+
     if move:
         temp_fname = f"{final_fname}.tmp"
         commands = [
-            f"put {src_path} {temp_fname}",
+            f"{put_cmd} {src_path} {temp_fname}",
             f"rename {temp_fname} {final_fname}",
             "bye",
         ]
     else:
-        commands = [f"put {src_path} {final_fname}", "bye"]
+        commands = [f"{put_cmd} {src_path} {final_fname}", "bye"]
 
-    sftp = actual_upload(src_path, sftp_uri, commands)
+    started_on = now()
+    sftp = sftp_actual_upload(
+        private_key, src_path, sftp_uri, commands, cipher, compress, bandwidth
+    )
+    ended_on = now()
 
     if sftp.returncode == 0:
         logger.info("Uploader ran successfuly.")
+        display_stats(filesize, started_on, ended_on)
         if delete:
             remove_source_file(src_path)
     else:
@@ -262,11 +348,28 @@ def rebuild_uri(
     return urllib.parse.urlparse(new_uri)
 
 
+def display_stats(filesize, started_on, ended_on=None):
+    ended_on = ended_on or now()
+    duration = (ended_on - started_on).total_seconds()
+    if humanfriendly:
+        hfilesize = humanfriendly.format_size(filesize, binary=True)
+        hduration = humanfriendly.format_timespan(duration, max_units=2)
+        speed = humanfriendly.format_size(filesize / duration)
+        msg = f"uploaded {hfilesize} in {hduration} ({speed}/s)"
+    else:
+        hfilesize = filesize / 2 ** 20  # size in MiB
+        speed = filesize / 1000000 / duration  # MB/s
+        duration = duration / 60  # in mn
+        msg = f"uploaded {hfilesize:.3}MiB in {duration:.1}mn ({speed:.3}MBps)"
+    logger.info(f"[stats] {msg}")
+
+
 def upload_file(
     src_path,
     upload_uri,
     private_key,
     username=None,
+    resume=False,
     move=False,
     delete=False,
     compress=False,
@@ -292,24 +395,21 @@ def upload_file(
         logger.critical(f"URI scheme not supported: {upload_uri.scheme}")
         return 1
 
-    filesize = src_path.stat().st_size
-    started_on = datetime.datetime.now()
-    returncode = method(
-        src_path, upload_uri, private_key, move, delete, compress, bandwidth, cipher
+    if upload_uri.scheme == "scp" and resume:
+        logger.warning("--resume not supported via SCP. Will upload from scratch.")
+
+    return method(
+        src_path,
+        upload_uri,
+        src_path.stat().st_size,
+        private_key,
+        resume,
+        move,
+        delete,
+        compress,
+        bandwidth,
+        cipher,
     )
-    if returncode == 0:
-        duration = (datetime.datetime.now() - started_on).total_seconds()
-        if humanfriendly:
-            hfilesize = humanfriendly.format_size(filesize, binary=True)
-            hduration = humanfriendly.format_timespan(duration, max_units=2)
-            speed = humanfriendly.format_size(filesize / duration)
-            msg = f"uploaded {hfilesize} in {hduration} ({speed}/s)"
-        else:
-            hfilesize = filesize / 2 ** 20  # size in MiB
-            speed = filesize / 1000000 / duration  # MB/s
-            duration = duration / 60  # in mn
-            msg = f"uploaded {hfilesize:.3}MiB in {duration:.1}mn ({speed:.3}MBps)"
-        logger.info(f"[stats] {msg}")
 
 
 def main():
@@ -339,6 +439,13 @@ def main():
 
     parser.add_argument(
         "--username", help="username to authenticate to warehouse (if not in URI)",
+    )
+
+    parser.add_argument(
+        "--resume",
+        help="whether to continue uploading existing remote file instead of overriding (SFTP only)",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
@@ -424,6 +531,7 @@ def main():
             upload_uri=args.upload_uri,
             username=args.username,
             private_key=private_key,
+            resume=args.resume,
             move=args.move,
             delete=args.delete,
             compress=args.compress,
