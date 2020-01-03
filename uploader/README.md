@@ -8,8 +8,10 @@ Files are uploaded via SFTP (pubkey authentication) or SCP using OpenSSH.
 
 ## Usage
 
-* Use `scp://` for SCP upload
-* Use `sftp://` for SFTP upload
+* Specify file to upload with `--file`.
+* Mount the RSA private key onto `/etc/ssh/keys/id_rsa` or use `--private_key`
+* Use an `scp://` or `sftp://` URI to specify target.
+* Specify a full path (with filename) to upload to a specific name or end with a `/` for uploading inside a folder
 
 ``` sh
 docker run \
@@ -19,7 +21,6 @@ docker run \
     --file /path/my_file.zim \
     --upload-uri sftp://uploader@warehouse.farm.openzim.org/zim/ \
     --move \
-    --cipher aes128-ctr \
     --delete
 ```
 
@@ -30,4 +31,5 @@ docker run \
 * `--delete`: delete source file once uploaded successfuly.
 * `--compress`: enable transfer compression.
 * `--bandwidth`: enable bandwidth limit. Set it in Kbps.
-* `--cipher`: change default cipher. `aes128-ctr` is faster for instance.
+* `--cipher`: change default cipher (`aes128-ctr`).
+* `--resume`: resume partially uploaded file (SFTP only)
