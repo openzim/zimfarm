@@ -83,7 +83,7 @@
               <table class="table table-sm table-striped">
                 <tbody>
                 <tr v-for="run in history_runs" :key="run._id">
-                  <td><code :class="status_class(run.status)">{{ run.status }}</code></td>
+                  <td><code :class="statusClass(run.status)">{{ run.status }}</code></td>
                   <td><router-link :to="{name: 'task-detail', params: {_id: run._id}}">{{ run.updated_at | from_now }}</router-link></td>
                 </tr>
               </tbody>
@@ -187,13 +187,6 @@
       },
       setReady() { this.ready = true; },
       setError(error) { this.error = error; },
-      status_class(status) {
-        if (status == "succeeded")
-          return {"schedule-suceedeed": true};
-        if (["failed", "canceled", "cancel_requested"].indexOf(status) != -1)
-          return {"schedule-failed": true};
-        return {};
-      },
     },
     mounted() {
       let parent = this;

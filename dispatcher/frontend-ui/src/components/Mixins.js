@@ -90,5 +90,13 @@ export default {
     alertDanger(title, text, duration) { this.alert('danger', title, text, duration); },
     alertAccessRefused(perm_name) { this.alertWarning("Access Refused", "You don't have <code>" + perm_name + "</code> permission."); },
     alertError(text) { this.alertDanger("Error", text, Constants.ALERT_PERMANENT_DURATION); },
+
+    statusClass(status) {
+      if (status == 'succeeded')
+        return 'schedule-suceedeed';
+      if (["failed", "canceled", "cancel_requested"].indexOf(status))
+        return 'schedule-failed';
+      return 'schedule-running';
+    }
   }
 }

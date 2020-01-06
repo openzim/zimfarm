@@ -82,7 +82,7 @@
           <td>{{ schedule.language.name_en }}</td>
           <td>{{ schedule.config.task_name }}</td>
           <td v-if="schedule.most_recent_task">
-            <code :class="{'schedule-suceedeed': schedule.most_recent_task.status == 'succeeded', 'schedule-failed': schedule.most_recent_task.status == 'failed'}">{{ schedule.most_recent_task.status }}</code>
+            <code :class="statusClass(schedule.most_recent_task.status)">{{ schedule.most_recent_task.status }}</code>
           </td>
           <td colspan="2" v-else>-</td>
           <td v-if="schedule.most_recent_task" v-tooltip="format_dt(schedule.most_recent_task.updated_at)">

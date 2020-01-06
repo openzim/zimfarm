@@ -56,6 +56,10 @@ h2 {  /* Task/Schedule ID/title */
     color: #155724;
 }
 
+.schedule-running {
+    color: black;
+}
+
 table td { padding: .5rem; }
 table th { white-space: nowrap; }
 table caption { caption-side: top; }
