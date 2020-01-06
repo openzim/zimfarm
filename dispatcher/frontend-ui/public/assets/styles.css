@@ -123,3 +123,4 @@ table.loading tbody tr th,
 table.loading tbody tr a,
 table.loading tbody tr code,
 table.loading tbody tr span { color: transparent; }
+table.loading tbody tr span { background-color: transparent; }
