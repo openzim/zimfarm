@@ -120,27 +120,19 @@ class KeyRoute(BaseRoute):
         query.update({"ssh_keys.fingerprint": fingerprint})
 
         # database
-        user = Users().find_one(
-            query,
-            {
-                "username": 1,
-                "scope": 1,
-                "ssh_keys.key": 1,
-                "ssh_keys.type": 1,
-                "ssh_keys.name": 1,
-            },
-        )
+        user = Users().find_one(query, {"username": 1, "scope": 1, "ssh_keys": 1,},)
 
         # no user means no matching SSH key for fingerprint
         if not user:
             raise errors.NotFound()
+
+        key = [key for key in user["ssh_keys"] if key["fingerprint"] == fingerprint][-1]
 
         for permission in requested_permissions:
             namespace, perm_name = permission.split(".", 1)
             if not user.get("scope", {}).get(namespace, {}).get(perm_name):
                 raise errors.NotEnoughPrivilege(permission)
 
-        key = user["ssh_keys"][0]
         payload = {
             "username": user["username"],
             "key": key["key"],
