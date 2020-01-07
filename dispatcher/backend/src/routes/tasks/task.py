@@ -24,12 +24,6 @@ from common.schemas.parameters import TasksSchema, TaskCreateSchema, TasKUpdateS
 logger = logging.getLogger(__name__)
 
 
-def _add_updated_at(task, pop_events=True):
-    events = task.pop("events") if pop_events else task["events"]
-    task["updated_at"] = events[-1]["timestamp"]
-    return task
-
-
 class TasksRoute(BaseRoute):
     rule = "/"
     name = "tasks"
@@ -55,29 +49,28 @@ class TasksRoute(BaseRoute):
             query["schedule_name"] = schedule_name
 
         count = Tasks().count_documents(query)
-        projection = {
-            "_id": 1,
-            "schedule_name": 1,
-            "status": 1,
-            "timestamp": 1,
-            "worker": 1,
-            "config.resources": 1,
-            "events": 1,  # will be popped-out
-        }
-        cursor = (
-            Tasks()
-            .find(query, projection)
-            .sort(
-                [
-                    (f"timestamp.{status}", pymongo.DESCENDING)
-                    for status in sorted(TaskStatus.all(), reverse=True)
-                ]
-            )
-            .skip(skip)
-            .limit(limit)
+
+        cursor = Tasks().aggregate(
+            [
+                {"$match": query},
+                {
+                    "$project": {
+                        "schedule_name": 1,
+                        "schedule_name": 1,
+                        "status": 1,
+                        "timestamp": 1,
+                        "worker": 1,
+                        "config.resources": 1,
+                        "updated_at": {"$arrayElemAt": ["$events.timestamp", -1]},
+                    }
+                },
+                {"$sort": {"updated_at": pymongo.DESCENDING}},
+                {"$skip": skip},
+                {"$limit": limit},
+            ]
         )
 
-        tasks = list(map(_add_updated_at, cursor))
+        tasks = list(cursor)
 
         return jsonify(
             {"meta": {"skip": skip, "limit": limit, "count": count}, "items": tasks}
@@ -95,7 +88,9 @@ class TaskRoute(BaseRoute):
         if task is None:
             raise TaskNotFound()
 
-        return jsonify(_add_updated_at(task, False))
+        task["updated_at"] = task["events"][-1]["timestamp"]
+
+        return jsonify(task)
 
     @authenticate
     @require_perm("tasks", "create")
