@@ -74,7 +74,7 @@
         let parent = this;
         let req_headers = parent.$root.axios.defaults.headers;
         req_headers['refresh-token'] = refresh_token;
-        parent.$root.axios.post('/auth/token', {}, {headers: req_headers})
+        parent.queryAPI('post', '/auth/token', {}, {headers: req_headers})
           .then(function (response) {
             parent.handleTokenResponse(response);
             parent.alertInfo("Signed-in!", "Your token has been refreshed.");
@@ -106,7 +106,7 @@
         // download languages
         if (!parent.$store.getters.languages.length) {
           this.toggleLoader("fetching languages…");
-          parent.$root.axios.get('/languages/', {params: {limit: 400}})
+          parent.queryAPI('get', '/languages/', {params: {limit: 400}})
             .then(function (response) {
               let languages = [];
               for (var i=0; i<response.data.items.length; i++){
@@ -127,7 +127,7 @@
         // download tags
         if (!parent.$store.getters.tags.length) {
           this.toggleLoader("fetching tags…");
-          parent.$root.axios.get('/tags/', {params: {limit: 100}})
+          parent.queryAPI('get', '/tags/', {params: {limit: 100}})
             .then(function (response) {
               let tags = [];
               for (var i=0; i<response.data.items.length; i++){
@@ -148,7 +148,7 @@
         // download offliners
         if (!parent.$store.getters.offliners.length) {
           this.toggleLoader("fetching offliners…");
-          parent.$root.axios.get('/offliners/', {params: {limit: 100}})
+          parent.queryAPI('get', '/offliners/', {params: {limit: 100}})
             .then(function (response) {
               let offliners = [];
               for (var i=0; i<response.data.items.length; i++){
@@ -172,7 +172,7 @@
           this.toggleLoader("fetching offliners defs…");
 
           let requests = parent.$store.getters.offliners.map(function (offliner) {
-            return parent.$root.axios.get('/offliners/' + offliner);
+            return parent.queryAPI('get', '/offliners/' + offliner);
           });
           let results = await axios.all(requests);
           let definitions = {};
@@ -197,7 +197,7 @@
 
         parent.$store.dispatch('clearSchedule');  // reset until we receive the right schedule
         parent.toggleLoader("fetching schedule…");
-        parent.$root.axios.get('/schedules/' + schedule_name)
+        parent.queryAPI('get', '/schedules/' + schedule_name)
           .then(function (response) {
               // parent.error = null;
               let schedule = response.data;

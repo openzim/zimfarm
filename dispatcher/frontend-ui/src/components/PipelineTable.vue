@@ -127,7 +127,7 @@
         let parent = this;
         parent.toggleLoader("fetching tasks…");
         parent.loading = true;
-        parent.$root.axios.get(url, {params})
+        this.queryAPI('get', url, {params})
           .then(function (response) {
               parent.resetData();
               parent.meta = response.data.meta;
@@ -183,7 +183,7 @@
 
         parent.toggleLoader("fetching tasks…");
         let requests = schedule_names.map(function (schedule_name) {
-            return parent.$root.axios.get("/schedules/" + schedule_name);
+            return parent.queryAPI('get', "/schedules/" + schedule_name);
           });
         let results = await axios.all(requests);
 

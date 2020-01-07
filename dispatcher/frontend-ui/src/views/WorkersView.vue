@@ -196,7 +196,7 @@
         let parent = this;
 
         parent.toggleLoader("fetching tasks…");
-        parent.$root.axios.get('/tasks/', {params: {status: Constants.running_statuses, limit:200}})
+        parent.queryAPI('get', '/tasks/', {params: {status: Constants.running_statuses, limit:200}})
           .then(function (response) {
             parent.error = null;
             parent.running_tasks = [];
@@ -219,7 +219,7 @@
         let parent = this;
 
         parent.toggleLoader("fetching workers…");
-        parent.$root.axios.get('/workers/')
+        parent.queryAPI('get', '/workers/')
           .then(function (response) {
             parent.error = null;
             parent.all_workers = [];

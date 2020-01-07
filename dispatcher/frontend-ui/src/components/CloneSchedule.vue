@@ -34,7 +34,7 @@
         let parent = this;
         let payload = {name: this.form_name};
         parent.toggleLoader("Cloning recipe…");
-        parent.$root.axios.post('/schedules/' + parent.from + '/clone', payload)
+        parent.queryAPI('post', '/schedules/' + parent.from + '/clone', payload)
           .then(function () {
             parent.alertSuccess("Created!", "Recipe <code>"+ payload.name +"</code> has been created off <code>" + parent.from + "</code>.");
             parent.redirectTo('schedule-detail', {schedule_name: payload.name});

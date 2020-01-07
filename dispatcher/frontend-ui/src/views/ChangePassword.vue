@@ -48,7 +48,7 @@
         parent.error = null;
 
         let payload = {current: parent.current_password, new: parent.new_password};
-        parent.$root.axios.patch('/users/' + parent.$store.getters.username + '/password', payload)
+        parent.queryAPI('patch', '/users/' + parent.$store.getters.username + '/password', payload)
           .then(function () {
               parent.alertSuccess("Changed!", "Your password has been updated.");
               parent.$router.back();  // redirect

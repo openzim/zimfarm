@@ -199,7 +199,7 @@
 
       parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
       parent.requested = null;
-      parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
+      parent.queryAPI('get', '/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
               parent.requested = response.data.items[0];
@@ -212,7 +212,7 @@
         })
 
       parent.history_runs = [];
-      parent.$root.axios.get('/tasks/', {params: {schedule_name: parent.schedule_name}})
+      parent.queryAPI('get', '/tasks/', {params: {schedule_name: parent.schedule_name}})
         .then(function (response) {
             parent.history_runs = response.data.items;
         })

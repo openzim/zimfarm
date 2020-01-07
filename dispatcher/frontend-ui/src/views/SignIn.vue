@@ -59,7 +59,7 @@
 
         let params = {username: this.username, password: this.password};
 
-        parent.$root.axios.post('/auth/authorize', Constants.params_serializer(params))
+        parent.queryAPI('post', '/auth/authorize', Constants.params_serializer(params))
           .then(function (response) {
             parent.handleTokenResponse(response);
             // redirect

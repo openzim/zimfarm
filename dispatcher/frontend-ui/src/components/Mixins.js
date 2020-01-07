@@ -101,7 +101,6 @@ export default {
       return 'schedule-running';
     },
     handleTokenResponse(response) {
-      console.debug("handleTokenResponse", response);
       // prepare our token structure
       let access_token = response.data.access_token;
       let refresh_token = response.data.refresh_token;
@@ -119,6 +118,13 @@ export default {
                        JSON.stringify(cookie_data),
                        {expires: Constants.TOKEN_COOKIE_EXPIRY,
                         secure: Constants.isProduction()});
+    },
+    queryAPI(method, path, data, config) {
+      if (data === undefined)
+        data = {};
+      if (config === undefined)
+        config = {};
+      return this.$root.axios[method](path, data, config);
     },
   }
 }

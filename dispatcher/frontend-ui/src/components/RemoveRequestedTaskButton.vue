@@ -37,7 +37,7 @@
         let parent = this;
 
         parent.working = true;
-        parent.$root.axios.delete('/requested-tasks/' + parent._id)
+        parent.queryAPI('delete', '/requested-tasks/' + parent._id)
           .then(function () {
             let msg = "Requested Task <code>" + Constants.short_id(parent._id) + "</code> has been removed.";
 

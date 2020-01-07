@@ -208,7 +208,7 @@
         }
 
         parent.error = null;
-        parent.$root.axios.get('/schedules/', {params: params})
+        parent.queryAPI('get', '/schedules/', {params: params})
           .then(function (response) {
                 parent.schedules = [];
                 parent.meta = response.data.meta;
@@ -224,9 +224,6 @@
       },
     },
     beforeMount() {
-      // if (this.$root.schedules_selectedLanguagesOptions)
-      //   this.selectedLanguagesOptions = this.$root.schedules_selectedLanguagesOptions;
-      // console.log("MOUNTING SCHEDULES-LIST");
       this.loadSchedules();
     },
   }
