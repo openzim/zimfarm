@@ -39,7 +39,7 @@
       deleteItem() {
         let parent = this;
         parent.toggleLoader("deleting " + parent.description + "…");
-        parent.$root.axios.delete(parent.url)
+        parent.queryAPI('delete', parent.url)
           .then(function () {
             parent.alertSuccess("Deleted!", parent.description + " <code>"+ parent.name +"</code> has been removed.");
             parent.redirectTo(parent.target);

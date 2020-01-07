@@ -111,14 +111,14 @@
         let parent = this;
 
         parent.requested_task = {};
-        parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: [parent.name]}})
+        parent.queryAPI('get', '/requested-tasks/', {params: {schedule_name: [parent.name]}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
               parent.requested_task = response.data.items[0];
             }
 
             // once requested-tasks is ran, look for running ones
-            parent.$root.axios.get('/tasks/', {params: {schedule_name: [parent.name], status: Constants.cancelable_statuses}})
+            parent.queryAPI('get', '/tasks/', {params: {schedule_name: [parent.name], status: Constants.cancelable_statuses}})
               .then(function (response) {
                 if (response.data.meta.count > 0) {
                   parent.task = response.data.items[0];
@@ -135,7 +135,7 @@
             parent.ready = false;
           });
 
-        parent.$root.axios.get('/workers/')
+        parent.queryAPI('get', '/workers/')
         .then(function (response) {
             parent.workers = response.data.items;
           });
@@ -150,7 +150,7 @@
           params.priority = Constants.DEFAULT_FIRE_PRIORITY;
         if (worker_name)
           params.worker =  worker_name;
-        parent.$root.axios.post('/requested-tasks/', params)
+        parent.queryAPI('post', '/requested-tasks/', params)
           .then(function (response) {
             parent.requested_task = {_id: response.data.requested[0], priority: priority || 0};
             let msg = "Schedule <em>" + parent.name + "</em> has been requested as <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
@@ -171,7 +171,7 @@
           return;
 
         parent.working_text = "Firing it up…";
-        parent.$root.axios.patch('/requested-tasks/' + parent.requested_task_id, {priority: Constants.DEFAULT_FIRE_PRIORITY})
+        parent.queryAPI('patch', '/requested-tasks/' + parent.requested_task_id, {priority: Constants.DEFAULT_FIRE_PRIORITY})
         .then(function () {
           let msg = "Added priority to request <code>" + Constants.short_id(parent.requested_task_id) + "</code>.";
 
@@ -189,7 +189,7 @@
         let parent = this;
         parent.working_text = "Canceling task…";
 
-        parent.$root.axios.post('/tasks/' + parent.task_id + '/cancel')
+        parent.queryAPI('post', '/tasks/' + parent.task_id + '/cancel')
           .then(function () {
             let msg = "Requested Task <code>" + Constants.short_id(parent.task_id) + "</code> has been marked for cancelation.";
             parent.task = null;
@@ -208,7 +208,7 @@
         let parent = this;
         parent.working_text = "Un-requesting task…";
 
-        parent.$root.axios.delete('/requested-tasks/' + parent.requested_task_id)
+        parent.queryAPI('delete', '/requested-tasks/' + parent.requested_task_id)
           .then(function () {
             let msg = "Requested Task <code>" + Constants.short_id(parent.requested_task_id) + "</code> has been removed.";
             parent.requested_task = {};

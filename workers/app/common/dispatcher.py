@@ -100,7 +100,7 @@ def query_api(token, method, url, payload=None, params=None, headers={}):
         content = resp["error"]
         if "error_description" in resp:
             content += "\n"
-            content += resp["error_description"]
+            content += str(resp["error_description"])
     else:
         content = str(resp)
 

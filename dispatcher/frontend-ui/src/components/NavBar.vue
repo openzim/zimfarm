@@ -20,7 +20,7 @@
                     <li class="nav-item disabled">
                         <router-link class="nav-link" :to="{ name: 'workers' }">Workers</router-link>
                     </li>
-                    <li class="nav-item" v-show="$root.isLoggedIn">
+                    <li class="nav-item" v-show="canReadUsers">
                         <router-link class="nav-link" :to="{ name: 'users-list' }">Users</router-link>
                     </li>
                     <li class="nav-item disabled">

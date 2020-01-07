@@ -242,9 +242,7 @@ class TaskWorker(BaseWorker):
         self.mark_task_completed(status, **kwargs)
 
     def start_uploader(self, upload_dir, filename):
-        logger.info(
-            f"Starting uploader for /{upload_dir}/{filename}"
-        )
+        logger.info(f"Starting uploader for /{upload_dir}/{filename}")
         self.uploader = start_uploader(
             self.docker,
             self.task,

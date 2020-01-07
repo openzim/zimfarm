@@ -69,7 +69,7 @@
           params.tag = this.for_tags;
         }
 
-        parent.$root.axios.get('/schedules/', {params: params})
+        parent.queryAPI('get', '/schedules/', {params: params})
           .then(function (response) {
             parent.schedules_names = response.data.items.map(function(item) { return item["name"]});
             parent.do_request_tasks();
@@ -83,7 +83,7 @@
       do_request_tasks() {
         let parent = this;
         let params = {schedule_names: parent.schedules_names};
-        parent.$root.axios.post('/requested-tasks/', params)
+        parent.queryAPI('post', '/requested-tasks/', params)
           .then(function (response) {
             let nb_requested = response.data.requested.length;
             let msg = "Exactly <code>" + nb_requested + "</code> recipe(s) matching your selection have been requested.";

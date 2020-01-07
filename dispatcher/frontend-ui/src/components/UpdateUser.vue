@@ -58,7 +58,7 @@
           return;
 
         parent.toggleLoader("changing password…");
-        parent.$root.axios.patch('/users/' + parent.user.username + '/password', {new: parent.form.password})
+        parent.queryAPI('patch', '/users/' + parent.user.username + '/password', {new: parent.form.password})
         .then(function () {
             parent.alertSuccess(
               "Password Changed!",
@@ -81,7 +81,7 @@
 
         let parent = this;
         parent.toggleLoader("updating user…");
-        parent.$root.axios.patch('/users/' + parent.user.username, this.payload)
+        parent.queryAPI('patch', '/users/' + parent.user.username, this.payload)
           .then(function () {
             parent.alertSuccess("Updated!", "User account <code>"+ parent.user.username +"</code> has been updated.");
             parent.redirectTo('users-list');

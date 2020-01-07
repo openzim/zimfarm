@@ -56,6 +56,10 @@ h2 {  /* Task/Schedule ID/title */
     color: #155724;
 }
 
+.schedule-running {
+    color: black;
+}
+
 table td { padding: .5rem; }
 table th { white-space: nowrap; }
 table caption { caption-side: top; }
@@ -123,3 +127,4 @@ table.loading tbody tr th,
 table.loading tbody tr a,
 table.loading tbody tr code,
 table.loading tbody tr span { color: transparent; }
+table.loading tbody tr span { background-color: transparent; }

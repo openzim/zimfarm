@@ -81,15 +81,17 @@
       signOut() {
         let parent = this;
         let msg = "";
-        if (Constants.now().isAfter(this.$store.getters.token_expiry)) {
+        if (this.token_expired) {
           msg = "Your token already expired anyway 🤷🏾‍♂️";
         } else {
-          let human_diff = Constants.format_duration(this.$store.getters.token_expiry.diff());
+          let expiry = this.$store.getters.token_expiry;
+          let human_diff = (expiry === null) ? "some time" : Constants.format_duration(expiry.diff());
           msg = "Your token is still valid for about " + human_diff + " though";
         }
         parent.$store.dispatch('clearAuthentication');
-        parent.$cookie.delete('token_data');
+        parent.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
         parent.alertInfo("Signed-out!", msg);
+        this.redirectTo('home')
       }
     },
   }

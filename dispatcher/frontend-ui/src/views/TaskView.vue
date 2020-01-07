@@ -171,7 +171,7 @@
       let parent = this;
 
       parent.toggleLoader("fetching task…");
-      parent.$root.axios.get('/tasks/' + this._id, {})
+      parent.queryAPI('get', '/tasks/' + this._id, {})
         .then(function (response) {
             parent.error = null;
             parent.task = response.data;
@@ -187,7 +187,6 @@
       // scroll stdout and stderr to bottom
       let element;
       ["stdout", "stderr"].forEach(function(item) {
-        console.log(item);
         element = this.$el.querySelector("." + item);
         if (element)
           element.scrollTop = element.scrollHeight;

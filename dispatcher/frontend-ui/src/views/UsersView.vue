@@ -87,7 +87,7 @@
         let parent = this;
         payload.password = this.genPassword();
         parent.toggleLoader("creating user…");
-        parent.$root.axios.post('/users/', payload)
+        parent.queryAPI('post', '/users/', payload)
         .then(function () {
             parent.alertSuccess(
               "User Created!",
@@ -108,7 +108,7 @@
         let parent = this;
 
         parent.toggleLoader("fetching workers…");
-        parent.$root.axios.get('/users/')
+        parent.queryAPI('get', '/users/')
           .then(function (response) {
             parent.error = null;
             parent.users = [];

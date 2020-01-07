@@ -8,8 +8,6 @@
 
 <script type="text/javascript">
   import axios from 'axios'
-  import moment from 'moment';
-  import jwt from 'jsonwebtoken';
 
   import Constants from './constants.js'
   import ZimfarmMixins from './components/Mixins.js'
@@ -21,48 +19,12 @@
     mixins: [ZimfarmMixins],
     components: {NavBar, AlertFeedback},
     methods: {
-      loadTokenFromCookie() {
-        // already authenticated
-        if (this.$root.isLoggedIn)
-          return;
-        let cookie_value = this.$cookie.get(Constants.TOKEN_COOKIE_NAME);
-
-        // no cookie
-        if (!cookie_value)
-          return;
-
-        let token_data;
-        try {
-           token_data = JSON.parse(cookie_value);
-           token_data.payload = jwt.decode(token_data.access_token);
-        } catch {
-          // incorrect cookie payload
-          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
-          return;
-        }
-
-        let expiry = moment(token_data.payload.exp * 1000);
-        if (moment().isAfter(expiry)) {
-          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
-          return;
-        }
-
-        this.$store.dispatch('saveAuthenticationToken', token_data)
-      },
-      checkExpiryAndUpdateUI() {
-        if (this.$store.getters.token_expired) {
-          console.debug("token has expired, logging-out");
-          let msg = "Your token expired " + this.$store.getters.token_expiry.fromNow() + ". You can sign back in at any time.";
-          this.$store.dispatch('clearAuthentication');
-          this.alertInfo("Signed-out!", msg);
-        }
-      },
       loadLanguages() {
         let parent = this;
         // download languages
         if (!parent.$store.getters.languages.length) {
           this.toggleLoader("fetching languages…");
-          parent.$root.axios.get('/languages/', {params: {limit: 400}})
+          parent.queryAPI('get', '/languages/', {params: {limit: 400}})
             .then(function (response) {
               let languages = [];
               for (var i=0; i<response.data.items.length; i++){
@@ -71,7 +33,7 @@
               parent.$store.dispatch('setLanguages', languages);
             })
             .catch(function (error) {
-              parent.alertDanger("Unable to fecth languages",  Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fetch languages",  Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -83,7 +45,7 @@
         // download tags
         if (!parent.$store.getters.tags.length) {
           this.toggleLoader("fetching tags…");
-          parent.$root.axios.get('/tags/', {params: {limit: 100}})
+          parent.queryAPI('get', '/tags/', {params: {limit: 100}})
             .then(function (response) {
               let tags = [];
               for (var i=0; i<response.data.items.length; i++){
@@ -92,7 +54,7 @@
               parent.$store.dispatch('setTags', tags);
             })
             .catch(function (error) {
-              parent.alertDanger("Unable to fecth tags", Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fetch tags", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -104,7 +66,7 @@
         // download offliners
         if (!parent.$store.getters.offliners.length) {
           this.toggleLoader("fetching offliners…");
-          parent.$root.axios.get('/offliners/', {params: {limit: 100}})
+          parent.queryAPI('get', '/offliners/', {params: {limit: 100}})
             .then(function (response) {
               let offliners = [];
               for (var i=0; i<response.data.items.length; i++){
@@ -114,7 +76,7 @@
               parent.loadOfflinersDefs();
             })
             .catch(function (error) {
-              parent.alertDanger("Unable to fecth offliners", Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fetch offliners", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -128,7 +90,7 @@
           this.toggleLoader("fetching offliners defs…");
 
           let requests = parent.$store.getters.offliners.map(function (offliner) {
-            return parent.$root.axios.get('/offliners/' + offliner);
+            return parent.queryAPI('get', '/offliners/' + offliner);
           });
           let results = await axios.all(requests);
           let definitions = {};
@@ -153,7 +115,7 @@
 
         parent.$store.dispatch('clearSchedule');  // reset until we receive the right schedule
         parent.toggleLoader("fetching schedule…");
-        parent.$root.axios.get('/schedules/' + schedule_name)
+        parent.queryAPI('get', '/schedules/' + schedule_name)
           .then(function (response) {
               // parent.error = null;
               let schedule = response.data;
@@ -175,11 +137,6 @@
     },
     mounted() {
       this.loadMetaData();
-    },
-    watch: {
-      $route() {
-        this.checkExpiryAndUpdateUI();
-      },
     },
   }
 </script>

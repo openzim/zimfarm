@@ -434,7 +434,7 @@
 
         let parent = this;
         parent.toggleLoader("commiting updates…");
-        parent.$root.axios.patch('/schedules/' + this.schedule_name, parent.payload)
+        parent.queryAPI('patch', '/schedules/' + this.schedule_name, parent.payload)
         .then(function () {
             parent.alertSuccess("Updated!", "Recipe updated successfuly.");
             if (parent.payload.name !== undefined) {  // named changed so we need to redirect
