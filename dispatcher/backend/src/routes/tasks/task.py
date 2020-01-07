@@ -56,7 +56,6 @@ class TasksRoute(BaseRoute):
                 {
                     "$project": {
                         "schedule_name": 1,
-                        "schedule_name": 1,
                         "status": 1,
                         "timestamp": 1,
                         "worker": 1,
