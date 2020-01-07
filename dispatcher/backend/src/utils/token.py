@@ -15,7 +15,8 @@ class AccessToken:
         [random.choice(string.ascii_letters + string.digits) for _ in range(32)]
     )
     issuer = "dispatcher"
-    expire_time_delta = timedelta(hours=TOKEN_EXPIRY)
+    # expire_time_delta = timedelta(hours=TOKEN_EXPIRY)
+    expire_time_delta = timedelta(minutes=1)
 
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
