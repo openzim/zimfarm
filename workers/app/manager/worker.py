@@ -26,7 +26,7 @@ from common.constants import CANCELED, CANCELING, CANCEL_REQUESTED, SUPPORTED_OF
 
 
 class WorkerManager(BaseWorker):
-    poll_interval = os.getenv("POLL_INTERVAL", 300)  # seconds between each manual poll
+    poll_interval = os.getenv("POLL_INTERVAL", 180)  # seconds between each manual poll
     sleep_interval = os.getenv("SLEEP_INTERVAL", 5)  # seconds to sleep while idle
     events = ["requested-task", "requested-tasks", "cancel-task"]
     config_keys = ["poll_interval", "sleep_interval", "events"]
@@ -93,6 +93,7 @@ class WorkerManager(BaseWorker):
         self.last_poll = datetime.datetime.now()
 
         host_stats = query_host_stats(self.docker, self.workdir)
+        logger.debug(host_stats)
         success, status_code, response = self.query_api(
             "GET",
             "/requested-tasks/worker",
@@ -114,9 +115,9 @@ class WorkerManager(BaseWorker):
             )
             self.start_task(response["items"].pop())
             # we need to allow the task to start, its container to start and
-            # eventually its scraper to start we docker can report to us
+            # eventually its scraper to start so docker can report to us
             # the assigned resources (on the scraper) _before_ polling again
-            time.sleep(40)
+            time.sleep(90)
             self.poll()
         elif not success:
             logger.warning(f"poll failed with HTTP {status_code}: {response}")
@@ -163,7 +164,7 @@ class WorkerManager(BaseWorker):
             self.tasks[task_id]["status"] = CANCELING
         except KeyError:
             pass
-        self.stop_task_worker(task_id)
+        self.stop_task_worker(task_id, timeout=60)
         self.tasks.pop(task_id, None)
 
     def update_task_data(self, task_id):
@@ -216,9 +217,9 @@ class WorkerManager(BaseWorker):
                 logger.info(f"task {task_id} is not running anymore, unwatching.")
                 self.tasks.pop(task_id, None)
 
-    def stop_task_worker(self, task_id):
+    def stop_task_worker(self, task_id, timeout=20):
         logger.debug(f"stop_task_worker: {task_id}")
-        stop_task_worker(self.docker, task_id, timeout=20)
+        stop_task_worker(self.docker, task_id, timeout=timeout)
 
     def start_task(self, requested_task):
         task_id = requested_task["_id"]

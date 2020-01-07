@@ -132,6 +132,7 @@ def query_host_stats(docker_client, workdir):
 
     # disk space
     workir_fs_stats = os.statvfs(workdir)
+    disk_used = stats["disk"]
     disk_free = workir_fs_stats.f_bavail * workir_fs_stats.f_frsize
     disk_avail = as_pos_int(min([ZIMFARM_DISK_SPACE - stats["disk"], disk_free]))
 
@@ -144,9 +145,13 @@ def query_host_stats(docker_client, workdir):
     mem_avail = as_pos_int(ZIMFARM_MEMORY - mem_used)
 
     return {
-        "cpu": {"total": ZIMFARM_CPUS, "available": cpu_avail},
-        "disk": {"total": ZIMFARM_DISK_SPACE, "available": disk_avail},
-        "memory": {"total": ZIMFARM_MEMORY, "available": mem_avail},
+        "cpu": {"total": ZIMFARM_CPUS, "used": cpu_used, "available": cpu_avail},
+        "disk": {
+            "total": ZIMFARM_DISK_SPACE,
+            "used": disk_used,
+            "available": disk_avail,
+        },
+        "memory": {"total": ZIMFARM_MEMORY, "used": mem_used, "available": mem_avail},
     }
 
 
