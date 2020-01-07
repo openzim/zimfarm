@@ -85,10 +85,8 @@
             <code :class="statusClass(schedule.most_recent_task.status)">{{ schedule.most_recent_task.status }}</code>
           </td>
           <td colspan="2" v-else>-</td>
-          <td v-if="schedule.most_recent_task" v-tooltip="format_dt(schedule.most_recent_task.updated_at)">
-            <router-link :to="{name: 'task-detail', params: {_id: schedule.most_recent_task._id}}">
-              {{ schedule.most_recent_task.updated_at | from_now }}
-            </router-link>
+          <td v-if="schedule.most_recent_task">
+            <TaskLink :_id="schedule.most_recent_task._id" :updated_at="schedule.most_recent_task.updated_at" />
           </td>
         </tr>
       </tbody>
@@ -102,11 +100,12 @@
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import RequestSelectionButton from '../components/RequestSelectionButton.vue'
+  import TaskLink from '../components/TaskLink.vue'
 
   export default {
     name: 'SchedulesList',
     mixins: [ZimfarmMixins],
-    components: {Multiselect, RequestSelectionButton},
+    components: {Multiselect, RequestSelectionButton, TaskLink},
     data() {
       return {
         error: null,  // API originated error message

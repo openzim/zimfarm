@@ -54,10 +54,8 @@
               {{ row.task.schedule_name }}
             </router-link>
           </td>
-          <td v-if="row.kind == 'task'" v-tooltip="format_dt(started_on(row.task))">
-            <router-link :to="{name: 'task-detail', params:{_id: row.task._id}}">
-              {{ started_on(row.task)|from_now }}
-            </router-link>
+          <td v-if="row.kind == 'task'">
+            <TaskLink :_id="row.task._id" :updated_at="started_on(row.task)" />
           </td>
           <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.cpu }}</td>
           <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.memory|filesize }}</td>
@@ -76,11 +74,12 @@
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
+  import TaskLink from '../components/TaskLink.vue'
 
   export default {
     name: 'WorkersView',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage, ResourceBadge},
+    components: {ErrorMessage, ResourceBadge, TaskLink},
     data() {
       return {
         ready: false,

@@ -35,6 +35,7 @@ export default {
   methods: {
     scrollToTop() { window.scrollTo(0,0); },
     format_dt(dt) { return Constants.format_dt(dt); },
+    from_now(dt) { return Constants.from_now(dt); },
     toggleLoader(text) { // shortcut to store's loader status changer
       let payload = text ? {status: true, text: text} : {status: false};
       this.$store.dispatch('setLoading', payload);

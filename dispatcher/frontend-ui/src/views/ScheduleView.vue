@@ -67,7 +67,7 @@
             <th>Last run</th>
             <td v-if="last_run">
               <code>{{ last_run.status }}</code>,
-              <router-link :to="{name: 'task-detail', params: {_id: last_run._id}}">{{ last_run.updated_at | from_now }}</router-link>
+              <TaskLink :_id="last_run._id" :updated_at="last_run.updated_at" />
             </td>
             <td v-else><code>none</code> 🙁</td>
           </tr>
@@ -84,9 +84,7 @@
                 <tbody>
                 <tr v-for="run in history_runs" :key="run._id">
                   <td><code :class="statusClass(run.status)">{{ run.status }}</code></td>
-                  <td><router-link :to="{name: 'task-detail', params: {_id: run._id}}"
-                                   v-tooltip="format_dt(run.updated_at)">{{ run.updated_at | from_now }}</router-link>
-                  </td>
+                  <td><TaskLink :_id="run._id" :updated_at="run.updated_at" /></td>
                 </tr>
               </tbody>
               </table>
@@ -141,12 +139,13 @@
   import DeleteItem from '../components/DeleteItem.vue'
   import CloneSchedule from '../components/CloneSchedule.vue'
   import FlagsList from '../components/FlagsList.vue'
+  import TaskLink from '../components/TaskLink.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
     components: {ScheduleActionButton, ErrorMessage, ResourceBadge,
-                 ScheduleEditor, DeleteItem, CloneSchedule, FlagsList},
+                 ScheduleEditor, DeleteItem, CloneSchedule, FlagsList, TaskLink},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug

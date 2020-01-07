@@ -187,7 +187,6 @@
       // scroll stdout and stderr to bottom
       let element;
       ["stdout", "stderr"].forEach(function(item) {
-        console.log(item);
         element = this.$el.querySelector("." + item);
         if (element)
           element.scrollTop = element.scrollHeight;
