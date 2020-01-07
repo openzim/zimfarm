@@ -84,7 +84,9 @@
                 <tbody>
                 <tr v-for="run in history_runs" :key="run._id">
                   <td><code :class="statusClass(run.status)">{{ run.status }}</code></td>
-                  <td><router-link :to="{name: 'task-detail', params: {_id: run._id}}">{{ run.updated_at | from_now }}</router-link></td>
+                  <td><router-link :to="{name: 'task-detail', params: {_id: run._id}}"
+                                   v-tooltip="format_dt(run.updated_at)">{{ run.updated_at | from_now }}</router-link>
+                  </td>
                 </tr>
               </tbody>
               </table>

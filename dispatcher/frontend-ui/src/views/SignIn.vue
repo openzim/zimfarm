@@ -29,8 +29,6 @@
 </template>
 
 <script type="text/javascript">
-  import jwt from 'jsonwebtoken';
-
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
 
@@ -63,36 +61,19 @@
 
         parent.$root.axios.post('/auth/authorize', Constants.params_serializer(params))
           .then(function (response) {
-              // prepare our token structure
-              let access_token = response.data.access_token;
-              let refresh_token = response.data.refresh_token;
-              let token_data = {
-                access_token: access_token,
-                payload: jwt.decode(access_token),
-                refresh_token: refresh_token,
-              }
-              // save token to store
-              parent.$store.dispatch('saveAuthenticationToken', token_data);
-
-              // save to cookie
-              let cookie_data = {"access_token": access_token, "refresh_token": refresh_token};
-              parent.$cookie.set(Constants.TOKEN_COOKIE_NAME,
-                                 JSON.stringify(cookie_data),
-                                 {expires: Constants.TOKEN_COOKIE_EXPIRY,
-                                  secure: Constants.isProduction()});
-
-              // redirect
-              parent.$router.back();
-            })
-            .catch(function (error) {
-              if (error.response)
-                parent.error = Constants.standardHTTPError(error.response);
-              else
-                parent.error = error;
-            })
-            .then(function () {
-              parent.working = false;
-            });
+            parent.handleTokenResponse(response);
+            // redirect
+            parent.$router.back();
+          })
+          .catch(function (error) {
+            if (error.response)
+              parent.error = Constants.standardHTTPError(error.response);
+            else
+              parent.error = error;
+          })
+          .then(function () {
+            parent.working = false;
+          });
         }
     },
   }

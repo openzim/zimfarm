@@ -103,6 +103,7 @@ const store = new Vuex.Store({
     loadingStatus(state) { return {should_display: state.loading, text: state.loading_text};},
     username(state) { try { return state.token.payload.user.username } catch { return null; } },
     access_token(state) { return state.token.access_token || null },
+    refresh_token(state) { return state.token.refresh_token || null },
     token_expiry(state) {
       try{
         return moment(state.token.payload.exp * 1000);

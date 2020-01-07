@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 
 import Constants from '../constants.js'
 
@@ -97,6 +98,26 @@ export default {
       if (["failed", "canceled", "cancel_requested"].indexOf(status))
         return 'schedule-failed';
       return 'schedule-running';
-    }
+    },
+    handleTokenResponse(response) {
+      console.debug("handleTokenResponse", response);
+      // prepare our token structure
+      let access_token = response.data.access_token;
+      let refresh_token = response.data.refresh_token;
+      let token_data = {
+        access_token: access_token,
+        payload: jwt.decode(access_token),
+        refresh_token: refresh_token,
+      }
+      // save token to store
+      this.$store.dispatch('saveAuthenticationToken', token_data);
+
+      // save to cookie
+      let cookie_data = {"access_token": access_token, "refresh_token": refresh_token};
+      this.$cookie.set(Constants.TOKEN_COOKIE_NAME,
+                       JSON.stringify(cookie_data),
+                       {expires: Constants.TOKEN_COOKIE_EXPIRY,
+                        secure: Constants.isProduction()});
+    },
   }
 }
