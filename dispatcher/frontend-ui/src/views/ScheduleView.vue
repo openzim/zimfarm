@@ -67,7 +67,7 @@
             <th>Last run</th>
             <td v-if="last_run">
               <code>{{ last_run.status }}</code>,
-              <router-link :to="{name: 'task-detail', params: {_id: last_run._id}}">{{ last_run.updated_at | from_now }}</router-link>
+              <TaskLink :_id="last_run._id" :updated_at="last_run.updated_at" />
             </td>
             <td v-else><code>none</code> 🙁</td>
           </tr>
@@ -83,8 +83,8 @@
               <table class="table table-sm table-striped">
                 <tbody>
                 <tr v-for="run in history_runs" :key="run._id">
-                  <td><code :class="status_class(run.status)">{{ run.status }}</code></td>
-                  <td><router-link :to="{name: 'task-detail', params: {_id: run._id}}">{{ run.updated_at | from_now }}</router-link></td>
+                  <td><code :class="statusClass(run.status)">{{ run.status }}</code></td>
+                  <td><TaskLink :_id="run._id" :updated_at="run.updated_at" /></td>
                 </tr>
               </tbody>
               </table>
@@ -139,12 +139,13 @@
   import DeleteItem from '../components/DeleteItem.vue'
   import CloneSchedule from '../components/CloneSchedule.vue'
   import FlagsList from '../components/FlagsList.vue'
+  import TaskLink from '../components/TaskLink.vue'
 
   export default {
     name: 'ScheduleView',
     mixins: [ZimfarmMixins],
     components: {ScheduleActionButton, ErrorMessage, ResourceBadge,
-                 ScheduleEditor, DeleteItem, CloneSchedule, FlagsList},
+                 ScheduleEditor, DeleteItem, CloneSchedule, FlagsList, TaskLink},
     props: {
       schedule_name: String,  // the schedule name/ID
       selectedTab: {  // currently selected tab: details, container, debug
@@ -187,13 +188,6 @@
       },
       setReady() { this.ready = true; },
       setError(error) { this.error = error; },
-      status_class(status) {
-        if (status == "succeeded")
-          return {"schedule-suceedeed": true};
-        if (["failed", "canceled", "cancel_requested"].indexOf(status) != -1)
-          return {"schedule-failed": true};
-        return {};
-      },
     },
     mounted() {
       let parent = this;
@@ -205,7 +199,7 @@
 
       parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
       parent.requested = null;
-      parent.$root.axios.get('/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
+      parent.queryAPI('get', '/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
         .then(function (response) {
             if (response.data.meta.count > 0) {
               parent.requested = response.data.items[0];
@@ -218,7 +212,7 @@
         })
 
       parent.history_runs = [];
-      parent.$root.axios.get('/tasks/', {params: {schedule_name: parent.schedule_name}})
+      parent.queryAPI('get', '/tasks/', {params: {schedule_name: parent.schedule_name}})
         .then(function (response) {
             parent.history_runs = response.data.items;
         })

@@ -213,6 +213,7 @@ class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
         schedule.pop("_id", None)
         schedule.pop("most_recent_task", None)
         schedule["name"] = new_schedule_name
+        schedule["enabled"] = False
 
         # insert document
         schedule_id = Schedules().insert_one(schedule).inserted_id

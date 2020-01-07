@@ -153,7 +153,7 @@
       deleteKey(ssh_key) {
         let parent = this;
         parent.toggleLoader("deleting key…");
-        parent.$root.axios.delete('/users/' + this.username + '/keys/' + ssh_key.fingerprint)
+        parent.queryAPI('delete', '/users/' + this.username + '/keys/' + ssh_key.fingerprint)
           .then(function () {
             parent.alertSuccess("Key Removed!", "SSH Key <code>" + ssh_key.name + "</code> has been removed.");
             parent.loadUser();
@@ -170,7 +170,7 @@
         let parent = this;
 
         parent.toggleLoader("fetching user…");
-        parent.$root.axios.get('/users/' + this.username)
+        parent.queryAPI('get', '/users/' + this.username)
           .then(function (response) {
             parent.error = null;
             parent.user = response.data;

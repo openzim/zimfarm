@@ -28,7 +28,7 @@
         <tr><th>Schedule</th><th>Completed</th><th>Worker</th><th>Duration</th></tr>
       </thead>
       <thead v-if="selectedTable == 'failed'">
-        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th></tr>
+        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th><th>Last Run</th></tr>
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task._id">
@@ -54,6 +54,16 @@
           <td><code v-if="task.worker">{{ task.worker }}</code><span v-else>n/a</span></td>
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'"><code>{{ task.status }}</code></td>
+          <td v-if="selectedTable == 'failed'">
+            <span v-if="last_runs_loaded && schedules_last_runs[task.schedule_name]">
+              <code :class="statusClass(getPropFor(task.schedule_name, 'status'))">
+                {{ getPropFor(task.schedule_name, 'status') }}
+              </code>,
+              <TaskLink
+                :_id="getPropFor(task.schedule_name, '_id', '-')"
+                :updated_at="getPropFor(task.schedule_name, 'updated_at')" />
+            </span>
+          </td>
           <td v-if="selectedTable == 'todo'" v-show="canUnRequestTasks"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
         </tr>
       </tbody>
@@ -63,16 +73,19 @@
 </template>
 
 <script type="text/javascript">
+  import axios from 'axios'
+
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import RemoveRequestedTaskButton from '../components/RemoveRequestedTaskButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
+  import TaskLink from '../components/TaskLink.vue'
 
   export default {
     name: 'PipelineTable',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge},
+    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink},
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
@@ -83,6 +96,8 @@
         error: false, // error string to display on API error
         timer: null,  // auto-refresh timer
         loading: false,
+        schedules_last_runs: {}, // last runs for all schedule_names of tasks
+        last_runs_loaded: false,  // used to trigger render() on last_run cell
       };
     },
     computed: {
@@ -91,6 +106,15 @@
       }
     },
     methods: {
+      getPropFor(schedule_name, prop, otherwise) {
+        let last_run = this.schedules_last_runs[schedule_name];
+        if (last_run)
+          if (last_run[prop])
+            return last_run[prop];
+        if (otherwise)
+          return otherwise;
+        return null;
+      },
       limitChanged() {
         this.saveLimitPreference(this.selectedLimit);
         this.loadData();
@@ -101,15 +125,17 @@
         this.meta = {};
         this.loading = false;
       },
-      loadGenericData(url, params, item_transform) {
+      loadGenericData(url, params, item_transform, success_callback) {
         let parent = this;
         parent.toggleLoader("fetching tasks…");
         parent.loading = true;
-        parent.$root.axios.get(url, {params})
+        this.queryAPI('get', url, {params})
           .then(function (response) {
               parent.resetData();
               parent.meta = response.data.meta;
               parent.tasks = response.data.items.map(item_transform);
+              if (success_callback)
+                success_callback();
           })
           .catch(function (error) {
             parent.resetData();
@@ -120,6 +146,7 @@
           });
       },
       loadData() {
+        let parent = this;
         if (this.selectedTable == 'todo') {
           this.loadGenericData('/requested-tasks/',
                                {limit: this.selectedLimit},
@@ -147,8 +174,29 @@
                                function (item) {
                                 item["duration"] = Constants.format_duration_between(item.timestamp.started, item.updated_at);
                                 return item;
+                               }, function(){ // success_callback
+                                parent.loadLastRuns();
                                });
         }
+      },
+      async loadLastRuns() {
+        let parent = this;
+        let schedule_names = parent.tasks.map(function (item) { return item.schedule_name; }).unique();
+
+        parent.toggleLoader("fetching tasks…");
+        let requests = schedule_names.map(function (schedule_name) {
+            return parent.queryAPI('get', "/schedules/" + schedule_name);
+          });
+        let results = await axios.all(requests);
+
+        results.forEach(function (response, index) {
+          let schedule_name = schedule_names[index];
+          if (response.data.most_recent_task) {
+           parent.schedules_last_runs[schedule_name] = response.data.most_recent_task;
+          }
+        });
+        parent.last_runs_loaded = true;
+        parent.toggleLoader(false);
       },
     },
     mounted() {

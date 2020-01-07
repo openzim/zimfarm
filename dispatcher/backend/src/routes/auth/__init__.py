@@ -3,6 +3,7 @@ from http import HTTPStatus
 from datetime import datetime, timedelta
 
 import flask
+from bson.binary import UUIDLegacy
 from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
@@ -92,21 +93,19 @@ def refresh_token():
 
     # check token exists in database and get expire time and user id
     old_token_document = RefreshTokens().find_one(
-        {"token": UUID(old_token)}, {"expire_time": 1, "username": 1}
+        {"token": UUIDLegacy(UUID(old_token))}, {"expire_time": 1, "username": 1}
     )
     if old_token_document is None:
-        raise Unauthorized()
+        raise Unauthorized("refresh-token invalid")
 
     # check token is not expired
-    expire_time = old_token_document["expire_time"]
-    if expire_time < datetime.now():
+    if old_token_document["expire_time"] < datetime.now():
         raise Unauthorized("token expired")
 
     # check user exists
-    username = old_token_document["username"]
-    user = Users().find_one({"name": username}, {"username": 1, "scope": 1})
+    user = Users().find_one({"username": old_token_document["username"]}, {"username": 1, "scope": 1})
     if user is None:
-        raise Unauthorized()
+        raise Unauthorized("user not found")
 
     # generate token
     access_token = AccessToken.encode(user)
