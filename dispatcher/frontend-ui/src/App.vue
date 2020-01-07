@@ -8,8 +8,6 @@
 
 <script type="text/javascript">
   import axios from 'axios'
-  import moment from 'moment'
-  import jwt from 'jsonwebtoken';
 
   import Constants from './constants.js'
   import ZimfarmMixins from './components/Mixins.js'
@@ -21,86 +19,6 @@
     mixins: [ZimfarmMixins],
     components: {NavBar, AlertFeedback},
     methods: {
-      tokenHasExpired() {
-        let expiry = this.$store.getters.token_expiry;
-        if (!expiry)
-          return true;
-        return moment().isAfter(expiry);
-      },
-      loadTokenFromCookie() {
-        // already authenticated
-        if (this.isLoggedIn)
-          return;
-        let cookie_value = this.$cookie.get(Constants.TOKEN_COOKIE_NAME);
-
-        // no cookie
-        if (!cookie_value)
-          return;
-
-        let token_data;
-        try {
-           token_data = JSON.parse(cookie_value);
-           token_data.payload = jwt.decode(token_data.access_token);
-        } catch {
-          // incorrect cookie payload
-          this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
-          return;
-        }
-
-        let expiry = moment(token_data.payload.exp * 1000);
-        if (moment().isAfter(expiry)) {
-          this.fetchNewTokenFromRefresh(
-            token_data.refresh_token,
-            function () {},
-            function () { // on error
-              this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
-            }
-          );
-        } else {
-          this.$store.dispatch('saveAuthenticationToken', token_data);
-        }
-      },
-      fetchNewTokenFromRefresh(refresh_token, on_success, on_error) {
-        if (!refresh_token) {
-          refresh_token = this.$store.getters.refresh_token;
-        }
-
-        if (!refresh_token) {
-          if (on_error)
-            on_error("no refresh-token");
-          return;
-        }
-
-        let parent = this;
-        let req_headers = parent.$root.axios.defaults.headers;
-        req_headers['refresh-token'] = refresh_token;
-        parent.queryAPI('post', '/auth/token', {}, {headers: req_headers})
-          .then(function (response) {
-            parent.handleTokenResponse(response);
-            parent.alertInfo("Signed-in!", "Your token has been refreshed.");
-            if (on_success)
-              on_success(response);
-          })
-          .catch(function (error) {
-            console.error(error);
-            if (on_error)
-              on_error(error);
-          })
-      },
-      checkExpiryAndUpdateUI() {
-        if (this.tokenHasExpired()) {
-          // attempt to renew token using refresh one
-          this.fetchNewTokenFromRefresh(
-            null,
-            function () {}, // on success
-            function () {  // on error
-              let msg = "Your token expired " + this.$store.getters.token_expiry.fromNow() + ". You can sign back in at any time.";
-              this.$store.dispatch('clearAuthentication');
-              this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
-              this.alertInfo("Signed-out!", msg);
-          }.bind(this));
-        }
-      },
       loadLanguages() {
         let parent = this;
         // download languages
@@ -115,7 +33,7 @@
               parent.$store.dispatch('setLanguages', languages);
             })
             .catch(function (error) {
-              parent.alertDanger("Unable to fecth languages",  Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fetch languages",  Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -136,7 +54,7 @@
               parent.$store.dispatch('setTags', tags);
             })
             .catch(function (error) {
-              parent.alertDanger("Unable to fecth tags", Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fetch tags", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -158,7 +76,7 @@
               parent.loadOfflinersDefs();
             })
             .catch(function (error) {
-              parent.alertDanger("Unable to fecth offliners", Constants.standardHTTPError(error.response));
+              parent.alertDanger("Unable to fetch offliners", Constants.standardHTTPError(error.response));
               return;
             }).then(function () {
               parent.toggleLoader(false);
@@ -219,11 +137,6 @@
     },
     mounted() {
       this.loadMetaData();
-    },
-    watch: {
-      $route() {
-        this.checkExpiryAndUpdateUI();
-      },
     },
   }
 </script>

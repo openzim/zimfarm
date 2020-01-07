@@ -72,8 +72,6 @@ Vue.use(Tooltip);
 import Sugar from 'sugar'
 Sugar.extend({namespaces: [Array, Object]});
 
-import moment from 'moment';
-
 // Own modules
 import App from './App.vue'
 import Constants from './constants.js'
@@ -109,15 +107,6 @@ new Vue({
   store: store,
   router: router,
   computed: {
-    token_expired() {
-      let expiry = this.$store.getters.token_expiry;
-      return (!expiry) ? true : moment().isAfter(expiry);
-    },
-    isLoggedIn() {
-      try {
-        return Boolean(this.$store.getters.username !== null && !this.token_expired);
-      } catch { return false; }
-    },
     axios() { // prefixed axios object with API url and token from store
       return axios.create({
           baseURL: Constants.zimfarm_webapi,

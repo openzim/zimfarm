@@ -55,13 +55,14 @@
           <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
           <td v-if="selectedTable == 'failed'"><code>{{ task.status }}</code></td>
           <td v-if="selectedTable == 'failed'">
-            <router-link v-if="last_runs_loaded && schedules_last_runs[task.schedule_name]"
-                         :to="{name: 'task-detail', params: {_id: getPropFor(task.schedule_name, '_id', '-')}}">
-              <code v-show="schedules_last_runs[task.schedule_name]"
-                    :class="statusClass(getPropFor(task.schedule_name, 'status'))">
-                  {{ getPropFor(task.schedule_name, 'status') }}</code>,
-                  {{ getPropFor(task.schedule_name, 'updated_at') | from_now }}
-            </router-link>
+            <span v-if="last_runs_loaded && schedules_last_runs[task.schedule_name]">
+              <code :class="statusClass(getPropFor(task.schedule_name, 'status'))">
+                {{ getPropFor(task.schedule_name, 'status') }}
+              </code>,
+              <TaskLink
+                :_id="getPropFor(task.schedule_name, '_id', '-')"
+                :updated_at="getPropFor(task.schedule_name, 'updated_at')" />
+            </span>
           </td>
           <td v-if="selectedTable == 'todo'" v-show="canUnRequestTasks"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
         </tr>
@@ -79,11 +80,12 @@
   import ErrorMessage from '../components/ErrorMessage.vue'
   import RemoveRequestedTaskButton from '../components/RemoveRequestedTaskButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
+  import TaskLink from '../components/TaskLink.vue'
 
   export default {
     name: 'PipelineTable',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge},
+    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink},
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
