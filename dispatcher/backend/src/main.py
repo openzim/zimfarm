@@ -27,9 +27,9 @@ if os.getenv("DOCS_DIR"):
 else:
     # docs dir outside codebase
     docs_dir = pathlib.Path(__file__).parent.resolve().parent.joinpath("docs")
-app = Flask(__name__, template_folder=docs_dir)
-app.json_encoder = Encoder
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
+application = Flask(__name__, template_folder=docs_dir)
+application.json_encoder = Encoder
+cors = CORS(application, resources={r"/*": {"origins": "*"}})
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s
 logger.addHandler(handler)
 
 
-@app.route(f"{API_PATH}/openapi.yaml")
+@application.route(f"{API_PATH}/openapi.yaml")
 def openapi():
     fname = "openapi_v1.yaml"
     if not docs_dir.joinpath(fname).exists():
@@ -49,7 +49,7 @@ def openapi():
     return resp
 
 
-@app.route(f"{API_PATH}")
+@application.route(f"{API_PATH}")
 def api_doc():
     fname = "swagger-ui.html"
     if not docs_dir.joinpath(fname).exists():
@@ -57,22 +57,22 @@ def api_doc():
     return render_template(fname)
 
 
-@app.route("/")
+@application.route("/")
 def home():
     return redirect("/v1")
 
 
-app.register_blueprint(auth.Blueprint())
-app.register_blueprint(schedules.Blueprint())
-app.register_blueprint(tasks.Blueprint())
-app.register_blueprint(requested_tasks.Blueprint())
-app.register_blueprint(users.Blueprint())
-app.register_blueprint(workers.Blueprint())
-app.register_blueprint(languages.Blueprint())
-app.register_blueprint(tags.Blueprint())
-app.register_blueprint(offliners.Blueprint())
+application.register_blueprint(auth.Blueprint())
+application.register_blueprint(schedules.Blueprint())
+application.register_blueprint(tasks.Blueprint())
+application.register_blueprint(requested_tasks.Blueprint())
+application.register_blueprint(users.Blueprint())
+application.register_blueprint(workers.Blueprint())
+application.register_blueprint(languages.Blueprint())
+application.register_blueprint(tags.Blueprint())
+application.register_blueprint(offliners.Blueprint())
 
-errors.register_handlers(app)
+errors.register_handlers(application)
 
 logger.info(f"connected broadcaster to {BROADCASTER.uri}")
 BROADCASTER.broadcast_dispatcher_started()
@@ -80,4 +80,4 @@ BROADCASTER.broadcast_dispatcher_started()
 
 if __name__ == "__main__":
     Initializer.create_initial_user()
-    app.run(host="0.0.0.0", debug=os.getenv("DEBUG", False), port=80, threaded=True)
+    application.run(host="0.0.0.0", debug=os.getenv("DEBUG", False), port=80, threaded=True)
