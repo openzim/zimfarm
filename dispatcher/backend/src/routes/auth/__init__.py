@@ -103,7 +103,9 @@ def refresh_token():
         raise Unauthorized("token expired")
 
     # check user exists
-    user = Users().find_one({"username": old_token_document["username"]}, {"username": 1, "scope": 1})
+    user = Users().find_one(
+        {"username": old_token_document["username"]}, {"username": 1, "scope": 1}
+    )
     if user is None:
         raise Unauthorized("user not found")
 
