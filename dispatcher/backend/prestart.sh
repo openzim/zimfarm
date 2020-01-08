@@ -6,5 +6,3 @@ die() {
 }
 
 python -c "from utils.database import Initializer; Initializer.create_initial_user()" || die
-
-exec "$@"
