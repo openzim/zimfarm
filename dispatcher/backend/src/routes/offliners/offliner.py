@@ -1,6 +1,4 @@
-import json
-
-from flask import jsonify, Response
+from flask import jsonify
 
 from common.enum import Offliner
 from routes import url_object_id
@@ -40,4 +38,4 @@ class offlinerRoute(BaseRoute):
 
         schema = ScheduleConfigSchema.get_offliner_schema(offliner)()
 
-        return Response(json.dumps(schema.to_desc(), indent=4))
+        return jsonify(schema.to_desc())
