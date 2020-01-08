@@ -8,6 +8,7 @@
 
 import sys
 import pathlib
+import datetime
 import subprocess
 
 
@@ -22,7 +23,8 @@ def to_log(text):
     sys.stderr.flush()
 
 
-def main(command, args=[]):
+def main(interval, command, args=[]):
+    last_run = None
     while True:
         # transition from ACKNOWLEDGED to READY
         to_supervisor("READY\n")
@@ -34,13 +36,16 @@ def main(command, args=[]):
         headers = dict([x.split(":") for x in line.split()])
         sys.stdin.read(int(headers["len"]))
 
-        script = subprocess.run(
-            [command] + args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        to_log(script.stdout)
+        now = datetime.datetime.now()
+        if last_run is None or last_run <= now - datetime.timedelta(seconds=interval):
+            last_run = now
+            script = subprocess.run(
+                [command] + args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            to_log(script.stdout)
 
         # if script.returncode != 0:
         #     to_supervisor("RESULT 4\nFAIL")
@@ -50,13 +55,19 @@ def main(command, args=[]):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        to_log("no script specified, crashing")
+    if len(sys.argv) < 3:
+        to_log("missing interval and/or script, crashing")
         sys.exit(1)
 
-    args = sys.argv[1:]
+    try:
+        interval = int(sys.argv[1])
+    except Exception:
+        to_log(f"incorrect interval `{sys.argv[1]}, crashing")
+        sys.exit(1)
+
+    args = sys.argv[2:]
     if not pathlib.Path(args[0]).exists():
         to_log("script path `{cmd}` doesnt exists. crashing")
         sys.exit(1)
 
-    main(args[0], args[1:])
+    main(interval, args[0], args[1:])

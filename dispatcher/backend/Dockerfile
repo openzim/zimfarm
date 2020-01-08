@@ -10,7 +10,6 @@ COPY src /app/
 COPY docs /app/docs
 WORKDIR /app/
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENV DOCS_DIR /app/docs
 ENV MONGODB_URI mongodb://localhost
 ENV SOCKET_URI tcp://localhost:5000
