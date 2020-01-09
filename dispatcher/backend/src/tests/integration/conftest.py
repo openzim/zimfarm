@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from flask.testing import FlaskClient
 
-from main import app
+from main import application as app
 from common import mongo
 from common.roles import ROLES
 from routes import API_PATH
