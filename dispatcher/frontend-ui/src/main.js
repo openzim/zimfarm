@@ -82,6 +82,7 @@ import store from './store'  // Vuex store
 Vue.filter('filesize', Constants.filesize);
 Vue.filter('format_dt', Constants.format_dt);
 Vue.filter('from_now', Constants.from_now);
+Vue.filter('duration', Constants.format_duration);
 Vue.filter('yes_no', Constants.yes_no);
 Vue.filter('short_id', Constants.short_id);
 

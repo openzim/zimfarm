@@ -77,6 +77,16 @@
             <td v-else-if="requested"><code>{{ requested_id | short_id }}</code>, {{ requested.timestamp.requested | from_now }} <b-badge pill variant="warning" v-if="requested.priority"><font-awesome-icon icon="fire" size="sm" /> {{ requested.priority }}</b-badge></td>
             <td v-else><code>no</code></td>
           </tr>
+          <tr v-if="schedule.duration">
+            <th>Duration</th>
+            <td>
+              {{ schedule.duration.value * 1000 | duration }} from
+              <code v-if="schedule.duration.status == 'default'">default</code>
+              <span v-else>
+                <code>{{ schedule.duration.status}}</code> on <TaskLink :id="schedule.duration.task" :updated_at="schedule.duration.on" />
+              </span>
+            </td>
+          </tr>
           <tr>
             <th>History</th>
             <td v-if="history_runs">
