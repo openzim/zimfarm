@@ -22,54 +22,55 @@ def update_schedule_duration(schedule_name):
         value is computed with `scraper_completed - started` timestamps """
 
     schedule_query = {"name": schedule_name}
-    duration = Schedules().find_one(schedule_query, {"duration": 1}).get("duration")
-
-    # we already have a computed duration so we want to update only with real value
 
     # retrieve last tasks that completed the resources intensive part
     query = {
         "schedule_name": schedule_name,
         f"timestamp.{TaskStatus.scraper_completed}": {"$exists": True},
         f"timestamp.{TaskStatus.started}": {"$exists": True},
+        "container.exit_code": 0,
+    }
+
+    document = {
+        "default": {
+            "value": DEFAULT_SCHEDULE_DURATION,
+            "task": None,
+            "on": datetime.datetime.now(tz=pytz.utc),
+        },
     }
 
     # we have no finished task for this schedule, using default duration
     if Tasks().count_documents(query) == 0:
-        duration = {
-            "status": "default",
-            "value": DEFAULT_SCHEDULE_DURATION,
-            "task": None,
-            "on": datetime.datetime.now(tz=pytz.utc),
-        }
+        document.update(
+            {"available": False, "workers": {},}
+        )
+
     # compute duration from last completed tasks
     else:
-        tasks = list(
+        tasks = (
             Tasks()
-            .find(query, {"timestamp": 1, "status": 1, "container.exit_code": 1})
-            .sort(f"timestamp.{TaskStatus.scraper_completed}", pymongo.DESCENDING)
+            .find(query, {"timestamp": 1, "worker": 1})
+            .sort(f"timestamp.{TaskStatus.scraper_completed}", pymongo.ASCENDING)
         )
-        # pick a successful one if it exists otherwise the lastest one
-        sucessful = list(
-            filter(
-                lambda x: x["status"] == TaskStatus.succeeded
-                or x.get("container", {}).get("exit_code") == 0,
-                tasks,
-            )
-        )
-        task = sucessful[0] if sucessful else tasks[0]
-        value = int(
-            (
-                task["timestamp"]["scraper_completed"] - task["timestamp"]["started"]
-            ).total_seconds()
-        )
-        duration = {
-            "status": TaskStatus.succeeded if task in sucessful else TaskStatus.failed,
-            "task": task["_id"],
-            "value": value,
-            "on": task["timestamp"][TaskStatus.scraper_completed],
-        }
 
-    Schedules().update_one(schedule_query, {"$set": {"duration": duration}})
+        workers = {
+            task["worker"]: {
+                "worker": task["worker"],
+                "task": task["_id"],
+                "value": int(
+                    (
+                        task["timestamp"]["scraper_completed"]
+                        - task["timestamp"]["started"]
+                    ).total_seconds()
+                ),
+                "on": task["timestamp"][TaskStatus.scraper_completed],
+            }
+            for task in tasks
+        }
+        if workers:
+            document.update({"available": True, "workers": workers})
+
+    Schedules().update_one(schedule_query, {"$set": {"duration": document}})
 
 
 def task_event_handler(task_id, event, payload):
