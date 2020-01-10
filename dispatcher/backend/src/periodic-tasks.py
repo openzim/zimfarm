@@ -78,7 +78,7 @@ def history_cleanup():
 def status_to_cancel(now, status, timeout):
     logger.info(f":: canceling tasks `{status}` for more than {timeout}s")
     ago = now - datetime.timedelta(seconds=timeout)
-    query = {"status": status, "timestamp.{status}": {"lte": ago}}
+    query = {"status": status, f"timestamp.{status}": {"$lte": ago}}
     result = Tasks().update_many(
         query,
         {
