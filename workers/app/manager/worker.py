@@ -26,10 +26,11 @@ from common.constants import CANCELED, CANCELING, CANCEL_REQUESTED, SUPPORTED_OF
 
 
 class WorkerManager(BaseWorker):
-    poll_interval = os.getenv("POLL_INTERVAL", 180)  # seconds between each manual poll
-    sleep_interval = os.getenv("SLEEP_INTERVAL", 5)  # seconds to sleep while idle
+    poll_interval = int(os.getenv("POLL_INTERVAL", 180))  # seconds between each poll
+    sleep_interval = int(os.getenv("SLEEP_INTERVAL", 5))  # seconds to sleep while idle
     events = ["requested-task", "requested-tasks", "cancel-task"]
-    config_keys = ["poll_interval", "sleep_interval", "events"]
+    selfish = bool(os.getenv("SELFISH", False))  # whether to only accept assigned tasks
+    config_keys = ["poll_interval", "sleep_interval", "events", "selfish"]
 
     def __init__(self, **kwargs):
         # include our class config values in the config print
@@ -39,7 +40,7 @@ class WorkerManager(BaseWorker):
 
         # set data holders
         self.tasks = {}
-        self.last_poll = None
+        self.last_poll = datetime.datetime(2020, 1, 1)
         self.should_stop = False
 
         # check workdir
@@ -75,7 +76,6 @@ class WorkerManager(BaseWorker):
         self.register_signals()
 
         self.sync_tasks_and_containers()
-        self.poll()
 
     @property
     def should_poll(self):
@@ -106,7 +106,16 @@ class WorkerManager(BaseWorker):
                 "matching_offliners": SUPPORTED_OFFLINERS,
             },
         )
-        if success and response["items"]:
+        if not success:
+            logger.warning(f"poll failed with HTTP {status_code}: {response}")
+            return
+
+        if self.selfish:
+            response["items"] = [
+                t for t in response["items"] if t["worker"] == self.worker_name
+            ]
+
+        if response["items"]:
             logger.info(
                 "API is offering {nb} task(s): {ids}".format(
                     nb=len(response["items"]),
@@ -117,10 +126,7 @@ class WorkerManager(BaseWorker):
             # we need to allow the task to start, its container to start and
             # eventually its scraper to start so docker can report to us
             # the assigned resources (on the scraper) _before_ polling again
-            time.sleep(90)
-            self.poll()
-        elif not success:
-            logger.warning(f"poll failed with HTTP {status_code}: {response}")
+            self.last_poll = datetime.datetime.now() + datetime.timedelta(seconds=90)
 
     def check_in(self):
         """ inform backend that we started a manager, sending resources info """
@@ -257,9 +263,13 @@ class WorkerManager(BaseWorker):
         except Exception as exc:
             logger.exception(exc)
             logger.info(received_string)
+            return
 
         if key == "cancel-task":
-            self.cancel_and_remove_task(payload)
+            if payload in self.tasks.keys():
+                self.cancel_and_remove_task(payload)
+            else:
+                logger.debug("not our task, discarding")
         elif key in ("requested-task", "requested-tasks"):
             # incoming task. wait <nb-running> x <sleep_itvl> seconds before polling
             # to allow idle workers to pick this up first
@@ -284,6 +294,7 @@ class WorkerManager(BaseWorker):
         logger.info(f"subscribing to events from {self.socket_uri}…")
         socket.connect(self.socket_uri)
         for event in self.events:
+            logger.debug(f".. {event}")
             socket.setsockopt_string(zmq.SUBSCRIBE, event)
 
         while not self.should_stop:

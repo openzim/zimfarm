@@ -45,8 +45,8 @@ class MessageBroadcaster:
     def broadcast_requested_tasks(self, tasks):
         self.send("requested-tasks", tasks)
 
-    def broadcast_cancel_task(self, task):
-        self.send("cancel-task", task)
+    def broadcast_cancel_task(self, task_id):
+        self.send("cancel-task", task_id)
 
     def broadcast_updated_task(self, task_id, event, payload={}):
         try:

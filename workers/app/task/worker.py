@@ -245,6 +245,7 @@ class TaskWorker(BaseWorker):
         logger.info(f"Starting uploader for /{upload_dir}/{filename}")
         self.uploader = start_uploader(
             self.docker,
+            False,
             self.task,
             self.username,
             self.host_task_workdir,
@@ -348,7 +349,7 @@ class TaskWorker(BaseWorker):
             if self.log_uploader.status in RUNNING_STATUSES:
                 # still uploading
                 return
-            time.sleep(2)  # in case it was shutting down
+
             try:
                 remove_container(self.docker, self.log_uploader.name)
             except docker.errors.NotFound:
@@ -357,6 +358,7 @@ class TaskWorker(BaseWorker):
 
         self.log_uploader = start_uploader(
             self.docker,
+            True,
             self.task,
             self.username,
             host_logsdir,
