@@ -118,7 +118,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
         )
 
     # update task status, timestamp and other fields
-    if "scraper_" not in code and "file" not in code:
+    if "file" not in code:
         task_updates["status"] = code
 
     def add_to_update_if_present(payload_key, update_key):
