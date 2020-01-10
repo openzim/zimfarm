@@ -358,7 +358,6 @@ def stop_task_worker(docker_client, task_id, timeout: int = 20):
 
 def start_uploader(
     docker_client,
-    auto_remove,
     task,
     username,
     host_workdir,
@@ -423,7 +422,7 @@ def start_uploader(
         mem_swappiness=0,
         mounts=mounts,
         name=container_name,
-        remove=auto_remove,
+        remove=False,
     )
 
 
