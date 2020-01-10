@@ -9,11 +9,11 @@ import pytz
 import pymongo
 
 from common.mongo import Tasks
+from common.enum import TaskStatus
 
 # constants
 ONE_MN = 60
 ONE_HOUR = 60 * ONE_MN
-CANCELED = "canceled"
 NAME = "periodic-tasks"
 
 # config
@@ -78,14 +78,14 @@ def history_cleanup():
 def status_to_cancel(now, status, timeout):
     logger.info(f":: canceling tasks `{status}` for more than {timeout}s")
     ago = now - datetime.timedelta(seconds=timeout)
-    query = {"status": status, "timestamp.{status}": {"lte": ago}}
+    query = {"status": status, f"timestamp.{status}": {"$lte": ago}}
     result = Tasks().update_many(
         query,
         {
             "$set": {
-                "status": CANCELED,
+                "status": TaskStatus.canceled,
                 "canceled_by": NAME,
-                f"timestamp.{CANCELED}": now,
+                f"timestamp.{TaskStatus.canceled}": now,
             }
         },
     )
@@ -98,31 +98,38 @@ def staled_statuses():
     now = datetime.datetime.now().astimezone(pytz.utc)
 
     # `started` statuses
-    status_to_cancel(now, "started", STALLED_STARTED_TIMEOUT)
+    status_to_cancel(now, TaskStatus.started, STALLED_STARTED_TIMEOUT)
 
     # `reserved` statuses
-    status_to_cancel(now, "reserved", STALLED_RESERVED_TIMEOUT)
+    status_to_cancel(now, TaskStatus.reserved, STALLED_RESERVED_TIMEOUT)
 
     # `cancel_requested` statuses
-    status_to_cancel(now, "cancel_requested", STALLED_CANCELREQ_TIMEOUT)
+    status_to_cancel(now, TaskStatus.cancel_requested, STALLED_CANCELREQ_TIMEOUT)
 
     # `scraper_completed` statuses: either success or failure
-    status = "scraper_completed"
+    status = TaskStatus.scraper_completed
     logger.info(
         f":: closing tasks `{status}` for more than {STALLED_COMPLETED_TIMEOUT}s"
     )
     ago = now - datetime.timedelta(seconds=STALLED_COMPLETED_TIMEOUT)
-    query = {"status": status, "timestamp.{status}": {"lte": ago}}
+    query = {"status": status, f"timestamp.{status}": {"$lte": ago}}
     query_success = {"container.exit_code": 0}
     query_success.update(query)
     result = Tasks().update_many(
-        query_success, {"$set": {"status": "succeeded", f"timestamp.succeeded": now}},
+        query_success,
+        {
+            "$set": {
+                "status": TaskStatus.succeeded,
+                f"timestamp.{TaskStatus.succeeded}": now,
+            }
+        },
     )
     logger.info(f"::: succeeded {result.modified_count}/{result.matched_count} tasks")
     query_failed = {"container.exit_code": {"$ne": 0}}
     query_failed.update(query)
     result = Tasks().update_many(
-        query_failed, {"$set": {"status": "failed", f"timestamp.failed": now}},
+        query_failed,
+        {"$set": {"status": TaskStatus.failed, f"timestamp.{TaskStatus.failed}": now}},
     )
     logger.info(f"::: failed {result.modified_count}/{result.matched_count} tasks")
 

@@ -26,8 +26,8 @@ from common.constants import (
 )
 from common.utils import short_id, as_pos_int, format_size
 
-RUNNING_STATUSES = ("created", "running", "restarting", "paused")
-STOPPED_STATUSES = ("exited", "dead", "removing")
+RUNNING_STATUSES = ("created", "running", "restarting", "paused", "removing")
+STOPPED_STATUSES = ("exited", "dead")
 RETRIES = 3  # retry attempts in case of API error
 RESOURCES_DISK_LABEL = "resources_disk"
 
@@ -358,6 +358,7 @@ def stop_task_worker(docker_client, task_id, timeout: int = 20):
 
 def start_uploader(
     docker_client,
+    auto_remove,
     task,
     username,
     host_workdir,
@@ -414,7 +415,6 @@ def start_uploader(
         detach=True,
         environment={"RSA_KEY": str(PRIVATE_KEY)},
         labels={
-            "zimuploader": "yes",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
@@ -423,7 +423,7 @@ def start_uploader(
         mem_swappiness=0,
         mounts=mounts,
         name=container_name,
-        remove=False,  # scaper container will be removed once log&zim handled
+        remove=auto_remove,
     )
 
 
