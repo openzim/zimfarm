@@ -18,6 +18,10 @@ class TaskStatus:
         return [cls.requested, cls.reserved, cls.started, cls.scraper_started]
 
     @classmethod
+    def complete(cls):
+        return [cls.failed, cls.canceled, cls.succeeded]
+
+    @classmethod
     def all(cls):
         return [
             cls.requested,

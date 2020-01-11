@@ -6,71 +6,13 @@ import logging
 import datetime
 
 import pytz
-import pymongo
 from bson import ObjectId
 
 from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
-from common.constants import DEFAULT_SCHEDULE_DURATION
+from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
-
-
-def update_schedule_duration(schedule_name):
-    """ set/update the `duration` object of a schedule by looking at its recent tasks
-
-        value is computed with `scraper_completed - started` timestamps """
-
-    schedule_query = {"name": schedule_name}
-
-    # retrieve last tasks that completed the resources intensive part
-    query = {
-        "schedule_name": schedule_name,
-        f"timestamp.{TaskStatus.scraper_completed}": {"$exists": True},
-        f"timestamp.{TaskStatus.started}": {"$exists": True},
-        "container.exit_code": 0,
-    }
-
-    document = {
-        "default": {
-            "value": DEFAULT_SCHEDULE_DURATION,
-            "task": None,
-            "on": datetime.datetime.now(tz=pytz.utc),
-        },
-    }
-
-    # we have no finished task for this schedule, using default duration
-    if Tasks().count_documents(query) == 0:
-        document.update(
-            {"available": False, "workers": {},}
-        )
-
-    # compute duration from last completed tasks
-    else:
-        tasks = (
-            Tasks()
-            .find(query, {"timestamp": 1, "worker": 1})
-            .sort(f"timestamp.{TaskStatus.scraper_completed}", pymongo.ASCENDING)
-        )
-
-        workers = {
-            task["worker"]: {
-                "worker": task["worker"],
-                "task": task["_id"],
-                "value": int(
-                    (
-                        task["timestamp"]["scraper_completed"]
-                        - task["timestamp"]["started"]
-                    ).total_seconds()
-                ),
-                "on": task["timestamp"][TaskStatus.scraper_completed],
-            }
-            for task in tasks
-        }
-        if workers:
-            document.update({"available": True, "workers": workers})
-
-    Schedules().update_one(schedule_query, {"$set": {"duration": document}})
 
 
 def task_event_handler(task_id, event, payload):
