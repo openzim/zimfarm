@@ -194,10 +194,10 @@ def get_duration_for(schedule_name, worker_name):
     )
 
 
-def get_task_eta(task):
+def get_task_eta(task, worker_name):
     """ compute task duration (dict), remaining (seconds) and eta (datetime) """
     now = getnow()
-    duration = get_duration_for(task["schedule_name"], task["worker"])
+    duration = get_duration_for(task["schedule_name"], worker_name)
     elapsed = now - task["timestamp"]["started"]  # delta
     remaining = max([duration["value"] - elapsed.total_seconds(), 60])  # seconds
     remaining *= 1.005  # .5% margin
@@ -281,7 +281,7 @@ def get_currently_running_tasks(worker_name):
 
     # calculate ETAs of the tasks we are currently running
     for task in running_tasks:
-        task.update(get_task_eta(task))
+        task.update(get_task_eta(task, worker_name))
 
     return running_tasks
 
