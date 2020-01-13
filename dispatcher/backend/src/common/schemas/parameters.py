@@ -54,6 +54,14 @@ class RequestedTaskSchema(Schema):
     matching_offliners = fields.List(offliner_field, required=False)
 
 
+# requested-tasks for worker
+class WorkerRequestedTaskSchema(Schema):
+    worker = fields.String(required=True, validate=validate_worker_name)
+    avail_cpu = fields.Integer(required=True, validate=validate_cpu)
+    avail_memory = fields.Integer(required=True, validate=validate_memory)
+    avail_disk = fields.Integer(required=True, validate=validate_disk)
+
+
 # requested-tasks POST
 class NewRequestedTaskSchema(Schema):
     schedule_names = fields.List(schedule_name_field, required=True)

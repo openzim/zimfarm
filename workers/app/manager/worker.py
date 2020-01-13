@@ -98,12 +98,10 @@ class WorkerManager(BaseWorker):
             "GET",
             "/requested-tasks/worker",
             params={
-                "limit": 1,
                 "worker": self.worker_name,
-                "matching_cpu": host_stats["cpu"]["available"],
-                "matching_memory": host_stats["memory"]["available"],
-                "matching_disk": host_stats["disk"]["available"],
-                "matching_offliners": SUPPORTED_OFFLINERS,
+                "avail_cpu": host_stats["cpu"]["available"],
+                "avail_memory": host_stats["memory"]["available"],
+                "avail_disk": host_stats["disk"]["available"],
             },
         )
         if not success:

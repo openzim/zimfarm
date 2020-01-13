@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 def get_default_duration():
     return {
         "value": int(DEFAULT_SCHEDULE_DURATION),
-        "task": None,
         "on": getnow(),
+        "worker": None,
+        "task": None,
     }
 
 
