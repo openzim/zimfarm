@@ -210,8 +210,10 @@ class TestSchedulePost:
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 200
 
+        response_json = response.get_json()
         document["config"].update(command_information_for(document["config"]))
-        assert response.get_json() == document
+        response_json.pop("duration", None)  # generated server-side
+        assert response_json == document
 
         # remove from DB to prevent count mismatch on other tests
         database.schedules.delete_one({"_id": ObjectId(schedule_id)})

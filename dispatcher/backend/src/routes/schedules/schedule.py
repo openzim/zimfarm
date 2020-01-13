@@ -82,6 +82,7 @@ class SchedulesRoute(BaseRoute):
                 "schedule with name `{}` already exists".format(document["name"])
             )
 
+        document["duration"] = get_default_duration()
         schedule_id = Schedules().insert_one(document).inserted_id
 
         return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)

@@ -22,12 +22,11 @@ class AccessToken:
         def default(self, o):
             if isinstance(o, datetime.datetime):
                 return int(o.timestamp())
-            elif isinstance(o, ObjectId):
+            if isinstance(o, ObjectId):
                 return str(o)
-            elif isinstance(o, uuid.UUID):
+            if isinstance(o, uuid.UUID):
                 return str(o)
-            else:
-                super().default(o)
+            super().default(o)
 
     class Payload:
         def __init__(self, data: dict):
