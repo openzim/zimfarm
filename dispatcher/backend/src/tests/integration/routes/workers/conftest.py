@@ -3,6 +3,8 @@ import datetime
 import pytest
 from bson import ObjectId
 
+from common import getnow
+
 
 @pytest.fixture(scope="module")
 def make_worker(database):
@@ -11,7 +13,7 @@ def make_worker(database):
     def _make_worker(
         name: str = "worker_name",
         username: str = "some-user",
-        last_seen: datetime = datetime.datetime.now(),
+        last_seen: datetime = getnow(),
         resources: dict = None,
     ) -> dict:
         document = {

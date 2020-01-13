@@ -1,6 +1,6 @@
+import datetime
 from uuid import UUID, uuid4
 from http import HTTPStatus
-from datetime import datetime, timedelta
 
 import flask
 from bson.binary import UUIDLegacy
@@ -8,6 +8,7 @@ from flask import request, jsonify, Response
 from werkzeug.security import check_password_hash
 
 from utils.token import AccessToken
+from common import getnow
 from common.mongo import Users, RefreshTokens
 from common.constants import REFRESH_TOKEN_EXPIRY
 from routes import API_PATH, authenticate
@@ -22,12 +23,12 @@ def create_refresh_token(username):
         {
             "token": token,
             "username": username,
-            "expire_time": datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRY),
+            "expire_time": getnow() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 
     # delete old refresh token from database
-    RefreshTokens().delete_many({"expire_time": {"$lte": datetime.now()}})
+    RefreshTokens().delete_many({"expire_time": {"$lte": getnow()}})
 
     return token
 
@@ -99,7 +100,7 @@ def refresh_token():
         raise Unauthorized("refresh-token invalid")
 
     # check token is not expired
-    if old_token_document["expire_time"] < datetime.now():
+    if old_token_document["expire_time"] < getnow():
         raise Unauthorized("token expired")
 
     # check user exists

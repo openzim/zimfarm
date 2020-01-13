@@ -16,6 +16,7 @@ from common.constants import (
     REFRESH_TOKEN_EXPIRY,
     TOKEN_EXPIRY,
 )
+from common import getnow
 from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
 
@@ -113,8 +114,7 @@ def asymmetric_key_auth():
         {
             "token": refresh_token,
             "user_id": user["_id"],
-            "expire_time": datetime.datetime.now()
-            + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
+            "expire_time": getnow() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 

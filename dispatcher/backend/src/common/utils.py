@@ -5,9 +5,9 @@
 import logging
 import datetime
 
-import pytz
 from bson import ObjectId
 
+from common import getnow, to_naive_utc
 from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
 from utils.scheduling import update_schedule_duration
@@ -37,8 +37,8 @@ def task_event_handler(task_id, event, payload):
 def get_timestamp_from_event(event: dict) -> datetime.datetime:
     timestamp = event.get("timestamp")
     if not timestamp:
-        return datetime.datetime.now(tz=pytz.utc)
-    return datetime.datetime.fromisoformat(timestamp).astimezone(pytz.utc)
+        return getnow()
+    return to_naive_utc(timestamp)
 
 
 def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwargs):

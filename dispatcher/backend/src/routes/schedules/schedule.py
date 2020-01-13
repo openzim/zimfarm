@@ -13,6 +13,7 @@ from routes import authenticate, require_perm
 from routes.base import BaseRoute
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
+from utils.scheduling import get_default_duration
 
 
 class SchedulesRoute(BaseRoute):
@@ -212,8 +213,10 @@ class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
 
         schedule.pop("_id", None)
         schedule.pop("most_recent_task", None)
+        schedule.pop("duration", None)
         schedule["name"] = new_schedule_name
         schedule["enabled"] = False
+        schedule["duration"] = get_default_duration()
 
         # insert document
         schedule_id = Schedules().insert_one(schedule).inserted_id
