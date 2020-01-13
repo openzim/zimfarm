@@ -120,3 +120,15 @@ class Offliner:
     @classmethod
     def all(cls):
         return [cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet, cls.sotoki]
+
+
+class SchedulePeriodicity:
+    manually = "manually"
+    monthly = "monthly"
+    quarterly = "quarterly"
+    biannualy = "biannualy"
+    annually = "annually"
+
+    @classmethod
+    def all(cls) -> str:
+        return [cls.manually, cls.monthly, cls.quarterly, cls.biannualy, cls.annually]

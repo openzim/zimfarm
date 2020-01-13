@@ -9,6 +9,7 @@ from common.schemas.fields import (
     schedule_name_field,
     offliner_field,
     category_field,
+    periodicity_field,
     tag_field,
     username_field,
     email_field,
@@ -80,6 +81,7 @@ class UpdateSchema(Schema):
     name = schedule_name_field
     language = fields.Nested(LanguageSchema(), required=False)
     category = category_field
+    periodicity = periodicity_field
     tags = tag_field
     enabled = fields.Boolean(required=False, truthy={True}, falsy={False})
     task_name = offliner_field

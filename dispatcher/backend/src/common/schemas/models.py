@@ -12,6 +12,7 @@ from common.schemas.fields import (
     validate_category,
     validate_warehouse_path,
     validate_offliner,
+    validate_periodicity,
 )
 from common.schemas.offliners import (
     MWOfflinerFlagsSchema,
@@ -77,6 +78,7 @@ class ScheduleSchema(Schema):
     name = fields.String(required=True, validate=validate_schedule_name)
     language = fields.Nested(LanguageSchema(), required=True)
     category = fields.String(required=True, validate=validate_category)
+    periodicity = fields.String(required=True, validate=validate_periodicity)
     tags = fields.List(
         fields.String(validate=validate_not_empty), required=True, default=[]
     )

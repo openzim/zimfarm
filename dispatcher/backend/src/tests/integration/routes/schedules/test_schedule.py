@@ -167,6 +167,7 @@ class TestSchedulePost:
                     "name_en": "Bambara",
                     "name_native": "Bamanankan",
                 },
+                "periodicity": "monthly",
                 "config": {
                     "task_name": "phet",
                     "warehouse_path": "/phet",
@@ -185,6 +186,7 @@ class TestSchedulePost:
                     "name_en": "Multiple Languages",
                     "name_native": "Multiple Languages",
                 },
+                "periodicity": "annually",
                 "config": {
                     "task_name": "gutenberg",
                     "warehouse_path": "/gutenberg",
