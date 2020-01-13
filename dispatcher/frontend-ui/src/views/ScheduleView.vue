@@ -57,6 +57,7 @@
           <tr><th>Category</th><td>{{ schedule.category }}</td></tr>
           <tr><th>Language</th><td>{{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code>)</td></tr>
           <tr><th>Enabled</th><td><code>{{ schedule.enabled }}</code></td></tr>
+          <tr><th>Periodicity</th><td><code>{{ schedule.periodicity }}</code></td></tr>
           <tr v-if="schedule.tags.length">
             <th>Tags</th>
             <td>

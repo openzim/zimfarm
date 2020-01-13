@@ -182,6 +182,7 @@ export default {
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary"],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki"],
+  periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB
                   2147483648,  // 2GiB
