@@ -205,7 +205,7 @@ def get_task_eta(task):
     return {"duration": duration, "remaining": remaining, "eta": eta}
 
 
-def get_requested_tasks_doable_by(worker):
+def get_reqs_doable_by(worker):
     """ cursor of RequestedTasks() doable by a worker using all its resources
 
         - sorted by priority
@@ -269,6 +269,32 @@ def get_requested_tasks_doable_by(worker):
     )
 
 
+def get_currently_running_tasks(worker_name):
+    """ list of tasks being run by worker at this moment, including ETA """
+    running_tasks = list(
+        Tasks().find(
+            {"status": {"$nin": TaskStatus.complete()}, "worker": worker_name},
+            {"config.resources": 1, "schedule_name": 1, "timestamp": 1},
+        )
+    )
+
+    # calculate ETAs of the tasks we are currently running
+    for task in running_tasks:
+        task.update(get_task_eta(task))
+
+    return running_tasks
+
+
+def get_possible_task_with(tasks_worker_could_do, available_resources, available_time):
+    """ first of possible tasks runnable with availresources within avail_time """
+    for temp_candidate in tasks_worker_could_do:
+        if can_run(temp_candidate, available_resources):
+            if temp_candidate["duration"]["value"] <= available_time:
+                logger.debug(f"{temp_candidate['schedule_name']} it is!")
+                return temp_candidate
+            logger.debug(f"{temp_candidate['schedule_name']} would take too long")
+
+
 def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
     """ optimal requested_task to run now for a given worker
 
@@ -292,7 +318,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     # find all requested tasks that this worker can do with its total resources
     #   sorted by priorities
     #   sorted by max durations
-    tasks_worker_could_do = get_requested_tasks_doable_by(worker)
+    tasks_worker_could_do = get_reqs_doable_by(worker)
 
     # record available resources
     available_resources = {"cpu": avail_cpu, "memory": avail_memory, "disk": avail_disk}
@@ -319,16 +345,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     logger.debug(f"missing cpu:{missing_cpu}, mem:{missing_memory}, dsk:{missing_disk}")
 
     # retrieve list of tasks we are currently running with associated resources
-    running_tasks = list(
-        Tasks().find(
-            {"status": {"$nin": TaskStatus.complete()}, "worker": worker_name},
-            {"config.resources": 1, "schedule_name": 1, "timestamp": 1},
-        )
-    )
-
-    # calculate ETAs of the tasks we are currently running
-    for task in running_tasks:
-        task.update(get_task_eta(task))
+    running_tasks = get_currently_running_tasks(worker_name)
 
     # pile-up all of those which we need to complete to have enough resources
     preventing_tasks = []
@@ -346,16 +363,15 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
             # stop when we'd have reclaimed our missing resources
             break
 
-    # get the ETA that point in time (ETA of last preventing_tasks)
-    if preventing_tasks:
-        logger.debug(f"we have {len(preventing_tasks)} tasks blocking out way")
-        opening_eta = preventing_tasks[-1]["eta"]
-        logger.debug(f"opening_eta:{opening_eta}")
-    else:
+    if not preventing_tasks:
         # we should not get there: no preventing task yet we don't have our total
         # resources available? problem.
         logger.error("we have no preventing tasks. oops")
         return None
+
+    logger.debug(f"we have {len(preventing_tasks)} tasks blocking out way")
+    opening_eta = preventing_tasks[-1]["eta"]
+    logger.debug(f"opening_eta:{opening_eta}")
 
     # get the number of available seconds from now to that ETA
     available_time = (opening_eta - getnow()).total_seconds()
@@ -364,12 +380,11 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     )
 
     # loop on task[1+] to find the first task which can fit
-    for temp_candidate in tasks_worker_could_do:
-        if can_run(temp_candidate, available_resources):
-            if temp_candidate["duration"]["value"] <= available_time:
-                logger.debug(f"{temp_candidate['schedule_name']} it is!")
-                return temp_candidate
-            logger.debug(f"{temp_candidate['schedule_name']} would take too long")
+    temp_candidate = get_possible_task_with(
+        tasks_worker_could_do, available_resources, available_time
+    )
+    if temp_candidate:
+        return temp_candidate
 
     # if none in the loop are possible, return None (worker will wait)
     logger.debug("unable to fit anything, you'll have to wait for task to complete")
