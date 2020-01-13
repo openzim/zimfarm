@@ -1,15 +1,12 @@
 import logging
-import datetime
 from http import HTTPStatus
 
-import pytz
 import pymongo
 from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
 
-from common.enum import TaskStatus
+from common import getnow
 from common.mongo import RequestedTasks, Schedules, Workers
-from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id, auth_info_if_supplied, require_perm
 from routes.base import BaseRoute
@@ -21,6 +18,7 @@ from common.schemas.parameters import (
     NewRequestedTaskSchema,
     UpdateRequestedTaskSchema,
 )
+from utils.scheduling import request_a_schedule
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +33,7 @@ def list_of_requested_tasks(token: AccessToken.Payload = None):
     if token and worker:
         Workers().update_one(
             {"name": worker, "username": token.username},
-            {"$set": {"last_seen": datetime.datetime.now()}},
+            {"$set": {"last_seen": getnow()}},
         )
 
     request_args["matching_offliners"] = request.args.getlist("matching_offliners")
@@ -126,44 +124,16 @@ class RequestedTasksRoute(BaseRoute):
         ):
             raise NotFound()
 
-        now = datetime.datetime.now(tz=pytz.utc)
         requested_tasks = []
         for schedule_name in schedule_names:
 
-            # skip if already requested
-            if RequestedTasks().count_documents(
-                {"schedule_name": schedule_name, "worker": worker}
-            ):
-                continue
-
-            schedule = Schedules().find_one(
-                {"name": schedule_name, "enabled": True}, {"config": 1}
+            rq_task = request_a_schedule(
+                schedule_name, token.username, worker, priority
             )
-            # schedule might be disabled
-            if not schedule:
+            if rq_task is None:
                 continue
 
-            config = schedule["config"]
-            # build and save command-information to config
-            config.update(command_information_for(config))
-
-            document = {
-                "schedule_name": schedule_name,
-                "status": TaskStatus.requested,
-                "timestamp": {TaskStatus.requested: now},
-                "events": [{"code": TaskStatus.requested, "timestamp": now}],
-                "requested_by": token.username,
-                "priority": priority,
-                "worker": worker,
-                "config": config,
-            }
-
-            if worker:
-                document["worker"] = worker
-
-            rt_id = RequestedTasks().insert_one(document).inserted_id
-            document.update({"_id": str(rt_id)})
-            requested_tasks.append(document)
+            requested_tasks.append(rq_task)
 
         if len(requested_tasks) > 1:
             BROADCASTER.broadcast_requested_tasks(requested_tasks)

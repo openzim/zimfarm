@@ -5,15 +5,15 @@
 import logging
 import datetime
 
-import pytz
 import pymongo
 import humanfriendly
 from bson.son import SON
 
-from common.enum import TaskStatus
+from common import getnow
+from common.constants import PERIODICITIES
+from common.enum import TaskStatus, SchedulePeriodicity
 from utils.offliners import command_information_for
 from common.mongo import Tasks, Schedules, Workers, RequestedTasks
-
 from common.constants import DEFAULT_SCHEDULE_DURATION
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def get_default_duration():
     return {
         "value": int(DEFAULT_SCHEDULE_DURATION),
         "task": None,
-        "on": datetime.datetime.now(tz=pytz.utc),
+        "on": getnow(),
     }
 
 
@@ -78,37 +78,102 @@ def update_schedule_duration(schedule_name):
     Schedules().update_one(schedule_query, {"$set": {"duration": document}})
 
 
-def schedule_everything():
+def request_a_schedule(
+    schedule_name, requested_by: str, worker: str = None, priority: int = 0
+):
+    """ created requested_task for schedule_name if possible else None
 
-    now = datetime.datetime.now()
-    requester = "schedule-script"
+        enabled=False schedules can't be requested
+        schedule can't be requested if already requested on same worker """
+
+    # skip if already requested
+    if RequestedTasks().count_documents(
+        {"schedule_name": schedule_name, "worker": worker}
+    ):
+        return None
+
+    schedule = Schedules().find_one(
+        {"name": schedule_name, "enabled": True}, {"config": 1}
+    )
+    # schedule might be disabled
+    if not schedule:
+        return None
+
+    config = schedule["config"]
+    # build and save command-information to config
+    config.update(command_information_for(config))
+
+    now = getnow()
+
+    document = {
+        "schedule_name": schedule_name,
+        "status": TaskStatus.requested,
+        "timestamp": {TaskStatus.requested: now},
+        "events": [{"code": TaskStatus.requested, "timestamp": now}],
+        "requested_by": requested_by,
+        "priority": priority,
+        "worker": worker,
+        "config": config,
+    }
+
+    if worker:
+        document["worker"] = worker
+
+    rt_id = RequestedTasks().insert_one(document).inserted_id
+
+    document.update({"_id": str(rt_id)})
+    return document
+
+
+def request_tasks_using_schedule():
+    """ create requested_tasks based on schedule's periodicity field
+
+        Expected to be ran periodically to compute what needs to be scheduled """
+
+    requester = "period-scheduler"
     priority = 0
     worker = None
 
-    for schedule in Schedules().find({"enabled": True}, {"name": 1, "config": 1}):
-        config = schedule["config"]
-        # build and save command-information to config
-        config.update(command_information_for(config))
+    query = {"enabled": True}
+    projection = {"name": 1, "config": 1, "most_recent_task": 1}
 
-        document = {
-            "schedule_name": schedule["name"],
-            "status": TaskStatus.requested,
-            "timestamp": {TaskStatus.requested: now},
-            "events": [{"code": TaskStatus.requested, "timestamp": now}],
-            "requested_by": requester,
-            "priority": priority,
-            "worker": worker,
-            "config": config,
-        }
+    for period, period_data in {
+        p: PERIODICITIES.get(p) for p in SchedulePeriodicity.all()
+    }.items():
+        if not period_data:
+            continue  # manually has no data
 
-        if worker:
-            document["worker"] = worker
+        period_start = getnow() - datetime.timedelta(days=period_data["days"])
+        logger.debug(f"requesting for `{period}` schedules (before {period_start})")
 
-        logger.debug(RequestedTasks().insert_one(document).inserted_id)
+        # find non-requested schedules which last run started before our period start
+        query["periodicity"] = period
+        for schedule in Schedules().find(query, projection):
+            # don't bother if the schedule's already requested
+            if (
+                RequestedTasks().count_documents({"schedule_name": schedule["name"]})
+                > 0
+            ):
+                continue
 
+            if schedule.get("most_recent_task"):
+                last_run = Tasks().find_one(
+                    {"_id": schedule["most_recent_task"]["_id"]}, {"timestamp": 1}
+                )
+                # don't bother if it started after this rolling period's start
+                if (
+                    last_run
+                    and last_run["timestamp"].get(
+                        "started", datetime.datetime(2019, 1, 1)
+                    )
+                    > period_start
+                ):
+                    continue
 
-def truncate_schedule():
-    RequestedTasks().delete_many({})
+            if request_a_schedule(schedule["name"], requester, worker, priority):
+                logger.debug(f"requested {schedule['name']}")
+            else:
+                logger.debug(f"could not request {schedule['name']}")
 
 
 def can_run(task, resources):
@@ -131,7 +196,7 @@ def get_duration_for(schedule_name, worker_name):
 
 def get_task_eta(task):
     """ compute task duration (dict), remaining (seconds) and eta (datetime) """
-    now = datetime.datetime.now()
+    now = getnow()
     duration = get_duration_for(task["schedule_name"], task["worker"])
     elapsed = now - task["timestamp"]["started"]  # delta
     remaining = max([duration["value"] - elapsed.total_seconds(), 60])  # seconds
@@ -244,7 +309,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     missing_cpu = max([candidate["config"]["resources"]["cpu"] - avail_cpu, 0])
     missing_memory = max([candidate["config"]["resources"]["memory"] - avail_memory, 0])
     missing_disk = max([candidate["config"]["resources"]["disk"] - avail_disk, 0])
-    logger.debug(f"missing {missing_cpu=}, {missing_memory=}, {missing_disk=}")
+    logger.debug(f"missing cpu:{missing_cpu}, mem:{missing_memory}, dsk:{missing_disk}")
 
     # retrieve list of tasks we are currently running with associated resources
     running_tasks = list(
@@ -278,7 +343,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     if preventing_tasks:
         logger.debug(f"we have {len(preventing_tasks)} tasks blocking out way")
         opening_eta = preventing_tasks[-1]["eta"]
-        logger.debug(f"{opening_eta=}")
+        logger.debug(f"opening_eta:{opening_eta}")
     else:
         # we should not get there: no preventing task yet we don't have our total
         # resources available? problem.
@@ -286,7 +351,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         return None
 
     # get the number of available seconds from now to that ETA
-    available_time = (opening_eta - datetime.datetime.now()).total_seconds()
+    available_time = (opening_eta - getnow()).total_seconds()
     logger.debug(
         "we have approx. {} to reclaim resources".format(
             humanfriendly.format_timespan(available_time)
