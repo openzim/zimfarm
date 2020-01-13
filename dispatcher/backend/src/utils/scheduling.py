@@ -6,7 +6,6 @@ import logging
 import datetime
 
 import pymongo
-import humanfriendly
 from bson.son import SON
 
 from common import getnow
@@ -206,29 +205,11 @@ def get_task_eta(task):
     return {"duration": duration, "remaining": remaining, "eta": eta}
 
 
-def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
-    """ optimal requested_task to run now for a given worker
+def get_requested_tasks_doable_by(worker):
+    """ cursor of RequestedTasks() doable by a worker using all its resources
 
-        Accounts for:
-         - longest tasks this worker can do (total resources)
-         - available resources now (sent)
-         - extimated duration to reclaim resources for longest tasks
-    """
-
-    # get total resources for that worker
-    worker = Workers().find_one(
-        {"username": username, "name": worker_name},
-        {"resources": 1, "offliners": 1, "last_seen": 1},
-    )
-
-    # worker is not checked-in
-    if worker is None:
-        logger.error(f"worker `{worker_name}` not checked-in")
-        return None
-
-    # find all requested tasks that this worker can do with its total resources
-    #   sorted by priorities
-    #   sorted by max durations
+        - sorted by priority
+        - sorted by duration (longest first) """
     query = {}
     for res_key in ("cpu", "memory", "disk"):
         query[f"config.resources.{res_key}"] = {"$lte": worker["resources"][res_key]}
@@ -256,13 +237,13 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         "duration": {
             "$mergeObjects": [
                 {"value": "$schedule.duration.default.value"},
-                {"value": f"$schedule.duration.workers.{worker_name}.value"},
+                {"value": f"$schedule.duration.workers.{worker['name']}.value"},
             ]
         },
     }
     duration_value_proj.update(projection)
 
-    tasks_worker_could_do = RequestedTasks().aggregate(
+    return RequestedTasks().aggregate(
         [
             {"$match": query},
             # inner join on schedules
@@ -286,6 +267,32 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
             },
         ]
     )
+
+
+def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
+    """ optimal requested_task to run now for a given worker
+
+        Accounts for:
+         - longest tasks this worker can do (total resources)
+         - available resources now (sent)
+         - extimated duration to reclaim resources for longest tasks
+    """
+
+    # get total resources for that worker
+    worker = Workers().find_one(
+        {"username": username, "name": worker_name},
+        {"resources": 1, "offliners": 1, "last_seen": 1, "name": 1},
+    )
+
+    # worker is not checked-in
+    if worker is None:
+        logger.error(f"worker `{worker_name}` not checked-in")
+        return None
+
+    # find all requested tasks that this worker can do with its total resources
+    #   sorted by priorities
+    #   sorted by max durations
+    tasks_worker_could_do = get_requested_tasks_doable_by(worker)
 
     # record available resources
     available_resources = {"cpu": avail_cpu, "memory": avail_memory, "disk": avail_disk}
@@ -353,9 +360,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     # get the number of available seconds from now to that ETA
     available_time = (opening_eta - getnow()).total_seconds()
     logger.debug(
-        "we have approx. {} to reclaim resources".format(
-            humanfriendly.format_timespan(available_time)
-        )
+        "we have approx. {}mn to reclaim resources".format(available_time / 60)
     )
 
     # loop on task[1+] to find the first task which can fit
