@@ -43,8 +43,7 @@ class BadRequest(Exception):
     def handler(e):
         if isinstance(e, BadRequest) and e.message is not None:
             return make_response(jsonify({"error": e.message}), HTTPStatus.BAD_REQUEST)
-        else:
-            return Response(status=HTTPStatus.BAD_REQUEST)
+        return Response(status=HTTPStatus.BAD_REQUEST)
 
 
 class OfflinerConfigNotValid(Exception):
@@ -55,8 +54,7 @@ class OfflinerConfigNotValid(Exception):
     def handler(e):
         if isinstance(e, OfflinerConfigNotValid):
             return make_response(jsonify(e.errors), HTTPStatus.BAD_REQUEST)
-        else:
-            return Response(status=HTTPStatus.BAD_REQUEST)
+        return Response(status=HTTPStatus.BAD_REQUEST)
 
 
 # 401
@@ -68,8 +66,7 @@ class Unauthorized(Exception):
     def handler(e):
         if isinstance(e, Unauthorized) and e.message is not None:
             return make_response(jsonify({"error": e.message}), HTTPStatus.UNAUTHORIZED)
-        else:
-            return Response(status=HTTPStatus.UNAUTHORIZED)
+        return Response(status=HTTPStatus.UNAUTHORIZED)
 
 
 class NotEnoughPrivilege(Unauthorized):
@@ -90,8 +87,7 @@ class NotFound(Exception):
     def handler(e):
         if isinstance(e, NotFound) and e.message is not None:
             return make_response(jsonify({"error": e.message}), HTTPStatus.NOT_FOUND)
-        else:
-            return Response(status=HTTPStatus.NOT_FOUND)
+        return Response(status=HTTPStatus.NOT_FOUND)
 
 
 # 500

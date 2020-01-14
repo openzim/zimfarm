@@ -41,7 +41,8 @@ class OAuth2:
                 raise InvalidRequest('Request was missing the "password" parameter.')
 
             return self.password_grant(username, password)
-        elif grant_type == "refresh_token":
+
+        if grant_type == "refresh_token":
             # refresh token grant
             if request.is_json:
                 refresh_token = request.json.get("refresh_token")
@@ -61,11 +62,10 @@ class OAuth2:
                 raise InvalidGrant("Refresh token is invalid.")
 
             return self.refresh_token_grant(refresh_token)
-        else:
-            # unknown grant
-            raise UnsupportedGrantType(
-                "{} is not a supported grant type.".format(grant_type)
-            )
+        # unknown grant
+        raise UnsupportedGrantType(
+            "{} is not a supported grant type.".format(grant_type)
+        )
 
     @staticmethod
     def password_grant(username: str, password: str):

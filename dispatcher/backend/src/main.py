@@ -81,5 +81,8 @@ BROADCASTER.broadcast_dispatcher_started()
 if __name__ == "__main__":
     Initializer.create_initial_user()
     application.run(
-        host="0.0.0.0", debug=os.getenv("DEBUG", False), port=80, threaded=True
+        host=os.getenv("BINDING_HOST", "localhost"),
+        debug=os.getenv("DEBUG", False),
+        port=int(os.getenv("BINDING_PORT", 8000)),
+        threaded=True,
     )
