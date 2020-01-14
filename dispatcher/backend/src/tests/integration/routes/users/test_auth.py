@@ -42,7 +42,7 @@ class TestAuthentication:
 
             self.do_test_token(client, response_json["access_token"])
 
-    def test_refresh_token(self, client, users):
+    def test_refresh_token(self, client, user):
         response = self.do_get_token_with(client, "some-user", "some-password")
         assert response.status_code == 200
         response_json = response.get_json()
@@ -71,7 +71,7 @@ class TestAuthentication:
     def test_ssh(
         self,
         client,
-        users,
+        user,
         working_private_key,
         not_working_private_key,
         username,
@@ -85,16 +85,16 @@ class TestAuthentication:
 
         if key_to_use == "none":
             with pytest.raises(IOError):
-                self.do_test_ssh(client, users, key, username)
+                self.do_test_ssh(client, key, username)
         else:
-            response = self.do_test_ssh(client, users, key, username)
+            response = self.do_test_ssh(client, key, username)
             if response.status_code != assert_code:
                 print(response.get_json())
             assert response.status_code == assert_code
             if assert_code == 200:
                 self.do_test_token(client, response.get_json()["access_token"])
 
-    def do_test_ssh(self, client, users, private_key, username):
+    def do_test_ssh(self, client, private_key, username):
 
         # build the SSH payload
         now = datetime.datetime.utcnow()
