@@ -32,6 +32,7 @@ CANCELING = "canceling"
 
 # docker resources
 DEFAULT_CPU_SHARE = 1024
+DOCKER_CLIENT_TIMEOUT = 180  # 3mn for read timeout on docker API socket
 
 # configuration
 ZIMFARM_CPUS, ZIMFARM_MEMORY, ZIMFARM_DISK_SPACE = None, None, None
