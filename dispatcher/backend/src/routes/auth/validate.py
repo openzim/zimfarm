@@ -46,5 +46,4 @@ def ssh_key():
 
     if user.matched_count == 0:
         raise errors.Unauthorized()
-    else:
-        return Response(status=HTTPStatus.NO_CONTENT)
+    return Response(status=HTTPStatus.NO_CONTENT)

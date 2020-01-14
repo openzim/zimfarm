@@ -16,14 +16,14 @@ def make_language():
 
 @pytest.fixture(scope="module")
 def make_config():
-    def _make_config(sub_domain: str = "en", format: str = "nopic") -> dict:
+    def _make_config(sub_domain: str = "en", fmt: str = "nopic") -> dict:
         return {
             "task_name": "mwoffliner",
             "image": {"name": "openzim/mwoffliner", "tag": "latest"},
             "flags": {
                 "mwUrl": "https://{}.wikipedia.org".format(sub_domain),
                 "adminEmail": "test@kiwix.org",
-                "format": format,
+                "format": fmt,
                 "withZimFullTextIndex": True,
             },
             "warehouse_path": "/wikipedia",

@@ -171,8 +171,8 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
 
         if matched_count:
             return Response(status=HTTPStatus.NO_CONTENT)
-        else:
-            raise ScheduleNotFound()
+
+        raise ScheduleNotFound()
 
     @authenticate
     @require_perm("schedules", "delete")
@@ -184,8 +184,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
 
         if result.deleted_count == 0:
             raise ScheduleNotFound()
-        else:
-            return Response(status=HTTPStatus.NO_CONTENT)
+        return Response(status=HTTPStatus.NO_CONTENT)
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):

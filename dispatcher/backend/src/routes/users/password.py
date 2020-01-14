@@ -59,5 +59,4 @@ class PasswordRoute(BaseRoute):
         # send response
         if matched_count == 0:
             raise errors.NotFound()
-        else:
-            return Response(status=HTTPStatus.NO_CONTENT)
+        return Response(status=HTTPStatus.NO_CONTENT)

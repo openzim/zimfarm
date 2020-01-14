@@ -66,8 +66,7 @@ def auth_info_if_supplied(f):
             kwargs["token"] = None
         except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError):
             kwargs["token"] = None
-        finally:
-            return f(*args, **kwargs)
+        return f(*args, **kwargs)
 
     return wrapper
 

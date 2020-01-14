@@ -9,9 +9,8 @@ class Encoder(JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
             return o.isoformat() + "Z"
-        elif isinstance(o, UUID):
+        if isinstance(o, UUID):
             return str(o)
-        elif isinstance(o, ObjectId):
+        if isinstance(o, ObjectId):
             return str(o)
-        else:
-            super().default(o)
+        super().default(o)
