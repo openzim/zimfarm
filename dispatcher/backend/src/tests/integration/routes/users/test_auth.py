@@ -88,6 +88,8 @@ class TestAuthentication:
                 self.do_test_ssh(client, users, key, username)
         else:
             response = self.do_test_ssh(client, users, key, username)
+            if response.status_code != assert_code:
+                print(response.get_json())
             assert response.status_code == assert_code
             if assert_code == 200:
                 self.do_test_token(client, response.get_json()["access_token"])
@@ -134,5 +136,4 @@ class TestAuthentication:
             "X-SSHAuth-Message": message,
             "X-SSHAuth-Signature": b64_signature,
         }
-        response = client.post("/auth/ssh_authorize", headers=headers)
-        return response
+        return client.post("/auth/ssh_authorize", headers=headers)
