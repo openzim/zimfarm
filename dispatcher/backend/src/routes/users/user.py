@@ -132,5 +132,4 @@ class UserRoute(BaseRoute):
         deleted_count = Users().delete_one({"username": username}).deleted_count
         if deleted_count == 0:
             raise errors.NotFound()
-        else:
-            return Response(status=HTTPStatus.NO_CONTENT)
+        return Response(status=HTTPStatus.NO_CONTENT)

@@ -59,8 +59,8 @@ def asymmetric_key_auth():
     )
     if user is None:
         raise errors.Unauthorized("User not found")  # we shall never get there
-    else:
-        ssh_keys = user.pop("ssh_keys", [])
+
+    ssh_keys = user.pop("ssh_keys", [])
 
     # check that the message was signed with a known private key
     authenticated = False
