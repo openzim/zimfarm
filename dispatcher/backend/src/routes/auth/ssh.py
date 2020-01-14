@@ -76,7 +76,6 @@ def asymmetric_key_auth():
             fp.write(signature)
 
         for ssh_key in ssh_keys:
-            print("ssh_key", ssh_key)
             pkcs8_data = ssh_key.get("pkcs8_key")
             if not pkcs8_data:  # User record has no PKCS8 version
                 continue
@@ -84,7 +83,6 @@ def asymmetric_key_auth():
             pkcs8_key = tmp_dir.joinpath("pubkey")
             with open(pkcs8_key, "w") as fp:
                 fp.write(pkcs8_data)
-            print("pkcs8_data", pkcs8_data)
 
             pkey_util = subprocess.run(
                 [
@@ -100,19 +98,9 @@ def asymmetric_key_auth():
                     signatured_path,
                 ], capture_output=True, text=True
             )
-            print(" ".join([str(a) for a in pkey_util.args]))
-            # DEBUG: trying to understand travis failure
-            print(f"pkey_util.returncode: {pkey_util.returncode}")
-            print(f"pkey_util.stdout: --{pkey_util.stdout.strip()}--")
-            # if pkey_util.returncode == 1 and pkey_util.stdout.strip() == "Signature Verified Successfully":
-            #     authenticated = True
-            #     print(f"returncode 1 for success (old version): {authenticated}")
-            #     break
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
-                print(f"authenticated: {authenticated}")
                 break
-    print(f"authenticated2: {authenticated}")
     if not authenticated:
         raise errors.Unauthorized("Could not find matching key for signature")
 
