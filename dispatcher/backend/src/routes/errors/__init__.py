@@ -54,8 +54,7 @@ class OfflinerConfigNotValid(Exception):
     def handler(e):
         if isinstance(e, OfflinerConfigNotValid):
             return make_response(jsonify(e.errors), HTTPStatus.BAD_REQUEST)
-        else:
-            return Response(status=HTTPStatus.BAD_REQUEST)
+        return Response(status=HTTPStatus.BAD_REQUEST)
 
 
 # 401
