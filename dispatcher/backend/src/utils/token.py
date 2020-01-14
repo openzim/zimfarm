@@ -2,11 +2,12 @@ import json
 import uuid
 import string
 import random
-from datetime import datetime, timedelta
+import datetime
 
 import jwt
 from bson import ObjectId
 
+from common import getnow, to_naive_utc
 from common.constants import TOKEN_EXPIRY
 
 
@@ -15,18 +16,17 @@ class AccessToken:
         [random.choice(string.ascii_letters + string.digits) for _ in range(32)]
     )
     issuer = "dispatcher"
-    expire_time_delta = timedelta(hours=TOKEN_EXPIRY)
+    expire_time_delta = datetime.timedelta(hours=TOKEN_EXPIRY)
 
     class JSONEncoder(json.JSONEncoder):
         def default(self, o):
-            if isinstance(o, datetime):
+            if isinstance(o, datetime.datetime):
                 return int(o.timestamp())
-            elif isinstance(o, ObjectId):
+            if isinstance(o, ObjectId):
                 return str(o)
-            elif isinstance(o, uuid.UUID):
+            if isinstance(o, uuid.UUID):
                 return str(o)
-            else:
-                super().default(o)
+            super().default(o)
 
     class Payload:
         def __init__(self, data: dict):
@@ -50,7 +50,7 @@ class AccessToken:
 
     @classmethod
     def encode(cls, user: dict) -> str:
-        issue_time = datetime.now()
+        issue_time = getnow()
         expire_time = issue_time + cls.expire_time_delta
         payload = {
             "iss": cls.issuer,  # issuer
@@ -69,7 +69,7 @@ class AccessToken:
 
     @classmethod
     def get_expiry(cls, token: str) -> datetime:
-        return datetime.fromtimestamp(cls.decode(token)["exp"])
+        return to_naive_utc(cls.decode(token)["exp"])
 
 
 class LoadedAccessToken(AccessToken):

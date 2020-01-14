@@ -8,6 +8,7 @@ import datetime
 import pytz
 import pymongo
 
+from common import getnow
 from common.mongo import Tasks
 from common.enum import TaskStatus
 
@@ -95,7 +96,7 @@ def status_to_cancel(now, status, timeout):
 def staled_statuses():
     """ set the status for tasks in an unfinished state """
 
-    now = datetime.datetime.now().astimezone(pytz.utc)
+    now = getnow()
 
     # `started` statuses
     status_to_cancel(now, TaskStatus.started, STALLED_STARTED_TIMEOUT)

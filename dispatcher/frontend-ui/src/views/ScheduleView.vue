@@ -57,6 +57,7 @@
           <tr><th>Category</th><td>{{ schedule.category }}</td></tr>
           <tr><th>Language</th><td>{{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code>)</td></tr>
           <tr><th>Enabled</th><td><code>{{ schedule.enabled }}</code></td></tr>
+          <tr><th>Periodicity</th><td><code>{{ schedule.periodicity }}</code></td></tr>
           <tr v-if="schedule.tags.length">
             <th>Tags</th>
             <td>
@@ -80,10 +81,20 @@
           <tr v-if="schedule.duration">
             <th>Duration</th>
             <td>
-              {{ schedule.duration.value * 1000 | duration }} from
-              <code v-if="schedule.duration.status == 'default'">default</code>
+              <span v-if="duration_dict.single">
+                {{ duration_dict.value | duration }} (<code>{{ duration_dict.worker }}</code> on {{ duration_dict.on | format_dt }})</span>
               <span v-else>
-                <code>{{ schedule.duration.status}}</code> on <TaskLink :id="schedule.duration.task" :updated_at="schedule.duration.on" />
+                between {{ duration_dict.min_value | duration }} (<code
+                 v-for="worker in duration_dict.min_workers"
+                 :key="worker.worker"><TaskLink
+                  :_id="worker.task"
+                  :updated_at="worker.on"
+                  :text="worker.worker" /></code>) and {{ duration_dict.max_value | duration }} (<code
+                    v-for="worker in duration_dict.max_workers"
+                    :key="worker.worker"><TaskLink
+                      :_id="worker.task"
+                      :updated_at="worker.on"
+                      :text="worker.worker" /></code>)
               </span>
             </td>
           </tr>
@@ -184,6 +195,7 @@
       command() { return Constants.build_docker_command(this.name, this.config); },
       trimmed_command() { return Constants.trim_command(this.command); },
       requested_id() { return (this.requested) ? this.requested._id : null; },
+      duration_dict() { return Constants.schedule_durations_dict(this.schedule.duration); }
     },
     methods: {
       filesize(value) { return Constants.filesize(parseInt(value)); },

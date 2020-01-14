@@ -587,59 +587,39 @@ paths:
         - token: []
         - oauth: []
       parameters:
-      - $ref: '#/components/parameters/SkipParameter'
-      - $ref: '#/components/parameters/LimitParameter'
-      - $ref: '#/components/parameters/ScheduleNameQueryParameter'
       - in: query
-        name: matching_cpu
-        required: false
+        name: avail_cpu
+        required: true
         schema:
           type: integer
           format: int32
           example: 3
           description: number of CPU cores required to run it
       - in: query
-        name: matching_memory
-        required: false
+        name: avail_memory
+        required: true
         schema:
           type: integer
           format: int32
           example: 1024
           description: RAM (in bytes) required to run it
       - in: query
-        name: matching_disk
-        required: false
+        name: avail_disk
+        required: true
         schema:
           type: integer
           format: int32
           example: 1024
           description: Disk space (in bytes) required to run it
       - in: query
-        name: matching_offliners
-        required: false
-        schema:
-          type: array
-          items:
-            $ref: '#/components/schemas/Offliner'
-          example:
-            - "youtube"
-            - "mwoffliner"
-          description: list of offliners supported
-      - in: query
-        name: priority
-        required: false
-        description: filter to this or higher priority
-        schema:
-          $ref: '#/components/schemas/Priority'
-      - in: query
         name: worker
-        required: false
+        required: true
         description: filter to this or unassigned worker
         schema:
           $ref: '#/components/schemas/WorkerName'
       responses:
         200:
-          description: List of RequestedTask matching criteria
+          description: List of 1 RequestedTask for this worker matching resources
           content:
             application/json:
               schema:
@@ -1679,6 +1659,10 @@ components:
             updated_at:
               type: string
               format: date-time
+        periodicity:
+          $ref: '#/components/schemas/Periodicity'
+        duration:
+          $ref: '#/components/schemas/Duration'
         tags:
           $ref: '#/components/schemas/ScheduleTags'
     ScheduleName:
@@ -2018,6 +2002,34 @@ components:
       format: Int32
       description: Positive int priority for requested_task. Default priority is 0.
       example: 5
+    Periodicity:
+      type: string
+      example: monthly
+      enum:
+        - manually
+        - monthly
+        - quarterly
+        - biannually
+        - annually
+    Duration:
+      type: object
+      required:
+        - value
+        - on
+        - task
+        - worker
+      properties:
+        value:
+          type: integer
+          format: int32
+          example: 1200
+          description: duration in seconds
+        on:
+          $ref: '#/components/schemas/SingleTimestamp'
+        task:
+          $ref: '#/components/schemas/MongoId'
+        worker:
+          $ref: '#/components/schemas/WorkerName'
     Email:
       type: string
       format: email

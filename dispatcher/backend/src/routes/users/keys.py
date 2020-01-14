@@ -78,12 +78,15 @@ class KeysRoute(BaseRoute):
         # add new ssh key to database
         ssh_key = {
             "name": request_json["name"],
+            # ssh-keygen -l -f xxx.pub -E md5 - just data, without dots
             "fingerprint": fingerprint,
             "key": key,
             "type": "RSA",
             "added": datetime.now(),
             "last_used": None,
         }
+
+        # get PKCS8 - ssh-keygen -e -f xxx.priv -m PKCS8
         with tempfile.NamedTemporaryFile(mode="w", suffix=".pub", delete=False) as fp:
             fp.write("ssh-rsa {} {}\n".format(ssh_key["key"], ssh_key["name"]))
         keygen = subprocess.run(

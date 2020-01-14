@@ -29,37 +29,11 @@
         </b-form-group>
       </b-col>
       <b-col>
-        <b-form-group label="Category:" label-for="es_category">
-          <b-form-select id="es_category"
-                         v-model="edit_schedule.category"
-                         :options="categoriesOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
         <b-form-group label="Language:" label-for="es_language" description="Use API if wanted language not present.">
           <b-form-select id="es_language"
                          v-model="edit_schedule.language.code"
                          :options="languagesOptions"
                          size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-    </b-row>
-
-    <b-row>
-      <b-col>
-        <b-form-group label="Status:" label-for="es_enable" description="Disabled recipe can't be scheduled.">
-          <SwitchButton v-model="edit_schedule.enabled">{{ edit_schedule.enabled|yes_no("Enabled", "Disabled") }}</SwitchButton>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Warehouse Path:" label-for="es_warehouse_path" description="Where to upload files. Usually matches category.">
-          <b-form-select id="es_warehouse_path"
-                          v-model="edit_schedule.config.warehouse_path"
-                          :options="warehouse_pathsOptions"
-                          required
-                          placeholder="Warehouse Path"
-                          size="sm"></b-form-select>
         </b-form-group>
       </b-col>
       <b-col>
@@ -76,6 +50,45 @@
                  tag-placeholder="Create as new tag"
                  @tag="addTag"
                  size="sm"></multiselect>
+        </b-form-group>
+      </b-col>
+    </b-row>
+
+    <b-row>
+      <b-col>
+        <b-form-group label="Category:" label-for="es_category">
+          <b-form-select id="es_category"
+                         v-model="edit_schedule.category"
+                         :options="categoriesOptions"
+                         size="sm"></b-form-select>
+        </b-form-group>
+      </b-col>
+      <b-col>
+        <b-form-group label="Warehouse Path:" label-for="es_warehouse_path" description="Where to upload files. Usually matches category.">
+          <b-form-select id="es_warehouse_path"
+                          v-model="edit_schedule.config.warehouse_path"
+                          :options="warehouse_pathsOptions"
+                          required
+                          placeholder="Warehouse Path"
+                          size="sm"></b-form-select>
+        </b-form-group>
+      </b-col>
+      <b-col>
+        <b-form-group label="Status:" label-for="es_enable" description="Disabled recipe can't be scheduled.">
+          <SwitchButton v-model="edit_schedule.enabled">{{ edit_schedule.enabled|yes_no("Enabled", "Disabled") }}</SwitchButton>
+        </b-form-group>
+      </b-col>
+    </b-row>
+
+    <b-row>
+      <b-col cols="4">
+        <b-form-group label="Periodicity:" label-for="es_periodicity" description="How often to automatically request recipe">
+          <b-form-select id="es_periodicity"
+                          v-model="edit_schedule.periodicity"
+                          :options="periodicityOptions"
+                          required
+                          placeholder="Periodicity"
+                          size="sm"></b-form-select>
         </b-form-group>
       </b-col>
     </b-row>
@@ -350,7 +363,7 @@
         let payload = {};
         let parent = this;
 
-        ["name", "category", "enabled"].forEach(function (key) {
+        ["name", "category", "enabled", "periodicity"].forEach(function (key) {
           if (parent.edit_schedule[key] != parent.schedule[key])
             payload[key] = parent.edit_schedule[key];
         });
@@ -417,6 +430,9 @@
       },
       tagsOptions() {
         return this.tags.map(function (tag) { return {text: tag, value: tag}; });
+      },
+      periodicityOptions() {
+        return this.periodicities.map(function (periodicity) { return {text: periodicity, value: periodicity}; });
       },
     },
     methods: {

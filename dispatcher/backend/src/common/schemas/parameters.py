@@ -9,6 +9,7 @@ from common.schemas.fields import (
     schedule_name_field,
     offliner_field,
     category_field,
+    periodicity_field,
     tag_field,
     username_field,
     email_field,
@@ -53,6 +54,14 @@ class RequestedTaskSchema(Schema):
     matching_offliners = fields.List(offliner_field, required=False)
 
 
+# requested-tasks for worker
+class WorkerRequestedTaskSchema(Schema):
+    worker = fields.String(required=True, validate=validate_worker_name)
+    avail_cpu = fields.Integer(required=True, validate=validate_cpu)
+    avail_memory = fields.Integer(required=True, validate=validate_memory)
+    avail_disk = fields.Integer(required=True, validate=validate_disk)
+
+
 # requested-tasks POST
 class NewRequestedTaskSchema(Schema):
     schedule_names = fields.List(schedule_name_field, required=True)
@@ -80,6 +89,7 @@ class UpdateSchema(Schema):
     name = schedule_name_field
     language = fields.Nested(LanguageSchema(), required=False)
     category = category_field
+    periodicity = periodicity_field
     tags = tag_field
     enabled = fields.Boolean(required=False, truthy={True}, falsy={False})
     task_name = offliner_field

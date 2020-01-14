@@ -3,7 +3,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
-import datetime
 from http import HTTPStatus
 
 import pymongo
@@ -12,6 +11,7 @@ from marshmallow import ValidationError
 
 from errors.http import InvalidRequestJSON
 from routes import authenticate, url_object_id
+from common import getnow
 from common.mongo import Workers
 from routes.base import BaseRoute
 from utils.broadcaster import BROADCASTER
@@ -29,10 +29,8 @@ class WorkersRoute(BaseRoute):
     def get(self, *args, **kwargs):
         """ list of workers with checked-in data """
 
-        now = datetime.datetime.now()
-
         def add_status(worker):
-            not_seen_since = now - worker["last_seen"]
+            not_seen_since = getnow() - worker["last_seen"]
             worker["status"] = (
                 "online"
                 if not_seen_since.total_seconds() < OFFLINE_DELAY
@@ -89,7 +87,7 @@ class WorkerCheckinRoute(BaseRoute):
                 "disk": request_json["disk"],
             },
             "offliners": request_json["offliners"],
-            "last_seen": datetime.datetime.now(),
+            "last_seen": getnow(),
         }
         Workers().replace_one({"name": name}, document, upsert=True)
 
