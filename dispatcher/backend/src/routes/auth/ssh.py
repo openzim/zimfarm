@@ -96,7 +96,9 @@ def asymmetric_key_auth():
                     str(message_path),
                     "-sigfile",
                     signatured_path,
-                ], capture_output=True, text=True
+                ],
+                capture_output=True,
+                text=True,
             )
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
