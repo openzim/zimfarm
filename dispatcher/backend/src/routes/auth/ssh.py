@@ -62,6 +62,8 @@ def asymmetric_key_auth():
     else:
         ssh_keys = user.pop("ssh_keys", [])
 
+    from pprint import pprint as pp ; pp(ssh_keys)
+
     # check that the message was signed with a known private key
     authenticated = False
     with tempfile.TemporaryDirectory() as tmp_dirname:
@@ -76,6 +78,7 @@ def asymmetric_key_auth():
             fp.write(signature)
 
         for ssh_key in ssh_keys:
+            print("ssh_key", ssh_key)
             pkcs8_data = ssh_key.get("pkcs8_key")
             if not pkcs8_data:  # User record has no PKCS8 version
                 continue
@@ -83,6 +86,7 @@ def asymmetric_key_auth():
             pkcs8_key = tmp_dir.joinpath("pubkey")
             with open(pkcs8_key, "w") as fp:
                 fp.write(pkcs8_data)
+            print("pkcs8_data", pkcs8_data)
 
             pkey_util = subprocess.run(
                 [
@@ -98,6 +102,7 @@ def asymmetric_key_auth():
                     signatured_path,
                 ]
             )
+            print(" ".join([str(a) for a in pkey_util.args]))
             # DEBUG: trying to understand travis failure
             print(f"pkey_util.returncode: {pkey_util.returncode}")
             if pkey_util.returncode == 0:  # signature verified
