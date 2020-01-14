@@ -16,6 +16,7 @@ from common.constants import (
     REFRESH_TOKEN_EXPIRY,
     TOKEN_EXPIRY,
 )
+from common import getnow
 from common.mongo import Users, RefreshTokens
 from utils.token import AccessToken
 
@@ -95,12 +96,11 @@ def asymmetric_key_auth():
                     str(message_path),
                     "-sigfile",
                     signatured_path,
-                ]
+                ], capture_output=True, text=True
             )
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
                 break
-
     if not authenticated:
         raise errors.Unauthorized("Could not find matching key for signature")
 
@@ -113,8 +113,7 @@ def asymmetric_key_auth():
         {
             "token": refresh_token,
             "user_id": user["_id"],
-            "expire_time": datetime.datetime.now()
-            + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
+            "expire_time": getnow() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
         }
     )
 

@@ -112,6 +112,39 @@ function duplicate(dict) {
   return JSON.parse(JSON.stringify(dict));
 }
 
+
+function schedule_durations_dict(duration) {
+  function single_duration(value, worker, on) {
+    return {single: true,
+            value: value * 1000,
+            worker: worker,
+            on: on};
+  }
+
+  function multiple_durations(min_value, max_value, workers) {
+    let min_workers = Object.values(Object.filter(workers, function (item) { return item.value == min_value; }));
+    let max_workers = Object.values(Object.filter(workers, function (item) { return item.value == max_value; }));
+    return {single: false,
+            min_value: min_value * 1000,
+            max_value: max_value * 1000,
+            min_workers: min_workers,
+            max_workers: max_workers};
+  }
+
+  if (!duration.available) {
+    return single_duration(duration.default.value, "default", duration.default.on);
+  }
+  let min_worker = Object.min(duration.workers, 'value');
+  let max_worker = Object.max(duration.workers, 'value');
+
+  if (min_worker == max_worker) {
+    return single_duration(duration.workers[min_worker].value, min_worker, duration.workers[min_worker].on);
+  }
+  let min_value = duration.workers[min_worker].value;
+  let max_value = duration.workers[max_worker].value;
+  return multiple_durations(min_value, max_value, duration.workers);
+}
+
 var DEFAULT_CPU_SHARE = 1024;
 
 var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
@@ -149,6 +182,7 @@ export default {
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary"],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki"],
+  periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB
                   2147483648,  // 2GiB
@@ -297,4 +331,5 @@ export default {
   short_id: short_id,
   filesize: filesize2,
   duplicate: duplicate,
+  schedule_durations_dict: schedule_durations_dict,
 };

@@ -3,10 +3,8 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
-import datetime
 from http import HTTPStatus
 
-import pytz
 import pymongo
 from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
@@ -103,8 +101,6 @@ class TaskRoute(BaseRoute):
 
         request_args = TaskCreateSchema().load(request.args.to_dict())
 
-        now = datetime.datetime.now(tz=pytz.utc)
-
         document = {}
         document.update(requested_task)
 
@@ -119,7 +115,7 @@ class TaskRoute(BaseRoute):
             logger.exception(exc)
             raise exc
 
-        payload = {"worker": request_args["worker_name"], "timestamp": now.isoformat()}
+        payload = {"worker": request_args["worker_name"]}
         try:
             task_event_handler(task_id, TaskStatus.reserved, payload)
         except Exception as exc:

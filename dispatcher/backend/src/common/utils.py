@@ -5,71 +5,14 @@
 import logging
 import datetime
 
-import pytz
-import pymongo
 from bson import ObjectId
 
+from common import getnow, to_naive_utc
 from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
-from common.constants import DEFAULT_SCHEDULE_DURATION
+from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
-
-
-def update_schedule_duration(schedule_name):
-    """ set/update the `duration` object of a schedule by looking at its recent tasks
-
-        value is computed with `scraper_completed - started` timestamps """
-
-    schedule_query = {"name": schedule_name}
-    duration = Schedules().find_one(schedule_query, {"duration": 1}).get("duration")
-
-    # we already have a computed duration so we want to update only with real value
-
-    # retrieve last tasks that completed the resources intensive part
-    query = {
-        "schedule_name": schedule_name,
-        f"timestamp.{TaskStatus.scraper_completed}": {"$exists": True},
-        f"timestamp.{TaskStatus.started}": {"$exists": True},
-    }
-
-    # we have no finished task for this schedule, using default duration
-    if Tasks().count_documents(query) == 0:
-        duration = {
-            "status": "default",
-            "value": DEFAULT_SCHEDULE_DURATION,
-            "task": None,
-            "on": datetime.datetime.now(tz=pytz.utc),
-        }
-    # compute duration from last completed tasks
-    else:
-        tasks = list(
-            Tasks()
-            .find(query, {"timestamp": 1, "status": 1, "container.exit_code": 1})
-            .sort(f"timestamp.{TaskStatus.scraper_completed}", pymongo.DESCENDING)
-        )
-        # pick a successful one if it exists otherwise the lastest one
-        sucessful = list(
-            filter(
-                lambda x: x["status"] == TaskStatus.succeeded
-                or x.get("container", {}).get("exit_code") == 0,
-                tasks,
-            )
-        )
-        task = sucessful[0] if sucessful else tasks[0]
-        value = int(
-            (
-                task["timestamp"]["scraper_completed"] - task["timestamp"]["started"]
-            ).total_seconds()
-        )
-        duration = {
-            "status": TaskStatus.succeeded if task in sucessful else TaskStatus.failed,
-            "task": task["_id"],
-            "value": value,
-            "on": task["timestamp"][TaskStatus.scraper_completed],
-        }
-
-    Schedules().update_one(schedule_query, {"$set": {"duration": duration}})
 
 
 def task_event_handler(task_id, event, payload):
@@ -94,8 +37,8 @@ def task_event_handler(task_id, event, payload):
 def get_timestamp_from_event(event: dict) -> datetime.datetime:
     timestamp = event.get("timestamp")
     if not timestamp:
-        return datetime.datetime.now(tz=pytz.utc)
-    return datetime.datetime.fromisoformat(timestamp).astimezone(pytz.utc)
+        return getnow()
+    return to_naive_utc(timestamp)
 
 
 def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwargs):
