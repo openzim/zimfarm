@@ -13,7 +13,7 @@ import docker
 import requests
 
 from common import logger
-from common.constants import DOCKER_SOCKET, PRIVATE_KEY
+from common.constants import DOCKER_SOCKET, PRIVATE_KEY, DOCKER_CLIENT_TIMEOUT
 from common.dispatcher import get_token_ssh, query_api
 
 
@@ -76,7 +76,9 @@ class BaseWorker:
         ):
             logger.critical(f"\tsocket ({DOCKER_SOCKET}) not available.")
             sys.exit(1)
-        self.docker = docker.DockerClient(base_url=f"unix://{DOCKER_SOCKET}")
+        self.docker = docker.DockerClient(
+            base_url=f"unix://{DOCKER_SOCKET}", timeout=DOCKER_CLIENT_TIMEOUT
+        )
         try:
             if len(self.docker.containers.list(all=False)) < 1:
                 logger.warning("\tno running container, am I out-of-docker?")
