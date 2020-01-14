@@ -256,13 +256,13 @@ def get_reqs_doable_by(worker):
                     "as": "schedules",
                 }
             },
-            {"$project": extract_schedule_proj,},
+            {"$project": extract_schedule_proj},
             {"$project": duration_value_proj},
             {
                 "$sort": SON(
                     [
                         ("priority", pymongo.DESCENDING),
-                        ("duration.value", pymongo.DESCENDING,),
+                        ("duration.value", pymongo.DESCENDING),
                     ]
                 )
             },

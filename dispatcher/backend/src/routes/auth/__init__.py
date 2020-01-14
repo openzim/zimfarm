@@ -47,20 +47,20 @@ def credentials():
         username = request.headers.get("username")
         password = request.headers.get("password")
     if username is None or password is None:
-        raise BadRequest()
+        raise BadRequest("missing username or password")
 
     # check user exists
     user = Users().find_one(
         {"username": username}, {"username": 1, "scope": 1, "password_hash": 1}
     )
     if user is None:
-        raise Unauthorized()
+        raise Unauthorized("this user does not exist")
 
     # check password is valid
     password_hash = user.pop("password_hash")
     is_valid = check_password_hash(password_hash, password)
     if not is_valid:
-        raise Unauthorized()
+        raise Unauthorized("password does not match")
 
     # generate token
     access_token = AccessToken.encode(user)
@@ -90,13 +90,16 @@ def refresh_token():
     # get old refresh token from request header
     old_token = request.headers.get("refresh-token")
     if old_token is None:
-        raise BadRequest()
+        raise BadRequest("missing refresh-token")
 
     # check token exists in database and get expire time and user id
-    old_token_document = RefreshTokens().find_one(
-        {"token": UUIDLegacy(UUID(old_token))}, {"expire_time": 1, "username": 1}
-    )
-    if old_token_document is None:
+    try:
+        old_token_document = RefreshTokens().find_one(
+            {"token": UUIDLegacy(UUID(old_token))}, {"expire_time": 1, "username": 1}
+        )
+        if old_token_document is None:
+            raise Unauthorized("refresh-token invalid")
+    except Exception:
         raise Unauthorized("refresh-token invalid")
 
     # check token is not expired
