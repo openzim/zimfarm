@@ -62,8 +62,6 @@ def asymmetric_key_auth():
     else:
         ssh_keys = user.pop("ssh_keys", [])
 
-    from pprint import pprint as pp ; pp(ssh_keys)
-
     # check that the message was signed with a known private key
     authenticated = False
     with tempfile.TemporaryDirectory() as tmp_dirname:
@@ -100,11 +98,16 @@ def asymmetric_key_auth():
                     str(message_path),
                     "-sigfile",
                     signatured_path,
-                ]
+                ], capture_output=True, text=True
             )
             print(" ".join([str(a) for a in pkey_util.args]))
             # DEBUG: trying to understand travis failure
             print(f"pkey_util.returncode: {pkey_util.returncode}")
+            print(f"pkey_util.stdout: --{pkey_util.stdout.strip()}--")
+            # if pkey_util.returncode == 1 and pkey_util.stdout.strip() == "Signature Verified Successfully":
+            #     authenticated = True
+            #     print(f"returncode 1 for success (old version): {authenticated}")
+            #     break
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
                 print(f"authenticated: {authenticated}")
