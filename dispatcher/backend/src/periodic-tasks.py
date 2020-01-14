@@ -5,7 +5,6 @@
 import logging
 import datetime
 
-import pytz
 import pymongo
 
 from common import getnow
