@@ -98,10 +98,13 @@ def asymmetric_key_auth():
                     signatured_path,
                 ]
             )
+            # DEBUG: trying to understand travis failure
+            print(f"pkey_util.returncode: {pkey_util.returncode}")
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
+                print(f"authenticated: {authenticated}")
                 break
-
+    print(f"authenticated2: {authenticated}")
     if not authenticated:
         raise errors.Unauthorized("Could not find matching key for signature")
 
