@@ -36,8 +36,7 @@ function die() {
     exit 1
 }
 
-# select and read config file
-configfname="zimfarm.config"
+# find this script's path
 if [[ $(uname -s) == "Darwin" ]]; then
     parentdir=$(dirname "$(greadlink -f "$0")")
     scriptname=$(basename "$(greadlink -f "$0")")
@@ -45,55 +44,83 @@ else
     parentdir=$(dirname "$(readlink -f "$0")") 
     scriptname=$(basename "$(readlink -f "$0")")
 fi
-if [ -f $parentdir/$configfname ] ; then
-    configpath=$parentdir/$configfname
-elif [ -f ~/.$configfname ] ; then
-    configpath=~/.$configfname
-elif [ -f /etc/$configfname ]; then
-    configpath=/etc/$configfname
-else
-    die "unable to find ${configfname} in known locations"
-fi
+
+# select and read config file
+configfname="zimfarm.config"
+search_paths=( "${parentdir}/${configfname}" "~/.${configfname}" "~/${configfname}" "/etc/${configfname}" )
+function display_search_paths() {
+    echo ""
+    echo "Search paths:"
+    for path in "${search_paths[@]}"
+    do
+       :
+       echo "  - ${path}"
+    done
+}
+configpath=
+for path in "${search_paths[@]}"
+do
+   :
+   if [ -f $path ] ; then
+    configpath=$path
+    break
+   fi
+done
+
+# fail if we have no config file
+if [[ "$configpath" == "" ]]; then
+    echo "unable to find ${configfname} in known locations"
+    display_search_paths
+    die
+fi 
+
+# load config variables
 source $configpath || die "failed to source ${configpath}"
 datadir=$ZIMFARM_ROOT/data
 
 # display config file path
 function config() {
-    echo "Using config file at: ${configpath}"
-}
-
-# display a list of running containers with some zimfarm labels
-function ps() {
-    docker ps --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "schedule_name"}}\t{{.Label "task_id"}}\t{{.RunningFor}}\t{{.Names}}'
-}
-
-# cleanup disk usage (to be run in cron)
-function prune() {
-    docker system prune --volumes -af
+    echo "Using: ${configpath}"
+    display_search_paths
 }
 
 # display options list
 function usage() {
     echo "Usage: $0 [help|config|ps|prune|restart|stop|shutdown|update]"
     echo ""
-    echo "  config      show the config file path in use"
-    echo "  ps          list of running containers with zimfarm labels"
-    echo "  prune       remove all docker containers/images/volums"
-    echo "  restart     start or restart the manager. reloads config."
-    echo "  stop        stop a task using its name ('xxx_zimtask') or the manager with 'manager'"
-    echo "  shutdown    stops the manager and all running tasks"
-    echo "  update      display commands to update this script (apply with 'update do')"
+    echo "  config          show the config file path in use"
+    echo ""
+    echo "  restart         start or restart the manager. reloads config."
+    echo "  logs <name> [n] display logs of task or 'manager' using its name"
+    echo "  stop <name>     stop a task or the 'manager' using its name"
+    echo "  shutdown        stops the manager and all running tasks"
+    echo ""
+    echo "  ps              list of running containers with zimfarm labels"
+    echo "  prune           remove all docker containers/images/volums"
+    echo "  update          display commands to update this script (apply with 'update do')"
     echo ""
 }
 
+# run docker commands directly or via sudo if SUDO_DOCKER is set
 function run() {
-    if [[ "$SUDO_DOCKER" -eq 1 ]]; then
+    if [ ! -z $SUDO_DOCKER ]; then
         sudo "$@"
     else
         "$@"
     fi
 }
 
+# display a list of running containers with some zimfarm labels
+function ps() {
+    run docker ps --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "schedule_name"}}\t{{.Label "task_id"}}\t{{.RunningFor}}\t{{.Names}}'
+}
+
+# cleanup disk usage (to be run in cron)
+function prune() {
+    run docker system prune --volumes -af
+}
+
+# stop container, extending timeout so task can stop scrapers and dnscache
 function stop() {
     target=$1
     if [[ "$target" == "manager" ]]; then
@@ -103,6 +130,7 @@ function stop() {
     run docker stop -t 120 $target
 }
 
+# start or restart the manager using config values
 function restart() {
     echo "(re)starting zimfarm worker manager..."
     echo ":: stopping ${WORKER_MANAGER_NAME}"
@@ -137,19 +165,27 @@ function restart() {
     $manager_image_string worker-manager
 }
 
+# stop the manager and all the workers
 function shutdown() {
     echo "shutting down manager and all the workers..."
     run docker kill -s SIGQUIT $WORKER_MANAGER_NAME
 }
 
+# display logs of a container or the manager, using --tail and -f
 function logs() {
     target=$1
+    tail=$2
     if [[ "$target" == "manager" ]]; then
         target=$WORKER_MANAGER_NAME
     fi
-    run docker logs --tail 100 -f $target
+    if [[ "${tail}" == "" ]]; then
+        tail="100"
+    fi
+    run docker logs --tail $tail -f $target
 }
 
+# display the command needed to update this script from the repo
+# add 'do' parameter to attempt to run it
 function update() {
     echo "updating $1..."
     dest="${parentdir}/${scriptname}"
@@ -158,6 +194,13 @@ function update() {
         bash -c "${update_cmd}"
     else
         echo $update_cmd
+    fi
+}
+
+function usage_if_missing() {
+    if [ -z $1 ]; then
+        usage
+        exit 1
     fi
 }
 
@@ -188,15 +231,17 @@ function main() {
         ;;
 
       "stop")
-        stop $2
+        usage_if_missing $target
+        stop $target
         ;;
 
       "logs")
-        logs $2
+        usage_if_missing $target
+        logs $target $3
         ;;
 
       "shutdown")
-        shutdown $2
+        shutdown
         ;;
 
       "update")
