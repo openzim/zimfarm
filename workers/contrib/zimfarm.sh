@@ -47,7 +47,7 @@ fi
 
 # select and read config file
 configfname="zimfarm.config"
-search_paths=( "${parentdir}/${configfname}" "~/.${configfname}" "~/${configfname}" "/etc/${configfname}" )
+search_paths=( "${parentdir}/${configfname}" "${HOME}/.${configfname}" "${HOME}/${configfname}" "/etc/${configfname}" )
 function display_search_paths() {
     echo ""
     echo "Search paths:"
