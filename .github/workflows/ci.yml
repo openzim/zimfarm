@@ -47,7 +47,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r dispatcher/backend/requirements.txt
-          pip install -U codecov pytest pytest-cov
+          pip install -U pytest pytest-cov
       - name: prepare DB
         run: |
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
@@ -56,7 +56,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
           PYTHONPATH=$PWD pytest -c tests/integration/pytest.ini tests/ --cov=./
-      - name: upload coverage report
-        run: |
-          cd $GITHUB_WORKSPACE/dispatcher/backend/src
-          codecov
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
