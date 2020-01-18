@@ -30,9 +30,9 @@ class LanguageSchema(Schema):
 
 
 class ResourcesSchema(Schema):
-    cpu = fields.Integer(strict=True, required=True, validate=validate_cpu)
-    memory = fields.Integer(strict=True, required=True, validate=validate_memory)
-    disk = fields.Integer(strict=True, required=True, validate=validate_disk)
+    cpu = fields.Integer(required=True, validate=validate_cpu)
+    memory = fields.Integer(required=True, validate=validate_memory)
+    disk = fields.Integer(required=True, validate=validate_disk)
 
 
 class DockerImageSchema(Schema):
