@@ -24,10 +24,9 @@ jobs:
       with:
         path: '.'
     - name: Test with pytest
-      env:
-        PYTHONPATH: $GITHUB_WORKSPACE/dispatcher/backend/src
       run: |
         cd dispatcher/backend/src
+        export PYTHONPATH=$PWD
         pytest tests/unit
 
   integration-tests:
@@ -51,12 +50,11 @@ jobs:
           pip install -r dispatcher/backend/requirements.txt
           pip install codecov pytest pytest-cov
       - name: prepare DB
-        env:
-          PYTHONPATH: $GITHUB_WORKSPACE/dispatcher/backend/src
-        run: python -c "from utils.database import Initializer; Initializer.initialize()"
-      - name: run tests
         run: |
           cd dispatcher/backend/src
-          pytest -c tests/integration/pytest.ini tests/ --cov=./
+          export PYTHONPATH=$PWD
+          python -c "from utils.database import Initializer; Initializer.initialize()"
+      - name: run tests
+        run: pytest -c tests/integration/pytest.ini tests/ --cov=./
       - name: upload coverage report
         run: codecov
