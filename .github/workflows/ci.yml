@@ -34,9 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Start MongoDB
-      uses: superchargejs/mongodb-github-action@v1
-      with:
-        mongodb-version: 4.2
+        uses: superchargejs/mongodb-github-action@v1
+        with:
+          mongodb-version: 4.2
 
       - uses: actions/checkout@v1
         with:
