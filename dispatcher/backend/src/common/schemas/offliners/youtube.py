@@ -74,7 +74,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="all-subtitles",
     )
     pagination = fields.Integer(
-        strict=True,
         metadata={
             "label": "Pagination",
             "description": "Number of videos per page (40 otherwise)",
