@@ -48,11 +48,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dispatcher/backend/requirements.txt
           pip install -U codecov pytest pytest-cov
-      - name: change working directory
-        run: cd dispatcher/backend/src
       - name: prepare DB
-        run: PYTHONPATH=$PWD python -c "from utils.database import Initializer; Initializer.initialize()"
+        run: |
+          cd $GITHUB_WORKSPACE/dispatcher/backend/src
+          PYTHONPATH=$PWD python -c "from utils.database import Initializer; Initializer.initialize()"
       - name: run tests
-        run: PYTHONPATH=$PWD pytest -c tests/integration/pytest.ini tests/ --cov=./
+        run: |
+          cd $GITHUB_WORKSPACE/dispatcher/backend/src
+          PYTHONPATH=$PWD pytest -c tests/integration/pytest.ini tests/ --cov=./
       - name: upload coverage report
-        run: codecov
+        run: |
+          cd $GITHUB_WORKSPACE/dispatcher/backend/src
+          codecov
