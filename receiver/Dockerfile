@@ -14,7 +14,7 @@ RUN ./configure --prefix=/ && make && make install
 RUN printf "allowscp\nallowsftp\n" > /etc/rssh.conf
 
 WORKDIR /
-# setup a chroot jail at /jail 
+# setup a chroot jail at /jail
 RUN wget https://olivier.sessink.nl/jailkit/jailkit-2.21.tar.gz
 RUN tar xf jailkit-2.21.tar.gz
 RUN cd jailkit-2.21 && ./configure && make && make install
