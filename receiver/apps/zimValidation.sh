@@ -20,7 +20,7 @@ DESTDIR=$(dirname $DESTFILE)
 
 if [ "$OPTION" = "NO_QUARANTINE" ]
 then
- QUARDIR=$DESTDIR 
+ QUARDIR=$DESTDIR
  QUARFILE=$DESTFILE
 else
  QUARFILE=$4$ZIMPATH
@@ -44,10 +44,10 @@ else
 
   if $ZIMCHECK $ZIMCHECK_OPTION $ZIMFILE > $LOGFILE 2>&1
   then
-   echo "$ZIMFILE is valid" >> $LOGFILE 
+   echo "$ZIMFILE is valid" >> $LOGFILE
    moveZim $DESTDIR $DESTFILE
   else
-   echo "$ZIMFILE is not valid" >> $LOGFILE 
+   echo "$ZIMFILE is not valid" >> $LOGFILE
    moveZim $QUARDIR $QUARFILE
   fi
 fi

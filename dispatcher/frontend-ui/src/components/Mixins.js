@@ -41,7 +41,7 @@ export default {
     canUpdateUsers() { return this.$root.has_perm("users", "update"); },
     canDeleteUsers() { return this.$root.has_perm("users", "delete"); },
     canChangePasswordUsers() { return this.$root.has_perm("users", "change_password"); },
-    
+
   },
   methods: {
     scrollToTop() { window.scrollTo(0,0); },

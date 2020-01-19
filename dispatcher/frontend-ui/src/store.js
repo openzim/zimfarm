@@ -12,12 +12,12 @@ const store = new Vuex.Store({
     loading_text: "",
 
     token: {},
-    
+
     languages: [],
     tags: [],
     offliners: [],
     offliners_defs: {},
-    
+
     schedule: null,
 
     selectedLanguagesOptions: [],
@@ -112,12 +112,12 @@ const store = new Vuex.Store({
     permissions(state) {
       try { return state.token.payload.user.scope } catch { return {}; }
     },
-    
+
     languages(state) { return state.languages; },
     tags(state) { return state.tags; },
     offliners(state) { return state.offliners; },
     offliners_defs(state) { return state.offliners_defs; },
-    
+
     schedule(state) { return state.schedule; },
   }
 })

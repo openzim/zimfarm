@@ -41,7 +41,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
     parentdir=$(dirname "$(greadlink -f "$0")")
     scriptname=$(basename "$(greadlink -f "$0")")
 else
-    parentdir=$(dirname "$(readlink -f "$0")") 
+    parentdir=$(dirname "$(readlink -f "$0")")
     scriptname=$(basename "$(readlink -f "$0")")
 fi
 
@@ -72,7 +72,7 @@ if [[ "$configpath" == "" ]]; then
     echo "unable to find ${configfname} in known locations"
     display_search_paths
     die
-fi 
+fi
 
 # load config variables
 source $configpath || die "failed to source ${configpath}"
