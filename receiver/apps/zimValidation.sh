@@ -51,5 +51,3 @@ else
    moveZim $QUARDIR $QUARFILE
   fi
 fi
-
-rm -f /tmp/zimcheckoutput
