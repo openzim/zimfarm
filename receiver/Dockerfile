@@ -8,7 +8,9 @@ RUN apt-get update -y \
 
 # build and configure rssh
 # we are keeping source here as it's small and hosted on sourceforge
-ADD rssh-2.3.4.tar.gz /usr/src/
+WORKDIR /usr/src/
+RUN wget https://download.kiwix.org/dev/rssh-2.3.4.tar.gz
+RUN tar -xvf rssh-2.3.4.tar.gz
 WORKDIR /usr/src/rssh-2.3.4
 RUN ./configure --prefix=/ && make && make install
 RUN printf "allowscp\nallowsftp\n" > /etc/rssh.conf
