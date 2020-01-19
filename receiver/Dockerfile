@@ -2,7 +2,7 @@ FROM python:3.8-buster
 
 # system dependencies
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends openssh-sftp-server openssh-server wget cron \
+    && apt-get install -y --no-install-recommends openssh-sftp-server openssh-server wget cron parallel \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
