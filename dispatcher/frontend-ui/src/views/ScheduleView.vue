@@ -210,6 +210,30 @@
       },
       setReady() { this.ready = true; },
       setError(error) { this.error = error; },
+      refresh_data() {
+        let parent = this;
+        parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
+        parent.requested = null;
+        parent.queryAPI('get', '/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
+          .then(function (response) {
+              if (response.data.meta.count > 0) {
+                parent.requested = response.data.items[0];
+              } else {
+                parent.requested = false;
+              }
+          })
+          .catch(function () {
+            parent.requested = false;
+          })
+
+        parent.history_runs = [];
+        parent.queryAPI('get', '/tasks/', {params: {schedule_name: parent.schedule_name}})
+          .then(function (response) {
+              parent.history_runs = response.data.items;
+          })
+          .catch(function () {
+          })
+      }
     },
     mounted() {
       let parent = this;
@@ -219,28 +243,13 @@
         parent.redirectTo('schedule-detail', {schedule_name: this.schedule_name});
       }
 
-      parent.$root.$emit('load-schedule', this.schedule_name, false, this.setReady, this.setError);
-      parent.requested = null;
-      parent.queryAPI('get', '/requested-tasks/', {params: {schedule_name: parent.schedule_name}})
-        .then(function (response) {
-            if (response.data.meta.count > 0) {
-              parent.requested = response.data.items[0];
-            } else {
-              parent.requested = false;
-            }
-        })
-        .catch(function () {
-          parent.requested = false;
-        })
-
-      parent.history_runs = [];
-      parent.queryAPI('get', '/tasks/', {params: {schedule_name: parent.schedule_name}})
-        .then(function (response) {
-            parent.history_runs = response.data.items;
-        })
-        .catch(function () {
-        })
+      this.refresh_data();
     },
+    watch: {
+      selectedTab() {
+        this.refresh_data();
+      },
+    }
   }
 </script>
 

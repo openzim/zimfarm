@@ -165,23 +165,25 @@
             parent.alertWarning("Unable to copy command to clipboard 😞. ",
                                 "Please copy it manually.");
           });
+      },
+      refresh_data() {
+        let parent = this;
+        parent.toggleLoader("fetching task…");
+        parent.queryAPI('get', '/tasks/' + this._id, {})
+          .then(function (response) {
+              parent.error = null;
+              parent.task = response.data;
+          })
+          .catch(function (error) {
+            parent.error = Constants.standardHTTPError(error.response);
+          })
+          .then(function () {
+              parent.toggleLoader(false);
+          });
       }
     },
     mounted() {
-      let parent = this;
-
-      parent.toggleLoader("fetching task…");
-      parent.queryAPI('get', '/tasks/' + this._id, {})
-        .then(function (response) {
-            parent.error = null;
-            parent.task = response.data;
-        })
-        .catch(function (error) {
-          parent.error = Constants.standardHTTPError(error.response);
-        })
-        .then(function () {
-            parent.toggleLoader(false);
-        });
+      this.refresh_data();
     },
     updated(){
       // scroll stdout and stderr to bottom
@@ -191,7 +193,11 @@
         if (element)
           element.scrollTop = element.scrollHeight;
       }.bind(this));
-
+    },
+    watch: {
+      selectedTab() {
+        this.refresh_data();
+      },
     }
   }
 </script>
