@@ -82,7 +82,7 @@ class SchedulesRoute(BaseRoute):
                 "schedule with name `{}` already exists".format(document["name"])
             )
 
-        document["duration"] = get_default_duration()
+        document["duration"] = {"default": get_default_duration()}
         schedule_id = Schedules().insert_one(document).inserted_id
 
         return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)
@@ -216,7 +216,7 @@ class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
         schedule.pop("duration", None)
         schedule["name"] = new_schedule_name
         schedule["enabled"] = False
-        schedule["duration"] = get_default_duration()
+        schedule["duration"] = {"default": get_default_duration()}
 
         # insert document
         schedule_id = Schedules().insert_one(schedule).inserted_id
