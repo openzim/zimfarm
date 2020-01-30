@@ -20,6 +20,7 @@ from common.schemas.offliners import (
     PhetFlagsSchema,
     GutenbergFlagsSchema,
     SotokiFlagsSchema,
+    NautilusFlagsSchema,
 )
 
 
@@ -65,6 +66,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.gutenberg: GutenbergFlagsSchema,
             Offliner.phet: PhetFlagsSchema,
             Offliner.sotoki: SotokiFlagsSchema,
+            Offliner.nautilus: NautilusFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema

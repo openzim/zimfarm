@@ -104,10 +104,18 @@ class DockerImageName:
     gutenberg = "openzim/gutenberg"
     phet = "openzim/phet"
     sotoki = "openzim/sotoki"
+    nautilus = "openzim/nautilus"
 
     @classmethod
     def all(cls) -> set:
-        return {cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet, cls.sotoki}
+        return {
+            cls.mwoffliner,
+            cls.youtube,
+            cls.gutenberg,
+            cls.phet,
+            cls.sotoki,
+            cls.nautilus,
+        }
 
 
 class Offliner:
@@ -116,10 +124,18 @@ class Offliner:
     gutenberg = "gutenberg"
     phet = "phet"
     sotoki = "sotoki"
+    nautilus = "nautilus"
 
     @classmethod
     def all(cls):
-        return [cls.mwoffliner, cls.youtube, cls.gutenberg, cls.phet, cls.sotoki]
+        return [
+            cls.mwoffliner,
+            cls.youtube,
+            cls.gutenberg,
+            cls.phet,
+            cls.sotoki,
+            cls.nautilus,
+        ]
 
 
 class SchedulePeriodicity:
