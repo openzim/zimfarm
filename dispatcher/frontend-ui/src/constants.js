@@ -181,7 +181,7 @@ export default {
                     "/ted", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary"],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB
