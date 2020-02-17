@@ -136,6 +136,7 @@ class WorkerManager(BaseWorker):
             f"/workers/{self.worker_name}/check-in",
             payload={
                 "username": self.username,
+                "selfish": self.selfish,
                 "cpu": host_stats["cpu"]["total"],
                 "memory": host_stats["memory"]["total"],
                 "disk": host_stats["disk"]["total"],

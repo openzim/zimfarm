@@ -81,6 +81,7 @@ class WorkerCheckinRoute(BaseRoute):
         document = {
             "name": name,
             "username": request_json["username"],
+            "selfish": request_json["selfish"],
             "resources": {
                 "cpu": request_json["cpu"],
                 "memory": request_json["memory"],
