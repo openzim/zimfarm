@@ -214,7 +214,11 @@ def get_reqs_doable_by(worker):
     query = {}
     for res_key in ("cpu", "memory", "disk"):
         query[f"config.resources.{res_key}"] = {"$lte": worker["resources"][res_key]}
+
     query["config.task_name"] = {"$in": worker["offliners"]}
+
+    if worker.get("selfish", False):
+        query["worker"] = worker["name"]
 
     projection = {
         "_id": 1,
@@ -308,7 +312,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     # get total resources for that worker
     worker = Workers().find_one(
         {"username": username, "name": worker_name},
-        {"resources": 1, "offliners": 1, "last_seen": 1, "name": 1},
+        {"resources": 1, "offliners": 1, "last_seen": 1, "name": 1, "selfish": 1},
     )
 
     # worker is not checked-in

@@ -146,6 +146,7 @@ class UserUpdateSchema(Schema):
 # workers checkin
 class WorkerCheckInSchema(Schema):
     username = username_field
+    selfish = fields.Boolean(required=False, missing=False)
     cpu = fields.Integer(required=True, validate=validate_cpu)
     memory = fields.Integer(required=True, validate=validate_memory)
     disk = fields.Integer(required=True, validate=validate_disk)
