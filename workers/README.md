@@ -82,7 +82,7 @@ RSA key to us when requesting a worker account.
 
 ```bash
 # Generate an RSA key pair (use empty passphrase)
-ssh-keygen -t rsa -f id_rsa
+ssh-keygen -m PEM -t rsa -f id_rsa
 
 # Display its public key (you'll upload this part)
 cat id_rsa.pub | cut -d " " -f 2
