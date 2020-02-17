@@ -96,6 +96,11 @@ def remove_container(docker_client, *args, **kwargs):
     return retried_docker_call(docker_client.api.remove_container, *args, **kwargs)
 
 
+def prune_containers(docker_client, *args, **kwargs):
+    """ filters={} """
+    return retried_docker_call(docker_client.api.prune_containers, *args, **kwargs)
+
+
 def stop_container(docker_client, *args, **kwargs):
     """ container="", timeout=None """
     return retried_docker_call(docker_client.api.stop, *args, **kwargs)
@@ -373,6 +378,7 @@ def start_uploader(
     # remove container should it exists (should not)
     try:
         remove_container(docker_client, container_name)
+        prune_containers(docker_client, {"label": [f"filename={filename}"]})
     except docker.errors.NotFound:
         pass
 

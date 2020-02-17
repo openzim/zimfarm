@@ -26,6 +26,7 @@ from common.docker import (
     get_container_logs,
     task_container_name,
     remove_container,
+    prune_containers,
 )
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
@@ -348,10 +349,29 @@ class TaskWorker(BaseWorker):
                 return  # still uploading
 
             self.log_uploader.wait()  # make sure we're not in a transient state
+            time.sleep(2)
+
+            self.log_uploader.reload()
+            if self.log_uploader.status != "removing":
+                try:
+                    remove_container(self.docker, self.log_uploader.name, force=True)
+                except docker.errors.NotFound:
+                    pass
+                except docker.errors.APIError as exc:
+                    logger.error(
+                        f"failed to remove container {self.log_uploader.name}::{self.log_uploader.status}"
+                    )
+                    raise exc
+
             try:
-                remove_container(self.docker, self.log_uploader.name)
+                self.log_uploader.wait(condition="removed", timeout=300)
+            except requests.exceptions.ReadTimeout:
+                logger.error("log_container could not be awaited (removal).")
             except docker.errors.NotFound:
                 pass
+            finally:
+                prune_containers(self.docker, {"label": [f"filename={filename}"]})
+            time.sleep(2)
             self.log_uploader = None
 
         self.log_uploader = start_uploader(
