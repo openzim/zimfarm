@@ -348,9 +348,7 @@ class TaskWorker(BaseWorker):
             if self.log_uploader.status in RUNNING_STATUSES:
                 return  # still uploading
 
-            # make sure we're not in a transient state
-            logger.debug(f".. log_uploader exited|dead: {self.log_uploader.status}")
-            logger.debug(f".. {self.log_uploader.wait()}")
+            self.log_uploader.wait()  # make sure we're not in a transient state
             time.sleep(2)
 
             self.log_uploader.reload()
@@ -359,18 +357,20 @@ class TaskWorker(BaseWorker):
                     remove_container(self.docker, self.log_uploader.name, force=True)
                 except docker.errors.NotFound:
                     pass
+                except docker.errors.APIError as exc:
+                    logger.error(
+                        f"failed to remove container {self.log_uploader.name}::{self.log_uploader.status}"
+                    )
+                    raise exc
+
             try:
-                logger.debug(
-                    f".. {self.log_uploader.wait(condition='removed', timeout=300)}"
-                )
+                self.log_uploader.wait(condition="removed", timeout=300)
             except requests.exceptions.ReadTimeout:
-                logger.error(".. log_container could not be awaited.")
+                logger.error("log_container could not be awaited (removal).")
             except docker.errors.NotFound:
                 pass
             finally:
-                fn_filter = f"filename={filename}"
-                logger.debug(f".. pruning containers for {fn_filter}")
-                prune_containers(self.docker, {"label": [fn_filter]})
+                prune_containers(self.docker, {"label": [f"filename={filename}"]})
             time.sleep(2)
             self.log_uploader = None
 
