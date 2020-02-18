@@ -4,6 +4,7 @@
 
 import os
 import time
+import uuid
 import pathlib
 
 import docker
@@ -206,8 +207,10 @@ def scraper_container_name(task_id, task_name):
     return f"{short_id(task_id)}_{CONTAINER_SCRAPER_IDENT}_{task_name}"
 
 
-def upload_container_name(task_id, filename):
+def upload_container_name(task_id, filename, unique):
     ident = "zimup" if filename.endswith(".zim") else "logup"
+    if unique:
+        filename = f"{uuid.uuid4().hex}{pathlib.Path(filename).suffix}"
     return f"{short_id(task_id)}_{ident}_{filename}"
 
 
@@ -372,8 +375,9 @@ def start_uploader(
     delete,
     compress,
     resume,
+    uniq_container_name,
 ):
-    container_name = upload_container_name(task["_id"], filename)
+    container_name = upload_container_name(task["_id"], filename, uniq_container_name)
 
     # remove container should it exists (should not)
     try:
