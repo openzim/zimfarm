@@ -1,4 +1,5 @@
-from marshmallow import fields, validate
+from bson.objectid import ObjectId, InvalidId
+from marshmallow import fields, validate, ValidationError
 
 from common.roles import ROLES
 from common.enum import Offliner, ScheduleCategory, TaskStatus, SchedulePeriodicity
@@ -24,6 +25,31 @@ validate_periodicity = validate.OneOf(SchedulePeriodicity.all())
 
 def validate_multiple_of_100(value):
     return value % 100 == 0
+
+
+class TaskIdsListOrNone(fields.Field):
+    """ str field representing a comma separated list of Mongo Ids or `none`
+
+        used to represent being-run tasks on worker:
+        - list with content represent running tasks
+        - "none" -> [] means no running tasks
+        - None means param not supplied, so to avoid syncing. """
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if value is None:
+            raise ValidationError("Not serializing None")
+        if not isinstance(value, list):
+            raise ValidationError("Not a list")
+        return ",".join([str(v) for v in value])
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        v = value.lower().strip()
+        if v == "none":
+            return []
+        try:
+            return [ObjectId(i) for i in v.split(",")]
+        except InvalidId:
+            raise ValidationError("Not a list of valid ids")
 
 
 # reusable fields

@@ -12,7 +12,7 @@ from marshmallow import ValidationError
 from common.enum import TaskStatus
 from utils.token import AccessToken
 from utils.broadcaster import BROADCASTER
-from common.utils import task_event_handler
+from common.utils import record_task_event
 from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id, require_perm
@@ -117,7 +117,7 @@ class TaskRoute(BaseRoute):
 
         payload = {"worker": request_args["worker_name"]}
         try:
-            task_event_handler(task_id, TaskStatus.reserved, payload)
+            record_task_event(task_id, TaskStatus.reserved, payload)
         except Exception as exc:
             logger.exception(exc)
             logger.error("unable to create task. reverting.")
@@ -131,8 +131,6 @@ class TaskRoute(BaseRoute):
             RequestedTasks().delete_one({"_id": task_id})
         except Exception as exc:
             logger.exception(exc)  # and pass
-
-        BROADCASTER.broadcast_updated_task(task_id, TaskStatus.reserved, payload)
 
         return make_response(
             jsonify(Tasks().find_one({"_id": task_id})), HTTPStatus.CREATED
@@ -155,11 +153,7 @@ class TaskRoute(BaseRoute):
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        task_event_handler(task["_id"], request_json["event"], request_json["payload"])
-
-        BROADCASTER.broadcast_updated_task(
-            task_id, request_json["event"], request_json["payload"]
-        )
+        record_task_event(task["_id"], request_json["event"], request_json["payload"])
 
         return Response(status=HTTPStatus.NO_CONTENT)
 
@@ -180,8 +174,11 @@ class TaskCancelRoute(BaseRoute):
         if task is None:
             raise TaskNotFound()
 
-        task_event_handler(
-            task["_id"], TaskStatus.cancel_requested, {"canceled_by": token.username}
+        record_task_event(
+            task["_id"],
+            TaskStatus.cancel_requested,
+            {"canceled_by": token.username},
+            broadcast=False,
         )
 
         # broadcast cancel-request to worker

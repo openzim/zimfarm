@@ -20,6 +20,7 @@ from common.schemas.parameters import (
     WorkerRequestedTaskSchema,
 )
 from utils.scheduling import request_a_schedule, find_requested_task_for
+from common.utils import sync_running_and_expected_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +173,11 @@ class RequestedTasksForWorkers(BaseRoute):
             )
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
+
+        # sync tasks actually being run with tasks expected to be running
+        running_task_ids = request_args.get("running_task_ids")
+        if worker_name and running_task_ids is not None:
+            sync_running_and_expected_tasks(worker_name, running_task_ids)
 
         task = find_requested_task_for(
             token.username,

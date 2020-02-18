@@ -24,6 +24,7 @@ from common.schemas.fields import (
     validate_status,
     validate_event,
     validate_worker_name,
+    TaskIdsListOrNone,
 )
 from common.schemas.models import LanguageSchema, DockerImageSchema, ResourcesSchema
 
@@ -57,6 +58,7 @@ class RequestedTaskSchema(Schema):
 # requested-tasks for worker
 class WorkerRequestedTaskSchema(Schema):
     worker = fields.String(required=True, validate=validate_worker_name)
+    running_task_ids = TaskIdsListOrNone(required=False, missing=None)
     avail_cpu = fields.Integer(required=True, validate=validate_cpu)
     avail_memory = fields.Integer(required=True, validate=validate_memory)
     avail_disk = fields.Integer(required=True, validate=validate_disk)

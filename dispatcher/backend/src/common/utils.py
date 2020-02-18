@@ -11,8 +11,42 @@ from common import getnow, to_naive_utc
 from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
 from utils.scheduling import update_schedule_duration
+from utils.broadcaster import BROADCASTER
 
 logger = logging.getLogger(__name__)
+
+
+def sync_running_and_expected_tasks(worker_name, running_task_ids):
+    """ compare provided list of running tasks with ones that are expected to be run
+
+        by this worker, marking missing ones as failed """
+
+    expected_task_ids = [
+        t["_id"]
+        for t in Tasks().find(
+            {
+                "worker": worker_name,
+                "status": {
+                    "$in": [
+                        TaskStatus.started,
+                        TaskStatus.scraper_started,
+                        TaskStatus.scraper_completed,
+                        TaskStatus.scraper_killed,
+                    ]
+                },
+            },
+            {"_id": 1},
+        )
+    ]
+    for tid in filter(lambda i: i not in running_task_ids, expected_task_ids):
+        record_task_event(tid, TaskStatus.failed, {"exception": "task container gone"})
+
+
+def record_task_event(task_id, event, payload={}, broadcast=True):
+    """ record a task-related event in the DB using the proper handler and broadcast """
+    task_event_handler(task_id, event, payload)
+    if broadcast:
+        BROADCASTER.broadcast_updated_task(task_id, event, payload)
 
 
 def task_event_handler(task_id, event, payload):

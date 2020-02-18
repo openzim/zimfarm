@@ -99,6 +99,7 @@ class WorkerManager(BaseWorker):
             "/requested-tasks/worker",
             params={
                 "worker": self.worker_name,
+                "running_task_ids": ",".join(self.tasks.keys()) or "none",
                 "avail_cpu": host_stats["cpu"]["available"],
                 "avail_memory": host_stats["memory"]["available"],
                 "avail_disk": host_stats["disk"]["available"],
@@ -107,11 +108,6 @@ class WorkerManager(BaseWorker):
         if not success:
             logger.warning(f"poll failed with HTTP {status_code}: {response}")
             return
-
-        if self.selfish:
-            response["items"] = [
-                t for t in response["items"] if t["worker"] == self.worker_name
-            ]
 
         if response["items"]:
             logger.info(
@@ -189,6 +185,7 @@ class WorkerManager(BaseWorker):
         return success
 
     def sync_tasks_and_containers(self):
+        logger.debug("sync_tasks_and_containers")
         # list of completed containers (successfuly ran)
         completed_containers = list_containers(
             self.docker, all=True, filters={"label": ["zimtask=yes"], "exited": 0}
