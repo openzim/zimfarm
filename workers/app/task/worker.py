@@ -255,6 +255,7 @@ class TaskWorker(BaseWorker):
             delete=True,
             compress=False,
             resume=False,
+            uniq_container_name=False,
         )
 
     def stop_uploader(self, timeout=None):
@@ -334,6 +335,41 @@ class TaskWorker(BaseWorker):
                 )
                 self.zim_files[zim_file] = UPLOADING
 
+    def attempt_to_remove_log_container(self, filename):
+        self.log_uploader.wait()  # make sure we're not in a transient state
+        time.sleep(2)
+
+        self.log_uploader.reload()
+        if self.log_uploader.status != "removing":
+            try:
+                remove_container(self.docker, self.log_uploader.name, force=True)
+            except docker.errors.NotFound:
+                pass  # already removed
+            except docker.errors.APIError as exc:
+                if exc.status_code == 409:  # probably `removing` already
+                    logger.error(
+                        f"conflict removing log container {self.log_uploader.name}::{self.log_uploader.status} ({exc.explanation})"
+                    )
+                else:
+                    raise exc
+
+        try:
+            self.log_uploader.wait(condition="removed", timeout=5 * 60)
+        except requests.exceptions.ReadTimeout:
+            logger.error("log_container could not be awaited (removal).")
+        except docker.errors.NotFound:
+            pass  # already removed
+
+        try:
+            prune_containers(self.docker, {"label": [f"filename={filename}"]})
+        except docker.errors.APIError as exc:
+            if exc.status_code == 409:  # probably a prune in progress already
+                logger.error(f"Unable to prune containers for {filename} ({exc})")
+            else:
+                raise exc
+
+        self.log_uploader = None
+
     def upload_log(self):
         if not self.scraper:
             # no more scraper, can't do.
@@ -348,31 +384,7 @@ class TaskWorker(BaseWorker):
             if self.log_uploader.status in RUNNING_STATUSES:
                 return  # still uploading
 
-            self.log_uploader.wait()  # make sure we're not in a transient state
-            time.sleep(2)
-
-            self.log_uploader.reload()
-            if self.log_uploader.status != "removing":
-                try:
-                    remove_container(self.docker, self.log_uploader.name, force=True)
-                except docker.errors.NotFound:
-                    pass
-                except docker.errors.APIError as exc:
-                    logger.error(
-                        f"failed to remove container {self.log_uploader.name}::{self.log_uploader.status}"
-                    )
-                    raise exc
-
-            try:
-                self.log_uploader.wait(condition="removed", timeout=300)
-            except requests.exceptions.ReadTimeout:
-                logger.error("log_container could not be awaited (removal).")
-            except docker.errors.NotFound:
-                pass
-            finally:
-                prune_containers(self.docker, {"label": [f"filename={filename}"]})
-            time.sleep(2)
-            self.log_uploader = None
+            self.attempt_to_remove_log_container(filename)
 
         self.log_uploader = start_uploader(
             self.docker,
@@ -385,6 +397,7 @@ class TaskWorker(BaseWorker):
             delete=False,
             compress=True,
             resume=True,
+            uniq_container_name=True,
         )
 
     def handle_stopped_scraper(self):
@@ -393,19 +406,24 @@ class TaskWorker(BaseWorker):
         stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
         self.mark_scraper_completed(exit_code, stdout, stderr)
+        scraper_log_path = pathlib.Path(self.scraper.attrs["LogPath"])
         self.scraper_succeeded = exit_code == 0
         self.upload_log()
         logger.info("Waiting for scraper log to finish uploading")
         if self.log_uploader:
-            exit_code = self.log_uploader.wait()["StatusCode"]
-            logger.info(f"Scraper log upload complete: {exit_code}")
+            # Issue #400 showed a neverending container
+            try:
+                exit_code = self.log_uploader.wait(timeout=20 * 60)["StatusCode"]
+            except requests.exceptions.ReadTimeout:
+                logger.error("log_container could not be awaited (removal).")
+                exit_code = -1
+            finally:
+                logger.info(f"Scraper log upload complete: {exit_code}")
             if exit_code != 0:
                 logger.error(f"Log Uploader:: {self.log_uploader.logs()}")
-            else:
-                try:
-                    remove_container(self.docker, self.log_uploader.name)
-                except docker.errors.NotFound:
-                    pass
+
+            # remove logup container, we already retrieved its log should it have failed
+            self.attempt_to_remove_log_container(scraper_log_path.name)
 
     def sleep(self):
         time.sleep(1)
