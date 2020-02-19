@@ -59,6 +59,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
  * Fast internet connexion (downstream and upstream).
 * A Zimfarm user account (with appropriate `worker` role).
 * An RSA private key with its public key uploaded to the user account.
+* the clock must be synchronized, e.g. using ntp
 
 __Note__: SSH access to your host for our developers is handy but not required.
 
