@@ -4,6 +4,7 @@
 
 import sys
 import time
+import types
 import signal
 import shutil
 import pathlib
@@ -335,30 +336,58 @@ class TaskWorker(BaseWorker):
                 )
                 self.zim_files[zim_file] = UPLOADING
 
-    def attempt_to_remove_log_container(self, filename):
-        self.log_uploader.wait()  # make sure we're not in a transient state
-        time.sleep(2)
+    def safe_log_uploader(self, method_or_prop=None, *args, **kwargs):
+        """ proxy to self.log_uploader but updated (reload()) and NotFound safe
 
-        self.log_uploader.reload()
-        if self.log_uploader.status != "removing":
-            try:
-                remove_container(self.docker, self.log_uploader.name, force=True)
-            except docker.errors.NotFound:
-                pass  # already removed
-            except docker.errors.APIError as exc:
-                if exc.status_code == 409:  # probably `removing` already
-                    logger.error(
-                        f"conflict removing log container {self.log_uploader.name}::{self.log_uploader.status} ({exc.explanation})"
-                    )
-                else:
-                    raise exc
+            automatically sets log_uploader to None on NotFound errors
+            returns "removed" if error encountered querying status """
 
         try:
-            self.log_uploader.wait(condition="removed", timeout=5 * 60)
+            self.log_uploader.reload()
+        except (AttributeError, docker.errors.NotFound):
+            self.log_uploader = None
+            return "removed" if method_or_prop == "status" else None
+
+        if method_or_prop is None:
+            return self.log_uploader
+
+        try:
+            mop = getattr(self.log_uploader, method_or_prop)
+        except AttributeError as exc:
+            logger.debug(exc)  # if called incorectly we need to know
+            self.log_uploader = None
+            return "removed" if method_or_prop == "status" else None
+
+        if not isinstance(mop, types.MethodType):
+            return mop
+
+        try:
+            return mop(*args, **kwargs)
+        except docker.errors.NotFound:
+            self.log_uploader = None
+        except docker.errors.APIError as exc:
+            if exc.status_code == 409:  # conflict in requested operation
+                logger.error(
+                    f"conflict calling {method_or_prop}() on {self.log_uploader.name}::{self.log_uploader.status} ({exc.explanation})"
+                )
+            else:
+                raise exc
+        return None
+
+    def attempt_to_remove_log_container(self, filename):
+        if not self.safe_log_uploader():
+            return
+
+        self.safe_log_uploader("wait")  # make sure we're not in a transient state
+        time.sleep(2)
+
+        if self.safe_log_uploader("status") != "removing":
+            self.safe_log_uploader("remove", force=True)
+
+        try:
+            self.safe_log_uploader("wait", condition="removed", timeout=5 * 60)
         except requests.exceptions.ReadTimeout:
             logger.error("log_container could not be awaited (removal).")
-        except docker.errors.NotFound:
-            pass  # already removed
 
         try:
             prune_containers(self.docker, {"label": [f"filename={filename}"]})
@@ -376,23 +405,19 @@ class TaskWorker(BaseWorker):
             return
 
         log_path = pathlib.Path(self.scraper.attrs["LogPath"])
-        host_logsdir = log_path.parent
-        filename = log_path.name
 
-        if self.log_uploader:
-            self.log_uploader.reload()
-            if self.log_uploader.status in RUNNING_STATUSES:
-                return  # still uploading
+        if self.safe_log_uploader("status") in RUNNING_STATUSES:
+            return  # still uploading
 
-            self.attempt_to_remove_log_container(filename)
+        self.attempt_to_remove_log_container(log_path.name)
 
         self.log_uploader = start_uploader(
             self.docker,
             self.task,
             self.username,
-            host_logsdir,
+            log_path.parent,
             "logs",
-            filename,
+            log_path.name,
             move=False,
             delete=False,
             compress=True,
@@ -410,17 +435,17 @@ class TaskWorker(BaseWorker):
         self.scraper_succeeded = exit_code == 0
         self.upload_log()
         logger.info("Waiting for scraper log to finish uploading")
-        if self.log_uploader:
+        if self.safe_log_uploader():
             # Issue #400 showed a neverending container
             try:
-                exit_code = self.log_uploader.wait(timeout=20 * 60)["StatusCode"]
-            except requests.exceptions.ReadTimeout:
+                log_ec = self.safe_log_uploader("wait", timeout=20 * 60)["StatusCode"]
+            except (TypeError, requests.exceptions.ReadTimeout):
                 logger.error("log_container could not be awaited (removal).")
-                exit_code = -1
+                log_ec = -1
             finally:
-                logger.info(f"Scraper log upload complete: {exit_code}")
-            if exit_code != 0:
-                logger.error(f"Log Uploader:: {self.log_uploader.logs()}")
+                logger.info(f"Scraper log upload complete: {log_ec}")
+            if log_ec != 0:
+                logger.error(f"Log Uploader:: {self.safe_log_uploader('logs')}")
 
             # remove logup container, we already retrieved its log should it have failed
             self.attempt_to_remove_log_container(scraper_log_path.name)
