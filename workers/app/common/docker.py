@@ -29,22 +29,22 @@ from common.utils import short_id, as_pos_int, format_size
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused", "removing")
 STOPPED_STATUSES = ("exited", "dead")
-RETRIES = 3  # retry attempts in case of API error
+DOCKER_API_RETRIES = 10  # retry attempts in case of API error
 RESOURCES_DISK_LABEL = "resources_disk"
 
 
 def retried_docker_call(docker_method, *args, **kwargs):
     attempt = 0
     while True:
+        attempt += 1
         try:
-            attempt += 1
             return docker_method(*args, **kwargs)
         except docker.errors.APIError as exc:
-            if exc.is_server_error() and attempt <= RETRIES:
+            if exc.is_server_error() and attempt <= DOCKER_API_RETRIES:
                 logger.debug(
                     f"Docker API Error for {docker_method} (attempt {attempt})"
                 )
-                time.sleep(2)
+                time.sleep(10 * attempt)
                 continue
             raise exc
 
