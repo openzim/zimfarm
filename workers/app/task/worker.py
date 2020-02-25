@@ -439,8 +439,9 @@ class TaskWorker(BaseWorker):
             # Issue #400 showed a neverending container
             try:
                 log_ec = self.safe_log_uploader("wait", timeout=20 * 60)["StatusCode"]
-            except (TypeError, requests.exceptions.ReadTimeout):
-                logger.error("log_container could not be awaited (removal).")
+            # connexion exception can be thrown by socket, urllib, requests
+            except Exception as exc:
+                logger.error(f"log_container could not be awaited (removal). {exc}")
                 log_ec = -1
             finally:
                 logger.info(f"Scraper log upload complete: {log_ec}")
