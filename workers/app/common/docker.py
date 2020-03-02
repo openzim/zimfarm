@@ -236,6 +236,7 @@ def start_dnscache(docker_client, task):
         environment=environment,
         remove=True,
         labels={
+            "zimfarm": "",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
@@ -279,6 +280,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
         dns=dns,
         detach=True,
         labels={
+            "zimfarm": "",
             "zimscraper": "yes",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
@@ -342,6 +344,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
         },
         labels={
+            "zimfarm": "",
             "zimtask": "yes",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
@@ -424,6 +427,7 @@ def start_uploader(
         detach=True,
         environment={"RSA_KEY": str(PRIVATE_KEY)},
         labels={
+            "zimfarm": "",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
