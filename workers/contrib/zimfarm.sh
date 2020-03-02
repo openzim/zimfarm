@@ -86,12 +86,13 @@ function config() {
 
 # display options list
 function usage() {
-    echo "Usage: $0 [help|config|ps|prune|restart|stop|shutdown|update]"
+    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|update]"
     echo ""
     echo "  config          show the config file path in use"
     echo ""
     echo "  restart         start or restart the manager. reloads config."
     echo "  logs <name> [n] display logs of task or 'manager' using its name"
+    echo "  inspect <name>  inspect details of the 'manager' or container"
     echo "  stop <name>     stop a task or the 'manager' using its name"
     echo "  shutdown        stops the manager and all running tasks"
     echo ""
@@ -112,12 +113,12 @@ function run() {
 
 # display a list of running containers with some zimfarm labels
 function ps() {
-    run docker ps --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "schedule_name"}}\t{{.Label "task_id"}}\t{{.RunningFor}}\t{{.Names}}'
+    run docker ps --filter label=zimfarm --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "schedule_name"}}\t{{.Label "task_id"}}\t{{.RunningFor}}\t{{.Names}}' $1
 }
 
 # cleanup disk usage (to be run in cron)
 function prune() {
-    run docker system prune --volumes -af
+    run docker system prune --volumes --all --force --filter label=zimfarm
 }
 
 # stop container, extending timeout so task can stop scrapers and dnscache
@@ -143,6 +144,7 @@ function restart() {
     run docker pull $manager_image_string
     run docker run \
         --name $WORKER_MANAGER_NAME \
+        --label=zimfarm \
         --restart=always \
         --detach \
         --log-driver json-file \
@@ -184,6 +186,15 @@ function logs() {
     run docker logs --tail $tail -f $target
 }
 
+# display details of a container or the manager
+function inspect() {
+    target=$1
+    if [[ "$target" == "manager" ]]; then
+        target=$WORKER_MANAGER_NAME
+    fi
+    run docker inspect $2 $target
+}
+
 # display the command needed to update this script from the repo
 # add 'do' parameter to attempt to run it
 function update() {
@@ -215,7 +226,8 @@ function main() {
         ;;
 
       "ps")
-        ps
+        # optionnal: pass params to ps (-a, -nX)
+        ps $target $3
         ;;
 
       "prune")
@@ -238,6 +250,11 @@ function main() {
       "logs")
         usage_if_missing $target
         logs $target $3
+        ;;
+
+      "inspect")
+        usage_if_missing $target
+        inspect $target $3
         ;;
 
       "shutdown")
