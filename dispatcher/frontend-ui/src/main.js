@@ -109,9 +109,10 @@ new Vue({
   router: router,
   computed: {
     axios() { // prefixed axios object with API url and token from store
+      let headers = store.getters.access_token === null ? {} : {'Authorization': "Token " + store.getters.access_token};
       return axios.create({
           baseURL: Constants.zimfarm_webapi,
-          headers: {'Authorization': "Token " + store.getters.access_token},
+          headers: headers,
           paramsSerializer: Constants.params_serializer,
         });
     },
