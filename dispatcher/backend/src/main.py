@@ -29,7 +29,7 @@ else:
     docs_dir = pathlib.Path(__file__).parent.resolve().parent.joinpath("docs")
 application = Flask(__name__, template_folder=docs_dir)
 application.json_encoder = Encoder
-cors = CORS(application, resources={r"/*": {"origins": "*"}})
+CORS(application)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
