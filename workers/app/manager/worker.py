@@ -12,7 +12,7 @@ import zmq
 import requests
 
 from common import logger
-from common.utils import format_size
+from common.utils import format_size, as_pos_int
 from common.worker import BaseWorker
 from common.docker import (
     query_host_stats,
@@ -61,14 +61,20 @@ class WorkerManager(BaseWorker):
             "Host hardware resources:"
             "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
             "\n\tRAM : {mem_total} (total) ;  {mem_avail} (avail)"
-            "\n\tDisk: {disk_avail} (avail)".format(
+            "\n\tDisk: {disk_total} (configured) ; {disk_avail} (avail)".format(
                 mem_total=format_size(host_stats["memory"]["total"]),
                 mem_avail=format_size(host_stats["memory"]["available"]),
                 cpu_total=host_stats["cpu"]["total"],
                 cpu_avail=host_stats["cpu"]["available"],
                 disk_avail=format_size(host_stats["disk"]["available"]),
+                disk_total=format_size(host_stats["disk"]["total"]),
             )
         )
+
+        if host_stats["disk"]["available"] < host_stats["disk"]["total"]:
+            self.should_stop = True
+            logger.critical("Configured disk space is not available. Exiting.")
+            return
 
         self.check_in()
 
@@ -93,7 +99,16 @@ class WorkerManager(BaseWorker):
         self.last_poll = datetime.datetime.now()
 
         host_stats = query_host_stats(self.docker, self.workdir)
-        logger.debug(host_stats)
+        expected_disk_avail = as_pos_int(
+            host_stats["disk"]["total"] - host_stats["disk"]["used"]
+        )
+        if host_stats["disk"]["available"] < expected_disk_avail:
+            self.should_stop = True
+            logger.critical(
+                f"Available disk space ({format_size(host_stats['disk']['available'])}) is lower than expected ({format_size(expected_disk_avail)}). Exiting."
+            )
+            return
+
         success, status_code, response = self.query_api(
             "GET",
             "/requested-tasks/worker",
@@ -287,6 +302,9 @@ class WorkerManager(BaseWorker):
         logger.info("clean-up successful")
 
     def run(self):
+        if self.should_stop:  # early exit
+            return 1
+
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
 

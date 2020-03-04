@@ -23,9 +23,9 @@ host:
 * `ZIMFARM_MAX_RAM` sets the max amount of RAM the worker will assign
   to its tasks.
 
-* `ZIMFARM_DISK` sets the max amount of disk you'd want the worker to
-  use. It is used to decide whether you can run tasks or not but _is
-  not enforced_. If a [Zimfarm](https://farm.openzim.org/recipes)
+* `ZIMFARM_DISK` sets the amount of disk you want to dedicate to the worker.
+  It is used to decide whether you can run tasks or not but _is
+  not enforced_: if a [Zimfarm](https://farm.openzim.org/recipes)
   recipe indicates that a task uses `2GB` of disk but actually uses
   `10GB`, it will try to use those `10GB` on your disk.
 
