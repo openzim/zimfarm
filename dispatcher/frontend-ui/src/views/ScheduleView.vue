@@ -128,7 +128,7 @@
               <ResourceBadge kind="disk" :value="config.resources.disk" />
             </td>
           </tr>
-          <tr><th>Config</th><td><FlagsList :flags="config.flags" /></td></tr>
+          <tr><th>Config</th><td><FlagsList :flags="config.flags" :secret_fields="secret_fields" /></td></tr>
           <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
         </table>
       </div>
@@ -190,9 +190,11 @@
       last_run() { return this.schedule.most_recent_task; },
       config() { return this.schedule.config; },
       offliner() { return this.config.task_name; },
+      offliner_def() { return this.$store.getters.offliners_defs[this.offliner] || null; },
+      secret_fields() { return Constants.secret_fields_for(this.offliner_def); },
       image_human() { return Constants.image_human(this.config); },
       warehouse_path() { return this.config.warehouse_path; },
-      command() { return Constants.build_docker_command(this.name, this.config); },
+      command() { return Constants.build_docker_command(this.name, this.config, this.secret_fields); },
       trimmed_command() { return Constants.trim_command(this.command); },
       requested_id() { return (this.requested) ? this.requested._id : null; },
       duration_dict() { return Constants.schedule_durations_dict(this.schedule.duration); }
