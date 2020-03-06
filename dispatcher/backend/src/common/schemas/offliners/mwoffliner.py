@@ -93,7 +93,7 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "label": "Custom Flavour",
             "description": "Custom processor to filter and process articles (see extensions/*.js)",
         },
-        validate=validate.OneOf(["/tmp/mwoffliner/wiktionary_fr.js"]),
+        validate=validate.OneOf(["/tmp/mwoffliner/wiktionary_fr.js"]),  # nosec
     )
 
     optimisationCacheUrl = fields.Url(
