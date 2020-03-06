@@ -169,7 +169,7 @@ function secret_fields_for(offliner_def) {
   if (offliner_def === null)
     return null;
   return offliner_def
-    .filter(function (item) { return item.hasOwnProperty("secret") && item.secret === true; })
+    .filter(function (item) { return "secret" in item && item.secret === true; })
     .map(function (item) { return item.key});
 }
 
