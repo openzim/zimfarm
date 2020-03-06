@@ -4,7 +4,7 @@
 
 <template>
   <div class="container">
-    <div class="row"><ScheduleActionButton :name="schedule_name" /></div>
+    <div class="row" v-if="schedule.enabled"><ScheduleActionButton :name="schedule_name" /></div>
     <div class="row"><div class="col"><h2><code>{{ schedule_name }}</code></h2></div></div>
 
     <div v-if="!error && ready">

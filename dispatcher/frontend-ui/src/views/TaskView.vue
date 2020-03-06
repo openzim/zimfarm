@@ -4,7 +4,7 @@
 
 <template>
   <div class="container">
-    <div class="row"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
+    <div class="row" v-if="schedule_enabled"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
     <h2 class="row">
       <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
       <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
@@ -155,6 +155,12 @@
       webapi_url() { return Constants.zimfarm_webapi; },
       command() { return this.task_container.command.join(" "); },
       trimmed_command() { return Constants.trim_command(this.command); },
+      schedule_enabled() {
+        let schedule = this.$store.getters.schedule || null;
+        if (schedule)
+          return schedule.enabled;
+        return false;
+      },
     },
     methods: {
       copyCommand() {
