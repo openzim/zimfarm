@@ -35,12 +35,32 @@ function image_human(config) {
   return config.image.name + ":" + config.image.tag;
 }
 
-function build_docker_command(name, config) {
+function build_command_without(config, secret_fields) {
+  if (secret_fields == null)
+    return "<missing defs>";
+  if (secret_fields.length == 0)
+    return config.str_command;
+
+  function should_keep(line) {
+    let keep = true;
+    secret_fields.forEach(function (field_name) {
+      if (line.indexOf("--" + field_name) == 0)
+        keep = false;
+    });
+    return keep;
+  }
+
+  return config.command.map(function (line) {
+      return should_keep(line) ? line : line.split("=")[0] + '="' + secret_replacement + '"';
+  }).join(" ");
+}
+
+function build_docker_command(name, config, secret_fields) {
   let mounts = ["-v", "/my-path:" + config.mount_point + ":rw"];
   let mem_params = ["--memory-swappiness", "0", "--memory", config.resources.memory];
   let cpu_params = ["--cpu-shares", config.resources.cpu * DEFAULT_CPU_SHARE];
   let docker_base = ["docker", "run"].concat(mounts).concat(["--name", config.task_name + "_" + name, "--detach"]).concat(cpu_params).concat(mem_params);
-  let scraper_command = config.str_command;
+  let scraper_command = build_command_without(config, secret_fields);
   let args = docker_base.concat([image_human(config)]).concat([scraper_command]);
   return args.join(" ");
 }
@@ -145,12 +165,21 @@ function schedule_durations_dict(duration) {
   return multiple_durations(min_value, max_value, duration.workers);
 }
 
+function secret_fields_for(offliner_def) {
+  if (offliner_def === null)
+    return null;
+  return offliner_def
+    .filter(function (item) { return "secret" in item && item.secret === true; })
+    .map(function (item) { return item.key});
+}
+
 var DEFAULT_CPU_SHARE = 1024;
 
 var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
 var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
 var cancelable_statuses = ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"];
 var running_statuses = cancelable_statuses.concat(["cancel_requested"]);
+var secret_replacement = "**********";
 
 export default {
   isProduction() {
@@ -332,4 +361,6 @@ export default {
   filesize: filesize2,
   duplicate: duplicate,
   schedule_durations_dict: schedule_durations_dict,
+  secret_fields_for: secret_fields_for,
+  secret_replacement: secret_replacement,
 };
