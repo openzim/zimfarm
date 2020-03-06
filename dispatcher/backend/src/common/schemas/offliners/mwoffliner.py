@@ -1,6 +1,6 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, ListOfStringEnum
+from common.schemas import SerializableSchema, ListOfStringEnum, StringEnum
 from common.schemas.fields import validate_output
 
 
@@ -87,6 +87,21 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "label": "Flavours",
             "description": "Which flavours to build, as `<flavour>:<custom-suffix>`. Empty option is full without suffix.",
         },
+    )
+    customFlavour = StringEnum(
+        metadata={
+            "label": "Custom Flavour",
+            "description": "Custom processor to filter and process articles (see extensions/*.js)",
+        },
+        validate=validate.OneOf(["/tmp/mwoffliner/wiktionary_fr.js"]),
+    )
+
+    optimisationCacheUrl = fields.Url(
+        metadata={
+            "label": "Optmiziation Cache URL",
+            "description": "S3 Storage URL including credentials and bucket",
+            "secret": True,
+        }
     )
 
     addNamespaces = fields.String(
