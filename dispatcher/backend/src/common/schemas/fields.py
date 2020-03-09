@@ -1,7 +1,13 @@
 from marshmallow import fields, validate
 
 from common.roles import ROLES
-from common.enum import Offliner, ScheduleCategory, TaskStatus, SchedulePeriodicity
+from common.enum import (
+    Offliner,
+    ScheduleCategory,
+    TaskStatus,
+    SchedulePeriodicity,
+    Platform,
+)
 
 # validators
 validate_priority = validate.Range(min=0, max=10)
@@ -20,6 +26,8 @@ validate_status = validate.OneOf(TaskStatus.all())
 validate_event = validate.OneOf(TaskStatus.all_events())
 validate_worker_name = validate.Length(min=3)
 validate_periodicity = validate.OneOf(SchedulePeriodicity.all())
+validate_platform = validate.OneOf(Platform.all())
+validate_platform_value = validate.Range(min=0)
 
 
 def validate_multiple_of_100(value):

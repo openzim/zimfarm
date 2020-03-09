@@ -159,7 +159,14 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
                     "Schedule with name `{}` already exists".format(update["name"])
                 )
 
-        config_keys = ["task_name", "warehouse_path", "image", "resources", "flags"]
+        config_keys = [
+            "task_name",
+            "warehouse_path",
+            "image",
+            "resources",
+            "platform",
+            "flags",
+        ]
         mongo_update = {
             f"config.{key}" if key in config_keys else key: value
             for key, value in update.items()
