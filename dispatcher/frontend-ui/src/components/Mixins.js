@@ -19,6 +19,7 @@ export default {
     languages() { return this.$store.getters.languages; },  // list of lang for filter/edit
     tags() { return this.$store.getters.tags; },  // list of tags for filter/edit
     offliners() { return this.$store.getters.offliners; }, // list of offliners for edit
+    platforms() { return this.$store.getters.platforms; }, // list of platforms for edit
 
     isLoggedIn() {
       try {

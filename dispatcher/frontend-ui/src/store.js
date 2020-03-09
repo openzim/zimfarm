@@ -18,6 +18,8 @@ const store = new Vuex.Store({
     offliners: [],
     offliners_defs: {},
 
+    platforms: [],
+
     schedule: null,
 
     selectedLanguagesOptions: [],
@@ -50,6 +52,9 @@ const store = new Vuex.Store({
     },
     saveOfflinerDef(state, payload) {
       state.offliners_defs[payload.name] = payload.def;
+    },
+    savePlatforms(state, payload) {
+      state.platforms = payload;
     },
     saveSchedule(state, payload) {
       state.schedule = payload;
@@ -92,6 +97,9 @@ const store = new Vuex.Store({
     setOfflinerDef(context, payload) {
       context.commit('saveOfflinerDef', payload);
     },
+    setPlatforms(context, payload) {
+      context.commit('savePlatforms', payload);
+    },
     setSchedule(context, payload) {
       context.commit('saveSchedule', payload);
     },
@@ -117,6 +125,7 @@ const store = new Vuex.Store({
     tags(state) { return state.tags; },
     offliners(state) { return state.offliners; },
     offliners_defs(state) { return state.offliners_defs; },
+    platforms(state) { return state.platforms; },
 
     schedule(state) { return state.schedule; },
   }

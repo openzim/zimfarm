@@ -83,6 +83,27 @@
             });
         }
       },
+      loadPlatforms() {
+        let parent = this;
+        // download offliners
+        if (!parent.$store.getters.platforms.length) {
+          this.toggleLoader("fetching platforms…");
+          parent.queryAPI('get', '/platforms/', {params: {limit: 100}})
+            .then(function (response) {
+              let platforms = [];
+              for (var i=0; i<response.data.items.length; i++){
+                platforms.push(response.data.items[i]);
+              }
+              parent.$store.dispatch('setPlatforms', platforms);
+            })
+            .catch(function (error) {
+              parent.alertDanger("Unable to fetch platforms", Constants.standardHTTPError(error.response));
+              return;
+            }).then(function () {
+              parent.toggleLoader(false);
+            });
+        }
+      },
       async loadOfflinersDefs() {
         let parent = this;
         // download offliners defs
@@ -104,6 +125,7 @@
         this.loadLanguages();
         this.loadTags();
         this.loadOffliners();
+        this.loadPlatforms();
       },
       loadSchedule(schedule_name, force_reload, on_success, on_error) {
         if (!force_reload && this.$store.getters.schedule && this.$store.getters.schedule.name == schedule_name){
