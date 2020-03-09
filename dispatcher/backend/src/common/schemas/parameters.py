@@ -26,7 +26,12 @@ from common.schemas.fields import (
     validate_worker_name,
     validate_platform,
 )
-from common.schemas.models import LanguageSchema, DockerImageSchema, ResourcesSchema, PlatformsLimitSchema
+from common.schemas.models import (
+    LanguageSchema,
+    DockerImageSchema,
+    ResourcesSchema,
+    PlatformsLimitSchema,
+)
 
 # languages GET
 class SkipLimit500Schema(Schema):

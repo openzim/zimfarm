@@ -102,10 +102,11 @@ SUPPORTED_OFFLINERS = [
 ALL_PLATFORMS = ["wikimedia", "youtube"]
 PLATFORMS_TASKS = {}
 for platform in ALL_PLATFORMS:
-    env = os.getenv(f"PLATFORM_{platform}_MAX_TASKS")
-    if not env:
+    name = f"PLATFORM_{platform}_MAX_TASKS"
+    value = os.getenv(name)
+    if not value:
         continue
     try:
-        PLATFORMS_TASKS[platform] = int(env)
+        PLATFORMS_TASKS[platform] = int(value)
     except Exception:
-        pass
+        logger.debug(f"Incorrect value for {name} ({value}). Ignored.")
