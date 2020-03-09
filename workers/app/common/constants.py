@@ -98,3 +98,14 @@ SUPPORTED_OFFLINERS = [
     )
     if offliner in ALL_OFFLINERS
 ]
+
+ALL_PLATFORMS = ["wikimedia", "youtube"]
+PLATFORMS_TASKS = {}
+for platform in ALL_PLATFORMS:
+    env = os.getenv(f"PLATFORM_{platform}_MAX_TASKS")
+    if not env:
+        continue
+    try:
+        PLATFORMS_TASKS[platform] = int(env)
+    except Exception:
+        pass
