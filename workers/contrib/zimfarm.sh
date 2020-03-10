@@ -164,6 +164,8 @@ function restart() {
         --env USE_PUBLIC_DNS=$USE_PUBLIC_DNS \
         --env OFFLINERS=$ZIMFARM_OFFLINERS \
         --env TASK_WORKER_IMAGE=$worker_image_string \
+        --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
+        --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
     $manager_image_string worker-manager
 }
 
