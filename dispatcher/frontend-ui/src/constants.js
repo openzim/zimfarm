@@ -249,6 +249,7 @@ export default {
                 161061273600,  // 150GiB
                 214748364800,  // 200GiB
                 268435456000,  // 250GiB
+                322122547200,  // 300GiB
                 ],
   yes_no(value, value_yes, value_no) {
     if (!value_yes)
