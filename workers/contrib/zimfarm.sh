@@ -202,7 +202,7 @@ function inspect() {
 function update() {
     echo "updating $1..."
     dest="${parentdir}/${scriptname}"
-    update_cmd="sudo wget -O ${dest} ${SOURCE_URL} && chmod +x ${dest}"
+    update_cmd="sudo wget -O ${dest} ${SOURCE_URL} && sudo chmod +x ${dest}"
     if [[ "$2" == "do" ]]; then
         bash -c "${update_cmd}"
     else
