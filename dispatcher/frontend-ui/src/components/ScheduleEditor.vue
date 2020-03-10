@@ -108,6 +108,18 @@
         </b-form-group>
       </b-col>
       <b-col>
+        <b-form-group label="Platform:"
+                      label-for="es_platform"
+                      description="The platform targetted by the offliner">
+          <b-form-select id="es_platform"
+                         v-model="edit_schedule.config.platform"
+                         :options="platformsOptions"
+                         size="sm"></b-form-select>
+        </b-form-group>
+      </b-col>
+    </b-row>
+    <b-row>
+      <b-col>
         <b-form-group label="Image Name:" label-for="es_image" description="Just the image name (repo/name)">
           <b-form-input v-model="edit_schedule.config.image.name"
                         id="es_image"
@@ -377,7 +389,7 @@
           payload.language = this.languages.filter(function (language) { return language.code == this.edit_schedule.language.code }.bind(this))[0];
 
         // config properties
-        ["warehouse_path", "task_name"].forEach(function (key) {
+        ["warehouse_path", "task_name", "platform"].forEach(function (key) {
           if (parent.edit_schedule.config[key] != parent.schedule.config[key])
             payload[key] = parent.edit_schedule.config[key];
         });
@@ -424,6 +436,11 @@
       },
       offlinersOptions() {
         return this.offliners.map(function (offliner) { return {text: offliner, value: offliner}; });
+      },
+      platformsOptions() {
+        let values = this.platforms.map(function (platform) { return {text: platform, value: platform}; });
+        values.push({text: "None", value: null});
+        return values;
       },
       languagesOptions() {
         return this.languages.map(function (language) { return {text: language.name_en, value: language.code}; });

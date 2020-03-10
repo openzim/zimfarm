@@ -24,8 +24,14 @@ from common.schemas.fields import (
     validate_status,
     validate_event,
     validate_worker_name,
+    validate_platform,
 )
-from common.schemas.models import LanguageSchema, DockerImageSchema, ResourcesSchema
+from common.schemas.models import (
+    LanguageSchema,
+    DockerImageSchema,
+    ResourcesSchema,
+    PlatformsLimitSchema,
+)
 
 # languages GET
 class SkipLimit500Schema(Schema):
@@ -95,6 +101,9 @@ class UpdateSchema(Schema):
     task_name = offliner_field
     warehouse_path = fields.String(required=False, validate=validate_warehouse_path)
     image = fields.Nested(DockerImageSchema, required=False)
+    platform = fields.String(
+        required=False, validate=validate_platform, allow_none=True
+    )
     resources = fields.Nested(ResourcesSchema, required=False)
     flags = fields.Dict(required=False)
 
@@ -151,3 +160,4 @@ class WorkerCheckInSchema(Schema):
     memory = fields.Integer(required=True, validate=validate_memory)
     disk = fields.Integer(required=True, validate=validate_disk)
     offliners = fields.List(offliner_field, required=True)
+    platforms = fields.Nested(PlatformsLimitSchema(), required=False)

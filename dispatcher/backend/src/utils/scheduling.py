@@ -4,13 +4,14 @@
 
 import logging
 import datetime
+import functools
 
 import pymongo
 from bson.son import SON
 
 from common import getnow
 from common.constants import PERIODICITIES
-from common.enum import TaskStatus, SchedulePeriodicity
+from common.enum import TaskStatus, SchedulePeriodicity, Platform
 from utils.offliners import command_information_for
 from common.mongo import Tasks, Schedules, Workers, RequestedTasks
 from common.constants import DEFAULT_SCHEDULE_DURATION
@@ -198,7 +199,8 @@ def get_task_eta(task, worker_name):
     """ compute task duration (dict), remaining (seconds) and eta (datetime) """
     now = getnow()
     duration = get_duration_for(task["schedule_name"], worker_name)
-    elapsed = now - task["timestamp"]["started"]  # delta
+    # delta
+    elapsed = now - task["timestamp"].get("started", task["timestamp"]["reserved"])
     remaining = max([duration["value"] - elapsed.total_seconds(), 60])  # seconds
     remaining *= 1.005  # .5% margin
     eta = now + datetime.timedelta(seconds=remaining)
@@ -225,6 +227,7 @@ def get_reqs_doable_by(worker):
         "status": 1,
         "schedule_name": 1,
         "config.task_name": 1,
+        "config.platform": 1,
         "config.resources": 1,
         "timestamp.requested": 1,
         "requested_by": 1,
@@ -279,7 +282,12 @@ def get_currently_running_tasks(worker_name):
     running_tasks = list(
         Tasks().find(
             {"status": {"$nin": TaskStatus.complete()}, "worker": worker_name},
-            {"config.resources": 1, "schedule_name": 1, "timestamp": 1},
+            {
+                "config.resources": 1,
+                "config.platform": 1,
+                "schedule_name": 1,
+                "timestamp": 1,
+            },
         )
     )
 
@@ -300,6 +308,26 @@ def get_possible_task_with(tasks_worker_could_do, available_resources, available
             logger.debug(f"{temp_candidate['schedule_name']} would take too long")
 
 
+def does_platform_allow_worker_to_run(worker, running_tasks, task):
+    """ whether worker can now run task according to platform limitations """
+    platform = task["config"].get("platform")
+    if not platform:
+        return True
+    nb_running_on = sum(
+        [
+            1
+            for running_task in running_tasks
+            if running_task["config"].get("platform") == platform
+        ]
+    )
+    if nb_running_on == 0:
+        return True
+    platform_limit = worker.get("platforms", {}).get(
+        platform, Platform.get_max_concurrent_for(platform)
+    )
+    return True if platform_limit is None else nb_running_on < platform_limit
+
+
 def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
     """ optimal requested_task to run now for a given worker
 
@@ -312,7 +340,14 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     # get total resources for that worker
     worker = Workers().find_one(
         {"username": username, "name": worker_name},
-        {"resources": 1, "offliners": 1, "last_seen": 1, "name": 1, "selfish": 1},
+        {
+            "resources": 1,
+            "offliners": 1,
+            "last_seen": 1,
+            "name": 1,
+            "selfish": 1,
+            "platforms": 1,
+        },
     )
 
     # worker is not checked-in
@@ -320,10 +355,19 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         logger.error(f"worker `{worker_name}` not checked-in")
         return None
 
+    # retrieve list of tasks we are currently running with associated resources
+    running_tasks = get_currently_running_tasks(worker_name)
+
     # find all requested tasks that this worker can do with its total resources
     #   sorted by priorities
     #   sorted by max durations
     tasks_worker_could_do = get_reqs_doable_by(worker)
+
+    # filter-out requested tasks that are not doable now due to platform limitations
+    worker_platform_filter = functools.partial(
+        does_platform_allow_worker_to_run, worker, running_tasks
+    )
+    tasks_worker_could_do = filter(worker_platform_filter, tasks_worker_could_do)
 
     # record available resources
     available_resources = {"cpu": avail_cpu, "memory": avail_memory, "disk": avail_disk}
@@ -332,7 +376,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         # candidate is task[0]
         candidate = next(tasks_worker_could_do)
     except StopIteration:
-        logger.debug("nothing scheduled")
+        logger.debug(f"no request doable by worker (selfish={worker.get('selfish')})")
         return None
 
     # can worker do task[0] ?
@@ -348,9 +392,6 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     missing_memory = max([candidate["config"]["resources"]["memory"] - avail_memory, 0])
     missing_disk = max([candidate["config"]["resources"]["disk"] - avail_disk, 0])
     logger.debug(f"missing cpu:{missing_cpu}, mem:{missing_memory}, dsk:{missing_disk}")
-
-    # retrieve list of tasks we are currently running with associated resources
-    running_tasks = get_currently_running_tasks(worker_name)
 
     # pile-up all of those which we need to complete to have enough resources
     preventing_tasks = []

@@ -28,6 +28,7 @@ def make_mwoffliner_config(**kwargs):
         "warehouse_path": "/wikipedia",
         "image": {"name": "openzim/mwoffliner", "tag": "1.8.0"},
         "flags": make_mwoffliner_flags(),
+        "platform": None,
         "resources": {"cpu": 3, "memory": 512 * 1048576, "disk": 2 ** 30},
     }
     config.update(kwargs)
@@ -40,6 +41,7 @@ def make_phet_config(**kwargs):
         "warehouse_path": "/phet",
         "image": {"name": "openzim/phet", "tag": "latest"},
         "flags": {},
+        "platform": None,
         "resources": {"cpu": 3, "memory": 512 * 1048576, "disk": 2 ** 30},
     }
     config.update(kwargs)

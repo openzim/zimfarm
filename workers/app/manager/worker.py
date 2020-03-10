@@ -22,7 +22,13 @@ from common.docker import (
     list_containers,
     remove_container,
 )
-from common.constants import CANCELED, CANCELING, CANCEL_REQUESTED, SUPPORTED_OFFLINERS
+from common.constants import (
+    CANCELED,
+    CANCELING,
+    CANCEL_REQUESTED,
+    SUPPORTED_OFFLINERS,
+    PLATFORMS_TASKS,
+)
 
 
 class WorkerManager(BaseWorker):
@@ -36,6 +42,7 @@ class WorkerManager(BaseWorker):
         # include our class config values in the config print
         kwargs.update({k: getattr(self, k) for k in self.config_keys})
         kwargs.update({"OFFLINERS": SUPPORTED_OFFLINERS})
+        kwargs.update({"PLATFORMS_TASKS": PLATFORMS_TASKS})
         self.print_config(**kwargs)
 
         # set data holders
@@ -156,6 +163,7 @@ class WorkerManager(BaseWorker):
                 "memory": host_stats["memory"]["total"],
                 "disk": host_stats["disk"]["total"],
                 "offliners": SUPPORTED_OFFLINERS,
+                "platforms": PLATFORMS_TASKS,
             },
         )
         if not success:

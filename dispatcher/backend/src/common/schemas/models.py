@@ -1,6 +1,6 @@
-from marshmallow import Schema, fields, validate, validates_schema
+from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 
-from common.enum import DockerImageName, Offliner
+from common.enum import DockerImageName, Offliner, Platform
 from common.schemas import SerializableSchema
 from common.schemas.fields import (
     validate_not_empty,
@@ -13,6 +13,8 @@ from common.schemas.fields import (
     validate_warehouse_path,
     validate_offliner,
     validate_periodicity,
+    validate_platform,
+    validate_platform_value,
 )
 from common.schemas.offliners import (
     MWOfflinerFlagsSchema,
@@ -57,6 +59,7 @@ class ScheduleConfigSchema(SerializableSchema):
     image = fields.Nested(DockerImageSchema(), required=True)
     resources = fields.Nested(ResourcesSchema(), required=True)
     flags = fields.Dict(required=True)
+    platform = fields.String(required=True, allow_none=True, validate=validate_platform)
 
     @staticmethod
     def get_offliner_schema(offliner):
@@ -86,3 +89,11 @@ class ScheduleSchema(Schema):
     )
     enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
     config = fields.Nested(ScheduleConfigSchema(), required=True)
+
+
+PlatformsLimitSchema = Schema.from_dict(
+    {
+        platform: fields.Integer(required=False, validate=validate_platform_value)
+        for platform in Platform.all()
+    }
+)

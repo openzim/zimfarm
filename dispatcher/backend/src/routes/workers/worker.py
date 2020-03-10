@@ -88,6 +88,7 @@ class WorkerCheckinRoute(BaseRoute):
                 "disk": request_json["disk"],
             },
             "offliners": request_json["offliners"],
+            "platforms": request_json.get("platforms", {}),
             "last_seen": getnow(),
         }
         Workers().replace_one({"name": name}, document, upsert=True)

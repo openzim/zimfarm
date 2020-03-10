@@ -4,7 +4,7 @@
 
 <template>
   <div class="container">
-    <div class="row" v-if="schedule.enabled"><ScheduleActionButton :name="schedule_name" /></div>
+    <div class="row" v-if="schedule && schedule.enabled"><ScheduleActionButton :name="schedule_name" /></div>
     <div class="row"><div class="col"><h2><code>{{ schedule_name }}</code></h2></div></div>
 
     <div v-if="!error && ready">
@@ -118,6 +118,7 @@
       <div v-if="selectedTab == 'config'" class="tab-content">
         <table class="table table-responsive-md table-striped table-in-tab">
           <tr><th>Offliner</th><td><code>{{ offliner }}</code></td></tr>
+          <tr><th>Platform</th><td><code>{{ platform || "-" }}</code></td></tr>
           <tr><th>Warehouse path</th><td><code>{{ warehouse_path }}</code></td></tr>
           <tr><th>Image</th><td><a target="_blank" :href="'https://hub.docker.com/r/' + config.image.name"><code>{{ image_human }}</code></a></td></tr>
           <tr>
@@ -191,6 +192,7 @@
       config() { return this.schedule.config; },
       offliner() { return this.config.task_name; },
       offliner_def() { return this.$store.getters.offliners_defs[this.offliner] || null; },
+      platform() { return this.config.platform; },
       secret_fields() { return Constants.secret_fields_for(this.offliner_def); },
       image_human() { return Constants.image_human(this.config); },
       warehouse_path() { return this.config.warehouse_path; },

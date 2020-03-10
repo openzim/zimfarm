@@ -1,3 +1,6 @@
+import os
+
+
 class TaskStatus:
     requested = "requested"
     reserved = "reserved"
@@ -148,3 +151,19 @@ class SchedulePeriodicity:
     @classmethod
     def all(cls) -> str:
         return [cls.manually, cls.monthly, cls.quarterly, cls.biannualy, cls.annually]
+
+
+class Platform:
+    wikimedia = "wikimedia"
+    youtube = "youtube"
+
+    @classmethod
+    def all(cls) -> str:
+        return [cls.wikimedia, cls.youtube]
+
+    @classmethod
+    def get_max_concurrent_for(cls, platform) -> int:
+        try:
+            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS"))
+        except (TypeError, ValueError):
+            return None
