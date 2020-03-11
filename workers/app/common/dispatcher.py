@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import json
+import time
 import base64
 import pathlib
 import datetime
@@ -11,6 +12,7 @@ import subprocess
 
 import requests
 
+from common import logger
 from common.constants import OPENSSL_BIN
 
 
@@ -62,14 +64,21 @@ def get_token_ssh(webapi_uri, username, private_key):
         return req.json().get("access_token"), req.json().get("refresh_token")
 
 
-def query_api(token, method, url, payload=None, params=None, headers={}):
+def query_api(token, method, url, payload=None, params=None, headers={}, attempt=0):
+    req_headers = {}
+    req_headers.update(headers)
     try:
-        headers.update({"Authorization": "Token {}".format(token)})
+        req_headers.update({"Authorization": f"Token {token}"})
         req = getattr(requests, method.lower(), "get")(
-            url=url, headers=headers, json=payload, params=params
+            url=url, headers=req_headers, json=payload, params=params
         )
-    except Exception as exp:
-        return (False, 599, "ConnectionError -- {}".format(exp))
+    except Exception as exc:
+        attempt += 1
+        logger.error(f"ConnectionError (attempt {attempt}) for {method} {url} -- {exc}")
+        if attempt <= 3:
+            time.sleep(attempt * 60 * 2)
+            return query_api(token, method, url, payload, params, headers, attempt)
+        return (False, 599, f"ConnectionError -- {exc}")
 
     if req.status_code == requests.codes.NO_CONTENT:
         return True, req.status_code, ""
@@ -80,13 +89,13 @@ def query_api(token, method, url, payload=None, params=None, headers={}):
         return (
             False,
             req.status_code,
-            "ResponseError (not JSON): -- {}".format(req.text),
+            f"ResponseError (not JSON): -- {req.text}",
         )
-    except Exception as exp:
+    except Exception as exc:
         return (
             False,
             req.status_code,
-            "ResponseError -- {} -- {}".format(str(exp), req.text),
+            f"ResponseError -- {exc} -- {req.text}",
         )
 
     if req.status_code in (
