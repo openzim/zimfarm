@@ -20,7 +20,9 @@
 
 import os
 import sys
+import time
 import urllib
+import signal
 import logging
 import pathlib
 import argparse
@@ -38,8 +40,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-HOST_KNOW_FILE = pathlib.Path("/etc/ssh/known_hosts")
-MARKER_FILE = pathlib.Path("/usr/share/marker")
+HOST_KNOW_FILE = pathlib.Path(os.getenv("HOST_KNOW_FILE", "/etc/ssh/known_hosts"))
+MARKER_FILE = pathlib.Path(os.getenv("MARKER_FILE", "/usr/share/marker"))
 SCP_BIN_PATH = pathlib.Path(os.getenv("SCP_BIN_PATH", "/usr/bin/scp"))
 SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
 
@@ -364,12 +366,66 @@ def display_stats(filesize, started_on, ended_on=None):
     logger.info(f"[stats] {msg}")
 
 
+def watched_upload(delay, method, **kwargs):
+    str_delay = humanfriendly.format_timespan(delay) if humanfriendly else f"{delay}s"
+    logger.info(f"... watching file until {str_delay} after last modification")
+
+    class ExitCatcher:
+        def __init__(self):
+            self.requested = False
+            for name in ["TERM", "INT", "QUIT"]:
+                signal.signal(getattr(signal, f"SIG{name}"), self.on_exit)
+
+        def on_exit(self, signum, frame):
+            self.requested = True
+            logger.info(f"received signal {signal.strsignal(signum)}, graceful exit.")
+
+    exit_catcher = ExitCatcher()
+    last_change = datetime.datetime.fromtimestamp(kwargs["src_path"].stat().st_mtime)
+    last_upload, retries = None, 10
+
+    while (
+        # make sure we upload it at least once
+        not last_upload
+        # delay without change has not expired
+        or datetime.datetime.now() - datetime.timedelta(seconds=delay) < last_change
+    ):
+
+        # file has changed (or initial), we need to upload
+        if not last_upload or last_upload < last_change:
+            started_on = datetime.datetime.now()
+            kwargs["filesize"] = kwargs["src_path"].stat().st_size
+            returncode = method(**kwargs)
+            if returncode != 0:
+                retries -= 1
+                if retries <= 0:
+                    return returncode
+            else:
+                if not last_upload:  # this was first run
+                    kwargs["resume"] = True
+                last_upload = started_on
+
+        if exit_catcher.requested:
+            break
+
+        # nb of seconds to sleep between modtime checks
+        time.sleep(1)
+
+        # refresh modification time
+        last_change = datetime.datetime.fromtimestamp(
+            kwargs["src_path"].stat().st_mtime
+        )
+    if not exit_catcher.requested:
+        logger.info(f"File last modified on {last_change}. Delay expired.")
+
+
 def upload_file(
     src_path,
     upload_uri,
     private_key,
     username=None,
     resume=False,
+    watch=None,
     move=False,
     delete=False,
     compress=False,
@@ -398,18 +454,29 @@ def upload_file(
     if upload_uri.scheme == "scp" and resume:
         logger.warning("--resume not supported via SCP. Will upload from scratch.")
 
-    return method(
-        src_path,
-        upload_uri,
-        src_path.stat().st_size,
-        private_key,
-        resume,
-        move,
-        delete,
-        compress,
-        bandwidth,
-        cipher,
-    )
+    kwargs = {
+        "src_path": src_path,
+        "upload_uri": upload_uri,
+        "filesize": src_path.stat().st_size,
+        "private_key": private_key,
+        "resume": resume,
+        "move": move,
+        "delete": delete,
+        "compress": compress,
+        "bandwidth": bandwidth,
+        "cipher": cipher,
+    }
+
+    if watch:
+        try:
+            # without humanfriendly, watch is considered to be in seconds
+            watch = int(humanfriendly.parse_timespan(watch) if humanfriendly else watch)
+        except Exception as exc:
+            logger.critical(f"--watch delay ({watch}) not correct: {exc}")
+            return 1
+        return watched_upload(watch, method, **kwargs)
+
+    return method(**kwargs)
 
 
 def main():
@@ -446,6 +513,13 @@ def main():
         help="whether to continue uploading existing remote file instead of overriding (SFTP only)",
         action="store_true",
         default=False,
+    )
+
+    # format: https://humanfriendly.readthedocs.io/en/latest/api.html#humanfriendly.parse_timespan
+    parser.add_argument(
+        "--watch",
+        help="Keep uploading until file has not been changed for that period of time (ex. 10s 1m 2h 3d)",
+        action="store",
     )
 
     parser.add_argument(
@@ -512,6 +586,8 @@ def main():
     # make sur upload-uri is correct (trailing slash)
     try:
         url = urllib.parse.urlparse(args.upload_uri)
+        if not url.scheme or not url.netloc:
+            raise ValueError("missing URL component")
     except Exception as exc:
         logger.error(f"invalid upload URI: `{args.upload_uri}` ({exc}).")
         sys.exit(1)
@@ -532,6 +608,7 @@ def main():
             username=args.username,
             private_key=private_key,
             resume=args.resume,
+            watch=args.watch,
             move=args.move,
             delete=args.delete,
             compress=args.compress,

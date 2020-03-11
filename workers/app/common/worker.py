@@ -94,7 +94,6 @@ class BaseWorker:
         signal.signal(signal.SIGTERM, self.exit_gracefully)
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGQUIT, self.exit_gracefully)
-        # signal.signal(signal.SIGSTOP, self.exit_gracefully)
 
     def authenticate(self, force=False):
         # our access token should grant us access for 60mn

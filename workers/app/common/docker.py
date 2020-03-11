@@ -107,6 +107,11 @@ def stop_container(docker_client, *args, **kwargs):
     return retried_docker_call(docker_client.api.stop, *args, **kwargs)
 
 
+def wait_container(docker_client, *args, **kwargs):
+    """ container="", timeout=None, condition="" """
+    return retried_docker_call(docker_client.api.wait, *args, **kwargs)
+
+
 def container_logs(docker_client, *args, **kwargs):
     """ container, stdout=True, stderr=True, stream=False, timestamps=False,
         tail='all', since=None, follow=None, until=None """
@@ -377,9 +382,9 @@ def start_uploader(
     delete,
     compress,
     resume,
-    uniq_container_name,
+    watch,
 ):
-    container_name = upload_container_name(task["_id"], filename, uniq_container_name)
+    container_name = upload_container_name(task["_id"], filename, False)
 
     # remove container should it exists (should not)
     try:
@@ -418,6 +423,8 @@ def start_uploader(
         command.append("--move")
     if delete:
         command.append("--delete")
+    if watch:
+        command += ["--watch", str(watch)]
 
     return run_container(
         docker_client,
