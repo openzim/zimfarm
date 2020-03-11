@@ -38,17 +38,18 @@ def list_of_requested_tasks(token: AccessToken.Payload = None):
         )
 
     request_args["matching_offliners"] = request.args.getlist("matching_offliners")
+    request_args["schedule_name"] = request.args.getlist("schedule_name")
     request_args = RequestedTaskSchema().load(request_args)
 
     # unpack query parameter
     skip, limit = request_args["skip"], request_args["limit"]
-    schedule_name = request_args.get("schedule_name")
+    schedule_names = request_args["schedule_name"]
     priority = request_args.get("priority")
 
     # get requested tasks from database
     query = {}
-    if schedule_name:
-        query["schedule_name"] = schedule_name
+    if schedule_names:
+        query["schedule_name"] = {"$in": schedule_names}
 
     if priority:
         query["priority"] = {"$gte": priority}
