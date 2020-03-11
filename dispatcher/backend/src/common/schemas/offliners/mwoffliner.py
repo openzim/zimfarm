@@ -98,7 +98,7 @@ class MWOfflinerFlagsSchema(SerializableSchema):
 
     optimisationCacheUrl = fields.Url(
         metadata={
-            "label": "Optmiziation Cache URL",
+            "label": "Optmization Cache URL",
             "description": "S3 Storage URL including credentials and bucket",
             "secret": True,
         }
