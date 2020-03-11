@@ -460,6 +460,14 @@ paths:
       - $ref: '#/components/parameters/LimitParameter'
       - $ref: '#/components/parameters/ScheduleNameQueryParameter'
       - in: query
+        required: false
+        name: schedule_name
+        description: filter by schedule_name
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleName'
+      - in: query
         name: matching_cpu
         required: false
         schema:

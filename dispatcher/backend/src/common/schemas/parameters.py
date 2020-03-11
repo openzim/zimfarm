@@ -52,7 +52,7 @@ class RequestedTaskSchema(Schema):
 
     worker = worker_field
     priority = priority_field
-    schedule_name = schedule_name_field
+    schedule_name = fields.List(schedule_name_field, required=False)
 
     matching_cpu = fields.Integer(required=False, validate=validate_cpu)
     matching_memory = fields.Integer(required=False, validate=validate_memory)
