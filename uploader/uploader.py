@@ -380,7 +380,7 @@ def watched_upload(delay, method, **kwargs):
             self.requested = True
             logger.info(f"received signal {signal.strsignal(signum)}, graceful exit.")
 
-    exit = ExitCatcher()
+    exit_catcher = ExitCatcher()
     last_change = datetime.datetime.fromtimestamp(kwargs["src_path"].stat().st_mtime)
     last_upload, retries = None, 10
 
@@ -405,7 +405,7 @@ def watched_upload(delay, method, **kwargs):
                     kwargs["resume"] = True
                 last_upload = started_on
 
-        if exit.requested:
+        if exit_catcher.requested:
             break
 
         # nb of seconds to sleep between modtime checks
@@ -415,7 +415,7 @@ def watched_upload(delay, method, **kwargs):
         last_change = datetime.datetime.fromtimestamp(
             kwargs["src_path"].stat().st_mtime
         )
-    if not exit.requested:
+    if not exit_catcher.requested:
         logger.info(f"File last modified on {last_change}. Delay expired.")
 
 
