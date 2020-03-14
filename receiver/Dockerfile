@@ -57,6 +57,7 @@ RUN wget -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
   tar -xzf zim-tools.tar.gz && \
   cp zim-tools*/* /usr/local/bin/ && \
   rm -rf zim-tools*
+COPY apps/check_zims.sh /usr/local/bin/
 COPY apps/check_zim.sh /usr/local/bin/
 
 # OpenSSH public-key auth relay

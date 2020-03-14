@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# dump environment variables to /etc/environ.json
+# Dump environment variables to /etc/environ.json
 JSON_PATH=/etc/environ.json
-echo "dump ZIMFARM_* environ variables to $JSON_PATH"
+echo "Dump ZIMFARM_* environ variables to $JSON_PATH"
 
 json_output="{\n"
 for envLine in $(env)
@@ -19,10 +19,11 @@ echo -e "$json_output" > $JSON_PATH
 
 cat $JSON_PATH
 
-# start openssh-server
+# Start openssh-server
 /etc/init.d/ssh start
 
-# configure zimValidation
-echo "* *  * * *  root  /usr/bin/flock -w 0 /dev/shm/cron.lock find $ZIM_SRC_DIR -iname \"*.zim\" -exec bash /usr/local/bin/check_zim.sh \"{}\" $ZIM_SRC_DIR $ZIM_DST_DIR $ZIM_QUAR_DIR $VALIDATION_LOG_DIR \"$ZIMCHECK_OPTION\" $VALIDATION_OPTION ';' >> /dev/shm/check_zim.log 2>&1" >> /etc/cron.d/zimvalidation
+# Create cron entry for ZIM quarantine
+echo "* *  * * *  root  /usr/bin/flock -w 0 /dev/shm/cron.lock /usr/local/bin/check_zims.sh $ZIM_SRC_DIR $ZIM_DST_DIR $ZIM_QUAR_DIR $VALIDATION_LOG_DIR \"$ZIMCHECK_OPTION\" $VALIDATION_OPTION >> /dev/shm/check_zims.log 2>&1" >> /etc/cron.d/check_zims
+chmod +x /etc/cron.d/check_zims
 
 exec "$@"

@@ -2,7 +2,7 @@
 #
 # Author : Florent Kaisser
 #
-# Usage : zimValidation <zimFilePath> <zimSrcDir> <zimDstDir> <zimQuarantineDir> <logDir> <zimCheckOptions> [NO_QUARANTINE|NO_CHECK]
+# Usage : check_zim.sh <zimFilePath> <zimSrcDir> <zimDstDir> <zimQuarantineDir> <logDir> <zimCheckOptions> [NO_QUARANTINE|NO_CHECK]
 #
 
 ZIMCHECK=/usr/local/bin/zimcheck
