@@ -57,8 +57,7 @@ RUN wget -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
   tar -xzf zim-tools.tar.gz && \
   cp zim-tools*/* /usr/local/bin/ && \
   rm -rf zim-tools*
-COPY apps/zimValidation.sh /usr/local/bin/
-RUN chmod 0500 /usr/local/bin/zimValidation.sh
+COPY apps/check_zim.sh /usr/local/bin/
 
 # OpenSSH public-key auth relay
 ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v1
@@ -67,7 +66,6 @@ ENV ZIMFARM_USERNAME uploader
 COPY apps/requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
 COPY apps/get_zimfarm_key.py /usr/bin/get_zimfarm_keys
-RUN chmod 755 /usr/bin/get_zimfarm_keys
 
 COPY entrypoint.sh /usr/bin/entrypoint.sh
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]

@@ -23,6 +23,6 @@ cat $JSON_PATH
 /etc/init.d/ssh start
 
 # configure zimValidation
-echo "* *  * * *  root  /usr/bin/flock -w 0 /dev/shm/cron.lock find $ZIM_SRC_DIR -iname \"*.zim\" -exec bash /usr/local/bin/zimValidation.sh  \"{}\" $ZIM_SRC_DIR $ZIM_DST_DIR $ZIM_QUAR_DIR $VALIDATION_LOG_DIR \"$ZIMCHECK_OPTION\" $VALIDATION_OPTION ';' >> /dev/shm/zimvalidation.log 2>&1" >> /etc/cron.d/zimvalidation
+echo "* *  * * *  root  /usr/bin/flock -w 0 /dev/shm/cron.lock find $ZIM_SRC_DIR -iname \"*.zim\" -exec bash /usr/local/bin/check_zim.sh \"{}\" $ZIM_SRC_DIR $ZIM_DST_DIR $ZIM_QUAR_DIR $VALIDATION_LOG_DIR \"$ZIMCHECK_OPTION\" $VALIDATION_OPTION ';' >> /dev/shm/check_zim.log 2>&1" >> /etc/cron.d/zimvalidation
 
 exec "$@"
