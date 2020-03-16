@@ -29,6 +29,7 @@ def task_event_handler(task_id, event, payload):
         TaskStatus.scraper_killed: task_scraper_killed_event_handler,
         TaskStatus.created_file: task_created_file_event_handler,
         TaskStatus.uploaded_file: task_uploaded_file_event_handler,
+        TaskStatus.failed_file: task_failed_file_event_handler,
     }
     func = handlers.get(event, handle_others)
     return func(task_id, payload)
@@ -98,7 +99,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
                 "status": fstatus,
                 f"{fstatus}_timestamp": timestamp,
             }
-        elif fstatus == "uploaded":
+        elif fstatus in ("uploaded", "failed"):
             task_updates[f"files.{fkey}.status"] = fstatus
             task_updates[f"files.{fkey}.{fstatus}_timestamp"] = timestamp
 
@@ -271,6 +272,14 @@ def task_uploaded_file_event_handler(task_id, payload):
     logger.info(f"Task uploaded file: {task_id}, {file['name']}")
 
     save_event(task_id, TaskStatus.uploaded_file, timestamp, file=file)
+
+
+def task_failed_file_event_handler(task_id, payload):
+    file = {"name": payload.get("filename"), "status": "failed"}
+    timestamp = get_timestamp_from_event(payload)
+    logger.info(f"Task file upload failed: {task_id}, {file['name']}")
+
+    save_event(task_id, TaskStatus.failed_file, timestamp, file=file)
 
 
 def handle_others(self, event):
