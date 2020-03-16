@@ -200,11 +200,19 @@ def task_cancel_requested_event_handler(task_id, payload):
 def task_canceled_event_handler(task_id, payload):
     logger.info(f"Task Cancelled: {task_id}")
 
+    # if canceled event carries a `canceled_by` and we have none on the task
+    # then store it, otherwise keep what's in the task (manual request)
+    canceled_by = None
+    task = Tasks().find_one({"_id": task_id}, {"canceled_by": 1})
+    if payload.get("canceled_by") and task and not task.get("canceled_by"):
+        canceled_by = payload.get("canceled_by")
+
     save_event(
         task_id,
         TaskStatus.canceled,
         get_timestamp_from_event(payload),
         task_log=payload.get("log"),
+        canceled_by=canceled_by,
     )
 
 

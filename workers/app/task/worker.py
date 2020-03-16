@@ -139,13 +139,10 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def mark_task_completed(self, status, exception=None, traceback=None):
+    def mark_task_completed(self, status, **kwargs):
         logger.info(f"Updating task-status={status}")
         event_payload = {}
-        if exception:
-            event_payload["exception"] = exception
-        if traceback:
-            event_payload["traceback"] = traceback
+        event_payload.update(kwargs)
 
         event_payload["log"] = get_container_logs(
             self.docker, task_container_name(self.task_id), tail=2000
@@ -233,7 +230,7 @@ class TaskWorker(BaseWorker):
         logger.info(f"received exit signal ({signame}), shutting down…")
         self.stop()
         self.cleanup_workdir()
-        self.mark_task_completed("canceled")
+        self.mark_task_completed("canceled", canceled_by=f"task shutdown ({signame})")
         sys.exit(1)
 
     def shutdown(self, status, **kwargs):
@@ -318,7 +315,9 @@ class TaskWorker(BaseWorker):
                 self.mark_file_uploaded(zim_file)
             else:
                 self.zim_files[zim_file] = FAILED
-                logger.error(f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}")
+                logger.error(
+                    f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}"
+                )
             self.uploader.remove()
             self.uploader = None
 
