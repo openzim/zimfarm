@@ -18,6 +18,7 @@ docker run \
     -v ~/.ssh/id_rsa:/etc/ssh/keys/id_rsa:ro \
     -v /path/:/path:rw \
     openzim/uploader \
+    uploader \
     --file /path/my_file.zim \
     --upload-uri sftp://uploader@warehouse.farm.openzim.org/zim/ \
     --move \
