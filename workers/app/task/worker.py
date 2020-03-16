@@ -318,7 +318,7 @@ class TaskWorker(BaseWorker):
                 self.mark_file_uploaded(zim_file)
             else:
                 self.zim_files[zim_file] = FAILED
-                logger.error(f"ZIM Uploader:: {self.uploader.logs()}")
+                logger.error(f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}")
             self.uploader.remove()
             self.uploader = None
 
