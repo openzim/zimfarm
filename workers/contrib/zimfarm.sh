@@ -30,6 +30,7 @@ UPLOAD_URI="sftp://uploader@warehouse.farm.openzim.org:1522" \
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm_worker-manager"
+SCRIPT_VERSION="1.0.0"
 
 function die() {
     echo $1
@@ -86,7 +87,7 @@ function config() {
 
 # display options list
 function usage() {
-    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|upload|update]"
+    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|upload|update|version]"
     echo ""
     echo "  config          show the config file path in use"
     echo ""
@@ -100,6 +101,7 @@ function usage() {
     echo "  prune           remove all docker containers/images/volums"
     echo "  upload          manually (re)upload a ZIM or log file (without --delete param)"
     echo "  update          display commands to update this script (apply with 'update do')"
+    echo "  version         display version of this script"
     echo ""
 }
 
@@ -304,6 +306,11 @@ function main() {
 
       "update")
         update $0 $2
+        ;;
+
+      "version")
+        echo "version ${SCRIPT_VERSION}"
+        exit 0
         ;;
 
       *)
