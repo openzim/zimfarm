@@ -15,6 +15,7 @@ class TaskStatus:
 
     created_file = "created_file"
     uploaded_file = "uploaded_file"
+    failed_file = "failed_file"
 
     @classmethod
     def incomplete(cls):
@@ -41,7 +42,7 @@ class TaskStatus:
 
     @classmethod
     def file_events(cls):
-        return [cls.created_file, cls.uploaded_file]
+        return [cls.created_file, cls.uploaded_file, cls.failed_file]
 
     @classmethod
     def all_events(cls):

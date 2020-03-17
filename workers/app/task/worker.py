@@ -34,6 +34,7 @@ PENDING = "pending"
 UPLOADING = "uploading"
 UPLOADED = "uploaded"
 FAILED = "failed"
+MAX_ZIM_RETRIES = 5
 
 started = "started"
 scraper_started = "scraper_started"
@@ -81,6 +82,7 @@ class TaskWorker(BaseWorker):
         self.dns = None  # list of DNS IPs or None
 
         self.zim_files = {}  # ZIM files registry
+        self.zim_retries = {}  # ZIM files with upload errors (registry)
         self.uploader = None  # zim-files uploader container
 
         self.scraper = None  # scraper container
@@ -139,13 +141,10 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def mark_task_completed(self, status, exception=None, traceback=None):
+    def mark_task_completed(self, status, **kwargs):
         logger.info(f"Updating task-status={status}")
         event_payload = {}
-        if exception:
-            event_payload["exception"] = exception
-        if traceback:
-            event_payload["traceback"] = traceback
+        event_payload.update(kwargs)
 
         event_payload["log"] = get_container_logs(
             self.docker, task_container_name(self.task_id), tail=2000
@@ -163,9 +162,9 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def mark_file_uploaded(self, filename):
-        logger.info(f"Updating file-status=uploaded for {filename}")
-        self.patch_task({"event": "uploaded_file", "payload": {"filename": filename}})
+    def mark_file_completed(self, filename, status):
+        logger.info(f"Updating file-status={status} for {filename}")
+        self.patch_task({"event": f"{status}_file", "payload": {"filename": filename}})
 
     def setup_workdir(self):
         logger.info("Setting-up workdir")
@@ -233,7 +232,7 @@ class TaskWorker(BaseWorker):
         logger.info(f"received exit signal ({signame}), shutting down…")
         self.stop()
         self.cleanup_workdir()
-        self.mark_task_completed("canceled")
+        self.mark_task_completed("canceled", canceled_by=f"task shutdown ({signame})")
         sys.exit(1)
 
     def shutdown(self, status, **kwargs):
@@ -292,6 +291,16 @@ class TaskWorker(BaseWorker):
         """ shortcut list of watched file in PENDING status """
         return list(filter(lambda x: x[1] == PENDING, self.zim_files.items()))
 
+    @property
+    def busy_zim_files(self):
+        """ list of files preventing worker to exit
+
+            including PENDING as those have not been uploaded
+            including UPLOADING as those might fail and go back to PENDING """
+        return list(
+            filter(lambda x: x[1] in (PENDING, UPLOADING), self.zim_files.items())
+        )
+
     def upload_files(self):
         """ manages self.zim_files
 
@@ -315,10 +324,18 @@ class TaskWorker(BaseWorker):
             # get result of container
             if self.uploader.attrs["State"]["ExitCode"] == 0:
                 self.zim_files[zim_file] = UPLOADED
-                self.mark_file_uploaded(zim_file)
+                self.mark_file_completed(zim_file, "uploaded")
             else:
-                self.zim_files[zim_file] = FAILED
-                logger.error(f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}")
+                logger.error(
+                    f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}"
+                )
+                self.zim_retries[zim_file] = self.zim_retries.get(zim_file, 0) + 1
+                if self.zim_retries[zim_file] >= MAX_ZIM_RETRIES:
+                    logger.error(f"{zim_file} exhausted retries ({MAX_ZIM_RETRIES})")
+                    self.zim_files[zim_file] = FAILED
+                    self.mark_file_completed(zim_file, "failed")
+                else:
+                    self.zim_files[zim_file] = PENDING
             self.uploader.remove()
             self.uploader = None
 
@@ -440,7 +457,7 @@ class TaskWorker(BaseWorker):
 
         # monitor upload of files
         while not self.should_stop and (
-            self.pending_zim_files or self.uploader_running
+            self.pending_zim_files or self.busy_zim_files or self.uploader_running
         ):
             now = datetime.datetime.now()
             if (now - last_check).total_seconds() < SLEEP_INTERVAL:
