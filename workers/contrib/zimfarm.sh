@@ -30,6 +30,7 @@ UPLOAD_URI="sftp://uploader@warehouse.farm.openzim.org:1522" \
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm_worker-manager"
+SCRIPT_VERSION="1.0.0"
 
 function die() {
     echo $1
@@ -86,7 +87,7 @@ function config() {
 
 # display options list
 function usage() {
-    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|update]"
+    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|upload|update|version]"
     echo ""
     echo "  config          show the config file path in use"
     echo ""
@@ -98,7 +99,9 @@ function usage() {
     echo ""
     echo "  ps              list of running containers with zimfarm labels"
     echo "  prune           remove all docker containers/images/volums"
+    echo "  upload          manually (re)upload a ZIM or log file (without --delete param)"
     echo "  update          display commands to update this script (apply with 'update do')"
+    echo "  version         display version of this script"
     echo ""
 }
 
@@ -197,6 +200,39 @@ function inspect() {
     run docker inspect $2 $target
 }
 
+# manually upload a file (debug/maintenance)
+function upload() {
+    target=$1
+    extra=$2
+
+    if [ ! -f $target ] ; then
+        die "File not found. Cannot upload: $target"
+    fi
+
+    if [[ $(uname -s) == "Darwin" ]]; then
+        parentpath=$(dirname "$(greadlink -f "$target")")
+        fname=$(basename "$(greadlink -f "$target")")
+    else
+        parentpath=$(dirname "$(readlink -f "$target")")
+        fname=$(basename "$(readlink -f "$target")")
+    fi
+
+    ext="${fname##*.}"
+    folder="logs"
+    if [ "$ext" = "zim" ]; then
+        folder="zim"
+    fi
+
+    run docker run \
+        --rm \
+        -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/id_rsa:ro \
+        -v $parentpath:/data:rw \
+        openzim/uploader \
+        uploader \
+        --file /data/$fname \
+        --upload-uri sftp://uploader@warehouse.farm.openzim.org:1522/$folder/ $extra
+}
+
 # display the command needed to update this script from the repo
 # add 'do' parameter to attempt to run it
 function update() {
@@ -263,8 +299,18 @@ function main() {
         shutdown
         ;;
 
+      "upload")
+        usage_if_missing $target
+        upload $target $3
+        ;;
+
       "update")
         update $0 $2
+        ;;
+
+      "version")
+        echo "version ${SCRIPT_VERSION}"
+        exit 0
         ;;
 
       *)
