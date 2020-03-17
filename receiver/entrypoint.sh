@@ -23,7 +23,7 @@ cat $JSON_PATH
 /etc/init.d/ssh start
 
 # Create cron entry for ZIM quarantine
-echo "* *  * * *  root  /usr/bin/flock -w 0 /dev/shm/cron.lock /usr/local/bin/check_zims.sh $ZIM_SRC_DIR $ZIM_DST_DIR $ZIM_QUAR_DIR $VALIDATION_LOG_DIR \"$ZIMCHECK_OPTION\" $VALIDATION_OPTION >> /dev/shm/check_zims.log 2>&1" >> /etc/cron.d/check_zims
+echo "* *  * * *  root  /usr/bin/flock -w 0 /dev/shm/cron.lock /usr/local/bin/check_zims.sh $ZIMCHECK_PARALLEL_JOBS $ZIM_SRC_DIR $ZIM_DST_DIR $ZIM_QUAR_DIR $VALIDATION_LOG_DIR \"$ZIMCHECK_OPTION\" $VALIDATION_OPTION >> /dev/shm/check_zims.log 2>&1" >> /etc/cron.d/check_zims
 chmod +x /etc/cron.d/check_zims
 
 exec "$@"

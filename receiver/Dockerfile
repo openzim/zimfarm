@@ -52,6 +52,7 @@ ENV ZIM_DST_DIR /mnt/zim
 ENV ZIM_QUAR_DIR /mnt/quarantine
 ENV VALIDATION_LOG_DIR /mnt/check_logs
 ENV ZIMCHECK_OPTION -A
+ENV ZIMCHECK_PARALLEL_JOBS 2
 
 RUN wget -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
   tar -xzf zim-tools.tar.gz && \
