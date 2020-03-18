@@ -39,7 +39,10 @@ def retried_docker_call(docker_method, *args, **kwargs):
         attempt += 1
         try:
             return docker_method(*args, **kwargs)
-        except docker.errors.APIError as exc:
+        # including ImageNotFound as per #456
+        # most 404 errors would be from incorrect image/tag name but we still want to
+        # avoid crashing on 404 due to temporary docker-hub issues
+        except (docker.errors.APIError, docker.errors.ImageNotFound) as exc:
             if exc.is_server_error() and attempt <= DOCKER_API_RETRIES:
                 logger.debug(
                     f"Docker API Error for {docker_method} (attempt {attempt})"
