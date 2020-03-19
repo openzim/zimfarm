@@ -3,7 +3,7 @@ from http import HTTPStatus
 from flask import request, jsonify, Response, make_response
 from marshmallow import ValidationError
 
-from common.mongo import Schedules, Tasks, Requested_Tasks
+from common.mongo import Schedules, Tasks, RequestedTasks
 from utils.token import AccessToken
 from utils.offliners import command_information_for
 from errors.http import InvalidRequestJSON, ScheduleNotFound
@@ -177,12 +177,15 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         )
 
         if matched_count:
+            tasks_query = {"schedule_name": schedule_name}
             if "name" in update:
-                Tasks().update_many(query, {
-                    "$set": {"schedule_name": update["name"]}})
+                Tasks().update_many(
+                    tasks_query, {"$set": {"schedule_name": update["name"]}}
+                )
 
-                Requested_Tasks().update_many(query, {
-                    "$set": {"schedule_name": update["name"]}})
+                RequestedTasks().update_many(
+                    tasks_query, {"$set": {"schedule_name": update["name"]}}
+                )
 
             return Response(status=HTTPStatus.NO_CONTENT)
 
