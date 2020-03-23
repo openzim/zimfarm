@@ -73,6 +73,7 @@ class SchedulesRoute(BaseRoute):
 
         try:
             document = ScheduleSchema().load(request.get_json())
+            document["name"] = document["name"].strip()
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
