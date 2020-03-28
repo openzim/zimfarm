@@ -33,6 +33,7 @@
 #StrictModes yes
 #MaxAuthTries 6
 #MaxSessions 10
+MaxSessions 20
 
 PubkeyAuthentication yes
 
@@ -96,11 +97,20 @@ PrintMotd no
 #TCPKeepAlive yes
 #PermitUserEnvironment no
 #Compression delayed
+
+# Send a alive requests every 5 seconds
 #ClientAliveInterval 0
+ClientAliveInterval 5
+
+# Disconnect after 10 alive requests unasnwered
 #ClientAliveCountMax 3
+ClientAliveCountMax 10
+
 #UseDNS no
 #PidFile /var/run/sshd.pid
 #MaxStartups 10:30:100
+MaxStartups 10:30:60
+
 #PermitTunnel no
 #ChrootDirectory none
 ChrootDirectory /jail
