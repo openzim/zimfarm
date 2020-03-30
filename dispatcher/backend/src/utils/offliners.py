@@ -22,7 +22,7 @@ def command_for(offliner, flags, mount_point):
 
         for an offliner,  flags:dict and a mount_point:Path (task volume) """
     if offliner == Offliner.phet:
-        return ["/bin/bash", "-c", "cd /phet && npm i && npm start"]
+        return ["/bin/bash", "-c", "'cd /phet && npm i && npm start'"]
     if offliner == Offliner.gutenberg:
         return [
             "gutenberg2zim",
