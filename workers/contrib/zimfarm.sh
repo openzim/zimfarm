@@ -158,6 +158,7 @@ function restart() {
         --env ZIMFARM_MEMORY=$ZIMFARM_MAX_RAM \
         --env ZIMFARM_DISK=$ZIMFARM_DISK \
         --env ZIMFARM_CPUS=$ZIMFARM_CPU \
+        --env SELFISH=$ZIMFARM_SELFISH \
         --env USERNAME=$ZIMFARM_USERNAME \
         --env DEBUG=$ZIMFARM_DEBUG \
         --env WORKER_NAME=$ZIMFARM_WORKER_NAME \
