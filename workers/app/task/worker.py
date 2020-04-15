@@ -9,6 +9,7 @@ import shutil
 import pathlib
 import datetime
 
+import docker
 import requests
 
 from common import logger
@@ -356,6 +357,7 @@ class TaskWorker(BaseWorker):
         self.upload_log(watch=True)
 
     def upload_log(self, watch=False):
+        logger.debug(f"starting log uploader, with watch={watch}")
         if not self.scraper:
             logger.error("can't start a log uploader without a scraper…")
             return  # scraper gone, we can't access log
@@ -378,15 +380,24 @@ class TaskWorker(BaseWorker):
 
     def finish_scraper_log_upload(self):
         # stop and remove previous (watch) container. might be already stopped
-        stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
-        remove_container(self.docker, self.log_uploader.name, force=True)
+        try:
+            stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
+            remove_container(self.docker, self.log_uploader.name, force=True)
+        except docker.errors.NotFound as exc:
+            # failure here is unexpected (container should exist) but happens randomly
+            # catching this to prevent task from crashing while there might be
+            # ZIM files to continue uploading after
+            logger.warning(f"Log uploader container missing: {exc}")
+            logger.warning("Expect full-log upload next (long)")
         self.log_uploader = None
 
-        # restart without watch to make sure it's complete
-        self.upload_log(watch=False)
-
         try:
+            # restart without watch to make sure it's complete
+            self.upload_log(watch=False)
+
             self.log_uploader.reload()
+            # should log uploader above have been gone, we might expect this to fail
+            # on super large mwoffliner with verbose mode on (20mn not enough for 20GB)
             exit_code = wait_container(
                 self.docker, self.log_uploader.name, timeout=20 * 60
             )["StatusCode"]

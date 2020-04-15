@@ -45,7 +45,7 @@ def retried_docker_call(docker_method, *args, **kwargs):
         except (docker.errors.APIError, docker.errors.ImageNotFound) as exc:
             if exc.is_server_error() and attempt <= DOCKER_API_RETRIES:
                 logger.debug(
-                    f"Docker API Error for {docker_method} (attempt {attempt})"
+                    f"Docker API Error for {docker_method} (attempt {attempt}): {exc}"
                 )
                 time.sleep(10 * attempt)
                 continue
