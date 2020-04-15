@@ -221,6 +221,8 @@ def get_reqs_doable_by(worker):
 
     if worker.get("selfish", False):
         query["worker"] = worker["name"]
+    else:
+        query["worker"] = {"$in": [worker["name"], None]}
 
     projection = {
         "_id": 1,
