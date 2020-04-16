@@ -63,6 +63,24 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
 
 __Note__: SSH access to your host for our developers is handy but not required.
 
+### Docker configuration
+
+Default docker configuration stores its internal data into `/var/lib/docker` (Linux). While the data produced by the Zimfarm are not stored in this folder (but in the `ZIMFARM_ROOT` you'll define later), it's important to note that docker container logs are stored there.
+
+Logs are kept only for the duration of the task/container so you should not worry about those piling up.
+
+Still, under certain circumstances, we enable verbose mode on scrapers and that can lead to logs files up to **20GB+** large. 
+
+Keep this information in mind when you configure the disk space you want zimfarm to use as those are not managed by the zimfarm and thus not accounted for.
+
+Additionnaly, if your partition scheme isn't compatible with such sizes on `/var/lib`, change the data folder of the docker daemon in `/etc/docker/daemon.json` (you'll probably have to create it) and restart docker.
+
+``` json
+{
+    "data-root": "/not/var/lib/docker"
+}
+```
+
 ### Create a Zimfarm folder
 
 Most of the (temporary) Zimfarm-related data will be put in there
