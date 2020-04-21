@@ -167,10 +167,10 @@ function schedule_durations_dict(duration) {
 
 function secret_fields_for(offliner_def) {
   if (offliner_def === null)
-    return null;
+    return [];
   return offliner_def
     .filter(function (item) { return "secret" in item && item.secret === true; })
-    .map(function (item) { return item.key});
+    .map(function (item) { return item.data_key});
 }
 
 var DEFAULT_CPU_SHARE = 1024;

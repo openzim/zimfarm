@@ -86,3 +86,12 @@ class SotokiFlagsSchema(SerializableSchema):
             "description": "Don't include user profiles",
         },
     )
+
+    optimization_cache = fields.Url(
+        metadata={
+            "label": "Optimization Cache URL",
+            "description": "S3 Storage URL including credentials and bucket",
+            "secret": True,
+        },
+        data_key="optimization-cache",
+    )

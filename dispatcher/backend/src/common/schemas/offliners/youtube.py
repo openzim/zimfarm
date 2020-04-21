@@ -64,6 +64,30 @@ class YoutubeFlagsSchema(SerializableSchema):
         },
     )
 
+    dateafter = fields.String(
+        metadata={
+            "label": "Only after date",
+            "description": "Custom filter to download videos uploaded on or after specified date. Format: YYYYMMDD or (now|today)[+-][0-9](day|week|month|year)(s)?",
+        }
+    )
+
+    optimization_cache = fields.Url(
+        metadata={
+            "label": "Optimization Cache URL",
+            "description": "S3 Storage URL including credentials and bucket",
+            "secret": True,
+        },
+        data_key="optimization-cache",
+    )
+
+    use_any_optimized_version = fields.Boolean(
+        metadata={
+            "label": "Use any optimized version",
+            "description": "Use the cached files if present, whatever the version",
+        },
+        data_key="use-any-optimized-version",
+    )
+
     all_subtitles = fields.Boolean(
         truthy=[True],
         falsy=[False],
