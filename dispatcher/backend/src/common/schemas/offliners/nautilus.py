@@ -39,6 +39,19 @@ class NautilusFlagsSchema(SerializableSchema):
         },
     )
 
+    no_random = fields.Boolean(
+        metadata={"label": "No-random", "description": "Don't randomize items in list"},
+        data_key="no-random",
+    )
+
+    show_description = fields.Boolean(
+        metadata={
+            "label": "Show descriptions",
+            "description": "Show items's descriptions in main list",
+        },
+        data_key="show-description",
+    )
+
     output = fields.String(
         metadata={
             "label": "Output folder",
@@ -126,6 +139,9 @@ class NautilusFlagsSchema(SerializableSchema):
             "description": "Custom footer color. Hex/HTML syntax (#DEDEDE). Default to main-logo's primary color solarized (or #95A5A6 if no logo).",
         },
         data_key="secondary-color",
+    )
+    about = fields.Url(
+        metadata={"label": "About page", "description": "Custom about HTML page.",},
     )
 
     debug = fields.Boolean(
