@@ -210,7 +210,7 @@ export default {
                     "/ted", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary"],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB
@@ -244,7 +244,7 @@ export default {
                 42949672960,  // 40GiB
                 53687091200,  // 50GiB
                 80530636800,  // 75GiB
-                107374182400,  // 100GiB
+                107374182400,  // 100GiBmount_point
                 134217728000,  // 125GiB
                 161061273600,  // 150GiB
                 214748364800,  // 200GiB

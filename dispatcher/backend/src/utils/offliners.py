@@ -43,6 +43,9 @@ def command_for(offliner, flags, mount_point):
     if offliner == Offliner.youtube:
         cmd = "youtube2zim"
         flags["output"] = str(mount_point)
+    if offliner == Offliner.ted:
+        cmd = "ted2zim"
+        flags["output"] = str(mount_point)
     if offliner == Offliner.nautilus:
         cmd = "nautiluszim"
         flags["output"] = str(mount_point)
