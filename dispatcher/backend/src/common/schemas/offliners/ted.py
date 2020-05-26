@@ -33,7 +33,7 @@ class TedFlagsSchema(SerializableSchema):
         truthy=[True],
         falsy=[False],
         metadata={
-            "label": "Consider subtitles",
+            "label": "Subtitles enough?",
             "description": "Whether to include videos that have a subtitle in requested language(s) if audio is in another language",
         },
     )
@@ -75,7 +75,7 @@ class TedFlagsSchema(SerializableSchema):
 
     name = fields.String(
         metadata={
-            "label": "ZIM Name",
+            "label": "Name",
             "description": "ZIM name. Used as identifier and filename (date will be appended)",
             "placeholder": "topic_eng",
         },
