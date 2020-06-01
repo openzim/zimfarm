@@ -459,6 +459,7 @@ class TaskWorker(BaseWorker):
                 self.sleep()
                 continue
 
+            last_check = now
             self.upload_files()
 
         # scraper is done. check files so upload can continue
@@ -475,6 +476,7 @@ class TaskWorker(BaseWorker):
                 self.sleep()
                 continue
 
+            last_check = now
             self.upload_files()
 
         self.upload_files()  # make sure we submit upload status for last one
