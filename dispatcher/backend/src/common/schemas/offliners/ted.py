@@ -8,17 +8,26 @@ class TedFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    topics = fields.String(
+    indiv_zims = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
         metadata={
-            "label": "Topics",
-            "description": "Comma-seperated list of topics to scrape; as given on ted.com/talks",
+            "label": "Individual ZIM mode",
+            "description": "Whether to produce one ZIM per topic/playlist",
         },
     )
 
-    playlist = fields.String(
+    topics = fields.String(
         metadata={
-            "label": "TED Playlist",
-            "description": "A playlist ID from ted.com/playlists to scrape videos from",
+            "label": "Topics",
+            "description": "Comma-seperated list of topics to scrape; as given on ted.com/talks. Pass all for all topics",
+        },
+    )
+
+    playlists = fields.String(
+        metadata={
+            "label": "TED Playlists",
+            "description": "Comma-seperated list of TED playlist IDs to scrape. Pass all for all playlists",
         },
     )
 
@@ -73,33 +82,57 @@ class TedFlagsSchema(SerializableSchema):
         },
     )
 
+    name_format = fields.String(
+        metadata={
+            "label": "Name Format",
+            "description": "Format for building individual --name argument",
+            "placeholder": "topic_eng",
+        },
+    )
+
     name = fields.String(
         metadata={
             "label": "Name",
             "description": "ZIM name. Used as identifier and filename (date will be appended)",
             "placeholder": "topic_eng",
         },
-        required=True,
+    )
+
+    title_format = fields.String(
+        metadata={
+            "label": "Title Format",
+            "description": "Custom title format for individual ZIMs",
+        }
     )
 
     title = fields.String(
         metadata={
             "label": "Title",
-            "description": "ustom title for your ZIM. Based on selection otherwise",
+            "description": "Custom title for your ZIM. Based on selection otherwise",
         }
     )
+
+    description_format = fields.String(
+        metadata={
+            "label": "Description Format",
+            "description": "Custom description format for individual ZIMs",
+        }
+    )
+
     description = fields.String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. Based on selection otherwise",
         }
     )
+
     creator = fields.String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. Defaults to TED",
         }
     )
+
     tags = fields.String(
         metadata={
             "label": "ZIM Tags",
@@ -133,6 +166,35 @@ class TedFlagsSchema(SerializableSchema):
         missing="/output",
         default="/output",
         validate=validate_output,
+    )
+
+    build_dir_format = fields.String(
+        metadata={
+            "label": "Format for custom build folders",
+            "description": "Custom format for build directory names for individual ZIMs",
+        },
+    )
+
+    build_dir = fields.String(
+        metadata={
+            "label": "Custom build folder",
+            "description": "Path to the directory to use as build directory. By default, a temporary directory is used",
+        },
+    )
+
+    metadata_from = fields.String(
+        metadata={
+            "label": "Metadata JSON",
+            "description": "File path or URL to a JSON file holding custom metadata for individual playlists/topics",
+        },
+    )
+
+    zim_file_format = fields.String(
+        metadata={
+            "label": "ZIM filename format",
+            "description": "Format for building individual --zim-file argument for individual ZIMs. Uses --name-format otherwise",
+        },
+        data_key="zim-file-format",
     )
 
     zim_file = fields.String(
