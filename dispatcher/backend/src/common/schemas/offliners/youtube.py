@@ -8,6 +8,15 @@ class YoutubeFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
+    indiv_playlists = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Playlists mode",
+            "description": "Build one ZIM per playlist of the channel or user",
+        },
+    )
+
     kind = StringEnum(
         metadata={
             "label": "Type",
@@ -31,13 +40,19 @@ class YoutubeFlagsSchema(SerializableSchema):
         required=True,
     )
 
+    playlists_name = fields.String(
+        metadata={
+            "label": "Playlists name",
+            "description": "Format for building individual --name argument. Required in playlist mode",
+        },
+    )
+
     name = fields.String(
         metadata={
             "label": "ZIM Name",
             "description": "Used as identifier and filename (date will be appended)",
             "placeholder": "mychannel_eng_all",
         },
-        required=True,
     )
 
     video_format = StringEnum(
@@ -121,6 +136,15 @@ class YoutubeFlagsSchema(SerializableSchema):
         default="/output",
         validate=validate_output,
     )
+
+    playlists_zim_file = fields.String(
+        metadata={
+            "label": "Playlists ZIM filename",
+            "description": "Format for building individual --zim-file argument. Uses --playlists-name otherwise",
+        },
+        data_key="playlists-zim-file",
+    )
+
     zim_file = fields.String(
         metadata={
             "label": "ZIM filename",
@@ -140,13 +164,32 @@ class YoutubeFlagsSchema(SerializableSchema):
             "description": "Locale name to use for translations (if avail) and time representations. Defaults to --language or English.",
         }
     )
+
+    playlists_title = fields.String(
+        metadata={
+            "label": "Playlists title",
+            "description": "Custom title format for individual playlist ZIM",
+        }
+    )
+
     title = fields.String(
         metadata={
             "label": "Title",
             "description": "Custom title for your project and ZIM. Default to Channel name (of first video if playlists)",
         }
     )
-    description = fields.String(metadata={"label": "Description", "description": ""})
+
+    playlists_description = fields.String(
+        metadata={
+            "label": "Playlists description",
+            "description": "Custom description format for individual playlist ZIM",
+        }
+    )
+
+    description = fields.String(
+        metadata={"label": "Description", "description": "Description for ZIM"}
+    )
+
     creator = fields.String(
         metadata={
             "label": "Content Creator",
@@ -158,6 +201,13 @@ class YoutubeFlagsSchema(SerializableSchema):
             "label": "ZIM Tags",
             "description": "List of Tags for the ZIM file. _videos:yes added automatically",
         }
+    )
+
+    metadata_from = fields.String(
+        metadata={
+            "label": "Metadata JSON",
+            "description": "File path or URL to a JSON file holding custom metadata for individual playlists",
+        },
     )
 
     profile = fields.Url(
