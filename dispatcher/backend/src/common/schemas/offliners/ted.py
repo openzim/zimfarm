@@ -168,17 +168,10 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    build_dir_format = fields.String(
+    tmp_dir = fields.String(
         metadata={
-            "label": "Format for custom build folders",
-            "description": "Custom format for build directory names for individual ZIMs",
-        },
-    )
-
-    build_dir = fields.String(
-        metadata={
-            "label": "Custom build folder",
-            "description": "Path to the directory to use as build directory. By default, a temporary directory is used",
+            "label": "Temp directory folder",
+            "description": "Path to the directory to create the temp folder in. The temp folder recieves all data and is used to create ZIMs",
         },
     )
 
@@ -209,11 +202,4 @@ class TedFlagsSchema(SerializableSchema):
         truthy=[True],
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
-    )
-
-    max_videos_per_topic = fields.Integer(
-        metadata={
-            "label": "Max Videos per Topic",
-            "description": "Max number of videos to scrape in each topic. Default behaviour is to scrape all",
-        },
     )
