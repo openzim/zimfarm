@@ -1,4 +1,4 @@
-from marshmallow import fields, validate
+from marshmallow import fields, validate, validates_schema, ValidationError
 
 from common.schemas import SerializableSchema, StringEnum, HexColor
 from common.schemas.fields import validate_output
@@ -15,6 +15,7 @@ class YoutubeFlagsSchema(SerializableSchema):
             "label": "Playlists mode",
             "description": "Build one ZIM per playlist of the channel or user",
         },
+        data_key="indiv-playlists",
     )
 
     kind = StringEnum(
@@ -40,19 +41,19 @@ class YoutubeFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    playlists_name = fields.String(
-        metadata={
-            "label": "Playlists name",
-            "description": "Format for building individual --name argument. Required in playlist mode",
-        },
-    )
-
     name = fields.String(
         metadata={
             "label": "ZIM Name",
             "description": "Used as identifier and filename (date will be appended)",
             "placeholder": "mychannel_eng_all",
         },
+    )
+    playlists_name = fields.String(
+        metadata={
+            "label": "Playlists name",
+            "description": "Format for building individual --name argument. Required in playlist mode. Variables: {title}, {description}, {playlist_id}, {slug} (from title), {creator_id}, {creator_name}",
+        },
+        data_key="playlists-name",
     )
 
     video_format = StringEnum(
@@ -96,6 +97,8 @@ class YoutubeFlagsSchema(SerializableSchema):
     )
 
     use_any_optimized_version = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
         metadata={
             "label": "Use any optimized version",
             "description": "Use the cached files if present, whatever the version",
@@ -130,19 +133,22 @@ class YoutubeFlagsSchema(SerializableSchema):
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
-            "description": "Output folder for ZIM file or build folder. Leave it as `/output`",
+            "description": "Output folder for ZIM file(s). Leave it as `/output`",
         },
         missing="/output",
         default="/output",
         validate=validate_output,
     )
-
-    playlists_zim_file = fields.String(
+    tmp_dir = fields.String(
         metadata={
-            "label": "Playlists ZIM filename",
-            "description": "Format for building individual --zim-file argument. Uses --playlists-name otherwise",
+            "label": "Temp folder",
+            "placeholder": "/output",
+            "description": "Where to create temporay build folder. Leave it as `/output`",
         },
-        data_key="playlists-zim-file",
+        missing="/output",
+        default="/output",
+        validate=validate_output,
+        data_key="tmp-dir",
     )
 
     zim_file = fields.String(
@@ -152,6 +158,14 @@ class YoutubeFlagsSchema(SerializableSchema):
         },
         data_key="zim-file",
     )
+    playlists_zim_file = fields.String(
+        metadata={
+            "label": "Playlists ZIM filename",
+            "description": "Format for building individual --zim-file argument. Uses --playlists-name otherwise",
+        },
+        data_key="playlists-zim-file",
+    )
+
     language = fields.String(
         metadata={
             "label": "Language",
@@ -165,29 +179,29 @@ class YoutubeFlagsSchema(SerializableSchema):
         }
     )
 
-    playlists_title = fields.String(
-        metadata={
-            "label": "Playlists title",
-            "description": "Custom title format for individual playlist ZIM",
-        }
-    )
-
     title = fields.String(
         metadata={
             "label": "Title",
             "description": "Custom title for your project and ZIM. Default to Channel name (of first video if playlists)",
         }
     )
-
-    playlists_description = fields.String(
+    playlists_title = fields.String(
         metadata={
-            "label": "Playlists description",
-            "description": "Custom description format for individual playlist ZIM",
-        }
+            "label": "Playlists title",
+            "description": "Custom title format for individual playlist ZIM",
+        },
+        data_key="playlists-title",
     )
 
     description = fields.String(
         metadata={"label": "Description", "description": "Description for ZIM"}
+    )
+    playlists_description = fields.String(
+        metadata={
+            "label": "Playlists description",
+            "description": "Custom description format for individual playlist ZIM",
+        },
+        data_key="playlists-description",
     )
 
     creator = fields.String(
@@ -208,6 +222,7 @@ class YoutubeFlagsSchema(SerializableSchema):
             "label": "Metadata JSON",
             "description": "File path or URL to a JSON file holding custom metadata for individual playlists",
         },
+        data_key="metadata-from",
     )
 
     profile = fields.Url(
@@ -242,3 +257,12 @@ class YoutubeFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        if data.get("indiv_playlists"):
+            if not data.get("playlists_name"):
+                raise ValidationError("playlists-name required in playlists mode")
+        else:
+            if not data.get("name"):
+                raise ValidationError("name required in normal mode")
