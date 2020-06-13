@@ -94,7 +94,7 @@ class TedFlagsSchema(SerializableSchema):
     name_format = fields.String(
         metadata={
             "label": "Name Format",
-            "description": "Format for building individual --name argument",
+            "description": "Format for building individual --name argument. Use variable {identity} for playlist id or topic name",
             "placeholder": "topic_eng",
         },
         data_key="name-format",
