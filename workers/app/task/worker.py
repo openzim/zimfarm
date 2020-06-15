@@ -224,9 +224,12 @@ class TaskWorker(BaseWorker):
         """ stopping everything before exit (on term or end of task) """
         logger.info("Stopping all containers and actions")
         self.should_stop = True
-        self.stop_scraper(timeout)
-        self.stop_dnscache(timeout)
-        self.stop_uploader(timeout)
+        for step in ("dnscache", "scraper", "uploader"):
+            try:
+                getattr(self, f"stop_{step}")(timeout)
+            except Exception as exc:
+                logger.warning(f"Failed to stop {step}: {exc}")
+                logger.exception(exc)
 
     def exit_gracefully(self, signum, frame):
         signame = signal.strsignal(signum)
@@ -237,10 +240,10 @@ class TaskWorker(BaseWorker):
         sys.exit(1)
 
     def shutdown(self, status, **kwargs):
+        self.mark_task_completed(status, **kwargs)
         logger.info("Shutting down task-worker")
         self.stop()
         self.cleanup_workdir()
-        self.mark_task_completed(status, **kwargs)
 
     def start_uploader(self, upload_dir, filename):
         logger.info(f"Starting uploader for /{upload_dir}/{filename}")
