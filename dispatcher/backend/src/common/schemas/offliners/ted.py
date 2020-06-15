@@ -1,4 +1,4 @@
-from marshmallow import fields, validate
+from marshmallow import fields, validate, validates_schema, ValidationError
 
 from common.schemas import SerializableSchema, StringEnum
 from common.schemas.fields import validate_output
@@ -8,17 +8,27 @@ class TedFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
+    indiv_zims = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Individual ZIM mode",
+            "description": "Whether to produce one ZIM per topic/playlist",
+        },
+        data_key="indiv-zims",
+    )
+
     topics = fields.String(
         metadata={
             "label": "Topics",
-            "description": "Comma-seperated list of topics to scrape; as given on ted.com/talks",
+            "description": "Comma-seperated list of topics to scrape; as given on ted.com/talks. Pass all for all topics",
         },
     )
 
-    playlist = fields.String(
+    playlists = fields.String(
         metadata={
-            "label": "TED Playlist",
-            "description": "A playlist ID from ted.com/playlists to scrape videos from",
+            "label": "TED Playlists",
+            "description": "Comma-seperated list of TED playlist IDs to scrape. Pass all for all playlists",
         },
     )
 
@@ -26,7 +36,7 @@ class TedFlagsSchema(SerializableSchema):
         metadata={
             "label": "Languages",
             "description": "Comma-seperated list of languages to filter videos",
-        }
+        },
     )
 
     subtitles_enough = fields.Boolean(
@@ -79,27 +89,54 @@ class TedFlagsSchema(SerializableSchema):
             "description": "ZIM name. Used as identifier and filename (date will be appended)",
             "placeholder": "topic_eng",
         },
-        required=True,
+    )
+
+    name_format = fields.String(
+        metadata={
+            "label": "Name Format",
+            "description": "Format for building individual --name argument. Use variable {identity} for playlist id or topic name",
+            "placeholder": "{identity}_eng",
+        },
+        data_key="name-format",
     )
 
     title = fields.String(
         metadata={
             "label": "Title",
-            "description": "ustom title for your ZIM. Based on selection otherwise",
+            "description": "Custom title for your ZIM. Based on selection otherwise",
         }
     )
+
+    title_format = fields.String(
+        metadata={
+            "label": "Title Format",
+            "description": "Custom title format for individual ZIMs",
+        },
+        data_key="title-format",
+    )
+
     description = fields.String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. Based on selection otherwise",
         }
     )
+
+    description_format = fields.String(
+        metadata={
+            "label": "Description Format",
+            "description": "Custom description format for individual ZIMs",
+        },
+        data_key="description-format",
+    )
+
     creator = fields.String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. Defaults to TED",
         }
     )
+
     tags = fields.String(
         metadata={
             "label": "ZIM Tags",
@@ -117,6 +154,8 @@ class TedFlagsSchema(SerializableSchema):
     )
 
     use_any_optimized_version = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
         metadata={
             "label": "Use any optimized version",
             "description": "Use the cached files if present, whatever the version",
@@ -128,11 +167,30 @@ class TedFlagsSchema(SerializableSchema):
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
-            "description": "Output folder for ZIM file or build folder. Leave it as `/output`",
+            "description": "Output folder for ZIM file(s). Leave it as `/output`",
         },
         missing="/output",
         default="/output",
         validate=validate_output,
+    )
+
+    tmp_dir = fields.String(
+        metadata={
+            "label": "Temp folder",
+            "description": "Where to create temporay build folder. Leave it as `/output`",
+        },
+        missing="/output",
+        default="/output",
+        validate=validate_output,
+        data_key="tmp-dir",
+    )
+
+    metadata_from = fields.String(
+        metadata={
+            "label": "Metadata JSON",
+            "description": "File path or URL to a JSON file holding custom metadata for individual playlists/topics",
+        },
+        data_key="metadata-from",
     )
 
     zim_file = fields.String(
@@ -143,15 +201,25 @@ class TedFlagsSchema(SerializableSchema):
         data_key="zim-file",
     )
 
+    zim_file_format = fields.String(
+        metadata={
+            "label": "ZIM filename format",
+            "description": "Format for building individual --zim-file argument for individual ZIMs. Uses --name-format otherwise",
+        },
+        data_key="zim-file-format",
+    )
+
     debug = fields.Boolean(
         truthy=[True],
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
-    max_videos_per_topic = fields.Integer(
-        metadata={
-            "label": "Max Videos per Topic",
-            "description": "Max number of videos to scrape in each topic. Default behaviour is to scrape all",
-        },
-    )
+    @validates_schema
+    def validate(self, data, **kwargs):
+        if data.get("indiv_zims"):
+            if not data.get("name_format"):
+                raise ValidationError("name-format required in individual ZIMs mode")
+        else:
+            if not data.get("name"):
+                raise ValidationError("name required in normal mode")
