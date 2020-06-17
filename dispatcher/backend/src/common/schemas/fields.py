@@ -7,6 +7,7 @@ from common.enum import (
     TaskStatus,
     SchedulePeriodicity,
     Platform,
+    WarehousePath,
 )
 
 # validators
@@ -20,7 +21,7 @@ validate_disk = validate.Range(min=0)
 validate_lang_code = validate.Length(min=2, max=3)
 validate_output = validate.Equal("/output")
 validate_category = validate.OneOf(ScheduleCategory.all())
-validate_warehouse_path = validate.OneOf(ScheduleCategory.all_warehouse_paths())
+validate_warehouse_path = validate.OneOf(WarehousePath.all())
 validate_offliner = validate.OneOf(Offliner.all())
 validate_status = validate.OneOf(TaskStatus.all())
 validate_event = validate.OneOf(TaskStatus.all_events())

@@ -54,6 +54,18 @@ class TaskStatus:
         )
 
 
+class WarehousePath:
+    hidden_dev = "/.hidden/dev"
+    hidden_endless = "/.hidden/endless"
+
+    @classmethod
+    def all(cls):
+        return ScheduleCategory.all_warehouse_paths() + [
+            cls.hidden_dev,
+            cls.hidden_endless,
+        ]
+
+
 class ScheduleCategory:
     gutenberg = "gutenberg"
     other = "other"
@@ -154,7 +166,7 @@ class SchedulePeriodicity:
     annually = "annually"
 
     @classmethod
-    def all(cls) -> str:
+    def all(cls):
         return [cls.manually, cls.monthly, cls.quarterly, cls.biannualy, cls.annually]
 
 
