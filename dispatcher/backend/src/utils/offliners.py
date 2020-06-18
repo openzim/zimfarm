@@ -24,14 +24,13 @@ def command_for(offliner, flags, mount_point):
     if offliner == Offliner.phet:
         return ["/bin/bash", "-c", "'cd /phet && npm i && npm start'"]
     if offliner == Offliner.gutenberg:
-        return [
-            "gutenberg2zim",
-            "--complete",
-            "--formats",
-            "all",
-            "--one-language-one-zim",
-            str(mount_point),
-        ]
+        cmd = "gutenberg2zim"
+        # multiple ZIM expects a directory
+        if flags.get("one-language-one-zim"):
+            flags["one-language-one-zim"] = str(mount_point)
+        if flags.get("one-language-one-zim") is False:
+            del flags["one-language-one-zim"]
+        # when not using multiple ZIM, scraper uses cwd as output (/output)
     if offliner == Offliner.sotoki:
         command_flags = copy.deepcopy(flags)
         domain = command_flags.pop("domain")
