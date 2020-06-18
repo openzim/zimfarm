@@ -360,7 +360,7 @@
                 if (typeof obj[k] == "object" && obj[k] !== null)
                   recursivelyCleanup(obj[k]);
                 else {
-                  if (!Object.isArray(obj) && obj[k] == "") {
+                  if (!Object.isArray(obj) && obj[k] === "") {
                     delete obj[k];
                   }
                 }
