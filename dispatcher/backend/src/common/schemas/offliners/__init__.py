@@ -10,4 +10,3 @@ from common.schemas.offliners.gutenberg import GutenbergFlagsSchema
 class PhetFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
-
