@@ -59,7 +59,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
  * Fast internet connexion (downstream and upstream).
 * A Zimfarm user account (with appropriate `worker` role).
 * An RSA private key with its public key uploaded to the user account.
-* the clock must be synchronized, e.g. using ntp
+* The clock must be synchronized, e.g. using ntp.
 
 __Note__: SSH access to your host for our developers is handy but not required.
 
@@ -73,7 +73,7 @@ Still, under certain circumstances, we enable verbose mode on scrapers and that 
 
 Keep this information in mind when you configure the disk space you want zimfarm to use as those are not managed by the zimfarm and thus not accounted for.
 
-Additionnaly, if your partition scheme isn't compatible with such sizes on `/var/lib`, change the data folder of the docker daemon in `/etc/docker/daemon.json` (you'll probably have to create it) and restart docker.
+Additionally, if your partition scheme isn't compatible with such sizes on `/var/lib`, change the data folder of the docker daemon in `/etc/docker/daemon.json` (you'll probably have to create it) and restart docker.
 
 ``` json
 {
