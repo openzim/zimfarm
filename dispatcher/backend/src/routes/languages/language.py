@@ -36,7 +36,7 @@ class LanguagesRoute(BaseRoute):
         else:
             pipeline = [
                 group,
-                {"$sort": {"_id": 1}},
+                {"$sort": {"name_en": 1}},
                 {"$skip": skip},
                 {"$limit": limit},
             ]
