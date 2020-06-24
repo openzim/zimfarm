@@ -30,6 +30,9 @@ fi
 LOGFILE=$(echo "$5$ZIMPATH" | cut -f 1 -d '.').log
 LOGDIR=$(dirname $5$ZIMPATH)
 
+NAME_FORMAT="^(.+?_)([a-z\-]{2,10}?_|)(.+_|)([\d]{4}|)\-([\d]{2})$"
+ZIM_NAME=$(basename "$ZIMPATH" .zim)
+
 function moveZim () {
    mkdir -p $1
    mv -f $ZIMFILE $2
@@ -41,11 +44,16 @@ then
   moveZim $DESTDIR $DESTFILE
 else
   mkdir -p $LOGDIR
-
   if $ZIMCHECK $ZIMCHECK_OPTION $ZIMFILE > $LOGFILE 2>&1
   then
-   echo "$ZIMFILE is valid" >> $LOGFILE
-   moveZim $DESTDIR $DESTFILE
+   if (echo $ZIM_NAME | grep -q -P $NAME_FORMAT)
+   then
+    echo "$ZIMFILE is valid" >> $LOGFILE
+    moveZim $DESTDIR $DESTFILE
+   else
+    echo "$ZIMFILE is valid but name is in an invalid format" >> $LOGFILE
+    moveZim $QUARDIR $QUARFILE
+   fi
   else
    echo "$ZIMFILE is not valid" >> $LOGFILE
    moveZim $QUARDIR $QUARFILE
