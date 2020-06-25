@@ -76,6 +76,10 @@ class SchedulesRoute(BaseRoute):
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
+        # make sure name doesn't contain whitespaces around it
+        if len(document["name"]) != len(document["name"].strip()):
+            raise BadRequest("schedule name cannot have whitespaces around it")
+
         # make sure it's not a duplicate
         if Schedules().find_one({"name": document["name"]}, {"name": 1}):
             raise BadRequest(
@@ -154,6 +158,8 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise InvalidRequestJSON(e.messages)
 
         if "name" in update:
+            if len(update["name"]) != len(update["name"].strip()):
+                raise BadRequest("schedule name cannot have whitespaces around it")
             if Schedules().count_documents({"name": update["name"]}):
                 raise BadRequest(
                     "Schedule with name `{}` already exists".format(update["name"])
@@ -221,6 +227,8 @@ class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
 
         request_json = CloneSchema().load(request.get_json())
         new_schedule_name = request_json["name"]
+        if len(new_schedule_name) != len(new_schedule_name.strip()):
+            raise BadRequest("schedule name cannot have whitespaces around it")
 
         # ensure it's not a duplicate
         if Schedules().find_one({"name": new_schedule_name}, {"name": 1}):

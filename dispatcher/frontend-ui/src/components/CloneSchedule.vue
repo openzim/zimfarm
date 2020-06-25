@@ -32,7 +32,7 @@
         if (!this.ready)
           return;
         let parent = this;
-        let payload = {name: this.form_name};
+        let payload = {name: this.form_name.trim()};
         parent.toggleLoader("Cloning recipe…");
         parent.queryAPI('post', '/schedules/' + parent.from + '/clone', payload)
           .then(function () {

@@ -377,8 +377,13 @@
         let parent = this;
 
         ["name", "category", "enabled", "periodicity"].forEach(function (key) {
-          if (parent.edit_schedule[key] != parent.schedule[key])
-            payload[key] = parent.edit_schedule[key];
+          if (parent.edit_schedule[key] != parent.schedule[key]) {
+            if (key != "name") {
+              payload[key] = parent.edit_schedule[key];
+            } else {
+              payload[key] = parent.edit_schedule[key].trim();
+            }
+          }
         });
 
         // compare tags array
