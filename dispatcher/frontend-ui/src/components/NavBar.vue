@@ -30,6 +30,9 @@
                         <router-link class="nav-link" :to="{ name: 'about' }">About</router-link>
                     </li>
                 </ul>
+                <a class="btn btn-sm btn-light mb-2 mt-2 mr-2" href="https://support.kiwix.org">
+                    <font-awesome-icon icon="heart" size="sm" /> Support us
+                </a>
                 <UserButton />
             </b-collapse>
         </nav>
