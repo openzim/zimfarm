@@ -60,6 +60,7 @@ RUN wget -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
   rm -rf zim-tools*
 COPY apps/check_zims.sh /usr/local/bin/
 COPY apps/check_zim.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/check_zim.sh /usr/local/bin/check_zims.sh
 
 # OpenSSH public-key auth relay
 ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v1
