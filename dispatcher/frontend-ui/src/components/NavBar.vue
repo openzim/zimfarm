@@ -26,13 +26,12 @@
                     <li class="nav-item disabled">
                         <span class="nav-link" href="/stats">Stats</span>
                     </li>
-                    <li class="nav-item">
-                        <router-link class="nav-link" :to="{ name: 'about' }">About</router-link>
+                    <li>
+                        <router-link class="btn btn-sm btn-light mt-1 mb-1" :to="{ name: 'support-us' }">
+                            <font-awesome-icon icon="heart" size="sm" color="red" /> Support us
+                        </router-link>
                     </li>
                 </ul>
-                <a class="btn btn-sm btn-light mb-2 mt-2 mr-2" href="https://support.kiwix.org">
-                    <font-awesome-icon icon="heart" size="sm" /> Support us
-                </a>
                 <UserButton />
             </b-collapse>
         </nav>

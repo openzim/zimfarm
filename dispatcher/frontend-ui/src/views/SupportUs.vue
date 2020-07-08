@@ -14,7 +14,7 @@
   import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
-    name: 'About',
+    name: 'SupportUs',
     mixins: [ZimfarmMixins],
   }
 </script>
