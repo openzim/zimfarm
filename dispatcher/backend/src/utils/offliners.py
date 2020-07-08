@@ -45,6 +45,9 @@ def command_for(offliner, flags, mount_point):
     if offliner == Offliner.ted:
         cmd = "ted2zim-multi"
         flags["output"] = str(mount_point)
+    if offliner == Offliner.openedx:
+        cmd = "openedx2zim"
+        flags["output"] = str(mount_point)
     if offliner == Offliner.nautilus:
         cmd = "nautiluszim"
         flags["output"] = str(mount_point)
@@ -57,6 +60,8 @@ def compute_flags(flags, use_equals=True):
     for key, value in flags.items():
         if value is True:
             params.append(f"--{key}")
+        if value is False:
+            continue
         elif isinstance(value, list):
             for item in value:
                 if use_equals:

@@ -78,6 +78,7 @@ UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org
 OFFLINER_MWOFFLINER = "mwoffliner"
 OFFLINER_YOUTUBE = "youtube"
 OFFLINER_TED = "ted"
+OFFLINER_OPENEDX = "openedx"
 OFFLINER_PHET = "phet"
 OFFLINER_GUTENBERG = "gutenberg"
 OFFLINER_SOTOKI = "sotoki"
@@ -91,6 +92,7 @@ ALL_OFFLINERS = [
     OFFLINER_SOTOKI,
     OFFLINER_NAUTILUS,
     OFFLINER_TED,
+    OFFLINER_OPENEDX,
 ]
 SUPPORTED_OFFLINERS = [
     offliner
