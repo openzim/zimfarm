@@ -73,6 +73,7 @@ class ScheduleCategory:
     psiram = "psiram"
     stack_exchange = "stack_exchange"
     ted = "ted"
+    openedx = "openedx"
     vikidia = "vikidia"
     wikibooks = "wikibooks"
     wikinews = "wikinews"
@@ -93,6 +94,7 @@ class ScheduleCategory:
             cls.psiram,
             cls.stack_exchange,
             cls.ted,
+            cls.openedx,
             cls.vikidia,
             cls.wikibooks,
             cls.wikinews,
@@ -122,6 +124,7 @@ class DockerImageName:
     sotoki = "openzim/sotoki"
     nautilus = "openzim/nautilus"
     ted = "openzim/ted"
+    openedx = "openzim/openedx"
 
     @classmethod
     def all(cls) -> set:
@@ -133,6 +136,7 @@ class DockerImageName:
             cls.sotoki,
             cls.nautilus,
             cls.ted,
+            cls.openedx,
         }
 
 
@@ -144,6 +148,7 @@ class Offliner:
     sotoki = "sotoki"
     nautilus = "nautilus"
     ted = "ted"
+    openedx = "openedx"
 
     @classmethod
     def all(cls):
@@ -155,6 +160,7 @@ class Offliner:
             cls.sotoki,
             cls.nautilus,
             cls.ted,
+            cls.openedx,
         ]
 
 

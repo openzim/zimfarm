@@ -203,14 +203,14 @@ export default {
   running_statuses: running_statuses,
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
-               "ted", "vikidia", "wikibooks", "wikinews", "wikipedia",
+               "ted", "openedx", "vikidia", "wikibooks", "wikinews", "wikipedia",
                "wikiquote", "wikisource", "wikispecies", "wikiversity",
                "wikivoyage", "wiktionary"],  // list of categories for fileering
   warehouse_paths: ["/gutenberg", "/other", "/phet", "/psiram", "/stack_exchange",
-                    "/ted", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
+                    "/ted", "/openedx", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary", "/.hidden/dev", "/.hidden/endless"],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB

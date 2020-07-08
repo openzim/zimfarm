@@ -24,6 +24,7 @@ from common.schemas.offliners import (
     SotokiFlagsSchema,
     NautilusFlagsSchema,
     TedFlagsSchema,
+    OpenedxFlagsSchema,
 )
 
 
@@ -72,6 +73,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.sotoki: SotokiFlagsSchema,
             Offliner.nautilus: NautilusFlagsSchema,
             Offliner.ted: TedFlagsSchema,
+            Offliner.openedx: OpenedxFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema
