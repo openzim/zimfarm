@@ -60,6 +60,7 @@ def compute_flags(flags, use_equals=True):
     for key, value in flags.items():
         if value is True:
             params.append(f"--{key}")
+            continue
         if value is False:
             continue
         elif isinstance(value, list):
