@@ -3,6 +3,7 @@ import os
 from werkzeug.security import generate_password_hash
 
 from common import mongo
+from common.roles import ROLES
 
 
 class Initializer:
@@ -25,13 +26,6 @@ class Initializer:
             document = {
                 "username": username,
                 "password_hash": generate_password_hash(password),
-                "scope": {
-                    "user_management": {
-                        "change_username": True,
-                        "change_email": True,
-                        "change_password": True,
-                    },
-                    "task": {"create": True, "delete": True},
-                },
+                "scope": ROLES.get("admin"),
             }
             users.insert_one(document)
