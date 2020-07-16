@@ -9,7 +9,7 @@ import UsersView from './views/UsersView.vue'
 import UserView from './views/UserView.vue'
 import WorkersView from './views/WorkersView.vue'
 import TaskView from './views/TaskView.vue'
-import About from './views/About.vue'
+import SupportUs from './views/SupportUs.vue'
 
 export default [
   {
@@ -18,9 +18,9 @@ export default [
     redirect: {name: 'pipeline'},
   },
   {
-    path: '/about',
-    name: 'about',
-    component: About,
+    path: '/support-us',
+    name: 'support-us',
+    component: SupportUs,
   },
   {
     path: '/pipeline/filter-:filter',
