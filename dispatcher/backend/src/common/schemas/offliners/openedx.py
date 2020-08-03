@@ -36,6 +36,42 @@ class OpenedxFlagsSchema(SerializableSchema):
         required=True,
     )
 
+    instance_login_page = fields.String(
+        metadata={
+            "label": "Login page path",
+            "description": "The login path in the instance. Must start with /",
+            "placeholder": "/login_ajax",
+        },
+        data_key="instance-login-page",
+    )
+
+    instance_course_page = fields.String(
+        metadata={
+            "label": "Course page path",
+            "description": "The path to the course page after the course ID. Must start with /",
+            "placeholder": "/course",
+        },
+        data_key="instance-course-page",
+    )
+
+    instance_course_prefix = fields.String(
+        metadata={
+            "label": "Course prefix path",
+            "description": "The prefix in the path before the course ID. Must start and end with /",
+            "placeholder": "/courses/",
+        },
+        data_key="instance-course-prefix",
+    )
+
+    favicon_url = fields.Url(
+        metadata={
+            "label": "Favicon URL",
+            "description": "URL pointing to a favicon image. Recommended size >= (48px x 48px)",
+            "placeholder": "https://github.com/edx/edx-platform/raw/master/lms/static/images/favicon.ico",
+        },
+        data_key="favicon-url",
+    )
+
     ignore_missing_xblocks = fields.Boolean(
         truthy=[True],
         falsy=[False],
@@ -85,6 +121,16 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="low-quality",
     )
 
+    autoplay = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Autoplay videos",
+            "description": "Enable autoplay on videos. Behavior differs on platforms/browsers",
+        },
+        data_key="autoplay",
+    )
+
     name = fields.String(
         metadata={
             "label": "Name",
@@ -122,7 +168,7 @@ class OpenedxFlagsSchema(SerializableSchema):
     tags = fields.String(
         metadata={
             "label": "ZIM Tags",
-            "description": "List of comma-separated Tags for the ZIM file. category:openedx, and openedx added automatically",
+            "description": "List of comma-separated Tags for the ZIM file. category:other, and openedx added automatically",
         },
         data_key="tags",
     )
