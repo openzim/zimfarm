@@ -207,7 +207,7 @@ export default {
                "wikiquote", "wikisource", "wikispecies", "wikiversity",
                "wikivoyage", "wiktionary"],  // list of categories for fileering
   warehouse_paths: ["/gutenberg", "/other", "/phet", "/psiram", "/stack_exchange",
-                    "/ted", "/openedx", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
+                    "/ted", "/mooc", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary", "/.hidden/dev", "/.hidden/endless"],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx"],

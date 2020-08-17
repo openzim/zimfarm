@@ -113,7 +113,11 @@ class ScheduleCategory:
 
     @classmethod
     def all_warehouse_paths(cls):
-        return [cls.get_warehouse_path(category) for category in cls.all()]
+        custom_paths = {cls.openedx: "mooc"}
+        return [
+            cls.get_warehouse_path(custom_paths.get(category, category))
+            for category in cls.all()
+        ]
 
 
 class DockerImageName:
