@@ -57,10 +57,12 @@ class TaskStatus:
 class WarehousePath:
     hidden_dev = "/.hidden/dev"
     hidden_endless = "/.hidden/endless"
+    videos = "/videos"
 
     @classmethod
     def all(cls):
         return ScheduleCategory.all_warehouse_paths() + [
+            cls.videos,
             cls.hidden_dev,
             cls.hidden_endless,
         ]
