@@ -102,6 +102,16 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="add-forum",
     )
 
+    remove_seq_nav = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "No top sequential navigation",
+            "description": "Remove the top sequential navigation bar in the ZIM",
+        },
+        data_key="remove-seq-nav",
+    )
+
     video_format = StringEnum(
         metadata={
             "label": "Video format",
