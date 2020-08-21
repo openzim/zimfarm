@@ -87,6 +87,15 @@ class SotokiFlagsSchema(SerializableSchema):
         },
     )
 
+    no_identicons = fields.Boolean(
+        required=False,
+        data_key="no-identicons",
+        metadata={
+            "label": "No Identicons",
+            "description": "Don't download user profile pictures",
+        },
+    )
+
     optimization_cache = fields.Url(
         metadata={
             "label": "Optimization Cache URL",
