@@ -21,9 +21,8 @@ jobs:
         pip install pytest
     - name: black code formatting check
       run: |
-        pip install black
-        black --version
-        black .
+        pip install -U "black>=20.8b1"
+        black --check .
     - name: Test with pytest
       run: |
         cd dispatcher/backend/src
