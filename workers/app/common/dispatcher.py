@@ -17,12 +17,12 @@ from common.constants import OPENSSL_BIN
 
 
 def get_token_ssh(webapi_uri, username, private_key):
-    """ retrieve access_token, refresh_token using SSH private key as auth
+    """retrieve access_token, refresh_token using SSH private key as auth
 
-        - build a standard message (username:timestamp in ISO format)
-        - sign this message file using private key
-        - send message and signature as headers
-        - server validates signature and checks timestamp is recent then auths """
+    - build a standard message (username:timestamp in ISO format)
+    - sign this message file using private key
+    - send message and signature as headers
+    - server validates signature and checks timestamp is recent then auths"""
 
     now = datetime.datetime.utcnow()
     message = f"{username}:{now.isoformat()}"

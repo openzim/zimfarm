@@ -40,9 +40,9 @@ logger.addHandler(handler)
 
 
 def history_cleanup():
-    """ removes tasks for which the schedule has been run multiple times after
+    """removes tasks for which the schedule has been run multiple times after
 
-        Uses HISTORY_TASK_PER_SCHEDULE """
+    Uses HISTORY_TASK_PER_SCHEDULE"""
 
     logger.info(f":: removing tasks history (>{HISTORY_TASK_PER_SCHEDULE})")
     cursor = Tasks().aggregate(

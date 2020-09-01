@@ -141,7 +141,10 @@ class NautilusFlagsSchema(SerializableSchema):
         data_key="secondary-color",
     )
     about = fields.Url(
-        metadata={"label": "About page", "description": "Custom about HTML page.",},
+        metadata={
+            "label": "About page",
+            "description": "Custom about HTML page.",
+        },
     )
 
     debug = fields.Boolean(

@@ -77,8 +77,8 @@ def pull_image(docker_client, *args, **kwargs):
 
 
 def run_container(docker_client, *args, **kwargs):
-    """ image, command=None
-        https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run """
+    """image, command=None
+    https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run"""
     return retried_docker_call(docker_client.containers.run, *args, **kwargs)
 
 
@@ -116,8 +116,8 @@ def wait_container(docker_client, *args, **kwargs):
 
 
 def container_logs(docker_client, *args, **kwargs):
-    """ container, stdout=True, stderr=True, stream=False, timestamps=False,
-        tail='all', since=None, follow=None, until=None """
+    """container, stdout=True, stderr=True, stream=False, timestamps=False,
+    tail='all', since=None, follow=None, until=None"""
     return retried_docker_call(docker_client.api.logs, *args, **kwargs)
 
 

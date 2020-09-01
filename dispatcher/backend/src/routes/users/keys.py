@@ -123,7 +123,14 @@ class KeyRoute(BaseRoute):
         query.update({"ssh_keys.fingerprint": fingerprint})
 
         # database
-        user = Users().find_one(query, {"username": 1, "scope": 1, "ssh_keys": 1,},)
+        user = Users().find_one(
+            query,
+            {
+                "username": 1,
+                "scope": 1,
+                "ssh_keys": 1,
+            },
+        )
 
         # no user means no matching SSH key for fingerprint
         if not user:
