@@ -20,9 +20,10 @@ jobs:
         pip install -r dispatcher/backend/requirements.txt
         pip install pytest
     - name: black code formatting check
-      uses: jpetrucciani/black-check@master
-      with:
-        path: '.'
+      run: |
+        pip install black
+        black --version
+        black .
     - name: Test with pytest
       run: |
         cd dispatcher/backend/src
