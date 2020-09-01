@@ -24,15 +24,15 @@ logger = logging.getLogger(__name__)
 
 
 def asymmetric_key_auth():
-    """ authenticate using signed message and generate tokens
+    """authenticate using signed message and generate tokens
 
-        - message in X-SSHAuth-Message HTTP header
-        - base64 signature in X-SSHAuth-Signature HTTP header
-        - decode standard message: username:timestamp(UTC ISO)
-        - verify timestamp is less than a minute old
-        - verify username matches our database
-        - verify signature of message with username's public keys
-        - generate tokens"""
+    - message in X-SSHAuth-Message HTTP header
+    - base64 signature in X-SSHAuth-Signature HTTP header
+    - decode standard message: username:timestamp(UTC ISO)
+    - verify timestamp is less than a minute old
+    - verify username matches our database
+    - verify signature of message with username's public keys
+    - generate tokens"""
 
     # check the message's validity
     try:

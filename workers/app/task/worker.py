@@ -297,19 +297,19 @@ class TaskWorker(BaseWorker):
 
     @property
     def busy_zim_files(self):
-        """ list of files preventing worker to exit
+        """list of files preventing worker to exit
 
-            including PENDING as those have not been uploaded
-            including UPLOADING as those might fail and go back to PENDING """
+        including PENDING as those have not been uploaded
+        including UPLOADING as those might fail and go back to PENDING"""
         return list(
             filter(lambda x: x[1] in (PENDING, UPLOADING), self.zim_files.items())
         )
 
     def upload_files(self):
-        """ manages self.zim_files
+        """manages self.zim_files
 
-            - list files in folder to upload list
-            - upload files one by one using dedicated uploader containers """
+        - list files in folder to upload list
+        - upload files one by one using dedicated uploader containers"""
         # check files in workdir and update our list of files to upload
         self.refresh_files_list()
 

@@ -53,7 +53,9 @@ def now():
 def ack_host_fingerprint(host, port):
     """ run/store ssh-keyscan to prevent need to manually confirm host fingerprint """
     keyscan = subprocess.run(
-        ["/usr/bin/ssh-keyscan", "-p", str(port), host], capture_output=True, text=True,
+        ["/usr/bin/ssh-keyscan", "-p", str(port), host],
+        capture_output=True,
+        text=True,
     )
     if keyscan.returncode != 0:
         logger.error(f"unable to get remote host ({host}:{port}) public key")
@@ -218,7 +220,10 @@ def sftp_remote_file_exists(private_key, sftp_uri, fname):
     logger.info("Executing: {args}".format(args=" ".join(args)))
 
     sftp = subprocess.run(
-        args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        args=args,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
     last_line = sftp.stdout.strip().split("\n")[-1]
     if not last_line.endswith(fname) or last_line.startswith("sftp"):
@@ -259,7 +264,10 @@ def sftp_actual_upload(
     logger.info("Executing: {args}".format(args=" ".join(args)))
 
     return subprocess.run(
-        args=args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        args=args,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
 
 
@@ -445,7 +453,10 @@ def upload_file(
 
     logger.info(f"Starting upload of {src_path} to {upload_uri.geturl()}")
 
-    method = {"scp": scp_upload_file, "sftp": sftp_upload_file,}.get(upload_uri.scheme)
+    method = {
+        "scp": scp_upload_file,
+        "sftp": sftp_upload_file,
+    }.get(upload_uri.scheme)
 
     if not method:
         logger.critical(f"URI scheme not supported: {upload_uri.scheme}")
@@ -505,7 +516,8 @@ def main():
     )
 
     parser.add_argument(
-        "--username", help="username to authenticate to warehouse (if not in URI)",
+        "--username",
+        help="username to authenticate to warehouse (if not in URI)",
     )
 
     parser.add_argument(
@@ -544,7 +556,9 @@ def main():
     )
 
     parser.add_argument(
-        "--bandwidth", help="limit bandwidth used for transfer. In Kbit/s.", type=int,
+        "--bandwidth",
+        help="limit bandwidth used for transfer. In Kbit/s.",
+        type=int,
     )
 
     parser.add_argument(

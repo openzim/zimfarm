@@ -29,9 +29,9 @@ def get_default_duration():
 
 
 def update_schedule_duration(schedule_name):
-    """ set/update the `duration` object of a schedule by looking at its recent tasks
+    """set/update the `duration` object of a schedule by looking at its recent tasks
 
-        value is computed with `scraper_completed - started` timestamps """
+    value is computed with `scraper_completed - started` timestamps"""
 
     schedule_query = {"name": schedule_name}
 
@@ -82,10 +82,10 @@ def update_schedule_duration(schedule_name):
 def request_a_schedule(
     schedule_name, requested_by: str, worker: str = None, priority: int = 0
 ):
-    """ created requested_task for schedule_name if possible else None
+    """created requested_task for schedule_name if possible else None
 
-        enabled=False schedules can't be requested
-        schedule can't be requested if already requested on same worker """
+    enabled=False schedules can't be requested
+    schedule can't be requested if already requested on same worker"""
 
     # skip if already requested
     if RequestedTasks().count_documents(
@@ -127,9 +127,9 @@ def request_a_schedule(
 
 
 def request_tasks_using_schedule():
-    """ create requested_tasks based on schedule's periodicity field
+    """create requested_tasks based on schedule's periodicity field
 
-        Expected to be ran periodically to compute what needs to be scheduled """
+    Expected to be ran periodically to compute what needs to be scheduled"""
 
     requester = "period-scheduler"
     priority = 0
@@ -209,10 +209,10 @@ def get_task_eta(task, worker_name):
 
 
 def get_reqs_doable_by(worker):
-    """ cursor of RequestedTasks() doable by a worker using all its resources
+    """cursor of RequestedTasks() doable by a worker using all its resources
 
-        - sorted by priority
-        - sorted by duration (longest first) """
+    - sorted by priority
+    - sorted by duration (longest first)"""
     query = {}
     for res_key in ("cpu", "memory", "disk"):
         query[f"config.resources.{res_key}"] = {"$lte": worker["resources"][res_key]}
@@ -331,12 +331,12 @@ def does_platform_allow_worker_to_run(worker, running_tasks, task):
 
 
 def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
-    """ optimal requested_task to run now for a given worker
+    """optimal requested_task to run now for a given worker
 
-        Accounts for:
-         - longest tasks this worker can do (total resources)
-         - available resources now (sent)
-         - extimated duration to reclaim resources for longest tasks
+    Accounts for:
+     - longest tasks this worker can do (total resources)
+     - available resources now (sent)
+     - extimated duration to reclaim resources for longest tasks
     """
 
     # get total resources for that worker
