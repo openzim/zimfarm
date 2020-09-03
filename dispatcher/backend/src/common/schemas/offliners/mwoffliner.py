@@ -211,14 +211,6 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Multiplicator for the number of parallel HTTP requests on Parsoid backend. Otherwise `1`. Reduce on throttled Wikis.",
         }
     )
-    useDownloadCache = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Use Download Cache",
-            "description": "Cache all downloaded contents (in between flavours)",
-        },
-    )
     withoutZimFullTextIndex = fields.Boolean(
         truthy=[True],
         falsy=[False],
