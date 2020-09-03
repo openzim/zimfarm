@@ -57,6 +57,7 @@ class TaskStatus:
 class WarehousePath:
     hidden_dev = "/.hidden/dev"
     hidden_endless = "/.hidden/endless"
+    hidden_custom_apps = "/.hidden/custom_apps"
     videos = "/videos"
 
     @classmethod
@@ -65,6 +66,7 @@ class WarehousePath:
             cls.videos,
             cls.hidden_dev,
             cls.hidden_endless,
+            cls.hidden_custom_apps,
         ]
 
 
