@@ -12,7 +12,10 @@ from common.enum import (
 
 # validators
 validate_priority = validate.Range(min=0, max=10)
-validate_schedule_name = validate.Length(min=2)
+validate_schedule_name = validate.Regexp(
+    regex=r"^(?! ).+(?<! )$",
+    error="Recipe name cannot contain leading and/or trailing space(s)",
+)
 validate_not_empty = validate.Length(min=1)
 validate_role = validate.OneOf(ROLES.keys())
 validate_cpu = validate.Range(min=0)

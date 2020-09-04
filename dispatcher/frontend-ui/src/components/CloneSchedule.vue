@@ -25,7 +25,7 @@
       };
     },
     computed: {
-      ready() { return this.from && this.form_name && this.from != this.form_name; },
+      ready() { return this.from && this.form_name.trim() && this.from != this.form_name; },
     },
     methods: {
       cloneSchedule() {
@@ -40,6 +40,7 @@
             parent.redirectTo('schedule-detail', {schedule_name: payload.name});
           })
           .catch(function (error) {
+            this.form_name = "";
             parent.alertError(Constants.standardHTTPError(error.response), true);
           })
           .then(function () {
