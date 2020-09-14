@@ -220,7 +220,6 @@ class TedFlagsSchema(SerializableSchema):
             "label": "Threads",
             "description": "Number of parallel threads to use while downloading",
         },
-        data_key="threads",
         validate=validate.Range(min=1),
     )
 
