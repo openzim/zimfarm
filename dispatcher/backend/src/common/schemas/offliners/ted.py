@@ -215,6 +215,14 @@ class TedFlagsSchema(SerializableSchema):
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
+    threads = fields.Integer(
+        metadata={
+            "label": "Threads",
+            "description": "Number of parallel threads to use while downloading",
+        },
+        validate=validate.Range(min=1),
+    )
+
     @validates_schema
     def validate(self, data, **kwargs):
         if data.get("indiv_zims"):

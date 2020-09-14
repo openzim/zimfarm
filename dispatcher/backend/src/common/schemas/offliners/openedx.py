@@ -238,3 +238,11 @@ class OpenedxFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
+
+    threads = fields.Integer(
+        metadata={
+            "label": "Threads",
+            "description": "Number of parallel threads to use while downloading",
+        },
+        validate=validate.Range(min=1),
+    )
