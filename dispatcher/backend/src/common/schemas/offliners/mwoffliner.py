@@ -106,6 +106,15 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         }
     )
 
+    zstd = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Use Zstandard compression",
+            "description": "Use Zstandard as ZIM compression (Lzma otherwise)",
+        },
+    )
+
     addNamespaces = fields.String(
         metadata={
             "label": "Add Namespaces",
