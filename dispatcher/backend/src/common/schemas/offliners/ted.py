@@ -223,6 +223,14 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate.Range(min=1),
     )
 
+    locale = fields.String(
+        metadata={
+            "label": "Locale",
+            "description": "The locale to use for the translations in ZIM",
+        },
+        data_key="locale",
+    )
+
     @validates_schema
     def validate(self, data, **kwargs):
         if data.get("indiv_zims"):
