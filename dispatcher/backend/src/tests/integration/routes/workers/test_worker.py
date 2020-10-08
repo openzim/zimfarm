@@ -84,7 +84,7 @@ class TestWorkerCheckIn:
                 "cpu": 4,
                 "memory": 2048,
                 "disk": 4096,
-                "offliners": ["mwoffliner", "phet", "zimit"],
+                "offliners": ["mwoffliner", "phet", "pouet"],
             },
         ],
     )

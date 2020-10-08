@@ -3,7 +3,7 @@ from uuid import uuid4
 from bson import ObjectId
 import pytest
 
-from utils.offliners import command_information_for
+from utils.offliners import expanded_config
 
 ONE_GiB = 2 ** 30
 ONE_MiB = 1048576
@@ -213,7 +213,7 @@ class TestSchedulePost:
         assert response.status_code == 200
 
         response_json = response.get_json()
-        document["config"].update(command_information_for(document["config"]))
+        document["config"] = expanded_config(document["config"])
         response_json.pop("duration", None)  # generated server-side
         assert response_json == document
 
@@ -321,7 +321,7 @@ class TestScheduleGet:
         assert response.status_code == 200
 
         del schedule["_id"]
-        schedule["config"].update(command_information_for(schedule["config"]))
+        schedule["config"] = expanded_config(schedule["config"])
         assert response.get_json() == schedule
 
 

@@ -25,6 +25,7 @@ from common.schemas.offliners import (
     NautilusFlagsSchema,
     TedFlagsSchema,
     OpenedxFlagsSchema,
+    ZimitFlagsSchema,
 )
 
 
@@ -38,6 +39,9 @@ class ResourcesSchema(Schema):
     cpu = fields.Integer(required=True, validate=validate_cpu)
     memory = fields.Integer(required=True, validate=validate_memory)
     disk = fields.Integer(required=True, validate=validate_disk)
+    shm = fields.Integer(required=False, validate=validate_memory)
+    cap_add = fields.List(fields.String(), required=False)
+    cap_drop = fields.List(fields.String(), required=False)
 
 
 class DockerImageSchema(Schema):
@@ -74,6 +78,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.nautilus: NautilusFlagsSchema,
             Offliner.ted: TedFlagsSchema,
             Offliner.openedx: OpenedxFlagsSchema,
+            Offliner.zimit: ZimitFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema
