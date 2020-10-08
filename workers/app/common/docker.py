@@ -277,6 +277,9 @@ def start_scraper(docker_client, task, dns, host_workdir):
     cpu_shares = config["resources"]["cpu"] * DEFAULT_CPU_SHARE
     mem_limit = config["resources"]["memory"]
     disk_limit = config["resources"]["disk"]
+    shm_size = config["resources"].get("shm")
+    cap_add = config["resources"].get("cap_add", [])
+    cap_drop = config["resources"].get("cap_drop", [])
 
     return run_container(
         docker_client,
@@ -298,6 +301,9 @@ def start_scraper(docker_client, task, dns, host_workdir):
             "human.disk": format_size(disk_limit),
         },
         mem_swappiness=0,
+        shm_size=shm_size,
+        cap_add=cap_add,
+        cap_drop=cap_drop,
         mounts=mounts,
         name=container_name,
         remove=False,  # scaper container will be removed once log&zim handled
