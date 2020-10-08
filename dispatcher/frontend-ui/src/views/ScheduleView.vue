@@ -127,6 +127,7 @@
               <ResourceBadge kind="cpu" :value="config.resources.cpu" />
               <ResourceBadge kind="memory" :value="config.resources.memory" />
               <ResourceBadge kind="disk" :value="config.resources.disk" />
+              <ResourceBadge kind="shm" :value="config.resources.shm" v-if="config.resources.shm" />
             </td>
           </tr>
           <tr><th>Config</th><td><FlagsList :flags="config.flags" :secret_fields="secret_fields" /></td></tr>

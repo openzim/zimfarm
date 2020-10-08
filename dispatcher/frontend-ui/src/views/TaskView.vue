@@ -77,9 +77,18 @@
       </div>
       <div v-if="selectedTab == 'debug'" class="tab-content">
         <table class="table table-responsive table-striped table-in-tab">
-          <tr v-if="task.config"><th>Offliner</th><td>{{ task.config.task_name }}</td></tr>
+          <tr v-if="task.config"><th>Offliner</th><td><a target="_blank" :href="'https://hub.docker.com/r/' + task.config.image.name"><code>{{ image_human }}</code></a> (<code>{{ task.config.task_name }}</code>)</td></tr>
+          <tr v-if="task.config">
+            <th>Resources</th>
+            <td>
+              <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
+              <ResourceBadge kind="memory" :value="task.config.resources.memory" />
+              <ResourceBadge kind="disk" :value="task.config.resources.disk" />
+              <ResourceBadge kind="shm" :value="task.config.resources.shm" v-if="task.config.resources.shm" />
+            </td>
+          </tr>
           <tr v-if="task.config"><th>Platform</th><td>{{ task.config.platform || "-" }}</td></tr>
-          <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :shrink="true" /></td></tr>
+          <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :shrink="false" /></td></tr>
           <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
@@ -100,6 +109,7 @@
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
+  import ResourceBadge from '../components/ResourceBadge.vue'
   import ScheduleActionButton from '../components/ScheduleActionButton.vue'
   import FlagsList from '../components/FlagsList.vue'
 
@@ -107,7 +117,7 @@
   export default {
     name: 'TaskView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage, FlagsList},
+    components: {ScheduleActionButton, ErrorMessage, FlagsList, ResourceBadge},
     props: {
       _id: String,
       selectedTab: {
@@ -165,6 +175,7 @@
           return schedule.enabled;
         return false;
       },
+      image_human() { return Constants.image_human(this.task.config); },
     },
     methods: {
       copyCommand() {
