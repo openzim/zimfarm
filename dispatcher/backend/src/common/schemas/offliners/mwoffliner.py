@@ -236,3 +236,12 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Print debug information to the stdout",
         },
     )
+
+    webp = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Webp",
+            "description": "Convert images to Webp",
+        },
+    )
