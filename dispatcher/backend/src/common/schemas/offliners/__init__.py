@@ -6,6 +6,7 @@ from common.schemas.offliners.nautilus import NautilusFlagsSchema
 from common.schemas.offliners.ted import TedFlagsSchema
 from common.schemas.offliners.openedx import OpenedxFlagsSchema
 from common.schemas.offliners.gutenberg import GutenbergFlagsSchema
+from common.schemas.offliners.zimit import ZimitFlagsSchema
 
 
 class PhetFlagsSchema(SerializableSchema):

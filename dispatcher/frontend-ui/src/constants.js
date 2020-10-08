@@ -58,8 +58,27 @@ function build_command_without(config, secret_fields) {
 function build_docker_command(name, config, secret_fields) {
   let mounts = ["-v", "/my-path:" + config.mount_point + ":rw"];
   let mem_params = ["--memory-swappiness", "0", "--memory", config.resources.memory];
+  let capadd_params = [];
+  let capdrop_params = [];
+  if (config.resources.cap_add) {
+    config.resources.cap_add.forEach(function (cap) {
+      capadd_params.push("--cap-add")
+      capadd_params.push(cap);
+    });
+  }
+  if (config.resources.cap_drop) {
+    config.resources.cap_drop.forEach(function (cap) {
+      capdrop_params.push("--cap-drop")
+      capdrop_params.push(cap);
+    });
+  }
+  let shm_params = [];
+  if (config.resources.shm)
+    shm_params = ["--shm-size", config.resources.shm];
   let cpu_params = ["--cpu-shares", config.resources.cpu * DEFAULT_CPU_SHARE];
-  let docker_base = ["docker", "run"].concat(mounts).concat(["--name", config.task_name + "_" + name, "--detach"]).concat(cpu_params).concat(mem_params);
+  let docker_base = ["docker", "run"].concat(mounts).concat(["--name", config.task_name + "_" + name, "--detach"])
+    .concat(cpu_params).concat(mem_params).concat(shm_params)
+    .concat(capadd_params).concat(capdrop_params);
   let scraper_command = build_command_without(config, secret_fields);
   let args = docker_base.concat([image_human(config)]).concat([scraper_command]);
   return args.join(" ");
@@ -210,7 +229,7 @@ export default {
                     "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
                     "/wikivoyage", "/wiktionary", "/.hidden/dev", "/.hidden/endless", "/.hidden/custom_apps",],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB

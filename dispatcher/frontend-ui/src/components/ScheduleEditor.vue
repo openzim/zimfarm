@@ -176,6 +176,16 @@
                          size="sm"></b-form-select>
         </b-form-group>
       </b-col>
+      <b-col>
+        <b-form-group label="RAM fs:"
+                      label-for="es_shm"
+                      description="Amount of RAM to mount as /dev/shm. Constrained by RAM & Offliner.">
+          <b-form-select id="es_shm"
+                         v-model="edit_schedule.config.resources.shm"
+                         :options="memoryOptions"
+                         size="sm"></b-form-select>
+        </b-form-group>
+      </b-col>
     </b-row>
 
     <hr />
@@ -404,7 +414,8 @@
         // resources are changed alltogether
         if (parent.edit_schedule.config.resources.cpu != parent.schedule.config.resources.cpu ||
               parent.edit_schedule.config.resources.memory != parent.schedule.config.resources.memory ||
-              parent.edit_schedule.config.resources.disk != parent.schedule.config.resources.disk) {
+              parent.edit_schedule.config.resources.disk != parent.schedule.config.resources.disk ||
+              parent.edit_schedule.config.resources.shm != parent.schedule.config.resources.shm) {
             payload.resources = parent.edit_schedule.config.resources;
         }
 

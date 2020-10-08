@@ -51,7 +51,21 @@ def command_for(offliner, flags, mount_point):
     if offliner == Offliner.nautilus:
         cmd = "nautiluszim"
         flags["output"] = str(mount_point)
+    if offliner == Offliner.zimit:
+        cmd = "zimit"
+        flags["output"] = str(mount_point)
     return [cmd] + compute_flags(flags)
+
+
+def docker_config_for(offliner):
+    # Note: in docker, --shm-size sets the size of /dev/shm
+    # it is taken out of --memory (if set)
+    if offliner == Offliner.zimit:
+        return {
+            "cap_add": ["SYS_ADMIN", "NET_ADMIN"],
+            "shm": 2 ** 30,
+        }
+    return {}
 
 
 def compute_flags(flags, use_equals=True):
@@ -79,11 +93,33 @@ def compute_flags(flags, use_equals=True):
     return params
 
 
-def command_information_for(config):
-    info = {}
-    info["mount_point"] = str(mount_point_for(config["task_name"]))
-    info["command"] = command_for(
-        config["task_name"], config["flags"], info["mount_point"]
+def expanded_config(config):
+    config["mount_point"] = str(mount_point_for(config["task_name"]))
+    config["command"] = command_for(
+        config["task_name"], config["flags"], config["mount_point"]
     )
-    info["str_command"] = " ".join(info["command"])
-    return info
+    config["str_command"] = " ".join(config["command"])
+    docker_options = docker_config_for(config["task_name"])
+
+    def get_shm(offliner_shm=None, config_shm=None):
+        # use largest of /dev/shm specified (in config vs in offliner rule)
+        if offliner_shm and config_shm:
+            dev_shm = max([offliner_shm, config_shm])
+        else:
+            dev_shm = config_shm or offliner_shm
+
+        # use at most memory for /dev/shm if specified and above memory
+        if dev_shm and dev_shm > config["resources"]["memory"]:
+            dev_shm = config["resources"]["memory"]
+        return dev_shm
+
+    dev_shm = get_shm(
+        offliner_shm=docker_options.pop("shm", None),
+        config_shm=config["resources"].get("shm"),
+    )
+    if dev_shm:
+        config["resources"]["shm"] = dev_shm
+
+    config["resources"].update(docker_options)
+
+    return config

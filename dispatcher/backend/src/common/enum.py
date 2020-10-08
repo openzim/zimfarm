@@ -133,6 +133,7 @@ class DockerImageName:
     nautilus = "openzim/nautilus"
     ted = "openzim/ted"
     openedx = "openzim/openedx"
+    zimit = "openzim/zimit"
 
     @classmethod
     def all(cls) -> set:
@@ -145,6 +146,7 @@ class DockerImageName:
             cls.nautilus,
             cls.ted,
             cls.openedx,
+            cls.zimit,
         }
 
 
@@ -157,6 +159,7 @@ class Offliner:
     nautilus = "nautilus"
     ted = "ted"
     openedx = "openedx"
+    zimit = "zimit"
 
     @classmethod
     def all(cls):
@@ -169,6 +172,7 @@ class Offliner:
             cls.nautilus,
             cls.ted,
             cls.openedx,
+            cls.zimit,
         ]
 
 

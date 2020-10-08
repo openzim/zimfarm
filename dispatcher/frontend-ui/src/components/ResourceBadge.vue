@@ -10,7 +10,7 @@
   export default {
     name: 'ResourceBadge',
     props: {
-      kind: String,  // cpu, memory, disk
+      kind: String,  // cpu, memory, disk, shm
       value: Number, // actual data
       human_value: String,  // human repr of value (instead of raw one)
     },
@@ -19,11 +19,11 @@
         if (this.human_value)
           return this.human_value;
         return (this.kind == 'cpu') ? this.value : filesize(this.value); },
-      icon() { return {cpu: 'microchip', memory: 'memory', disk: 'hdd'}[this.kind]; },
+      icon() { return {cpu: 'microchip', memory: 'memory', disk: 'hdd', shm: 'compact-disc'}[this.kind]; },
       tooltip_text() {
         if (!this.tooltip)
           return "-";
-        return {cpu: "CPU", memory: "Memory", disk: "Disk"}[this.kind];
+        return {cpu: "CPU", memory: "Memory", disk: "Disk", shm:"SHM"}[this.kind];
       },
     }
   }

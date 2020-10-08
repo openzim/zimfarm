@@ -12,7 +12,7 @@ from bson.son import SON
 from common import getnow
 from common.constants import PERIODICITIES
 from common.enum import TaskStatus, SchedulePeriodicity, Platform
-from utils.offliners import command_information_for
+from utils.offliners import expanded_config
 from common.mongo import Tasks, Schedules, Workers, RequestedTasks
 from common.constants import DEFAULT_SCHEDULE_DURATION
 
@@ -102,7 +102,7 @@ def request_a_schedule(
 
     config = schedule["config"]
     # build and save command-information to config
-    config.update(command_information_for(config))
+    config = expanded_config(config)
 
     now = getnow()
 

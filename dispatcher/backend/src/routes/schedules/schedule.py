@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 
 from common.mongo import Schedules, Tasks, RequestedTasks
 from utils.token import AccessToken
-from utils.offliners import command_information_for
+from utils.offliners import expanded_config
 from errors.http import InvalidRequestJSON, ScheduleNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
@@ -115,7 +115,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if schedule is None:
             raise ScheduleNotFound()
 
-        schedule["config"].update(command_information_for(schedule["config"]))
+        schedule["config"] = expanded_config(schedule["config"])
         return jsonify(schedule)
 
     @authenticate
