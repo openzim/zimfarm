@@ -246,3 +246,10 @@ class OpenedxFlagsSchema(SerializableSchema):
         },
         validate=validate.Range(min=1),
     )
+
+    locale = fields.String(
+        metadata={
+            "label": "Locale",
+            "description": "The locale to use for the translations in ZIM",
+        }
+    )
