@@ -118,9 +118,11 @@ class ScheduleCategory:
     @classmethod
     def all_warehouse_paths(cls):
         custom_paths = {cls.openedx: "mooc"}
+        excluded_categories = [cls.wikispecies]
         return [
             cls.get_warehouse_path(custom_paths.get(category, category))
             for category in cls.all()
+            if category not in excluded_categories
         ]
 
 
