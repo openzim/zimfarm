@@ -227,7 +227,7 @@ export default {
                "wikivoyage", "wiktionary"],  // list of categories for fileering
   warehouse_paths: ["/gutenberg", "/other", "/phet", "/psiram", "/stack_exchange",
                     "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
-                    "/wikiquote", "/wikisource", "/wikispecies", "/wikiversity",
+                    "/wikiquote", "/wikisource", "/wikiversity",
                     "/wikivoyage", "/wiktionary", "/.hidden/dev", "/.hidden/endless", "/.hidden/custom_apps",],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
