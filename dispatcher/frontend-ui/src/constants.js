@@ -206,7 +206,7 @@ export default {
   },
   zimfarm_webapi: ZIMFARM_WEBAPI,
   zimfarm_logs_url:  ZIMFARM_LOGS_URL,
-  kiwix_download_url:  window.environ.KIWIX_DOWNLOAD_URL || process.env.KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
+  kiwix_download_url:  window.environ.ZIMFARM_KIWIX_DOWNLOAD_URL || process.env.ZIMFARM_KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
