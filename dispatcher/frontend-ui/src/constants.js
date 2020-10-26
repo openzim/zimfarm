@@ -18,6 +18,11 @@ function format_duration_between(start, end) { // display a duration between two
   return format_duration(diff);
 }
 
+function duration_between(start,end) {
+  let diff = moment(end).diff(start);
+  return diff;
+}
+
 function from_now(value) {
   let mom = moment(value);
   return mom.isValid() ? mom.fromNow() : value;
@@ -370,6 +375,7 @@ export default {
   },
   format_dt: format_dt,
   format_duration: format_duration,
+  duration_between:duration_between,
   format_duration_between: format_duration_between,
   params_serializer:params_serializer,
   now: now,

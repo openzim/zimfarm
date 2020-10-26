@@ -157,6 +157,16 @@
         if (this.is_running) {
           return Constants.format_duration_between(first, Constants.now());
         }
+        var dur=0;
+        if(this.task.files&&Object.keys(this.task.files).length>0)
+        {
+            for (var file in this.task.files)
+            {
+              dur=dur+Constants.duration_between(this.task.timestamp.scraper_started, this.task.files[file].created_timestamp);
+            }
+            
+            return Constants.format_duration(dur);
+        }
 
         // if task is not running, it's started to last status
         let last = this.task.updated_at;
