@@ -1,6 +1,6 @@
-from marshmallow import fields
+from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema
+from common.schemas import SerializableSchema, StringEnum
 from common.schemas.fields import validate_output
 
 
@@ -149,6 +149,16 @@ class ZimitFlagsSchema(SerializableSchema):
             "label": "Scroll",
             "description": "If set, will autoscroll pages to bottom.",
         },
+        required=False,
+    )
+
+    new_context = StringEnum(
+        metadata={
+            "label": "New Context",
+            "description": "The context for each new capture. Defaults to page",
+        },
+        validate=validate.OneOf(["page", "session", "browser"]),
+        data_key="newContext",
         required=False,
     )
 
