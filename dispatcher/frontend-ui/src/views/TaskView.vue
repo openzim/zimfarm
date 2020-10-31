@@ -145,19 +145,16 @@
       schedule_name() { return this.task ? this.task.schedule_name : null; },
       task_container() { return this.task.container || {}; },
       task_debug() { return this.task.debug || {}; },
-      task_duration() {  // duration of a task
+        task_duration() {  // duration of a task
         if (!this.task.events)
           return '';
-
         let first = this.task.timestamp.started;
         if (!first)  // probably in reserved state, hence not yet started
           return "not actually started";
-
         // if task is running (non-complete status) then it's started-to now
         if (this.is_running) {
           return Constants.format_duration_between(first, Constants.now());
         }
-
         // if task is not running, it's started to last status
         let last = this.task.updated_at;
         return Constants.format_duration_between(first, last);
@@ -194,14 +191,45 @@
           .then(function (response) {
               parent.error = null;
               parent.task = response.data;
+              parent.task.files=parent.sort_object_of_objects(parent.task.files, "created_timestamp");
           })
           .catch(function (error) {
             parent.error = Constants.standardHTTPError(error.response);
+            
           })
           .then(function () {
               parent.toggleLoader(false);
+              
           });
+        },
+      sort_object_of_objects(data, attr) {
+      let arr = [];
+      for (let prop in data) {
+             let obj = {};
+             obj[prop] = data[prop];
+             obj.tempSortName = data[prop][attr];
+             arr.push(obj);
       }
+
+      arr.sort(function(a, b) {
+         let at = a.tempSortName,
+              bt = b.tempSortName;
+         return at > bt ? 1 : ( at < bt ? -1 : 0 );
+      });
+      
+      let result = [];
+      let id;
+      for (let i=0, l=arr.length; i<l; i++) {
+          let obj = arr[i];
+         delete obj.tempSortName;
+         for (let prop in obj) {
+                 id = prop;
+          }
+         let item = obj[id];
+         result.push(item);
+      } 
+      return result;
+      },
     },
     mounted() {
       this.refresh_data();
