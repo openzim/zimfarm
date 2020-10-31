@@ -1,6 +1,7 @@
 import moment from 'moment'
 import filesize from 'filesize'
 import querystring from 'querystring'
+import humanizeDuration from 'humanize-duration';
 
 function format_dt(value) { // display a datetime in a standard format
   if (!value)
@@ -15,8 +16,22 @@ function format_duration(diff) { // display a duration in a standard format
 
 function format_duration_between(start, end) { // display a duration between two datetimes
   let diff = moment(end).diff(start);
-  return format_duration(diff);
-}
+   const humanize_duration = humanizeDuration.humanizer({
+      language: "shortEn",
+      languages: {
+        shortEn: {
+          y: () => "y",
+          mo: () => "mo",
+          w: () => "w",
+          d: () => "d",
+          h: () => "h",
+          m: () => "m",
+          s: () => "s",
+          ms: () => "ms",
+        },
+      },largest: 2 ,round : true ,delimiter: " "});
+      return humanize_duration(diff);
+  }
 
 function from_now(value) {
   let mom = moment(value);
