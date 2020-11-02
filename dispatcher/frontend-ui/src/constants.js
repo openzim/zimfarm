@@ -29,7 +29,7 @@ function format_duration_between(start, end) { // display a duration between two
           s: () => "s",
           ms: () => "ms",
         },
-      },largest: 2 ,round : true ,delimiter: " "});
+      }, largest: 2, round: true , delimiter: " ", spacer: ""});
       return humanize_duration(diff);
   }
 
