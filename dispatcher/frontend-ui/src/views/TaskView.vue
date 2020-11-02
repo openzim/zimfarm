@@ -63,7 +63,7 @@
             <td>
               <table class="table table-responsive-md table-striped table-sm">
                 <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th></tr></thead>
-                <tr v-for="file in task.files" :key="file.name">
+                <tr v-for="file in sorted_files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
                   <td>{{ file.size | filesize }}</td>
                   <td v-tooltip="format_dt(file.created_timestamp)">{{ file | created_after(task) }}</td>
@@ -140,6 +140,7 @@
       }
     },
     computed: {
+      sorted_files() { return Object.values(this.task.files).sortBy('created_timestamp'); },
       short_id() { return Constants.short_id(this._id); },
       is_running() { return ["failed", "canceled", "succeeded"].indexOf(this.task.status) == -1; },
       schedule_name() { return this.task ? this.task.schedule_name : null; },
