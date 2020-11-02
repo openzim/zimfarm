@@ -17,6 +17,7 @@
     "core-js": "^3.3.2",
     "deep-diff": "^1.0.2",
     "filesize": "^6.0.1",
+    "humanize-duration": "^3.24.0",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.24.0",
     "password-generator": "^2.2.3",
