@@ -390,6 +390,7 @@ export default {
   now: now,
   image_human: image_human,
   build_docker_command: build_docker_command,
+  build_command_without: build_command_without,
   trim_command: trim_command,
   from_now: from_now,
   short_id: short_id,

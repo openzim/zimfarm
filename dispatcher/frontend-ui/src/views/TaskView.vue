@@ -89,7 +89,7 @@
           </tr>
           <tr v-if="task.config"><th>Platform</th><td>{{ task.config.platform || "-" }}</td></tr>
           <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :shrink="false" /></td></tr>
-          <tr v-if="task_container.command"><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
+          <tr v-if="task_container.command"><th>Command </th><td><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
@@ -179,15 +179,6 @@
       image_human() { return Constants.image_human(this.task.config); },
     },
     methods: {
-      copyCommand() {
-        let parent = this;
-        this.$copyText(this.command).then(function () {
-            parent.alertInfo("Command copied to Clipboard!");
-          }, function () {
-            parent.alertWarning("Unable to copy command to clipboard 😞. ",
-                                "Please copy it manually.");
-          });
-      },
       refresh_data() {
         let parent = this;
         parent.toggleLoader("fetching task…");
