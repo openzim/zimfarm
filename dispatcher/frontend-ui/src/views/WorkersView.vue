@@ -30,8 +30,9 @@
         <tr v-for="row in rows" :key="row.id" >
           <th v-if="row.kind == 'worker'"
               :rowspan="row.rowspan"
-              class="bg-light"
-              :class="(row.status == 'online') ? 'text-success' : 'text-secondary'">{{ row.worker.name }}</th>
+              :id="row.worker.name"
+              class= "bg-light"
+              :class="(row.status == 'online' ? 'text-success' : 'text-secondary')"><a :href="'#'+row.worker.name" :class=" (row.worker.name == $route.hash.split('#')[1] ? ' bg-warning' : 'bg-light')">{{ row.worker.name }}</a></th>
 
 
           <td v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" v-tooltip="format_dt(row.worker.last_seen)">
@@ -69,6 +70,7 @@
 
 <script type="text/javascript">
   import filesize from 'filesize';
+  import VueScrollTo from 'vue-scrollto';
 
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
@@ -236,11 +238,18 @@
             parent.toggleLoader(false);
           });
       },
+      scrollTo(){
+        if(this.$route.hash.split('#')[1])
+          VueScrollTo.scrollTo(`#${this.$route.hash.split('#')[1]}`, 0, { container: 'body' });
+      },
     },
     mounted() {
       this.showing_all = !this.getOnlinesOnlyPreference();
       this.loadWorkersList();
       this.timer = setInterval(this.loadWorkersList, 60000);
+    },
+    updated(){
+      this.scrollTo();
     },
     beforeDestroy () {
       clearInterval(this.timer)
