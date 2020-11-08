@@ -70,7 +70,6 @@
 
 <script type="text/javascript">
   import filesize from 'filesize';
-  import VueScrollTo from 'vue-scrollto';
 
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
@@ -240,7 +239,13 @@
       },
       scrollTo(){
         if(this.$route.hash.split('#')[1])
-          VueScrollTo.scrollTo(`#${this.$route.hash.split('#')[1]}`, 0, { container: 'body' });
+        {
+          const element = document.getElementById(this.$route.hash.split('#')[1]);
+          if(element)
+          {
+            window.scrollTo(0,element.offsetTop);
+          }
+        }
       },
     },
     mounted() {
