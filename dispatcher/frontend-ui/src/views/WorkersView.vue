@@ -30,8 +30,9 @@
         <tr v-for="row in rows" :key="row.id" >
           <th v-if="row.kind == 'worker'"
               :rowspan="row.rowspan"
-              class="bg-light"
-              :class="(row.status == 'online') ? 'text-success' : 'text-secondary'">{{ row.worker.name }}</th>
+              :id="row.worker.name"
+              class= "bg-light"
+              :class="(row.status == 'online' ? 'text-success' : 'text-secondary')"><a :href="'#'+row.worker.name" :class=" (row.worker.name == $route.hash.split('#')[1] ? ' bg-warning' : 'bg-light')">{{ row.worker.name }}</a></th>
 
 
           <td v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" v-tooltip="format_dt(row.worker.last_seen)">
@@ -236,11 +237,31 @@
             parent.toggleLoader(false);
           });
       },
+      totalOffset(element) {
+        var top = 0;
+        do {
+        top += element.offsetTop || 0;
+        element = element.offsetParent;
+        } while (element);
+        return top;
+      },
+      scrollTo(target) {
+        const element=document.querySelector(target);
+        const totalOffsetContainer = this.totalOffset(document.querySelector('body'));
+        const totalOffsetElement = this.totalOffset(element);
+        const targetY = totalOffsetElement - totalOffsetContainer;
+        document.querySelector('body').scrollTop = targetY;
+        // in firefox body.scrollTop doesn't scroll the page thus if we are trying to scrollTop on a body tag we need to scroll on the documentElement
+        document.documentElement.scrollTop = targetY; 
+      },
     },
     mounted() {
       this.showing_all = !this.getOnlinesOnlyPreference();
       this.loadWorkersList();
       this.timer = setInterval(this.loadWorkersList, 60000);
+    },
+    updated() {
+      this.scrollTo('#'+this.$route.hash.split('#')[1]);
     },
     beforeDestroy () {
       clearInterval(this.timer)
