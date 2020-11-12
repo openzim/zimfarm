@@ -237,15 +237,22 @@
             parent.toggleLoader(false);
           });
       },
-      scrollTo(){
-        if(this.$route.hash.split('#')[1])
-        {
-          const element = document.getElementById(this.$route.hash.split('#')[1]);
-          if(element)
-          {
-            window.scrollTo(0,element.offsetTop);
-          }
-        }
+      totalOffset(element) {
+        var top = 0;
+        do {
+        top += element.offsetTop || 0;
+        element = element.offsetParent;
+      } while (element);
+
+      return top;
+      },
+      scrollTo(target){
+        const element=document.querySelector(target);
+        const totalOffsetContainer = this.totalOffset(document.querySelector('body'));
+        const totalOffsetElement = this.totalOffset(element);
+        const targetY = totalOffsetElement - totalOffsetContainer ;
+        document.querySelector('body').scrollTop=targetY;
+        document.documentElement.scrollTop = targetY; // in firefox body.scrollTop doesn't scroll the page thus if we are trying to scrollTop on a body tag we need to scroll on the documentElement
       },
     },
     mounted() {
@@ -254,7 +261,7 @@
       this.timer = setInterval(this.loadWorkersList, 60000);
     },
     updated(){
-      this.scrollTo();
+      this.scrollTo('#'+this.$route.hash.split('#')[1]);
     },
     beforeDestroy () {
       clearInterval(this.timer)
