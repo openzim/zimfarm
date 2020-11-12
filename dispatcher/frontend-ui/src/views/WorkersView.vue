@@ -242,17 +242,17 @@
         do {
         top += element.offsetTop || 0;
         element = element.offsetParent;
-      } while (element);
-
-      return top;
+        } while (element);
+        return top;
       },
-      scrollTo(target){
+      scrollTo(target) {
         const element=document.querySelector(target);
         const totalOffsetContainer = this.totalOffset(document.querySelector('body'));
         const totalOffsetElement = this.totalOffset(element);
-        const targetY = totalOffsetElement - totalOffsetContainer ;
-        document.querySelector('body').scrollTop=targetY;
-        document.documentElement.scrollTop = targetY; // in firefox body.scrollTop doesn't scroll the page thus if we are trying to scrollTop on a body tag we need to scroll on the documentElement
+        const targetY = totalOffsetElement - totalOffsetContainer;
+        document.querySelector('body').scrollTop = targetY;
+        // in firefox body.scrollTop doesn't scroll the page thus if we are trying to scrollTop on a body tag we need to scroll on the documentElement
+        document.documentElement.scrollTop = targetY; 
       },
     },
     mounted() {
@@ -260,7 +260,7 @@
       this.loadWorkersList();
       this.timer = setInterval(this.loadWorkersList, 60000);
     },
-    updated(){
+    updated() {
       this.scrollTo('#'+this.$route.hash.split('#')[1]);
     },
     beforeDestroy () {
