@@ -192,3 +192,34 @@ class ZimitFlagsSchema(SerializableSchema):
         data_key="replay-viewer-source",
         required=False,
     )
+
+    use_sitemap = fields.Url(
+        metadata={
+            "label": "Use sitemap",
+            "description": "Use as sitemap to get additional URLs for the crawl "
+            "(usually at /sitemap.xml)",
+        },
+        data_key="useSitemap",
+        required=False,
+    )
+
+    mobile_device = fields.String(
+        metadata={
+            "label": "As device",
+            "description": "Device to crawl as. Defaults to `Iphone X`. "
+            "See Pupeeter's DeviceDescriptors.",
+        },
+        data_key="mobileDevice",
+        required=False,
+    )
+
+    admin_email = fields.String(
+        metadata={
+            "label": "Admin Email",
+            "description": "Admin Email for crawler: used in UserAgent "
+            "so website admin can contact us",
+        },
+        data_key="adminEmail",
+        default="contact+zimfarm@kiwix.org",
+        required=True,
+    )
