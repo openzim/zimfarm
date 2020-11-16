@@ -220,6 +220,5 @@ class ZimitFlagsSchema(SerializableSchema):
             "so website admin can contact us",
         },
         data_key="adminEmail",
-        default="contact+zimfarm@kiwix.org",
-        required=True,
+        required=False,
     )

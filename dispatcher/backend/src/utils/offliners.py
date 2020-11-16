@@ -53,6 +53,8 @@ def command_for(offliner, flags, mount_point):
         flags["output"] = str(mount_point)
     if offliner == Offliner.zimit:
         cmd = "zimit"
+        if "adminEmail" not in flags:
+            flags["adminEmail"] = "contact+zimfarm@kiwix.org"
         flags["output"] = str(mount_point)
     return [cmd] + compute_flags(flags)
 
