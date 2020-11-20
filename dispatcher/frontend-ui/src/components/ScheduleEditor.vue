@@ -229,6 +229,7 @@
       </tr>
     </tbody>
     </table>
+    <p v-if="!edit_flags_fields.length">No Command Flags</p>
 
   <b-row>
       <b-col>
