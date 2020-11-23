@@ -24,6 +24,8 @@ from common.constants import (
     DOCKER_SOCKET,
     PRIVATE_KEY,
     UPLOAD_URI,
+    DNSCACHE_IMAGE,
+    UPLOADER_IMAGE,
 )
 from common.utils import short_id, as_pos_int, format_size
 
@@ -119,6 +121,14 @@ def container_logs(docker_client, *args, **kwargs):
     """container, stdout=True, stderr=True, stream=False, timestamps=False,
     tail='all', since=None, follow=None, until=None"""
     return retried_docker_call(docker_client.api.logs, *args, **kwargs)
+
+
+def get_or_pull_image(docker_client, tag):
+    """ attempt to get locally or pull and return. Tag is repo:tag """
+    try:
+        return get_image(docker_client, tag)
+    except docker.errors.ImageNotFound:
+        return pull_image(docker_client, tag)
 
 
 def query_containers_resources(docker_client):
@@ -234,7 +244,7 @@ def get_label_value(docker_client, name, label):
 def start_dnscache(docker_client, task):
     name = dnscache_container_name(task["_id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
-    image = pull_image(docker_client, "openzim/dnscache", tag="latest")
+    image = get_or_pull_image(docker_client, DNSCACHE_IMAGE)
     return run_container(
         docker_client,
         image=image,
@@ -262,10 +272,10 @@ def start_scraper(docker_client, task, dns, host_workdir):
     except docker.errors.NotFound:
         pass
 
-    logger.debug(f'pulling image {config["image"]["name"]}:{config["image"]["tag"]}')
-    docker_image = pull_image(
-        docker_client, config["image"]["name"], tag=config["image"]["tag"]
-    )
+    # scraper is systematically pulled before starting
+    tag = f'{config["image"]["name"]}:{config["image"]["tag"]}'
+    logger.debug(f"Pulling image {tag}")
+    docker_image = pull_image(docker_client, tag)
 
     # where to mount volume inside scraper
     mount_point = config["mount_point"]
@@ -319,12 +329,9 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
     except docker.errors.NotFound:
         pass
 
-    image, tag = TASK_WORKER_IMAGE.rsplit(":", 1)
-    if tag == "local":
-        docker_image = get_image(docker_client, TASK_WORKER_IMAGE)
-    else:
-        logger.debug(f"pulling image {image}:{tag}")
-        docker_image = pull_image(docker_client, image, tag=tag)
+    logger.debug(f"getting image {TASK_WORKER_IMAGE}")
+    # task worker is always pulled to ensure we can update our code
+    docker_image = pull_image(docker_client, TASK_WORKER_IMAGE)
 
     # mounts will be attached to host's fs, not this one
     host_mounts = query_host_mounts(docker_client, workdir)
@@ -402,7 +409,7 @@ def start_uploader(
     except docker.errors.NotFound:
         pass
 
-    docker_image = pull_image(docker_client, "openzim/uploader", tag="latest")
+    docker_image = get_or_pull_image(docker_client, UPLOADER_IMAGE)
 
     # in container paths
     workdir = pathlib.Path("/data")
