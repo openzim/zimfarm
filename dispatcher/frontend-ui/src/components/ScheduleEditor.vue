@@ -190,7 +190,7 @@
 
     <hr />
 
-    <b-row v-if="edit_flags_fields.length>0"><b-col><h2><code>{{ edit_task_name}}</code> command flags</h2></b-col></b-row>
+    <b-row v-if="edit_flags_fields.length > 0"><b-col><h2><code>{{ edit_task_name}}</code> command flags</h2></b-col></b-row>
 
     <table class="table table-striped table-hover table-sm table-responsive-md">
       <tbody>
