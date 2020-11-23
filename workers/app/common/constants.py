@@ -18,6 +18,8 @@ TASK_WORKER = "task-worker"
 
 # images
 TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
+DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE", "openzim/dnscache:1.0")
+UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.0")
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
@@ -42,7 +44,8 @@ try:
 except Exception as exc:
     ZIMFARM_DISK_SPACE = 2 ** 34  # 16GiB
     logger.error(
-        f"Incorrect or missing `ZIMFARM_DISK` env. defaulting to {format_size(ZIMFARM_DISK_SPACE)} ({exc})"
+        f"Incorrect or missing `ZIMFARM_DISK` env. "
+        f"defaulting to {format_size(ZIMFARM_DISK_SPACE)} ({exc})"
     )
 
 try:
