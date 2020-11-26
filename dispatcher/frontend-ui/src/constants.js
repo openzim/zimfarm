@@ -209,8 +209,8 @@ function secret_fields_for(offliner_def) {
 
 var DEFAULT_CPU_SHARE = 1024;
 
-var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
-var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
+var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
+var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
 var cancelable_statuses = ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"];
 var running_statuses = cancelable_statuses.concat(["cancel_requested"]);
 var secret_replacement = "**********";
