@@ -2,8 +2,6 @@ import os
 
 import pytest
 from bson import ObjectId
-from pymongo import MongoClient
-from pymongo.database import Database
 from flask.testing import FlaskClient
 
 from main import application as app
@@ -74,8 +72,5 @@ def access_token():
 
 
 @pytest.fixture(scope="session")
-def database() -> Database:
-    client = MongoClient(os.getenv("MONGO_HOSTNAME"), 27017)
-    database = client["Zimfarm"]
-    mongo.Tasks(database=database).initialize()
-    yield database
+def database() -> mongo.Database:
+    yield mongo.Database()
