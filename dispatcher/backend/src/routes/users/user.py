@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash
 from marshmallow import ValidationError
 
 from common.mongo import Users
+from common.mongo import Workers
 from common.roles import get_role_for, ROLES
 from routes import authenticate, url_object_id, errors, require_perm
 from utils.token import AccessToken
@@ -129,6 +130,8 @@ class UserRoute(BaseRoute):
     @url_object_id("username")
     def delete(self, token: AccessToken.Payload, username: str):
         # delete user
+        if get_role_for(Users().find_one({"username":username}).get("scope")) == "worker":
+            Workers().delete_many({"username": username})
         deleted_count = Users().delete_one({"username": username}).deleted_count
         if deleted_count == 0:
             raise errors.NotFound()
