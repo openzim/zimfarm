@@ -1,19 +1,26 @@
 import os
+import urllib.parse
 
 from pymongo import MongoClient
 from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
 from common.enum import TaskStatus
 
+MONGODB_URI = urllib.parse.urlparse(
+    os.getenv("MONGODB_URI", "mongodb://localhost:27017/Zimfarm"), scheme="mongodb"
+)
+
 
 class Client(MongoClient):
     def __init__(self):
-        super().__init__(os.getenv("MONGODB_URI", "mongodb://localhost:27017/"))
+        super().__init__(f"{MONGODB_URI.scheme}://{MONGODB_URI.netloc}/")
 
 
 class Database(BaseDatabase):
     def __init__(self):
-        super().__init__(Client(), "Zimfarm")
+        super().__init__(
+            Client(), MONGODB_URI.path[1:] if MONGODB_URI.path else "Zimfarm"
+        )
 
 
 class Users(BaseCollection):

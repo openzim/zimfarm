@@ -14,7 +14,18 @@
   <link rel="apple-touch-icon" sizes="144x144" href="<%= BASE_URL %>assets/apple-touch-icon-144x144.png" />
   <link rel="apple-touch-icon" sizes="152x152" href="<%= BASE_URL %>assets/apple-touch-icon-152x152.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="<%= BASE_URL %>assets/apple-touch-icon-180x180.png" />
-  <script type="application/javascript" src="<%= BASE_URL %>environ.js"></script>
+  <script type="application/javascript">
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "<%= BASE_URL %>environ.json", false);
+      if (xhr.overrideMimeType)
+        xhr.overrideMimeType("application/json");
+      xhr.send();
+      try {
+        if (xhr.status != 200 || xhr.readyState != 4)
+          throw "Connection Error";
+        window.environ = JSON.parse(xhr.responseText);
+      } catch (exc) { console.error("Failed to load file ", xhr.responseURL, exc); }
+    </script>
 </head>
 <body>
     <noscript>
