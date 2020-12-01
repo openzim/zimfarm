@@ -24,7 +24,6 @@ from common.constants import (
     TASK_WORKER_IMAGE,
     DOCKER_SOCKET,
     PRIVATE_KEY,
-    UPLOAD_URI,
     DNSCACHE_IMAGE,
     UPLOADER_IMAGE,
 )
@@ -360,7 +359,6 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "USERNAME": username,
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
-            "UPLOAD_URI": UPLOAD_URI,
             "WORKER_NAME": worker_name,
             "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
             "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
@@ -428,13 +426,10 @@ def start_uploader(
     ]
 
     # append the upload_dir and filename to upload_uri
-    upload_uri = urllib.parse.urlparse(UPLOAD_URI)
-    if upload_uri.scheme == "s3":  # S3 needs it in `path` part, not end of string
-        parts = list(upload_uri)
-        parts[2] += f"{upload_dir}/{filepath.name}"
-        upload_uri = urllib.parse.urlunparse(parts)
-    else:
-        upload_uri = f"{UPLOAD_URI}/{upload_dir}/{filepath.name}"
+    upload_uri = urllib.parse.urlparse(task["upload_uri"])
+    parts = list(upload_uri)
+    parts[2] = (upload_uri.path or "/") + f"{upload_dir}/{filepath.name}"
+    upload_uri = urllib.parse.urlunparse(parts)
 
     command = [
         "uploader",
@@ -455,6 +450,8 @@ def start_uploader(
         command.append("--delete")
     if watch:
         command += ["--watch", str(watch)]
+    if task["zim_expiration"]:
+        command += ["--delete-after", str(task["zim_expiration"])]
 
     return run_container(
         docker_client,

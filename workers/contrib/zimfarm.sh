@@ -24,9 +24,8 @@ MANAGER_IMAGE="openzim/zimfarm-worker-manager"
 MANAGER_TAG="latest"
 WORKER_IMAGE="openzim/zimfarm-task-worker"
 WORKER_TAG="latest"
-SOCKET_URI="tcp://tcp.farm.openzim.org:32029" \
-WEB_API_URI="https://api.farm.openzim.org/v1" \
-UPLOAD_URI="sftp://uploader@warehouse.farm.openzim.org:1522" \
+SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
+WEB_API_URI="https://api.farm.openzim.org/v1"
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm_worker-manager"
