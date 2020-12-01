@@ -6,6 +6,7 @@ import os
 import time
 import uuid
 import pathlib
+import urllib.parse
 
 import docker
 from docker.types import Mount
@@ -426,12 +427,21 @@ def start_uploader(
         Mount(str(PRIVATE_KEY), host_private_key, type="bind", read_only=True),
     ]
 
+    # append the upload_dir and filename to upload_uri
+    upload_uri = urllib.parse.urlparse(UPLOAD_URI)
+    if upload_uri.scheme == "s3":  # S3 needs it in `path` part, not end of string
+        parts = list(upload_uri)
+        parts[2] += f"{upload_dir}/{filepath.name}"
+        upload_uri = urllib.parse.urlunparse(parts)
+    else:
+        upload_uri = f"{UPLOAD_URI}/{upload_dir}/{filepath.name}"
+
     command = [
         "uploader",
         "--file",
         str(filepath),
         "--upload-uri",
-        f"{UPLOAD_URI}/{upload_dir}/{filepath.name}",
+        upload_uri,
         "--username",
         username,
     ]

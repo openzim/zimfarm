@@ -1,7 +1,7 @@
 uploader
 ===
 
-Dedicated container/script to upload files to openzim/kiwix warehouses.
+Dedicated container/script to upload files to openzim/kiwix warehouses and S3
 
 Files are uploaded via SFTP (pubkey authentication) or SCP using OpenSSH.
 
