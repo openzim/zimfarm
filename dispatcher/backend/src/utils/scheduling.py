@@ -117,7 +117,7 @@ def request_a_schedule(
         "worker": worker,
         "config": config,
         # reverse ObjectId to randomize task ids
-        "_id": ObjectId(str(ObjectId())[::-1])
+        "_id": ObjectId(str(ObjectId())[::-1]),
     }
 
     if worker:
