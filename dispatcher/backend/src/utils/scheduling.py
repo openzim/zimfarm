@@ -10,6 +10,7 @@ import pymongo
 from bson.son import SON
 
 from common import getnow
+from bson.objectid import ObjectId
 from common.constants import PERIODICITIES
 from common.enum import TaskStatus, SchedulePeriodicity, Platform
 from utils.offliners import expanded_config
@@ -115,6 +116,8 @@ def request_a_schedule(
         "priority": priority,
         "worker": worker,
         "config": config,
+        # reverse ObjectId to randomize task ids
+        "_id": ObjectId(str(ObjectId())[::-1]),
     }
 
     if worker:

@@ -153,7 +153,7 @@ function trim_command(command, columns=79) {  // trim a string to espaced versio
 }
 
 function short_id(id) {  // short id of tasks (last chars)
-  return id.substr(id.length - 5);
+  return id.substr(0, 5);
 }
 
 function filesize2(value) {

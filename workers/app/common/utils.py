@@ -7,7 +7,7 @@ import humanfriendly
 
 def short_id(task_id):
     """ stripped version of task_id for containers/display """
-    return task_id[-5:]
+    return task_id[:5]
 
 
 def as_pos_int(value):
