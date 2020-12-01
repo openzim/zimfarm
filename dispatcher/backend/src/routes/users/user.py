@@ -5,7 +5,7 @@ from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
 from marshmallow import ValidationError
 
-from common.mongo import Users
+from common.mongo import Users, Workers
 from common.roles import get_role_for, ROLES
 from routes import authenticate, url_object_id, errors, require_perm
 from utils.token import AccessToken
@@ -132,4 +132,5 @@ class UserRoute(BaseRoute):
         deleted_count = Users().delete_one({"username": username}).deleted_count
         if deleted_count == 0:
             raise errors.NotFound()
+        Workers().delete_many({"username": username})
         return Response(status=HTTPStatus.NO_CONTENT)
