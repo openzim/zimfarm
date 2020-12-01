@@ -17,3 +17,9 @@ PERIODICITIES = {
     SchedulePeriodicity.biannualy: {"days": 180},
     SchedulePeriodicity.annually: {"days": 365},
 }
+
+UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522")
+try:
+    ZIM_EXPIRATION = int(os.getenv("ZIM_EXPIRATION", "0"))
+except Exception:
+    ZIM_EXPIRATION = 0
