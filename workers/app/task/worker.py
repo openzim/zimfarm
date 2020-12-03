@@ -39,6 +39,7 @@ MAX_ZIM_RETRIES = 5
 
 started = "started"
 scraper_started = "scraper_started"
+scraper_running = "scraper_running"
 scraper_completed = "scraper_completed"
 
 
@@ -139,6 +140,20 @@ class TaskWorker(BaseWorker):
             {
                 "event": scraper_completed,
                 "payload": {"exit_code": exit_code, "stdout": stdout, "stderr": stderr},
+            }
+        )
+
+    def submit_scraper_tail(self):
+        """ report last lines of scraper to the API """
+        self.scraper.reload()
+        stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
+        stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
+
+        logger.info("Submitting scraper tail")
+        self.patch_task(
+            {
+                "event": scraper_running,
+                "payload": {"stdout": stdout, "stderr": stderr},
             }
         )
 
@@ -250,6 +265,7 @@ class TaskWorker(BaseWorker):
         self.uploader = start_uploader(
             self.docker,
             self.task,
+            "zim",
             self.username,
             self.host_task_workdir,
             upload_dir,
@@ -356,9 +372,6 @@ class TaskWorker(BaseWorker):
                 )
                 self.zim_files[zim_file] = UPLOADING
 
-    def start_scraper_log_uploader(self):
-        self.upload_log(watch=True)
-
     def upload_log(self, watch=False):
         logger.debug(f"starting log uploader, with watch={watch}")
         if not self.scraper:
@@ -370,6 +383,7 @@ class TaskWorker(BaseWorker):
         self.log_uploader = start_uploader(
             self.docker,
             self.task,
+            "logs",
             self.username,
             log_path.parent,
             "logs",
@@ -383,16 +397,18 @@ class TaskWorker(BaseWorker):
 
     def finish_scraper_log_upload(self):
         # stop and remove previous (watch) container. might be already stopped
-        try:
-            stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
-            remove_container(self.docker, self.log_uploader.name, force=True)
-        except docker.errors.NotFound as exc:
-            # failure here is unexpected (container should exist) but happens randomly
-            # catching this to prevent task from crashing while there might be
-            # ZIM files to continue uploading after
-            logger.warning(f"Log uploader container missing: {exc}")
-            logger.warning("Expect full-log upload next (long)")
-        self.log_uploader = None
+        if self.log_uploader:
+            try:
+                stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
+                remove_container(self.docker, self.log_uploader.name, force=True)
+            except docker.errors.NotFound as exc:
+                # failure here is unexpected (container should exist)
+                # but happens randomly
+                # catching this to prevent task from crashing while there might be
+                # ZIM files to continue uploading after
+                logger.warning(f"Log uploader container missing: {exc}")
+                logger.warning("Expect full-log upload next (long)")
+            self.log_uploader = None
 
         try:
             # restart without watch to make sure it's complete
@@ -414,7 +430,8 @@ class TaskWorker(BaseWorker):
 
         if exit_code != 0:
             logger.error(
-                f"Log Uploader:: {get_container_logs(self.docker, self.log_uploader.name)}"
+                f"Log Uploader:: "
+                f"{get_container_logs(self.docker, self.log_uploader.name)}"
             )
 
         remove_container(self.docker, self.log_uploader.name, force=True)
@@ -452,7 +469,9 @@ class TaskWorker(BaseWorker):
         self.mark_scraper_started()
 
         # start scraper log uploader
-        self.start_scraper_log_uploader()
+        if self.can_stream_logs():
+            self.upload_log(watch=True)
+        self.submit_scraper_tail()
 
         last_check = datetime.datetime.now()
 
@@ -463,6 +482,7 @@ class TaskWorker(BaseWorker):
                 continue
 
             last_check = now
+            self.submit_scraper_tail()
             self.upload_files()
 
         # scraper is done. check files so upload can continue

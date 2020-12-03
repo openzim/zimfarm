@@ -25,6 +25,7 @@ def task_event_handler(task_id, event, payload):
         TaskStatus.cancel_requested: task_cancel_requested_event_handler,
         TaskStatus.canceled: task_canceled_event_handler,
         TaskStatus.scraper_started: task_scraper_started_event_handler,
+        TaskStatus.scraper_running: task_scraper_running_event_handler,
         TaskStatus.scraper_completed: task_scraper_completed_event_handler,
         TaskStatus.scraper_killed: task_scraper_killed_event_handler,
         TaskStatus.created_file: task_created_file_event_handler,
@@ -46,7 +47,8 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
     """ save event and its accompagning data to database """
 
     task_updates = {}
-    if "file" not in code:  # don't update timestamp for file events as not unique
+    # neither file events nor scraper_running should update timestamp list (not unique)
+    if "file" not in code and code != TaskStatus.scraper_running:
         task_updates[f"timestamp.{code}"] = timestamp
         # insert event and sort by timestamp
         Tasks().update_one(
@@ -61,9 +63,9 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
             },
         )
 
-    # update task status, timestamp and other fields
-    if "file" not in code:
-        task_updates["status"] = code
+        # update task status, timestamp and other fields
+        if "file" not in code:
+            task_updates["status"] = code
 
     def add_to_update_if_present(payload_key, update_key):
         if payload_key in kwargs:
@@ -231,6 +233,19 @@ def task_scraper_started_event_handler(task_id, payload):
         image=image,
         command=command,
         log=log,
+    )
+
+
+def task_scraper_running_event_handler(task_id, payload):
+    timestamp = get_timestamp_from_event(payload)
+    logger.info(f"Task Container ping: {task_id}")
+
+    save_event(
+        task_id,
+        TaskStatus.scraper_running,
+        timestamp,
+        stdout=payload.get("stdout"),
+        stderr=payload.get("stderr"),
     )
 
 

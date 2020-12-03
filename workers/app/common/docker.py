@@ -365,6 +365,9 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
             "DEBUG": os.getenv("DEBUG"),
             "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
+            "UPLOADER_IMAGE": UPLOADER_IMAGE,
+            "DNSCACHE_IMAGE": DNSCACHE_IMAGE,
+            "DOCKER_SOCKET": DOCKER_SOCKET,
         },
         labels={
             "zimfarm": "",
@@ -393,6 +396,7 @@ def stop_task_worker(docker_client, task_id, timeout: int = 20):
 def start_uploader(
     docker_client,
     task,
+    kind,
     username,
     host_workdir,
     upload_dir,
@@ -426,7 +430,7 @@ def start_uploader(
     ]
 
     # append the upload_dir and filename to upload_uri
-    upload_uri = urllib.parse.urlparse(task["upload_uri"])
+    upload_uri = urllib.parse.urlparse(task["upload"][kind]["upload_uri"])
     parts = list(upload_uri)
     parts[2] = (upload_uri.path or "/") + f"{upload_dir}/{filepath.name}"
     upload_uri = urllib.parse.urlunparse(parts)
@@ -450,8 +454,8 @@ def start_uploader(
         command.append("--delete")
     if watch:
         command += ["--watch", str(watch)]
-    if task["zim_expiration"]:
-        command += ["--delete-after", str(task["zim_expiration"])]
+    if task["upload"][kind]["expiration"]:
+        command += ["--delete-after", str(task["upload"][kind]["expiration"])]
 
     return run_container(
         docker_client,
