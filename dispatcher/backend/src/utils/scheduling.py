@@ -11,7 +11,13 @@ from bson.son import SON
 
 from common import getnow
 from bson.objectid import ObjectId
-from common.constants import PERIODICITIES
+from common.constants import (
+    PERIODICITIES,
+    ZIM_UPLOAD_URI,
+    ZIM_EXPIRATION,
+    LOGS_UPLOAD_URI,
+    LOGS_EXPIRATION,
+)
 from common.enum import TaskStatus, SchedulePeriodicity, Platform
 from utils.offliners import expanded_config
 from common.mongo import Tasks, Schedules, Workers, RequestedTasks
@@ -118,6 +124,16 @@ def request_a_schedule(
         "config": config,
         # reverse ObjectId to randomize task ids
         "_id": ObjectId(str(ObjectId())[::-1]),
+        "upload": {
+            "zim": {
+                "upload_uri": ZIM_UPLOAD_URI,
+                "expiration": ZIM_EXPIRATION,
+            },
+            "logs": {
+                "upload_uri": LOGS_UPLOAD_URI,
+                "expiration": LOGS_EXPIRATION,
+            },
+        },
     }
 
     if worker:

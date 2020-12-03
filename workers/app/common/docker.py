@@ -6,6 +6,7 @@ import os
 import time
 import uuid
 import pathlib
+import urllib.parse
 
 import docker
 from docker.types import Mount
@@ -23,7 +24,6 @@ from common.constants import (
     TASK_WORKER_IMAGE,
     DOCKER_SOCKET,
     PRIVATE_KEY,
-    UPLOAD_URI,
     DNSCACHE_IMAGE,
     UPLOADER_IMAGE,
 )
@@ -359,13 +359,15 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "USERNAME": username,
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
-            "UPLOAD_URI": UPLOAD_URI,
             "WORKER_NAME": worker_name,
             "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
             "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
             "DEBUG": os.getenv("DEBUG"),
             "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
+            "UPLOADER_IMAGE": UPLOADER_IMAGE,
+            "DNSCACHE_IMAGE": DNSCACHE_IMAGE,
+            "DOCKER_SOCKET": DOCKER_SOCKET,
         },
         labels={
             "zimfarm": "",
@@ -394,6 +396,7 @@ def stop_task_worker(docker_client, task_id, timeout: int = 20):
 def start_uploader(
     docker_client,
     task,
+    kind,
     username,
     host_workdir,
     upload_dir,
@@ -426,12 +429,18 @@ def start_uploader(
         Mount(str(PRIVATE_KEY), host_private_key, type="bind", read_only=True),
     ]
 
+    # append the upload_dir and filename to upload_uri
+    upload_uri = urllib.parse.urlparse(task["upload"][kind]["upload_uri"])
+    parts = list(upload_uri)
+    parts[2] = (upload_uri.path or "/") + f"{upload_dir}/{filepath.name}"
+    upload_uri = urllib.parse.urlunparse(parts)
+
     command = [
         "uploader",
         "--file",
         str(filepath),
         "--upload-uri",
-        f"{UPLOAD_URI}/{upload_dir}/{filepath.name}",
+        upload_uri,
         "--username",
         username,
     ]
@@ -445,6 +454,8 @@ def start_uploader(
         command.append("--delete")
     if watch:
         command += ["--watch", str(watch)]
+    if task["upload"][kind]["expiration"]:
+        command += ["--delete-after", str(task["upload"][kind]["expiration"])]
 
     return run_container(
         docker_client,
