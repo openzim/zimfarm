@@ -19,7 +19,7 @@ TASK_WORKER = "task-worker"
 # images
 TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
 DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE", "openzim/dnscache:1.0")
-UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.0")
+UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.1")
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
