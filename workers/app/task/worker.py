@@ -113,7 +113,8 @@ class TaskWorker(BaseWorker):
         )
         if not success or status_code != requests.codes.NO_CONTENT:
             logger.warning(
-                f"couldn't patch task status={payload['event']} HTTP {status_code}: {response}"
+                f"couldn't patch task status={payload['event']} "
+                f"HTTP {status_code}: {response}"
             )
 
     def mark_task_started(self):
@@ -198,15 +199,14 @@ class TaskWorker(BaseWorker):
             for f in self.task_wordir.glob("*.zim")
         ]
         if zim_files:
-            logger.error(f"ZIM files exists ; __NOT__ removing: {zim_files}")
-            return False
+            logger.warning(f"ZIM files exists. removing anyway: {zim_files}")
         try:
             shutil.rmtree(self.task_wordir)
         except Exception as exc:
             logger.error(f"Failed to remove workdir: {exc}")
 
     def start_dnscache(self):
-        logger.info(f"Starting DNS cache")
+        logger.info("Starting DNS cache")
         self.dnscache = start_dnscache(self.docker, self.task)
         self.dns = [get_ip_address(self.docker, self.dnscache.name)]
         logger.debug(f"DNS Cache started using IPs: {self.dns}")
@@ -347,7 +347,8 @@ class TaskWorker(BaseWorker):
                 self.mark_file_completed(zim_file, "uploaded")
             else:
                 logger.error(
-                    f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}"
+                    f"ZIM Uploader:: "
+                    f"{get_container_logs(self.docker, self.uploader.name)}"
                 )
                 self.zim_retries[zim_file] = self.zim_retries.get(zim_file, 0) + 1
                 if self.zim_retries[zim_file] >= MAX_ZIM_RETRIES:
