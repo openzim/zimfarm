@@ -120,6 +120,12 @@
       selectedLanguagesOptions: {  // multiple-select value for selected languages to filter on (union)
         set(selectedLanguagesOptions) {
           this.$store.commit('SET_SELECTED_LANGUAGES_OPTIONS', selectedLanguagesOptions);
+          if (this.selectedName.length > 0) {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags, name:this.selectedName }});
+          }
+          else {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags }});
+          }
         },
         get() {
           return this.$store.state.selectedLanguagesOptions;
@@ -128,6 +134,12 @@
       selectedCategoriesOptions: {  // multiple-select value for selected languages to filter on (union)
         set(selectedCategoriesOptions) {
           this.$store.commit('SET_SELECTED_CATEGORIES_OPTIONS', selectedCategoriesOptions);
+          if (this.selectedName.length > 0) {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags, name:this.selectedName} });
+          }
+          else {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags }});
+          }
         },
         get() {
           return this.$store.state.selectedCategoriesOptions;
@@ -136,6 +148,12 @@
       selectedTagsOptions: {  // multiple-select value for selected tags to filter on (intersection)
         set(selectedTagsOptions) {
           this.$store.commit('SET_SELECTED_TAGS_OPTIONS', selectedTagsOptions);
+          if (this.selectedName.length > 0) {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags, name:this.selectedName }});
+          }
+          else {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags }});
+          }
         },
         get() {
           return this.$store.state.selectedTagsOptions;
@@ -144,6 +162,12 @@
       selectedName: {  // entered regexp to match schedule names on
         set(selectedName) {
           this.$store.commit('SET_SELECTED_NAME', selectedName);
+          if (this.selectedName.length > 0 ) {
+            this.$router.replace({ name:"schedules-list", query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags, name:this.selectedName }});
+          }
+          else {
+            this.$router.replace({ name:"schedules-list" ,query:{ category:this.selectedCategories, language:this.selectedLanguages, tags:this.selectedTags }});
+          }
         },
         get() {
           return this.$store.state.selectedName;
@@ -193,22 +217,53 @@
       },
       loadSchedules() {  // load filtered schedules from API
         let parent = this;
-
         this.toggleLoader("fetching recipes…");
-
-        // prepare params for filering
         let params = {limit: parent.selectedLimit};
-        if (this.selectedLanguages.filter(item => item.length).length) {
-          params.lang = this.selectedLanguages;
+        // prepare params for filering
+        if (this.$route.query.language) {
+          params.lang = this.$route.query.language;
+          if (this.selectedLanguagesOptions.length == 0) {
+            if (typeof this.$route.query.language === "string") {
+              this.selectedLanguagesOptions.push({ name:this.$route.query.language, value:this.$route.query.language })
+            }
+            else {
+              for(var i=0; i<this.$route.query.language.length; i++) {
+                this.selectedLanguagesOptions.push({ name:this.$route.query.language[i], value:this.$route.query.language[i] });
+              }
+            }
+          }
         }
-        if (this.selectedTags.filter(item => item.length).length) {
-          params.tag = this.selectedTags;
+        if (this.$route.query.category) {
+          params.category = this.$route.query.category;
+          if (this.selectedCategoriesOptions.length == 0) {
+            if (typeof this.$route.query.category === "string") {
+              this.selectedCategoriesOptions.push({ name:this.$route.query.category, value:this.$route.query.category })
+            }
+            else {
+              for(i=0; i<this.$route.query.category.length; i++) {
+                this.selectedCategoriesOptions.push({ name:this.$route.query.category[i], value:this.$route.query.category[i] });
+              }
+            }
+          }
         }
-        if (this.selectedCategories.filter(item => item.length).length) {
-          params.category = this.selectedCategories;
+        if (this.$route.query.tags) {
+          params.tag = this.$route.query.tags;
+          if (this.selectedTagsOptions.length == 0) {
+              if (typeof this.$route.query.tags === "string") {
+                this.selectedTagsOptions.push({ name:this.$route.query.tags, value:this.$route.query.tags });
+              }
+              else {
+                for(i=0; i<this.$route.query.tags.length; i++){
+                  this.selectedTagsOptions.push({ name:this.$route.query.tags[i], value:this.$route.query.tags[i] });
+                }
+              }
+          } 
         }
-        if (this.selectedName.length) {
-          params.name = this.selectedName.trim();
+        if (this.$route.query.name) {
+          params.name = this.$route.query.name;
+          if (this.selectedName.trim().length == 0) {
+              this.selectedName = this.$route.query.name;
+          }
         }
 
         parent.error = null;
