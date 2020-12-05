@@ -30,7 +30,6 @@ WORKERS = [
     ("jehana", "212.51.141.4"),
     ("jehana", "2a02:168:61bf:0:c892:7d8:5307:c57b"),
     ("jehana", "2a02:168:61bf:0:8572:e45d:a0bc:a56d"),
-    ("sysiphus", "51.159.34.251"),
     ("linode-reg", "139.162.246.58"),
     ("TheSquashFS", "69.159.116.3"),
     ("TheSquashFS", "69.159.167.66"),
@@ -39,6 +38,8 @@ WORKERS = [
     ("protocol", "3.22.170.85"),
     ("pixelmemory", "99.87.255.75"),
     ("pixelmemory", "99.87.255.76"),
+    ("homelet-malitel", "217.64.110.189"),
+    ("sisyphus", "195.154.207.98"),
 ]
 
 

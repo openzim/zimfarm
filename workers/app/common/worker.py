@@ -7,6 +7,7 @@ import sys
 import signal
 import pathlib
 import datetime
+import urllib.parse
 
 import jwt
 import docker
@@ -36,7 +37,7 @@ class BaseWorker:
             or not self.workdir.is_dir()
             or not os.access(self.workdir, os.W_OK)
         ):
-            logger.critical(f"\tworkdir is not a writable path")
+            logger.critical("\tworkdir is not a writable path")
             sys.exit(1)
         else:
             logger.info("\tworkdir is available and writable")
@@ -48,7 +49,7 @@ class BaseWorker:
             or not PRIVATE_KEY.is_file()
             or not os.access(PRIVATE_KEY, os.R_OK)
         ):
-            logger.critical(f"\tprivate key is not a readable path")
+            logger.critical("\tprivate key is not a readable path")
             sys.exit(1)
         else:
             logger.info("\tprivate key is available and readable")
@@ -114,7 +115,16 @@ class BaseWorker:
                 return False
         return True
 
-    def query_api(self, method, path, payload=None, params=None, headers={}):
+    def can_stream_logs(self):
+        try:
+            upload_uri = urllib.parse.urlparse(
+                self.task.get("upload", {}).get("logs", {}).get("upload_uri", 1)
+            )
+        except Exception:
+            return False
+        return upload_uri.scheme in ("scp", "sftp")
+
+    def query_api(self, method, path, payload=None, params=None, headers=None):
         if not self.authenticate():
             return (False, 0, "")
 
@@ -126,7 +136,7 @@ class BaseWorker:
                 f"{self.webapi_uri}{path}",
                 payload,
                 params,
-                headers,
+                headers or {},
             )
             attempts += 1
 

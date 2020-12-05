@@ -19,7 +19,7 @@ TASK_WORKER = "task-worker"
 # images
 TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
 DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE", "openzim/dnscache:1.0")
-UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.0")
+UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.1")
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
@@ -76,7 +76,6 @@ CONTAINER_DNSCACHE_IDENT = "dnscache"
 # dispatcher-related
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
 DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5000")
-UPLOAD_URI = os.getenv("UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522")
 
 OFFLINER_MWOFFLINER = "mwoffliner"
 OFFLINER_YOUTUBE = "youtube"

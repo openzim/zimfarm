@@ -153,7 +153,7 @@ function trim_command(command, columns=79) {  // trim a string to espaced versio
 }
 
 function short_id(id) {  // short id of tasks (last chars)
-  return id.substr(id.length - 5);
+  return id.substr(0, 5);
 }
 
 function filesize2(value) {
@@ -209,8 +209,8 @@ function secret_fields_for(offliner_def) {
 
 var DEFAULT_CPU_SHARE = 1024;
 
-var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || process.env.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
-var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || process.env.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
+var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
+var ZIMFARM_LOGS_URL = window.environ.ZIMFARM_LOGS_URL || "https://logs.warehouse.farm.openzim.org";
 var cancelable_statuses = ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"];
 var running_statuses = cancelable_statuses.concat(["cancel_requested"]);
 var secret_replacement = "**********";
@@ -221,7 +221,7 @@ export default {
   },
   zimfarm_webapi: ZIMFARM_WEBAPI,
   zimfarm_logs_url:  ZIMFARM_LOGS_URL,
-  kiwix_download_url:  window.environ.ZIMFARM_KIWIX_DOWNLOAD_URL || process.env.ZIMFARM_KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
+  kiwix_download_url:  window.environ.ZIMFARM_KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,

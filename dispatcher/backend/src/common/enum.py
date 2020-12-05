@@ -6,6 +6,7 @@ class TaskStatus:
     reserved = "reserved"
     started = "started"
     scraper_started = "scraper_started"
+    scraper_running = "scraper_running"
     scraper_completed = "scraper_completed"
     scraper_killed = "scraper_killed"
     failed = "failed"
@@ -49,7 +50,7 @@ class TaskStatus:
         return list(
             filter(
                 lambda x: x not in (cls.requested, cls.reserved),
-                cls.all() + cls.file_events(),
+                cls.all() + cls.file_events() + [cls.scraper_running],
             )
         )
 

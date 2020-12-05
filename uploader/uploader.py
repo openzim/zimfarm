@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-""" SCP/SFTP file uploader for openZIM/Zimfarm
+""" SCP/SFTP/S3 file uploader for openZIM/Zimfarm
 
     manual tests lists (for each method):
         - with username in URI
@@ -29,6 +29,8 @@ import argparse
 import tempfile
 import datetime
 import subprocess
+
+from kiwixstorage import KiwixStorage, FileTransferHook
 
 try:
     import humanfriendly
@@ -118,6 +120,7 @@ def scp_upload_file(
     compress=False,
     bandwidth=None,
     cipher=None,
+    delete_after=None,
 ):
     # directly uploading final file to final destination
     if not move:
@@ -168,7 +171,8 @@ def scp_upload_file(
         return scp.returncode
 
     logger.info(
-        f"[WIP] uploaded to temp file `{temp_fname}` successfuly. uploading complete marker..."
+        f"[WIP] uploaded to temp file `{temp_fname}` successfuly. "
+        f"uploading complete marker..."
     )
     if delete:
         remove_source_file(src_path)
@@ -186,7 +190,8 @@ def scp_upload_file(
         logger.info("Uploader ran successfuly.")
     else:
         logger.warning(
-            f"scp failed to transfer upload marker returning {scp.returncode}:: {scp.stdout}"
+            f"scp failed to transfer upload marker "
+            f"returning {scp.returncode}:: {scp.stdout}"
         )
         logger.warning(
             "actual file transferred properly though. You'd need to move it manually."
@@ -282,6 +287,7 @@ def sftp_upload_file(
     compress=False,
     bandwidth=None,
     cipher=None,
+    delete_after=None,
 ):
     # we need to reconstruct the url but without an ending filename
     if not upload_uri.path.endswith("/"):
@@ -299,7 +305,8 @@ def sftp_upload_file(
         # if source and destination filesizes match, return as sftp would fail
         if existing_size >= filesize:
             logger.info(
-                "Nothing to upload (destination file bigger or same size as source file)"
+                "Nothing to upload "
+                "(destination file bigger or same size as source file)"
             )
             return 0
         # there's a different size file on destination, let's overwrite
@@ -334,8 +341,80 @@ def sftp_upload_file(
     return sftp.returncode
 
 
+def s3_upload_file(
+    src_path,
+    upload_uri,
+    filesize,
+    private_key,  # not used
+    resume=False,  # not supported
+    move=False,  # not relevant
+    delete=False,
+    compress=False,  # not relevant
+    bandwidth=None,  # not supported
+    cipher=None,  # not relevant
+    delete_after=None,  # nb of days to expire upload file after
+):
+    started_on = now()
+    s3_storage = KiwixStorage(rebuild_uri(upload_uri, scheme="https").geturl())
+    logger.debug(f"S3 initialized for {s3_storage.url.netloc}/{s3_storage.bucket_name}")
+
+    key = upload_uri.path[1:]
+    if upload_uri.path.endswith("/"):
+        key += src_path.name
+
+    try:
+        logger.info(f"Uploading to {key}")
+        hook = FileTransferHook(filename=src_path)
+        s3_storage.upload_file(fpath=str(src_path), key=key, Callback=hook)
+        print("", flush=True)
+    except Exception as exc:
+        # as there is no resume, uploading to existing URL will result in DELETE+UPLOAD
+        # if credentials doesn't allow DELETE or if there is an unsatisfied
+        # retention, will raise PermissionError
+        logger.error(f"uploader failed: {exc}")
+        logger.exception(exc)
+        return 1
+    ended_on = now()
+    logger.info("uploader ran successfuly.")
+
+    # setting autodelete
+    if delete_after is not None:
+        try:
+            # set expiration after bucket's min retention.
+            # bucket retention is 1d minumum.
+            # can be configured to loger value.
+            # if expiration before bucket min retention, raises 400 Bad Request
+            # on compliance
+            expire_on = (
+                datetime.datetime.now()
+                + datetime.timedelta(days=delete_after or 1)
+                # adding 1mn to prevent clash with bucket's equivalent min retention
+                + datetime.timedelta(seconds=60)
+            )
+            logger.info(f"Setting autodelete to {expire_on}")
+            s3_storage.set_object_autodelete_on(key=key, on=expire_on)
+        except Exception as exc:
+            logger.error(f"Failed to set autodelete: {exc}")
+            logger.exception(exc)
+
+    if delete:
+        remove_source_file(src_path)
+    display_stats(filesize, started_on, ended_on)
+
+    return 0
+
+
 def rebuild_uri(
-    uri, scheme=None, username=None, password=None, hostname=None, port=None, path=None
+    uri,
+    scheme=None,
+    username=None,
+    password=None,
+    hostname=None,
+    port=None,
+    path=None,
+    params=None,
+    query=None,
+    fragment=None,
 ):
     scheme = scheme or uri.scheme
     username = username or uri.username
@@ -343,19 +422,22 @@ def rebuild_uri(
     hostname = hostname or uri.hostname
     port = port or uri.port
     path = path or uri.path
-    new_uri = f"{scheme}://"
+    netloc = ""
     if username:
-        new_uri += username
+        netloc += username
     if password:
-        new_uri += f":{password}"
+        netloc += f":{password}"
     if username or password:
-        new_uri += "@"
-    new_uri += hostname
+        netloc += "@"
+    netloc += hostname
     if port:
-        new_uri += f":{port}"
-    if path:
-        new_uri += path
-    return urllib.parse.urlparse(new_uri)
+        netloc += f":{port}"
+    params = params or uri.params
+    query = query or uri.query
+    fragment = fragment or uri.fragment
+    return urllib.parse.urlparse(
+        urllib.parse.urlunparse([scheme, netloc, path, fragment, query, fragment])
+    )
 
 
 def display_stats(filesize, started_on, ended_on=None):
@@ -439,6 +521,7 @@ def upload_file(
     compress=False,
     bandwidth=None,
     cipher=None,
+    delete_after=None,
 ):
     try:
         upload_uri = urllib.parse.urlparse(upload_uri)
@@ -448,22 +531,36 @@ def upload_file(
         return 1
 
     # set username in URI if provided and URI has none
-    if username and not upload_uri.username:
+    if upload_uri.scheme in ("scp", "sftp") and username and not upload_uri.username:
         upload_uri = rebuild_uri(upload_uri, username=username)
 
-    logger.info(f"Starting upload of {src_path} to {upload_uri.geturl()}")
+    if upload_uri.scheme == "s3":
+        params = urllib.parse.parse_qs(upload_uri.query)
+        if "secretAccessKey" in params.keys():
+            params["secretAccessKey"] = ["xxxxx"]
+        safe_upload_uri = rebuild_uri(
+            upload_uri, query=urllib.parse.urlencode(params, doseq=True)
+        ).geturl()
+    else:
+        safe_upload_uri = upload_uri.geturl()
+
+    logger.info(f"Starting upload of {src_path} to {safe_upload_uri}")
 
     method = {
         "scp": scp_upload_file,
         "sftp": sftp_upload_file,
+        "s3": s3_upload_file,
     }.get(upload_uri.scheme)
 
     if not method:
         logger.critical(f"URI scheme not supported: {upload_uri.scheme}")
         return 1
 
-    if upload_uri.scheme == "scp" and resume:
-        logger.warning("--resume not supported via SCP. Will upload from scratch.")
+    if upload_uri.scheme in ("s3", "scp") and resume:
+        logger.warning("--resume not supported via SCP/S3. Will upload from scratch.")
+
+    if upload_uri.scheme != "s3" and delete_after:
+        logger.warning("--delete-after only supported on S3/Wasabi.")
 
     kwargs = {
         "src_path": src_path,
@@ -476,6 +573,7 @@ def upload_file(
         "compress": compress,
         "bandwidth": bandwidth,
         "cipher": cipher,
+        "delete_after": delete_after,
     }
 
     if watch:
@@ -511,7 +609,7 @@ def main():
         "--key",
         help="path to RSA private key",
         dest="private_key",
-        required=not bool(os.getenv("RSA_KEY", "/etc/ssh/keys/id_rsa")),
+        required=False,
         default=os.getenv("RSA_KEY", "/etc/ssh/keys/id_rsa"),
     )
 
@@ -522,15 +620,18 @@ def main():
 
     parser.add_argument(
         "--resume",
-        help="whether to continue uploading existing remote file instead of overriding (SFTP only)",
+        help="whether to continue uploading existing remote file instead "
+        "of overriding (SFTP only)",
         action="store_true",
         default=False,
     )
 
-    # format: https://humanfriendly.readthedocs.io/en/latest/api.html#humanfriendly.parse_timespan
+    # format: https://humanfriendly.readthedocs.io/en/latest/api.html
+    # humanfriendly.parse_timespan
     parser.add_argument(
         "--watch",
-        help="Keep uploading until file has not been changed for that period of time (ex. 10s 1m 2h 3d)",
+        help="Keep uploading until file has not been changed "
+        "for that period of time (ex. 10s 1m 2h 3d)",
         action="store",
     )
 
@@ -566,6 +667,14 @@ def main():
     )
 
     parser.add_argument(
+        "--delete-after",
+        help="nb of days after which to autodelete "
+        "(Wasabi/S3-only, bucket must support it)",
+        type=int,
+        default=None,
+    )
+
+    parser.add_argument(
         "--debug",
         help="change logging level to DEBUG",
         action="store_true",
@@ -585,18 +694,6 @@ def main():
         logger.error(f"source file ({src_path}) doesn't exist or is not readable.")
         sys.exit(1)
 
-    # fail early if private key is not readable
-    private_key = pathlib.Path(args.private_key).resolve()
-    if (
-        not private_key.exists()
-        or not private_key.is_file()
-        or not os.access(private_key, os.R_OK)
-    ):
-        logger.error(
-            f"private RSA key file ({private_key}) doesn't exist or is not readable."
-        )
-        sys.exit(1)
-
     # make sur upload-uri is correct (trailing slash)
     try:
         url = urllib.parse.urlparse(args.upload_uri)
@@ -608,11 +705,28 @@ def main():
     else:
         if not url.path.endswith("/") and not pathlib.Path(url.path).suffix:
             logger.error(
-                f"/!\\ your upload_uri doesn't end with a slash and has no file extension: `{args.upload_uri}`."
+                f"/!\\ your upload_uri doesn't end with a slash "
+                f"and has no file extension: `{args.upload_uri}`."
             )
             sys.exit(1)
 
-    ack_host_fingerprint(url.hostname, url.port)
+    if url.scheme in ("scp", "sftp"):
+        # fail early if private key is not readable
+        private_key = pathlib.Path(args.private_key).resolve()
+        if (
+            not private_key.exists()
+            or not private_key.is_file()
+            or not os.access(private_key, os.R_OK)
+        ):
+            logger.error(
+                f"private RSA key file ({private_key}) doesn't exist "
+                f"or is not readable."
+            )
+            sys.exit(1)
+
+        ack_host_fingerprint(url.hostname, url.port)
+    else:
+        private_key = None
 
     # running upload
     sys.exit(
@@ -628,6 +742,7 @@ def main():
             compress=args.compress,
             bandwidth=args.bandwidth,
             cipher=args.cipher,
+            delete_after=args.delete_after,
         )
     )
 

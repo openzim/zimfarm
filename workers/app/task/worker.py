@@ -39,6 +39,7 @@ MAX_ZIM_RETRIES = 5
 
 started = "started"
 scraper_started = "scraper_started"
+scraper_running = "scraper_running"
 scraper_completed = "scraper_completed"
 
 
@@ -112,7 +113,8 @@ class TaskWorker(BaseWorker):
         )
         if not success or status_code != requests.codes.NO_CONTENT:
             logger.warning(
-                f"couldn't patch task status={payload['event']} HTTP {status_code}: {response}"
+                f"couldn't patch task status={payload['event']} "
+                f"HTTP {status_code}: {response}"
             )
 
     def mark_task_started(self):
@@ -139,6 +141,20 @@ class TaskWorker(BaseWorker):
             {
                 "event": scraper_completed,
                 "payload": {"exit_code": exit_code, "stdout": stdout, "stderr": stderr},
+            }
+        )
+
+    def submit_scraper_tail(self):
+        """ report last lines of scraper to the API """
+        self.scraper.reload()
+        stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
+        stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
+
+        logger.info("Submitting scraper tail")
+        self.patch_task(
+            {
+                "event": scraper_running,
+                "payload": {"stdout": stdout, "stderr": stderr},
             }
         )
 
@@ -183,15 +199,14 @@ class TaskWorker(BaseWorker):
             for f in self.task_wordir.glob("*.zim")
         ]
         if zim_files:
-            logger.error(f"ZIM files exists ; __NOT__ removing: {zim_files}")
-            return False
+            logger.warning(f"ZIM files exists. removing anyway: {zim_files}")
         try:
             shutil.rmtree(self.task_wordir)
         except Exception as exc:
             logger.error(f"Failed to remove workdir: {exc}")
 
     def start_dnscache(self):
-        logger.info(f"Starting DNS cache")
+        logger.info("Starting DNS cache")
         self.dnscache = start_dnscache(self.docker, self.task)
         self.dns = [get_ip_address(self.docker, self.dnscache.name)]
         logger.debug(f"DNS Cache started using IPs: {self.dns}")
@@ -250,6 +265,7 @@ class TaskWorker(BaseWorker):
         self.uploader = start_uploader(
             self.docker,
             self.task,
+            "zim",
             self.username,
             self.host_task_workdir,
             upload_dir,
@@ -331,7 +347,8 @@ class TaskWorker(BaseWorker):
                 self.mark_file_completed(zim_file, "uploaded")
             else:
                 logger.error(
-                    f"ZIM Uploader:: {get_container_logs(self.docker, self.uploader.name)}"
+                    f"ZIM Uploader:: "
+                    f"{get_container_logs(self.docker, self.uploader.name)}"
                 )
                 self.zim_retries[zim_file] = self.zim_retries.get(zim_file, 0) + 1
                 if self.zim_retries[zim_file] >= MAX_ZIM_RETRIES:
@@ -356,9 +373,6 @@ class TaskWorker(BaseWorker):
                 )
                 self.zim_files[zim_file] = UPLOADING
 
-    def start_scraper_log_uploader(self):
-        self.upload_log(watch=True)
-
     def upload_log(self, watch=False):
         logger.debug(f"starting log uploader, with watch={watch}")
         if not self.scraper:
@@ -370,6 +384,7 @@ class TaskWorker(BaseWorker):
         self.log_uploader = start_uploader(
             self.docker,
             self.task,
+            "logs",
             self.username,
             log_path.parent,
             "logs",
@@ -383,16 +398,18 @@ class TaskWorker(BaseWorker):
 
     def finish_scraper_log_upload(self):
         # stop and remove previous (watch) container. might be already stopped
-        try:
-            stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
-            remove_container(self.docker, self.log_uploader.name, force=True)
-        except docker.errors.NotFound as exc:
-            # failure here is unexpected (container should exist) but happens randomly
-            # catching this to prevent task from crashing while there might be
-            # ZIM files to continue uploading after
-            logger.warning(f"Log uploader container missing: {exc}")
-            logger.warning("Expect full-log upload next (long)")
-        self.log_uploader = None
+        if self.log_uploader:
+            try:
+                stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
+                remove_container(self.docker, self.log_uploader.name, force=True)
+            except docker.errors.NotFound as exc:
+                # failure here is unexpected (container should exist)
+                # but happens randomly
+                # catching this to prevent task from crashing while there might be
+                # ZIM files to continue uploading after
+                logger.warning(f"Log uploader container missing: {exc}")
+                logger.warning("Expect full-log upload next (long)")
+            self.log_uploader = None
 
         try:
             # restart without watch to make sure it's complete
@@ -414,7 +431,8 @@ class TaskWorker(BaseWorker):
 
         if exit_code != 0:
             logger.error(
-                f"Log Uploader:: {get_container_logs(self.docker, self.log_uploader.name)}"
+                f"Log Uploader:: "
+                f"{get_container_logs(self.docker, self.log_uploader.name)}"
             )
 
         remove_container(self.docker, self.log_uploader.name, force=True)
@@ -452,7 +470,9 @@ class TaskWorker(BaseWorker):
         self.mark_scraper_started()
 
         # start scraper log uploader
-        self.start_scraper_log_uploader()
+        if self.can_stream_logs():
+            self.upload_log(watch=True)
+        self.submit_scraper_tail()
 
         last_check = datetime.datetime.now()
 
@@ -463,6 +483,7 @@ class TaskWorker(BaseWorker):
                 continue
 
             last_check = now
+            self.submit_scraper_tail()
             self.upload_files()
 
         # scraper is done. check files so upload can continue
