@@ -24,6 +24,24 @@ ENV NGINX_WORKER_PROCESSES 1
 ENV LISTEN_PORT 80
 ENV NGINV_ENABLE_GZIP 1
 
+# mailgun for notifications
+ENV MAILGUN_API_URL https://api.mailgun.net/v3/mg.farm.openzim.org
+ENV MAILGUN_FROM zimfarm <info@farm.openzim.org>
+# ENV MAILGUN_API_KEY -
+
+# slack for notifications
+# ENV SLACK_URL -
+# ENV SLACK_USERNAME zimfarm
+# ENV SLACK_EMOJI :ghost:
+# ENV SLACK_ICON https://farm.openzim.org/assets/apple-touch-icon.png
+
+# GLOBAL NOTIFICATIONS
+# format: list of `method,target,target` separated by comma `,`
+# multiple notification for same event separated with pipe `|`
+# ENV suffixed with event: `GLOBAL_NOTIFICATION_started` or `GLOBAL_NOTIFICATION_ended`
+# ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|mailgun,reg@kiwix.org
+
+
 # prestart script (former entrypoint - database init)
 COPY prestart.sh /app/prestart.sh
 RUN chmod +x /app/prestart.sh

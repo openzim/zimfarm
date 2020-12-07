@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validate, validates_schema, ValidationError
+from marshmallow import Schema, fields, validate, validates_schema
 
 from common.enum import DockerImageName, Offliner, Platform
 from common.schemas import SerializableSchema
@@ -15,6 +15,7 @@ from common.schemas.fields import (
     validate_periodicity,
     validate_platform,
     validate_platform_value,
+    validate_slack_target,
 )
 from common.schemas.offliners import (
     MWOfflinerFlagsSchema,
@@ -88,6 +89,18 @@ class ScheduleConfigSchema(SerializableSchema):
             data["flags"] = schema.load(data["flags"])
 
 
+class EventNotificationSchema(SerializableSchema):
+    mailgun = fields.List(fields.Email(), required=False)
+    webhook = fields.List(fields.Url(), required=False)
+    slack = fields.List(fields.String(validate=validate_slack_target), required=False)
+
+
+class ScheduleNotificationSchema(SerializableSchema):
+    requested = fields.Nested(EventNotificationSchema(), required=False)
+    started = fields.Nested(EventNotificationSchema(), required=False)
+    ended = fields.Nested(EventNotificationSchema(), required=False)
+
+
 class ScheduleSchema(Schema):
     name = fields.String(required=True, validate=validate_schedule_name)
     language = fields.Nested(LanguageSchema(), required=True)
@@ -98,6 +111,7 @@ class ScheduleSchema(Schema):
     )
     enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
     config = fields.Nested(ScheduleConfigSchema(), required=True)
+    notification = fields.Nested(ScheduleNotificationSchema(), required=False)
 
 
 PlatformsLimitSchema = Schema.from_dict(
