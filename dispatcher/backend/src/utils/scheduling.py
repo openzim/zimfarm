@@ -101,7 +101,7 @@ def request_a_schedule(
         return None
 
     schedule = Schedules().find_one(
-        {"name": schedule_name, "enabled": True}, {"config": 1}
+        {"name": schedule_name, "enabled": True}, {"config": 1, "notification": 1}
     )
     # schedule might be disabled
     if not schedule:
@@ -134,6 +134,7 @@ def request_a_schedule(
                 "expiration": LOGS_EXPIRATION,
             },
         },
+        "notification": schedule.get("notification"),
     }
 
     if worker:
