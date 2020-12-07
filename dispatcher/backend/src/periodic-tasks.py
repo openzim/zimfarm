@@ -86,7 +86,13 @@ def status_to_cancel(now, status, timeout):
                 "status": TaskStatus.canceled,
                 "canceled_by": NAME,
                 f"timestamp.{TaskStatus.canceled}": now,
-            }
+            },
+            "$push": {
+                "events": {
+                    "code": TaskStatus.canceled,
+                    f"timestamp.{TaskStatus.canceled}": now,
+                }
+            },
         },
     )
     logger.info(f"::: canceled {result.modified_count}/{result.matched_count} tasks")

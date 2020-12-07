@@ -29,6 +29,8 @@ validate_worker_name = validate.Length(min=3)
 validate_periodicity = validate.OneOf(SchedulePeriodicity.all())
 validate_platform = validate.OneOf(Platform.all())
 validate_platform_value = validate.Range(min=0)
+# slack target must start with # for channels or @ for usernames
+validate_slack_target = validate.Regexp(regex=r"^[#|@].+$")
 
 
 def validate_multiple_of_100(value):

@@ -15,7 +15,7 @@ from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id, require_perm
+from routes import authenticate, url_object_id, require_perm, auth_info_if_supplied
 from routes.base import BaseRoute
 from common.schemas.parameters import TasksSchema, TaskCreateSchema, TasKUpdateSchema
 
@@ -79,9 +79,19 @@ class TaskRoute(BaseRoute):
     name = "task"
     methods = ["GET", "POST", "PATCH"]
 
+    @auth_info_if_supplied
     @url_object_id("task_id")
-    def get(self, task_id: str):
-        task = Tasks().find_one({"_id": task_id})
+    def get(self, task_id: str, token: AccessToken.Payload = None):
+
+        # exclude notification to not expose private information (privacy)
+        # on anonymous requests and requests for users without schedules_update
+        projection = (
+            None
+            if token and token.get_permission("schedules", "update")
+            else {"notification": 0}
+        )
+
+        task = Tasks().find_one({"_id": task_id}, projection)
         if task is None:
             raise TaskNotFound()
 
