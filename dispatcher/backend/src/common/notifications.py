@@ -158,15 +158,14 @@ def handle_notification(task_id, event):
 
     # serialize/unserialize task so we use a safe version from now-on
     task = json.loads(json.dumps(task, cls=Encoder))
-    notifications = GlobalNotifications.entries.get(event, {})
+    global_notifs = GlobalNotifications.entries.get(event, {})
+    task_notifs = task.get("notification", {}).get(event, {})
 
     # exit early if we don't have notification requests for the event
-    if not notifications and not task.get("notification", {}).get(event, {}):
+    if not global_notifs and not task_notifs:
         return
 
-    for method, recipients in list(task["notification"][event].items()) + list(
-        notifications.items()
-    ):
+    for method, recipients in list(task_notifs.items()) + list(global_notifs.items()):
         func = {
             "mailgun": handle_mailgun_notification,
             "webhook": handle_webhook_notification,
