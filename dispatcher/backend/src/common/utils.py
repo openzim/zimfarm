@@ -10,6 +10,7 @@ from bson import ObjectId
 from common import getnow, to_naive_utc
 from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
+from common.notifications import handle_notification
 from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,12 @@ def task_event_handler(task_id, event, payload):
         TaskStatus.failed_file: task_failed_file_event_handler,
     }
     func = handlers.get(event, handle_others)
-    return func(task_id, payload)
+    ret = func(task_id, payload)
+
+    # fire notifications after event has been handled
+    handle_notification(task_id, event)
+
+    return ret
 
 
 def get_timestamp_from_event(event: dict) -> datetime.datetime:

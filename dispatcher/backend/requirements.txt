@@ -7,4 +7,7 @@ pytest==5.2.2
 pytest-env==0.6.2
 pytz>=2019.3
 zmq
-marshmallow==3.3.0
+marshmallow>=3.3.0,<3.4
+requests>=2.24.0,<2.26
+humanfriendly>=9.0,<10
+jinja2>=2.11,<2.12

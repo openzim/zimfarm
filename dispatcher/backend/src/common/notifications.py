@@ -144,6 +144,10 @@ def handle_slack_notification(task, channels):
 
 
 def handle_notification(task_id, event):
+    # alias for all complete status
+    if event in TaskStatus.complete():
+        event = "ended"
+
     # exit early if not a triggering event
     if event not in GlobalNotifications.events:
         return
