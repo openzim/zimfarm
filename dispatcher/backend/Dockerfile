@@ -26,7 +26,7 @@ ENV NGINV_ENABLE_GZIP 1
 
 # mailgun for notifications
 ENV MAILGUN_API_URL https://api.mailgun.net/v3/mg.farm.openzim.org
-ENV MAILGUN_FROM zimfarm <info@farm.openzim.org>
+ENV MAILGUN_FROM Zimfarm <info@farm.openzim.org>
 # ENV MAILGUN_API_KEY -
 
 # slack for notifications
