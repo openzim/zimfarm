@@ -25,14 +25,14 @@
       };
     },
     computed: {
-      ready() { return this.from && this.form_name && this.from != this.form_name; },
+      ready() { return this.from && this.form_name.trim() && this.from != this.form_name; },
     },
     methods: {
       cloneSchedule() {
         if (!this.ready)
           return;
         let parent = this;
-        let payload = {name: this.form_name};
+        let payload = {name: this.form_name.trim()};
         parent.toggleLoader("Cloning recipe…");
         parent.queryAPI('post', '/schedules/' + parent.from + '/clone', payload)
           .then(function () {

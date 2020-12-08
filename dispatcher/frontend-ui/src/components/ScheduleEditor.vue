@@ -386,7 +386,10 @@
         let payload = {};
         let parent = this;
 
-        ["name", "category", "enabled", "periodicity"].forEach(function (key) {
+        if (parent.edit_schedule["name"].trim() != parent.schedule["name"])
+            payload["name"] = parent.edit_schedule["name"].trim();
+
+        ["category", "enabled", "periodicity"].forEach(function (key) {
           if (parent.edit_schedule[key] != parent.schedule[key])
             payload[key] = parent.edit_schedule[key];
         });
