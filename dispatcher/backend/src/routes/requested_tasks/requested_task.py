@@ -2,10 +2,12 @@ import logging
 from http import HTTPStatus
 
 import pymongo
+from bson import ObjectId
 from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
 
 from common import getnow
+from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Schedules, Workers
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id, auth_info_if_supplied, require_perm
@@ -141,6 +143,10 @@ class RequestedTasksRoute(BaseRoute):
             BROADCASTER.broadcast_requested_tasks(requested_tasks)
         elif len(requested_tasks) == 1:
             BROADCASTER.broadcast_requested_task(requested_tasks[0])
+
+        # trigger event handler
+        for task in requested_tasks:
+            task_event_handler(ObjectId(task["_id"]), "requested", {})
 
         return make_response(
             jsonify({"requested": [rt["_id"] for rt in requested_tasks]}),

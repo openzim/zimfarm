@@ -96,9 +96,15 @@ class EventNotificationSchema(SerializableSchema):
 
 
 class ScheduleNotificationSchema(SerializableSchema):
-    requested = fields.Nested(EventNotificationSchema(), required=False)
-    started = fields.Nested(EventNotificationSchema(), required=False)
-    ended = fields.Nested(EventNotificationSchema(), required=False)
+    requested = fields.Nested(
+        EventNotificationSchema(), required=False, default={}, missing={}
+    )
+    started = fields.Nested(
+        EventNotificationSchema(), required=False, default={}, missing={}
+    )
+    ended = fields.Nested(
+        EventNotificationSchema(), required=False, default={}, missing={}
+    )
 
 
 class ScheduleSchema(Schema):
@@ -111,7 +117,9 @@ class ScheduleSchema(Schema):
     )
     enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
     config = fields.Nested(ScheduleConfigSchema(), required=True)
-    notification = fields.Nested(ScheduleNotificationSchema(), required=False)
+    notification = fields.Nested(
+        ScheduleNotificationSchema(), required=False, default={}, missing={}
+    )
 
 
 PlatformsLimitSchema = Schema.from_dict(
