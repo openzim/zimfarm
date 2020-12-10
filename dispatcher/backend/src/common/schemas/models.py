@@ -96,15 +96,9 @@ class EventNotificationSchema(SerializableSchema):
 
 
 class ScheduleNotificationSchema(SerializableSchema):
-    requested = fields.Nested(
-        EventNotificationSchema(), required=False, default={}, missing={}
-    )
-    started = fields.Nested(
-        EventNotificationSchema(), required=False, default={}, missing={}
-    )
-    ended = fields.Nested(
-        EventNotificationSchema(), required=False, default={}, missing={}
-    )
+    requested = fields.Nested(EventNotificationSchema(), required=False)
+    started = fields.Nested(EventNotificationSchema(), required=False)
+    ended = fields.Nested(EventNotificationSchema(), required=False)
 
 
 class ScheduleSchema(Schema):

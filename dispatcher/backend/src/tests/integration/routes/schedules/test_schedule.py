@@ -176,6 +176,7 @@ class TestSchedulePost:
                     "platform": None,
                     "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
                 },
+                "notification": {},
             },
             {
                 "name": "gutenberg_mul",
@@ -196,6 +197,7 @@ class TestSchedulePost:
                     "platform": None,
                     "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
                 },
+                "notification": {},
             },
         ],
     )
@@ -214,6 +216,7 @@ class TestSchedulePost:
 
         response_json = response.get_json()
         document["config"] = expanded_config(document["config"])
+        document["notification"] = {}
         response_json.pop("duration", None)  # generated server-side
         assert response_json == document
 

@@ -52,6 +52,7 @@ def make_schedule(database, make_language, make_config):
             "language": language or make_language(),
             "tags": tags,
             "config": config or make_config(),
+            "notification": {},
         }
         schedule_id = database.schedules.insert_one(document).inserted_id
         schedule_ids.append(schedule_id)

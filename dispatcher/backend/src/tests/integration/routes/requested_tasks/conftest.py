@@ -50,6 +50,7 @@ def make_requested_task(database, make_event):
             "timestamp": timestamp,
             "events": events,
             "config": config,
+            "notification": {},
             "priority": priority,
             "requested_by": requested_by,
         }
