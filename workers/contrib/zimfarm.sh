@@ -26,6 +26,7 @@ WORKER_IMAGE="openzim/zimfarm-task-worker"
 WORKER_TAG="latest"
 SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
 WEB_API_URI="https://api.farm.openzim.org/v1"
+POLL_INTERVAL="180"
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm_worker-manager"
@@ -169,6 +170,7 @@ function restart() {
         --env TASK_WORKER_IMAGE=$worker_image_string \
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
+        --env POLL_INTERVAL=$POLL_INTERVAL \
     $manager_image_string worker-manager
 }
 
