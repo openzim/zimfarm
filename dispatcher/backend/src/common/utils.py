@@ -84,6 +84,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
     add_to_update_if_present("exit_code", "container.exit_code")
     add_to_update_if_present("stdout", "container.stdout")
     add_to_update_if_present("stderr", "container.stderr")
+    add_to_update_if_present("progress", "container.progress")
     add_to_update_if_present("timeout", "container.timeout")
     add_to_update_if_present("log", "container.log")
     add_to_update_if_present("task_log", "debug.log")
@@ -252,6 +253,7 @@ def task_scraper_running_event_handler(task_id, payload):
         timestamp,
         stdout=payload.get("stdout"),
         stderr=payload.get("stderr"),
+        progress=payload.get("progress"),
     )
 
 

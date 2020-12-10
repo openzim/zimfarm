@@ -111,7 +111,9 @@ class ScheduleSchema(Schema):
     )
     enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
     config = fields.Nested(ScheduleConfigSchema(), required=True)
-    notification = fields.Nested(ScheduleNotificationSchema(), required=False)
+    notification = fields.Nested(
+        ScheduleNotificationSchema(), required=False, default={}, missing={}
+    )
 
 
 PlatformsLimitSchema = Schema.from_dict(

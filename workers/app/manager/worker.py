@@ -150,7 +150,7 @@ class WorkerManager(BaseWorker):
 
     def check_in(self):
         """ inform backend that we started a manager, sending resources info """
-        logger.info(f"checking-in with the API…")
+        logger.info("checking-in with the API…")
 
         host_stats = query_host_stats(self.docker, self.workdir)
         success, status_code, response = self.query_api(

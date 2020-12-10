@@ -11,7 +11,7 @@ import humanfriendly
 from marshmallow import ValidationError
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from common.mongo import Tasks
+from common.mongo import Tasks, RequestedTasks
 from utils.json import Encoder
 from common.enum import TaskStatus
 from common.emailing import send_email_via_mailgun
@@ -152,7 +152,9 @@ def handle_notification(task_id, event):
     if event not in GlobalNotifications.events:
         return
 
-    task = Tasks().find_one({"_id": task_id})
+    task = Tasks().find_one({"_id": task_id}) or RequestedTasks().find_one(
+        {"_id": task_id}
+    )
     if not task:
         return
 

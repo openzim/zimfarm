@@ -4,6 +4,7 @@
 
 import sys
 import time
+import json
 import signal
 import shutil
 import pathlib
@@ -29,6 +30,7 @@ from common.docker import (
     remove_container,
     wait_container,
 )
+from common.constants import PROGRESS_CAPABLE_OFFLINERS
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 PENDING = "pending"
@@ -78,6 +80,7 @@ class TaskWorker(BaseWorker):
         self.task = None
         self.should_stop = False
         self.task_wordir = None
+        self.progress_file = None
         self.host_task_workdir = None  # path on host for task_dir
 
         self.dnscache = None  # dnscache container
@@ -144,17 +147,40 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def submit_scraper_tail(self):
+    def submit_scraper_progress(self):
         """ report last lines of scraper to the API """
         self.scraper.reload()
         stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
 
-        logger.info("Submitting scraper tail")
+        # fetch and compute progression from progress file
+        progress = {}
+        if self.progress_file and self.progress_file.exists():
+            try:
+                with open(self.progress_file, "r") as fh:
+                    data = json.load(fh)
+                    done = int(data.get("done", 0))
+                    total = int(data.get("total", 100))
+                    progress = {
+                        "done": done,
+                        "total": total,
+                        "overall": int(done / total * 100),
+                    }
+            except Exception as exc:
+                logger.warning(f"failed to load progress details: {exc}")
+            else:
+                logger.info(f"reporting {progress['overall']}%")
+
+        logger.debug(
+            "Submitting scraper progress" + f": {progress['overall']}%"
+            if progress
+            else ""
+        )
+
         self.patch_task(
             {
                 "event": scraper_running,
-                "payload": {"stdout": stdout, "stderr": stderr},
+                "payload": {"stdout": stdout, "stderr": stderr, "progress": progress},
             }
         )
 
@@ -191,6 +217,9 @@ class TaskWorker(BaseWorker):
         self.task_wordir = self.workdir.joinpath(folder_name)
         self.task_wordir.mkdir(exist_ok=True)
         self.host_task_workdir = host_mounts[self.workdir].joinpath(folder_name)
+
+        if self.task["config"]["task_name"] in PROGRESS_CAPABLE_OFFLINERS:
+            self.progress_file = self.task_wordir.joinpath("task_progress.json")
 
     def cleanup_workdir(self):
         logger.info(f"Removing task workdir {self.workdir}")
@@ -472,7 +501,7 @@ class TaskWorker(BaseWorker):
         # start scraper log uploader
         if self.can_stream_logs():
             self.upload_log(watch=True)
-        self.submit_scraper_tail()
+        self.submit_scraper_progress()
 
         last_check = datetime.datetime.now()
 
@@ -483,7 +512,7 @@ class TaskWorker(BaseWorker):
                 continue
 
             last_check = now
-            self.submit_scraper_tail()
+            self.submit_scraper_progress()
             self.upload_files()
 
         # scraper is done. check files so upload can continue

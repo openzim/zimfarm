@@ -213,15 +213,15 @@ def query_host_mounts(docker_client, workdir=None):
 
 
 def task_container_name(task_id):
-    return f"{short_id(task_id)}_{CONTAINER_TASK_IDENT}"
+    return f"{CONTAINER_TASK_IDENT}_{short_id(task_id)}"
 
 
 def dnscache_container_name(task_id):
-    return f"{short_id(task_id)}_{CONTAINER_DNSCACHE_IDENT}"
+    return f"{CONTAINER_DNSCACHE_IDENT}_{short_id(task_id)}"
 
 
 def scraper_container_name(task_id, task_name):
-    return f"{short_id(task_id)}_{CONTAINER_SCRAPER_IDENT}_{task_name}"
+    return f"{CONTAINER_SCRAPER_IDENT}_{task_name}_{short_id(task_id)}"
 
 
 def upload_container_name(task_id, filename, unique):
