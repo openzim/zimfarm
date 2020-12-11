@@ -25,7 +25,20 @@
                   @click.prevent="toggle_workerslist">{{ toggle_text }}</b-button>
       </div>
     </div>
+    <div style="padding:15px">
+    </div>
     <table v-if="!error && workers" class="table table-responsive-md table-sm table-striped table-hover">
+      <thead>
+        <tr style="font-size:large;">
+          <th class="underline"
+              style="cursor:pointer;" 
+              @click="sort_workers">Worker name</th>
+          <th>Schedule name</th>
+          <th>Started on</th>
+          <th class="text-center"
+              colspan="3">Resources</th>
+        </tr>
+      </thead>
       <tbody>
         <tr v-for="row in rows" :key="row.id" >
           <th v-if="row.kind == 'worker'"
@@ -216,6 +229,11 @@
             parent.ready = true;
           });
       },
+      sort_workers(){
+        this.$route.query.order == "descending" ? this.$router.replace({ name:"workers" ,query: { order:'ascending' }}) 
+                                                : this.$router.replace({ name:"workers" ,query: { order:'descending' }});
+        this.loadWorkersList();
+      },
       loadWorkersList() {  // load workers list from API
         let parent = this;
 
@@ -224,9 +242,17 @@
           .then(function (response) {
             parent.error = null;
             parent.all_workers = [];
-            for (var i=0; i<response.data.items.length; i++){
-              response.data.items[i].tasks = []; // placeholder for tasks
-              parent.all_workers.push(response.data.items[i]);
+            if (parent.$route.query.order == 'descending') {
+              for (var i=response.data.items.length-1; i>=0; i--) {
+                response.data.items[i].tasks = []; // placeholder for tasks
+                parent.all_workers.push(response.data.items[i]);
+              }
+            }
+            else {
+              for (i=0; i<response.data.items.length; i++) {
+                response.data.items[i].tasks = []; // placeholder for tasks
+                parent.all_workers.push(response.data.items[i]);
+              }
             }
             parent.loadRunningTasks();
           })
@@ -274,4 +300,5 @@
   .progres-col { line-height: 0; }
   .progress { height: 100%; }
   .toggle_btn { float: right; }
+  .underline:hover { text-decoration: underline; }
 </style>
