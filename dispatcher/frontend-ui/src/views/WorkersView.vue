@@ -232,7 +232,7 @@
       sort_workers(){
         this.$route.query.order == "descending" ? this.$router.replace({ name:"workers" ,query: { order:'ascending' }}) 
                                                 : this.$router.replace({ name:"workers" ,query: { order:'descending' }});
-        this.loadWorkersList();
+        this.workers.reverse();                                       
       },
       loadWorkersList() {  // load workers list from API
         let parent = this;
