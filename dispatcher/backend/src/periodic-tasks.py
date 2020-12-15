@@ -90,7 +90,7 @@ def status_to_cancel(now, status, timeout):
             "$push": {
                 "events": {
                     "code": TaskStatus.canceled,
-                    f"timestamp.{TaskStatus.canceled}": now,
+                    "timestamp": now,
                 }
             },
         },

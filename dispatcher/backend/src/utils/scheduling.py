@@ -134,7 +134,7 @@ def request_a_schedule(
                 "expiration": LOGS_EXPIRATION,
             },
         },
-        "notification": schedule.get("notification"),
+        "notification": schedule.get("notification", {}),
     }
 
     if worker:
