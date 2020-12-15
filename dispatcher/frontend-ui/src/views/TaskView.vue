@@ -91,7 +91,7 @@
           <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :shrink="false" /></td></tr>
           <tr v-if="task_container.command"><th>Command </th><td><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
-          <tr v-if="task_container.progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task.container.progress.overall }}% ({{ task.container.progress.done }} / {{ task.container.progress.total }})</td></tr>
+          <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
           <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
@@ -146,6 +146,11 @@
       is_running() { return ["failed", "canceled", "succeeded"].indexOf(this.task.status) == -1; },
       schedule_name() { return this.task ? this.task.schedule_name : null; },
       task_container() { return this.task.container || {}; },
+      task_progress() {
+        try {
+          return this.task_container.progress.overall ? this.task_container.progress: {};
+        } catch { return {}; }
+      },
       task_debug() { return this.task.debug || {}; },
       task_duration() {  // duration of a task
         if (!this.task.events)
