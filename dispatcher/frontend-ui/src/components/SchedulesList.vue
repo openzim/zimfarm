@@ -98,10 +98,12 @@
 
 <script type="text/javascript">
   import Multiselect from 'vue-multiselect'
+
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import RequestSelectionButton from '../components/RequestSelectionButton.vue'
   import TaskLink from '../components/TaskLink.vue'
+
   export default {
     name: 'SchedulesList',
     mixins: [ZimfarmMixins],
@@ -209,19 +211,20 @@
 
         // adding filters to url 
         [["Categories","category"], ["Languages","lang"], ["Tags","tag"]].forEach(function (key) {
-        if (parent.$route.query[key[0]]) {
-          params[key[1]] = parent.$route.query[key[0]];
-            if (parent["selected"+key[0]+"Options"].length == 0) {
-              if (typeof parent.$route.query[key[0]] === "string") {
-                parent["selected"+key[0]+"Options"].push({ name:parent.$route.query[key[0]], value:parent.$route.query[key[0]] })
-              }
-              else {
-                for(var i=0; i<parent.$route.query[key[0]].length; i++) {
-                  parent["selected"+key[0]+"Options"].push({ name:parent.$route.query[key[0]][i], value:parent.$route.query[key[0]][i] });
+          var selectedFilterOption =  "selected"+key[0]+"Options"
+          if (parent.$route.query[key[0]]) {
+            params[key[1]] = parent.$route.query[key[0]];
+              if (parent[selectedFilterOption].length == 0) {
+                if (typeof parent.$route.query[key[0]] === "string") {
+                  parent[selectedFilterOption].push({ name:parent.$route.query[key[0]], value:parent.$route.query[key[0]] })
+                }
+                else {
+                  for(var i=0; i<parent.$route.query[key[0]].length; i++) {
+                    parent[selectedFilterOption].push({ name:parent.$route.query[key[0]][i], value:parent.$route.query[key[0]][i] });
+                  }
                 }
               }
             }
-          }
         });
         if (this.$route.query.name) {
           params.name = this.$route.query.name;
@@ -235,6 +238,7 @@
                 parent.schedules = [];
                 parent.meta = response.data.meta;
                 parent.schedules = response.data.items;
+
                 parent.queryAPI('get', '/requested-tasks/', {params: {
                     limit: parent.selectedLimit,
                     'schedule_name': parent.selection}})
