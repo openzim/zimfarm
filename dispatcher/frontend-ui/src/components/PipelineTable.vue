@@ -73,8 +73,6 @@
 </template>
 
 <script type="text/javascript">
-  import axios from 'axios'
-
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
@@ -183,16 +181,18 @@
         let parent = this;
         let schedule_names = parent.tasks.map(function (item) { return item.schedule_name; }).unique();
 
-        parent.toggleLoader("fetching tasks…");
+        parent.toggleLoader("fetching last runs…");
         let requests = schedule_names.map(function (schedule_name) {
             return parent.queryAPI('get', "/schedules/" + schedule_name);
           });
-        let results = await axios.all(requests);
+        const results = await Promise.all(requests.map(p => p.catch(e => e)));
 
         results.forEach(function (response, index) {
-          let schedule_name = schedule_names[index];
-          if (response.data.most_recent_task) {
-           parent.schedules_last_runs[schedule_name] = response.data.most_recent_task;
+          if (!(response instanceof Error)) {
+            let schedule_name = schedule_names[index];
+            if (response.data.most_recent_task) {
+             parent.schedules_last_runs[schedule_name] = response.data.most_recent_task;
+            }
           }
         });
         parent.last_runs_loaded = true;
