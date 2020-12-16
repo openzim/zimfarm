@@ -1,4 +1,5 @@
 FROM alpine:edge
+LABEL zimfarm=true
 
 RUN apk update && apk --no-cache add dnsmasq
 

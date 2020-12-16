@@ -1,4 +1,5 @@
 FROM rgaudin/uwsgi-nginx:python3.8
+LABEL zimfarm=true
 
 RUN pip install -U pip
 RUN pip install uwsgi==2.0.18

@@ -10,6 +10,7 @@ COPY src /app/src
 RUN NODE_ENV=production yarn build
 
 FROM library/nginx:mainline-alpine
+LABEL zimfarm=true
 RUN apk --no-cache add python3
 
 COPY --from=builder /app/dist /usr/share/nginx/html

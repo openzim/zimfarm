@@ -1,4 +1,5 @@
 FROM python:3.8-buster
+LABEL zimfarm=true
 
 # system dependencies
 RUN apt-get update -y \

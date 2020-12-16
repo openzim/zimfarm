@@ -179,6 +179,6 @@ That's it!
 
 --
 
-* **`zimfarm prune`**: removes unused containers and volumes to save space. you can put that in a cron task daily.
+* **`zimfarm prune`**: removes unused containers and volumes to save space. you can put that in a cron task daily. ⚠️ it removes all unused images and containers.
 * **`zimfarm update`**: displays a command you could use update this very script.
 * **`zimfarm update do`**: attempt to tun the `zimfarm update` command.

@@ -121,7 +121,10 @@ function ps() {
 
 # cleanup disk usage (to be run in cron)
 function prune() {
-    run docker system prune --volumes --all --force --filter label=zimfarm
+    # remove all unreferenced images and containers created by zimfarm
+    run docker system prune --all --force --filter label=zimfarm
+    # remove all unreferenced images and containers
+    run docker system prune --all --force
 }
 
 # stop container, extending timeout so task can stop scrapers and dnscache
