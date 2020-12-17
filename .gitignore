@@ -130,4 +130,6 @@ worker/temp/
 .pytest_cache
 .reg
 
-environ.js
+environ.json
+.env
+Pipfile
