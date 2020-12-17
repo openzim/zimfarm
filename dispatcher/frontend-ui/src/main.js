@@ -72,7 +72,7 @@ Vue.use(Tooltip);
 
 // Sugar extensions
 import Sugar from 'sugar'
-Sugar.extend({namespaces: [Array, Object]});
+Sugar.extend({namespaces: [Array, Object, String]});
 
 // Own modules
 import App from './App.vue'

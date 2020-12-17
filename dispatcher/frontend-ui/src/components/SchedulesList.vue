@@ -104,6 +104,8 @@
   import RequestSelectionButton from '../components/RequestSelectionButton.vue'
   import TaskLink from '../components/TaskLink.vue'
 
+  const filters_map = {"category": "Categories", "lang": "Languages", "tag": "Tags"};
+
   export default {
     name: 'SchedulesList',
     mixins: [ZimfarmMixins],
@@ -114,12 +116,14 @@
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
         requested_tasks: [],  // list of schedule_names with requested tasks
+        block_url_updates: false,
       };
     },
     computed: {
       selectedLanguagesOptions: {  // multiple-select value for selected languages to filter on (union)
         set(selectedLanguagesOptions) {
           this.$store.commit('SET_SELECTED_LANGUAGES_OPTIONS', selectedLanguagesOptions);
+          this.update_url();
         },
         get() {
           return this.$store.state.selectedLanguagesOptions;
@@ -128,6 +132,7 @@
       selectedCategoriesOptions: {  // multiple-select value for selected languages to filter on (union)
         set(selectedCategoriesOptions) {
           this.$store.commit('SET_SELECTED_CATEGORIES_OPTIONS', selectedCategoriesOptions);
+          this.update_url();
         },
         get() {
           return this.$store.state.selectedCategoriesOptions;
@@ -136,6 +141,7 @@
       selectedTagsOptions: {  // multiple-select value for selected tags to filter on (intersection)
         set(selectedTagsOptions) {
           this.$store.commit('SET_SELECTED_TAGS_OPTIONS', selectedTagsOptions);
+          this.update_url();
         },
         get() {
           return this.$store.state.selectedTagsOptions;
@@ -143,7 +149,8 @@
       },
       selectedName: {  // entered regexp to match schedule names on
         set(selectedName) {
-          this.$store.commit('SET_SELECTED_NAME', selectedName);
+          this.$store.commit('SET_SELECTED_NAME', selectedName.trim());
+          this.update_url();
         },
         get() {
           return this.$store.state.selectedName;
@@ -191,12 +198,65 @@
         this.saveLimitPreference(this.selectedLimit);
         this.loadSchedules();
       },
+      update_url(){
+        if (this.block_url_updates)
+          return;
+
+        let parent = this;
+        // create query obj from selected fields
+        let query = {};
+        ["category", "lang", "tag"].forEach(function (paramName) {
+          let filterLabel = filters_map[paramName];
+          let selectedValues =  "selected" + filterLabel;
+          // reproduce query-string behavior for single value
+          if (parent[selectedValues].length == 1)
+            query[paramName] = parent[selectedValues].first();
+          else if (parent[selectedValues].length > 1)
+            query[paramName] = parent[selectedValues];
+        });
+        if (this.selectedName.length > 0 )
+          query["name"] = this.selectedName;
+
+        // only update URL if filter selection is different
+        if (!Object.isEqual(this.$route.query, query)) {
+          this.$router.replace({name: "schedules-list", query: query});
+        }
+      },
       loadSchedules() {  // load filtered schedules from API
         let parent = this;
-
         this.toggleLoader("fetching recipes…");
+        this.block_url_updates = true;
 
-        // prepare params for filering
+        // extracting filters info from URL query (for multiple-values)
+        ["category", "lang", "tag"].forEach(function (filterName) {
+          let filterLabel = filters_map[filterName];
+          let selectedFilterOption =  "selected" + filterLabel + "Options";
+          // only care about set filters
+          let filterValue = parent.$route.query[filterName] || "";
+          if (filterValue) {
+            // update UI if there's no input there (loading URL)
+            if (parent[selectedFilterOption].length == 0) {
+              // multiple value fields appear as regular string if there's a single value
+              if (typeof filterValue === "string") {
+                parent[selectedFilterOption] = [{name: filterValue, value: filterValue}];
+              } else {
+                for(var i=0; i<parent.$route.query[filterName].length; i++) {
+                  parent[selectedFilterOption] = {name: filterValue, value: filterValue[i]};
+                }
+              }
+            }
+          }
+        });
+
+        // extract name from URL query
+        if (this.$route.query.name) {
+          // update UI
+          if (this.selectedName.trim().length == 0) {
+              this.selectedName = this.$route.query.name;
+          }
+        }
+
+        // create request params based on UI selection so its consistent
         let params = {limit: parent.selectedLimit};
         if (this.selectedLanguages.filter(item => item.length).length) {
           params.lang = this.selectedLanguages;
@@ -208,7 +268,7 @@
           params.category = this.selectedCategories;
         }
         if (this.selectedName.length) {
-          params.name = this.selectedName.trim();
+          params.name = this.selectedName;
         }
 
         parent.error = null;
@@ -236,6 +296,9 @@
           })
           .then(function () {
             parent.toggleLoader(false);
+            parent.block_url_updates = false;
+            // trigger update_url so it matches selection in case url was empty
+            parent.update_url();
           });
       },
     },
