@@ -25,14 +25,16 @@
       };
     },
     computed: {
-      ready() { return this.from && this.form_name.trim() && this.from != this.form_name; },
+      ready() { return this.from && this.form_name.trim() && this.from != this.form_name.trim(); },
     },
     methods: {
       cloneSchedule() {
+        // trailing spaces not allowed in schedule names
+        this.form_name = this.form_name.trim();
         if (!this.ready)
           return;
         let parent = this;
-        let payload = {name: this.form_name.trim()};
+        let payload = {name: this.form_name};
         parent.toggleLoader("Cloning recipe…");
         parent.queryAPI('post', '/schedules/' + parent.from + '/clone', payload)
           .then(function () {
