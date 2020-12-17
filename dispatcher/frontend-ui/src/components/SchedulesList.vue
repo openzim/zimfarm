@@ -104,6 +104,8 @@
   import RequestSelectionButton from '../components/RequestSelectionButton.vue'
   import TaskLink from '../components/TaskLink.vue'
 
+  const filters_map = {"category": "Categories", "lang": "Languages", "tag": "Tags"};
+
   export default {
     name: 'SchedulesList',
     mixins: [ZimfarmMixins],
@@ -114,6 +116,7 @@
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
         requested_tasks: [],  // list of schedule_names with requested tasks
+        block_url_updates: false,
       };
     },
     computed: {
@@ -146,7 +149,7 @@
       },
       selectedName: {  // entered regexp to match schedule names on
         set(selectedName) {
-          this.$store.commit('SET_SELECTED_NAME', selectedName);
+          this.$store.commit('SET_SELECTED_NAME', selectedName.trim());
           this.update_url();
         },
         get() {
@@ -196,42 +199,78 @@
         this.loadSchedules();
       },
       update_url(){
-         // updating url on reloading page
-         if (this.selectedName.length > 0 ) {
-            this.$router.replace({ name:"schedules-list", query:{ Categories:this.selectedCategories, Languages:this.selectedLanguages, Tags:this.selectedTags, name:this.selectedName }});
-          }
-          else {
-            this.$router.replace({ name:"schedules-list" ,query:{ Categories:this.selectedCategories, Languages:this.selectedLanguages, Tags:this.selectedTags }});
-          }
+        if (this.block_url_updates)
+          return;
+
+        let parent = this;
+        // create query obj from selected fields
+        let query = {};
+        ["category", "lang", "tag"].forEach(function (paramName) {
+          let filterLabel = filters_map[paramName];
+          let selectedValues =  "selected" + filterLabel;
+          // reproduce query-string behavior for single value
+          if (parent[selectedValues].length == 1)
+            query[paramName] = parent[selectedValues].first();
+          else if (parent[selectedValues].length > 1)
+            query[paramName] = parent[selectedValues];
+        });
+        if (this.selectedName.length > 0 )
+          query["name"] = this.selectedName;
+
+        // only update URL if filter selection is different
+        if (!Object.isEqual(this.$route.query, query)) {
+          this.$router.replace({name: "schedules-list", query: query});
+        }
       },
       loadSchedules() {  // load filtered schedules from API
         let parent = this;
         this.toggleLoader("fetching recipes…");
-        let params = {limit: parent.selectedLimit};
+        this.block_url_updates = true;
 
-        // adding filters to url 
-        [["Categories","category"], ["Languages","lang"], ["Tags","tag"]].forEach(function (key) {
-          var selectedFilterOption =  "selected"+key[0]+"Options"
-          if (parent.$route.query[key[0]]) {
-            params[key[1]] = parent.$route.query[key[0]];
-              if (parent[selectedFilterOption].length == 0) {
-                if (typeof parent.$route.query[key[0]] === "string") {
-                  parent[selectedFilterOption].push({ name:parent.$route.query[key[0]], value:parent.$route.query[key[0]] })
-                }
-                else {
-                  for(var i=0; i<parent.$route.query[key[0]].length; i++) {
-                    parent[selectedFilterOption].push({ name:parent.$route.query[key[0]][i], value:parent.$route.query[key[0]][i] });
-                  }
+        // extracting filters info from URL query (for multiple-values)
+        ["category", "lang", "tag"].forEach(function (filterName) {
+          let filterLabel = filters_map[filterName];
+          let selectedFilterOption =  "selected" + filterLabel + "Options";
+          // only care about set filters
+          let filterValue = parent.$route.query[filterName] || "";
+          if (filterValue) {
+            // update UI if there's no input there (loading URL)
+            if (parent[selectedFilterOption].length == 0) {
+              // multiple value fields appear as regular string if there's a single value
+              if (typeof filterValue === "string") {
+                parent[selectedFilterOption] = [{name: filterValue, value: filterValue}];
+              } else {
+                for(var i=0; i<parent.$route.query[filterName].length; i++) {
+                  parent[selectedFilterOption] = {name: filterValue, value: filterValue[i]};
                 }
               }
             }
+          }
         });
+
+        // extract name from URL query
         if (this.$route.query.name) {
-          params.name = this.$route.query.name;
+          // update UI
           if (this.selectedName.trim().length == 0) {
               this.selectedName = this.$route.query.name;
           }
         }
+
+        // create request params based on UI selection so its consistent
+        let params = {limit: parent.selectedLimit};
+        if (this.selectedLanguages.filter(item => item.length).length) {
+          params.lang = this.selectedLanguages;
+        }
+        if (this.selectedTags.filter(item => item.length).length) {
+          params.tag = this.selectedTags;
+        }
+        if (this.selectedCategories.filter(item => item.length).length) {
+          params.category = this.selectedCategories;
+        }
+        if (this.selectedName.length) {
+          params.name = this.selectedName;
+        }
+
         parent.error = null;
         parent.queryAPI('get', '/schedules/', {params: params})
           .then(function (response) {
@@ -257,6 +296,9 @@
           })
           .then(function () {
             parent.toggleLoader(false);
+            parent.block_url_updates = false;
+            // trigger update_url so it matches selection in case url was empty
+            parent.update_url();
           });
       },
     },
