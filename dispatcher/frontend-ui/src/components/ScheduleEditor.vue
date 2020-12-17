@@ -386,6 +386,9 @@
         let payload = {};
         let parent = this;
 
+        // trailing spaces not allowed in schedule names
+        parent.edit_schedule["name"] = parent.edit_schedule["name"].trim();
+
         ["name", "category", "enabled", "periodicity"].forEach(function (key) {
           if (parent.edit_schedule[key] != parent.schedule[key])
             payload[key] = parent.edit_schedule[key];

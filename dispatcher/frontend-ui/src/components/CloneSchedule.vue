@@ -25,10 +25,12 @@
       };
     },
     computed: {
-      ready() { return this.from && this.form_name && this.from != this.form_name; },
+      ready() { return this.from && this.form_name.trim() && this.from != this.form_name.trim(); },
     },
     methods: {
       cloneSchedule() {
+        // trailing spaces not allowed in schedule names
+        this.form_name = this.form_name.trim();
         if (!this.ready)
           return;
         let parent = this;

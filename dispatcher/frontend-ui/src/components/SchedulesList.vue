@@ -208,7 +208,7 @@
           params.category = this.selectedCategories;
         }
         if (this.selectedName.length) {
-          params.name = this.selectedName;
+          params.name = this.selectedName.trim();
         }
 
         parent.error = null;
