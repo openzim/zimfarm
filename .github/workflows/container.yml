@@ -3,7 +3,7 @@ name: Containers
 on:
   push:
     branches:
-      - 'master'
+      - 'testcontainer'
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./dnscache
+          context: https://github.com/openzim/zimfarm.git#testcontainer:dnscache
           file: ./Dockerfile
           push: true
           tags: |
