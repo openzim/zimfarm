@@ -13,6 +13,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.3.4
+        with:
+            path: repo
+
+      - name: move context
+        run: mv repo/dnscache .
 
       - name: Setup BuildX
         uses: docker/setup-buildx-action@v1
@@ -33,7 +38,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: https://github.com/openzim/zimfarm.git#testcontainer:dnscache
+          context: .
           file: ./Dockerfile
           push: true
           tags: |
