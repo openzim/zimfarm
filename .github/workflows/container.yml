@@ -17,7 +17,9 @@ jobs:
             path: repo
 
       - name: move context
-        run: mv repo/dnscache .
+        run: |
+            mv repo/dnscache/* .
+            ls -l
 
       - name: Setup BuildX
         uses: docker/setup-buildx-action@v1
