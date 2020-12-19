@@ -4,7 +4,12 @@
 
 <template>
   <div class="container">
-    <div class="row" v-if="schedule_enabled"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
+    <div class="row" v-if="can_cancel">
+      <b-button v-show="canCancelTasks"
+                style="margin-left: auto; margin-right: 1rem;"
+                size="sm" variant="danger"
+                @click.prevent="cancel">
+                <font-awesome-icon icon="stop-circle" size="sm" /> cancel</b-button></div>
     <h2 class="row">
       <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
       <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
@@ -111,14 +116,13 @@
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
-  import ScheduleActionButton from '../components/ScheduleActionButton.vue'
   import FlagsList from '../components/FlagsList.vue'
 
 
   export default {
     name: 'TaskView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage, FlagsList, ResourceBadge},
+    components: {ErrorMessage, FlagsList, ResourceBadge},
     props: {
       _id: String,
       selectedTab: {
@@ -143,7 +147,7 @@
     computed: {
       sorted_files() { return Object.values(this.task.files).sortBy('created_timestamp'); },
       short_id() { return Constants.short_id(this._id); },
-      is_running() { return ["failed", "canceled", "succeeded"].indexOf(this.task.status) == -1; },
+      is_running() { return ["failed", "canceled", "succeeded", "cancel_requested"].indexOf(this.task.status) == -1; },
       schedule_name() { return this.task ? this.task.schedule_name : null; },
       task_container() { return this.task.container || {}; },
       task_progress() {
@@ -183,8 +187,18 @@
         return false;
       },
       image_human() { return Constants.image_human(this.task.config); },
+      can_cancel() { return this.task && this.is_running && this.task["_id"]; },
     },
     methods: {
+      cancel() {
+        let parent = this;
+        this.cancel_task(
+          this.task["_id"],
+          function () {
+            parent.task = null;
+            parent.refresh_data();
+          });
+      },
       refresh_data() {
         let parent = this;
         parent.toggleLoader("fetching task…");
