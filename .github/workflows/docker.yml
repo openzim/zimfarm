@@ -15,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/dnscache
           on-master: latest
-          tag-pattern: dnscache-v*
+          tag-pattern: /^dnscache-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
           context: dnscache
           hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -33,11 +33,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/uploader
           on-master: latest
-          tag-pattern: uploader-v*
+          tag-pattern: /^uploader-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
           context: uploader
           hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/zimfarm-dispatcher
           on-master: latest
@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/zimfarm-ui
           on-master: latest
@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/zimfarm-receiver
           on-master: latest
@@ -102,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/zimfarm-task-worker
           on-master: latest
@@ -120,7 +120,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: rgaudin/openzim-docker-action@main
+        uses: openzim/docker-publish-action@v1
         with:
           image-path: openzim/zimfarm-worker-manager
           on-master: latest
