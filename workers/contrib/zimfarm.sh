@@ -20,10 +20,12 @@ ZIMFARM_ROOT=/tmp
 ZIMFARM_OFFLINERS=
 ZIMFARM_SELFISH=
 USE_PUBLIC_DNS=
-MANAGER_IMAGE="openzim/zimfarm-worker-manager"
+MANAGER_IMAGE="ghcr.io/openzim/zimfarm-worker-manager"
 MANAGER_TAG="latest"
-WORKER_IMAGE="openzim/zimfarm-task-worker"
+WORKER_IMAGE="ghcr.io/openzim/zimfarm-task-worker"
 WORKER_TAG="latest"
+DNSCACHE_IMAGE="ghcr.io/openzim/dnscache:1.0.1"
+UPLOADER_IMAGE="ghcr.io/openzim/uploader:1.1.1"
 SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
 WEB_API_URI="https://api.farm.openzim.org/v1"
 POLL_INTERVAL="180"
@@ -39,6 +41,7 @@ function die() {
 
 # find this script's path
 if [[ $(uname -s) == "Darwin" ]]; then
+    # brew install coreutils
     parentdir=$(dirname "$(greadlink -f "$0")")
     scriptname=$(basename "$(greadlink -f "$0")")
 else
@@ -174,6 +177,8 @@ function restart() {
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
         --env POLL_INTERVAL=$POLL_INTERVAL \
+        --env DNSCACHE_IMAGE=$DNSCACHE_IMAGE \
+        --env UPLOADER_IMAGE=$UPLOADER_IMAGE \
     $manager_image_string worker-manager
 }
 

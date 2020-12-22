@@ -125,7 +125,7 @@ appropriate options. Otherwise, use our handy bash script.
 sudo wget -O /usr/local/bin/zimfarm \
   https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh && \
   sudo chmod +x /usr/local/bin/zimfarm && \
-  sudo wget -O /etc/zimfarm.config \
+  sudo wget -O /etc/zimfarm.config.example \
   https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.config
 ```
 
