@@ -10,7 +10,7 @@ on:
 
 jobs:
   dnscache:
-    name: Deploy Docker Image
+    name: Deploy dnscache Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   uploader:
-    name: Deploy Docker Image
+    name: Deploy uploader Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -46,7 +46,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   dispatcher:
-    name: Deploy Docker Image
+    name: Deploy dispatcher Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -63,7 +63,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   ui:
-    name: Deploy Docker Image
+    name: Deploy ui Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -80,7 +80,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   receiver:
-    name: Deploy Docker Image
+    name: Deploy receiver Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -97,7 +97,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   task-worker:
-    name: Deploy Docker Image
+    name: Deploy task-worker Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -115,7 +115,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   worker-manager:
-    name: Deploy Docker Image
+    name: Deploy worker-manager Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
