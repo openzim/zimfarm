@@ -82,7 +82,7 @@
       </div>
       <div v-if="selectedTab == 'debug'" class="tab-content">
         <table class="table table-responsive table-striped table-in-tab">
-          <tr v-if="task.config"><th>Offliner</th><td><a target="_blank" :href="'https://hub.docker.com/r/' + task.config.image.name"><code>{{ image_human }}</code></a> (<code>{{ task.config.task_name }}</code>)</td></tr>
+          <tr v-if="task.config"><th>Offliner</th><td><a target="_blank" :href="image_url"><code>{{ image_human }}</code></a> (<code>{{ task.config.task_name }}</code>)</td></tr>
           <tr v-if="task.config">
             <th>Resources</th>
             <td>
@@ -187,6 +187,7 @@
         return false;
       },
       image_human() { return Constants.image_human(this.task.config); },
+      image_url() { return Constants.image_url(this.task.config); },
       can_cancel() { return this.task && this.is_running && this.task["_id"]; },
     },
     methods: {

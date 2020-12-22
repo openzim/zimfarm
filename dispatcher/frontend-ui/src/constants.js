@@ -50,6 +50,11 @@ function image_human(config) {
   return config.image.name + ":" + config.image.tag;
 }
 
+function image_url(config) {
+  let prefix = (config.image.name.indexOf("ghcr.io") != -1) ? "https://" : "https://hub.docker.com/r/";
+  return prefix + config.image.name;
+}
+
 function build_command_without(config, secret_fields) {
   if (secret_fields == null)
     return "<missing defs>";
@@ -389,6 +394,7 @@ export default {
   params_serializer:params_serializer,
   now: now,
   image_human: image_human,
+  image_url: image_url,
   build_docker_command: build_docker_command,
   build_command_without: build_command_without,
   trim_command: trim_command,
