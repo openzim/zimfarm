@@ -4,45 +4,130 @@ on:
   push:
     branches:
       - 'master'
+    tags:
+      - dnscache-v*
+      - uploader-v*
 
 jobs:
-  build:
+  dnscache:
     name: Deploy Docker Image
-    runs-on: ubuntu-latest
-    if: github.repository == 'openzim/zimfarm'
+    runs-on: ubuntu-20.04
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
         with:
-            path: repo
+          image-path: openzim/dnscache
+          on-master: latest
+          tag-pattern: dnscache-v*
+          restrict-to: openzim/zimfarm
+          context: dnscache
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
-      - name: move context
-        run: |
-            mv repo/dnscache/* .
-            rm -rf repo
-
-      - name: Setup BuildX
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
+  uploader:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          image-path: openzim/uploader
+          on-master: latest
+          tag-pattern: uploader-v*
+          restrict-to: openzim/zimfarm
+          context: uploader
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+  dispatcher:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
         with:
-          registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          image-path: openzim/zimfarm-dispatcher
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: dispatcher/backend
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
+  ui:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            openzim/dnscache:latest
-            ghcr.io/openzim/zimfarm/dnscache:latest
+          image-path: openzim/zimfarm-ui
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: dispatcher/frontend-ui
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+
+  receiver:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
+        with:
+          image-path: openzim/zimfarm-receiver
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: receiver
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+
+  task-worker:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
+        with:
+          image-path: openzim/zimfarm-task-worker
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: workers
+          dockerfile: task-Dockerfile
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+
+  worker-manager:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: rgaudin/openzim-docker-action@main
+        with:
+          image-path: openzim/zimfarm-worker-manager
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: workers
+          dockerfile: manager-Dockerfile
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}

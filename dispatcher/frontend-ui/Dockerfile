@@ -11,6 +11,8 @@ RUN NODE_ENV=production yarn build
 
 FROM library/nginx:mainline-alpine
 LABEL zimfarm=true
+LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
+
 RUN apk --no-cache add python3
 
 COPY --from=builder /app/dist /usr/share/nginx/html

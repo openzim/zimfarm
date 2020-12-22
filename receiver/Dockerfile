@@ -1,5 +1,6 @@
 FROM python:3.8-buster
 LABEL zimfarm=true
+LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
 # system dependencies
 RUN apt-get update -y \

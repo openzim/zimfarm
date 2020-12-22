@@ -1,5 +1,6 @@
 FROM rgaudin/uwsgi-nginx:python3.8
 LABEL zimfarm=true
+LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
 RUN pip install -U pip
 RUN pip install uwsgi==2.0.18
