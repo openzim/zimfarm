@@ -178,6 +178,25 @@ class Offliner:
             cls.zimit,
         ]
 
+    @classmethod
+    def get_image_name(cls, offliner):
+        prefix = os.getenv(f"DOCKER_REGISTRY_{offliner}", "")
+        prefix += "/" if prefix else ""
+        return (
+            prefix
+            + {
+                cls.mwoffliner: DockerImageName.mwoffliner,
+                cls.youtube: DockerImageName.youtube,
+                cls.gutenberg: DockerImageName.gutenberg,
+                cls.phet: DockerImageName.phet,
+                cls.sotoki: DockerImageName.sotoki,
+                cls.nautilus: DockerImageName.nautilus,
+                cls.ted: DockerImageName.ted,
+                cls.openedx: DockerImageName.openedx,
+                cls.zimit: DockerImageName.zimit,
+            }.get(offliner, "-")
+        )
+
 
 class SchedulePeriodicity:
     manually = "manually"
