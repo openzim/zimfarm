@@ -108,7 +108,7 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: workers
-          dockerfile: task-Dockerfile
+          dockerfile: ./workers/task-Dockerfile
           hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
           hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
           ghcr-username: ${{ secrets.GHCR_USERNAME }}
@@ -126,7 +126,7 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: workers
-          dockerfile: manager-Dockerfile
+          dockerfile: ./workers/manager-Dockerfile
           hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
           hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
           ghcr-username: ${{ secrets.GHCR_USERNAME }}
