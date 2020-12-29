@@ -14,6 +14,8 @@ class TaskStatus:
     canceled = "canceled"
     succeeded = "succeeded"
 
+    update = "update"
+
     created_file = "created_file"
     uploaded_file = "uploaded_file"
     failed_file = "failed_file"
@@ -46,11 +48,15 @@ class TaskStatus:
         return [cls.created_file, cls.uploaded_file, cls.failed_file]
 
     @classmethod
+    def silent_events(cls):
+        return cls.file_events() + [cls.scraper_running, cls.update]
+
+    @classmethod
     def all_events(cls):
         return list(
             filter(
                 lambda x: x not in (cls.requested, cls.reserved),
-                cls.all() + cls.file_events() + [cls.scraper_running],
+                cls.all() + cls.silent_events(),
             )
         )
 

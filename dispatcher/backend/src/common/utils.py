@@ -32,6 +32,7 @@ def task_event_handler(task_id, event, payload):
         TaskStatus.created_file: task_created_file_event_handler,
         TaskStatus.uploaded_file: task_uploaded_file_event_handler,
         TaskStatus.failed_file: task_failed_file_event_handler,
+        TaskStatus.update: task_update_event_handler,
     }
     func = handlers.get(event, handle_others)
     ret = func(task_id, payload)
@@ -54,7 +55,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
 
     task_updates = {}
     # neither file events nor scraper_running should update timestamp list (not unique)
-    if "file" not in code and code != TaskStatus.scraper_running:
+    if code not in TaskStatus.silent_events():
         task_updates[f"timestamp.{code}"] = timestamp
         # insert event and sort by timestamp
         Tasks().update_one(
@@ -70,8 +71,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
         )
 
         # update task status, timestamp and other fields
-        if "file" not in code:
-            task_updates["status"] = code
+        task_updates["status"] = code
 
     def add_to_update_if_present(payload_key, update_key):
         if payload_key in kwargs:
@@ -230,7 +230,6 @@ def task_scraper_started_event_handler(task_id, payload):
     timestamp = get_timestamp_from_event(payload)
     image = payload.get("image")
     command = payload.get("command")
-    log = payload.get("log")  # log is a docker json file. `cat x.log | jq -j '.log'`
     logger.info(f"Task Container Started: {task_id}, {command}")
 
     save_event(
@@ -239,7 +238,6 @@ def task_scraper_started_event_handler(task_id, payload):
         timestamp,
         image=image,
         command=command,
-        log=log,
     )
 
 
@@ -303,6 +301,14 @@ def task_failed_file_event_handler(task_id, payload):
     logger.info(f"Task file upload failed: {task_id}, {file['name']}")
 
     save_event(task_id, TaskStatus.failed_file, timestamp, file=file)
+
+
+def task_update_event_handler(task_id, payload):
+    timestamp = get_timestamp_from_event(payload)
+    log = payload.get("log")  # filename / S3 key of text file at upload_uri[logs]
+    logger.info(f"Task update: {task_id}, log: {log}")
+
+    save_event(task_id, TaskStatus.update, timestamp, log=log)
 
 
 def handle_others(self, event):
