@@ -99,7 +99,7 @@
           <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
-          <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
+          <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
           <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
           <tr v-if="task_debug.log"><th>Task-worker Log</th><td><pre>{{ task_debug.log }}</pre></td></tr>
@@ -175,7 +175,7 @@
       },
       started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
-      zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
+      zimfarm_logs_url() { return Constants.logs_url(this.task); },
       kiwix_download_url() { return Constants.kiwix_download_url; },
       webapi_url() { return Constants.zimfarm_webapi; },
       command() { return this.task_container.command.join(" "); },
