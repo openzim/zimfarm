@@ -10,7 +10,6 @@ import shutil
 import pathlib
 import datetime
 
-import docker
 import requests
 
 from common import logger
@@ -26,11 +25,9 @@ from common.docker import (
     RUNNING_STATUSES,
     get_container_logs,
     task_container_name,
-    stop_container,
-    remove_container,
-    wait_container,
 )
 from common.constants import PROGRESS_CAPABLE_OFFLINERS
+from common.logs import upload_scraper_log
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 PENDING = "pending"
@@ -171,11 +168,8 @@ class TaskWorker(BaseWorker):
             else:
                 logger.info(f"reporting {progress['overall']}%")
 
-        logger.debug(
-            "Submitting scraper progress" + f": {progress['overall']}%"
-            if progress
-            else ""
-        )
+        if progress:
+            logger.debug(f"Submitting scraper progress: {progress['overall']}%")
 
         self.patch_task(
             {
@@ -208,6 +202,10 @@ class TaskWorker(BaseWorker):
     def mark_file_completed(self, filename, status):
         logger.info(f"Updating file-status={status} for {filename}")
         self.patch_task({"event": f"{status}_file", "payload": {"filename": filename}})
+
+    def submit_scraper_log_location(self, filename):
+        logger.info(f"Sending scraper log filename: {filename}")
+        self.patch_task({"event": "update", "payload": {"log": filename}})
 
     def setup_workdir(self):
         logger.info("Setting-up workdir")
@@ -290,7 +288,7 @@ class TaskWorker(BaseWorker):
         self.cleanup_workdir()
 
     def start_uploader(self, upload_dir, filename):
-        logger.info(f"Starting uploader for /{upload_dir}/{filename}")
+        logger.info(f"Starting uploader for {upload_dir}/{filename}")
         self.uploader = start_uploader(
             self.docker,
             self.task,
@@ -303,7 +301,6 @@ class TaskWorker(BaseWorker):
             delete=True,
             compress=False,
             resume=False,
-            watch=False,
         )
 
     def stop_uploader(self, timeout=None):
@@ -397,74 +394,8 @@ class TaskWorker(BaseWorker):
                 # no more pending files,
                 logger.debug("failed to get ZIM file: pending_zim_files empty")
             else:
-                self.start_uploader(
-                    f"zim{self.task['config']['warehouse_path']}", zim_file
-                )
+                self.start_uploader(self.task["config"]["warehouse_path"], zim_file)
                 self.zim_files[zim_file] = UPLOADING
-
-    def upload_log(self, watch=False):
-        logger.debug(f"starting log uploader, with watch={watch}")
-        if not self.scraper:
-            logger.error("can't start a log uploader without a scraper…")
-            return  # scraper gone, we can't access log
-
-        log_path = pathlib.Path(self.scraper.attrs["LogPath"])
-
-        self.log_uploader = start_uploader(
-            self.docker,
-            self.task,
-            "logs",
-            self.username,
-            log_path.parent,
-            "logs",
-            log_path.name,
-            move=False,
-            delete=False,
-            compress=True,
-            resume=True,
-            watch="6h" if watch else None,
-        )
-
-    def finish_scraper_log_upload(self):
-        # stop and remove previous (watch) container. might be already stopped
-        if self.log_uploader:
-            try:
-                stop_container(self.docker, self.log_uploader.name, timeout=60 * 10)
-                remove_container(self.docker, self.log_uploader.name, force=True)
-            except docker.errors.NotFound as exc:
-                # failure here is unexpected (container should exist)
-                # but happens randomly
-                # catching this to prevent task from crashing while there might be
-                # ZIM files to continue uploading after
-                logger.warning(f"Log uploader container missing: {exc}")
-                logger.warning("Expect full-log upload next (long)")
-            self.log_uploader = None
-
-        try:
-            # restart without watch to make sure it's complete
-            self.upload_log(watch=False)
-
-            self.log_uploader.reload()
-            # should log uploader above have been gone, we might expect this to fail
-            # on super large mwoffliner with verbose mode on (20mn not enough for 20GB)
-            exit_code = wait_container(
-                self.docker, self.log_uploader.name, timeout=20 * 60
-            )["StatusCode"]
-        # connexion exception can be thrown by socket, urllib, requests
-        except Exception as exc:
-            logger.error(f"log upload could not complete. {exc}")
-            stop_container(self.docker, self.log_uploader.name)
-            exit_code = -1
-        finally:
-            logger.info(f"Scraper log upload complete: {exit_code}")
-
-        if exit_code != 0:
-            logger.error(
-                f"Log Uploader:: "
-                f"{get_container_logs(self.docker, self.log_uploader.name)}"
-            )
-
-        remove_container(self.docker, self.log_uploader.name, force=True)
 
     def handle_stopped_scraper(self):
         self.scraper.reload()
@@ -473,8 +404,22 @@ class TaskWorker(BaseWorker):
         stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
         self.mark_scraper_completed(exit_code, stdout, stderr)
         self.scraper_succeeded = exit_code == 0
-        logger.info("Waiting for scraper log to finish uploading")
-        self.finish_scraper_log_upload()
+
+        if not self.scraper:
+            logger.error("No scraper to upload it's logs…")
+            return  # scraper gone, we can't access log
+
+        logger.debug("Uploading scraper logs…")
+        uploaded, filename = upload_scraper_log(
+            self.docker,
+            self.task,
+            self.username,
+            self.scraper,
+            self.task_wordir,
+            self.host_task_workdir,
+        )
+        if uploaded:
+            self.submit_scraper_log_location(filename)
 
     def sleep(self):
         time.sleep(1)
@@ -498,9 +443,6 @@ class TaskWorker(BaseWorker):
         self.start_scraper()
         self.mark_scraper_started()
 
-        # start scraper log uploader
-        if self.can_stream_logs():
-            self.upload_log(watch=True)
         self.submit_scraper_progress()
 
         last_check = datetime.datetime.now()
