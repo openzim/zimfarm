@@ -3,6 +3,8 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import os
+import io
+import re
 import time
 import uuid
 import pathlib
@@ -80,7 +82,8 @@ def pull_image(docker_client, *args, **kwargs):
 
 def run_container(docker_client, *args, **kwargs):
     """image, command=None
-    https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run"""
+    https://docker-py.readthedocs.io/en/stable/
+    containers.html#docker.models.containers.ContainerCollection.run"""
     return retried_docker_call(docker_client.containers.run, *args, **kwargs)
 
 
@@ -129,6 +132,56 @@ def get_or_pull_image(docker_client, tag):
         return get_image(docker_client, tag)
     except docker.errors.ImageNotFound:
         return pull_image(docker_client, tag)
+
+
+class ContainerLogsAsFile(io.IOBase):
+    def __init__(self, docker_client, container_name, **kwargs):
+        self._buf = b""
+        self._logs = container_logs(
+            docker_client, container_name, stream=True, **kwargs
+        )
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return False
+
+    def read(self, size=-1):
+        if size == 0:
+            return b""
+
+        # account for existing remainings in buffer
+        output = self._buf
+        seen = len(output)
+
+        # check sizing as we might already have exhausted request with buffer
+        if size != -1 and seen >= size:
+            self._buf = output[size:]
+            return output[:size]
+
+        # size not exhausted, querying
+        while True:
+            try:
+                # query generator for input
+                line = next(self._logs)
+            except StopIteration:
+                # end of logs, we shall exit soon
+                line = b""
+
+            seen += len(line)
+            output += line
+
+            # check sizing again and return if exhausted
+            if size != -1 and seen > size:
+                self._buf = output[size:]
+                return output[:size]
+
+            # we've reached end of log
+            if not line:
+                return output
+
+        return output
 
 
 def query_containers_resources(docker_client):
@@ -405,7 +458,7 @@ def start_uploader(
     delete,
     compress,
     resume,
-    watch,
+    watch=False,
 ):
     container_name = upload_container_name(task["_id"], filename, False)
 
@@ -432,7 +485,10 @@ def start_uploader(
     # append the upload_dir and filename to upload_uri
     upload_uri = urllib.parse.urlparse(task["upload"][kind]["upload_uri"])
     parts = list(upload_uri)
-    parts[2] = (upload_uri.path or "/") + f"{upload_dir}/{filepath.name}"
+    # make sure we have a valid upload path
+    parts[2] += "/" if not parts[2].endswith("/") else ""
+    # ensure upload_dir is not absolute
+    parts[2] += os.path.join(re.sub(r"^/", "", upload_dir, 1), filepath.name)
     upload_uri = urllib.parse.urlunparse(parts)
 
     command = [
