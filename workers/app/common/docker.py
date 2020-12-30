@@ -22,12 +22,12 @@ from common.constants import (
     ZIMFARM_MEMORY,
     CONTAINER_TASK_IDENT,
     USE_PUBLIC_DNS,
-    CONTAINER_DNSCACHE_IDENT,
     TASK_WORKER_IMAGE,
     DOCKER_SOCKET,
     PRIVATE_KEY,
     DNSCACHE_IMAGE,
     UPLOADER_IMAGE,
+    CHECKER_IMAGE,
 )
 from common.utils import short_id, as_pos_int, format_size
 
@@ -265,16 +265,8 @@ def query_host_mounts(docker_client, workdir=None):
     return mounts
 
 
-def task_container_name(task_id):
-    return f"{CONTAINER_TASK_IDENT}_{short_id(task_id)}"
-
-
-def dnscache_container_name(task_id):
-    return f"{CONTAINER_DNSCACHE_IDENT}_{short_id(task_id)}"
-
-
-def scraper_container_name(task_id, task_name):
-    return f"{CONTAINER_SCRAPER_IDENT}_{task_name}_{short_id(task_id)}"
+def get_container_name(kind, task_id):
+    return f"{kind}_{short_id(task_id)}"
 
 
 def upload_container_name(task_id, filename, unique):
@@ -295,7 +287,7 @@ def get_label_value(docker_client, name, label):
 
 
 def start_dnscache(docker_client, task):
-    name = dnscache_container_name(task["_id"])
+    name = get_container_name("dnscache", task["_id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
     image = get_or_pull_image(docker_client, DNSCACHE_IMAGE)
     return run_container(
@@ -314,10 +306,52 @@ def start_dnscache(docker_client, task):
     )
 
 
+def start_checker(docker_client, task, host_workdir, filename):
+    name = get_container_name("checker", task["_id"])
+    image = get_or_pull_image(docker_client, CHECKER_IMAGE)
+
+    # remove container should it exists (should not)
+    try:
+        remove_container(docker_client, name)
+        prune_containers(docker_client, {"label": [f"filename={filename}"]})
+    except docker.errors.NotFound:
+        pass
+
+    # in container paths
+    workdir = pathlib.Path("/data")
+    filepath = workdir.joinpath(filename)
+    mounts = [Mount(str(workdir), str(host_workdir), type="bind", read_only=True)]
+
+    command = [
+        "zimcheck",
+        task["upload"]["zim"]["zimcheck"] or "-A",
+        str(filepath),
+    ]
+
+    return run_container(
+        docker_client,
+        image=image,
+        command=command,
+        detach=True,
+        name=name,
+        mounts=mounts,
+        labels={
+            "zimfarm": "",
+            "task_id": task["_id"],
+            "tid": short_id(task["_id"]),
+            "schedule_name": task["schedule_name"],
+            "filename": filename,
+        },
+        remove=False,
+    )
+
+
 def start_scraper(docker_client, task, dns, host_workdir):
     config = task["config"]
     offliner = config["task_name"]
-    container_name = scraper_container_name(task["_id"], offliner)
+    container_name = get_container_name(
+        f"{CONTAINER_SCRAPER_IDENT}_{offliner}", task["_id"]
+    )
 
     # remove container should it exists (should not)
     try:
@@ -374,7 +408,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
 
 
 def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker_name):
-    container_name = task_container_name(task["_id"])
+    container_name = get_container_name(CONTAINER_TASK_IDENT, task["_id"])
 
     # remove container should it exists (should not)
     try:
@@ -419,6 +453,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "DEBUG": os.getenv("DEBUG"),
             "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
             "UPLOADER_IMAGE": UPLOADER_IMAGE,
+            "CHECKER_IMAGE": CHECKER_IMAGE,
             "DNSCACHE_IMAGE": DNSCACHE_IMAGE,
             "DOCKER_SOCKET": DOCKER_SOCKET,
         },
@@ -437,7 +472,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
 
 
 def stop_task_worker(docker_client, task_id, timeout: int = 20):
-    container_name = task_container_name(task_id)
+    container_name = get_container_name(CONTAINER_TASK_IDENT, task_id)
     try:
         stop_container(docker_client, container_name, timeout=timeout)
     except docker.errors.NotFound:

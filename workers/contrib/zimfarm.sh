@@ -26,6 +26,7 @@ WORKER_IMAGE="ghcr.io/openzim/zimfarm-task-worker"
 WORKER_TAG="latest"
 DNSCACHE_IMAGE="ghcr.io/openzim/dnscache:1.0.1"
 UPLOADER_IMAGE="ghcr.io/openzim/uploader:1.1.1"
+CHECKER_IMAGE="ghcr.io/openzim/checker:1.0"
 SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
 WEB_API_URI="https://api.farm.openzim.org/v1"
 POLL_INTERVAL="180"
@@ -178,6 +179,7 @@ function restart() {
         --env POLL_INTERVAL=$POLL_INTERVAL \
         --env DNSCACHE_IMAGE=$DNSCACHE_IMAGE \
         --env UPLOADER_IMAGE=$UPLOADER_IMAGE \
+        --env CHECKER_IMAGE=$CHECKER_IMAGE \
     $manager_image_string worker-manager
 }
 
