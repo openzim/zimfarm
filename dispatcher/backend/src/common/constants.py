@@ -32,7 +32,9 @@ try:
     LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
 except Exception:
     LOGS_EXPIRATION = 30
-ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "-A")
+
+# empty ZIMCHECK_OPTION means no zimcheck
+ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
 
 # NOTIFICATIONS
 

@@ -37,6 +37,7 @@ UPLOADED = "uploaded"
 FAILED = "failed"
 CHECKING = "checking"
 CHECKED = "checked"
+SKIPPED = "skipped"
 MAX_ZIM_RETRIES = 5
 UP = "upload"
 CHK = "check"
@@ -330,7 +331,16 @@ class TaskWorker(BaseWorker):
         for fpath in self.task_wordir.glob("*.zim"):
             if fpath.name not in self.zim_files.keys():
                 # append file to our watchlist
-                self.zim_files.update({fpath.name: {UP: PENDING, CHK: PENDING}})
+                self.zim_files.update(
+                    {
+                        fpath.name: {
+                            UP: PENDING,
+                            CHK: PENDING
+                            if self.task["upload"]["zim"]["zimcheck"]
+                            else SKIPPED,
+                        }
+                    }
+                )
                 # inform API about new file
                 self.mark_file_created(fpath.name, fpath.stat().st_size)
 
@@ -353,6 +363,9 @@ class TaskWorker(BaseWorker):
         )
 
     def check_files(self):
+        if not self.task["upload"]["zim"]["zimcheck"]:
+            return
+
         self.refresh_files_list()
 
         # check if checker running
