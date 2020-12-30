@@ -15,6 +15,7 @@ from common.constants import (
     PERIODICITIES,
     ZIM_UPLOAD_URI,
     ZIM_EXPIRATION,
+    ZIMCHECK_OPTION,
     LOGS_UPLOAD_URI,
     LOGS_EXPIRATION,
 )
@@ -128,6 +129,7 @@ def request_a_schedule(
             "zim": {
                 "upload_uri": ZIM_UPLOAD_URI,
                 "expiration": ZIM_EXPIRATION,
+                "zimcheck": ZIMCHECK_OPTION,
             },
             "logs": {
                 "upload_uri": LOGS_UPLOAD_URI,

@@ -32,6 +32,7 @@ def task_event_handler(task_id, event, payload):
         TaskStatus.created_file: task_created_file_event_handler,
         TaskStatus.uploaded_file: task_uploaded_file_event_handler,
         TaskStatus.failed_file: task_failed_file_event_handler,
+        TaskStatus.checked_file: task_checked_file_event_handler,
         TaskStatus.update: task_update_event_handler,
     }
     func = handlers.get(event, handle_others)
@@ -94,9 +95,10 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
     add_to_update_if_present("traceback", "debug.traceback")
     add_to_update_if_present("exception", "debug.exception")
 
-    # files are uploaded as there are created ; 2 events:
+    # files are uploaded as there are created ; 3 events:
     # - one on file creation with name, size and status=created
     # - one on file upload complete with name and status=uploaded
+    # - one on file check complete with result and log
     if kwargs.get("file", {}).get("name"):
         # mongo doesn't support `.` in keys (so we replace with Unicode Full Stop)
         fkey = kwargs["file"]["name"].replace(".", "．")
@@ -111,6 +113,10 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
         elif fstatus in ("uploaded", "failed"):
             task_updates[f"files.{fkey}.status"] = fstatus
             task_updates[f"files.{fkey}.{fstatus}_timestamp"] = timestamp
+        elif fstatus == "checked":
+            task_updates[f"files.{fkey}.check_result"] = kwargs["file"].get("result")
+            task_updates[f"files.{fkey}.check_log"] = kwargs["file"].get("log")
+            task_updates[f"files.{fkey}.check_timestamp"] = timestamp
 
     Tasks().update_one({"_id": task_id}, {"$set": task_updates})
 
@@ -301,6 +307,19 @@ def task_failed_file_event_handler(task_id, payload):
     logger.info(f"Task file upload failed: {task_id}, {file['name']}")
 
     save_event(task_id, TaskStatus.failed_file, timestamp, file=file)
+
+
+def task_checked_file_event_handler(task_id, payload):
+    file = {
+        "name": payload.get("filename"),
+        "status": "checked",
+        "result": payload.get("result"),
+        "log": payload.get("log"),
+    }
+    timestamp = get_timestamp_from_event(payload)
+    logger.info(f"Task checked file: {task_id}, {file['name']}")
+
+    save_event(task_id, TaskStatus.checked_file, timestamp, file=file)
 
 
 def task_update_event_handler(task_id, payload):
