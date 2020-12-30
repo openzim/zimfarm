@@ -38,6 +38,15 @@ function moveZim () {
    mv -f $ZIMFILE $2
 }
 
+# prevent zim from being uploaded to root of zimDstDir
+if [ $(dirname $ZIMPATH) = "." ] ; then
+  echo "Zim outside subfolder. moving to quarantine"
+  QUARFILE=$4$ZIMPATH
+  QUARDIR=$(dirname $QUARFILE)
+  moveZim $QUARDIR $QUARFILE
+  exit 0
+fi
+
 if [ "$OPTION" = "NO_CHECK" ]
 then
   echo "move $ZIMFILE to $DESTFILE"
