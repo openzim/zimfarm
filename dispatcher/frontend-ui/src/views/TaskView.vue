@@ -67,7 +67,7 @@
             <th>Files</th>
             <td>
               <table class="table table-responsive-md table-striped table-sm">
-                <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th><th>Check</th></tr></thead>
+                <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th><th>Quality</th></tr></thead>
                 <tr v-for="file in sorted_files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
                   <td>{{ file.size | filesize }}</td>
@@ -75,7 +75,7 @@
                   <td v-tooltip="format_dt(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
                   <td v-else>-</td>
                   <td v-if="file.check_result !== undefined">
-                    <code>{{ file.check_result }}</code>
+                    <code v-tooltip="'zimcheck exit-code'">{{ file.check_result }}</code>
                     <b-button :id="'popover-log-' + file.name" variant="neutral"><font-awesome-icon icon="glasses" /></b-button>
                     <b-button variant="neutral" v-tooltip="'Copy log to clipboard'" @click.prevent="copyLog(file.check_log)"><font-awesome-icon icon="copy" /></b-button>
                     <b-popover triggers="hover focus" placement="left" :target="'popover-log-' + file.name" title="zimcheck output">
