@@ -46,7 +46,7 @@ jobs:
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
   checker:
-    name: Deploy uploader Image
+    name: Deploy checker Image
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
