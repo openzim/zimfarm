@@ -45,6 +45,24 @@ jobs:
           ghcr-username: ${{ secrets.GHCR_USERNAME }}
           ghcr-token: ${{ secrets.GHCR_TOKEN }}
 
+  checker:
+    name: Deploy uploader Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: openzim/docker-publish-action@v2
+        with:
+          image-path: openzim/checker
+          on-master: latest
+          tag-pattern: /^checker-v([0-9.]+)$/
+          restrict-to: openzim/zimfarm
+          context: checker
+          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          ghcr-username: ${{ secrets.GHCR_USERNAME }}
+          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+
   dispatcher:
     name: Deploy dispatcher Image
     runs-on: ubuntu-20.04
