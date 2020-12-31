@@ -10,6 +10,7 @@ import shutil
 import pathlib
 import datetime
 
+import docker
 import requests
 
 from common import logger
@@ -26,9 +27,9 @@ from common.docker import (
     RUNNING_STATUSES,
     get_container_logs,
     get_container_name,
+    container_logs,
 )
 from common.constants import PROGRESS_CAPABLE_OFFLINERS, CONTAINER_TASK_IDENT
-from common.logs import upload_scraper_log
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 PENDING = "pending"
@@ -77,7 +78,7 @@ class TaskWorker(BaseWorker):
 
         self.task = None
         self.should_stop = False
-        self.task_wordir = None
+        self.task_workdir = None
         self.progress_file = None
         self.host_task_workdir = None  # path on host for task_dir
 
@@ -216,32 +217,28 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def submit_scraper_log_location(self, filename):
-        logger.info(f"Sending scraper log filename: {filename}")
-        self.patch_task({"event": "update", "payload": {"log": filename}})
-
     def setup_workdir(self):
         logger.info("Setting-up workdir")
         folder_name = f"{self.task_id}"
         host_mounts = query_host_mounts(self.docker, self.workdir)
 
-        self.task_wordir = self.workdir.joinpath(folder_name)
-        self.task_wordir.mkdir(exist_ok=True)
+        self.task_workdir = self.workdir.joinpath(folder_name)
+        self.task_workdir.mkdir(exist_ok=True)
         self.host_task_workdir = host_mounts[self.workdir].joinpath(folder_name)
 
         if self.task["config"]["task_name"] in PROGRESS_CAPABLE_OFFLINERS:
-            self.progress_file = self.task_wordir.joinpath("task_progress.json")
+            self.progress_file = self.task_workdir.joinpath("task_progress.json")
 
     def cleanup_workdir(self):
         logger.info(f"Removing task workdir {self.workdir}")
         zim_files = [
             (f.name, format_size(f.stat().st_size))
-            for f in self.task_wordir.glob("*.zim")
+            for f in self.task_workdir.glob("*.zim")
         ]
         if zim_files:
             logger.warning(f"ZIM files exists. removing anyway: {zim_files}")
         try:
-            shutil.rmtree(self.task_wordir)
+            shutil.rmtree(self.task_workdir)
         except Exception as exc:
             logger.error(f"Failed to remove workdir: {exc}")
 
@@ -261,9 +258,15 @@ class TaskWorker(BaseWorker):
         logger.info(f"Stopping and removing {which}")
         container = getattr(self, which)
         if container:
-            container.stop(timeout=timeout)
-            if which != "dnscache":
+            try:
+                container.reload()
+                container.stop(timeout=timeout)
                 container.remove()
+            except docker.errors.NotFound:
+                logger.debug(".. already gone")
+                return
+            finally:
+                container = None
 
     def update(self):
         # update scraper
@@ -276,7 +279,7 @@ class TaskWorker(BaseWorker):
         """ stopping everything before exit (on term or end of task) """
         logger.info("Stopping all containers and actions")
         self.should_stop = True
-        for step in ("dnscache", "scraper", "uploader", "checker"):
+        for step in ("dnscache", "scraper", "log_uploader", "uploader", "checker"):
             try:
                 self.stop_container(step)
             except Exception as exc:
@@ -324,11 +327,79 @@ class TaskWorker(BaseWorker):
         container = getattr(self, which)
         if not container:
             return False
-        container.reload()
+        try:
+            container.reload()
+        except docker.errors.NotFound:
+            return False
         return container.status in RUNNING_STATUSES
 
+    def upload_scraper_log(self):
+        if not self.scraper:
+            logger.error("No scraper to upload it's logs…")
+            return  # scraper gone, we can't access log
+
+        logger.debug("Dumping docker logs to file…")
+        filename = f"{self.task['_id']}_{self.task['config']['task_name']}.log"
+        try:
+            fpath = self.task_workdir / filename
+            with open(fpath, "wb") as fh:
+                for line in container_logs(
+                    self.docker,
+                    self.scraper.name,
+                    stdout=True,
+                    stderr=True,
+                    stream=True,
+                ):
+                    fh.write(line)
+        except Exception as exc:
+            logger.error(f"Unable to dump logs to {fpath}")
+            logger.exception(exc)
+            return False
+
+        logger.debug("Starting log uploader container…")
+        self.log_uploader = start_uploader(
+            self.docker,
+            self.task,
+            "logs",
+            self.username,
+            host_workdir=self.host_task_workdir,
+            upload_dir="",
+            filename=filename,
+            move=False,
+            delete=True,
+            compress=True,
+            resume=True,
+        )
+
+    def check_scraper_log_upload(self):
+        if not self.log_uploader or self.container_running("log_uploader"):
+            return
+
+        try:
+            self.log_uploader.reload()
+            exit_code = self.log_uploader.attrs["State"]["ExitCode"]
+            filename = self.log_uploader.labels["filename"]
+        except docker.errors.NotFound:
+            # prevent race condition if re-entering between this and container removal
+            return
+        logger.info(f"Scraper log upload complete: {exit_code}")
+        if exit_code != 0:
+            logger.error(
+                f"Log Uploader:: "
+                f"{get_container_logs(self.docker, self.log_uploader.name)}"
+            )
+        self.stop_container("log_uploader")
+
+        logger.info(f"Sending scraper log filename: {filename}")
+        self.patch_task(
+            {
+                "event": "update",
+                "payload": {"log": filename},
+            }
+        )
+
     def refresh_files_list(self):
-        for fpath in self.task_wordir.glob("*.zim"):
+        for fpath in self.task_workdir.glob("*.zim"):
             if fpath.name not in self.zim_files.keys():
                 # append file to our watchlist
                 self.zim_files.update(
@@ -470,22 +541,7 @@ class TaskWorker(BaseWorker):
         stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
         self.mark_scraper_completed(exit_code, stdout, stderr)
         self.scraper_succeeded = exit_code == 0
-
-        if not self.scraper:
-            logger.error("No scraper to upload it's logs…")
-            return  # scraper gone, we can't access log
-
-        logger.debug("Uploading scraper logs…")
-        uploaded, filename = upload_scraper_log(
-            self.docker,
-            self.task,
-            self.username,
-            self.scraper,
-            self.task_wordir,
-            self.host_task_workdir,
-        )
-        if uploaded:
-            self.submit_scraper_log_location(filename)
+        self.upload_scraper_log()
 
     def sleep(self):
         time.sleep(1)
@@ -533,6 +589,7 @@ class TaskWorker(BaseWorker):
             self.busy_zim_files
             or self.container_running("uploader")
             or self.container_running("checker")
+            or self.container_running("log_uploader")
         ):
             now = datetime.datetime.now()
             if (now - last_check).total_seconds() < SLEEP_INTERVAL:
@@ -541,8 +598,11 @@ class TaskWorker(BaseWorker):
 
             last_check = now
             self.handle_files()
+            self.check_scraper_log_upload()
 
-        self.handle_files()  # make sure we submit upload status for last one
+        # make sure we submit upload status for last zim and scraper log
+        self.handle_files()
+        self.check_scraper_log_upload()
 
         # done with processing, cleaning-up and exiting
         self.shutdown("succeeded" if self.scraper_succeeded else "failed")

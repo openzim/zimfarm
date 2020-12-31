@@ -3,7 +3,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import os
-import io
 import re
 import time
 import uuid
@@ -134,56 +133,6 @@ def get_or_pull_image(docker_client, tag):
         return pull_image(docker_client, tag)
 
 
-class ContainerLogsAsFile(io.IOBase):
-    def __init__(self, docker_client, container_name, **kwargs):
-        self._buf = b""
-        self._logs = container_logs(
-            docker_client, container_name, stream=True, **kwargs
-        )
-
-    def readable(self):
-        return True
-
-    def seekable(self):
-        return False
-
-    def read(self, size=-1):
-        if size == 0:
-            return b""
-
-        # account for existing remainings in buffer
-        output = self._buf
-        seen = len(output)
-
-        # check sizing as we might already have exhausted request with buffer
-        if size != -1 and seen >= size:
-            self._buf = output[size:]
-            return output[:size]
-
-        # size not exhausted, querying
-        while True:
-            try:
-                # query generator for input
-                line = next(self._logs)
-            except StopIteration:
-                # end of logs, we shall exit soon
-                line = b""
-
-            seen += len(line)
-            output += line
-
-            # check sizing again and return if exhausted
-            if size != -1 and seen > size:
-                self._buf = output[size:]
-                return output[:size]
-
-            # we've reached end of log
-            if not line:
-                return output
-
-        return output
-
-
 def query_containers_resources(docker_client):
     cpu_shares = 0
     memory = 0
@@ -296,7 +245,7 @@ def start_dnscache(docker_client, task):
         detach=True,
         name=name,
         environment=environment,
-        remove=True,
+        remove=False,
         labels={
             "zimfarm": "",
             "task_id": task["_id"],
