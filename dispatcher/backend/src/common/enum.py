@@ -23,7 +23,13 @@ class TaskStatus:
 
     @classmethod
     def incomplete(cls):
-        return [cls.requested, cls.reserved, cls.started, cls.scraper_started]
+        return [
+            cls.requested,
+            cls.reserved,
+            cls.started,
+            cls.scraper_started,
+            cls.scraper_completed,
+        ]
 
     @classmethod
     def complete(cls):
