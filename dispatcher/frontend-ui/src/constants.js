@@ -232,6 +232,7 @@ export default {
   ALERT_PERMANENT_DURATION: true,
   ROLES: ["editor", "manager", "admin", "worker", "processor"],
   TOKEN_COOKIE_EXPIRY: '180D',  // 6 months
+  COOKIE_LIFETIME_EXPIRY: '10Y',  // 10 years
   TOKEN_COOKIE_NAME: "auth",
   cancelable_statuses: cancelable_statuses,
   running_statuses: running_statuses,

@@ -56,7 +56,7 @@ export default {
       return this.$cookie.get('pref-limit') || Constants.DEFAULT_LIMIT;
     },
     saveLimitPreference(value) {  // save nb of items to display in a cookie
-      this.$cookie.set('pref-limit', value);
+      this.$cookie.set('pref-limit', value, {expires: Constants.COOKIE_LIFETIME_EXPIRY});
     },
 
     redirectTo(name, params) {

@@ -176,7 +176,9 @@
         return value;
       },
       saveOnlinesOnlyPreference(value) {  // save onlines-only pref into cookie
-        this.$cookie.set('onlines-only', JSON.stringify(value), {expires: '10Y'});
+        this.$cookie.set('onlines-only',
+                         JSON.stringify(value), 
+                         {expires: Constants.COOKIE_LIFETIME_EXPIRY});
       },
       started_on(task) {
         return task.timestamp.started || "not started";
