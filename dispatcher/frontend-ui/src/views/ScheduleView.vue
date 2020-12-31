@@ -120,7 +120,7 @@
           <tr><th>Offliner</th><td><code>{{ offliner }}</code></td></tr>
           <tr><th>Platform</th><td><code>{{ platform || "-" }}</code></td></tr>
           <tr><th>Warehouse path</th><td><code>{{ warehouse_path }}</code></td></tr>
-          <tr><th>Image</th><td><a target="_blank" :href="'https://hub.docker.com/r/' + config.image.name"><code>{{ image_human }}</code></a></td></tr>
+          <tr><th>Image</th><td><a target="_blank" :href="image_url"><code>{{ image_human }}</code></a></td></tr>
           <tr>
             <th>Resources</th>
             <td>
@@ -197,6 +197,7 @@
       platform() { return this.config.platform; },
       secret_fields() { return Constants.secret_fields_for(this.offliner_def); },
       image_human() { return Constants.image_human(this.config); },
+      image_url() { return Constants.image_url(this.config); },
       warehouse_path() { return this.config.warehouse_path; },
       command() { return Constants.build_docker_command(this.name, this.config, this.secret_fields); },
       offliner_command() { return Constants.build_command_without(this.config, this.secret_fields); },

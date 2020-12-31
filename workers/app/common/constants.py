@@ -20,6 +20,7 @@ TASK_WORKER = "task-worker"
 TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
 DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE", "openzim/dnscache:1.0")
 UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.1")
+CHECKER_IMAGE = os.getenv("CHECKER_IMAGE", "openzim/checker:1.0.1")
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
@@ -71,7 +72,6 @@ USE_PUBLIC_DNS = bool(os.getenv("USE_PUBLIC_DNS", False))
 # docker container names
 CONTAINER_TASK_IDENT = "zimtask"
 CONTAINER_SCRAPER_IDENT = "zimscraper"
-CONTAINER_DNSCACHE_IDENT = "dnscache"
 
 # dispatcher-related
 DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")

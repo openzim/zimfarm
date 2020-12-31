@@ -97,11 +97,18 @@ def compute_flags(flags, use_equals=True):
 
 
 def expanded_config(config):
+    # update image name with registry if required
+    config["image"]["name"] = Offliner.get_image_name(config["task_name"])
+
+    # mount-point is offliner-specific
     config["mount_point"] = str(mount_point_for(config["task_name"]))
+    # computed command flags
     config["command"] = command_for(
         config["task_name"], config["flags"], config["mount_point"]
     )
+    # workers uses string version
     config["str_command"] = " ".join(config["command"])
+    # offliners can specify additional docker options (capabilities)
     docker_options = docker_config_for(config["task_name"])
 
     def get_shm(offliner_shm=None, config_shm=None):
@@ -123,6 +130,7 @@ def expanded_config(config):
     if dev_shm:
         config["resources"]["shm"] = dev_shm
 
+    # offliners can update resources
     config["resources"].update(docker_options)
 
     return config

@@ -1,5 +1,6 @@
 FROM alpine:edge
 LABEL zimfarm=true
+LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
 RUN apk update && apk --no-cache add dnsmasq
 

@@ -153,7 +153,7 @@
         if (this.selectedTable == 'doing') {
           this.loadGenericData('/tasks/',
                                {limit: this.selectedLimit,
-                                status: ["reserved", "started", "scraper_started", "cancel_requested"]},
+                                status: ["reserved", "started", "scraper_started", "scraper_completed", "cancel_requested"]},
                                function (item) { return item; });
         }
         if (this.selectedTable == 'done') {

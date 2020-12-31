@@ -14,13 +14,22 @@ class TaskStatus:
     canceled = "canceled"
     succeeded = "succeeded"
 
+    update = "update"
+
     created_file = "created_file"
     uploaded_file = "uploaded_file"
     failed_file = "failed_file"
+    checked_file = "checked_file"
 
     @classmethod
     def incomplete(cls):
-        return [cls.requested, cls.reserved, cls.started, cls.scraper_started]
+        return [
+            cls.requested,
+            cls.reserved,
+            cls.started,
+            cls.scraper_started,
+            cls.scraper_completed,
+        ]
 
     @classmethod
     def complete(cls):
@@ -43,14 +52,18 @@ class TaskStatus:
 
     @classmethod
     def file_events(cls):
-        return [cls.created_file, cls.uploaded_file, cls.failed_file]
+        return [cls.created_file, cls.uploaded_file, cls.failed_file, cls.checked_file]
+
+    @classmethod
+    def silent_events(cls):
+        return cls.file_events() + [cls.scraper_running, cls.update]
 
     @classmethod
     def all_events(cls):
         return list(
             filter(
                 lambda x: x not in (cls.requested, cls.reserved),
-                cls.all() + cls.file_events() + [cls.scraper_running],
+                cls.all() + cls.silent_events(),
             )
         )
 
@@ -177,6 +190,25 @@ class Offliner:
             cls.openedx,
             cls.zimit,
         ]
+
+    @classmethod
+    def get_image_name(cls, offliner):
+        prefix = os.getenv(f"DOCKER_REGISTRY_{offliner}", "")
+        prefix += "/" if prefix else ""
+        return (
+            prefix
+            + {
+                cls.mwoffliner: DockerImageName.mwoffliner,
+                cls.youtube: DockerImageName.youtube,
+                cls.gutenberg: DockerImageName.gutenberg,
+                cls.phet: DockerImageName.phet,
+                cls.sotoki: DockerImageName.sotoki,
+                cls.nautilus: DockerImageName.nautilus,
+                cls.ted: DockerImageName.ted,
+                cls.openedx: DockerImageName.openedx,
+                cls.zimit: DockerImageName.zimit,
+            }.get(offliner, "-")
+        )
 
 
 class SchedulePeriodicity:

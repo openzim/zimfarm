@@ -45,6 +45,21 @@ export default {
 
   },
   methods: {
+    cancel_task(task_id, on_success) {
+      let parent = this;
+      parent.queryAPI('post', '/tasks/' + task_id + '/cancel')
+        .then(function () {
+          let msg = "Requested Task <code>" + Constants.short_id(task_id) + "</code> has been marked for cancelation.";
+          parent.alertSuccess("Canceling!", msg);
+        })
+        .catch(function (error) {
+          parent.alertError(Constants.standardHTTPError(error.response));
+        })
+        .then(function () {
+          if (on_success)
+            on_success();
+        });
+    },
     scrollToTop() { window.scrollTo(0,0); },
     format_dt(dt) { return Constants.format_dt(dt); },
     from_now(dt) { return Constants.from_now(dt); },

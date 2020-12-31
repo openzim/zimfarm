@@ -4,7 +4,12 @@
 
 <template>
   <div class="container">
-    <div class="row" v-if="schedule_enabled"><ScheduleActionButton v-if="task" :name="schedule_name" /></div>
+    <div class="row" v-if="can_cancel">
+      <b-button v-show="canCancelTasks"
+                style="margin-left: auto; margin-right: 1rem;"
+                size="sm" variant="danger"
+                @click.prevent="cancel">
+                <font-awesome-icon icon="stop-circle" size="sm" /> cancel</b-button></div>
     <h2 class="row">
       <span class="col col-xs-12 col-sm-4 col-md-3 col-lg-2"><code>#{{ short_id }}</code></span>
       <span class="col col-xs-12 col-sm-8 col-md-9 col-lg-10" v-if="schedule_name"><code>{{ schedule_name }}</code></span>
@@ -62,12 +67,21 @@
             <th>Files</th>
             <td>
               <table class="table table-responsive-md table-striped table-sm">
-                <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th></tr></thead>
+                <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th><th>Quality</th></tr></thead>
                 <tr v-for="file in sorted_files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
                   <td>{{ file.size | filesize }}</td>
                   <td v-tooltip="format_dt(file.created_timestamp)">{{ file | created_after(task) }}</td>
                   <td v-tooltip="format_dt(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
+                  <td v-else>-</td>
+                  <td v-if="file.check_result !== undefined">
+                    <code v-tooltip="'zimcheck exit-code'">{{ file.check_result }}</code>
+                    <b-button :id="'popover-log-' + file.name" variant="neutral"><font-awesome-icon icon="glasses" /></b-button>
+                    <b-button variant="neutral" v-tooltip="'Copy log to clipboard'" @click.prevent="copyLog(file.check_log)"><font-awesome-icon icon="copy" /></b-button>
+                    <b-popover triggers="hover focus" placement="left" :target="'popover-log-' + file.name" title="zimcheck output">
+                      <pre>{{ file.check_log }}</pre>
+                    </b-popover>
+                  </td>
                   <td v-else>-</td>
                 </tr>
               </table>
@@ -77,7 +91,7 @@
       </div>
       <div v-if="selectedTab == 'debug'" class="tab-content">
         <table class="table table-responsive table-striped table-in-tab">
-          <tr v-if="task.config"><th>Offliner</th><td><a target="_blank" :href="'https://hub.docker.com/r/' + task.config.image.name"><code>{{ image_human }}</code></a> (<code>{{ task.config.task_name }}</code>)</td></tr>
+          <tr v-if="task.config"><th>Offliner</th><td><a target="_blank" :href="image_url"><code>{{ image_human }}</code></a> (<code>{{ task.config.task_name }}</code>)</td></tr>
           <tr v-if="task.config">
             <th>Resources</th>
             <td>
@@ -94,7 +108,7 @@
           <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
-          <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url + '/' + task_container.log">Download log</a></td></tr>
+          <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
           <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
           <tr v-if="task_debug.log"><th>Task-worker Log</th><td><pre>{{ task_debug.log }}</pre></td></tr>
@@ -111,14 +125,13 @@
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
-  import ScheduleActionButton from '../components/ScheduleActionButton.vue'
   import FlagsList from '../components/FlagsList.vue'
 
 
   export default {
     name: 'TaskView',
     mixins: [ZimfarmMixins],
-    components: {ScheduleActionButton, ErrorMessage, FlagsList, ResourceBadge},
+    components: {ErrorMessage, FlagsList, ResourceBadge},
     props: {
       _id: String,
       selectedTab: {
@@ -143,7 +156,7 @@
     computed: {
       sorted_files() { return Object.values(this.task.files).sortBy('created_timestamp'); },
       short_id() { return Constants.short_id(this._id); },
-      is_running() { return ["failed", "canceled", "succeeded"].indexOf(this.task.status) == -1; },
+      is_running() { return ["failed", "canceled", "succeeded", "cancel_requested"].indexOf(this.task.status) == -1; },
       schedule_name() { return this.task ? this.task.schedule_name : null; },
       task_container() { return this.task.container || {}; },
       task_progress() {
@@ -171,7 +184,7 @@
       },
       started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
-      zimfarm_logs_url() { return Constants.zimfarm_logs_url; },
+      zimfarm_logs_url() { return Constants.logs_url(this.task); },
       kiwix_download_url() { return Constants.kiwix_download_url; },
       webapi_url() { return Constants.zimfarm_webapi; },
       command() { return this.task_container.command.join(" "); },
@@ -183,8 +196,28 @@
         return false;
       },
       image_human() { return Constants.image_human(this.task.config); },
+      image_url() { return Constants.image_url(this.task.config); },
+      can_cancel() { return this.task && this.is_running && this.task["_id"]; },
     },
     methods: {
+      copyLog(log) {
+        let parent = this;
+        this.$copyText(log).then(function () {
+            parent.alertInfo("zimcheck log copied to Clipboard!");
+          }, function () {
+            parent.alertWarning("Unable to copy zimcheck log to clipboard 😞. ",
+                                "Please copy it manually.");
+          });
+      },
+      cancel() {
+        let parent = this;
+        this.cancel_task(
+          this.task["_id"],
+          function () {
+            parent.task = null;
+            parent.refresh_data();
+          });
+      },
       refresh_data() {
         let parent = this;
         parent.toggleLoader("fetching task…");

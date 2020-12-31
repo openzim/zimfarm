@@ -20,10 +20,13 @@ ZIMFARM_ROOT=/tmp
 ZIMFARM_OFFLINERS=
 ZIMFARM_SELFISH=
 USE_PUBLIC_DNS=
-MANAGER_IMAGE="openzim/zimfarm-worker-manager"
+MANAGER_IMAGE="ghcr.io/openzim/zimfarm-worker-manager"
 MANAGER_TAG="latest"
-WORKER_IMAGE="openzim/zimfarm-task-worker"
+WORKER_IMAGE="ghcr.io/openzim/zimfarm-task-worker"
 WORKER_TAG="latest"
+DNSCACHE_IMAGE="ghcr.io/openzim/dnscache:1.0.1"
+UPLOADER_IMAGE="ghcr.io/openzim/uploader:1.1.1"
+CHECKER_IMAGE="ghcr.io/openzim/checker:1.0.1"
 SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
 WEB_API_URI="https://api.farm.openzim.org/v1"
 POLL_INTERVAL="180"
@@ -39,6 +42,7 @@ function die() {
 
 # find this script's path
 if [[ $(uname -s) == "Darwin" ]]; then
+    # brew install coreutils
     parentdir=$(dirname "$(greadlink -f "$0")")
     scriptname=$(basename "$(greadlink -f "$0")")
 else
@@ -87,7 +91,7 @@ function config() {
 
 # display options list
 function usage() {
-    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|upload|update|version]"
+    echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|update|version]"
     echo ""
     echo "  config          show the config file path in use"
     echo ""
@@ -99,7 +103,6 @@ function usage() {
     echo ""
     echo "  ps              list of running containers with zimfarm labels"
     echo "  prune           remove all docker containers/images/volums"
-    echo "  upload          manually (re)upload a ZIM or log file (without --delete param)"
     echo "  update          display commands to update this script (apply with 'update do')"
     echo "  version         display version of this script"
     echo ""
@@ -174,6 +177,9 @@ function restart() {
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
         --env POLL_INTERVAL=$POLL_INTERVAL \
+        --env DNSCACHE_IMAGE=$DNSCACHE_IMAGE \
+        --env UPLOADER_IMAGE=$UPLOADER_IMAGE \
+        --env CHECKER_IMAGE=$CHECKER_IMAGE \
     $manager_image_string worker-manager
 }
 
@@ -203,39 +209,6 @@ function inspect() {
         target=$WORKER_MANAGER_NAME
     fi
     run docker inspect $2 $target
-}
-
-# manually upload a file (debug/maintenance)
-function upload() {
-    target=$1
-    extra=$2
-
-    if [ ! -f $target ] ; then
-        die "File not found. Cannot upload: $target"
-    fi
-
-    if [[ $(uname -s) == "Darwin" ]]; then
-        parentpath=$(dirname "$(greadlink -f "$target")")
-        fname=$(basename "$(greadlink -f "$target")")
-    else
-        parentpath=$(dirname "$(readlink -f "$target")")
-        fname=$(basename "$(readlink -f "$target")")
-    fi
-
-    ext="${fname##*.}"
-    folder="logs"
-    if [ "$ext" = "zim" ]; then
-        folder="zim"
-    fi
-
-    run docker run \
-        --rm \
-        -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/id_rsa:ro \
-        -v $parentpath:/data:rw \
-        openzim/uploader \
-        uploader \
-        --file /data/$fname \
-        --upload-uri sftp://uploader@warehouse.farm.openzim.org:1522/$folder/ $extra
 }
 
 # display the command needed to update this script from the repo
@@ -302,11 +275,6 @@ function main() {
 
       "shutdown")
         shutdown
-        ;;
-
-      "upload")
-        usage_if_missing $target
-        upload $target $3
         ;;
 
       "update")

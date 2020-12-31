@@ -30,7 +30,7 @@
     <b-button v-show="canRequestTasks"
               v-if="can_request"
               size="sm" variant="info"
-              v-b-tooltip.hover title="Request with normal priority"    
+              v-b-tooltip.hover title="Request with normal priority"
               @click.prevent="request_task(cleaned_selected_worker)">
       <font-awesome-icon icon="plus-circle" size="sm" /> Request
     </b-button>
@@ -43,7 +43,7 @@
     <b-button v-show="canCancelTasks"
               v-if="can_cancel"
               size="sm" variant="danger"
-              @click.prevent="cancel_task">
+              @click.prevent="cancel_the_task">
       <font-awesome-icon icon="stop-circle" size="sm" /> Cancel
     </b-button>
     <b-button v-show="canRequestTasks"
@@ -187,21 +187,13 @@
           parent.loadData();
         });
       },
-      cancel_task() {
+      cancel_the_task() {
         let parent = this;
         parent.working_text = "Canceling task…";
-
-        parent.queryAPI('post', '/tasks/' + parent.task_id + '/cancel')
-          .then(function () {
-            let msg = "Requested Task <code>" + Constants.short_id(parent.task_id) + "</code> has been marked for cancelation.";
+        this.cancel_task(
+          this.task_id,
+          function () {
             parent.task = null;
-
-            parent.alertSuccess("Canceling!", msg);
-          })
-          .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response));
-          })
-          .then(function () {
             parent.working_text = null;
             parent.loadData();
           });

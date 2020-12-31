@@ -22,11 +22,11 @@ SUDO_DOCKER=""
 ZIMFARM_DEBUG="y"
 
 # Maximum amount of RAM you want your worker to use
-ZIMFARM_MAX_RAM="1G"
+ZIMFARM_MAX_RAM="1GiB"
 
 # Disk space you are dedicating to the worker. worker needs this space avail to work
 # /!\ disk usage is not enforced (might exceed this limit)
-ZIMFARM_DISK="1G"
+ZIMFARM_DISK="1GiB"
 
 # Artificial number to configure the level of CPU load you want to
 # allocate. Put `"3"` if you want to have around one task at a time,
@@ -36,7 +36,7 @@ ZIMFARM_CPU="3"
 # Comma-separated list of offliners to run or `""` for all of them. If
 # you want to run `youtube` tasks, you need to be whitelisted, contact
 # us.
-ZIMFARM_OFFLINERS="mwoffliner,sotoki,gutenberg,phet,nautilus,ted,openedx"
+ZIMFARM_OFFLINERS="mwoffliner,sotoki,gutenberg,phet,nautilus,ted,openedx,zimit"
 
 # Set to `"y"` to only run task specifically assigned to this worker
 # (`""` otherwise)
