@@ -1,4 +1,6 @@
-from marshmallow import Schema, fields, validate, validates_schema
+import re
+
+from marshmallow import Schema, fields, validate, validates_schema, pre_load
 
 from common.enum import DockerImageName, Offliner, Platform
 from common.schemas import SerializableSchema
@@ -49,14 +51,13 @@ class DockerImageSchema(Schema):
     name = fields.String(required=True, validate=validate.OneOf(DockerImageName.all()))
     tag = fields.String(required=True)
 
-    # @validates_schema
-    # def validate(self, data, **kwargs):
-    #     if data["name"] == DockerImageName.mwoffliner:
-    #         allowed_tags = {"1.9.9", "1.9.10", "latest"}
-    #     else:
-    #         allowed_tags = {"latest"}
-    #     if data["tag"] not in allowed_tags:
-    #         raise ValidationError(f'tag {data["tag"]} is not an allowed tag')
+    @pre_load
+    def strip_prefix(self, in_data, **kwargs):
+        # strip the image prefix out so we don't have to care about it later-on
+        # should ideally be dynamic but this is based on the offliner/task_name
+        # which we don't have access to here. awaiting additional registry usage to fix
+        in_data["name"] = re.sub(r"^ghcr.io/", "", in_data["name"])
+        return in_data
 
 
 class ScheduleConfigSchema(SerializableSchema):

@@ -192,11 +192,15 @@ class Offliner:
         ]
 
     @classmethod
-    def get_image_name(cls, offliner):
+    def get_image_prefix(cls, offliner):
         prefix = os.getenv(f"DOCKER_REGISTRY_{offliner}", "")
         prefix += "/" if prefix else ""
+        return prefix
+
+    @classmethod
+    def get_image_name(cls, offliner):
         return (
-            prefix
+            cls.get_image_prefix(offliner)
             + {
                 cls.mwoffliner: DockerImageName.mwoffliner,
                 cls.youtube: DockerImageName.youtube,

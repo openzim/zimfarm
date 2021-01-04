@@ -33,6 +33,7 @@ from common.schemas.models import (
     PlatformsLimitSchema,
 )
 
+
 # languages GET
 class SkipLimit500Schema(Schema):
     skip = skip_field
