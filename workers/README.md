@@ -113,6 +113,7 @@ curl -X POST https://api.farm.openzim.org/v1/users/<username>/keys \
     -H 'Content-Type: application/json; charset=utf-8' \
     -d $'{"name": "<key-name>", "key": "<key-content>"}'
 ```
+Admin can directly add SSH key for the worker using UI in `Edit` section of `Users` tab
 
 ## Setup
 
