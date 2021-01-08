@@ -20,6 +20,14 @@
       <b-input class="mr-2" id="cu_password" placeholder="Password" required v-model="form.password"></b-input>
       <b-button type="submit" class="form-control" :disabled="!form.password" variant="primary">Change Password</b-button>
     </b-form>
+
+    <hr />
+
+    <b-form v-if=" form.role == 'worker'" inline @submit.prevent="addKey">
+      <b-input class="mr-2" placeholder="Key Name" required v-model="form.keyName"></b-input>
+      <b-input class="mr-2" placeholder="SSH Key" required v-model="form.key"></b-input>
+      <b-button type="submit" class="form-control" variant="primary">Add SSH Key</b-button>
+    </b-form>
   </div>
 </template>
 
@@ -38,6 +46,9 @@
     data() {
       return {
         form: {},
+        keyName: null, 
+        key: null, 
+        working: false, 
       };
     },
     computed: {
@@ -93,6 +104,25 @@
             parent.toggleLoader(false);
           });
       },
+      addKey() { // request token on API using credentials
+        let parent = this;
+
+        parent.working = true;
+        parent.error = null;
+
+        let payload = {name: parent.form.keyName, key: parent.form.key};
+        parent.queryAPI('post', '/users/' + parent.user.username + '/keys', payload)
+            .then(function () {
+              parent.alertSuccess("Added!", "SSH key has been added.");
+              parent.$router.back();  // redirect
+            })
+            .catch(function (error) {
+              parent.error = Constants.standardHTTPError(error.response);
+            })
+            .then(function () {
+              parent.working = false;
+            });
+        },
     },
     mounted() {
       if (!this.form.length && this.user) {
