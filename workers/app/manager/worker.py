@@ -64,21 +64,25 @@ class WorkerManager(BaseWorker):
 
         # display resources
         host_stats = query_host_stats(self.docker, self.workdir)
+
         logger.info(
             "Host hardware resources:"
             "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
             "\n\tRAM : {mem_total} (total) ;  {mem_avail} (avail)"
-            "\n\tDisk: {disk_total} (configured) ; {disk_avail} (avail)".format(
+            "\n\tDisk: {disk_total} (configured) ; {disk_avail} (avail) ; "
+            "{disk_used} (reserved) ; {disk_remain} (remain)".format(
                 mem_total=format_size(host_stats["memory"]["total"]),
                 mem_avail=format_size(host_stats["memory"]["available"]),
                 cpu_total=host_stats["cpu"]["total"],
                 cpu_avail=host_stats["cpu"]["available"],
                 disk_avail=format_size(host_stats["disk"]["available"]),
+                disk_used=format_size(host_stats["disk"]["used"]),
+                disk_remain=format_size(host_stats["disk"]["remaining"]),
                 disk_total=format_size(host_stats["disk"]["total"]),
             )
         )
 
-        if host_stats["disk"]["available"] < host_stats["disk"]["total"]:
+        if host_stats["disk"]["available"] < host_stats["disk"]["remaining"]:
             self.should_stop = True
             logger.critical("Configured disk space is not available. Exiting.")
             return

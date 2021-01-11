@@ -175,6 +175,7 @@ def query_host_stats(docker_client, workdir):
             "total": ZIMFARM_DISK_SPACE,
             "used": disk_used,
             "available": disk_free,
+            "remaining": ZIMFARM_DISK_SPACE - disk_used,
         },
         "memory": {"total": ZIMFARM_MEMORY, "used": mem_used, "available": mem_avail},
     }
