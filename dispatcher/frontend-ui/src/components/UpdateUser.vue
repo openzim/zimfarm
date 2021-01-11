@@ -24,6 +24,7 @@
     <hr />
 
     <b-form v-if=" form.role == 'worker'" inline @submit.prevent="addKey">
+      <label class="mr-2" for="cu_password">Add SSH Key</label>
       <b-input class="mr-2 mt-2" placeholder="Key Name" required v-model="form.keyName"></b-input>
       <b-form-textarea class="mr-2 mt-2" cols="80" placeholder="SSH Key" required v-model="form.key"></b-form-textarea>
       <b-button type="submit" class="form-control" variant="primary">Add SSH Key</b-button> 
