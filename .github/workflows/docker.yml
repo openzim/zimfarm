@@ -7,7 +7,6 @@ on:
     tags:
       - dnscache-v*
       - uploader-v*
-      - checker-v*
 
 jobs:
   dnscache:
@@ -16,17 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/dnscache
+          image-name: openzim/dnscache
           on-master: latest
           tag-pattern: /^dnscache-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
           context: dnscache
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   uploader:
     name: Deploy uploader Image
@@ -34,17 +34,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/uploader
+          image-name: openzim/uploader
           on-master: latest
           tag-pattern: /^uploader-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
           context: uploader
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   dispatcher:
     name: Deploy dispatcher Image
@@ -52,16 +53,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/zimfarm-dispatcher
+          image-name: openzim/zimfarm-dispatcher
           on-master: latest
           restrict-to: openzim/zimfarm
           context: dispatcher/backend
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   ui:
     name: Deploy ui Image
@@ -69,16 +71,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/zimfarm-ui
+          image-name: openzim/zimfarm-ui
           on-master: latest
           restrict-to: openzim/zimfarm
           context: dispatcher/frontend-ui
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   receiver:
     name: Deploy receiver Image
@@ -86,16 +89,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/zimfarm-receiver
+          image-name: openzim/zimfarm-receiver
           on-master: latest
           restrict-to: openzim/zimfarm
           context: receiver
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   task-worker:
     name: Deploy task-worker Image
@@ -103,17 +107,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/zimfarm-task-worker
+          image-name: openzim/zimfarm-task-worker
           on-master: latest
           restrict-to: openzim/zimfarm
           context: workers
           dockerfile: task-Dockerfile
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   worker-manager:
     name: Deploy worker-manager Image
@@ -121,14 +126,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v2
+        uses: openzim/docker-publish-action@v5
         with:
-          image-path: openzim/zimfarm-worker-manager
+          image-name: openzim/zimfarm-worker-manager
           on-master: latest
           restrict-to: openzim/zimfarm
           context: workers
           dockerfile: manager-Dockerfile
-          hub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          hub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          ghcr-username: ${{ secrets.GHCR_USERNAME }}
-          ghcr-token: ${{ secrets.GHCR_TOKEN }}
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
