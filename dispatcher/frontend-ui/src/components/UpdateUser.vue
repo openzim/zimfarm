@@ -24,9 +24,9 @@
     <hr />
 
     <b-form v-if=" form.role == 'worker'" inline @submit.prevent="addKey">
-      <b-input class="mr-2" placeholder="Key Name" required v-model="form.keyName"></b-input>
-      <b-input class="mr-2" placeholder="SSH Key" required v-model="form.key"></b-input>
-      <b-button type="submit" class="form-control" variant="primary">Add SSH Key</b-button>
+      <b-input class="mr-2 mt-2" placeholder="Key Name" required v-model="form.keyName"></b-input>
+      <b-form-textarea class="mr-2 mt-2" cols="80" placeholder="SSH Key" required v-model="form.key"></b-form-textarea>
+      <b-button type="submit" class="form-control" variant="primary">Add SSH Key</b-button> 
     </b-form>
   </div>
 </template>
@@ -110,7 +110,9 @@
         parent.working = true;
         parent.error = null;
 
-        let payload = {name: parent.form.keyName, key: parent.form.key};
+        let key = parent.form.key.replace(/[\n\r]+/g, '');
+        key = key.trim();
+        const payload = {name: parent.form.keyName, key: key};
         parent.queryAPI('post', '/users/' + parent.user.username + '/keys', payload)
             .then(function () {
               parent.alertSuccess("Added!", "SSH key has been added.");
