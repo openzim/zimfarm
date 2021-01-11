@@ -110,8 +110,7 @@
         parent.working = true;
         parent.error = null;
 
-        let key = parent.form.key.replace(/[\n\r]+/g, '');
-        key = key.trim();
+        const key = parent.form.key.replace(/[\n\r]+/g, '').trim();
         const payload = {name: parent.form.keyName, key: key};
         parent.queryAPI('post', '/users/' + parent.user.username + '/keys', payload)
             .then(function () {
