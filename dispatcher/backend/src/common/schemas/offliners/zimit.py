@@ -162,6 +162,15 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
+    custom_css = fields.Url(
+        metadata={
+            "label": "Custom CSS",
+            "description": "URL to a CSS file to inject into pages",
+        },
+        data_key="custom-css",
+        required=False,
+    )
+
     verbose = fields.Boolean(
         truthy=[True],
         falsy=[False],
