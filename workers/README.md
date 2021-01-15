@@ -97,7 +97,7 @@ cd ~/zimfarm
 ### Uploading your public key
 
 This is for reference only, you'd probably want to send your public
-RSA key to us when requesting a worker account.
+RSA key file to us when requesting a worker account (Admins can upload it via UI)
 
 ```bash
 # Generate an RSA key pair (use empty passphrase)
@@ -113,7 +113,6 @@ curl -X POST https://api.farm.openzim.org/v1/users/<username>/keys \
     -H 'Content-Type: application/json; charset=utf-8' \
     -d $'{"name": "<key-name>", "key": "<key-content>"}'
 ```
-Admin can directly add SSH key for the worker using UI in `Edit` section of `Users` tab
 
 ## Setup
 
