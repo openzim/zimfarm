@@ -97,7 +97,7 @@ cd ~/zimfarm
 ### Uploading your public key
 
 This is for reference only, you'd probably want to send your public
-RSA key to us when requesting a worker account.
+RSA key file to us when requesting a worker account (Admins can upload it via UI)
 
 ```bash
 # Generate an RSA key pair (use empty passphrase)

@@ -42,7 +42,8 @@ class KeysRoute(BaseRoute):
     def post(self, username: str, token: AccessToken.Payload):
         # if user in url is not user in token, not allowed to add ssh keys
         if username != token.username:
-            raise errors.NotEnoughPrivilege()
+            if not token.get_permission("users", "ssh_keys"):
+                raise errors.NotEnoughPrivilege()
 
         try:
             request_json = KeySchema().load(request.get_json())
