@@ -15,7 +15,6 @@ from routes import authenticate, url_object_id, errors
 from common.mongo import Users
 from utils.token import AccessToken
 from common.schemas.parameters import KeySchema
-from common.roles import get_role_for
 
 
 class KeysRoute(BaseRoute):
@@ -42,11 +41,9 @@ class KeysRoute(BaseRoute):
     @url_object_id(["username"])
     def post(self, username: str, token: AccessToken.Payload):
         # if user in url is not user in token, not allowed to add ssh keys
-        role = get_role_for(
-            Users().find_one({"username": token.username}, {"scope": 1})["scope"]
-        )
-        if username != token.username and role != "admin":
-            raise errors.NotEnoughPrivilege()
+        if username != token.username:
+            if not token.get_permission("users", "ssh_keys"):
+                raise errors.NotEnoughPrivilege()
 
         try:
             request_json = KeySchema().load(request.get_json())
