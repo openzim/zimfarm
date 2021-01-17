@@ -55,7 +55,7 @@
           </tbody>
         </table>
 
-        <table v-if="user.ssh_keys" class="table table-sm table-striped table-in-tab">
+        <table v-if="user.ssh_keys && user.ssh_keys.length" class="table table-sm table-striped table-in-tab">
           <thead>
             <tr>
               <th>SSH Key</th>

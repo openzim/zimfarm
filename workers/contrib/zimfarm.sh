@@ -26,7 +26,7 @@ WORKER_IMAGE="ghcr.io/openzim/zimfarm-task-worker"
 WORKER_TAG="latest"
 DNSCACHE_IMAGE="ghcr.io/openzim/dnscache:1.0.1"
 UPLOADER_IMAGE="ghcr.io/openzim/uploader:1.1.1"
-CHECKER_IMAGE="ghcr.io/openzim/checker:1.0.1"
+CHECKER_IMAGE="ghcr.io/openzim/zim-tools:2.1.0"
 SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
 WEB_API_URI="https://api.farm.openzim.org/v1"
 POLL_INTERVAL="180"
@@ -84,7 +84,7 @@ source $configpath || die "failed to source ${configpath}"
 datadir=$ZIMFARM_ROOT/data
 
 # display config file path
-function config() {
+function configfile() {
     echo "Using: ${configpath}"
     display_search_paths
 }
@@ -93,7 +93,8 @@ function config() {
 function usage() {
     echo "Usage: $0 [help|config|ps|logs|inspect|prune|restart|stop|shutdown|update|version]"
     echo ""
-    echo "  config          show the config file path in use"
+    echo "  configfile      show the config file path in use"
+    echo "  config          show the config file's content"
     echo ""
     echo "  restart         start or restart the manager. reloads config."
     echo "  logs <name> [n] display logs of task or 'manager' using its name"
@@ -116,6 +117,11 @@ function run() {
         "$@"
     fi
 }
+
+function config() {
+    cat $configpath
+}
+
 
 # display a list of running containers with some zimfarm labels
 function ps() {
@@ -148,9 +154,17 @@ function restart() {
     run docker rm $WORKER_MANAGER_NAME || true
 
     echo ":: starting ${WORKER_MANAGER_NAME}"
-    manager_image_string="$MANAGER_IMAGE:${MANAGER_TAG}"
-    worker_image_string="$WORKER_IMAGE:${WORKER_TAG}"
-    run docker pull $manager_image_string
+    if [[ ! -z "$MANAGER_TAG" ]] ; then
+        manager_image_string="$MANAGER_IMAGE:${MANAGER_TAG}"
+        run docker pull $manager_image_string
+    else
+        manager_image_string="$MANAGER_IMAGE"
+    fi
+    if [[ ! -z "$WORKER_TAG" ]] ; then
+        worker_image_string="$WORKER_IMAGE:${WORKER_TAG}"
+    else
+        worker_image_string="$WORKER_IMAGE"
+    fi
     run docker run \
         --name $WORKER_MANAGER_NAME \
         --label=zimfarm \
@@ -237,6 +251,10 @@ function main() {
     target=$2
 
     case $action in
+      "configfile")
+        configfile
+        ;;
+
       "config")
         config
         ;;

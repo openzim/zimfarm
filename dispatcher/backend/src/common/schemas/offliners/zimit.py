@@ -162,6 +162,15 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
+    custom_css = fields.Url(
+        metadata={
+            "label": "Custom CSS",
+            "description": "URL to a CSS file to inject into pages",
+        },
+        data_key="custom-css",
+        required=False,
+    )
+
     verbose = fields.Boolean(
         truthy=[True],
         falsy=[False],
@@ -181,6 +190,19 @@ class ZimitFlagsSchema(SerializableSchema):
         missing="/output",
         default="/output",
         validate=validate_output,
+    )
+
+    stats_filename = fields.String(
+        metadata={
+            "label": "Stats filename",
+            "placeholder": "/output/task_progress.json",
+            "description": "Scraping progress file. "
+            "Leave it as `/output/task_progress.json`",
+        },
+        data_key="statsFilename",
+        missing="/output/task_progress.json",
+        default="/output/task_progress.json",
+        validate=validate.Equal("/output/task_progress.json"),
     )
 
     replay_viewer_source = fields.Url(

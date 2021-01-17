@@ -143,6 +143,10 @@ def query_containers_resources(docker_client):
         container.reload()
         cpu_shares += container.attrs["HostConfig"]["CpuShares"] or DEFAULT_CPU_SHARE
         memory += container.attrs["HostConfig"]["Memory"]
+
+    for container in list_containers(
+        docker_client, filters={"name": CONTAINER_TASK_IDENT}
+    ):
         try:
             disk += int(container.labels.get(RESOURCES_DISK_LABEL, 0))
         except Exception:
@@ -175,6 +179,7 @@ def query_host_stats(docker_client, workdir):
             "total": ZIMFARM_DISK_SPACE,
             "used": disk_used,
             "available": disk_free,
+            "remaining": ZIMFARM_DISK_SPACE - disk_used,
         },
         "memory": {"total": ZIMFARM_MEMORY, "used": mem_used, "available": mem_avail},
     }
@@ -331,6 +336,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
         docker_client,
         image=docker_image,
         command=command,
+        # disk is already reserved on zimtask
         cpu_shares=cpu_shares,
         mem_limit=mem_limit,
         dns=dns,
@@ -341,7 +347,6 @@ def start_scraper(docker_client, task, dns, host_workdir):
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
-            RESOURCES_DISK_LABEL: str(disk_limit),
             "human.cpu": str(config["resources"]["cpu"]),
             "human.memory": format_size(mem_limit),
             "human.disk": format_size(disk_limit),
@@ -412,6 +417,12 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
+            # disk usage is accounted for on this container
+            RESOURCES_DISK_LABEL: str(task["config"]["resources"]["disk"]),
+            # display-only human-readable values
+            "human.cpu": str(task["config"]["resources"]["cpu"]),
+            "human.memory": format_size(task["config"]["resources"]["memory"]),
+            "human.disk": format_size(task["config"]["resources"]["disk"]),
         },
         mem_swappiness=0,
         mounts=mounts,
