@@ -126,17 +126,17 @@
                         type="text"
                         required
                         placeholder="openzim/mwoffliner"
+                        @change="fetch_image_tags"
                         size="sm"></b-form-input>
         </b-form-group>
       </b-col>
       <b-col>
-        <b-form-group label="Image Tag:" label-for="es_imagetag" description="Just the tag name. `latest` usually.">
-          <b-form-input v-model="edit_schedule.config.image.tag"
-                        id="es_imagetag"
-                        type="text"
-                        required
-                        placeholder="latest"
-                        size="sm"></b-form-input>
+         <b-form-group label="Image Tag" label-for="es_imagetag" description="Just the tag name. `latest` usually.">
+          <b-form-select id="es_category"
+                         v-model="edit_schedule.config.image.tag"
+                         required
+                         :options="imageTagOptions"
+                         size="sm"></b-form-select>
         </b-form-group>
       </b-col>
     </b-row>
@@ -249,6 +249,7 @@
 </template>
 
 <script type="text/javascript">
+  import axios from 'axios';
   import diff from 'deep-diff';
 
   import Constants from '../constants.js'
@@ -267,6 +268,7 @@
         error: null,  // API generated error message
         edit_schedule: null, // data holder for edition
         edit_flags: {}, // flags are handled separately
+        image_tags: [],
       };
     },
     computed: {
@@ -457,6 +459,9 @@
         values.push({text: "None", value: null});
         return values;
       },
+      imageTagOptions() {
+        return this.image_tags.map(function (tag) { return {text: tag, value: tag}; });
+      },
       languagesOptions() {
         return this.languages.map(function (language) { return {text: language.name_en, value: language.code}; });
       },
@@ -474,6 +479,19 @@
       },
       offliner_changed() { // assume flags are different so reset edit schedule
         this.edit_flags = {};
+      },
+      fetch_image_tags() {
+        const parent = this;
+        axios.get('https://hub.docker.com/v2/repositories/' + parent.edit_schedule.config.image.name + '/tags/')
+        .then(function (response) {
+          parent.image_tags = response.data.results.map(function (tag) { return tag.name; });
+        })
+        .catch(function (error) {
+          parent.image_tags = [];
+          if (error.response.status !== 404) {
+            parent.alertError("Error!", Constants.standardHTTPError(error.response));
+          }
+        });
       },
       commit_form() {
         if (this.payload === null) {
@@ -514,7 +532,7 @@
           schedule_name = parent.schedule_name;
 
         parent.$root.$emit('load-schedule', schedule_name, force,
-            function() { parent.reset_form(); },
+            function() { parent.reset_form(); parent.fetch_image_tags(); },
             function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });
       },
     },
