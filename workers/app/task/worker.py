@@ -166,6 +166,17 @@ class TaskWorker(BaseWorker):
                         "total": total,
                         "overall": int(done / total * 100),
                     }
+
+                    # limit is optionnal {"max": int, "hint": bool}
+                    if data.get("limit") and isinstance(data["limit"], dict):
+                        progress.update(
+                            {
+                                "limit": {
+                                    "max": int(data["limit"].get("max", 0)),
+                                    "hit": bool(data["limit"].get("hit", False)),
+                                }
+                            }
+                        )
             except Exception as exc:
                 logger.warning(f"failed to load progress details: {exc}")
             else:
