@@ -485,17 +485,15 @@
         const parts = image_name.split("/");
         if (parts.length < 2) {
            return; // invalid image_name
-        } 
+        }
         const hub_name = parts.splice(parts.length - 2, parts.length).join("/");
-        parent.queryAPI('get', '/schedules/' + this.schedule_name + '/image-names', {params:{hub_name:hub_name}})
+        parent.queryAPI('get', '/schedules/' + this.schedule_name + '/image-names', {params: {hub_name: hub_name}})
         .then(function (response) {
           parent.image_tags = response.data.results.map(function (tag) { return tag.name; });
         })
         .catch(function (error) {
           parent.image_tags = [];
-          if (error.response.status !== 404) {
-            parent.alertError("Error!", Constants.standardHTTPError(error.response));
-          }
+          parent.alertError(Constants.standardHTTPError(error.response));
         });
       },
       commit_form() {

@@ -213,16 +213,16 @@ class ScheduleImageNames(BaseRoute):
     @authenticate
     @require_perm("schedules", "update")
     def get(self, schedule_name: str, token: AccessToken.Payload):
-
+        """ proxy list of tags from docker hub """
         request_args = request.args.to_dict()
         hub_name = request_args.get("hub_name")
         try:
             data = requests.get(
-                "https://hub.docker.com/v2/repositories/" + hub_name + "/tags/"
+                f"https://hub.docker.com/v2/repositories/{hub_name}/tags/"
             ).json()
-            return data
-        except Exception as e:
-            return []
+            return jsonify(data)
+        except Exception:
+            return jsonify([])
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
