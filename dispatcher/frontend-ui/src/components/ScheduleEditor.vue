@@ -250,7 +250,7 @@
 
 <script type="text/javascript">
   import diff from 'deep-diff';
-  
+
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import SwitchButton from '../components/SwitchButton.vue'
@@ -535,6 +535,7 @@
         let parent = this;
         if (schedule_name === undefined || schedule_name === null)
           schedule_name = parent.schedule_name;
+
         parent.$root.$emit('load-schedule', schedule_name, force,
             function() { parent.reset_form(); parent.fetch_image_tags(); },
             function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });
