@@ -249,9 +249,8 @@
 </template>
 
 <script type="text/javascript">
-  import axios from 'axios';
   import diff from 'deep-diff';
-
+  
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import SwitchButton from '../components/SwitchButton.vue'
@@ -482,7 +481,13 @@
       },
       fetch_image_tags() {
         const parent = this;
-        axios.get('https://hub.docker.com/v2/repositories/' + parent.edit_schedule.config.image.name + '/tags/')
+        const image_name = parent.edit_schedule.config.image.name;
+        const parts = image_name.split("/");
+        if (parts.length < 2) {
+           return; // invalid image_name
+        } 
+        const hub_name = parts.splice(parts.length - 2, parts.length).join("/");
+        parent.queryAPI('get', '/schedules/' + this.schedule_name + '/image-names', {params:{hub_name:hub_name}})
         .then(function (response) {
           parent.image_tags = response.data.results.map(function (tag) { return tag.name; });
         })
@@ -530,7 +535,6 @@
         let parent = this;
         if (schedule_name === undefined || schedule_name === null)
           schedule_name = parent.schedule_name;
-
         parent.$root.$emit('load-schedule', schedule_name, force,
             function() { parent.reset_form(); parent.fetch_image_tags(); },
             function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });

@@ -1,5 +1,6 @@
 from http import HTTPStatus
-
+import logging
+import requests
 from flask import request, jsonify, Response, make_response
 from marshmallow import ValidationError
 
@@ -14,6 +15,9 @@ from routes.base import BaseRoute
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 from utils.scheduling import get_default_duration
+
+
+logger = logging.getLogger(__name__)
 
 
 class SchedulesRoute(BaseRoute):
@@ -202,6 +206,26 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if result.deleted_count == 0:
             raise ScheduleNotFound()
         return Response(status=HTTPStatus.NO_CONTENT)
+
+
+class ScheduleImageNames(BaseRoute):
+    rule = "/<string:schedule_name>/image-names"
+    name = "schedule-images"
+    methods = ["GET"]
+
+    @authenticate
+    @require_perm("schedules", "update")
+    def get(self, schedule_name: str, token: AccessToken.Payload):
+
+        request_args = request.args.to_dict()
+        hub_name = request_args.get("hub_name")
+        try:
+            data = requests.get(
+                "https://hub.docker.com/v2/repositories/" + hub_name + "/tags/"
+            ).json()
+        except:
+            return []
+        return data
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
