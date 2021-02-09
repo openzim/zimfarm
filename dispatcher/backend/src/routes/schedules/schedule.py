@@ -223,9 +223,10 @@ class ScheduleImageNames(BaseRoute):
             data = requests.get(
                 "https://hub.docker.com/v2/repositories/" + hub_name + "/tags/"
             ).json()
-        except:
+            return data
+        except Exception as e:
             return []
-        return data
+        
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
