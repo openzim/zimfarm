@@ -410,7 +410,7 @@ paths:
     get:
       tags:
       - restricted
-      summary: get image tags 
+      summary: get image tags
       operationId: getImageTags
       description: Retrieve Image Tags
       security:
@@ -425,7 +425,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImageTags'       
+                $ref: '#/components/schemas/ImageTags'
   /schedules/{scheduleName}/clone:
     post:
       tags:
