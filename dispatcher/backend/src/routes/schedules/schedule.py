@@ -222,7 +222,7 @@ class ScheduleImageNames(BaseRoute):
             ).json()
             return jsonify(data)
         except Exception:
-            return jsonify({ "result": []})
+            return jsonify({"result": []})
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
