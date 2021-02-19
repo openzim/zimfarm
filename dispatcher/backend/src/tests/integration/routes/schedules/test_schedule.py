@@ -289,9 +289,9 @@ class TestSchedulePost:
         )
         assert response.status_code == 200
         response = json.loads(response.data)
-        assert len(response["results"]) > 0
-        for item in response["results"]:
-            assert isinstance(item["name"], str)
+        assert len(response["result"]) > 0
+        for item in response["result"]:
+            assert isinstance(item, str)
 
     # exluding empty dict as it is invalid for PATCH but not for POST
     @pytest.mark.parametrize("update", [bpu for bpu in bad_patch_updates if bpu])

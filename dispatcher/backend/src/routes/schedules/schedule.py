@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import logging
 
 import requests
 from flask import request, jsonify, Response, make_response
@@ -15,6 +16,8 @@ from routes.base import BaseRoute
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 from utils.scheduling import get_default_duration
+
+logger = logging.getLogger(__name__)
 
 
 class SchedulesRoute(BaseRoute):
@@ -220,7 +223,8 @@ class ScheduleImageNames(BaseRoute):
             data = requests.get(
                 f"https://hub.docker.com/v2/repositories/{hub_name}/tags/"
             ).json()
-            return jsonify(data)
+            data = list(map(lambda item: item["name"], (data["results"])))
+            return jsonify({"result": data})
         except Exception:
             return jsonify({"result": []})
 

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 servers:
   - description: production server
-    url: http://192.168.29.252:8000/v1
+    url: https://api.farm.openzim.org/v1
 info:
   description: |
     Zimfarm is openZIM's automated & distributed ZIM files creation engine.
@@ -418,14 +418,37 @@ paths:
         - oauth: []
       parameters:
       - $ref: '#/components/parameters/ScheduleNameParameter'
-      - $ref: '#/components/parameters/ImageNameParameter'
+      - in: query
+        name: hub_name
+        description: Docker Hub image name
+        required: true
+        schema:
+          type: string
+          example: openzim/mwoffliner
       responses:
         200:
           description: List of Image Tags
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImageTags'
+                type: object
+                example:
+                  {
+                    "result": 
+                      [
+                        "latest",
+                        "dev",
+                        "1.11.3",
+                        "1.11.2",
+                        "1.11.1",
+                        "1.11.0",
+                        "1.10.12",
+                        "1.10.11",
+                        "1.10.10",
+                        "1.10.9"
+                      ]
+                  }
+                description: Image Tags for corresponding Image Name
   /schedules/{scheduleName}/clone:
     post:
       tags:
@@ -1551,8 +1574,8 @@ components:
       description: OAuth2
       flows:
         password:
-          tokenUrl: http://192.168.29.252:8000/v1/auth/oauth2
-          refreshUrl: http://192.168.29.252:8000/v1/auth/oauth2
+          tokenUrl: https://api.farm.openzim.org/v1/auth/oauth2
+          refreshUrl: https://api.farm.openzim.org/v1/auth/oauth2
   parameters:
     SkipParameter:
       in: query
@@ -1574,14 +1597,6 @@ components:
       name: scheduleName
       schema:
         $ref: '#/components/schemas/ScheduleName'
-    ImageNameParameter:
-      in: query
-      name: hub_name
-      description: Docker Hub image name
-      required: true
-      schema:
-        type: string
-        example: openzim/mwoffliner
     ScheduleNameQueryParameter:
       in: query
       required: false
@@ -1888,49 +1903,6 @@ components:
       type: integer
       format: int32
       description: Disk space (in bytes) required to run it
-    ImageTags:
-      type: object
-      example:
-        {
-          "count": 1,
-          "next": "https://hub.docker.com/v2/repositories/openzim/mwoffliner/tags/?page=2",
-          "previous": null,
-          "results":
-            [
-              {
-                "creator": 1625077,
-                "full_size": 1013973672,
-                "id": 58800064,
-                "image_id": null,
-                "images":
-                  [
-                    {
-                      "architecture": "amd64",
-                      "digest": "sha256:36d8bb6b10f09cafa31dcf6e6f964465c702cf330d701a6fbb5a436f275ec72c",
-                      "features": "",
-                      "last_pulled": "2021-02-17T18:45:20.97618Z",
-                      "last_pushed": "2020-12-31T14:47:18.949229Z",
-                      "os": "linux",
-                      "os_features": "",
-                      "os_version": null,
-                      "size": 1013973672,
-                      "status": "active",
-                      "variant": null
-                    }
-                  ],
-                "last_updated": "2020-12-31T14:47:18.949229Z",
-                "last_updater": 11388807,
-                "last_updater_username": "kiwixsloppy",
-                "name": "latest",
-                "repository": 1388920,
-                "tag_last_pulled": "2021-02-17T18:45:20.97618Z",
-                "tag_last_pushed": "2020-12-31T14:47:18.949229Z",
-                "tag_status": "active",
-                "v2": true
-              },
-            ]
-        }
-      description: Image Tags for corresponding Image Name
     Offliner:
       type: string
       enum:
