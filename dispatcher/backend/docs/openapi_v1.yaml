@@ -434,7 +434,7 @@ paths:
                 type: object
                 example:
                   {
-                    "result": 
+                    "result":
                       [
                         "latest",
                         "dev",

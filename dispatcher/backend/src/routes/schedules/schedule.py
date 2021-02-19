@@ -1,5 +1,4 @@
 from http import HTTPStatus
-import logging
 
 import requests
 from flask import request, jsonify, Response, make_response
@@ -16,8 +15,6 @@ from routes.base import BaseRoute
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 from utils.scheduling import get_default_duration
-
-logger = logging.getLogger(__name__)
 
 
 class SchedulesRoute(BaseRoute):
