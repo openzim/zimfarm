@@ -432,23 +432,17 @@ paths:
             application/json:
               schema:
                 type: object
-                example:
-                  {
-                    "result":
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    example:
                       [
                         "latest",
-                        "dev",
                         "1.11.3",
                         "1.11.2",
-                        "1.11.1",
-                        "1.11.0",
-                        "1.10.12",
-                        "1.10.11",
-                        "1.10.10",
-                        "1.10.9"
                       ]
-                  }
-                description: Image Tags for corresponding Image Name
   /schedules/{scheduleName}/clone:
     post:
       tags:

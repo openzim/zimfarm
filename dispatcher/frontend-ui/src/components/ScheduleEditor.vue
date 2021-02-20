@@ -489,7 +489,7 @@
         const hub_name = parts.splice(parts.length - 2, parts.length).join("/");
         parent.queryAPI('get', '/schedules/' + this.schedule_name + '/image-names', {params: {hub_name: hub_name}})
         .then(function (response) {
-          parent.image_tags = response.data.result;
+          parent.image_tags = response.data.items;
         })
         .catch(function (error) {
           parent.image_tags = [];

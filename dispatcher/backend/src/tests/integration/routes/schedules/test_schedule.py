@@ -289,8 +289,8 @@ class TestSchedulePost:
         )
         assert response.status_code == 200
         response = json.loads(response.data)
-        assert len(response["result"]) > 0
-        for item in response["result"]:
+        assert len(response["items"]) > 0
+        for item in response["items"]:
             assert isinstance(item, str)
 
     # exluding empty dict as it is invalid for PATCH but not for POST

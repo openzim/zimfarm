@@ -220,10 +220,11 @@ class ScheduleImageNames(BaseRoute):
             data = requests.get(
                 f"https://hub.docker.com/v2/repositories/{hub_name}/tags/"
             ).json()
+            count = len(data["results"])
             data = list(map(lambda item: item["name"], (data["results"])))
-            return jsonify({"result": data})
+            return jsonify({"meta": {"skip": 0, "limit": 30, "count": count}, "items": data})
         except Exception:
-            return jsonify({"result": []})
+            return jsonify({"meta": {"skip": 0, "limit": 30, "count": count}, "items": []})
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
