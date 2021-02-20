@@ -222,9 +222,13 @@ class ScheduleImageNames(BaseRoute):
             ).json()
             count = len(data["results"])
             data = list(map(lambda item: item["name"], (data["results"])))
-            return jsonify({"meta": {"skip": 0, "limit": None, "count": count}, "items": data})
+            return jsonify(
+                {"meta": {"skip": 0, "limit": None, "count": count}, "items": data}
+            )
         except Exception:
-            return jsonify({"meta": {"skip": 0, "limit": None, "count": count}, "items": []})
+            return jsonify(
+                {"meta": {"skip": 0, "limit": None, "count": count}, "items": []}
+            )
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
