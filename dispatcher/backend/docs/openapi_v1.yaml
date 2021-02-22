@@ -443,6 +443,14 @@ paths:
                         "1.11.3",
                         "1.11.2",
                       ]
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /schedules/{scheduleName}/clone:
     post:
       tags:

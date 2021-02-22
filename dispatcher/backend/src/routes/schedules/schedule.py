@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 
 import requests
@@ -7,7 +8,7 @@ from marshmallow import ValidationError
 from common.mongo import Schedules, Tasks, RequestedTasks
 from utils.token import AccessToken
 from utils.offliners import expanded_config
-from errors.http import InvalidRequestJSON, ScheduleNotFound
+from errors.http import InvalidRequestJSON, ScheduleNotFound, ResourceNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
 from routes import authenticate, require_perm
@@ -15,6 +16,8 @@ from routes.base import BaseRoute
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 from utils.scheduling import get_default_duration
+
+logger = logging.getLogger(__name__)
 
 
 class SchedulesRoute(BaseRoute):
@@ -216,19 +219,37 @@ class ScheduleImageNames(BaseRoute):
         """ proxy list of tags from docker hub """
         request_args = request.args.to_dict()
         hub_name = request_args.get("hub_name")
+
+        def make_resp(items):
+            return jsonify(
+                {
+                    "meta": {"skip": 0, "limit": None, "count": len(items)},
+                    "items": items,
+                }
+            )
+
         try:
-            data = requests.get(
+            resp = requests.get(
                 f"https://hub.docker.com/v2/repositories/{hub_name}/tags/"
-            ).json()
-            count = len(data["results"])
-            data = list(map(lambda item: item["name"], (data["results"])))
-            return jsonify(
-                {"meta": {"skip": 0, "limit": None, "count": count}, "items": data}
             )
-        except Exception:
-            return jsonify(
-                {"meta": {"skip": 0, "limit": None, "count": count}, "items": []}
-            )
+        except Exception as exc:
+            logger.error(f"Unable to connect to Docker Hub: {exc}")
+            return make_resp([])
+
+        if resp.status_code == HTTPStatus.NOT_FOUND:
+            raise ResourceNotFound()
+
+        if resp.status_code != HTTPStatus.OK:
+            logger.error(f"Docker Hub responded HTTP {resp.status_code} for {hub_name}")
+            return make_resp([])
+
+        try:
+            items = list(map(lambda item: item["name"], (resp.json()["results"])))
+        except Exception as exc:
+            logger.error(f"Unexpected Docker Hub response for {hub_name}: {exc}")
+            items = []
+
+        return make_resp(items)
 
 
 class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
