@@ -126,17 +126,17 @@
                         type="text"
                         required
                         placeholder="openzim/mwoffliner"
+                        @change="fetch_image_tags"
                         size="sm"></b-form-input>
         </b-form-group>
       </b-col>
       <b-col>
-        <b-form-group label="Image Tag:" label-for="es_imagetag" description="Just the tag name. `latest` usually.">
-          <b-form-input v-model="edit_schedule.config.image.tag"
-                        id="es_imagetag"
-                        type="text"
-                        required
-                        placeholder="latest"
-                        size="sm"></b-form-input>
+         <b-form-group label="Image Tag" label-for="es_imagetag" description="Just the tag name. `latest` usually.">
+          <b-form-select id="es_category"
+                         v-model="edit_schedule.config.image.tag"
+                         required
+                         :options="imageTagOptions"
+                         size="sm"></b-form-select>
         </b-form-group>
       </b-col>
     </b-row>
@@ -267,6 +267,7 @@
         error: null,  // API generated error message
         edit_schedule: null, // data holder for edition
         edit_flags: {}, // flags are handled separately
+        image_tags: [],
       };
     },
     computed: {
@@ -457,6 +458,9 @@
         values.push({text: "None", value: null});
         return values;
       },
+      imageTagOptions() {
+        return this.image_tags.map(function (tag) { return {text: tag, value: tag}; });
+      },
       languagesOptions() {
         return this.languages.map(function (language) { return {text: language.name_en, value: language.code}; });
       },
@@ -474,6 +478,23 @@
       },
       offliner_changed() { // assume flags are different so reset edit schedule
         this.edit_flags = {};
+      },
+      fetch_image_tags() {
+        const parent = this;
+        const image_name = parent.edit_schedule.config.image.name;
+        const parts = image_name.split("/");
+        if (parts.length < 2) {
+           return; // invalid image_name
+        }
+        const hub_name = parts.splice(parts.length - 2, parts.length).join("/");
+        parent.queryAPI('get', '/schedules/' + this.schedule_name + '/image-names', {params: {hub_name: hub_name}})
+        .then(function (response) {
+          parent.image_tags = response.data.items;
+        })
+        .catch(function (error) {
+          parent.image_tags = [];
+          parent.alertError(Constants.standardHTTPError(error.response));
+        });
       },
       commit_form() {
         if (this.payload === null) {
@@ -514,7 +535,7 @@
           schedule_name = parent.schedule_name;
 
         parent.$root.$emit('load-schedule', schedule_name, force,
-            function() { parent.reset_form(); },
+            function() { parent.reset_form(); parent.fetch_image_tags(); },
             function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });
       },
     },

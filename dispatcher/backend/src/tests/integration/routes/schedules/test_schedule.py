@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from bson import ObjectId
 import pytest
+import json
 
 from utils.offliners import expanded_config
 
@@ -278,6 +279,19 @@ class TestSchedulePost:
             url, json=schedule, headers={"Authorization": access_token}
         )
         assert response.status_code == 400
+
+    def test_image_names(self, client, schedule, access_token):
+        url = "/schedules/{}/image-names".format(schedule["name"])
+        response = client.get(
+            url,
+            headers={"Authorization": access_token},
+            query_string={"hub_name": "openzim/mwoffliner"},
+        )
+        assert response.status_code == 200
+        response = json.loads(response.data)
+        assert len(response["items"]) > 0
+        for item in response["items"]:
+            assert isinstance(item, str)
 
     # exluding empty dict as it is invalid for PATCH but not for POST
     @pytest.mark.parametrize("update", [bpu for bpu in bad_patch_updates if bpu])

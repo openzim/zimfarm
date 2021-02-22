@@ -3,6 +3,7 @@ from routes.base import BaseBlueprint
 from .schedule import (
     ScheduleRoute,
     SchedulesRoute,
+    ScheduleImageNames,
     SchedulesBackupRoute,
     ScheduleCloneRoute,
 )
@@ -14,5 +15,6 @@ class Blueprint(BaseBlueprint):
 
         self.register_route(SchedulesRoute())
         self.register_route(ScheduleRoute())
+        self.register_route(ScheduleImageNames())
         self.register_route(ScheduleCloneRoute())
         self.register_route(SchedulesBackupRoute())

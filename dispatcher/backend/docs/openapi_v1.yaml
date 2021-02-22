@@ -406,6 +406,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /schedules/{scheduleName}/image-names:
+    get:
+      tags:
+      - restricted
+      summary: get image tags
+      operationId: getImageTags
+      description: Retrieve Image Tags
+      security:
+        - token: []
+        - oauth: []
+      parameters:
+      - $ref: '#/components/parameters/ScheduleNameParameter'
+      - in: query
+        name: hub_name
+        description: Docker Hub image name
+        required: true
+        schema:
+          type: string
+          example: openzim/mwoffliner
+      responses:
+        200:
+          description: List of Image Tags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/MetaProperty'
+                  items:
+                    type: array
+                    example:
+                      [
+                        "latest",
+                        "1.11.3",
+                        "1.11.2",
+                      ]
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /schedules/{scheduleName}/clone:
     post:
       tags:
