@@ -4,7 +4,7 @@
 
 import logging
 from http import HTTPStatus
-
+import re
 import pymongo
 from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
@@ -96,6 +96,13 @@ class TaskRoute(BaseRoute):
             raise TaskNotFound()
 
         task["updated_at"] = task["events"][-1]["timestamp"]
+
+        if not token or not token.get_permission("schedules", "update"):
+            for index, item in enumerate(task["container"]["command"]):
+                for flag in ["optimisationCacheUrl", "api-key"]:
+                    if re.search(flag, item):
+                        task["config"]["flags"][flag] = "*********"
+                        task["container"]["command"][index] = "--" + flag + "=*********"
 
         return jsonify(task)
 
