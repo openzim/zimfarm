@@ -344,7 +344,7 @@ def hide_secret_flags(response):
     secret_fields = [
         flag["data_key"]
         for flag in offliner_schema
-        if ("secret" in flag and flag["secret"] == True)
+        if ("secret" in flag and flag["secret"])
     ]
 
     for secret_field in secret_fields:
