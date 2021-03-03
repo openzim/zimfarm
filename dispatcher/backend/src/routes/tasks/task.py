@@ -4,7 +4,8 @@
 
 import logging
 from http import HTTPStatus
-import re
+import json
+
 import pymongo
 from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
@@ -12,7 +13,7 @@ from marshmallow import ValidationError
 from common.enum import TaskStatus
 from utils.token import AccessToken
 from utils.broadcaster import BROADCASTER
-from common.utils import task_event_handler
+from common.utils import task_event_handler, hide_secret_flags
 from common.mongo import RequestedTasks, Tasks
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id, require_perm, auth_info_if_supplied
@@ -97,12 +98,8 @@ class TaskRoute(BaseRoute):
 
         task["updated_at"] = task["events"][-1]["timestamp"]
 
-        if not token or not token.get_permission("schedules", "update"):
-            for index, item in enumerate(task["container"]["command"]):
-                for flag in ["optimisationCacheUrl", "api-key"]:
-                    if re.search(flag, item):
-                        task["config"]["flags"][flag] = "*********"
-                        task["container"]["command"][index] = "--" + flag + "=*********"
+        if not token or not token.get_permission("tasks", "create"):
+            hide_secret_flags(task)
 
         return jsonify(task)
 

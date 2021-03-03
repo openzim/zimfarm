@@ -11,8 +11,9 @@ from utils.offliners import expanded_config
 from errors.http import InvalidRequestJSON, ScheduleNotFound, ResourceNotFound
 from routes.errors import BadRequest
 from routes.schedules.base import ScheduleQueryMixin
-from routes import authenticate, require_perm
+from routes import authenticate, require_perm, auth_info_if_supplied
 from routes.base import BaseRoute
+from common.utils import hide_secret_flags
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.parameters import SchedulesSchema, UpdateSchema, CloneSchema
 from utils.scheduling import get_default_duration
@@ -111,7 +112,8 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
     name = "schedule"
     methods = ["GET", "PATCH", "DELETE"]
 
-    def get(self, schedule_name: str):
+    @auth_info_if_supplied
+    def get(self, schedule_name: str, token: AccessToken.Payload):
         """Get schedule object."""
 
         query = {"name": schedule_name}
@@ -120,6 +122,9 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             raise ScheduleNotFound()
 
         schedule["config"] = expanded_config(schedule["config"])
+        if not token or not token.get_permission("schedules", "update"):
+            hide_secret_flags(schedule)
+
         return jsonify(schedule)
 
     @authenticate
