@@ -339,20 +339,26 @@ def handle_others(self, event):
 
 
 def hide_secret_flags(response):
-    offliner = response["config"]["task_name"]
-    offliner_schema = ScheduleConfigSchema.get_offliner_schema(offliner)().to_desc()
-    secret_fields = [
-        flag["data_key"]
-        for flag in offliner_schema
-        if ("secret" in flag and flag["secret"])
-    ]
+    if "config" in response:
+        offliner = response["config"]["task_name"]
+        offliner_schema = ScheduleConfigSchema.get_offliner_schema(offliner)().to_desc()
+        secret_fields = [
+            flag["data_key"]
+            for flag in offliner_schema
+            if ("secret" in flag and flag["secret"])
+        ]
 
-    for secret_field in secret_fields:
-        index = response["config"]["command"].index(
-            f'--{secret_field}="{response["config"]["flags"][secret_field]}"'
-        )
-        response["config"]["command"][index] = "--" + secret_field + "=*********"
-        response["config"]["flags"][secret_field] = "*********"
-        if "container" in response:
-            response["container"]["command"][index] = "--" + secret_field + "=*********"
-    response["config"]["str_command"] = " ".join(response["config"]["command"])
+        for secret_field in secret_fields:
+            if secret_field in response["config"]["command"]:
+                index = response["config"]["command"].index(
+                    f'--{secret_field}="{response["config"]["flags"][secret_field]}"'
+                )
+                response["config"]["command"][index] = (
+                    "--" + secret_field + "=*********"
+                )
+                response["config"]["flags"][secret_field] = "*********"
+                if "container" in response:
+                    response["container"]["command"][index] = (
+                        "--" + secret_field + "=*********"
+                    )
+        response["config"]["str_command"] = " ".join(response["config"]["command"])
