@@ -4,7 +4,6 @@
 
 import logging
 import datetime
-import re
 
 from bson import ObjectId
 
@@ -349,7 +348,7 @@ def hide_secret_flags(response):
         ]
 
         for secret_field in secret_fields:
-            if secret_field in response["config"]["command"]:
+            if f"--{secret_field}" in response["config"]["command"]:
                 index = response["config"]["command"].index(
                     f'--{secret_field}="{response["config"]["flags"][secret_field]}"'
                 )
