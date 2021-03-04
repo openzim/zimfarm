@@ -348,7 +348,7 @@ def hide_secret_flags(response):
         ]
 
         for secret_field in secret_fields:
-            if f"--{secret_field}" in response["config"]["command"]:
+            if secret_field in response["config"]["flags"]:
                 index = response["config"]["command"].index(
                     f'--{secret_field}="{response["config"]["flags"][secret_field]}"'
                 )

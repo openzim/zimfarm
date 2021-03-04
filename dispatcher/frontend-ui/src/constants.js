@@ -80,21 +80,8 @@ function logs_url(task) {
 function build_command_without(config, secret_fields) {
   if (secret_fields == null)
     return "<missing defs>";
-  if (secret_fields.length == 0)
-    return config.str_command;
-
-  function should_keep(line) {
-    let keep = true;
-    secret_fields.forEach(function (field_name) {
-      if (line.indexOf("--" + field_name) == 0)
-        keep = false;
-    });
-    return keep;
-  }
-
-  return config.command.map(function (line) {
-      return should_keep(line) ? line : line.split("=")[0] + '="' + secret_replacement + '"';
-  }).join(" ");
+    
+  return config.str_command;
 }
 
 function build_docker_command(name, config, secret_fields) {

@@ -4,7 +4,6 @@
 
 import logging
 from http import HTTPStatus
-import json
 
 import pymongo
 from flask import request, jsonify, make_response, Response
