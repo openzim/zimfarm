@@ -269,7 +269,7 @@ export default {
   warehouse_paths: ["/gutenberg", "/other", "/phet", "/psiram", "/stack_exchange",
                     "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikiversity",
-                    "/wikivoyage", "/wiktionary", "/.hidden/dev", "/.hidden/endless", "/.hidden/custom_apps",],
+                    "/wikivoyage", "/wiktionary", "/zimit", "/.hidden/dev", "/.hidden/private", "/.hidden/endless", "/.hidden/custom_apps",],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
