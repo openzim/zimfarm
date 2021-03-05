@@ -41,6 +41,8 @@ WORKERS = [
     ("pixelmemory-host", "99.87.255.75"),
     ("pixelmemory-vm", "99.87.255.76"),
     ("sisyphus", "195.154.207.98"),
+    ("kelson6", "2a02:168:6008:0:1c2b:e505:e1da:77eb"),
+    ("kelson", "212.51.141.46"),
 ]
 
 
