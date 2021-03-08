@@ -12,6 +12,7 @@ from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
 from common.notifications import handle_notification
 from common.schemas.models import ScheduleConfigSchema
+from common.constants import SECRET_REPLACEMENT
 from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
@@ -353,11 +354,11 @@ def hide_secret_flags(response):
                     f'--{secret_field}="{response["config"]["flags"][secret_field]}"'
                 )
                 response["config"]["command"][index] = (
-                    "--" + secret_field + "=*********"
+                    "--" + secret_field + "=" + SECRET_REPLACEMENT
                 )
-                response["config"]["flags"][secret_field] = "*********"
+                response["config"]["flags"][secret_field] = SECRET_REPLACEMENT
                 if "container" in response:
                     response["container"]["command"][index] = (
-                        "--" + secret_field + "=*********"
+                        "--" + secret_field + "=" + SECRET_REPLACEMENT
                     )
         response["config"]["str_command"] = " ".join(response["config"]["command"])

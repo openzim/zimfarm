@@ -130,7 +130,7 @@
               <ResourceBadge kind="shm" :value="config.resources.shm" v-if="config.resources.shm" />
             </td>
           </tr>
-          <tr><th>Config</th><td><FlagsList :flags="config.flags" :secret_fields="secret_fields" /></td></tr>
+          <tr><th>Config</th><td><FlagsList :flags="config.flags"/></td></tr>
           <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand(command)"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
           <tr><th>Offliner Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand(offliner_command)"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ offliner_command }}</code></td></tr>
         </table>

@@ -55,3 +55,6 @@ SLACK_URL = os.getenv("SLACK_URL", "")
 SLACK_USERNAME = os.getenv("SLACK_USERNAME")
 SLACK_EMOJI = os.getenv("SLACK_EMOJI")
 SLACK_ICON = os.getenv("SLACK_ICON")
+
+# Secret replacement for secret keys
+SECRET_REPLACEMENT = "********"

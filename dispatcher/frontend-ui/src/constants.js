@@ -226,7 +226,6 @@ var DEFAULT_CPU_SHARE = 1024;
 var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
 var cancelable_statuses = ["reserved", "started", "scraper_started", "scraper_completed", "scraper_killed"];
 var running_statuses = cancelable_statuses.concat(["cancel_requested"]);
-var secret_replacement = "**********";
 
 export default {
   isProduction() {
@@ -413,5 +412,4 @@ export default {
   duplicate: duplicate,
   schedule_durations_dict: schedule_durations_dict,
   secret_fields_for: secret_fields_for,
-  secret_replacement: secret_replacement,
 };
