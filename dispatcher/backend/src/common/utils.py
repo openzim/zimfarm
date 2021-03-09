@@ -11,8 +11,6 @@ from common import getnow, to_naive_utc
 from common.enum import TaskStatus
 from common.mongo import Tasks, Schedules
 from common.notifications import handle_notification
-from common.schemas.models import ScheduleConfigSchema
-from common.constants import SECRET_REPLACEMENT
 from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
@@ -336,29 +334,3 @@ def handle_others(self, event):
     event_description = str(event)[:100]
     logger.info(f"Other event: {event_description}")
     logger.info(f"Other event, keys: {list(event.keys())}")
-
-
-def hide_secret_flags(response):
-    if "config" in response:
-        offliner = response["config"]["task_name"]
-        offliner_schema = ScheduleConfigSchema.get_offliner_schema(offliner)().to_desc()
-        secret_fields = [
-            flag["data_key"]
-            for flag in offliner_schema
-            if ("secret" in flag and flag["secret"])
-        ]
-
-        for secret_field in secret_fields:
-            if secret_field in response["config"]["flags"]:
-                index = response["config"]["command"].index(
-                    f'--{secret_field}="{response["config"]["flags"][secret_field]}"'
-                )
-                response["config"]["command"][index] = (
-                    "--" + secret_field + "=" + SECRET_REPLACEMENT
-                )
-                response["config"]["flags"][secret_field] = SECRET_REPLACEMENT
-                if "container" in response:
-                    response["container"]["command"][index] = (
-                        "--" + secret_field + "=" + SECRET_REPLACEMENT
-                    )
-        response["config"]["str_command"] = " ".join(response["config"]["command"])

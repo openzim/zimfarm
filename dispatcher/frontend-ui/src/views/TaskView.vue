@@ -102,7 +102,7 @@
             </td>
           </tr>
           <tr v-if="task.config"><th>Platform</th><td>{{ task.config.platform || "-" }}</td></tr>
-          <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :shrink="false" /></td></tr>
+          <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :secret_fields="secret_fields" :shrink="false"/></td></tr>
           <tr v-if="task_container.command"><th>Command </th><td><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
           <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
@@ -154,6 +154,8 @@
       }
     },
     computed: {
+      offliner() { return this.task.config.task_name; },
+      offliner_def() { return this.$store.getters.offliners_defs[this.offliner] || null; },
       sorted_files() { return Object.values(this.task.files).sortBy('created_timestamp'); },
       short_id() { return Constants.short_id(this._id); },
       is_running() { return ["failed", "canceled", "succeeded", "cancel_requested"].indexOf(this.task.status) == -1; },
@@ -183,6 +185,7 @@
         return Constants.format_duration_between(first, last);
       },
       started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
+      secret_fields() { return Constants.secret_fields_for(this.offliner_def); },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.logs_url(this.task); },
       kiwix_download_url() { return Constants.kiwix_download_url; },

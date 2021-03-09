@@ -108,6 +108,7 @@ def expanded_config(config):
     )
     # workers uses string version
     config["str_command"] = " ".join(config["command"])
+    build_str_command(config)
     # offliners can specify additional docker options (capabilities)
     docker_options = docker_config_for(config["task_name"])
 
@@ -134,3 +135,7 @@ def expanded_config(config):
     config["resources"].update(docker_options)
 
     return config
+
+
+def build_str_command(response: dict):
+    response["str_command"] = " ".join(response["command"])
