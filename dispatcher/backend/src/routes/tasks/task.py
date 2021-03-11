@@ -10,6 +10,7 @@ from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
 
 from common.enum import TaskStatus
+from routes.utils import remove_secrets_from_response
 from utils.token import AccessToken
 from utils.broadcaster import BROADCASTER
 from common.utils import task_event_handler
@@ -96,6 +97,9 @@ class TaskRoute(BaseRoute):
             raise TaskNotFound()
 
         task["updated_at"] = task["events"][-1]["timestamp"]
+
+        if not token or not token.get_permission("tasks", "create"):
+            remove_secrets_from_response(task)
 
         return jsonify(task)
 
