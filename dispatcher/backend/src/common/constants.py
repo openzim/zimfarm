@@ -57,4 +57,4 @@ SLACK_EMOJI = os.getenv("SLACK_EMOJI")
 SLACK_ICON = os.getenv("SLACK_ICON")
 
 # string to replace hidden secrets with
-SECRET_REPLACEMENT = "********"  # noqa
+SECRET_REPLACEMENT = "********"  # nosec

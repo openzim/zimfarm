@@ -6,6 +6,7 @@ import copy
 import pathlib
 
 from common.enum import Offliner
+from typing import List
 
 
 def mount_point_for(offliner):
@@ -107,8 +108,7 @@ def expanded_config(config):
         config["task_name"], config["flags"], config["mount_point"]
     )
     # workers uses string version
-    config["str_command"] = " ".join(config["command"])
-    build_str_command(config)
+    config["str_command"] = build_str_command(config["command"])
     # offliners can specify additional docker options (capabilities)
     docker_options = docker_config_for(config["task_name"])
 
@@ -137,5 +137,6 @@ def expanded_config(config):
     return config
 
 
-def build_str_command(response: dict):
-    response["str_command"] = " ".join(response["command"])
+def build_str_command(args: List[str]):
+    """ string version of the command to be run by the worker """
+    return " ".join(args)

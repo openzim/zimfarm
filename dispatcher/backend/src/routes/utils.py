@@ -25,4 +25,6 @@ def remove_secrets_from_response(response: dict):
                 response["container"]["command"][
                     index
                 ] = f'--{field}="{SECRET_REPLACEMENT}"'
-        build_str_command(response["config"])
+        response["config"]["str_command"] = build_str_command(
+            response["config"]["command"]
+        )
