@@ -131,6 +131,7 @@
                 parent.ready = true;
               }).catch(function() {
                 parent.ready = false;
+
               });
           })
           .catch(function() {
@@ -160,7 +161,7 @@
             parent.alertSuccess("Scheduled!", msg);
           })
           .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response));
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.working_text = null;
@@ -180,7 +181,7 @@
           parent.alertSuccess("Prioritized!", msg);
         })
         .catch(function (error) {
-          parent.alertError(Constants.standardHTTPError(error.response));
+          parent.standardErrorHandling(error);
         })
         .then(function () {
           parent.working_text = null;
@@ -210,7 +211,7 @@
             parent.alertSuccess("Un-scheduled!", msg);
           })
           .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response));
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.working_text = null;

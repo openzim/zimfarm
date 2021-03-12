@@ -179,15 +179,15 @@ export default {
         }
       }
     },
-    loadTokenFromCookie() {
+    loadTokenFromCookie(force_refresh) {
       // already authenticated
-      if (this.isLoggedIn)
-        return;
+      if (this.isLoggedIn && !force_refresh)
+        return true;
       let cookie_value = this.$cookie.get(Constants.TOKEN_COOKIE_NAME);
 
       // no cookie
       if (!cookie_value)
-        return;
+        return false;
 
       let token_data;
       try {
@@ -196,28 +196,63 @@ export default {
       } catch {
         // incorrect cookie payload
         this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
-        return;
+        if (!force_refresh) {
+          return false;
+        }
       }
 
       console.debug("found auth cookie");
 
       let expiry = moment(token_data.payload.exp * 1000);
       let parent = this;
-      if (moment().isAfter(expiry)) {
-        console.debug("cookie token expired");
-
+      if (moment().isAfter(expiry) || force_refresh) {
+        console.debug("cookie token expired or refresh requested");
+        let renewed = false;
         this.renew_token_from_refresh(
           token_data.refresh_token,
-          function () { console.debug("could renew the token, great!");},
+          function () {
+            console.debug("could renew the token, great!");
+            renewed = true
+          },
           function () {
             console.debug("couldnt refresh token, removing cookie");
             parent.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
+            renewed = false;
           }
         );
+        return renewed;
       } else {
         console.log("cookie token not expired, using it.");
         this.$store.dispatch('saveAuthenticationToken', token_data);
+        return true;
       }
+    },
+    standardErrorHandling(error, duration) {
+      // log user out in case of 401
+      console.error(error);
+      if (error && error.response && error.response.status === 401) {
+        // attempt to automatically renew token
+        if (!this.loadTokenFromCookie(true)) {
+          this.removeToken()
+        }
+        this.redirectTo('home')
+      }
+      // set user-facing error message in UI
+      let msg = Constants.standardHTTPError(error.response);
+      try {
+        this.error = msg;
+      } catch {
+        this.alertDanger("Error", msg, duration);
+      }
+    },
+    removeToken(manual) {
+      this.$store.dispatch('clearAuthentication');
+      this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
+      let msg = "";
+      if (!manual) {
+        msg = "Due to your token not being valid anymore.";
+      }
+      this.alertInfo("Signed-out!", msg);
     },
     queryAPI(method, path, data, config) {
       console.debug("queryAPI", method, path);

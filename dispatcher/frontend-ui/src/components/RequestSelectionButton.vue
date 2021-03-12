@@ -90,7 +90,7 @@
             parent.alertSuccess("Requested!", msg, 10);
           })
           .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response));
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.working_text = null;

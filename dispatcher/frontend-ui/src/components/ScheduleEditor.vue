@@ -493,7 +493,7 @@
         })
         .catch(function (error) {
           parent.image_tags = [];
-          parent.alertError(Constants.standardHTTPError(error.response));
+          parent.standardErrorHandling(error);
         });
       },
       commit_form() {
@@ -513,10 +513,9 @@
               parent.loadSchedule(true);
         })
         .catch(function (error) {
+          parent.standardErrorHandling(error);
           if (error.response.status == 400) {
             parent.alertWarning("Error!", Constants.standardHTTPError(error.response));
-          } else {
-            parent.alertError(Constants.standardHTTPError(error.response));
           }
         })
         .then(function () {
