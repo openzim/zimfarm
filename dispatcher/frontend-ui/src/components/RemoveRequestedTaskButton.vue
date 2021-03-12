@@ -44,7 +44,7 @@
             parent.alertSuccess("Un-scheduled!", msg);
           })
           .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response));
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.working = false;

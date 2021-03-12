@@ -309,7 +309,7 @@ paths:
       - public
       summary: list schedules
       operationId: getSchedule
-      description: Retrieve a Schedule's details
+      description: Retrieve a Schedule's details (Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without schedules.update permission)
       parameters:
         - $ref: '#/components/parameters/ScheduleNameParameter'
       responses:
@@ -814,7 +814,7 @@ paths:
       - public
       summary: get task detail
       operationId: getTask
-      description: Retrieve a Task's details
+      description: Retrieve a Task's details (Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without tasks.create permission)
       parameters:
       - $ref: '#/components/parameters/TaskIdParameter'
       responses:

@@ -137,7 +137,7 @@
           })
           .catch(function (error) {
             parent.resetData();
-            parent.error = Constants.standardHTTPError(error.response);
+            parent.standardErrorHandling(error);
           })
           .then(function () {
               parent.toggleLoader(false);

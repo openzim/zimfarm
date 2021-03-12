@@ -99,7 +99,6 @@
 <script type="text/javascript">
   import Multiselect from 'vue-multiselect'
 
-  import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import RequestSelectionButton from '../components/RequestSelectionButton.vue'
   import TaskLink from '../components/TaskLink.vue'
@@ -292,7 +291,7 @@
           })
           .catch(function (error) {
             parent.schedules = [];
-            parent.error = Constants.standardHTTPError(error.response);
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.toggleLoader(false);
