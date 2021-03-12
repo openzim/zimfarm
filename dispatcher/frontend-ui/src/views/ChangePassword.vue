@@ -54,7 +54,7 @@
               parent.$router.back();  // redirect
             })
             .catch(function (error) {
-              parent.error = Constants.standardHTTPError(error.response);
+              parent.standardErrorHandling(error);
             })
             .then(function () {
               parent.working = false;

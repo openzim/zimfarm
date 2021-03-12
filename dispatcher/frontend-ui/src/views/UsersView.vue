@@ -97,7 +97,7 @@
             parent.loadUsersList();
         })
         .catch(function (error) {
-          parent.alertDanger("Error", Constants.standardHTTPError(error.response));
+          parent.standardErrorHandling(error);
         })
         .then(function () {
             parent.toggleLoader(false);
@@ -117,7 +117,7 @@
             }
           })
           .catch(function (error) {
-            parent.error = Constants.standardHTTPError(error.response);
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.toggleLoader(false);

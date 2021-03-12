@@ -230,7 +230,7 @@
               parent.task = response.data;
           })
           .catch(function (error) {
-            parent.error = Constants.standardHTTPError(error.response);
+            parent.standardErrorHandling(error);
           })
           .then(function () {
               parent.toggleLoader(false);

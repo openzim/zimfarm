@@ -10,7 +10,6 @@
 </template>
 
 <script type="text/javascript">
-  import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
@@ -42,7 +41,7 @@
             parent.redirectTo('schedule-detail', {schedule_name: payload.name});
           })
           .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response), true);
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.toggleLoader(false);

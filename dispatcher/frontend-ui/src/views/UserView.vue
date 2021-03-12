@@ -90,7 +90,6 @@
 </template>
 
 <script type="text/javascript">
-  import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
   import DeleteItem from '../components/DeleteItem.vue'
@@ -159,7 +158,7 @@
             parent.loadUser();
           })
           .catch(function (error) {
-            parent.alertError(Constants.standardHTTPError(error.response));
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.toggleLoader(false);
@@ -176,7 +175,7 @@
             parent.user = response.data;
           })
           .catch(function (error) {
-            parent.error = Constants.standardHTTPError(error.response);
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.toggleLoader(false);

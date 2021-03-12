@@ -118,7 +118,7 @@
             parent.redirectTo('users-list');
         })
         .catch(function (error) {
-          parent.alertDanger("Error", Constants.standardHTTPError(error.response), 10);
+          parent.standardErrorHandling(error, 10);
         })
         .then(function () {
             parent.toggleLoader(false);
@@ -137,7 +137,7 @@
             parent.redirectTo('users-list');
           })
           .catch(function (error) {
-            parent.alertDanger("Error", Constants.standardHTTPError(error.response), 10);
+            parent.standardErrorHandling(error, 10);
           })
           .then(function () {
             parent.toggleLoader(false);
@@ -154,7 +154,7 @@
               parent.redirectTo('users-list');
             })
             .catch(function (error) {
-              parent.alertDanger("Error", Constants.standardHTTPError(error.response), 10);
+              parent.standardErrorHandling(error, 10);
             })
             .then(function () {
               parent.toggleLoader(false);

@@ -11,7 +11,6 @@
 </template>
 
 <script type="text/javascript">
-  import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
 
   export default {
@@ -45,7 +44,7 @@
             parent.redirectTo(parent.target);
           })
           .catch(function (error) {
-            parent.alertDanger("Error", Constants.standardHTTPError(error.response));
+            parent.standardErrorHandling(error);
           })
           .then(function () {
             parent.toggleLoader(false);
