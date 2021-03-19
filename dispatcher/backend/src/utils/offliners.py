@@ -58,6 +58,9 @@ def command_for(offliner, flags, mount_point):
             flags["adminEmail"] = "contact+zimfarm@kiwix.org"
         flags["statsFilename"] = str(mount_point_for(offliner) / "task_progress.json")
         flags["output"] = str(mount_point)
+    if offliner == Offliner.kolibri:
+        cmd = "kolibri2zim"
+        flags["output"] = str(mount_point)
     return [cmd] + compute_flags(flags)
 
 

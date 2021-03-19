@@ -154,6 +154,7 @@ class DockerImageName:
     ted = "openzim/ted"
     openedx = "openzim/openedx"
     zimit = "openzim/zimit"
+    kolibri = "openzim/kolibri"
 
     @classmethod
     def all(cls) -> set:
@@ -167,6 +168,7 @@ class DockerImageName:
             cls.ted,
             cls.openedx,
             cls.zimit,
+            cls.kolibri,
         }
 
 
@@ -180,6 +182,7 @@ class Offliner:
     ted = "ted"
     openedx = "openedx"
     zimit = "zimit"
+    kolibri = "kolibri"
 
     @classmethod
     def all(cls):
@@ -193,6 +196,7 @@ class Offliner:
             cls.ted,
             cls.openedx,
             cls.zimit,
+            cls.kolibri,
         ]
 
     @classmethod
@@ -215,6 +219,7 @@ class Offliner:
                 cls.ted: DockerImageName.ted,
                 cls.openedx: DockerImageName.openedx,
                 cls.zimit: DockerImageName.zimit,
+                cls.kolibri: DockerImageName.kolibri,
             }.get(offliner, "-")
         )
 
