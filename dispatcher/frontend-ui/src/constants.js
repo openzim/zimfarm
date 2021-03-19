@@ -256,7 +256,7 @@ export default {
                     "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
                     "/wikiquote", "/wikisource", "/wikiversity",
                     "/wikivoyage", "/wiktionary", "/zimit", "/.hidden/dev", "/.hidden/private", "/.hidden/endless", "/.hidden/custom_apps",],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit", "kolibri"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB

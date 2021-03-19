@@ -29,6 +29,7 @@ from common.schemas.offliners import (
     TedFlagsSchema,
     OpenedxFlagsSchema,
     ZimitFlagsSchema,
+    KolibriFlagsSchema,
 )
 
 
@@ -81,6 +82,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.ted: TedFlagsSchema,
             Offliner.openedx: OpenedxFlagsSchema,
             Offliner.zimit: ZimitFlagsSchema,
+            Offliner.kolibri: KolibriFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema
