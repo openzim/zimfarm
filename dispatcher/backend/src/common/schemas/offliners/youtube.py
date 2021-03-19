@@ -30,7 +30,8 @@ class YoutubeFlagsSchema(SerializableSchema):
     ident = fields.String(
         metadata={
             "label": "Youtube ID",
-            "description": "Youtube ID of the collection. Seperate multiple playlists with commas.",
+            "description": "Youtube ID of the collection. "
+            "Separate multiple playlists with commas.",
         },
         data_key="id",
         required=True,
@@ -51,7 +52,9 @@ class YoutubeFlagsSchema(SerializableSchema):
     playlists_name = fields.String(
         metadata={
             "label": "Playlists name",
-            "description": "Format for building individual --name argument. Required in playlist mode. Variables: {title}, {description}, {playlist_id}, {slug} (from title), {creator_id}, {creator_name}",
+            "description": "Format for building individual --name argument. "
+            "Required in playlist mode. Variables: {title}, {description}, "
+            "{playlist_id}, {slug} (from title), {creator_id}, {creator_name}",
         },
         data_key="playlists-name",
     )
@@ -83,7 +86,9 @@ class YoutubeFlagsSchema(SerializableSchema):
     dateafter = fields.String(
         metadata={
             "label": "Only after date",
-            "description": "Custom filter to download videos uploaded on or after specified date. Format: YYYYMMDD or (now|today)[+-][0-9](day|week|month|year)(s)?",
+            "description": "Custom filter to download videos uploaded on "
+            "or after specified date. Format: YYYYMMDD or "
+            "(now|today)[+-][0-9](day|week|month|year)(s)?",
         }
     )
 
@@ -126,7 +131,8 @@ class YoutubeFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={
             "label": "Auto-play",
-            "description": "Enable autoplay on video articles (home never have autoplay).",
+            "description": "Enable autoplay on video articles "
+            "(home never have autoplay).",
         },
     )
     output = fields.String(
@@ -143,7 +149,8 @@ class YoutubeFlagsSchema(SerializableSchema):
         metadata={
             "label": "Temp folder",
             "placeholder": "/output",
-            "description": "Where to create temporay build folder. Leave it as `/output`",
+            "description": "Where to create temporay build folder. "
+            "Leave it as `/output`",
         },
         missing="/output",
         default="/output",
@@ -154,14 +161,16 @@ class YoutubeFlagsSchema(SerializableSchema):
     zim_file = fields.String(
         metadata={
             "label": "ZIM filename",
-            "description": "ZIM file name (based on --name if not provided)",
+            "description": "ZIM file name (based on --name if not provided). "
+            "Include {period} to insert date period dynamically",
         },
         data_key="zim-file",
     )
     playlists_zim_file = fields.String(
         metadata={
             "label": "Playlists ZIM filename",
-            "description": "Format for building individual --zim-file argument. Uses --playlists-name otherwise",
+            "description": "Format for building individual --zim-file argument. "
+            "Uses --playlists-name otherwise",
         },
         data_key="playlists-zim-file",
     )
@@ -175,14 +184,16 @@ class YoutubeFlagsSchema(SerializableSchema):
     locale = fields.String(
         metadata={
             "label": "Locale",
-            "description": "Locale name to use for translations (if avail) and time representations. Defaults to --language or English.",
+            "description": "Locale name to use for translations (if avail) "
+            "and time representations. Defaults to --language or English.",
         }
     )
 
     title = fields.String(
         metadata={
             "label": "Title",
-            "description": "Custom title for your project and ZIM. Default to Channel name (of first video if playlists)",
+            "description": "Custom title for your project and ZIM. Default to "
+            "Channel name (of first video if playlists)",
         }
     )
     playlists_title = fields.String(
@@ -207,20 +218,23 @@ class YoutubeFlagsSchema(SerializableSchema):
     creator = fields.String(
         metadata={
             "label": "Content Creator",
-            "description": "Name of content creator. Defaults to Channel name or “Youtue Channels”",
+            "description": "Name of content creator. Defaults to Channel name "
+            "or “Youtue Channels”",
         }
     )
     tags = fields.String(
         metadata={
             "label": "ZIM Tags",
-            "description": "List of Tags for the ZIM file. _videos:yes added automatically",
+            "description": "List of Tags for the ZIM file. "
+            "_videos:yes added automatically",
         }
     )
 
     metadata_from = fields.String(
         metadata={
             "label": "Metadata JSON",
-            "description": "File path or URL to a JSON file holding custom metadata for individual playlists",
+            "description": "File path or URL to a JSON file holding custom metadata "
+            "for individual playlists",
         },
         data_key="metadata-from",
     )
@@ -228,7 +242,8 @@ class YoutubeFlagsSchema(SerializableSchema):
     profile = fields.Url(
         metadata={
             "label": "Profile Image",
-            "description": "Custom profile image. Squared. Will be resized to 100x100px",
+            "description": "Custom profile image. Squared. "
+            "Will be resized to 100x100px",
         }
     )
     banner = fields.Url(
@@ -240,14 +255,16 @@ class YoutubeFlagsSchema(SerializableSchema):
     main_color = HexColor(
         metadata={
             "label": "Main Color",
-            "description": "Custom color. Hex/HTML syntax (#DEDEDE). Default to main color of profile image.",
+            "description": "Custom color. Hex/HTML syntax (#DEDEDE). "
+            "Default to main color of profile image.",
         },
         data_key="main-color",
     )
     secondary_color = HexColor(
         metadata={
             "label": "Secondary Color",
-            "description": "Custom secondary color. Hex/HTML syntax (#DEDEDE). Default to secondary color of profile image.",
+            "description": "Custom secondary color. Hex/HTML syntax (#DEDEDE). "
+            "Default to secondary color of profile image.",
         },
         data_key="secondary-color",
     )
