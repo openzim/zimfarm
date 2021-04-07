@@ -52,7 +52,30 @@ class KolibriFlagsSchema(SerializableSchema):
     favicon = fields.Url(
         metadata={
             "label": "Favicon",
-            "description": "URL for Favicon. Kolibri channel thumbnail otherwise",
+            "description": "URL for Favicon. Kolibri channel thumbnail otherwise "
+            "or default Kolobri logo if missing",
+        },
+        required=False,
+    )
+
+    css = fields.Url(
+        metadata={
+            "label": "Custom CSS",
+            "description": "URL to a single CSS file to be included in all pages "
+            "(but not on kolibri-html-content ones). "
+            "Inlude external resources using data URL.",
+        },
+        required=False,
+    )
+
+    about = fields.Url(
+        metadata={
+            "label": "Custom About",
+            "description": "URL to a single HTML file to use as an about page. "
+            "Place everythong inside `body .container` "
+            "(including stylesheets and scripts) "
+            "as only this and your <title> will be merged into the actual about page. "
+            "Remember to include images inline using data URL.",
         },
         required=False,
     )
