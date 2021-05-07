@@ -221,7 +221,7 @@ class ScheduleImageNames(BaseRoute):
     @authenticate
     @require_perm("schedules", "update")
     def get(self, schedule_name: str, token: AccessToken.Payload):
-        """ proxy list of tags from docker hub """
+        """proxy list of tags from docker hub"""
         request_args = request.args.to_dict()
         hub_name = request_args.get("hub_name")
 

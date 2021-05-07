@@ -10,7 +10,7 @@ from typing import List
 
 
 def mount_point_for(offliner):
-    """ Path to mount task volume in scraper """
+    """Path to mount task volume in scraper"""
     if offliner == Offliner.phet:
         return pathlib.Path("/phet/dist")
     if offliner == Offliner.sotoki:
@@ -76,7 +76,7 @@ def docker_config_for(offliner):
 
 
 def compute_flags(flags, use_equals=True):
-    """ flat list of params from dict of flags """
+    """flat list of params from dict of flags"""
     params: [str] = []
     for key, value in flags.items():
         if value is True:
@@ -141,5 +141,5 @@ def expanded_config(config):
 
 
 def build_str_command(args: List[str]):
-    """ string version of the command to be run by the worker """
+    """string version of the command to be run by the worker"""
     return " ".join(args)

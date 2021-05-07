@@ -6,7 +6,7 @@ import humanfriendly
 
 
 def short_id(task_id):
-    """ stripped version of task_id for containers/display """
+    """stripped version of task_id for containers/display"""
     return task_id[:5]
 
 

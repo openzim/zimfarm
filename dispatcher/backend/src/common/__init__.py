@@ -4,12 +4,12 @@ import pytz
 
 
 def getnow():
-    """ naive UTC now """
+    """naive UTC now"""
     return datetime.datetime.utcnow()
 
 
 def to_naive_utc(timestamp_or_iso):
-    """ naive UTC datetime from iso string or timestamp """
+    """naive UTC datetime from iso string or timestamp"""
     if isinstance(timestamp_or_iso, str):
         new_date = datetime.datetime.fromisoformat(timestamp_or_iso)
     elif isinstance(timestamp_or_iso, int):

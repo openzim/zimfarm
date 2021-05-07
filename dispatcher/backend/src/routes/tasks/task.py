@@ -107,7 +107,7 @@ class TaskRoute(BaseRoute):
     @require_perm("tasks", "create")
     @url_object_id("task_id")
     def post(self, task_id: str, token: AccessToken.Payload):
-        """ create a task from a requested_task_id """
+        """create a task from a requested_task_id"""
 
         requested_task = RequestedTasks().find_one({"_id": task_id})
         if requested_task is None:

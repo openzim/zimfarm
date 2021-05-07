@@ -4,7 +4,7 @@ from utils.offliners import build_str_command
 
 
 def remove_secrets_from_response(response: dict):
-    """ replaces (in-place) all occurences of secrets in flags/commands with stars """
+    """replaces (in-place) all occurences of secrets in flags/commands with stars"""
 
     if "config" not in response:
         return

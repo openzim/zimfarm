@@ -53,7 +53,7 @@ def now():
 
 
 def ack_host_fingerprint(host, port):
-    """ run/store ssh-keyscan to prevent need to manually confirm host fingerprint """
+    """run/store ssh-keyscan to prevent need to manually confirm host fingerprint"""
     keyscan = subprocess.run(
         ["/usr/bin/ssh-keyscan", "-p", str(port), host],
         capture_output=True,
@@ -79,7 +79,7 @@ def remove_source_file(src_path):
 
 
 def scp_actual_upload(private_key, source_path, dest_uri, cipher, compress, bandwidth):
-    """ transfer a file via SCP and return subprocess """
+    """transfer a file via SCP and return subprocess"""
 
     args = [
         str(SCP_BIN_PATH),

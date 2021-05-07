@@ -153,7 +153,7 @@ class WorkerManager(BaseWorker):
             self.last_poll = datetime.datetime.now() + datetime.timedelta(seconds=90)
 
     def check_in(self):
-        """ inform backend that we started a manager, sending resources info """
+        """inform backend that we started a manager, sending resources info"""
         logger.info("checking-in with the API…")
 
         host_stats = query_host_stats(self.docker, self.workdir)
@@ -200,7 +200,7 @@ class WorkerManager(BaseWorker):
         self.tasks.pop(task_id, None)
 
     def update_task_data(self, task_id):
-        """ request task object from server and update locally """
+        """request task object from server and update locally"""
 
         logger.debug(f"update_task_data: {task_id}")
         success, status_code, response = self.query_api("GET", f"/tasks/{task_id}")

@@ -148,7 +148,7 @@ class TaskWorker(BaseWorker):
         )
 
     def submit_scraper_progress(self):
-        """ report last lines of scraper to the API """
+        """report last lines of scraper to the API"""
         self.scraper.reload()
         stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
@@ -287,7 +287,7 @@ class TaskWorker(BaseWorker):
         self.refresh_files_list()
 
     def stop(self, timeout=5):
-        """ stopping everything before exit (on term or end of task) """
+        """stopping everything before exit (on term or end of task)"""
         logger.info("Stopping all containers and actions")
         self.should_stop = True
         for step in ("dnscache", "scraper", "log_uploader", "uploader", "checker"):
@@ -334,7 +334,7 @@ class TaskWorker(BaseWorker):
         )
 
     def container_running(self, which):
-        """ whether refered container is still running or not """
+        """whether refered container is still running or not"""
         container = getattr(self, which)
         if not container:
             return False
@@ -427,7 +427,7 @@ class TaskWorker(BaseWorker):
                 self.mark_file_created(fpath.name, fpath.stat().st_size)
 
     def pending_zim_files(self, kind):
-        """ shortcut list of watched file in PENDING status for upload or check """
+        """shortcut list of watched file in PENDING status for upload or check"""
         return list(filter(lambda x: x[1][kind] == PENDING, self.zim_files.items()))
 
     @property

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def task_event_handler(task_id, event, payload):
-    """ ventilate event processing to appropriate handler """
+    """ventilate event processing to appropriate handler"""
     handlers = {
         TaskStatus.reserved: task_reserved_event_handler,
         TaskStatus.started: task_started_event_handler,
@@ -52,7 +52,7 @@ def get_timestamp_from_event(event: dict) -> datetime.datetime:
 
 
 def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwargs):
-    """ save event and its accompagning data to database """
+    """save event and its accompagning data to database"""
 
     task_updates = {}
     # neither file events nor scraper_running should update timestamp list (not unique)
@@ -130,7 +130,7 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
 
 
 def _update_schedule_most_recent_task_status(task_id):
-    """ update `most_recent_task` value of associated schedule """
+    """update `most_recent_task` value of associated schedule"""
     # get schedule and last event
     cursor = Tasks().aggregate(
         [

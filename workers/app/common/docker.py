@@ -70,12 +70,12 @@ def retried_docker_call(docker_method, *args, **kwargs):
 
 
 def get_image(docker_client, *args, **kwargs):
-    """ name="" """
+    """name="" """
     return retried_docker_call(docker_client.images.get, *args, **kwargs)
 
 
 def pull_image(docker_client, *args, **kwargs):
-    """ repository="", tag=None """
+    """repository="", tag=None"""
     return retried_docker_call(docker_client.images.pull, *args, **kwargs)
 
 
@@ -87,7 +87,7 @@ def run_container(docker_client, *args, **kwargs):
 
 
 def get_container(docker_client, *args, **kwargs):
-    """ id_or_name="" """
+    """id_or_name="" """
     container = retried_docker_call(docker_client.containers.get, *args, **kwargs)
     # save a very frequent call to reload()
     container.reload()
@@ -95,27 +95,27 @@ def get_container(docker_client, *args, **kwargs):
 
 
 def list_containers(docker_client, *args, **kwargs):
-    """ all=False, since="Id or name", before="Id or name", limit=None, filters={} """
+    """all=False, since="Id or name", before="Id or name", limit=None, filters={}"""
     return retried_docker_call(docker_client.containers.list, *args, **kwargs)
 
 
 def remove_container(docker_client, *args, **kwargs):
-    """ container="", v=False, link=False, force=False """
+    """container="", v=False, link=False, force=False"""
     return retried_docker_call(docker_client.api.remove_container, *args, **kwargs)
 
 
 def prune_containers(docker_client, *args, **kwargs):
-    """ filters={} """
+    """filters={}"""
     return retried_docker_call(docker_client.api.prune_containers, *args, **kwargs)
 
 
 def stop_container(docker_client, *args, **kwargs):
-    """ container="", timeout=None """
+    """container="", timeout=None"""
     return retried_docker_call(docker_client.api.stop, *args, **kwargs)
 
 
 def wait_container(docker_client, *args, **kwargs):
-    """ container="", timeout=None, condition="" """
+    """container="", timeout=None, condition="" """
     return retried_docker_call(docker_client.api.wait, *args, **kwargs)
 
 
@@ -126,7 +126,7 @@ def container_logs(docker_client, *args, **kwargs):
 
 
 def get_or_pull_image(docker_client, tag):
-    """ attempt to get locally or pull and return. Tag is repo:tag """
+    """attempt to get locally or pull and return. Tag is repo:tag"""
     try:
         return get_image(docker_client, tag)
     except docker.errors.ImageNotFound:
@@ -231,12 +231,12 @@ def upload_container_name(task_id, filename, unique):
 
 
 def get_ip_address(docker_client, name):
-    """ IP Address (first) of a named container """
+    """IP Address (first) of a named container"""
     return get_container(docker_client, name).attrs["NetworkSettings"]["IPAddress"]
 
 
 def get_label_value(docker_client, name, label):
-    """ direct access to a single label value """
+    """direct access to a single label value"""
     return get_container(docker_client, name).attrs["Config"]["Labels"].get(label)
 
 

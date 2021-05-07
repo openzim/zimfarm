@@ -43,7 +43,7 @@ class GlobalNotifications:
 
 
 def load_global_notifications_config():
-    """ fill-up GlobalNotifications from environ """
+    """fill-up GlobalNotifications from environ"""
     for event in GlobalNotifications.events:
         event_entry = os.getenv(f"GLOBAL_NOTIFICATION_{event}")
         if not event_entry:

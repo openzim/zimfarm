@@ -99,7 +99,7 @@ def status_to_cancel(now, status, timeout):
 
 
 def staled_statuses():
-    """ set the status for tasks in an unfinished state """
+    """set the status for tasks in an unfinished state"""
 
     now = getnow()
 

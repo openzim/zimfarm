@@ -200,7 +200,7 @@ def request_tasks_using_schedule():
 
 
 def can_run(task, resources):
-    """ whether resources are suffiscient to run this task """
+    """whether resources are suffiscient to run this task"""
     for key in ["cpu", "memory", "disk"]:
         if task["config"]["resources"][key] > resources[key]:
             return False
@@ -208,7 +208,7 @@ def can_run(task, resources):
 
 
 def get_duration_for(schedule_name, worker_name):
-    """ duration doc for a schedule and worker (or default one) """
+    """duration doc for a schedule and worker (or default one)"""
     schedule = Schedules().find_one({"name": schedule_name}, {"duration": 1})
     if not schedule:
         return get_default_duration()
@@ -218,7 +218,7 @@ def get_duration_for(schedule_name, worker_name):
 
 
 def get_task_eta(task, worker_name):
-    """ compute task duration (dict), remaining (seconds) and eta (datetime) """
+    """compute task duration (dict), remaining (seconds) and eta (datetime)"""
     now = getnow()
     duration = get_duration_for(task["schedule_name"], worker_name)
     # delta
@@ -302,7 +302,7 @@ def get_reqs_doable_by(worker):
 
 
 def get_currently_running_tasks(worker_name):
-    """ list of tasks being run by worker at this moment, including ETA """
+    """list of tasks being run by worker at this moment, including ETA"""
     running_tasks = list(
         Tasks().find(
             {"status": {"$nin": TaskStatus.complete()}, "worker": worker_name},
@@ -323,7 +323,7 @@ def get_currently_running_tasks(worker_name):
 
 
 def get_possible_task_with(tasks_worker_could_do, available_resources, available_time):
-    """ first of possible tasks runnable with availresources within avail_time """
+    """first of possible tasks runnable with availresources within avail_time"""
     for temp_candidate in tasks_worker_could_do:
         if can_run(temp_candidate, available_resources):
             if temp_candidate["duration"]["value"] <= available_time:
@@ -333,7 +333,7 @@ def get_possible_task_with(tasks_worker_could_do, available_resources, available
 
 
 def does_platform_allow_worker_to_run(worker, running_tasks, task):
-    """ whether worker can now run task according to platform limitations """
+    """whether worker can now run task according to platform limitations"""
     platform = task["config"].get("platform")
     if not platform:
         return True

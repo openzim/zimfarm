@@ -27,7 +27,7 @@ class WorkersRoute(BaseRoute):
     methods = ["GET"]
 
     def get(self, *args, **kwargs):
-        """ list of workers with checked-in data """
+        """list of workers with checked-in data"""
 
         def add_status(worker):
             not_seen_since = getnow() - worker["last_seen"]

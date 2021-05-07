@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def list_of_requested_tasks(token: AccessToken.Payload = None):
-    """ list of requested tasks  """
+    """list of requested tasks"""
 
     request_args = request.args.to_dict()
     worker = request_args.get("worker")
@@ -111,7 +111,7 @@ class RequestedTasksRoute(BaseRoute):
     @authenticate
     @require_perm("tasks", "request")
     def post(self, token: AccessToken.Payload):
-        """ Create requested task from a list of schedule_names """
+        """Create requested task from a list of schedule_names"""
 
         try:
             request_json = NewRequestedTaskSchema().load(request.get_json())
@@ -155,7 +155,7 @@ class RequestedTasksRoute(BaseRoute):
 
     @auth_info_if_supplied
     def get(self, token: AccessToken.Payload = None):
-        """ list of requested tasks for API users, no-auth """
+        """list of requested tasks for API users, no-auth"""
         return list_of_requested_tasks(token)
 
 
@@ -166,7 +166,7 @@ class RequestedTasksForWorkers(BaseRoute):
 
     @authenticate
     def get(self, token: AccessToken.Payload):
-        """ list of requested tasks to be retrieved by workers, auth-only """
+        """list of requested tasks to be retrieved by workers, auth-only"""
 
         request_args = request.args.to_dict()
         worker_name = request_args.get("worker")
