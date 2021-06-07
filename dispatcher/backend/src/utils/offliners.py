@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import copy
 import pathlib
 
 from common.enum import Offliner
@@ -13,8 +12,6 @@ def mount_point_for(offliner):
     """Path to mount task volume in scraper"""
     if offliner == Offliner.phet:
         return pathlib.Path("/phet/dist")
-    if offliner == Offliner.sotoki:
-        return pathlib.Path("/work")
     return pathlib.Path("/output")
 
 
@@ -33,10 +30,12 @@ def command_for(offliner, flags, mount_point):
             del flags["one-language-one-zim"]
         # when not using multiple ZIM, scraper uses cwd as output (/output)
     if offliner == Offliner.sotoki:
-        command_flags = copy.deepcopy(flags)
-        domain = command_flags.pop("domain")
-        publisher = command_flags.pop("publisher", "Kiwix")
-        return ["sotoki", domain, publisher] + compute_flags(command_flags)
+        cmd = "sotoki"
+        flags["mirror"] = flags.get(
+            "mirror", "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
+        )
+        flags["statsFilename"] = str(mount_point_for(offliner) / "task_progress.json")
+        flags["output"] = str(mount_point)
     if offliner == Offliner.mwoffliner:
         cmd = "mwoffliner"
         flags["outputDirectory"] = str(mount_point)
