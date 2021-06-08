@@ -31,6 +31,10 @@ def command_for(offliner, flags, mount_point):
         # when not using multiple ZIM, scraper uses cwd as output (/output)
     if offliner == Offliner.sotoki:
         cmd = "sotoki"
+        if flags.get("use-redis"):
+            flags["use-redis"] = "file:///var/run/redis.sock"
+        elif flags.get("use-redis") is False:
+            flags["use-redis"]
         flags["mirror"] = flags.get(
             "mirror", "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
         )

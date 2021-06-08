@@ -196,6 +196,14 @@ class SotokiFlagsSchema(SerializableSchema):
         validate=validate.Equal("/output/task_progress.json"),
     )
 
+    use_redis = fields.Boolean(
+        metadata={
+            "label": "Use Redis",
+            "description": "Use Redis as database backend instead of SQLite",
+        },
+        data_key="use-redis",
+    )
+
     debug = fields.Boolean(
         truthy=[True],
         falsy=[False],
