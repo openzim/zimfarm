@@ -352,7 +352,7 @@ class WatcherRunner:
 
         return payload.get("requested")
 
-    def update_file(self, key):
+    def update_file(self, key, schedule_upon_success):
         """Do an all-steps update of that file as we know there's a new one avail."""
         domain = re.sub(r".7z$", "", key)
         prefix = f" [{domain}]"
@@ -394,7 +394,7 @@ class WatcherRunner:
         fpath.unlink()
         logger.info(f"{prefix} Local file removed")
 
-        if self.schedule_on_update:
+        if schedule_upon_success:
             logger.info(f"{prefix} Scheduling recipe on Zimfarm")
             scheduled = self.schedule_in_zimfarm(domain)
             if scheduled:
@@ -413,11 +413,44 @@ class WatcherRunner:
         self.domains_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
         for domain in domains:
-            key = f"{domain}.7z"
-            if not self.s3_storage.has_object_matching(key, meta={"version": version}):
-                logger.info(f" [+] {key}")
-                future = self.domains_executor.submit(self.update_file, key=key)
-                self.domains_futures.update({future: key})
+            # stackoverflow is a special case in that it's not a single file
+            # but multiple ones. We need to run the update for each of them
+            if domain == "stackoverflow.com":
+                keys = [
+                    f"{domain}-{part}.7z"
+                    for part in (
+                        "Badges",
+                        "Comments",
+                        "PostHistory",
+                        "PostLinks",
+                        "Posts",
+                        "Tags",
+                        "Users",
+                        "Votes",
+                    )
+                ]
+            else:
+                keys = [f"{domain}.7z"]
+
+            for key in keys:
+                if not self.s3_storage.has_object_matching(
+                    key, meta={"version": version}
+                ):
+                    logger.info(f" [+] {key}")
+
+                    # update shall trigger a new recipe schedule on Zimfarm upon compl.
+                    # - unless requested not to
+                    # - unless this is for stackoverflow as this one requires multiple
+                    # files and we'd trigger it only on the ~last one.
+                    schedule_upon_success = self.schedule_on_update and (
+                        domain != "stackoverflow.com" or key.endwsith("-Votes.7z")
+                    )
+                    future = self.domains_executor.submit(
+                        self.update_file,
+                        key=key,
+                        schedule_upon_success=schedule_upon_success,
+                    )
+                    self.domains_futures.update({future: key})
 
         if not self.domains_futures:
             logger.info("All synced up.")
@@ -519,6 +552,7 @@ def entrypoint():
         help="How many threads to run to parallelize download/upload? "
         "Defaults to 1 inside Docker as we can't guess available CPUs",
         dest="nb_threads",
+        type=int,
         default=1
         if is_running_inside_container()
         else multiprocessing.cpu_count() - 1 or 1,
