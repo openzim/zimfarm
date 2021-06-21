@@ -1,7 +1,7 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_multiple_of_100
+from common.schemas.fields import validate_output
 
 
 class SotokiFlagsSchema(SerializableSchema):
@@ -196,12 +196,16 @@ class SotokiFlagsSchema(SerializableSchema):
         validate=validate.Equal("/output/task_progress.json"),
     )
 
-    use_redis = fields.Boolean(
+    redis_url = fields.String(
         metadata={
-            "label": "Use Redis",
-            "description": "Use Redis as database backend instead of SQLite",
+            "label": "Redis URL",
+            "description": "Redis URL to use as database. "
+            "Keep it as file:///var/run/redis.sock",
         },
-        data_key="use-redis",
+        missing="file:///var/run/redis.sock",
+        default="file:///var/run/redis.sock",
+        validate=validate.Equal("file:///var/run/redis.sock"),
+        data_key="redis-url",
     )
 
     debug = fields.Boolean(
