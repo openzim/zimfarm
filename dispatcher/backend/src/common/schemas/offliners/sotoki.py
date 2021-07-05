@@ -200,11 +200,11 @@ class SotokiFlagsSchema(SerializableSchema):
         metadata={
             "label": "Redis URL",
             "description": "Redis URL to use as database. "
-            "Keep it as file:///var/run/redis.sock",
+            "Keep it as unix:///var/run/redis.sock",
         },
-        missing="file:///var/run/redis.sock",
-        default="file:///var/run/redis.sock",
-        validate=validate.Equal("file:///var/run/redis.sock"),
+        missing="unix:///var/run/redis.sock",
+        default="unix:///var/run/redis.sock",
+        validate=validate.Equal("unix:///var/run/redis.sock"),
         data_key="redis-url",
     )
 
