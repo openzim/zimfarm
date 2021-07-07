@@ -190,7 +190,7 @@ class SotokiFlagsSchema(SerializableSchema):
             "description": "Scraping progress file. "
             "Leave it as `/output/task_progress.json`",
         },
-        data_key="statsFilename",
+        data_key="stats-filename",
         missing="/output/task_progress.json",
         default="/output/task_progress.json",
         validate=validate.Equal("/output/task_progress.json"),
