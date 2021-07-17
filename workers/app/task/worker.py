@@ -185,10 +185,14 @@ class TaskWorker(BaseWorker):
         if progress:
             logger.debug(f"Submitting scraper progress: {progress['overall']}%")
 
+        payload = {"stdout": stdout, "stderr": stderr}
+        if progress:
+            payload["progress"] = progress
+
         self.patch_task(
             {
                 "event": "scraper_running",
-                "payload": {"stdout": stdout, "stderr": stderr, "progress": progress},
+                "payload": payload,
             }
         )
 
