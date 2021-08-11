@@ -128,6 +128,7 @@ def make_requested_task(database, make_event):
                 "image": {"name": "openzim/youtube", "tag": "latest"},
                 "task_name": "youtube",
                 "warehouse_path": "/other",
+                "monitor": False,
             }
         }
 

@@ -29,6 +29,7 @@ def make_mwoffliner_config(**kwargs):
         "flags": make_mwoffliner_flags(),
         "platform": None,
         "resources": {"cpu": 3, "memory": 512 * 1048576, "disk": 2 ** 30},
+        "monitor": False,
     }
     config.update(kwargs)
     return config
@@ -42,6 +43,7 @@ def make_phet_config(**kwargs):
         "flags": {},
         "platform": None,
         "resources": {"cpu": 3, "memory": 512 * 1048576, "disk": 2 ** 30},
+        "monitor": False,
     }
     config.update(kwargs)
     return config
