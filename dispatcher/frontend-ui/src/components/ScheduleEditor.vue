@@ -139,6 +139,11 @@
                          size="sm"></b-form-select>
         </b-form-group>
       </b-col>
+      <b-col>
+         <b-form-group label="Monitoring" label-for="es_monitor" description="Attach a monitoring companion to scraper">
+          <SwitchButton v-model="edit_schedule.config.monitor">{{ edit_schedule.config.monitor|yes_no("Enabled", "Disabled") }}</SwitchButton>
+        </b-form-group>
+      </b-col>
     </b-row>
 
     <b-row>
@@ -404,7 +409,7 @@
           payload.language = this.languages.filter(function (language) { return language.code == this.edit_schedule.language.code }.bind(this))[0];
 
         // config properties
-        ["warehouse_path", "task_name", "platform"].forEach(function (key) {
+        ["warehouse_path", "task_name", "platform", "monitor"].forEach(function (key) {
           if (parent.edit_schedule.config[key] != parent.schedule.config[key])
             payload[key] = parent.edit_schedule.config[key];
         });
