@@ -106,6 +106,7 @@ class UpdateSchema(Schema):
         required=False, validate=validate_platform, allow_none=True
     )
     resources = fields.Nested(ResourcesSchema, required=False)
+    monitor = fields.Boolean(required=False, truthy={True}, falsy={False})
     flags = fields.Dict(required=False)
 
 

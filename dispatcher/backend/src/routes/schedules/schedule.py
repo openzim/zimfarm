@@ -175,6 +175,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             "resources",
             "platform",
             "flags",
+            "monitor",
         ]
         mongo_update = {
             f"config.{key}" if key in config_keys else key: value
