@@ -103,7 +103,11 @@ class BaseWorker:
                 self.access_token, self.refresh_token = get_token_ssh(
                     self.webapi_uri, self.username, PRIVATE_KEY
                 )
-                self.token_payload = jwt.decode(self.access_token, verify=False)
+                self.token_payload = jwt.decode(
+                    self.access_token,
+                    algorithms=["HS256"],
+                    options={"verify_signature": False},
+                )
                 self.authenticated_on = datetime.datetime.now()
                 self.authentication_expires_on = datetime.datetime.fromtimestamp(
                     self.token_payload["exp"]

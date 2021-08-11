@@ -204,7 +204,11 @@ class WatcherRunner:
                 self.access_token, self.refresh_token = get_token(
                     ZIMFARM_API_URL, self.zimfarm_username, self.zimfarm_password
                 )
-                self.token_payload = jwt.decode(self.access_token, verify=False)
+                self.token_payload = jwt.decode(
+                    self.access_token,
+                    algorithms=["HS256"],
+                    options={"verify_signature": False},
+                )
                 self.authenticated_on = datetime.datetime.now()
                 self.authentication_expires_on = datetime.datetime.fromtimestamp(
                     self.token_payload["exp"]
