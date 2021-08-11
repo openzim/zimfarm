@@ -176,6 +176,7 @@ class TestSchedulePost:
                     "image": {"name": "openzim/phet", "tag": "latest"},
                     "platform": None,
                     "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
+                    "monitor": False,
                 },
                 "notification": {},
             },
@@ -197,6 +198,7 @@ class TestSchedulePost:
                     "image": {"name": "openzim/gutenberg", "tag": "latest"},
                     "platform": None,
                     "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
+                    "monitor": False,
                 },
                 "notification": {},
             },
@@ -243,6 +245,7 @@ class TestSchedulePost:
                 "warehouse_path": "/phet",
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},
+                "monitor": False,
             },
         }
 
@@ -270,6 +273,7 @@ class TestSchedulePost:
                 "warehouse_path": "/phet",
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},
+                "monitor": False,
             },
         }
 

@@ -99,6 +99,7 @@
               <ResourceBadge kind="memory" :value="task.config.resources.memory" />
               <ResourceBadge kind="disk" :value="task.config.resources.disk" />
               <ResourceBadge kind="shm" :value="task.config.resources.shm" v-if="task.config.resources.shm" />
+              <span class="badge badge-warning mr-2" v-if="task.config.monitor || false"><font-awesome-icon icon="bug" size="sm" /> monitored</span>
             </td>
           </tr>
           <tr v-if="task.config"><th>Platform</th><td>{{ task.config.platform || "-" }}</td></tr>

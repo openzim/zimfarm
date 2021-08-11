@@ -69,6 +69,7 @@ class ScheduleConfigSchema(SerializableSchema):
     resources = fields.Nested(ResourcesSchema(), required=True)
     flags = fields.Dict(required=True)
     platform = fields.String(required=True, allow_none=True, validate=validate_platform)
+    monitor = fields.Boolean(required=True, truthy=[True], falsy=[False])
 
     @staticmethod
     def get_offliner_schema(offliner):

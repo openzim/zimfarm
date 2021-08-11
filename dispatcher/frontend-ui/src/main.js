@@ -27,9 +27,10 @@ import { faSpinner, faUser, faUserCircle, faKey, faTimes, faTimesCircle,
          faCalendarAlt, faStopCircle, faTrashAlt, faPlug,
          faSkullCrossbones, faAsterisk, faCheck, faPlusCircle,
          faExclamationTriangle, faServer, faSortAmountUp,
-         faExternalLinkAlt, faClock, faCompactDisc, faGlasses } from '@fortawesome/free-solid-svg-icons'
+         faExternalLinkAlt, faClock, faCompactDisc, faGlasses, faBug } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(faKey);
+library.add(faBug);
 library.add(faHdd);
 library.add(faUser);
 library.add(faPlug);
