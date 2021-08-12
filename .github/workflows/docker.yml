@@ -139,6 +139,24 @@ jobs:
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
+  monitor:
+    name: Deploy monitor Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish Docker Image
+        uses: openzim/docker-publish-action@v5
+        with:
+          image-name: openzim/zimfarm-monitor
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: monitor
+          credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
+
   watcher:
     name: Deploy watcher Image
     runs-on: ubuntu-20.04
