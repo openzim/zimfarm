@@ -296,7 +296,10 @@ def start_monitor(docker_client, task):
 
     environment = {
         "SCRAPER_CONTAINER": get_scraper_container_name(task),
-        "NETDATA_HOSTNAME": f"{name}.{task['worker']}",
+        "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
+            task_ident=get_container_name(task["schedule_name"], task["_id"]),
+            worker=task["worker"],
+        ),
     }
     if MONITORING_DEST:
         environment["MONITORING_DEST"] = MONITORING_DEST
