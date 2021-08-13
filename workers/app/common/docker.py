@@ -27,6 +27,9 @@ from common.constants import (
     DNSCACHE_IMAGE,
     UPLOADER_IMAGE,
     CHECKER_IMAGE,
+    MONITOR_IMAGE,
+    MONITORING_DEST,
+    MONITORING_KEY,
 )
 from common.utils import short_id, as_pos_int, format_size
 
@@ -205,11 +208,20 @@ def query_container_stats(workdir):
     }
 
 
+def get_running_container_id():
+    try:
+        with open("/proc/self/cpuset", "r") as fh:
+            return pathlib.Path(fh.read().strip()).name
+    except Exception as exc:
+        logger.error(f"Unable to retrieve own container ID: {exc}")
+    return None
+
+
 def query_host_mounts(docker_client, workdir=None):
     keys = [DOCKER_SOCKET, PRIVATE_KEY]
     if workdir:
         keys.append(workdir)
-    container = get_container(docker_client, os.getenv("HOSTNAME"))
+    container = get_container(docker_client, get_running_container_id())
     mounts = {}
     for mount in container.attrs["Mounts"]:
         dest = pathlib.Path(mount["Destination"])
@@ -221,6 +233,23 @@ def query_host_mounts(docker_client, workdir=None):
 
 def get_container_name(kind, task_id):
     return f"{kind}_{short_id(task_id)}"
+
+
+def get_scraper_container_name(task):
+    return get_container_name(
+        f"{CONTAINER_SCRAPER_IDENT}_{task['config']['task_name']}", task["_id"]
+    )
+
+
+def get_container_hostname(kind, task_id):
+    def to_hostname(text):
+        # https://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_hostnames
+        # limit to ASCII a-z 0-9 and -
+        # limit to 63b
+        # we know we won't produce recipes with leading -
+        return re.sub(r"[^a-z0-9\-]", "-", text.lower())[:63]
+
+    return to_hostname(f"{kind}-{short_id(task_id)}")
 
 
 def upload_container_name(task_id, filename, unique):
@@ -249,6 +278,7 @@ def start_dnscache(docker_client, task):
         image=image,
         detach=True,
         name=name,
+        hostname=get_container_hostname("dnscache", task["_id"]),
         environment=environment,
         remove=False,
         labels={
@@ -257,6 +287,55 @@ def start_dnscache(docker_client, task):
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
         },
+    )
+
+
+def start_monitor(docker_client, task):
+    name = get_container_name("monitor", task["_id"])
+    image = get_or_pull_image(docker_client, MONITOR_IMAGE)
+    hostname = get_container_hostname("monitor", task["_id"])
+
+    host_mounts = query_host_mounts(docker_client)
+    host_docker_socket = str(host_mounts.get(DOCKER_SOCKET))
+
+    mounts = [
+        Mount("/host/etc/passwd", "/etc/passwd", type="bind", read_only=True),
+        Mount("/host/etc/group", "/etc/group", type="bind", read_only=True),
+        Mount("/host/proc", "/proc", type="bind", read_only=True),
+        Mount("/host/sys", "/sys", type="bind", read_only=True),
+        Mount("/host/etc/os-release", "/etc/os-release", type="bind", read_only=True),
+        Mount("/var/run/docker.sock", host_docker_socket, type="bind", read_only=True),
+    ]
+
+    environment = {
+        "SCRAPER_CONTAINER": get_scraper_container_name(task),
+        "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
+            task_ident=get_container_hostname(task["schedule_name"], task["_id"]),
+            worker=task["worker"],
+        ),
+    }
+    if MONITORING_DEST:
+        environment["MONITORING_DEST"] = MONITORING_DEST
+    if MONITORING_KEY:
+        environment["MONITORING_KEY"] = MONITORING_KEY
+
+    return run_container(
+        docker_client,
+        image=image,
+        detach=True,
+        name=name,
+        hostname=hostname,
+        mounts=mounts,
+        remove=True,
+        labels={
+            "zimfarm": "",
+            "task_id": task["_id"],
+            "tid": short_id(task["_id"]),
+            "schedule_name": task["schedule_name"],
+        },
+        environment=environment,
+        cap_add=["SYS_PTRACE"],
+        security_opt=["apparmor=unconfined"],
     )
 
 
@@ -288,6 +367,7 @@ def start_checker(docker_client, task, host_workdir, filename):
         command=command,
         detach=True,
         name=name,
+        hostname=get_container_hostname("checker", task["_id"]),
         mounts=mounts,
         labels={
             "zimfarm": "",
@@ -302,10 +382,7 @@ def start_checker(docker_client, task, host_workdir, filename):
 
 def start_scraper(docker_client, task, dns, host_workdir):
     config = task["config"]
-    offliner = config["task_name"]
-    container_name = get_container_name(
-        f"{CONTAINER_SCRAPER_IDENT}_{offliner}", task["_id"]
-    )
+    container_name = get_scraper_container_name(task)
 
     # remove container should it exists (should not)
     try:
@@ -357,6 +434,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
         cap_drop=cap_drop,
         mounts=mounts,
         name=container_name,
+        hostname=get_container_hostname("scraper", task["_id"]),
         remove=False,  # scaper container will be removed once log&zim handled
     )
 
@@ -409,6 +487,9 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "UPLOADER_IMAGE": UPLOADER_IMAGE,
             "CHECKER_IMAGE": CHECKER_IMAGE,
             "DNSCACHE_IMAGE": DNSCACHE_IMAGE,
+            "MONITOR_IMAGE": MONITOR_IMAGE,
+            "MONITORING_DEST": MONITORING_DEST,
+            "MONITORING_KEY": MONITORING_KEY,
             "DOCKER_SOCKET": DOCKER_SOCKET,
         },
         labels={
@@ -427,6 +508,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         mem_swappiness=0,
         mounts=mounts,
         name=container_name,
+        hostname=get_container_hostname("worker", task["_id"]),
         remove=False,  # zimtask containers are pruned periodically
     )
 
@@ -524,6 +606,9 @@ def start_uploader(
         mem_swappiness=0,
         mounts=mounts,
         name=container_name,
+        hostname=get_container_hostname(
+            "zimup" if filename.endswith(".zim") else "logup", task["_id"]
+        ),
         remove=False,
     )
 

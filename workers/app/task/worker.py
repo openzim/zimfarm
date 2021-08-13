@@ -28,6 +28,7 @@ from common.docker import (
     get_container_logs,
     get_container_name,
     container_logs,
+    start_monitor,
 )
 from common.constants import PROGRESS_CAPABLE_OFFLINERS, CONTAINER_TASK_IDENT
 
@@ -84,6 +85,7 @@ class TaskWorker(BaseWorker):
 
         self.dnscache = None  # dnscache container
         self.dns = None  # list of DNS IPs or None
+        self.monitor = None  # monitor container
 
         self.zim_files = {}  # ZIM files registry
         self.zim_retries = {}  # ZIM files with upload errors (registry)
@@ -263,6 +265,10 @@ class TaskWorker(BaseWorker):
         self.dns = [get_ip_address(self.docker, self.dnscache.name)]
         logger.debug(f"DNS Cache started using IPs: {self.dns}")
 
+    def start_monitor(self):
+        logger.info("Starting resource monitor")
+        self.monitor = start_monitor(self.docker, self.task)
+
     def start_scraper(self):
         logger.info(f"Starting scraper. Expects files at: {self.host_task_workdir} ")
         self.scraper = start_scraper(
@@ -287,6 +293,8 @@ class TaskWorker(BaseWorker):
         # update scraper
         self.scraper.reload()
         self.dnscache.reload()
+        if self.monitor:
+            self.monitor.reload()
         self.uploader.reload()
         self.refresh_files_list()
 
@@ -294,7 +302,14 @@ class TaskWorker(BaseWorker):
         """stopping everything before exit (on term or end of task)"""
         logger.info("Stopping all containers and actions")
         self.should_stop = True
-        for step in ("dnscache", "scraper", "log_uploader", "uploader", "checker"):
+        for step in (
+            "monitor",
+            "dnscache",
+            "scraper",
+            "log_uploader",
+            "uploader",
+            "checker",
+        ):
             try:
                 self.stop_container(step)
             except Exception as exc:
@@ -575,6 +590,9 @@ class TaskWorker(BaseWorker):
 
         # start our DNS cache
         self.start_dnscache()
+
+        if self.task["config"].get("monitor", False):
+            self.start_monitor()
 
         # start scraper
         self.start_scraper()

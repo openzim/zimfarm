@@ -27,9 +27,12 @@ WORKER_TAG="latest"
 DNSCACHE_IMAGE="ghcr.io/openzim/dnscache:1.0.1"
 UPLOADER_IMAGE="ghcr.io/openzim/uploader:1.1.1"
 CHECKER_IMAGE="ghcr.io/openzim/zim-tools:2.1.0"
+MONITOR_IMAGE="ghcr.io/openzim/zimfarm-monitor:latest"
 SOCKET_URI="tcp://tcp.farm.openzim.org:32029"
 WEB_API_URI="https://api.farm.openzim.org/v1"
 POLL_INTERVAL="180"
+MONITORING_DEST=""  # IP:PORT
+MONITORING_KEY=""  # UUID
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm_worker-manager"
@@ -175,6 +178,7 @@ function restart() {
         -v $datadir:/data \
         -v /var/run/docker.sock:/var/run/docker.sock:ro \
         -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/zimfarm:ro \
+        --hostname manager \
         --env ZIMFARM_MEMORY=$ZIMFARM_MAX_RAM \
         --env ZIMFARM_DISK=$ZIMFARM_DISK \
         --env ZIMFARM_CPUS=$ZIMFARM_CPU \
@@ -194,6 +198,9 @@ function restart() {
         --env DNSCACHE_IMAGE=$DNSCACHE_IMAGE \
         --env UPLOADER_IMAGE=$UPLOADER_IMAGE \
         --env CHECKER_IMAGE=$CHECKER_IMAGE \
+        --env MONITOR_IMAGE=$MONITOR_IMAGE \
+        --env MONITORING_DEST=$MONITORING_DEST \
+        --env MONITORING_KEY=$MONITORING_KEY \
     $manager_image_string worker-manager
 }
 
