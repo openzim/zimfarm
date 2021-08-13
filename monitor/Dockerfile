@@ -1,4 +1,4 @@
-FROM netdata/netdata:v1.31.0
+FROM netdata/netdata:latest
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
