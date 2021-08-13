@@ -251,7 +251,9 @@ def upload_container_name(task_id, filename, unique):
 
 def get_ip_address(docker_client, name):
     """IP Address (first) of a named container"""
-    return get_container(docker_client, name).attrs["NetworkSettings"]["IPAddress"]
+    return get_container(docker_client, name).attrs["NetworkSettings"]["Networks"][
+        NETWORK_NAME
+    ]["IPAddress"]
 
 
 def get_label_value(docker_client, name, label):
