@@ -35,7 +35,7 @@ MONITORING_DEST=""  # IP:PORT
 MONITORING_KEY=""  # UUID
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
-WORKER_MANAGER_NAME="zimfarm_worker-manager"
+WORKER_MANAGER_NAME="zimfarm-manager"
 SCRIPT_VERSION="1.0.0"
 
 function die() {
@@ -178,7 +178,6 @@ function restart() {
         -v $datadir:/data \
         -v /var/run/docker.sock:/var/run/docker.sock:ro \
         -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/zimfarm:ro \
-        --hostname manager \
         --env ZIMFARM_MEMORY=$ZIMFARM_MAX_RAM \
         --env ZIMFARM_DISK=$ZIMFARM_DISK \
         --env ZIMFARM_CPUS=$ZIMFARM_CPU \

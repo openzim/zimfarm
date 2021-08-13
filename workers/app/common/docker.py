@@ -241,17 +241,6 @@ def get_scraper_container_name(task):
     )
 
 
-def get_container_hostname(kind, task_id):
-    def to_hostname(text):
-        # https://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_hostnames
-        # limit to ASCII a-z 0-9 and -
-        # limit to 63b
-        # we know we won't produce recipes with leading -
-        return re.sub(r"[^a-z0-9\-]", "-", text.lower())[:63]
-
-    return to_hostname(f"{kind}-{short_id(task_id)}")
-
-
 def upload_container_name(task_id, filename, unique):
     ident = "zimup" if filename.endswith(".zim") else "logup"
     if unique:
@@ -278,7 +267,6 @@ def start_dnscache(docker_client, task):
         image=image,
         detach=True,
         name=name,
-        hostname=get_container_hostname("dnscache", task["_id"]),
         environment=environment,
         remove=False,
         labels={
@@ -293,7 +281,6 @@ def start_dnscache(docker_client, task):
 def start_monitor(docker_client, task):
     name = get_container_name("monitor", task["_id"])
     image = get_or_pull_image(docker_client, MONITOR_IMAGE)
-    hostname = get_container_hostname("monitor", task["_id"])
 
     host_mounts = query_host_mounts(docker_client)
     host_docker_socket = str(host_mounts.get(DOCKER_SOCKET))
@@ -309,10 +296,7 @@ def start_monitor(docker_client, task):
 
     environment = {
         "SCRAPER_CONTAINER": get_scraper_container_name(task),
-        "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
-            task_ident=get_container_hostname(task["schedule_name"], task["_id"]),
-            worker=task["worker"],
-        ),
+        "NETDATA_HOSTNAME": f"{name}.{task['worker']}'",
     }
     if MONITORING_DEST:
         environment["MONITORING_DEST"] = MONITORING_DEST
@@ -324,7 +308,6 @@ def start_monitor(docker_client, task):
         image=image,
         detach=True,
         name=name,
-        hostname=hostname,
         mounts=mounts,
         remove=True,
         labels={
@@ -367,7 +350,6 @@ def start_checker(docker_client, task, host_workdir, filename):
         command=command,
         detach=True,
         name=name,
-        hostname=get_container_hostname("checker", task["_id"]),
         mounts=mounts,
         labels={
             "zimfarm": "",
@@ -434,7 +416,6 @@ def start_scraper(docker_client, task, dns, host_workdir):
         cap_drop=cap_drop,
         mounts=mounts,
         name=container_name,
-        hostname=get_container_hostname("scraper", task["_id"]),
         remove=False,  # scaper container will be removed once log&zim handled
     )
 
@@ -508,7 +489,6 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         mem_swappiness=0,
         mounts=mounts,
         name=container_name,
-        hostname=get_container_hostname("worker", task["_id"]),
         remove=False,  # zimtask containers are pruned periodically
     )
 
@@ -606,9 +586,6 @@ def start_uploader(
         mem_swappiness=0,
         mounts=mounts,
         name=container_name,
-        hostname=get_container_hostname(
-            "zimup" if filename.endswith(".zim") else "logup", task["_id"]
-        ),
         remove=False,
     )
 
