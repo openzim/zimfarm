@@ -11,6 +11,7 @@ echo "${STREAM_CONF}" > /etc/netdata/stream.conf
 
 # configure redis module to scraper (even if there's no redis there)
 read -d '' REDIS_CONF << EOF
+autodetection_retry: 30
 jobs:
  - name: scraper
    address: 'redis://${SCRAPER_CONTAINER}:6379'
