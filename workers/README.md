@@ -81,6 +81,8 @@ Additionally, if your partition scheme isn't compatible with such sizes on `/var
 }
 ```
 
+Zimfarm uses a dedicated network (`name=zimfarm`) which is used for all its containers. This network is created automatically (`driver=bridge`) if not present. Create one yourself with that name if you'd prefer a different configuration.
+
 ### Create a Zimfarm folder
 
 Most of the (temporary) Zimfarm-related data will be put in there

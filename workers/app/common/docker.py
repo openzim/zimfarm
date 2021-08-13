@@ -30,6 +30,7 @@ from common.constants import (
     MONITOR_IMAGE,
     MONITORING_DEST,
     MONITORING_KEY,
+    NETWORK_NAME,
 )
 from common.utils import short_id, as_pos_int, format_size
 
@@ -275,6 +276,7 @@ def start_dnscache(docker_client, task):
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
         },
+        network=NETWORK_NAME,
     )
 
 
@@ -312,7 +314,7 @@ def start_monitor(docker_client, task):
         detach=True,
         name=name,
         mounts=mounts,
-        remove=True,
+        remove=False,
         labels={
             "zimfarm": "",
             "task_id": task["_id"],
@@ -322,6 +324,7 @@ def start_monitor(docker_client, task):
         environment=environment,
         cap_add=["SYS_PTRACE"],
         security_opt=["apparmor=unconfined"],
+        network=NETWORK_NAME,
     )
 
 
@@ -362,6 +365,7 @@ def start_checker(docker_client, task, host_workdir, filename):
             "filename": filename,
         },
         remove=False,
+        network=NETWORK_NAME,
     )
 
 
@@ -420,6 +424,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
         mounts=mounts,
         name=container_name,
         remove=False,  # scaper container will be removed once log&zim handled
+        network=NETWORK_NAME,
     )
 
 
@@ -493,6 +498,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         mounts=mounts,
         name=container_name,
         remove=False,  # zimtask containers are pruned periodically
+        network=NETWORK_NAME,
     )
 
 
@@ -590,6 +596,7 @@ def start_uploader(
         mounts=mounts,
         name=container_name,
         remove=False,
+        network=NETWORK_NAME,
     )
 
 

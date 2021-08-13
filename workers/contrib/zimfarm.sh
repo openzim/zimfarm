@@ -151,6 +151,12 @@ function stop() {
 
 # start or restart the manager using config values
 function restart() {
+    # check whether we have our zimfarm network
+    docker network inspect zimfarm 2&> /dev/null
+    if [ $? -gt 0 ]; then
+        echo "creating “zimfarm” network"
+        docker network create --driver bridge --label "zimfarm=" zimfarm
+    fi
     echo "(re)starting zimfarm worker manager..."
     echo ":: stopping ${WORKER_MANAGER_NAME}"
     run docker stop $WORKER_MANAGER_NAME || true
@@ -175,6 +181,7 @@ function restart() {
         --detach \
         --log-driver json-file \
         --log-opt max-size="100m" \
+        --network zimfarm \
         -v $datadir:/data \
         -v /var/run/docker.sock:/var/run/docker.sock:ro \
         -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/zimfarm:ro \
