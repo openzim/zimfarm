@@ -1,0 +1,16 @@
+{
+  "homelet-orange": "197.155.137.102",
+  "homelet-malitel": "217.64.110.0/24",
+  "wmflabs": "185.15.56.0/24",
+  "athena18": "147.229.8.218",
+  "linode-reg": "178.79.146.140",
+  "linode-reg6": "2a01:7e00::f03c:92ff:fe41:1803",
+  "pixelmemory-host": "99.87.255.75",
+  "pixelmemory-vm": "99.87.255.76",
+  "sisyphus": "195.154.207.98",
+  "kelson6": "2a02:168:6008:0:1c2b:e505:e1da:77eb",
+  "kelson": "212.51.141.46",
+  "download-kiwix": "195.154.156.115",
+  "demo.offspot": "195.154.81.22",
+  "boli": "51.159.186.117"
+}

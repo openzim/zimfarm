@@ -17,34 +17,35 @@
 import os
 import sys
 import json
+import pathlib
 
 from kiwixstorage import KiwixStorage
 
 POLICY_ARN = "arn:aws:iam::100000050990:policy/ZimfarmWorker"
 STATEMENT_ID = "ZimfarmWorkersIPsWhiteList"
 
-WORKERS = [
-    ("homelet-orange", "197.155.137.102"),
-    ("homelet-malitel", "217.64.110.0/24"),
-    ("wmflabs", "185.15.56.0/24"),
-    ("athena18", "147.229.8.218"),
-    # ("jehana", "212.51.141.4"),
-    # ("jehana", "2a02:168:61bf:0:c892:7d8:5307:c57b"),
-    # ("jehana", "2a02:168:61bf:0:8572:e45d:a0bc:a56d"),
-    ("linode-reg", "178.79.146.140"),
-    ("linode-reg-v6", "2a01:7e00::f03c:92ff:fe41:1803"),
-    # ("TheSquashFS", "69.159.116.3"),
-    # ("TheSquashFS", "69.159.167.66"),
-    # ("TheSquashFS", "69.159.167.66"),
-    # ("hum", "31.17.74.139"),
-    # ("protocol", "3.22.170.85"),
-    ("pixelmemory-host", "99.87.255.75"),
-    ("pixelmemory-vm", "99.87.255.76"),
-    ("sisyphus", "195.154.207.98"),
-    ("kelson6", "2a02:168:6008:0:1c2b:e505:e1da:77eb"),
-    ("kelson", "212.51.141.46"),
-    ("download-kiwix", "195.154.156.115"),
-]
+workers_path = "workers.json"
+try:
+    with open(pathlib.Path(__file__).parent.joinpath(workers_path), "r") as fh:
+        WORKERS = json.load(fh)
+except IOError:
+    try:
+        url = (
+            "https://raw.githubusercontent.com/openzim/zimfarm/master"
+            "/workers/contrib/workers.json"
+        )
+        import requests
+
+        WORKERS = requests.get(url).json()
+    except ImportError:
+        print(f"{workers_path} not present, you'll need requests to fetch from github")
+        sys.exit(1)
+    except Exception as exc:
+        print(f"{workers_path} not present. couldn't fetch from github at {url}: {exc}")
+        sys.exit(1)
+except Exception as exc:
+    print(f"Failed to read {workers_path}: {exc}")
+    sys.exit(1)
 
 
 def get_statement():
@@ -53,9 +54,7 @@ def get_statement():
         "Effect": "Deny",
         "Action": "s3:*",
         "Resource": "arn:aws:s3:::*",
-        "Condition": {
-            "NotIpAddress": {"aws:SourceIp": [worker[1] for worker in WORKERS]}
-        },
+        "Condition": {"NotIpAddress": {"aws:SourceIp": list(WORKERS.values())}},
     }
 
 
