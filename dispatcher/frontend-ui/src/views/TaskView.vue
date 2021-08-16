@@ -99,13 +99,20 @@
               <ResourceBadge kind="memory" :value="task.config.resources.memory" />
               <ResourceBadge kind="disk" :value="task.config.resources.disk" />
               <ResourceBadge kind="shm" :value="task.config.resources.shm" v-if="task.config.resources.shm" />
-              <span class="badge badge-warning mr-2" v-if="task.config.monitor || false"><font-awesome-icon icon="bug" size="sm" /> monitored</span>
+              <span class="badge badge-warning mr-2" v-if="task.config.monitor || false">
+                <a target="_blank" :href="monitoring_url" ><font-awesome-icon icon="bug" size="sm" /> monitored</a>
+              </span>
             </td>
           </tr>
           <tr v-if="task.config"><th>Platform</th><td>{{ task.config.platform || "-" }}</td></tr>
           <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :secret_fields="secret_fields" :shrink="false"/></td></tr>
           <tr v-if="task_container.command"><th>Command </th><td><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
+          <tr v-if="max_memory != null">
+            <th>Stats</th>
+            <td><span class="badge badge-light mr-2"><font-awesome-icon icon="memory" /> {{ max_memory }} (max)</span>
+            </td>
+          </tr>
           <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
@@ -128,6 +135,7 @@
   import ResourceBadge from '../components/ResourceBadge.vue'
   import FlagsList from '../components/FlagsList.vue'
 
+  import filesize from 'filesize';
 
   export default {
     name: 'TaskView',
@@ -202,6 +210,8 @@
       image_human() { return Constants.image_human(this.task.config); },
       image_url() { return Constants.image_url(this.task.config); },
       can_cancel() { return this.task && this.is_running && this.task["_id"]; },
+      max_memory() { try { return filesize(this.task_container.stats.memory.max_usage); } catch { return null; } },
+      monitoring_url () { return 'http://monitoring.openzim.org/host/{schedule_name}_{short_id}.{worker}/'.format({schedule_name: this.schedule_name, short_id: this.short_id, worker: this.task.worker}); },
     },
     methods: {
       copyLog(log) {

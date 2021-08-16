@@ -154,6 +154,12 @@ class TaskWorker(BaseWorker):
         self.scraper.reload()
         stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
         stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
+        scraper_stats = self.scraper.stats(stream=False)
+        stats = {
+            "memory": {
+                "max_usage": scraper_stats.get("memory_stats", {}).get("max_usage")
+            }
+        }
 
         # fetch and compute progression from progress file
         progress = {}
@@ -187,7 +193,7 @@ class TaskWorker(BaseWorker):
         if progress:
             logger.debug(f"Submitting scraper progress: {progress['overall']}%")
 
-        payload = {"stdout": stdout, "stderr": stderr}
+        payload = {"stdout": stdout, "stderr": stderr, "stats": stats}
         if progress:
             payload["progress"] = progress
 
