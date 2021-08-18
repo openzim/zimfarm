@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # set streaming destination
+# shellcheck disable=SC2162
 read -d '' STREAM_CONF << EOF
 [stream]
  enabled = yes
@@ -10,6 +11,7 @@ EOF
 echo "${STREAM_CONF}" > /etc/netdata/stream.conf
 
 # configure redis module to scraper (even if there's no redis there)
+# shellcheck disable=SC2162
 read -d '' REDIS_CONF << EOF
 autodetection_retry: 30
 jobs:
