@@ -152,10 +152,10 @@ function stop() {
 # start or restart the manager using config values
 function restart() {
     # check whether we have our zimfarm network
-    docker network inspect zimfarm 2&> /dev/null
-    if [ $? -gt 0 ]; then
+    if ! run docker network inspect zimfarm > /dev/null
+    then
         echo "creating “zimfarm” network"
-        docker network create --driver bridge --label "zimfarm=" zimfarm
+        run docker network create --driver bridge --label "zimfarm=" zimfarm
     fi
     echo "(re)starting zimfarm worker manager..."
     echo ":: stopping ${WORKER_MANAGER_NAME}"
