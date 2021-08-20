@@ -37,6 +37,10 @@ def command_for(offliner, flags, mount_point):
         flags["redis-url"] = "unix:///var/run/redis.sock"
         flags["stats-filename"] = str(mount_point_for(offliner) / "task_progress.json")
         flags["output"] = str(mount_point)
+    if offliner == Offliner.wikihow:
+        cmd = "wikihow2zim"
+        flags["stats-filename"] = str(mount_point_for(offliner) / "task_progress.json")
+        flags["output"] = str(mount_point)
     if offliner == Offliner.mwoffliner:
         cmd = "mwoffliner"
         flags["outputDirectory"] = str(mount_point)
