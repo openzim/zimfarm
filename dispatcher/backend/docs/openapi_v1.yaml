@@ -1914,6 +1914,11 @@ components:
         - phet
         - sotoki
         - nautilus
+        - kolibri
+        - openedx
+        - ted
+        - wikihow
+        - zimit
       example:
         - mwoffliner
         - sotoki
