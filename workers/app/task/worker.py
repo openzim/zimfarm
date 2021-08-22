@@ -597,12 +597,13 @@ class TaskWorker(BaseWorker):
         # start our DNS cache
         self.start_dnscache()
 
-        if self.task["config"].get("monitor", False):
-            self.start_monitor()
-
         # start scraper
         self.start_scraper()
         self.mark_scraper_started()
+
+        # monitor must be started after scraper to feed it the scraper IP
+        if self.task["config"].get("monitor", False):
+            self.start_monitor()
 
         self.submit_scraper_progress()
 

@@ -90,18 +90,6 @@ class BaseWorker:
         else:
             logger.info("\tdocker API access successful")
 
-        # ensure we have our zimfarm network
-        try:
-            self.docker.api.create_network(
-                name="zimfarm",
-                driver="bridge",
-                labels={"zimfarm": ""},
-                check_duplicate=True,
-            )
-        except docker.errors.APIError as exc:
-            if not exc.status_code == 409:
-                raise exc
-
     def register_signals(self):
         logger.info("registering exit signals")
         signal.signal(signal.SIGTERM, self.exit_gracefully)

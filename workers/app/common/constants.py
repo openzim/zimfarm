@@ -15,7 +15,6 @@ from common.utils import as_pos_int, format_size
 # worker names
 WORKER_MANAGER = "worker-manager"
 TASK_WORKER = "task-worker"
-NETWORK_NAME = "zimfarm"
 
 # images
 TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")

@@ -30,7 +30,6 @@ from common.constants import (
     MONITOR_IMAGE,
     MONITORING_DEST,
     MONITORING_KEY,
-    NETWORK_NAME,
 )
 from common.utils import short_id, as_pos_int, format_size
 
@@ -251,9 +250,7 @@ def upload_container_name(task_id, filename, unique):
 
 def get_ip_address(docker_client, name):
     """IP Address (first) of a named container"""
-    return get_container(docker_client, name).attrs["NetworkSettings"]["Networks"][
-        NETWORK_NAME
-    ]["IPAddress"]
+    return get_container(docker_client, name).attrs["NetworkSettings"]["IPAddress"]
 
 
 def get_label_value(docker_client, name, label):
@@ -278,7 +275,6 @@ def start_dnscache(docker_client, task):
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
         },
-        network=NETWORK_NAME,
     )
 
 
@@ -299,7 +295,9 @@ def start_monitor(docker_client, task):
     ]
 
     environment = {
-        "SCRAPER_CONTAINER": get_scraper_container_name(task),
+        "SCRAPER_CONTAINER": get_ip_address(
+            docker_client, get_scraper_container_name(task)
+        ),
         "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
             task_ident=get_container_name(task["schedule_name"], task["_id"]),
             worker=task["worker"],
@@ -326,7 +324,6 @@ def start_monitor(docker_client, task):
         environment=environment,
         cap_add=["SYS_PTRACE"],
         security_opt=["apparmor=unconfined"],
-        network=NETWORK_NAME,
     )
 
 
@@ -367,7 +364,6 @@ def start_checker(docker_client, task, host_workdir, filename):
             "filename": filename,
         },
         remove=False,
-        network=NETWORK_NAME,
     )
 
 
@@ -426,7 +422,6 @@ def start_scraper(docker_client, task, dns, host_workdir):
         mounts=mounts,
         name=container_name,
         remove=False,  # scaper container will be removed once log&zim handled
-        network=NETWORK_NAME,
     )
 
 
@@ -500,7 +495,6 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         mounts=mounts,
         name=container_name,
         remove=False,  # zimtask containers are pruned periodically
-        network=NETWORK_NAME,
     )
 
 
@@ -598,7 +592,6 @@ def start_uploader(
         mounts=mounts,
         name=container_name,
         remove=False,
-        network=NETWORK_NAME,
     )
 
 
