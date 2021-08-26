@@ -216,7 +216,7 @@ class SotokiFlagsSchema(SerializableSchema):
         missing="ENV:REDIS_PID",
         default="ENV:REDIS_PID",
         validate=validate.Equal("ENV:REDIS_PID"),
-        data_key="rdefrag_redis",
+        data_key="defrag-redis",
     )
 
     debug = fields.Boolean(
