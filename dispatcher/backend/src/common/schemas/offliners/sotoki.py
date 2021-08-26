@@ -208,6 +208,17 @@ class SotokiFlagsSchema(SerializableSchema):
         data_key="redis-url",
     )
 
+    defrag_redis = fields.String(
+        metadata={
+            "label": "Defrag redis",
+            "description": "Keep it as ENV:REDIS_PID",
+        },
+        missing="ENV:REDIS_PID",
+        default="ENV:REDIS_PID",
+        validate=validate.Equal("ENV:REDIS_PID"),
+        data_key="rdefrag_redis",
+    )
+
     debug = fields.Boolean(
         truthy=[True],
         falsy=[False],
