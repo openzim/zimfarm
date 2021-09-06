@@ -98,6 +98,7 @@ class ScheduleCategory:
     openedx = "openedx"
     vikidia = "vikidia"
     wikibooks = "wikibooks"
+    wikihow = "wikihow"
     wikinews = "wikinews"
     wikipedia = "wikipedia"
     wikiquote = "wikiquote"
@@ -119,6 +120,7 @@ class ScheduleCategory:
             cls.openedx,
             cls.vikidia,
             cls.wikibooks,
+            cls.wikihow,
             cls.wikinews,
             cls.wikipedia,
             cls.wikiquote,

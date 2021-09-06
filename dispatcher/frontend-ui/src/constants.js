@@ -80,7 +80,7 @@ function logs_url(task) {
 function build_command_without(config, secret_fields) {
   if (secret_fields == null)
     return "<missing defs>";
-    
+
   return config.str_command;
 }
 
@@ -249,13 +249,15 @@ export default {
   running_statuses: running_statuses,
   contact_email: "contact@kiwix.org",
   categories: ["gutenberg", "other", "phet", "psiram", "stack_exchange",
-               "ted", "openedx", "vikidia", "wikibooks", "wikinews", "wikipedia",
-               "wikiquote", "wikisource", "wikispecies", "wikiversity",
+               "ted", "openedx", "vikidia", "wikibooks", "wikihow", "wikinews",
+               "wikipedia", "wikiquote", "wikisource", "wikispecies", "wikiversity",
                "wikivoyage", "wiktionary"],  // list of categories for fileering
   warehouse_paths: ["/gutenberg", "/other", "/phet", "/psiram", "/stack_exchange",
-                    "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikinews", "/wikipedia",
-                    "/wikiquote", "/wikisource", "/wikiversity",
-                    "/wikivoyage", "/wiktionary", "/zimit", "/.hidden/dev", "/.hidden/private", "/.hidden/endless", "/.hidden/custom_apps",],
+                    "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikihow",
+                    "/wikinews", "/wikipedia", "/wikiquote", "/wikisource",
+                    "/wikiversity", "/wikivoyage", "/wiktionary", "/zimit",
+                    "/.hidden/dev", "/.hidden/private", "/.hidden/endless",
+                    "/.hidden/custom_apps",],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit", "kolibri", "wikihow"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
