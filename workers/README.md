@@ -55,7 +55,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
 
 * A GNU/Linux host (works on macOS) with at least:
  * 2GB of RAM and 3 cores available.
- * Docker CE server running.
+ * [Docker CE server](https://docs.docker.com/engine/install/) running.
  * Fast internet connexion (downstream and upstream).
 * A Zimfarm user account (with appropriate `worker` role).
 * An RSA private key with its public key uploaded to the user account.
@@ -125,8 +125,8 @@ appropriate options. Otherwise, use our handy bash script.
 sudo wget -O /usr/local/bin/zimfarm \
   https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh && \
   sudo chmod +x /usr/local/bin/zimfarm && \
-  sudo wget -O /etc/zimfarm.config.example \
-  https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.config
+  sudo wget -O /etc/zimfarm.config \
+  https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.config.example
 ```
 
 Now read and edit `/etc/zimfarm.config`. The **bare-minimal** is setting:
