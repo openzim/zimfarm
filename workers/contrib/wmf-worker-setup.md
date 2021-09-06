@@ -127,6 +127,7 @@ USE_PUBLIC_DNS=""
 # change default maximum nb of tasks for your worker over a specific platform
 PLATFORM_wikimedia_MAX_TASKS=3
 # PLATFORM_youtube_MAX_TASKS=2
+# PLATFORM_wikihow_MAX_TASKS=2
 ```
 
 

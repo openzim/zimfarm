@@ -193,6 +193,7 @@ function restart() {
         --env TASK_WORKER_IMAGE=$worker_image_string \
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
+        --env PLATFORM_wikihow_MAX_TASKS=$PLATFORM_wikihow_MAX_TASKS \
         --env POLL_INTERVAL=$POLL_INTERVAL \
         --env DNSCACHE_IMAGE=$DNSCACHE_IMAGE \
         --env UPLOADER_IMAGE=$UPLOADER_IMAGE \

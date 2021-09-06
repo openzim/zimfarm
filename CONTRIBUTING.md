@@ -177,7 +177,8 @@ docker run \
 	--env POLL_INTERVAL="30" \
 	--env PLATFORM_wikimedia_MAX_TASKS="1" \
 	--env PLATFORM_youtube_MAX_TASKS="1" \
-   --env WEB_API_URI="http://192.168.5.80/v1" \
+	--env PLATFORM_wikihow_MAX_TASKS="1" \
+    --env WEB_API_URI="http://192.168.5.80/v1" \
 	--env TASK_WORKER_IMAGE='task-worker:local' \
 	worker-manager:local
 ```

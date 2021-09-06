@@ -244,10 +244,11 @@ class SchedulePeriodicity:
 class Platform:
     wikimedia = "wikimedia"
     youtube = "youtube"
+    wikihow = "wikihow"
 
     @classmethod
     def all(cls) -> str:
-        return [cls.wikimedia, cls.youtube]
+        return [cls.wikimedia, cls.youtube, cls.wikihow]
 
     @classmethod
     def get_max_concurrent_for(cls, platform) -> int:
