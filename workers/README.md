@@ -58,7 +58,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
  * [Docker CE server](https://docs.docker.com/engine/install/) running.
  * Fast internet connexion (downstream and upstream).
 * A Zimfarm user account (with appropriate `worker` role).
-* An RSA private key with its public key uploaded to the user account.
+* A 2048b RSA private key with its public key uploaded to the user account.
 * The clock must be synchronized, e.g. using ntp.
 
 __Note__: SSH access to your host for our developers is handy but not required.
@@ -101,7 +101,7 @@ RSA key file to us when requesting a worker account (Admins can upload it via UI
 
 ```bash
 # Generate an RSA key pair (use empty passphrase)
-ssh-keygen -m PEM -t rsa -f id_rsa
+ssh-keygen -m PEM -t rsa -b 2048 -f id_rsa
 
 # Display its public key (you'll upload this part)
 cat id_rsa.pub | cut -d " " -f 2
