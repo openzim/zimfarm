@@ -79,6 +79,26 @@ class WikihowFlagsSchema(SerializableSchema):
         data_key="without-external-links",
     )
 
+    without_videos = fields.Boolean(
+        metadata={
+            "label": "Without Videos",
+            "description": "Don't include the video blocks (Youtube hosted). "
+            "Most are copyrighted",
+        },
+        data_key="without-videos",
+        truthy=[True],
+        falsy=[False],
+    )
+
+    exclude = fields.Url(
+        metadata={
+            "label": "Exclude",
+            "description": "URL to a text file listing Article ID or "
+            "`Category:` prefixed Category IDs to exclude from the scrape. "
+            "Lines starting with # are ignored",
+        },
+    )
+
     low_quality = fields.Boolean(
         metadata={
             "label": "Low quality",
