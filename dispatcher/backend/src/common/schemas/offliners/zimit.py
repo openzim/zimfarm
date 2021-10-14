@@ -1,7 +1,7 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output
+from common.schemas.fields import validate_output, validate_zim_filename
 
 
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
@@ -144,6 +144,7 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "ZIM file name (based on --name if not provided)",
         },
         data_key="zim-file",
+        validate=validate_zim_filename,
     )
 
     tags = fields.String(

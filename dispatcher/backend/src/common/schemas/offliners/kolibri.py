@@ -1,7 +1,7 @@
 from marshmallow import fields
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output
+from common.schemas.fields import validate_output, validate_zim_filename
 
 
 class KolibriFlagsSchema(SerializableSchema):
@@ -168,6 +168,7 @@ class KolibriFlagsSchema(SerializableSchema):
             "Include {period} to insert date period dynamically",
         },
         data_key="zim-file",
+        validate=validate_zim_filename,
     )
 
     threads = fields.Integer(

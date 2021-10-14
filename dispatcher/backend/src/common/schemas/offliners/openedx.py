@@ -1,7 +1,7 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output
+from common.schemas.fields import validate_output, validate_zim_filename
 
 
 class OpenedxFlagsSchema(SerializableSchema):
@@ -231,6 +231,7 @@ class OpenedxFlagsSchema(SerializableSchema):
             "description": "ZIM file name (based on ZIM name if not provided)",
         },
         data_key="zim-file",
+        validate=validate_zim_filename,
     )
 
     debug = fields.Boolean(

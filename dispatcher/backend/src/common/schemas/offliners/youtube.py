@@ -1,7 +1,7 @@
 from marshmallow import fields, validate, validates_schema, ValidationError
 
 from common.schemas import SerializableSchema, StringEnum, HexColor
-from common.schemas.fields import validate_output
+from common.schemas.fields import validate_output, validate_zim_filename
 
 
 class YoutubeFlagsSchema(SerializableSchema):
@@ -165,6 +165,7 @@ class YoutubeFlagsSchema(SerializableSchema):
             "Include {period} to insert date period dynamically",
         },
         data_key="zim-file",
+        validate=validate_zim_filename,
     )
     playlists_zim_file = fields.String(
         metadata={

@@ -1,7 +1,7 @@
 from marshmallow import fields, validate, validates_schema, ValidationError
 
 from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output
+from common.schemas.fields import validate_output, validate_zim_filename
 
 
 class TedFlagsSchema(SerializableSchema):
@@ -199,6 +199,7 @@ class TedFlagsSchema(SerializableSchema):
             "description": "ZIM file name (based on ZIM name if not provided)",
         },
         data_key="zim-file",
+        validate=validate_zim_filename,
     )
 
     zim_file_format = fields.String(

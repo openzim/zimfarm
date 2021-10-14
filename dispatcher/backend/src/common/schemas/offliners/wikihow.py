@@ -1,7 +1,7 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output
+from common.schemas.fields import validate_output, validate_zim_filename
 
 
 class WikihowFlagsSchema(SerializableSchema):
@@ -138,6 +138,7 @@ class WikihowFlagsSchema(SerializableSchema):
             "Include {period} to insert date period dynamically",
         },
         data_key="zim-file",
+        validate=validate_zim_filename,
     )
 
     optimization_cache = fields.Url(

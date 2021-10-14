@@ -34,6 +34,10 @@ validate_platform = validate.OneOf(Platform.all())
 validate_platform_value = validate.Range(min=0)
 # slack target must start with # for channels or @ for usernames
 validate_slack_target = validate.Regexp(regex=r"^[#|@].+$")
+validate_zim_filename = validate.Regexp(
+    regex=r"^[a-z\_\-\.0-9]+_[a-z]{2}_[a-z\_\-\.0-9]+(|{period})\.zim$",
+    error="ZIM filename format is incorrect",
+)
 
 
 def validate_multiple_of_100(value):
