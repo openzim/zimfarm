@@ -48,7 +48,7 @@ VOLUME /mnt/quarantine
 VOLUME /mnt/zim
 VOLUME /mnt/check_logs
 
-ENV ZIM_TOOLS_URL https://download.openzim.org/release/zim-tools/zim-tools_linux-x86_64-2.1.0.tar.gz
+ENV ZIM_TOOLS_URL https://download.openzim.org/release/zim-tools/zim-tools_linux-x86_64-3.0.0.tar.gz
 ENV ZIM_SRC_DIR /jail/zim
 ENV ZIM_DST_DIR /mnt/zim
 ENV ZIM_QUAR_DIR /mnt/quarantine

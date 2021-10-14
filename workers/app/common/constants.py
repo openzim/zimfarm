@@ -20,7 +20,7 @@ TASK_WORKER = "task-worker"
 TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
 DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE", "openzim/dnscache:1.0.1")
 UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.1.1")
-CHECKER_IMAGE = os.getenv("CHECKER_IMAGE", "openzim/zim-tools:2.1.0")
+CHECKER_IMAGE = os.getenv("CHECKER_IMAGE", "openzim/zim-tools:3.0.0")
 MONITOR_IMAGE = os.getenv("MONITOR_IMAGE", "openzim/zimfarm-monitor:latest")
 
 # paths
