@@ -64,9 +64,9 @@ def get_token_ssh(webapi_uri, username, private_key):
         return req.json().get("access_token"), req.json().get("refresh_token")
 
 
-def query_api(token, method, url, payload=None, params=None, headers={}, attempt=0):
+def query_api(token, method, url, payload=None, params=None, headers=None, attempt=0):
     req_headers = {}
-    req_headers.update(headers)
+    req_headers.update(headers if headers else {})
     try:
         req_headers.update({"Authorization": f"Token {token}"})
         req = getattr(requests, method.lower(), "get")(

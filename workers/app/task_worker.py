@@ -48,7 +48,7 @@ def main():
     try:
         worker = TaskWorker(
             username=args.username,
-            webapi_uri=args.webapi_uri,
+            webapi_uris=[args.webapi_uri],
             workdir=args.workdir,
             task_id=args.task_id,
         )

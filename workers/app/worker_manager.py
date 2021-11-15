@@ -8,8 +8,7 @@ import argparse
 
 from common import logger
 from common.constants import (
-    DEFAULT_WEB_API_URL,
-    DEFAULT_SOCKET_URI,
+    DEFAULT_WEB_API_URLS,
     WORKER_MANAGER,
     DEFAULT_WORKDIR,
 )
@@ -22,16 +21,16 @@ def main():
     parser.add_argument(
         "--webapi-uri",
         help="zimfarm API URI",
-        required=not bool(DEFAULT_WEB_API_URL),
-        default=DEFAULT_WEB_API_URL,
-        dest="webapi_uri",
+        required=not bool(DEFAULT_WEB_API_URLS),
+        default=[],
+        dest="webapi_uris",
+        action="append",
     )
 
     parser.add_argument(
         "--socket-uri",
-        help="zimfarm websocket URI (tcp://hostname:port)",
-        required=not bool(DEFAULT_SOCKET_URI),
-        default=DEFAULT_SOCKET_URI,
+        help="[obsolete] zimfarm websocket URI",
+        required=False,
         dest="socket_uri",
     )
 
@@ -60,12 +59,14 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.webapi_uris and DEFAULT_WEB_API_URLS:
+        args.webapi_uris += DEFAULT_WEB_API_URLS
+
     logger.info(f"starting zimfarm {WORKER_MANAGER}.")
     try:
         manager = WorkerManager(
             username=args.username,
-            webapi_uri=args.webapi_uri,
-            socket_uri=args.socket_uri,
+            webapi_uris=args.webapi_uris,
             workdir=args.workdir,
             worker_name=args.worker_name,
         )
