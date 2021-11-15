@@ -133,7 +133,7 @@ class SotokiFlagsSchema(SerializableSchema):
             "containing one word per line. Each of them to be removed from all content."
             " Very slow.",
         },
-        data_key="censor-words-list"
+        data_key="censor-words-list",
     )
 
     output = fields.String(
