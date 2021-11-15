@@ -452,7 +452,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         Mount(str(DOCKER_SOCKET), host_docker_socket, type="bind", read_only=True),
         Mount(str(PRIVATE_KEY), host_private_key, type="bind", read_only=True),
     ]
-    command = ["task-worker", "--task-id", task["_id"]]
+    command = ["task-worker", "--task-id", task["_id"], "--webapi-uri", webapi_uri]
 
     logger.debug(f"running {command}")
     return run_container(
@@ -483,6 +483,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "zimtask": "yes",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
+            "webapi_uri": webapi_uri,
             "schedule_name": task["schedule_name"],
             # disk usage is accounted for on this container
             RESOURCES_DISK_LABEL: str(task["config"]["resources"]["disk"]),

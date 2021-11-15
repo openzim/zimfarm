@@ -34,6 +34,13 @@ CANCELED = "canceled"
 CANCEL_REQUESTED = "cancel_requested"
 CANCELING = "canceling"
 
+# connections related
+access_token = "access_token"
+refresh_token = "refresh_token"
+token_payload = "token_payload"
+authenticated_on = "authenticated_on"
+authentication_expires_on = "authentication_expires_on"
+
 # docker resources
 DEFAULT_CPU_SHARE = 1024
 DOCKER_CLIENT_TIMEOUT = 180  # 3mn for read timeout on docker API socket
@@ -79,8 +86,10 @@ MONITORING_DEST = os.getenv("MONITORING_DEST")  # {ip}:{port}
 MONITORING_KEY = os.getenv("MONITORING_DEST")  # {uuid}
 
 # dispatcher-related
-DEFAULT_WEB_API_URL = os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
-DEFAULT_SOCKET_URI = os.getenv("SOCKET_URI", "tcp://api.farm.openzim.org:5000")
+DEFAULT_WEB_API_URLS = os.getenv(
+    "WEB_API_URIS", os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
+).split(",")
+DEFAULT_WEB_API_URL = DEFAULT_WEB_API_URLS[0]  # used in task-worker's argparse default
 
 OFFLINER_MWOFFLINER = "mwoffliner"
 OFFLINER_YOUTUBE = "youtube"
