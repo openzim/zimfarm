@@ -126,6 +126,16 @@ class SotokiFlagsSchema(SerializableSchema):
         data_key="without-names",
     )
 
+    censor_words_list = fields.Url(
+        metadata={
+            "label": "Words black list",
+            "description": "URL to a text file "
+            "containing one word per line. Each of them to be removed from all content."
+            " Very slow.",
+        },
+        data_key="censor-words-list"
+    )
+
     output = fields.String(
         metadata={
             "label": "Output folder",
