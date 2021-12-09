@@ -70,4 +70,4 @@ Scrapers are not part of the Zimfarm. Those are completely independent projects 
 
 ZIM file requests are handled on [zim-requests](https://github.com/openzim/zim-requests/issues/new/choose) repository.
 
-If there's already a scraper for he website you want to convert to ZIM, someone with editor access to the Zimfarm will create the recipe and in a few days, a ZIM file should be available.
+If there's already a scraper for the website you want to convert to ZIM, someone with editor access to the Zimfarm will create the recipe and in a few days, a ZIM file should be available.
