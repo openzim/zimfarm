@@ -207,11 +207,11 @@ def query_container_stats(workdir):
         with open("/sys/fs/cgroup/memory.current", "r") as fp:
             mem_used = int(fp.read().strip())
         with open("/sys/fs/cgroup/cpuset.cpus.effective", "r") as fp:
-            cpu_total = int(fp.read().strip().split("-", 1)[-1])
+            cpu_total = fp.read().strip().split("-", 1)[-1]
 
     mem_avail = mem_total - mem_used
     return {
-        "cpu": {"total": cpu_total},
+        "cpu": {"total": cpu_total},  # str
         "disk": {"available": avail_disk},
         "memory": {"total": mem_total, "available": mem_avail},
     }
