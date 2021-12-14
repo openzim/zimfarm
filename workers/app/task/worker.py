@@ -18,7 +18,7 @@ from common.utils import format_size
 from common.worker import BaseWorker
 from common.docker import (
     query_host_mounts,
-    query_container_stats,
+    query_host_stats,
     start_dnscache,
     get_ip_address,
     start_scraper,
@@ -63,17 +63,21 @@ class TaskWorker(BaseWorker):
         # ensure we have access to docker API
         self.check_docker()
 
-        cont_stats = query_container_stats(self.workdir)
+        host_stats = query_host_stats(self.docker, self.workdir)
         logger.info(
-            "Container resources:"
-            "\n\tRAM  (total): {mem_total}"
-            "\n\tRAM  (avail): {mem_avail}"
-            "\n\tCPUs: {cpu_total}"
-            "\n\tDisk: {disk_avail}".format(
-                mem_total=format_size(cont_stats["memory"]["total"]),
-                mem_avail=format_size(cont_stats["memory"]["available"]),
-                cpu_total=cont_stats["cpu"]["total"],
-                disk_avail=format_size(cont_stats["disk"]["available"]),
+            "Host hardware resources:"
+            "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
+            "\n\tRAM : {mem_total} (total) ;  {mem_avail} (avail)"
+            "\n\tDisk: {disk_total} (configured) ; {disk_avail} (avail) ; "
+            "{disk_used} (reserved) ; {disk_remain} (remain)".format(
+                mem_total=format_size(host_stats["memory"]["total"]),
+                mem_avail=format_size(host_stats["memory"]["available"]),
+                cpu_total=host_stats["cpu"]["total"],
+                cpu_avail=host_stats["cpu"]["available"],
+                disk_avail=format_size(host_stats["disk"]["available"]),
+                disk_used=format_size(host_stats["disk"]["used"]),
+                disk_remain=format_size(host_stats["disk"]["remaining"]),
+                disk_total=format_size(host_stats["disk"]["total"]),
             )
         )
 
