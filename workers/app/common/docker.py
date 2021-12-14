@@ -208,12 +208,12 @@ def query_container_stats(workdir):
     }
 
 
-def get_running_container_id():
+def get_running_container_name():
     try:
-        with open("/proc/self/cpuset", "r") as fh:
+        with open("/etc/hostname", "r") as fh:
             return pathlib.Path(fh.read().strip()).name
     except Exception as exc:
-        logger.error(f"Unable to retrieve own container ID: {exc}")
+        logger.error(f"Unable to retrieve own container name: {exc}")
     return None
 
 
@@ -221,7 +221,7 @@ def query_host_mounts(docker_client, workdir=None):
     keys = [DOCKER_SOCKET, PRIVATE_KEY]
     if workdir:
         keys.append(workdir)
-    container = get_container(docker_client, get_running_container_id())
+    container = get_container(docker_client, get_running_container_name())
     mounts = {}
     for mount in container.attrs["Mounts"]:
         dest = pathlib.Path(mount["Destination"])
