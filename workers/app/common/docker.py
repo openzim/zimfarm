@@ -192,15 +192,24 @@ def query_container_stats(workdir):
     workir_fs_stats = os.statvfs(workdir)
     avail_disk = workir_fs_stats.f_bavail * workir_fs_stats.f_frsize
 
-    with open("/sys/fs/cgroup/memory/memory.limit_in_bytes", "r") as fp:
-        mem_total = int(fp.read().strip())
-    with open("/sys/fs/cgroup/memory/memory.usage_in_bytes", "r") as fp:
-        mem_used = int(fp.read().strip())
+    # dockerd < 20 /sys structure
+    if pathlib.Path("/sys/fs/cgroup/memory/memory.limit_in_bytes").exists():
+        with open("/sys/fs/cgroup/memory/memory.limit_in_bytes", "r") as fp:
+            mem_total = int(fp.read().strip())
+        with open("/sys/fs/cgroup/memory/memory.usage_in_bytes", "r") as fp:
+            mem_used = int(fp.read().strip())
+        with open("/sys/fs/cgroup/cpuacct/cpuacct.usage_percpu", "r") as fp:
+            cpu_total = len(fp.read().strip().split())
+    # dockerd >= 20 /sys structure
+    else:
+        with open("/sys/fs/cgroup/memory.max", "r") as fp:
+            mem_total = int(fp.read().strip())
+        with open("/sys/fs/cgroup/memory.current", "r") as fp:
+            mem_used = int(fp.read().strip())
+        with open("/sys/fs/cgroup/cpuset.cpus.effective", "r") as fp:
+            cpu_total = int(fp.read().strip().split("-", 1)[-1])
+
     mem_avail = mem_total - mem_used
-
-    with open("/sys/fs/cgroup/cpuacct/cpuacct.usage_percpu", "r") as fp:
-        cpu_total = len(fp.read().strip().split())
-
     return {
         "cpu": {"total": cpu_total},
         "disk": {"available": avail_disk},
