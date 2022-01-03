@@ -56,7 +56,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
 * A GNU/Linux host (works on macOS) with at least:
  * 2GB of RAM and 3 cores available.
  * [Docker CE server](https://docs.docker.com/engine/install/) running.
- * Fast internet connexion (downstream and upstream).
+ * Fast internet connexion (downstream and upstream) with a static Public IP.
 * A Zimfarm user account (with appropriate `worker` role).
 * A 2048b RSA private key with its public key uploaded to the user account.
 * The clock must be synchronized, e.g. using ntp.
