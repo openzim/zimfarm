@@ -58,3 +58,22 @@ SLACK_ICON = os.getenv("SLACK_ICON")
 
 # string to replace hidden secrets with
 SECRET_REPLACEMENT = "********"  # nosec
+
+# ###
+# workers whitelist management
+# ###
+# using the following, it is possible to automate
+# the update of a whitelist of workers IPs on Wasabi (S3 provider)
+# enable this feature (default is off)
+USES_WORKERS_IPS_WHITELIST = bool(os.getenv("USES_WORKERS_IPS_WHITELIST", ""))
+MAX_WORKER_IP_CHANGES_PER_DAY = 4
+# wasabi URL with credentials to update policy
+WASABI_URL = os.getenv("WASABI_URL", "")
+# policy ARN such as arn:aws:iam::xxxxxxxxxxxx:policy/yyyyyyyy
+WASABI_WHITELIST_POLICY_ARN = os.getenv("WASABI_WHITELIST_POLICY_ARN", "")
+# ID of the statement to set on the policy for the whitelist
+WASABI_WHITELIST_STATEMENT_ID = os.getenv("ZimfarmWorkersIPsWhiteList")
+# list of IPs and networks to always allow (regardless of used by workers or not)
+WHITELISTED_IPS = [
+    ip.strip() for ip in os.getenv("WHITELISTED_IPS", "").split(",") if ip.strip()
+]

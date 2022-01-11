@@ -1,3 +1,4 @@
+import datetime
 import logging
 from http import HTTPStatus
 
@@ -6,9 +7,11 @@ from bson import ObjectId
 from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
 
-from common import getnow
+from common import getnow, WorkersIpChangesCounts
+from common.constants import MAX_WORKER_IP_CHANGES_PER_DAY, USES_WORKERS_IPS_WHITELIST
 from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Schedules, Workers
+from common.external import update_workers_whitelist
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import authenticate, url_object_id, auth_info_if_supplied, require_perm
 from routes.base import BaseRoute
@@ -24,6 +27,21 @@ from common.schemas.parameters import (
 from utils.scheduling import request_a_schedule, find_requested_task_for
 
 logger = logging.getLogger(__name__)
+
+
+def record_ip_change(worker_name):
+    """record that this worker changed its IP and trigger whitelist changes"""
+    today = datetime.date.today()
+    # counts and limits are per-day so reset it if date changed
+    if today != WorkersIpChangesCounts.today:
+        WorkersIpChangesCounts.reset()
+    if WorkersIpChangesCounts.add(worker_name) <= MAX_WORKER_IP_CHANGES_PER_DAY:
+        update_workers_whitelist()
+    else:
+        logger.error(
+            f"Worker {worker_name} IP changes for {today} "
+            f"is above limit ({MAX_WORKER_IP_CHANGES_PER_DAY}). Not updating whitelist!"
+        )
 
 
 def list_of_requested_tasks(token: AccessToken.Payload = None):
@@ -170,13 +188,21 @@ class RequestedTasksForWorkers(BaseRoute):
 
         request_args = request.args.to_dict()
         worker_name = request_args.get("worker")
+        worker_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+
+        worker_query = {"name": worker_name, "username": token.username}
+        last_ip = Workers().find_one(worker_query, {"last_ip": 1}).get("last_ip")
 
         # record we've seen a worker, if applicable
         if token and worker_name:
             Workers().update_one(
                 {"name": worker_name, "username": token.username},
-                {"$set": {"last_seen": getnow()}},
+                {"$set": {"last_seen": getnow(), "last_ip": worker_ip}},
             )
+
+        # IP changed since last encounter
+        if USES_WORKERS_IPS_WHITELIST and last_ip != worker_ip:
+            record_ip_change(worker_name)
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
 
