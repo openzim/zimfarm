@@ -18,3 +18,24 @@ def to_naive_utc(timestamp_or_iso):
         new_date = timestamp_or_iso
 
     return new_date.astimezone(pytz.utc).replace(tzinfo=None)
+
+
+class WorkersIpChangesCounts:
+    today: datetime.date.today()
+    counts: dict()
+
+    @classmethod
+    def reset(cls):
+        cls.today = datetime.date.today()
+        cls.counts = dict()
+
+    @classmethod
+    def add(cls, worker: str) -> int:
+        if worker not in cls.counts.keys():
+            cls.counts[worker] = 0
+        cls.counts[worker] += 1
+        return cls.get(worker)
+
+    @classmethod
+    def get(cls, worker: str) -> int:
+        return cls.counts.get(worker, 0)
