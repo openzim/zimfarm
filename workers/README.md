@@ -56,7 +56,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
 * A GNU/Linux host (works on macOS) with at least:
  * 2GB of RAM and 3 cores available.
  * [Docker CE server](https://docs.docker.com/engine/install/) running.
- * Fast internet connexion (downstream and upstream) with a static Public IP.
+ * Fast internet connexion (downstream and upstream).
 * A Zimfarm user account (with appropriate `worker` role).
 * A 2048b RSA private key with its public key uploaded to the user account.
 * The clock must be synchronized, e.g. using ntp.
@@ -147,6 +147,8 @@ zimfarm logs manager
 
 If the output of the manager logs says `polling...` then the worker
 started properly and is looking for tasks.
+
+**Allow a minute** for the initial request to trigger the IP whitelist update on the S3 cache.
 
 You can now request a short task (we recommend `wikipedia_fr_test`) to
 your worker specifically on the Zimfarm and wait for it to pick-it up,
