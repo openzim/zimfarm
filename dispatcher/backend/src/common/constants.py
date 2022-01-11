@@ -72,7 +72,9 @@ WASABI_URL = os.getenv("WASABI_URL", "")
 # policy ARN such as arn:aws:iam::xxxxxxxxxxxx:policy/yyyyyyyy
 WASABI_WHITELIST_POLICY_ARN = os.getenv("WASABI_WHITELIST_POLICY_ARN", "")
 # ID of the statement to set on the policy for the whitelist
-WASABI_WHITELIST_STATEMENT_ID = os.getenv("ZimfarmWorkersIPsWhiteList")
+WASABI_WHITELIST_STATEMENT_ID = os.getenv(
+    "WASABI_WHITELIST_STATEMENT_ID", "ZimfarmWorkersIPsWhiteList"
+)
 # list of IPs and networks to always allow (regardless of used by workers or not)
 WHITELISTED_IPS = [
     ip.strip() for ip in os.getenv("WHITELISTED_IPS", "").split(",") if ip.strip()
