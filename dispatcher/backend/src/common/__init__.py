@@ -21,8 +21,8 @@ def to_naive_utc(timestamp_or_iso):
 
 
 class WorkersIpChangesCounts:
-    today: datetime.date.today()
-    counts: dict()
+    today = datetime.date.today()
+    counts = dict()
 
     @classmethod
     def reset(cls):
