@@ -354,7 +354,8 @@ def start_checker(docker_client, task, host_workdir, filename):
 
     command = [
         "zimcheck",
-        task["upload"]["zim"]["zimcheck"] or "-A",
+        "--json",
+        task["upload"]["zim"]["zimcheck"] or "--all",
         str(filepath),
     ]
 
