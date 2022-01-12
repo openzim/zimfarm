@@ -17,11 +17,13 @@ WORKER_MANAGER = "worker-manager"
 TASK_WORKER = "task-worker"
 
 # images
-TASK_WORKER_IMAGE = os.getenv("TASK_WORKER_IMAGE", "openzim/zimfarm-task-worker:latest")
-DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE", "openzim/dnscache:1.0.1")
-UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE", "openzim/uploader:1.1.1")
-CHECKER_IMAGE = os.getenv("CHECKER_IMAGE", "openzim/zim-tools:3.0.0")
-MONITOR_IMAGE = os.getenv("MONITOR_IMAGE", "openzim/zimfarm-monitor:latest")
+TASK_WORKER_IMAGE = (
+    os.getenv("TASK_WORKER_IMAGE") or "ghcr.io/openzim/zimfarm-task-worker:latest"
+)
+DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE") or "ghcr.io/openzim/dnscache:1.0.1"
+UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE") or "ghcr.io/openzim/uploader:1.1.1"
+CHECKER_IMAGE = os.getenv("CHECKER_IMAGE") or "ghcr.io/openzim/zim-tools:3.0.0-1"
+MONITOR_IMAGE = os.getenv("MONITOR_IMAGE") or "ghcr.io/openzim/zimfarm-monitor:latest"
 
 # paths
 DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager

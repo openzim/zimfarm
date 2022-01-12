@@ -20,14 +20,12 @@ ZIMFARM_ROOT=/tmp
 ZIMFARM_OFFLINERS=
 ZIMFARM_SELFISH=
 USE_PUBLIC_DNS=
-MANAGER_IMAGE="ghcr.io/openzim/zimfarm-worker-manager"
-MANAGER_TAG="latest"
-WORKER_IMAGE="ghcr.io/openzim/zimfarm-task-worker"
-WORKER_TAG="latest"
-DNSCACHE_IMAGE="ghcr.io/openzim/dnscache:1.0.1"
-UPLOADER_IMAGE="ghcr.io/openzim/uploader:1.1.1"
-CHECKER_IMAGE="ghcr.io/openzim/zim-tools:3.0.0"
-MONITOR_IMAGE="ghcr.io/openzim/zimfarm-monitor:latest"
+MANAGER_IMAGE="ghcr.io/openzim/zimfarm-worker-manager:latest"
+TASK_WORKER_IMAGE=""
+DNSCACHE_IMAGE=""
+UPLOADER_IMAGE=""
+CHECKER_IMAGE=""
+MONITOR_IMAGE=""
 WEB_API_URIS="https://api.farm.openzim.org/v1"
 POLL_INTERVAL="180"
 MONITORING_DEST=""  # IP:PORT
@@ -156,17 +154,10 @@ function restart() {
     run docker rm $WORKER_MANAGER_NAME || true
 
     echo ":: starting ${WORKER_MANAGER_NAME}"
-    if [[ ! -z "$MANAGER_TAG" ]] ; then
-        manager_image_string="$MANAGER_IMAGE:${MANAGER_TAG}"
-        run docker pull $manager_image_string
-    else
-        manager_image_string="$MANAGER_IMAGE"
+    if [[ $MANAGER_IMAGE =~ ":" ]]; then
+        run docker pull $MANAGER_IMAGE
     fi
-    if [[ ! -z "$WORKER_TAG" ]] ; then
-        worker_image_string="$WORKER_IMAGE:${WORKER_TAG}"
-    else
-        worker_image_string="$WORKER_IMAGE"
-    fi
+
     run docker run \
         --name $WORKER_MANAGER_NAME \
         --label=zimfarm \
@@ -188,7 +179,7 @@ function restart() {
         --env UPLOAD_URI=$UPLOAD_URI \
         --env USE_PUBLIC_DNS=$USE_PUBLIC_DNS \
         --env OFFLINERS=$ZIMFARM_OFFLINERS \
-        --env TASK_WORKER_IMAGE=$worker_image_string \
+        --env TASK_WORKER_IMAGE=$TASK_WORKER_IMAGE \
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
         --env PLATFORM_wikihow_MAX_TASKS=$PLATFORM_wikihow_MAX_TASKS \
@@ -199,7 +190,7 @@ function restart() {
         --env MONITOR_IMAGE=$MONITOR_IMAGE \
         --env MONITORING_DEST=$MONITORING_DEST \
         --env MONITORING_KEY=$MONITORING_KEY \
-    $manager_image_string worker-manager
+    $MANAGER_IMAGE worker-manager
 }
 
 # stop the manager and all the workers
