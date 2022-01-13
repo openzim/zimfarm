@@ -115,9 +115,15 @@ def save_event(task_id: ObjectId, code: str, timestamp: datetime.datetime, **kwa
             task_updates[f"files.{fkey}.status"] = fstatus
             task_updates[f"files.{fkey}.{fstatus}_timestamp"] = timestamp
         elif fstatus == "checked":
-            task_updates[f"files.{fkey}.check_result"] = kwargs["file"].get("result")
-            task_updates[f"files.{fkey}.check_log"] = kwargs["file"].get("log")
+            task_updates[f"files.{fkey}.check_result"] = kwargs["file"].get(
+                "check_result"
+            )
+            task_updates[f"files.{fkey}.check_log"] = kwargs["file"].get("check_log")
             task_updates[f"files.{fkey}.check_timestamp"] = timestamp
+            task_updates[f"files.{fkey}.check_details"] = kwargs["file"].get(
+                "check_details"
+            )
+            task_updates[f"files.{fkey}.metadata"] = kwargs["file"].get("metadata")
 
     Tasks().update_one({"_id": task_id}, {"$set": task_updates})
 
@@ -315,8 +321,10 @@ def task_checked_file_event_handler(task_id, payload):
     file = {
         "name": payload.get("filename"),
         "status": "checked",
-        "result": payload.get("result"),
-        "log": payload.get("log"),
+        "check_result": payload.get("result"),
+        "check_log": payload.get("log"),
+        "check_details": payload.get("details"),
+        "metadata": payload.get("metadata"),
     }
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task checked file: {task_id}, {file['name']}")
