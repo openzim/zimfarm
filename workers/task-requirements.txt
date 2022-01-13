@@ -4,3 +4,5 @@ psutil>=5.8.0,<6.0
 humanfriendly>=9.2,<10.0
 PyJWT>=2.1.0,<3.0
 kiwixstorage==0.6
+ujson>=5.1.0,<5.2
+zimscraperlib>=1.4.1,<1.5

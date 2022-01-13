@@ -9,9 +9,11 @@ import signal
 import shutil
 import pathlib
 import datetime
+from typing import Dict, Any
 
 import docker
 import requests
+import ujson
 
 from common import logger
 from common.utils import format_size
@@ -31,6 +33,7 @@ from common.docker import (
     start_monitor,
 )
 from common.constants import PROGRESS_CAPABLE_OFFLINERS, CONTAINER_TASK_IDENT
+from common.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 PENDING = "pending"
@@ -235,12 +238,25 @@ class TaskWorker(BaseWorker):
         logger.info(f"Updating file-status={status} for {filename}")
         self.patch_task({"event": f"{status}_file", "payload": {"filename": filename}})
 
-    def mark_file_checked(self, filename, result, log):
-        logger.info(f"Updating file check-result={result} for {filename}")
+    def mark_file_checked(
+        self,
+        filename: str,
+        info: Dict[str, Any],
+        zimcheck_retcode: int,
+        zimcheck_result: Dict[str, Any] = None,
+        zimcheck_log: str = None,
+    ):
+        logger.info(f"Updating file check-result={zimcheck_retcode} for {filename}")
         self.patch_task(
             {
                 "event": "checked_file",
-                "payload": {"filename": filename, "result": result, "log": log},
+                "payload": {
+                    "filename": filename,
+                    "result": zimcheck_retcode,
+                    "log": zimcheck_log,
+                    "details": zimcheck_result,
+                    "info": info,
+                },
             }
         )
 
@@ -341,6 +357,8 @@ class TaskWorker(BaseWorker):
         self.cleanup_workdir()
 
     def start_uploader(self, upload_dir, filename):
+        logger.info(f"Gathering ZIM metadata for {upload_dir}/{filename}")
+
         logger.info(f"Starting uploader for {upload_dir}/{filename}")
         self.uploader = start_uploader(
             self.docker,
@@ -492,11 +510,27 @@ class TaskWorker(BaseWorker):
             # find file
             zim_file = self.checker.labels["filename"]
             self.zim_files[zim_file][CHK] = CHECKED
+
             # get result of container
+            zimcheck_log = get_container_logs(self.docker, self.checker.name).strip()
+            # /!\ ugly/fragile hacking awaiting release 3.1.0
+            # with https://github.com/openzim/zim-tools/issues/278
+            zimcheck_log = zimcheck_log.replace("'", '"')
+            try:
+                zimcheck_result = ujson.loads(zimcheck_log)
+            except Exception as exc:
+                zimcheck_result = None
+                logger.warning(f"Failed to parse zimcheck output: {exc}")
+                logger.debug(zimcheck_log)
+            else:
+                zimcheck_log = None
+
             self.mark_file_checked(
                 zim_file,
-                result=self.checker.attrs["State"]["ExitCode"],
-                log=get_container_logs(self.docker, self.checker.name),
+                zimcheck_retcode=self.checker.attrs["State"]["ExitCode"],
+                zimcheck_result=zimcheck_result,
+                zimcheck_log=zimcheck_log,
+                info=get_zim_info(self.task_workdir / zim_file),
             )
             self.checker.remove()
             self.checker = None
