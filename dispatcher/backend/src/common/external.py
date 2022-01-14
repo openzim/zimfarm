@@ -1,17 +1,22 @@
+import datetime
 import ipaddress
 import json
 import logging
 import typing
 
+from bson import ObjectId
+import requests
 from kiwixstorage import KiwixStorage, AuthenticationError
 
 from common.constants import (
+    CMS_ENDPOINT,
+    CMS_ZIM_DOWNLOAD_URL,
     WASABI_URL,
     WASABI_WHITELIST_POLICY_ARN,
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
-from common.mongo import Workers
+from common.mongo import Workers, Tasks
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -131,3 +136,76 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
         PolicyDocument=new_policy,
         SetAsDefault=True,
     )
+
+
+def advertise_books_to_cms(task_id: ObjectId):
+    """inform openZIM CMS of all created ZIMs in the farm for this task
+
+    Safe to re-run as successful requests are skipped"""
+    for file in Tasks().find({"_id": task_id}, {"files": 1}):
+        advertise_book_to_cms(task_id, file["name"])
+
+
+def advertise_book_to_cms(task_id: ObjectId, filename: str):
+    """inform openZIM CMS (or compatible) of a created ZIM in the farm
+
+    Safe to re-run as successful requests are skipped"""
+    # retrieve task and file
+    key = filename.replace(".", "．")
+    query = {"_id": task_id}
+    file = Tasks().find_one(query, {f"files.{key}": 1, "config.warehouse_path": 1})[
+        "files"
+    ][key]
+
+    # skip if already advertised to CMS
+    if file.get("cms"):
+        # cms query already succeeded
+        if file["cms"].get("succeeded"):
+            return
+
+    # prepare payload and submit request to CMS
+    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}/{file['config']['warehouse_path']}"
+    file["cms"] = {
+        "status_code": -1,
+        "succeeded": False,
+        "on": datetime.datetime.now(),
+        "book_id": None,
+        "title_ident": None,
+    }
+    try:
+        resp = requests.post(
+            CMS_ENDPOINT, json=get_openzimcms_payload(file, download_prefix)
+        )
+    except Exception as exc:
+        logger.error(f"Unable to query CMS at {CMS_ENDPOINT}: {exc}")
+        logger.exception(exc)
+    else:
+        file["cms"]["status_code"] = resp.status_code
+        file["cms"]["succeeded"] = resp.status_code == 201
+        try:
+            data = resp.json()
+            file["cms"]["book_id"] = data.get("uuid")
+            file["cms"]["title_ident"] = data.get("title")
+        except Exception as exc:
+            logger.error(f"Unable to parse CMS response: {exc}")
+            logger.exception(exc)
+
+    # record request result
+    Tasks().update_one(query, {"$set": {f"files.{key}": file}})
+
+
+def get_openzimcms_payload(
+    file: typing.Dict[str, typing.Any], download_prefix: str
+) -> typing.Dict[str, typing.Any]:
+    payload = {
+        "id": file["info"]["id"],
+        "period": file["info"].get("metadata", {}).get("Date"),
+        "counter": file["info"].get("counter"),
+        "article_count": file["info"].get("article_count"),
+        "media_count": file["info"].get("media_count"),
+        "size": file["info"].get("size"),
+        "metadata": file["info"].get("metadata"),
+        "url": f"{download_prefix}/{file['name']}",
+        "zimcheck": file.get("check_details", {}),
+    }
+    return payload

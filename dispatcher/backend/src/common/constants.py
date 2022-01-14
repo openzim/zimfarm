@@ -79,3 +79,12 @@ WASABI_WHITELIST_STATEMENT_ID = os.getenv(
 WHITELISTED_IPS = [
     ip.strip() for ip in os.getenv("WHITELISTED_IPS", "").split(",") if ip.strip()
 ]
+
+
+# openZIM CMS can be called upon receival of each ZIM
+INFORM_CMS = bool(os.getenv("INFORM_CMS"))
+CMS_ENDPOINT = os.getenv("CMS_ENDPOINT", "https://api.cms.openzim.org/v1/books/add")
+# URL to tell the CMS where to download ZIM from
+CMS_ZIM_DOWNLOAD_URL = os.getenv(
+    "CMS_ZIM_DOWNLOAD_URL", "https://download.kiwix.org/zim"
+)
