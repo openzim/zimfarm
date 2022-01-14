@@ -8,7 +8,9 @@ import datetime
 from bson import ObjectId
 
 from common import getnow, to_naive_utc
+from common.constants import INFORM_CMS
 from common.enum import TaskStatus
+from common.external import advertise_book_to_cms
 from common.mongo import Tasks, Schedules
 from common.notifications import handle_notification
 from utils.scheduling import update_schedule_duration
@@ -330,6 +332,9 @@ def task_checked_file_event_handler(task_id, payload):
     logger.info(f"Task checked file: {task_id}, {file['name']}")
 
     save_event(task_id, TaskStatus.checked_file, timestamp, file=file)
+
+    if INFORM_CMS:
+        advertise_book_to_cms(task_id, file["name"])
 
 
 def task_update_event_handler(task_id, payload):
