@@ -35,6 +35,7 @@ def command_for(offliner, flags, mount_point):
             "mirror", "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
         )
         flags["redis-url"] = "unix:///var/run/redis.sock"
+        flags["keep-redis"] = True
         flags["stats-filename"] = str(mount_point_for(offliner) / "task_progress.json")
         flags["output"] = str(mount_point)
     if offliner == Offliner.wikihow:

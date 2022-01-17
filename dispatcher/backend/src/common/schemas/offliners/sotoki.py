@@ -235,3 +235,16 @@ class SotokiFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
+
+    keep_redis = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Keep redis",
+            "description": "Don't flush redis DB on exit. Keep it enabled.",
+        },
+        missing=True,
+        default=True,
+        validate=validate.Equal(True),
+        data_key="keep-redis",
+    )
