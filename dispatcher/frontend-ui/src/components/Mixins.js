@@ -1,5 +1,4 @@
 
-import moment from 'moment';
 import jwt from 'jsonwebtoken';
 
 import Constants from '../constants.js'
@@ -28,7 +27,7 @@ export default {
     },
     token_expired() {
       let expiry = this.$store.getters.token_expiry;
-      return (!expiry) ? true : moment().isAfter(expiry);
+      return (!expiry) ? true : Constants.now() > expiry;
     },
     canRequestTasks() { return this.$root.has_perm("tasks", "request"); },
     canUnRequestTasks() { return this.$root.has_perm("tasks", "unrequest"); },
@@ -203,9 +202,9 @@ export default {
 
       console.debug("found auth cookie");
 
-      let expiry = moment(token_data.payload.exp * 1000);
+      let expiry = Constants.fromSeconds(token_data.payload.exp);
       let parent = this;
-      if (moment().isAfter(expiry) || force_refresh) {
+      if ((Constants.now() > expiry) || force_refresh) {
         console.debug("cookie token expired or refresh requested");
         let renewed = false;
         this.renew_token_from_refresh(

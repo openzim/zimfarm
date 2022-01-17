@@ -1,42 +1,41 @@
-import moment from 'moment'
 import filesize from 'filesize'
 import querystring from 'querystring'
-import humanizeDuration from 'humanize-duration';
-const { DateTime, Duration } = require("luxon");
+const { DateTime, Duration, Interval } = require("luxon");
 
 function format_dt(value) { // display a datetime in a standard format
   if (!value)
     return '';
-  let mom = moment(value);
-  return mom.isValid() ? mom.format("LLL") : value;
+  let dt = DateTime.fromISO(value);
+  if (dt.invalid)
+    return value;
+  return dt.toFormat('fff');
 }
 
-function format_duration(diff) { // display a duration in a standard format
-  return moment.duration(diff).locale("en").humanize();
+function get_units(interval) {
+  let units = []
+  let all_units = ["months", "days", "hours", "minutes"];
+  all_units.forEach(function (unit){
+    if (interval.length(unit) >= 1)
+      units.push(unit);
+  });
+  if (units.length == 0)
+    units.push("seconds")
+  return units;
 }
 
 function format_duration_between(start, end) { // display a duration between two datetimes
-  let diff = moment(end).diff(start);
-   const humanize_duration = humanizeDuration.humanizer({
-      language: "shortEn",
-      languages: {
-        shortEn: {
-          y: () => "y",
-          mo: () => "mo",
-          w: () => "w",
-          d: () => "d",
-          h: () => "h",
-          m: () => "m",
-          s: () => "s",
-          ms: () => "ms",
-        },
-      }, largest: 2, round: true , delimiter: " ", spacer: ""});
-      return humanize_duration(diff);
-  }
+  var int = Interval.fromDateTimes(DateTime.fromISO(start), DateTime.fromISO(end));
+  let diff = Duration.fromObject(int.toDuration(get_units(int)).toObject());
+  return diff.toHuman({ maximumSignificantDigits: 1 });
+}
 
 function from_now(value) {
-  let mom = moment(value);
-  return mom.isValid() ? mom.fromNow() : value;
+  if (!value)
+    return '';
+  let start = DateTime.fromISO(value);
+  if (start.invalid)
+    return value;
+  return start.toRelative();
 }
 
 function params_serializer(params) { // turn javascript params object into querystring
@@ -44,7 +43,7 @@ function params_serializer(params) { // turn javascript params object into query
 }
 
 function now() {
-  return moment();
+  return DateTime.now();
 }
 
 function image_human(config) {
@@ -455,7 +454,6 @@ export default {
     return response.status + ": " + status_text + ".";
   },
   format_dt: format_dt,
-  format_duration: format_duration,
   format_duration_between: format_duration_between,
   params_serializer:params_serializer,
   now: now,
@@ -472,4 +470,5 @@ export default {
   schedule_durations_dict: schedule_durations_dict,
   secret_fields_for: secret_fields_for,
   tz_details: get_timezone_details(),
+  fromSeconds: DateTime.fromSeconds,
 };

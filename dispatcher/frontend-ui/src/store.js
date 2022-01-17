@@ -4,7 +4,7 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex);
 
-import moment from 'moment';
+import Constants from './constants.js'
 
 const store = new Vuex.Store({
   state: {
@@ -114,7 +114,7 @@ const store = new Vuex.Store({
     refresh_token(state) { return state.token.refresh_token || null },
     token_expiry(state) {
       try{
-        return moment(state.token.payload.exp * 1000);
+        return Constants.fromSeconds(state.token.payload.exp);
       } catch { return null; }
     },
     permissions(state) {
