@@ -114,6 +114,7 @@
             </td>
           </tr>
           <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
+          <tr v-if="task_container.stdout || task_container.stderr || task_container.log"><td colspan="2"><small>Logs uses UTC Timezone. {{ offset_string }}</small></td></tr>
           <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
           <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
@@ -163,6 +164,9 @@
       }
     },
     computed: {
+      offset_string() {
+        return `You are ${Constants.tz_details.offsetstr} (${Constants.tz_details.tz}).`
+      },
       offliner() { return this.task.config.task_name; },
       offliner_def() { return this.$store.getters.offliners_defs[this.offliner] || null; },
       sorted_files() { return Object.values(this.task.files).sortBy('created_timestamp'); },

@@ -2,6 +2,7 @@ import moment from 'moment'
 import filesize from 'filesize'
 import querystring from 'querystring'
 import humanizeDuration from 'humanize-duration';
+const { DateTime, Duration } = require("luxon");
 
 function format_dt(value) { // display a datetime in a standard format
   if (!value)
@@ -219,6 +220,27 @@ function secret_fields_for(offliner_def) {
   return offliner_def
     .filter(function (item) { return "secret" in item && item.secret === true; })
     .map(function (item) { return item.data_key});
+}
+
+function get_timezone_details() {
+  let dt = DateTime.local()
+  let diff = Duration.fromObject({minutes: Math.abs(dt.o)})
+  let offsetstr = "";
+  let amount = "";
+  if (diff.minutes % 60 == 0) {
+    amount = `${diff.as("hour")} hour`
+    if (diff.minutes > 60)
+      amount += 's'
+  } else
+    amount = `${diff.toHuman({ unitDisplay: "long" })}`
+
+  if (dt.o > 0)
+    offsetstr = `${amount} ahead of UTC`
+  else if (dt.o < 0)
+    offsetstr = `${amount} behind UTC`
+  else
+    offsetstr = 'in par with UTC'
+  return {tz: dt.zoneName, offset: dt.o, offsetstr: offsetstr}
 }
 
 var DEFAULT_CPU_SHARE = 1024;
@@ -449,4 +471,5 @@ export default {
   duplicate: duplicate,
   schedule_durations_dict: schedule_durations_dict,
   secret_fields_for: secret_fields_for,
+  tz_details: get_timezone_details(),
 };
