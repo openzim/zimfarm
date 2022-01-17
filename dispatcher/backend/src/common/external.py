@@ -153,9 +153,8 @@ def advertise_book_to_cms(task_id: ObjectId, filename: str):
     # retrieve task and file
     key = filename.replace(".", "．")
     query = {"_id": task_id}
-    file = Tasks().find_one(query, {f"files.{key}": 1, "config.warehouse_path": 1})[
-        "files"
-    ][key]
+    task = Tasks().find_one(query, {f"files.{key}": 1, "config.warehouse_path": 1})
+    file = task["files"][key]
 
     # skip if already advertised to CMS
     if file.get("cms"):
@@ -164,7 +163,7 @@ def advertise_book_to_cms(task_id: ObjectId, filename: str):
             return
 
     # prepare payload and submit request to CMS
-    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}/{file['config']['warehouse_path']}"
+    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}/{task['config']['warehouse_path']}"
     file["cms"] = {
         "status_code": -1,
         "succeeded": False,
