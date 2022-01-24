@@ -23,6 +23,49 @@ function get_units(interval) {
   return units;
 }
 
+function to_duration_obj(milliseconds) {
+  var items = {years: 0,
+    months: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    milliseconds: milliseconds};
+
+  function to_obj() {
+    let o = {};
+    Object.entries(items).forEach(item => {
+      let [key, value] = item;
+      if (value >= 1 && key != "milliseconds")
+        o[key] = value;
+    })
+    return o;
+  }
+
+  function shift(lower, upper, num) {
+    items[upper] = items[lower] / num;
+    items[lower] = items[lower] % num;
+    return (items[upper] < 1);
+  }
+  if (shift("milliseconds", "seconds", 1000))
+    return to_obj();
+  if (shift("seconds", "minutes", 60))
+    return to_obj();
+  if (shift("minutes", "hours", 60))
+    return to_obj();
+  if (shift("hours", "days", 24))
+    return to_obj();
+  if (shift("days", "months", 30))
+    return to_obj();
+  shift("months", "years", 12);
+  return to_obj();
+}
+
+function format_duration(duration_value) {
+  let dur = Duration.fromObject(to_duration_obj(duration_value));
+  return dur.toHuman({ maximumSignificantDigits: 1 });
+}
+
 function format_duration_between(start, end) { // display a duration between two datetimes
   var int = Interval.fromDateTimes(DateTime.fromISO(start), DateTime.fromISO(end));
   let diff = Duration.fromObject(int.toDuration(get_units(int)).toObject());
@@ -184,7 +227,7 @@ function duplicate(dict) {
 function schedule_durations_dict(duration) {
   function single_duration(value, worker, on) {
     return {single: true,
-            value: value * 1000,
+            value: value,
             worker: worker,
             on: on};
   }
@@ -454,6 +497,7 @@ export default {
     return response.status + ": " + status_text + ".";
   },
   format_dt: format_dt,
+  format_duration: format_duration,
   format_duration_between: format_duration_between,
   params_serializer:params_serializer,
   now: now,
