@@ -99,6 +99,15 @@ class WikihowFlagsSchema(SerializableSchema):
         },
     )
 
+    only = fields.Url(
+        metadata={
+            "label": "Exclude",
+            "description": "URL to a text file listing Article IDs. "
+            "This filters out every other article. "
+            "Lines starting with # are ignored",
+        },
+    )
+
     low_quality = fields.Boolean(
         metadata={
             "label": "Low quality",
