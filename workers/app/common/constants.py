@@ -69,6 +69,11 @@ except Exception:
         ZIMFARM_CPUS = physical_cpu
 
 try:
+    ZIMFARM_TASK_CPUS = float(os.getenv("ZIMFARM_TASK_CPUS"))
+except Exception:
+    ZIMFARM_TASK_CPUS = None
+
+try:
     ZIMFARM_MEMORY = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_MEMORY")))
 except Exception:
     physical_mem = psutil.virtual_memory().total
