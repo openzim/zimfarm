@@ -18,6 +18,7 @@ from common.constants import (
     CONTAINER_SCRAPER_IDENT,
     ZIMFARM_DISK_SPACE,
     ZIMFARM_CPUS,
+    ZIMFARM_TASK_CPUS,
     ZIMFARM_MEMORY,
     CONTAINER_TASK_IDENT,
     USE_PUBLIC_DNS,
@@ -406,12 +407,20 @@ def start_scraper(docker_client, task, dns, host_workdir):
     cap_add = config["resources"].get("cap_add", [])
     cap_drop = config["resources"].get("cap_drop", [])
 
+    if ZIMFARM_TASK_CPUS:
+        period = 100000
+        quota = int(period * ZIMFARM_TASK_CPUS)
+    else:
+        period = quota = None
+
     return run_container(
         docker_client,
         image=docker_image,
         command=command,
         # disk is already reserved on zimtask
         cpu_shares=cpu_shares,
+        cpu_period=period,
+        cpu_quota=quota,
         mem_limit=mem_limit,
         dns=dns,
         detach=True,
@@ -424,6 +433,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
             "human.cpu": str(config["resources"]["cpu"]),
             "human.memory": format_size(mem_limit),
             "human.disk": format_size(disk_limit),
+            "human.task-cpu": str(ZIMFARM_TASK_CPUS),
         },
         mem_swappiness=0,
         shm_size=shm_size,
@@ -477,6 +487,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "WORKER_NAME": worker_name,
             "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
             "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
+            "ZIMFARM_TASK_CPUS": os.getenv("ZIMFARM_TASK_CPUS"),
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
             "DEBUG": os.getenv("DEBUG"),
             "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
@@ -501,6 +512,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "human.cpu": str(task["config"]["resources"]["cpu"]),
             "human.memory": format_size(task["config"]["resources"]["memory"]),
             "human.disk": format_size(task["config"]["resources"]["disk"]),
+            "human.task-cpu": str(ZIMFARM_TASK_CPUS),
         },
         mem_swappiness=0,
         mounts=mounts,

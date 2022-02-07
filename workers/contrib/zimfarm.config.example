@@ -33,6 +33,11 @@ ZIMFARM_DISK="1GiB"
 # `"6"` if you want to have around two task in parallel, etc.
 ZIMFARM_CPU="3"
 
+# Number of CPU/core to assign to each scraper. This is a hard limit.
+# Leave it unset to allow as much CPU as available.
+# Value of "1" means one core. "2" is two cores. ".5" means half a core
+# ZIMFARM_TASK_CPUS="1"
+
 # Comma-separated list of offliners to run or `""` for all of them. If
 # you want to run `youtube` tasks, you need to be whitelisted, contact
 # us.
