@@ -37,6 +37,9 @@ ZIMFARM_CPU="3"
 # Leave it unset to allow as much CPU as available.
 # Value of "1" means one core. "2" is two cores. ".5" means half a core
 # ZIMFARM_TASK_CPUS="1"
+# Which CPU/core scraper containers should use (use numbers from /proc/cpuinfo)
+# Leave it unset to let docker spread resources itself.
+# ZIMFARM_TASK_CPUSET="0-3"
 
 # Comma-separated list of offliners to run or `""` for all of them. If
 # you want to run `youtube` tasks, you need to be whitelisted, contact

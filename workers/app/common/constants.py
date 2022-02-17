@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import multiprocessing
 import os
 import pathlib
-import multiprocessing
+import re
 
 import psutil
 import humanfriendly
@@ -72,6 +73,15 @@ try:
     ZIMFARM_TASK_CPUS = float(os.getenv("ZIMFARM_TASK_CPUS"))
 except Exception:
     ZIMFARM_TASK_CPUS = None
+
+ZIMFARM_TASK_CPUSET = os.getenv("ZIMFARM_TASK_CPUSET", "")
+if (
+    not ZIMFARM_TASK_CPUSET.isdigit()
+    and not re.match(r"^\d+\-\d+$", ZIMFARM_TASK_CPUSET)
+    and not all([part.isdigit() for part in ZIMFARM_TASK_CPUSET.split(",")])
+):
+    ZIMFARM_TASK_CPUSET = None
+
 
 try:
     ZIMFARM_MEMORY = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_MEMORY")))
