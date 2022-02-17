@@ -5,6 +5,7 @@
 import pathlib
 
 from common.enum import Offliner
+from common.constants import DISALLOW_CAPABILITIES
 from typing import List
 
 
@@ -72,12 +73,12 @@ def command_for(offliner, flags, mount_point):
 def docker_config_for(offliner):
     # Note: in docker, --shm-size sets the size of /dev/shm
     # it is taken out of --memory (if set)
+    extra_config = {}
     if offliner == Offliner.zimit:
-        return {
-            "cap_add": ["SYS_ADMIN", "NET_ADMIN"],
-            "shm": 2 ** 30,
-        }
-    return {}
+        extra_config.update({"shm": 2 ** 30})
+        if not DISALLOW_CAPABILITIES:
+            extra_config.update({"cap_add": ["SYS_ADMIN", "NET_ADMIN"]})
+    return extra_config
 
 
 def compute_flags(flags, use_equals=True):

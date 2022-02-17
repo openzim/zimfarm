@@ -88,3 +88,6 @@ CMS_ENDPOINT = os.getenv("CMS_ENDPOINT", "https://api.cms.openzim.org/v1/books/a
 CMS_ZIM_DOWNLOAD_URL = os.getenv(
     "CMS_ZIM_DOWNLOAD_URL", "https://download.kiwix.org/zim"
 )
+
+# [DEBUG] prevent scraper containers from running wit extended capabilities
+DISALLOW_CAPABILITIES = bool(os.getenv("ZIMFARM_DISALLOW_CAPABILITIES"))
