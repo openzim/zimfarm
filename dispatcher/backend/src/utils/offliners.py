@@ -76,8 +76,6 @@ def docker_config_for(offliner):
     extra_config = {}
     if offliner == Offliner.zimit:
         extra_config.update({"shm": 2 ** 30})
-        if not DISALLOW_CAPABILITIES:
-            extra_config.update({"cap_add": ["SYS_ADMIN", "NET_ADMIN"]})
     return extra_config
 
 
