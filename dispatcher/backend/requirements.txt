@@ -11,4 +11,5 @@ marshmallow>=3.3.0,<3.4
 requests>=2.24.0,<2.26
 humanfriendly>=9.0,<10
 jinja2>=2.11,<2.12
+markupsafe>=2.1.0,<2.2
 kiwixstorage>=0.8.1,<0.9
