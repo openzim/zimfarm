@@ -37,8 +37,11 @@ ZIMFARM_CPU="3"
 # Leave it unset to allow as much CPU as available.
 # Value of "1" means one core. "2" is two cores. ".5" means half a core
 # ZIMFARM_TASK_CPUS="1"
+
 # Which CPU/core scraper containers should use (use numbers from /proc/cpuinfo)
 # Leave it unset to let docker spread resources itself.
+# Seems to overide cpu-quota (ZIMFARM_TASK_CPUS). Doc is unclear.
+# See https://docs.docker.com/config/containers/resource_constraints/#cpu
 # ZIMFARM_TASK_CPUSET="0-3"
 
 # Comma-separated list of offliners to run or `""` for all of them. If

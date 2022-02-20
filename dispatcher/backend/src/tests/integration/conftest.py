@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from bson import ObjectId
 from flask.testing import FlaskClient
