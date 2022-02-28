@@ -116,14 +116,6 @@ class WikihowFlagsSchema(SerializableSchema):
         data_key="low-quality",
     )
 
-    skip_relateds = fields.Boolean(
-        metadata={
-            "label": "Skip relateds",
-            "description": "Don't fetch related articles from found articles",
-        },
-        data_key="skip-relateds",
-    )
-
     output = fields.String(
         metadata={
             "label": "Output folder",
