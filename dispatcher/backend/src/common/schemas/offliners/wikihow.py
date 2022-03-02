@@ -187,3 +187,22 @@ class WikihowFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
+
+    delay = fields.Float(
+        metadata={
+            "label": "Delay",
+            "description": "Add this delay (seconds) "
+            "before each request to please wikiHow servers. Can be fractions. "
+            "Defaults to 0: no delay",
+        },
+    )
+
+    api_delay = fields.Float(
+        metadata={
+            "label": "Delay",
+            "description": "Add this delay (seconds) "
+            "before each API query (!= calls) to please wikiHow servers. "
+            "Can be fractions. Defaults to 0: no delay",
+        },
+        data_key="api-delay",
+    )
