@@ -199,7 +199,7 @@ class WikihowFlagsSchema(SerializableSchema):
 
     api_delay = fields.Float(
         metadata={
-            "label": "Delay",
+            "label": "API Delay",
             "description": "Add this delay (seconds) "
             "before each API query (!= calls) to please wikiHow servers. "
             "Can be fractions. Defaults to 0: no delay",
