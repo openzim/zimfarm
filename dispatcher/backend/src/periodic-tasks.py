@@ -17,7 +17,7 @@ ONE_HOUR = 60 * ONE_MN
 NAME = "periodic-tasks"
 
 # config
-HISTORY_TASK_PER_SCHEDULE = 5
+HISTORY_TASK_PER_SCHEDULE = 10
 # when launching worker, it sets status to `started` then start scraper and
 # change status to `scraper_started` so it's a minutes max duration
 STALLED_STARTED_TIMEOUT = 30 * ONE_MN
