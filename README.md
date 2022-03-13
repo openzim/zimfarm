@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm)
 
 The ZIM farm (zimfarm) is a semi-decentralised software solution to
-build [ZIM files](http://www.openzim.org/) efficiently. This means scrapping Web content,
+build [ZIM files](http://www.openzim.org/) efficiently. This means scraping Web contents,
 packaging them into a ZIM file and uploading the result to an online
 ZIM files repository.
 
@@ -16,7 +16,7 @@ The Zimfarm platform is a combination of different tools:
 
 ### dispatcher
 
-The [dispatcher](http://hub.docker.com/r/openzim/zimfarm-dispatcher) is a central database and [API](https://api.farm.openzim.org/v1) that records *recipes* (metadata of ZIM to produce) and *tasks*. It includes a scheduler that decides when a ZIM file should be recreated (based on recipe) and a dispatcher that creates and assigns *tasks* to *workers*.
+The [dispatcher](http://hub.docker.com/r/openzim/zimfarm-dispatcher) is a central database and [API](https://api.farm.openzim.org/v1) that records *recipes* (metadata of ZIM to produce) and *tasks*. It includes a scheduler that decides when a ZIM file should be recreated (based on the recipe) and a dispatcher that creates and assigns *tasks* to *workers*.
 
 ### frontend
 
@@ -34,7 +34,7 @@ A worker is made of two software components:
 
 #### worker-manager
 
-The [manager](http://hub.docker.com/r/openzim/zimfarm-worker-manager) is responsible for declaring its available resources and configuration and receives tasks assigned to it by the dispatcher. It's a very-low resources container which job is to spawn `task-worker` ones.
+The [manager](http://hub.docker.com/r/openzim/zimfarm-worker-manager) is responsible for declaring its available resources and configuration and receives tasks assigned to it by the dispatcher. It's a very-low resources container whose job is to spawn `task-worker` ones.
 
 #### task-worker
 
