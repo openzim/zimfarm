@@ -217,9 +217,11 @@ def get_duration_for(schedule_name, worker_name):
     )
 
 
-def get_task_eta(task, worker_name):
+def get_task_eta(task, worker_name=None):
     """compute task duration (dict), remaining (seconds) and eta (datetime)"""
     now = getnow()
+    if not worker_name:
+        worker_name = task.get("worker")
     duration = get_duration_for(task["schedule_name"], worker_name)
     # delta
     elapsed = now - task["timestamp"].get("started", task["timestamp"]["reserved"])
@@ -301,11 +303,14 @@ def get_reqs_doable_by(worker):
     )
 
 
-def get_currently_running_tasks(worker_name):
+def get_currently_running_tasks(worker_name=None):
     """list of tasks being run by worker at this moment, including ETA"""
+    query = {"status": {"$nin": TaskStatus.complete()}}
+    if worker_name:
+        query.update({"worker": worker_name})
     running_tasks = list(
         Tasks().find(
-            {"status": {"$nin": TaskStatus.complete()}, "worker": worker_name},
+            query,
             {
                 "config.resources": 1,
                 "config.platform": 1,
@@ -332,24 +337,40 @@ def get_possible_task_with(tasks_worker_could_do, available_resources, available
             logger.debug(f"{temp_candidate['schedule_name']} would take too long")
 
 
-def does_platform_allow_worker_to_run(worker, running_tasks, task):
+def does_platform_allow_worker_to_run(worker, all_running_tasks, running_tasks, task):
     """whether worker can now run task according to platform limitations"""
     platform = task["config"].get("platform")
     if not platform:
         return True
-    nb_running_on = sum(
+
+    # check whether we have an overall per-platform limit
+    platform_overall_limit = Platform.get_max_overall_tasks_for(platform)
+    if platform_overall_limit is not None:
+        nb_platform_running = sum(
+            [
+                1
+                for running_task in all_running_tasks
+                if running_task["config"].get("platform") == platform
+            ]
+        )
+        if nb_platform_running >= platform_overall_limit:
+            return False
+
+    # check whether we have a per-worker limit for this platform
+    worker_limit = worker.get("platforms", {}).get(
+        platform, Platform.get_max_per_worker_tasks_for(platform)
+    )
+    if worker_limit is None:
+        return True
+
+    nb_worker_running = sum(
         [
             1
             for running_task in running_tasks
             if running_task["config"].get("platform") == platform
         ]
     )
-    if nb_running_on == 0:
-        return True
-    platform_limit = worker.get("platforms", {}).get(
-        platform, Platform.get_max_concurrent_for(platform)
-    )
-    return True if platform_limit is None else nb_running_on < platform_limit
+    return nb_worker_running < worker_limit
 
 
 def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
@@ -379,8 +400,13 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         logger.error(f"worker `{worker_name}` not checked-in")
         return None
 
+    # retrieve list of all running tasks with associated resources
+    all_running_tasks = get_currently_running_tasks()
+
     # retrieve list of tasks we are currently running with associated resources
-    running_tasks = get_currently_running_tasks(worker_name)
+    running_tasks = [
+        task for task in all_running_tasks if task.get("worker") == worker_name
+    ]
 
     # find all requested tasks that this worker can do with its total resources
     #   sorted by priorities
@@ -389,7 +415,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
 
     # filter-out requested tasks that are not doable now due to platform limitations
     worker_platform_filter = functools.partial(
-        does_platform_allow_worker_to_run, worker, running_tasks
+        does_platform_allow_worker_to_run, worker, all_running_tasks, running_tasks
     )
     tasks_worker_could_do = filter(worker_platform_filter, tasks_worker_could_do)
 
