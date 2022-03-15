@@ -255,8 +255,15 @@ class Platform:
         return [cls.wikimedia, cls.youtube, cls.wikihow]
 
     @classmethod
-    def get_max_concurrent_for(cls, platform) -> int:
+    def get_max_per_worker_tasks_for(cls, platform) -> int:
         try:
-            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS"))
+            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS_PER_WORKER"))
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def get_max_overall_tasks_for(cls, platform) -> int:
+        try:
+            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS_TOTAL"))
         except (TypeError, ValueError):
             return None
