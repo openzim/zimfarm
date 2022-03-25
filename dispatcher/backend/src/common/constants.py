@@ -9,6 +9,7 @@ MESSAGE_VALIDITY = 60  # number of seconds before a message expire
 REFRESH_TOKEN_EXPIRY = 180  # days
 TOKEN_EXPIRY = 24  # hours
 
+ENABLED_SCHEDULER = not os.getenv("DISABLE_SCHEDULER", "")
 DEFAULT_SCHEDULE_DURATION = datetime.timedelta(days=31).total_seconds()
 
 PERIODICITIES = {

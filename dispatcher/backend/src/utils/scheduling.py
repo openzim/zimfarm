@@ -18,6 +18,7 @@ from common.constants import (
     ZIMCHECK_OPTION,
     LOGS_UPLOAD_URI,
     LOGS_EXPIRATION,
+    ENABLED_SCHEDULER,
 )
 from common.enum import TaskStatus, SchedulePeriodicity, Platform
 from utils.offliners import expanded_config
@@ -381,6 +382,10 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
      - available resources now (sent)
      - extimated duration to reclaim resources for longest tasks
     """
+
+    # global scheduler switch (for maintainance, mainly)
+    if not ENABLED_SCHEDULER:
+        return None
 
     # get total resources for that worker
     worker = Workers().find_one(

@@ -8,7 +8,11 @@ from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
 
 from common import getnow, WorkersIpChangesCounts
-from common.constants import MAX_WORKER_IP_CHANGES_PER_DAY, USES_WORKERS_IPS_WHITELIST
+from common.constants import (
+    MAX_WORKER_IP_CHANGES_PER_DAY,
+    USES_WORKERS_IPS_WHITELIST,
+    ENABLED_SCHEDULER,
+)
 from common.utils import task_event_handler
 from common.mongo import RequestedTasks, Schedules, Workers
 from common.external import update_workers_whitelist
@@ -185,6 +189,14 @@ class RequestedTasksForWorkers(BaseRoute):
     @authenticate
     def get(self, token: AccessToken.Payload):
         """list of requested tasks to be retrieved by workers, auth-only"""
+
+        if not ENABLED_SCHEDULER:
+            return jsonify(
+                {
+                    "meta": {"skip": 0, "limit": 1, "count": 0},
+                    "items": [],
+                }
+            )
 
         request_args = request.args.to_dict()
         worker_name = request_args.get("worker")

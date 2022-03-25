@@ -10,6 +10,7 @@ from flask import request, jsonify, make_response, Response
 from marshmallow import ValidationError
 
 from common.enum import TaskStatus
+from common.constants import ENABLED_SCHEDULER
 from routes.utils import remove_secrets_from_response
 from utils.token import AccessToken
 from utils.broadcaster import BROADCASTER
@@ -108,6 +109,11 @@ class TaskRoute(BaseRoute):
     @url_object_id("task_id")
     def post(self, task_id: str, token: AccessToken.Payload):
         """create a task from a requested_task_id"""
+
+        if not ENABLED_SCHEDULER:
+            raise make_response(
+                jsonify({"msg": "scheduler is paused"}), HTTPStatus.NO_CONTENT
+            )
 
         requested_task = RequestedTasks().find_one({"_id": task_id})
         if requested_task is None:
