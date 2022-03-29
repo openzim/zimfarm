@@ -159,8 +159,8 @@ class TaskWorker(BaseWorker):
     def submit_scraper_progress(self):
         """report last lines of scraper to the API"""
         self.scraper.reload()
-        stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
-        stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
+        stdout = self.scraper.logs(stdout=True, stderr=False, tail=5000).decode("utf-8")
+        stderr = self.scraper.logs(stdout=False, stderr=True, tail=5000).decode("utf-8")
         scraper_stats = self.scraper.stats(stream=False)
         stats = {
             "memory": {
@@ -513,15 +513,11 @@ class TaskWorker(BaseWorker):
 
             # get result of container
             zimcheck_log = get_container_logs(self.docker, self.checker.name).strip()
-            # /!\ ugly/fragile hacking awaiting release 3.1.0
-            # with https://github.com/openzim/zim-tools/issues/278
-            zimcheck_log = zimcheck_log.replace("'", '"')
             try:
                 zimcheck_result = ujson.loads(zimcheck_log)
             except Exception as exc:
                 zimcheck_result = None
                 logger.warning(f"Failed to parse zimcheck output: {exc}")
-                logger.debug(zimcheck_log)
             else:
                 zimcheck_log = None
 
