@@ -163,7 +163,7 @@ def advertise_book_to_cms(task_id: ObjectId, filename: str):
             return
 
     # prepare payload and submit request to CMS
-    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}/{task['config']['warehouse_path']}"
+    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task['config']['warehouse_path']}"
     file["cms"] = {
         "status_code": -1,
         "succeeded": False,
