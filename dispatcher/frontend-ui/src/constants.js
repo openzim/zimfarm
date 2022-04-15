@@ -113,10 +113,6 @@ function logs_url(task) {
     return log_url + task.container.log;
   }
 
-  if (url.hostname.indexOf("warehouse.farm.openzim.org") != -1) {
-    return "https://logs.warehouse.farm.openzim.org/" + task.container.log;
-  }
-
   return task.container.log;
 }
 
