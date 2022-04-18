@@ -1919,6 +1919,7 @@ components:
         - ted
         - wikihow
         - zimit
+        - ifixit
       example:
         - mwoffliner
         - sotoki

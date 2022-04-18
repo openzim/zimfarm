@@ -9,6 +9,7 @@ from common.schemas.offliners.gutenberg import GutenbergFlagsSchema
 from common.schemas.offliners.zimit import ZimitFlagsSchema
 from common.schemas.offliners.kolibri import KolibriFlagsSchema
 from common.schemas.offliners.wikihow import WikihowFlagsSchema
+from common.schemas.offliners.ifixit import IFixitFlagsSchema
 
 
 class PhetFlagsSchema(SerializableSchema):

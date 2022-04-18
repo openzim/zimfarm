@@ -47,7 +47,7 @@ ZIMFARM_CPU="3"
 # Comma-separated list of offliners to run or `""` for all of them. If
 # you want to run `youtube` tasks, you need to be whitelisted, contact
 # us.
-ZIMFARM_OFFLINERS="mwoffliner,sotoki,gutenberg,phet,nautilus,ted,openedx,zimit,kolibri,wikihow"
+ZIMFARM_OFFLINERS="mwoffliner,sotoki,gutenberg,phet,nautilus,ted,openedx,zimit,kolibri,wikihow,ifixit"
 
 # Set to `"y"` to only run task specifically assigned to this worker
 # (`""` otherwise)

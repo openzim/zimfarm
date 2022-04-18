@@ -31,6 +31,7 @@ from common.schemas.offliners import (
     ZimitFlagsSchema,
     KolibriFlagsSchema,
     WikihowFlagsSchema,
+    IFixitFlagsSchema,
 )
 
 
@@ -86,6 +87,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.zimit: ZimitFlagsSchema,
             Offliner.kolibri: KolibriFlagsSchema,
             Offliner.wikihow: WikihowFlagsSchema,
+            Offliner.ifixit: IFixitFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema
