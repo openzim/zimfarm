@@ -4,14 +4,18 @@ from common.schemas import SerializableSchema
 from common.schemas.fields import validate_output, validate_zim_filename
 
 
-class WikihowFlagsSchema(SerializableSchema):
+def validate_percent(value):
+    return value >= 1 and value <= 100
+
+
+class IFixitFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
     language = fields.String(
         metadata={
             "label": "Language",
-            "description": "wikiHow website to build from. 2-letters language code.",
+            "description": "iFixIt website to build from",
         },
         required=True,
     )
@@ -28,7 +32,7 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. "
-            "Wikihow homepage title otherwise",
+            "iFixIt homepage title otherwise",
         },
     )
 
@@ -36,7 +40,7 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. "
-            "Wikihow homepage description (meta) otherwise",
+            "iFixIt homepage description (meta) otherwise",
         },
     )
 
@@ -44,14 +48,14 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={
             "label": "Icon",
             "description": "Custom Icon for your ZIM (URL). "
-            "wikiHow square logo otherwise",
+            "iFixit square logo otherwise",
         }
     )
 
     creator = fields.String(
         metadata={
             "label": "Creator",
-            "description": "Name of content creator. “wikiHow” otherwise",
+            "description": "Name of content creator. “iFixit” otherwise",
         },
     )
 
@@ -66,54 +70,8 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={
             "label": "ZIM Tags",
             "description": "List of semi-colon-separated Tags for the ZIM file. "
-            "_category:other and wikihow added automatically",
+            "_category:ifixit and ifixit added automatically",
         }
-    )
-
-    without_external_links = fields.Boolean(
-        metadata={
-            "label": "Without External links",
-            "description": "Remove all external links from pages. "
-            "Link text is kept but not the address",
-        },
-        data_key="without-external-links",
-    )
-
-    without_videos = fields.Boolean(
-        metadata={
-            "label": "Without Videos",
-            "description": "Don't include the video blocks (Youtube hosted). "
-            "Most are copyrighted",
-        },
-        data_key="without-videos",
-        truthy=[True],
-        falsy=[False],
-    )
-
-    exclude = fields.Url(
-        metadata={
-            "label": "Exclude",
-            "description": "URL to a text file listing Article ID or "
-            "`Category:` prefixed Category IDs to exclude from the scrape. "
-            "Lines starting with # are ignored",
-        },
-    )
-
-    only = fields.Url(
-        metadata={
-            "label": "Exclude",
-            "description": "URL to a text file listing Article IDs. "
-            "This filters out every other article. "
-            "Lines starting with # are ignored",
-        },
-    )
-
-    low_quality = fields.Boolean(
-        metadata={
-            "label": "Low quality",
-            "description": "Use lower-quality, smaller file-size video encode",
-        },
-        data_key="low-quality",
     )
 
     output = fields.String(
@@ -159,16 +117,6 @@ class WikihowFlagsSchema(SerializableSchema):
         data_key="optimization-cache",
     )
 
-    category = fields.String(
-        metadata={
-            "label": "Categories",
-            "description": "Only scrape those categories (comma-separated). "
-            "Use URL-ID of the Category "
-            "(after the colon `:` in the URL). "
-            "Add a slash after Category to request it without recursion",
-        },
-    )
-
     stats_filename = fields.String(
         metadata={
             "label": "Stats filename",
@@ -192,7 +140,7 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={
             "label": "Delay",
             "description": "Add this delay (seconds) "
-            "before each request to please wikiHow servers. Can be fractions. "
+            "before each request to please iFixit servers. Can be fractions. "
             "Defaults to 0: no delay",
         },
     )
@@ -201,8 +149,85 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={
             "label": "API Delay",
             "description": "Add this delay (seconds) "
-            "before each API query (!= calls) to please wikiHow servers. "
+            "before each API query (!= calls) to please iFixit servers. "
             "Can be fractions. Defaults to 0: no delay",
         },
         data_key="api-delay",
+    )
+
+    cdn_delay = fields.Float(
+        metadata={
+            "label": "CDN Delay",
+            "description": "Add this delay (seconds) "
+            "before each CDN file download to please iFixit servers. "
+            "Can be fractions. Defaults to 0: no delay",
+        },
+        data_key="cdn-delay",
+    )
+
+    max_missing_items = fields.Integer(
+        metadata={
+            "label": "Max Missing Items",
+            "description": "Amount of missing items which will force the scraper to "
+            "stop, expressed as a percentage of the total number of items to retrieve. "
+            "Integer from 1 to 100",
+        },
+        data_key="max-missing-items-percent",
+        validate=validate_percent,
+    )
+
+    max_error_items = fields.Integer(
+        metadata={
+            "label": "Max Error Items",
+            "description": "Amount of items with failed processing which will force "
+            "the scraper to stop, expressed as a percentage of the total number of "
+            "items to retrieve. Integer from 1 to 100",
+        },
+        data_key="max-error-items-percent",
+        validate=validate_percent,
+    )
+
+    category = fields.String(
+        metadata={
+            "label": "Categories",
+            "description": "Only scrape those categories (comma-separated). "
+            "Specify the category names",
+        }
+    )
+
+    no_category = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={"label": "No category", "description": "Do not scrape any category"},
+        data_key="no-category",
+    )
+
+    guide = fields.String(
+        metadata={
+            "label": "Guides",
+            "description": "Only scrape this guide (comma-separated)). "
+            "Specify the guide names",
+        },
+    )
+
+    no_guide = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={"label": "No guide", "description": "Do not scrape any guide"},
+        data_key="no-guide",
+    )
+
+    info = fields.String(
+        metadata={
+            "label": "Info",
+            "description": "Only scrape this info (comma-separated)). "
+            "Specify the info names",
+        },
+    )
+
+    no_info = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={"label": "No info", "description": "Do not scrape any info"},
+        data_key="no-info",
     )

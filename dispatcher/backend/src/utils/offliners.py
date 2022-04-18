@@ -2,11 +2,28 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import collections
 import pathlib
 
 from common.enum import Offliner
-from common.constants import DISALLOW_CAPABILITIES
+
+# from common.constants import DISALLOW_CAPABILITIES
 from typing import List
+
+od = collections.namedtuple("OfflinerDef", ["cmd", "std_output", "std_stats"])
+OFFLINER_DEFS = {
+    Offliner.gutenberg: od("gutenberg2zim", False, False),
+    Offliner.sotoki: od("sotoki", True, True),
+    Offliner.wikihow: od("wikihow2zim", True, True),
+    Offliner.ifixit: od("ifixit2zim", True, True),
+    Offliner.mwoffliner: od("mwoffliner", "outputDirectory", False),
+    Offliner.youtube: od("youtube2zim-playlists", True, False),
+    Offliner.ted: od("ted2zim-multi", True, False),
+    Offliner.openedx: od("openedx2zim", True, False),
+    Offliner.nautilus: od("nautiluszim", True, False),
+    Offliner.zimit: od("zimit", True, "statsFilename"),
+    Offliner.kolibri: od("kolibri2zim", True, False),
+}
 
 
 def mount_point_for(offliner):
@@ -20,10 +37,26 @@ def command_for(offliner, flags, mount_point):
     """command:list to be passed to docker run
 
     for an offliner,  flags:dict and a mount_point:Path (task volume)"""
+
     if offliner == Offliner.phet:
         return ["/bin/bash", "-c", "'cd /phet && npm i && npm start'"]
+
+    offliner_def = OFFLINER_DEFS[offliner]
+    cmd = offliner_def.cmd
+    if offliner_def.std_output:
+        flags[
+            offliner_def.std_output
+            if isinstance(offliner_def.std_output, str)
+            else "output"
+        ] = str(mount_point)
+    if offliner_def.std_stats:
+        flags[
+            offliner_def.std_stats
+            if isinstance(offliner_def.std_stats, str)
+            else "stats-filename"
+        ] = str(mount_point_for(offliner) / "task_progress.json")
+
     if offliner == Offliner.gutenberg:
-        cmd = "gutenberg2zim"
         # multiple ZIM expects a directory
         if flags.get("one-language-one-zim"):
             flags["one-language-one-zim"] = str(mount_point)
@@ -31,42 +64,14 @@ def command_for(offliner, flags, mount_point):
             del flags["one-language-one-zim"]
         # when not using multiple ZIM, scraper uses cwd as output (/output)
     if offliner == Offliner.sotoki:
-        cmd = "sotoki"
         flags["mirror"] = flags.get(
             "mirror", "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
         )
         flags["redis-url"] = "unix:///var/run/redis.sock"
         flags["keep-redis"] = True
-        flags["stats-filename"] = str(mount_point_for(offliner) / "task_progress.json")
-        flags["output"] = str(mount_point)
-    if offliner == Offliner.wikihow:
-        cmd = "wikihow2zim"
-        flags["stats-filename"] = str(mount_point_for(offliner) / "task_progress.json")
-        flags["output"] = str(mount_point)
-    if offliner == Offliner.mwoffliner:
-        cmd = "mwoffliner"
-        flags["outputDirectory"] = str(mount_point)
-    if offliner == Offliner.youtube:
-        cmd = "youtube2zim-playlists"
-        flags["output"] = str(mount_point)
-    if offliner == Offliner.ted:
-        cmd = "ted2zim-multi"
-        flags["output"] = str(mount_point)
-    if offliner == Offliner.openedx:
-        cmd = "openedx2zim"
-        flags["output"] = str(mount_point)
-    if offliner == Offliner.nautilus:
-        cmd = "nautiluszim"
-        flags["output"] = str(mount_point)
     if offliner == Offliner.zimit:
-        cmd = "zimit"
         if "adminEmail" not in flags:
             flags["adminEmail"] = "contact+zimfarm@kiwix.org"
-        flags["statsFilename"] = str(mount_point_for(offliner) / "task_progress.json")
-        flags["output"] = str(mount_point)
-    if offliner == Offliner.kolibri:
-        cmd = "kolibri2zim"
-        flags["output"] = str(mount_point)
     return [cmd] + compute_flags(flags)
 
 
