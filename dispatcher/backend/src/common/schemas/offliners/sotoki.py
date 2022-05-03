@@ -33,7 +33,7 @@ class SotokiFlagsSchema(SerializableSchema):
 
     description = fields.String(
         metadata={
-            "label": "Title",
+            "label": "Description",
             "description": "Custom description for your ZIM. Site tagline otherwise",
         },
     )
@@ -54,7 +54,7 @@ class SotokiFlagsSchema(SerializableSchema):
 
     publisher = fields.String(
         metadata={
-            "label": "Creator",
+            "label": "Publisher",
             "description": "Custom publisher name (ZIM metadata). “OpenZIM” otherwise",
         },
     )
