@@ -23,8 +23,6 @@ jobs:
           restrict-to: openzim/zimfarm
           context: dnscache
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -42,8 +40,6 @@ jobs:
           restrict-to: openzim/zimfarm
           context: uploader
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -60,8 +56,6 @@ jobs:
           restrict-to: openzim/zimfarm
           context: dispatcher/backend
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -78,8 +72,6 @@ jobs:
           restrict-to: openzim/zimfarm
           context: dispatcher/frontend-ui
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -96,8 +88,6 @@ jobs:
           restrict-to: openzim/zimfarm
           context: receiver
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -115,8 +105,6 @@ jobs:
           context: workers
           dockerfile: task-Dockerfile
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -134,8 +122,6 @@ jobs:
           context: workers
           dockerfile: manager-Dockerfile
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -152,8 +138,6 @@ jobs:
           restrict-to: openzim/zimfarm
           context: monitor
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
@@ -170,7 +154,5 @@ jobs:
           restrict-to: openzim/zimfarm
           context: watcher
           credentials:
-            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
