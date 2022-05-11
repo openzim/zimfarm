@@ -317,6 +317,7 @@ def get_currently_running_tasks(worker_name=None):
                 "config.platform": 1,
                 "schedule_name": 1,
                 "timestamp": 1,
+                "worker": 1,
             },
         )
     )
