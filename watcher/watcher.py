@@ -32,6 +32,7 @@ import logging
 import argparse
 import datetime
 import subprocess
+import traceback
 import multiprocessing
 import concurrent.futures as cf
 
@@ -81,6 +82,8 @@ def is_running_inside_container():
 def get_version_for(url):
     """casted datetime of the Last-Modified header for an URL"""
     with requests.head(url, allow_redirects=True) as resp:
+        if resp.status_code == 404:
+            raise FileNotFoundError(url)
         return datetime.datetime.strptime(
             resp.headers.get("last-modified"), "%a, %d %b %Y %H:%M:%S GMT"
         ).strftime("%Y-%m")
@@ -377,7 +380,11 @@ class WatcherRunner:
         logger.info(f"{prefix} Downloading…")
         url = f"{DOWNLOAD_URL}/{key}"
         fpath = self.work_dir / key
-        version = get_version_for(url)
+        try:
+            version = get_version_for(url)
+        except FileNotFoundError:
+            logger.error(f"{url} is missing upstream. Skipping.")
+            return
 
         wget = subprocess.run(
             ["/usr/bin/env", "wget", "-O", fpath, url],
@@ -467,7 +474,7 @@ class WatcherRunner:
             if exc:
                 key = self.domains_futures.get(future)
                 logger.error(f"Error processing {key}: {exc}")
-                logger.exception(exc)
+                traceback.print_exception(exc)
 
         if result.not_done:
             logger.error(
