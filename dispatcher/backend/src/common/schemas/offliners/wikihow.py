@@ -188,6 +188,16 @@ class WikihowFlagsSchema(SerializableSchema):
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
+    missing_article_tolerance = fields.Integer(
+        metadata={
+            "label": "Missing tolerance",
+            "description": "Allow this percentage (0-100) of articles to "
+            "be missing (HTTP 404). Defaults to 0: no tolerance",
+        },
+        data_key="missing-article-tolerance",
+        validate=validate.Range(min=0, max=100)
+    )
+
     delay = fields.Float(
         metadata={
             "label": "Delay",
