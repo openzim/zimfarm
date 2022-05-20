@@ -195,7 +195,7 @@ class WikihowFlagsSchema(SerializableSchema):
             "be missing (HTTP 404). Defaults to 0: no tolerance",
         },
         data_key="missing-article-tolerance",
-        validate=validate.Range(min=0, max=100)
+        validate=validate.Range(min=0, max=100),
     )
 
     delay = fields.Float(
