@@ -54,7 +54,7 @@ ZIMFARM_CPUS, ZIMFARM_MEMORY, ZIMFARM_DISK_SPACE = None, None, None
 try:
     ZIMFARM_DISK_SPACE = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_DISK")))
 except Exception as exc:
-    ZIMFARM_DISK_SPACE = 2 ** 34  # 16GiB
+    ZIMFARM_DISK_SPACE = 2**34  # 16GiB
     logger.error(
         f"Incorrect or missing `ZIMFARM_DISK` env. "
         f"defaulting to {format_size(ZIMFARM_DISK_SPACE)} ({exc})"

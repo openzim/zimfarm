@@ -221,23 +221,20 @@ class Offliner:
 
     @classmethod
     def get_image_name(cls, offliner):
-        return (
-            cls.get_image_prefix(offliner)
-            + {
-                cls.mwoffliner: DockerImageName.mwoffliner,
-                cls.youtube: DockerImageName.youtube,
-                cls.gutenberg: DockerImageName.gutenberg,
-                cls.phet: DockerImageName.phet,
-                cls.sotoki: DockerImageName.sotoki,
-                cls.nautilus: DockerImageName.nautilus,
-                cls.ted: DockerImageName.ted,
-                cls.openedx: DockerImageName.openedx,
-                cls.zimit: DockerImageName.zimit,
-                cls.kolibri: DockerImageName.kolibri,
-                cls.wikihow: DockerImageName.wikihow,
-                cls.ifixit: DockerImageName.ifixit,
-            }.get(offliner, "-")
-        )
+        return cls.get_image_prefix(offliner) + {
+            cls.mwoffliner: DockerImageName.mwoffliner,
+            cls.youtube: DockerImageName.youtube,
+            cls.gutenberg: DockerImageName.gutenberg,
+            cls.phet: DockerImageName.phet,
+            cls.sotoki: DockerImageName.sotoki,
+            cls.nautilus: DockerImageName.nautilus,
+            cls.ted: DockerImageName.ted,
+            cls.openedx: DockerImageName.openedx,
+            cls.zimit: DockerImageName.zimit,
+            cls.kolibri: DockerImageName.kolibri,
+            cls.wikihow: DockerImageName.wikihow,
+            cls.ifixit: DockerImageName.ifixit,
+        }.get(offliner, "-")
 
 
 class SchedulePeriodicity:

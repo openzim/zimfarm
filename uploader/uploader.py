@@ -449,7 +449,7 @@ def display_stats(filesize, started_on, ended_on=None):
         speed = humanfriendly.format_size(filesize / duration)
         msg = f"uploaded {hfilesize} in {hduration} ({speed}/s)"
     else:
-        hfilesize = filesize / 2 ** 20  # size in MiB
+        hfilesize = filesize / 2**20  # size in MiB
         speed = filesize / 1000000 / duration  # MB/s
         duration = duration / 60  # in mn
         msg = f"uploaded {hfilesize:.3}MiB in {duration:.1}mn ({speed:.3}MBps)"

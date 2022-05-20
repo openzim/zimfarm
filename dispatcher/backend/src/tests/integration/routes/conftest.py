@@ -27,7 +27,7 @@ def make_config():
                 "withZimFullTextIndex": True,
             },
             "warehouse_path": "/wikipedia",
-            "resources": {"cpu": 1, "memory": 2 ** 30, "disk": 2 ** 30},
+            "resources": {"cpu": 1, "memory": 2**30, "disk": 2**30},
         }
 
     return _make_config

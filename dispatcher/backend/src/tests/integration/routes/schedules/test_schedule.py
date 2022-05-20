@@ -6,7 +6,7 @@ import json
 
 from utils.offliners import expanded_config
 
-ONE_GiB = 2 ** 30
+ONE_GiB = 2**30
 ONE_MiB = 1048576
 MIN_RAM = 512 * ONE_MiB
 

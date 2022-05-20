@@ -80,7 +80,7 @@ def docker_config_for(offliner):
     # it is taken out of --memory (if set)
     extra_config = {}
     if offliner == Offliner.zimit:
-        extra_config.update({"shm": 2 ** 30})
+        extra_config.update({"shm": 2**30})
     return extra_config
 
 
