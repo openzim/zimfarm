@@ -21,7 +21,7 @@ def register_handlers(app: Flask):
     def handler_validationerror(e):
         return make_response(jsonify({"message": e.messages}), HTTPStatus.BAD_REQUEST)
 
-    @app.errorhandler(jwt_exceptions.ExpiredSignature)
+    @app.errorhandler(jwt_exceptions.ExpiredSignatureError)
     def handler_expiredsig(_):
         return make_response(
             jsonify({"error": "token expired"}), HTTPStatus.UNAUTHORIZED
