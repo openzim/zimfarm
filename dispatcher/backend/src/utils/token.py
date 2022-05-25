@@ -61,7 +61,7 @@ class AccessToken:
         }
         return jwt.encode(
             payload, key=cls.secret, algorithm="HS256", json_encoder=cls.JSONEncoder
-        ).decode("utf-8")
+        )
 
     @classmethod
     def decode(cls, token: str) -> dict:
