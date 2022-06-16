@@ -15,4 +15,4 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["entrypoint.sh"]
 
-CMD ["dnsmasq", "--no-daemon", "--user=root", "--conf-file=/etc/dnsmasq.conf", "--resolv-file=/etc/resolv.dnsmasq", "--domain-needed", "--bogus-priv", "--no-hosts", "--min-cache-ttl=86400", "--cache-size=1000", "--neg-ttl=3600", "--no-poll"]
+CMD ["dnsmasq", "--no-daemon", "--user=root", "--conf-file=/etc/dnsmasq.conf", "--resolv-file=/etc/resolv.dnsmasq", "--domain-needed", "--bogus-priv", "--no-hosts", "--cache-size=1500", "--neg-ttl=600", "--no-poll"]
