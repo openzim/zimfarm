@@ -35,7 +35,7 @@ validate_platform_value = validate.Range(min=0)
 # slack target must start with # for channels or @ for usernames
 validate_slack_target = validate.Regexp(regex=r"^[#|@].+$")
 validate_zim_filename = validate.Regexp(
-    regex=r"^[a-z\_\-\.0-9]+_[a-z]{2}_[a-z\_\-\.0-9]+(|{period})\.zim$",
+    regex=r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|{period}).zim$",
     error="ZIM filename format is incorrect",
 )
 
