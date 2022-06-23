@@ -20,12 +20,24 @@ validate_devicelist = validate.OneOf(
             "Galaxy S III landscape",
             "Galaxy S5",
             "Galaxy S5 landscape",
+            "Galaxy S8",
+            "Galaxy S8 landscape",
+            "Galaxy S9+",
+            "Galaxy S9+ landscape",
+            "Galaxy Tab S4",
+            "Galaxy Tab S4 landscape",
             "iPad",
             "iPad landscape",
+            "iPad (gen 6)",
+            "iPad (gen 6) landscape",
+            "iPad (gen 7)",
+            "iPad (gen 7) landscape",
             "iPad Mini",
             "iPad Mini landscape",
             "iPad Pro",
             "iPad Pro landscape",
+            "iPad Pro 11",
+            "iPad Pro 11 landscape",
             "iPhone 4",
             "iPhone 4 landscape",
             "iPhone 5",
@@ -54,6 +66,22 @@ validate_devicelist = validate.OneOf(
             "iPhone 11 Pro landscape",
             "iPhone 11 Pro Max",
             "iPhone 11 Pro Max landscape",
+            "iPhone 12",
+            "iPhone 12 landscape",
+            "iPhone 12 Pro",
+            "iPhone 12 Pro landscape",
+            "iPhone 12 Pro Max",
+            "iPhone 12 Pro Max landscape",
+            "iPhone 12 Mini",
+            "iPhone 12 Mini landscape",
+            "iPhone 13",
+            "iPhone 13 landscape",
+            "iPhone 13 Pro",
+            "iPhone 13 Pro landscape",
+            "iPhone 13 Pro Max",
+            "iPhone 13 Pro Max landscape",
+            "iPhone 13 Mini",
+            "iPhone 13 Mini landscape",
             "JioPhone 2",
             "JioPhone 2 landscape",
             "Kindle Fire HDX",
@@ -85,6 +113,16 @@ validate_devicelist = validate.OneOf(
             "Pixel 2 landscape",
             "Pixel 2 XL",
             "Pixel 2 XL landscape",
+            "Pixel 3",
+            "Pixel 3 landscape",
+            "Pixel 4",
+            "Pixel 4 landscape",
+            "Pixel 4a (5G)",
+            "Pixel 4a (5G) landscape",
+            "Pixel 5",
+            "Pixel 5 landscape",
+            "Moto G4",
+            "Moto G4 landscape",
         ]
     )
 )
@@ -115,14 +153,14 @@ class ZimitFlagsSchema(SerializableSchema):
         metadata={
             "label": "Language",
             "description": "ISO-639-3 (3 chars) language code of content. "
-            "Default to `eng`",
+            "Defaults to `eng`",
         }
     )
 
     title = fields.String(
         metadata={
             "label": "Title",
-            "description": "Custom title for ZIM. Default to title of main page",
+            "description": "Custom title for ZIM. Defaults to title of main page",
         }
     )
     description = fields.String(
@@ -131,9 +169,9 @@ class ZimitFlagsSchema(SerializableSchema):
 
     favicon = fields.Url(
         metadata={
-            "label": "Favicon",
-            "description": "URL for Favicon. "
-            "If unspecified, will attempt to use the one used from main page.",
+            "label": "Illustration",
+            "description": "URL for Illustration. "
+            "If unspecified, will attempt to use favicon from main page.",
         },
         required=False,
     )
@@ -141,7 +179,8 @@ class ZimitFlagsSchema(SerializableSchema):
     zim_file = fields.String(
         metadata={
             "label": "ZIM filename",
-            "description": "ZIM file name (based on --name if not provided)",
+            "description": "ZIM file name (based on --name if not provided). "
+            "Make sure to end with _{period}.zim",
         },
         data_key="zim-file",
         validate=validate_zim_filename,
@@ -171,70 +210,7 @@ class ZimitFlagsSchema(SerializableSchema):
     workers = fields.Integer(
         metadata={
             "label": "Workers",
-            "description": "The number of workers to run in parallel. Default to 1",
-        },
-        required=False,
-    )
-
-    include_domains = fields.String(
-        metadata={
-            "label": "Include domains",
-            "description": "Limit to URLs from only certain domains. "
-            "If not set, all URLs are included.",
-        },
-        data_key="include-domains",
-        required=False,
-    )
-
-    exclude = fields.String(
-        metadata={
-            "label": "Exclude",
-            "description": "Regex of URLs that should be excluded from the crawl.",
-        },
-        required=False,
-    )
-
-    wait_until = fields.String(
-        metadata={
-            "label": "WaitUntil",
-            "description": "Puppeteer page.goto() condition to wait for "
-            "before continuing. Default to `load`",
-        },
-        data_key="waitUntil",
-        required=False,
-    )
-
-    limit = fields.Integer(
-        metadata={
-            "label": "Limit",
-            "description": "Limit crawl to this number of pages. 0 means no-limit.",
-        },
-    )
-
-    timeout = fields.Integer(
-        metadata={
-            "label": "Timeout",
-            "description": "Timeout for each page to load (in millis). "
-            "Default to 30000",
-        },
-        required=False,
-    )
-
-    scope = fields.String(
-        metadata={
-            "label": "Scope",
-            "description": "The scope of current page that should be included in the "
-            "crawl (defaults to the domain of URL)",
-        },
-        required=False,
-    )
-
-    scroll = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Scroll",
-            "description": "If set, will autoscroll pages to bottom.",
+            "description": "The number of workers to run in parallel. Defaults to 1",
         },
         required=False,
     )
@@ -246,6 +222,162 @@ class ZimitFlagsSchema(SerializableSchema):
         },
         validate=validate.OneOf(["page", "session", "browser"]),
         data_key="newContext",
+        required=False,
+    )
+
+    wait_until = fields.String(
+        metadata={
+            "label": "WaitUntil",
+            "description": "Puppeteer page.goto() condition to wait for "
+            "before continuing. Defaults to `load`",
+        },
+        data_key="waitUntil",
+        required=False,
+    )
+
+    depth = fields.Integer(
+        metadata={
+            "label": "Depth",
+            "description": "The depth of the crawl for all seeds. Defaults to -1",
+        },
+        required=False,
+    )
+
+    extra_hops = fields.Integer(
+        metadata={
+            "label": "Extra Hops",
+            "description": "Number of extra 'hops' to follow, "
+            "beyond the current scope. Defaults to 0",
+        },
+        data_key="extraHops",
+        required=False,
+    )
+
+    limit = fields.Integer(
+        metadata={
+            "label": "Limit",
+            "description": "Limit crawl to this number of pages. 0 means no-limit.",
+        },
+    )
+
+    scope_type = StringEnum(
+        metadata={
+            "label": "Scope Type",
+            "description": "A predfined scope of the crawl. For more customization, "
+            "use 'custom' and set include regexes. Defaults to prefix.",
+        },
+        data_key="scopeType",
+        required=False,
+        validate=validate.OneOf(
+            ["page", "page-spa", "prefix", "host", "domain", "any", "custom"]
+        ),
+    )
+
+    include = fields.String(
+        metadata={
+            "label": "Include",
+            "description": "Regex of page URLs that should be "
+            "included in the crawl (defaults to the immediate directory of URL)",
+        },
+        required=False,
+    )
+
+    exclude = fields.String(
+        metadata={
+            "label": "Exclude",
+            "description": "Regex of page URLs that should be excluded from the crawl",
+        },
+        required=False,
+    )
+
+    allow_hash_urls = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Allow Hashtag URLs",
+            "description": "Allow Hashtag URLs, useful for single-page-application "
+            "crawling or when different hashtags load dynamic content",
+        },
+        data_key="allowHashUrls",
+        required=False,
+    )
+
+    mobile_device = StringEnum(
+        metadata={
+            "label": "As device",
+            "description": "Device to crawl as. Defaults to `Iphone X`. "
+            "See Pupeeter's DeviceDescriptors.",
+        },
+        data_key="mobileDevice",
+        required=False,
+        validate=validate_devicelist,
+    )
+
+    user_agent = fields.String(
+        metadata={
+            "label": "User Agent",
+            "description": "Override user-agent with specified",
+        },
+        data_key="userAgent",
+        required=False,
+    )
+
+    user_agent_suffix = fields.String(
+        metadata={
+            "label": "User Agent Suffix",
+            "description": "Append suffix to existing browser user-agent. "
+            "Defaults to +Zimit",
+        },
+        data_key="userAgentSuffix",
+        required=False,
+    )
+
+    use_sitemap = fields.Url(
+        metadata={
+            "label": "Use sitemap",
+            "description": "Use as sitemap to get additional URLs for the crawl "
+            "(usually at /sitemap.xml)",
+        },
+        data_key="useSitemap",
+        required=False,
+    )
+
+    behaviors = fields.String(
+        metadata={
+            "label": "Behaviors",
+            "description": "Which background behaviors to enable on each page. "
+            "Defaults to autoplay,autofetch,siteSpecific.",
+        },
+        required=False,
+    )
+
+    behavior_timeout = fields.Integer(
+        metadata={
+            "label": "Behavior Timeout",
+            "description": "If >0, timeout (in seconds) for in-page behavior "
+            "will run on each page. If 0, a behavior can run until finish. "
+            "Defaults to 90",
+        },
+        data_key="behaviorTimeout",
+        required=False,
+    )
+
+    size_limit = fields.Integer(
+        metadata={
+            "label": "Size Limit",
+            "description": "If set, save state and exit "
+            "if size limit exceeds this value, in bytes",
+        },
+        data_key="sizeLimit",
+        required=False,
+    )
+
+    time_limit = fields.Integer(
+        metadata={
+            "label": "Time Limit",
+            "description": "If set, save state and exit after time limit, in seconds",
+        },
+        data_key="timeLimit",
         required=False,
     )
 
@@ -300,27 +432,6 @@ class ZimitFlagsSchema(SerializableSchema):
         },
         data_key="replay-viewer-source",
         required=False,
-    )
-
-    use_sitemap = fields.Url(
-        metadata={
-            "label": "Use sitemap",
-            "description": "Use as sitemap to get additional URLs for the crawl "
-            "(usually at /sitemap.xml)",
-        },
-        data_key="useSitemap",
-        required=False,
-    )
-
-    mobile_device = StringEnum(
-        metadata={
-            "label": "As device",
-            "description": "Device to crawl as. Defaults to `Iphone X`. "
-            "See Pupeeter's DeviceDescriptors.",
-        },
-        data_key="mobileDevice",
-        required=False,
-        validate=validate_devicelist,
     )
 
     admin_email = fields.String(
