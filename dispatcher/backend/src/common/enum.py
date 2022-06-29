@@ -253,10 +253,11 @@ class Platform:
     wikimedia = "wikimedia"
     youtube = "youtube"
     wikihow = "wikihow"
+    ifixit = "ifixit"
 
     @classmethod
     def all(cls) -> str:
-        return [cls.wikimedia, cls.youtube, cls.wikihow]
+        return [cls.wikimedia, cls.youtube, cls.wikihow, cls.ifixit]
 
     @classmethod
     def get_max_per_worker_tasks_for(cls, platform) -> int:
