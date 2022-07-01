@@ -50,6 +50,7 @@ class WorkersRoute(BaseRoute):
             "offliners": 1,
             "resources": 1,
             "last_seen": 1,
+            "last_ip": 1,
         }
         cursor = (
             Workers()
