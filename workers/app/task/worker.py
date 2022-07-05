@@ -16,7 +16,7 @@ import requests
 import ujson
 
 from common import logger
-from common.utils import format_size
+from common.utils import format_size, format_key
 from common.worker import BaseWorker
 from common.docker import (
     query_host_mounts,
@@ -32,7 +32,11 @@ from common.docker import (
     container_logs,
     start_monitor,
 )
-from common.constants import PROGRESS_CAPABLE_OFFLINERS, CONTAINER_TASK_IDENT
+from common.constants import (
+    PROGRESS_CAPABLE_OFFLINERS,
+    CONTAINER_TASK_IDENT,
+    MONITORING_KEY,
+)
 from common.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
@@ -293,7 +297,9 @@ class TaskWorker(BaseWorker):
 
     def start_monitor(self):
         logger.info("Starting resource monitor")
-        self.monitor = start_monitor(self.docker, self.task)
+        self.monitor = start_monitor(
+            self.docker, self.task, MONITORING_KEY or format_key(self.fingerprint)
+        )
 
     def start_scraper(self):
         logger.info(f"Starting scraper. Expects files at: {self.host_task_workdir} ")

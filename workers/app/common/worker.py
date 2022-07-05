@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import binascii
 import os
 import sys
 import signal
@@ -11,6 +12,7 @@ import urllib.parse
 
 import jwt
 import docker
+import paramiko
 import requests
 
 from common import logger
@@ -60,8 +62,19 @@ class BaseWorker:
         ):
             logger.critical("\tprivate key is not a readable path")
             sys.exit(1)
+
+        try:
+            self.fingerprint = binascii.hexlify(
+                paramiko.RSAKey.from_private_key(
+                    open(PRIVATE_KEY, "r")
+                ).get_fingerprint()
+            ).decode("ASCII")
+        except Exception as exc:
+            logger.critical("\tprivate key is not valid RSA")
+            logger.exception(exc)
+            sys.exit(1)
         else:
-            logger.info("\tprivate key is available and readable")
+            logger.info(f"\tprivate key is available and readable ({self.fingerprint})")
 
     def check_auth(self):
         self.connections = {

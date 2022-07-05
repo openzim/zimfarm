@@ -289,7 +289,7 @@ def start_dnscache(docker_client, task):
     )
 
 
-def start_monitor(docker_client, task):
+def start_monitor(docker_client, task, monitoring_key):
     name = get_container_name("monitor", task["_id"])
     image = get_or_pull_image(docker_client, MONITOR_IMAGE)
 
@@ -316,8 +316,8 @@ def start_monitor(docker_client, task):
     }
     if MONITORING_DEST:
         environment["MONITORING_DEST"] = MONITORING_DEST
-    if MONITORING_KEY:
-        environment["MONITORING_KEY"] = MONITORING_KEY
+    if monitoring_key:
+        environment["MONITORING_KEY"] = monitoring_key
 
     return run_container(
         docker_client,

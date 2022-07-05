@@ -18,3 +18,11 @@ def as_pos_int(value):
 
 def format_size(value):
     return humanfriendly.format_size(value, binary=True)
+
+
+def format_key(fingerprint):
+    """UUID-hex looking from RSA fingerprint"""
+    return (
+        f"{fingerprint[0:8]}-{fingerprint[8:12]}-{fingerprint[12:16]}"
+        f"-{fingerprint[16:20]}-{fingerprint[20:]}"
+    ).upper()

@@ -6,3 +6,4 @@ PyJWT>=2.4.0,<3.0
 kiwixstorage==0.6
 ujson>=5.1.0,<5.2
 zimscraperlib>=1.4.1,<1.5
+paramiko==2.11.0
