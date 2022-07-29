@@ -11,6 +11,15 @@ function format_dt(value) { // display a datetime in a standard format
   return dt.toFormat('fff');
 }
 
+function to_timestamp(value) {
+  if (!value)
+    return 0;
+  let dt = DateTime.fromISO(value);
+  if (dt.invalid)
+    return 0;
+  return dt.toMillis();
+}
+
 function get_units(interval) {
   let units = []
   let all_units = ["months", "days", "hours", "minutes"];
@@ -511,4 +520,5 @@ export default {
   secret_fields_for: secret_fields_for,
   tz_details: get_timezone_details(),
   fromSeconds: DateTime.fromSeconds,
+  to_timestamp: to_timestamp,
 };

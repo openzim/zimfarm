@@ -215,7 +215,15 @@
       image_url() { return Constants.image_url(this.task.config); },
       can_cancel() { return this.task && this.is_running && this.task["_id"]; },
       max_memory() { try { return filesize(this.task_container.stats.memory.max_usage); } catch { return null; } },
-      monitoring_url () { return 'http://monitoring.openzim.org/host/{schedule_name}_{short_id}.{worker}/'.format({schedule_name: this.schedule_name, short_id: this.short_id, worker: this.task.worker}); },
+      monitoring_url () {
+        return 'http://monitoring.openzim.org/host/{schedule_name}_{short_id}.{worker}/#menu_cgroup_zimscraper_{scraper}_{short_id}_submenu_cpu;after={start_ts};before={end_ts};theme=slate;utc=Africa/Bamako'.format({
+          schedule_name: this.schedule_name,
+          short_id: this.short_id,
+          worker: this.task.worker,
+          scraper: this.task.config.task_name,
+          start_ts: Constants.to_timestamp(this.task.timestamp.scraper_started || 0),
+          end_ts: Constants.to_timestamp(this.task.timestamp.scraper_completed || 0)
+        }); },
     },
     methods: {
       copyLog(log) {
