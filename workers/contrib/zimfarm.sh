@@ -187,6 +187,8 @@ function restart() {
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
         --env PLATFORM_wikihow_MAX_TASKS=$PLATFORM_wikihow_MAX_TASKS \
+        --env PLATFORM_ifixit_MAX_TASKS=$PLATFORM_ifixit_MAX_TASKS \
+        --env PLATFORM_ted_MAX_TASKS=$PLATFORM_ted_MAX_TASKS \
         --env POLL_INTERVAL=$POLL_INTERVAL \
         --env DNSCACHE_IMAGE=$DNSCACHE_IMAGE \
         --env UPLOADER_IMAGE=$UPLOADER_IMAGE \

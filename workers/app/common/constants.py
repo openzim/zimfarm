@@ -144,7 +144,7 @@ SUPPORTED_OFFLINERS = [
 ]
 PROGRESS_CAPABLE_OFFLINERS = [OFFLINER_ZIMIT, OFFLINER_SOTOKI, OFFLINER_IFIXIT]
 
-ALL_PLATFORMS = ["wikimedia", "youtube", "wikihow"]
+ALL_PLATFORMS = ["wikimedia", "youtube", "wikihow", "ifixit", "ted"]
 PLATFORMS_TASKS = {}
 for platform in ALL_PLATFORMS:
     name = f"PLATFORM_{platform}_MAX_TASKS"
