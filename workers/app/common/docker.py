@@ -256,6 +256,8 @@ def upload_container_name(task_id, filename, unique):
     ident = "zimup" if filename.endswith(".zim") else "logup"
     if unique:
         filename = f"{uuid.uuid4().hex}{pathlib.Path(filename).suffix}"
+    else:
+        filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", filename)
     return f"{short_id(task_id)}_{ident}_{filename}"
 
 
