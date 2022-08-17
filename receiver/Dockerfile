@@ -11,7 +11,7 @@ RUN apt-get update -y \
 # build and configure rssh
 # we are keeping source here as it's small and hosted on sourceforge
 WORKDIR /usr/src/
-RUN wget https://download.kiwix.org/dev/rssh-2.3.4.tar.gz
+RUN wget -nv https://download.kiwix.org/dev/rssh-2.3.4.tar.gz
 RUN tar -xvf rssh-2.3.4.tar.gz
 WORKDIR /usr/src/rssh-2.3.4
 RUN ./configure --prefix=/ && make && make install
@@ -19,7 +19,7 @@ RUN printf "allowscp\nallowsftp\n" > /etc/rssh.conf
 
 WORKDIR /
 # setup a chroot jail at /jail
-RUN wget https://olivier.sessink.nl/jailkit/jailkit-2.21.tar.gz
+RUN wget -nv https://olivier.sessink.nl/jailkit/jailkit-2.21.tar.gz
 RUN tar xf jailkit-2.21.tar.gz
 RUN cd jailkit-2.21 && ./configure && make && make install
 RUN rm -rf /jailkit-2.21 && rm -f jailkit-2.21.tar.gz
@@ -56,7 +56,7 @@ ENV VALIDATION_LOG_DIR /mnt/check_logs
 ENV ZIMCHECK_OPTION -A
 ENV ZIMCHECK_PARALLEL_JOBS 2
 
-RUN wget -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
+RUN wget -nv -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
   tar -xzf zim-tools.tar.gz && \
   cp zim-tools*/* /usr/local/bin/ && \
   rm -rf zim-tools*
@@ -69,7 +69,7 @@ ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v1
 ENV ZIMFARM_USERNAME uploader
 
 COPY apps/requirements.txt /tmp/requirements.txt
-RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 COPY apps/get_zimfarm_key.py /usr/bin/get_zimfarm_keys
 
 COPY entrypoint.sh /usr/bin/entrypoint.sh

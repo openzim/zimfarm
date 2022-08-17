@@ -2,11 +2,11 @@ FROM rgaudin/uwsgi-nginx:python3.8
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
-RUN pip install -U pip
-RUN pip install uwsgi==2.0.18
+RUN pip install --no-cache-dir -U pip
+RUN pip install --no-cache-dir uwsgi==2.0.18
 
 COPY requirements.txt /app/
-RUN pip install -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY src /app/
 COPY docs /app/docs
