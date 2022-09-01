@@ -16,13 +16,14 @@ def read(*names, **kwargs):
 
 setup(
     name="openzim_uploader",
-    version="1.0",
+    version="1.0.1",
+    summary="SCP/SFTP helper for openZIM uploads to our dropbox",
     description="SCP/SFTP helper for openZIM uploads to our dropbox",
     long_description=read("README.md"),
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/markdown; charset=UTF-8; variant=GFM",
     author="kiwix",
     author_email="reg@kiwix.org",
-    url="https://github.com/openzim/zimfarm",
+    url="https://github.com/openzim/zimfarm/tree/master/uploader",
     keywords="scp sftp upload kiwix",
     license="GPLv3+",
     packages=find_packages(),

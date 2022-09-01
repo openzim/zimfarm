@@ -606,6 +606,8 @@ def check_and_upload_file(
     cipher=None,
     delete_after=None,
 ):
+    """checks inputs and uploads file, returning 0 on success"""
+
     # fail early if source file is not readable
     src_path = pathlib.Path(src_path).expanduser().resolve()
     if (

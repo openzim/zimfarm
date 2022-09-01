@@ -43,3 +43,15 @@ docker run \
 pip3 install openzim_uploader[all]
 openzim-uploader --help
 ```
+
+```py
+from openzim_uploader import check_and_upload_file
+
+check_and_upload_file(
+    src_path="/path/my_file.zim",
+    upload_uri="sftp://uploader@warehouse.farm.openzim.org/zim/",
+    private_key="~/.ssh/id_rsa",
+)
+```
+
+_Note_: `check_and_upload_file` returns an unix-like returncode (`0` on success)
