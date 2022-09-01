@@ -42,7 +42,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-HOST_KNOW_FILE = pathlib.Path(os.getenv("HOST_KNOW_FILE", "/etc/ssh/known_hosts"))
+HOST_KNOW_FILE = (
+    pathlib.Path(os.getenv("HOST_KNOW_FILE", "~/.ssh/known_hosts"))
+    .expanduser()
+    .resolve()
+)
 MARKER_FILE = pathlib.Path(os.getenv("MARKER_FILE", "/usr/share/marker"))
 SCP_BIN_PATH = pathlib.Path(os.getenv("SCP_BIN_PATH", "/usr/bin/scp"))
 SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
@@ -588,6 +592,81 @@ def upload_file(
     return method(**kwargs)
 
 
+def check_and_upload_file(
+    src_path,
+    upload_uri,
+    private_key,
+    username=None,
+    resume=False,
+    watch=None,
+    move=False,
+    delete=False,
+    compress=False,
+    bandwidth=None,
+    cipher=None,
+    delete_after=None,
+):
+    # fail early if source file is not readable
+    src_path = pathlib.Path(src_path).expanduser().resolve()
+    if (
+        not src_path.exists()
+        or not src_path.is_file()
+        or not os.access(src_path, os.R_OK)
+    ):
+        logger.error(f"source file ({src_path}) doesn't exist or is not readable.")
+        return 1
+
+    # make sur upload-uri is correct (trailing slash)
+    try:
+        url = urllib.parse.urlparse(upload_uri)
+        if not url.scheme or not url.netloc:
+            raise ValueError("missing URL component")
+    except Exception as exc:
+        logger.error(f"invalid upload URI: `{upload_uri}` ({exc}).")
+        return 1
+    else:
+        if not url.path.endswith("/") and not pathlib.Path(url.path).suffix:
+            logger.error(
+                f"/!\\ your upload_uri doesn't end with a slash "
+                f"and has no file extension: `{upload_uri}`."
+            )
+            return 1
+
+    if url.scheme in ("scp", "sftp"):
+        # fail early if private key is not readable
+        private_key = pathlib.Path(private_key).expanduser().resolve()
+        if (
+            not private_key.exists()
+            or not private_key.is_file()
+            or not os.access(private_key, os.R_OK)
+        ):
+            logger.error(
+                f"private RSA key file ({private_key}) doesn't exist "
+                f"or is not readable."
+            )
+            return 1
+
+        ack_host_fingerprint(url.hostname, url.port)
+    else:
+        private_key = None
+
+    # running upload
+    return upload_file(
+        src_path=src_path,
+        upload_uri=upload_uri,
+        private_key=private_key,
+        username=username,
+        resume=resume,
+        watch=watch,
+        move=move,
+        delete=delete,
+        compress=compress,
+        bandwidth=bandwidth,
+        cipher=cipher,
+        delete_after=delete_after,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(prog="uploader")
 
@@ -684,57 +763,12 @@ def main():
     args = parser.parse_args()
     logger.setLevel(logging.DEBUG if args.debug else logging.INFO)
 
-    # fail early if source file is not readable
-    src_path = pathlib.Path(args.src_path).resolve()
-    if (
-        not src_path.exists()
-        or not src_path.is_file()
-        or not os.access(src_path, os.R_OK)
-    ):
-        logger.error(f"source file ({src_path}) doesn't exist or is not readable.")
-        sys.exit(1)
-
-    # make sur upload-uri is correct (trailing slash)
-    try:
-        url = urllib.parse.urlparse(args.upload_uri)
-        if not url.scheme or not url.netloc:
-            raise ValueError("missing URL component")
-    except Exception as exc:
-        logger.error(f"invalid upload URI: `{args.upload_uri}` ({exc}).")
-        sys.exit(1)
-    else:
-        if not url.path.endswith("/") and not pathlib.Path(url.path).suffix:
-            logger.error(
-                f"/!\\ your upload_uri doesn't end with a slash "
-                f"and has no file extension: `{args.upload_uri}`."
-            )
-            sys.exit(1)
-
-    if url.scheme in ("scp", "sftp"):
-        # fail early if private key is not readable
-        private_key = pathlib.Path(args.private_key).resolve()
-        if (
-            not private_key.exists()
-            or not private_key.is_file()
-            or not os.access(private_key, os.R_OK)
-        ):
-            logger.error(
-                f"private RSA key file ({private_key}) doesn't exist "
-                f"or is not readable."
-            )
-            sys.exit(1)
-
-        ack_host_fingerprint(url.hostname, url.port)
-    else:
-        private_key = None
-
-    # running upload
     sys.exit(
-        upload_file(
-            src_path=src_path,
+        check_and_upload_file(
+            src_path=args.src_path,
             upload_uri=args.upload_uri,
             username=args.username,
-            private_key=private_key,
+            private_key=args.private_key,
             resume=args.resume,
             watch=args.watch,
             move=args.move,

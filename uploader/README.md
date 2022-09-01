@@ -34,3 +34,12 @@ docker run \
 * `--bandwidth`: enable bandwidth limit. Set it in Kbps.
 * `--cipher`: change default cipher (`aes128-ctr`).
 * `--resume`: resume partially uploaded file (SFTP only)
+
+### Python
+
+[![PyPI version shields.io](https://img.shields.io/pypi/v/openzim_uploader)](https://pypi.org/project/openzim_uploader/)
+
+```sh
+pip3 install openzim_uploader[all]
+openzim-uploader --help
+```
