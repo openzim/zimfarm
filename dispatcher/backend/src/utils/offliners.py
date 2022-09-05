@@ -84,6 +84,12 @@ def docker_config_for(offliner):
     return extra_config
 
 
+def simplified(value):
+    if (isinstance(value, float) and value.is_integer()) or str(value).isdigit():
+        return str(int(value))
+    return value
+
+
 def compute_flags(flags, use_equals=True):
     """flat list of params from dict of flags"""
     params: [str] = []
@@ -96,16 +102,16 @@ def compute_flags(flags, use_equals=True):
         elif isinstance(value, list):
             for item in value:
                 if use_equals:
-                    params.append(f'--{key}="{item}"')
+                    params.append(f'--{key}="{simplified(item)}"')
                 else:
                     params.append(f"--{key}")
-                    params.append(f"{item}")
+                    params.append(f"{simplified(item)}")
         else:
             if use_equals:
-                params.append(f'--{key}="{value}"')
+                params.append(f'--{key}="{simplified(value)}"')
             else:
                 params.append(f"--{key}")
-                params.append(f"{value}")
+                params.append(f"{simplified(value)}")
     return params
 
 
