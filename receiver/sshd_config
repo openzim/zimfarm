@@ -95,12 +95,13 @@ X11Forwarding no
 PrintMotd no
 #PrintLastLog yes
 #TCPKeepAlive yes
+TCPKeepAlive no
 #PermitUserEnvironment no
 #Compression delayed
 
 # Send a alive requests every 5 seconds
 #ClientAliveInterval 0
-ClientAliveInterval 5
+ClientAliveInterval 30
 
 # Disconnect after 10 alive requests unasnwered
 #ClientAliveCountMax 3
