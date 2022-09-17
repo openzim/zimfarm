@@ -77,9 +77,9 @@
                   <td v-if="file.check_result !== undefined">
                     <code v-tooltip="'zimcheck exit-code'">{{ file.check_result }}</code>
                     <b-button :id="'popover-log-' + file.name" variant="neutral"><font-awesome-icon icon="glasses" /></b-button>
-                    <b-button variant="neutral" v-tooltip="'Copy log to clipboard'" @click.prevent="copyLog(file.check_log)"><font-awesome-icon icon="copy" /></b-button>
+                    <b-button variant="neutral" v-tooltip="'Copy log to clipboard'" @click.prevent="copyLog(JSON.stringify(file.check_details, null, 2))"><font-awesome-icon icon="copy" /></b-button>
                     <b-popover triggers="hover focus" placement="left" :target="'popover-log-' + file.name" title="zimcheck output">
-                      <pre>{{ file.check_log }}</pre>
+                      <pre>{{ JSON.stringify(file.check_details, null, 2) }}</pre>
                     </b-popover>
                   </td>
                   <td v-else>-</td>
