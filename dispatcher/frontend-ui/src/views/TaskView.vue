@@ -115,8 +115,16 @@
           </tr>
           <tr v-if="task_progress.overall"><th>Scraper&nbsp;progress</th><td>{{ task_progress.overall }}% ({{ task_progress.done }} / {{ task_progress.total }})</td></tr>
           <tr v-if="task_container.stdout || task_container.stderr || task_container.log"><td colspan="2"><small>Logs uses UTC Timezone. {{ offset_string }}</small></td></tr>
-          <tr v-if="task_container.stdout"><th>Scraper&nbsp;stdout</th><td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
-          <tr v-if="task_container.stderr"><th>Scraper&nbsp;stderr</th><td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
+          <tr v-if="task_container.stdout">
+            <th>Scraper&nbsp;stdout
+                <b-button variant="neutral" v-tooltip="'Copy stdout to clipboard'" @click.prevent="copyOutput(task_container.stdout, 'stdout')"><font-awesome-icon icon="copy" /></b-button>
+            </th>
+            <td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
+          <tr v-if="task_container.stderr">
+            <th>Scraper&nbsp;stderr
+                <b-button variant="neutral" v-tooltip="'Copy stderr to clipboard'" @click.prevent="copyOutput(task_container.stderr, 'stderr')"><font-awesome-icon icon="copy" /></b-button>
+            </th>
+            <td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
           <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
           <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
@@ -232,6 +240,17 @@
             parent.alertInfo("zimcheck log copied to Clipboard!");
           }, function () {
             parent.alertWarning("Unable to copy zimcheck log to clipboard 😞. ",
+                                "Please copy it manually.");
+          });
+      },
+      copyOutput(log, name) {
+        if (name === undefined)
+          name = "stdout";
+        let parent = this;
+        this.$copyText('```\n' + log + '\n```\n').then(function () {
+            parent.alertInfo(`${name} copied to Clipboard!`);
+          }, function () {
+            parent.alertWarning(`Unable to copy ${name} to clipboard 😞. `,
                                 "Please copy it manually.");
           });
       },
