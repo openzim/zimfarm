@@ -605,6 +605,8 @@ def check_and_upload_file(
     bandwidth=None,
     cipher=None,
     delete_after=None,
+    attempts=None,
+    attempt_delay=None,
 ):
     """checks inputs and uploads file, returning 0 on success"""
 
@@ -652,21 +654,35 @@ def check_and_upload_file(
     else:
         private_key = None
 
-    # running upload
-    return upload_file(
-        src_path=src_path,
-        upload_uri=upload_uri,
-        private_key=private_key,
-        username=username,
-        resume=resume,
-        watch=watch,
-        move=move,
-        delete=delete,
-        compress=compress,
-        bandwidth=bandwidth,
-        cipher=cipher,
-        delete_after=delete_after,
-    )
+    attempts = attempts or 1
+    attempt_delay = attempt_delay or 0
+    rc = None
+
+    while attempts and rc != 0:
+        attempts -= 1
+        rc = upload_file(
+            src_path=src_path,
+            upload_uri=upload_uri,
+            private_key=private_key,
+            username=username,
+            resume=resume,
+            watch=watch,
+            move=move,
+            delete=delete,
+            compress=compress,
+            bandwidth=bandwidth,
+            cipher=cipher,
+            delete_after=delete_after,
+        )
+        if rc != 0:
+            if not attempts:
+                return rc
+            logger.warning(f"Upload failed: {attempts} attempts remaining.")
+            if attempt_delay:
+                logger.info(f"Pausing for {attempt_delay}s")
+                time.sleep(attempt_delay)
+            continue
+    return rc
 
 
 def main():
@@ -756,6 +772,20 @@ def main():
     )
 
     parser.add_argument(
+        "--attempts",
+        help="Number of upload attempts before giving up should it fail",
+        default=3,
+        type=int,
+    )
+
+    parser.add_argument(
+        "--attempt-delay",
+        help="Delay (seconds) between attempts should the upload fail.",
+        default=3 * 60,
+        type=int,
+    )
+
+    parser.add_argument(
         "--debug",
         help="change logging level to DEBUG",
         action="store_true",
@@ -779,6 +809,8 @@ def main():
             bandwidth=args.bandwidth,
             cipher=args.cipher,
             delete_after=args.delete_after,
+            attempts=args.attempts,
+            attempt_delay=args.attempt_delay,
         )
     )
 
