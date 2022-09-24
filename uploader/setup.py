@@ -16,7 +16,7 @@ def read(*names, **kwargs):
 
 setup(
     name="openzim_uploader",
-    version="1.0.1",
+    version="1.2",
     summary="SCP/SFTP helper for openZIM uploads to our dropbox",
     description="SCP/SFTP helper for openZIM uploads to our dropbox",
     long_description=read("README.md"),
