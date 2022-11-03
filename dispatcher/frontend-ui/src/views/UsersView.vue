@@ -108,7 +108,8 @@
         let parent = this;
 
         parent.toggleLoader("fetching workers…");
-        parent.queryAPI('get', '/users/')
+        let params = {limit: 50};
+        parent.queryAPI('get', '/users/', {params: params})
           .then(function (response) {
             parent.error = null;
             parent.users = [];
