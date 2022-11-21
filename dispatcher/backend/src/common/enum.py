@@ -72,6 +72,7 @@ class WarehousePath:
     hidden_dev = "/.hidden/dev"
     hidden_endless = "/.hidden/endless"
     hidden_bard = "/.hidden/bard"
+    hidden_bsf = "/.hidden/bsf"
     hidden_private = "/.hidden/private"
     hidden_custom_apps = "/.hidden/custom_apps"
     videos = "/videos"
@@ -86,6 +87,7 @@ class WarehousePath:
             cls.hidden_private,
             cls.hidden_endless,
             cls.hidden_bard,
+            cls.hidden_bsf,
             cls.hidden_custom_apps,
         ]
 

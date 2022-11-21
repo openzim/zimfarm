@@ -326,7 +326,7 @@ export default {
                     "/wikinews", "/wikipedia", "/wikiquote", "/wikisource",
                     "/wikiversity", "/wikivoyage", "/wiktionary", "/zimit",
                     "/.hidden/dev", "/.hidden/private", "/.hidden/endless",
-                    "/.hidden/bard", "/.hidden/custom_apps"],
+                    "/.hidden/bard", "/.hidden/bsf", "/.hidden/custom_apps"],
   offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit", "kolibri", "wikihow", "ifixit"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
