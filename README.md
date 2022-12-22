@@ -1,9 +1,9 @@
 # ZIM Farm
 
-[![Build Status](https://github.com/openzim/zimfarm/workflows/CI/badge.svg?query=branch%3Amaster)](https://github.com/openzim/zimfarm/actions?query=branch%3Amaster)
+[![Build Status](https://github.com/openzim/zimfarm/workflows/CI/badge.svg?query=branch%3Amain)](https://github.com/openzim/zimfarm/actions?query=branch%3Amain)
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/zimfarm/badge)](https://www.codefactor.io/repository/github/openzim/zimfarm)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![codecov](https://codecov.io/gh/openzim/zimfarm/branch/master/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm)
+[![codecov](https://codecov.io/gh/openzim/zimfarm/branch/main/graph/badge.svg)](https://codecov.io/gh/openzim/zimfarm)
 
 The ZIM farm (zimfarm) is a semi-decentralised software solution to
 build [ZIM files](http://www.openzim.org/) efficiently. This means scraping Web contents,
@@ -28,7 +28,7 @@ Anybody can use it in read-only mode.
 
 ### workers
 
-Workers are always-running computers which gets assigned ZIM creation tasks by the dispatcher. If you are interested in providing us worker resources, please [read these instructions](https://github.com/openzim/zimfarm/blob/master/workers/README.md).
+Workers are always-running computers which gets assigned ZIM creation tasks by the dispatcher. If you are interested in providing us worker resources, please [read these instructions](https://github.com/openzim/zimfarm/blob/main/workers/README.md).
 
 A worker is made of two software components:
 
