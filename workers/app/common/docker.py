@@ -23,6 +23,7 @@ from common.constants import (
     ZIMFARM_MEMORY,
     CONTAINER_TASK_IDENT,
     USE_PUBLIC_DNS,
+    DISABLE_IPV6,
     TASK_WORKER_IMAGE,
     DOCKER_SOCKET,
     PRIVATE_KEY,
@@ -271,6 +272,10 @@ def get_label_value(docker_client, name, label):
     return get_container(docker_client, name).attrs["Config"]["Labels"].get(label)
 
 
+def get_sysctl():
+    return {"net.ipv6.conf.all.disable_ipv6": "1"} if DISABLE_IPV6 else None
+
+
 def start_dnscache(docker_client, task):
     name = get_container_name("dnscache", task["_id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
@@ -288,6 +293,7 @@ def start_dnscache(docker_client, task):
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
         },
+        sysctl=get_sysctl(),
     )
 
 
@@ -337,6 +343,7 @@ def start_monitor(docker_client, task, monitoring_key):
         environment=environment,
         cap_add=["SYS_PTRACE"],
         security_opt=["apparmor=unconfined"],
+        sysctl=get_sysctl(),
     )
 
 
@@ -378,6 +385,7 @@ def start_checker(docker_client, task, host_workdir, filename):
             "filename": filename,
         },
         remove=False,
+        sysctl=get_sysctl(),
     )
 
 
@@ -447,6 +455,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
         mounts=mounts,
         name=container_name,
         remove=False,  # scaper container will be removed once log&zim handled
+        sysctl=get_sysctl(),
     )
 
 
@@ -496,7 +505,8 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
             "ZIMFARM_TASK_CPUSET": os.getenv("ZIMFARM_TASK_CPUSET"),
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
             "DEBUG": os.getenv("DEBUG"),
-            "USE_PUBLIC_DNS": "1" if USE_PUBLIC_DNS else "",
+            "USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "",
+            "DISABLE_IPV6": "yes" if DISABLE_IPV6 else "",
             "UPLOADER_IMAGE": UPLOADER_IMAGE,
             "CHECKER_IMAGE": CHECKER_IMAGE,
             "DNSCACHE_IMAGE": DNSCACHE_IMAGE,
@@ -525,6 +535,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         mounts=mounts,
         name=container_name,
         remove=False,  # zimtask containers are pruned periodically
+        sysctl=get_sysctl(),
     )
 
 

@@ -22,6 +22,7 @@ ZIMFARM_ROOT=/tmp
 ZIMFARM_OFFLINERS=
 ZIMFARM_SELFISH=
 USE_PUBLIC_DNS=
+DISABLE_IPV6=
 MANAGER_IMAGE="ghcr.io/openzim/zimfarm-worker-manager:latest"
 TASK_WORKER_IMAGE=""
 DNSCACHE_IMAGE=""
@@ -160,6 +161,12 @@ function restart() {
         run docker pull $MANAGER_IMAGE
     fi
 
+    if [[ "$DISABLE_IPV6" = "y" ]]; then
+        ipv6flag="--sysctl net.ipv6.conf.all.disable_ipv6=1"
+    else
+        ipv6flag=""
+    fi
+
     run docker run \
         --name $WORKER_MANAGER_NAME \
         --label=zimfarm \
@@ -170,6 +177,7 @@ function restart() {
         -v $datadir:/data \
         -v /var/run/docker.sock:/var/run/docker.sock:ro \
         -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/zimfarm:ro \
+        $ipv6flag \
         --env ZIMFARM_MEMORY=$ZIMFARM_MAX_RAM \
         --env ZIMFARM_DISK=$ZIMFARM_DISK \
         --env ZIMFARM_CPUS=$ZIMFARM_CPU \
@@ -182,6 +190,7 @@ function restart() {
         --env WEB_API_URIS=$WEB_API_URIS \
         --env UPLOAD_URI=$UPLOAD_URI \
         --env USE_PUBLIC_DNS=$USE_PUBLIC_DNS \
+        --env DISABLE_IPV6=$DISABLE_IPV6 \
         --env OFFLINERS=$ZIMFARM_OFFLINERS \
         --env TASK_WORKER_IMAGE=$TASK_WORKER_IMAGE \
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \

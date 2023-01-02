@@ -93,6 +93,7 @@ except Exception:
         ZIMFARM_MEMORY = physical_mem
 
 USE_PUBLIC_DNS = bool(os.getenv("USE_PUBLIC_DNS", False))
+DISABLE_IPV6 = bool(os.getenv("DISABLE_IPV6", False))
 
 # docker container names
 CONTAINER_TASK_IDENT = "zimtask"
