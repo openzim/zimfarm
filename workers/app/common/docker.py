@@ -293,7 +293,7 @@ def start_dnscache(docker_client, task):
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
         },
-        sysctl=get_sysctl(),
+        sysctls=get_sysctl(),
     )
 
 
@@ -343,7 +343,7 @@ def start_monitor(docker_client, task, monitoring_key):
         environment=environment,
         cap_add=["SYS_PTRACE"],
         security_opt=["apparmor=unconfined"],
-        sysctl=get_sysctl(),
+        sysctls=get_sysctl(),
     )
 
 
@@ -385,7 +385,7 @@ def start_checker(docker_client, task, host_workdir, filename):
             "filename": filename,
         },
         remove=False,
-        sysctl=get_sysctl(),
+        sysctls=get_sysctl(),
     )
 
 
@@ -455,7 +455,7 @@ def start_scraper(docker_client, task, dns, host_workdir):
         mounts=mounts,
         name=container_name,
         remove=False,  # scaper container will be removed once log&zim handled
-        sysctl=get_sysctl(),
+        sysctls=get_sysctl(),
     )
 
 
@@ -535,7 +535,7 @@ def start_task_worker(docker_client, task, webapi_uri, username, workdir, worker
         mounts=mounts,
         name=container_name,
         remove=False,  # zimtask containers are pruned periodically
-        sysctl=get_sysctl(),
+        sysctls=get_sysctl(),
     )
 
 
