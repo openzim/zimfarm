@@ -1,6 +1,8 @@
 openapi: 3.0.0
 servers:
-  - description: production server
+  - description: this server
+    url: "./"
+  - description: Zimfarm production server
     url: https://api.farm.openzim.org/v1
 info:
   description: |
