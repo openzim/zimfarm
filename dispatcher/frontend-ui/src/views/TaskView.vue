@@ -125,7 +125,7 @@
                 <b-button variant="neutral" v-tooltip="'Copy stderr to clipboard'" @click.prevent="copyOutput(task_container.stderr, 'stderr')"><font-awesome-icon icon="copy" /></b-button>
             </th>
             <td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
-          <tr v-if="task_container.log"><th>Scrapper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
+          <tr v-if="task_container.log"><th>Scraper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
           <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
           <tr v-if="task_debug.log"><th>Task-worker Log</th><td><pre>{{ task_debug.log }}</pre></td></tr>

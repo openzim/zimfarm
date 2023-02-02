@@ -1,7 +1,7 @@
 DNS Cache
 ===
 
-Simple `dnsmasq` container to cache DNS requests for openzim's scrappers.
+Simple `dnsmasq` container to cache DNS requests for openzim's scrapers.
 
 ## Usage
 
@@ -17,7 +17,7 @@ It uses the host's DNS configuration (`/etc/resolv.conf`) or a mix of public DNS
 docker run --name dnscache --env USE_PUBLIC_DNS=yes openzim/dnscache
 ```
 
-To use your DNS cache container, you need to run your scrapper(s) with the `--dns=` option. This option **only accepts** IPv4 and IPv6 values (no alias).
+To use your DNS cache container, you need to run your scraper(s) with the `--dns=` option. This option **only accepts** IPv4 and IPv6 values (no alias).
 
 ### Find out the IP of your `dnscache` container:
 
@@ -25,7 +25,7 @@ To use your DNS cache container, you need to run your scrapper(s) with the `--dn
 docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dnscache
 ```
 
-### Start a scrapper without knowing the IP
+### Start a scraper without knowing the IP
 
 You can save the extra step and set the `--dns` to output of the previous command:
 
