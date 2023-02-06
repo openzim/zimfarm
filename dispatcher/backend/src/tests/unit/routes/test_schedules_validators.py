@@ -61,9 +61,11 @@ class TestMWOfflinerFlagsValidator:
             "mwUrl": "https://en.wikipedia.org/",
             "adminEmail": "contact@kiwix.org",
             "articleList": "https://en.wikipedia.org/list",
+            "articleListToIgnore": "https://en.wikipedia.org/list",
             "customZimFavicon": "https://en.wikipedia.org/icon.png",
             "customZimTitle": "Wikipedia Offline",
             "customZimDescription": "An offline Wikipedia",
+            "customZimLongDescription": "An offline Wikipedia",
             "customZimTags": "Highlight",
             "customMainPage": "Main_Page",
             "filenamePrefix": "wikipedia_all",
@@ -83,7 +85,6 @@ class TestMWOfflinerFlagsValidator:
             "withoutZimFullTextIndex": False,
             "addNamespaces": "100,200",
             "getCategories": False,
-            "noLocalParserFallback": True,
         }
         MWOfflinerFlagsSchema().load(flags)
 
@@ -109,9 +110,11 @@ class TestMWOfflinerFlagsValidator:
             {"mwUrl": "http:/example.com"},
             {"adminEmail": "user @example.com"},
             {"articleList": "abc"},
+            {"articleListToIgnore": "abc"},
             {"customZimFavicon": "http:/example.com"},
             {"customZimTitle": 123},
             {"customZimDescription": None},
+            {"customZimLongDescription": None},
             {"customZimTags": False},
             {"customZimTags": ["Highlight", 123]},
             {"customMainPage": 123},
@@ -133,7 +136,6 @@ class TestMWOfflinerFlagsValidator:
             {"withoutZimFullTextIndex": "False"},
             {"addNamespaces": 123},
             {"getCategories": "False"},
-            {"noLocalParserFallback": "False"},
         ],
     )
     def test_invalid_field(self, data):
