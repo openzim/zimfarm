@@ -38,6 +38,8 @@ validate_zim_filename = validate.Regexp(
     regex=r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|{period}).zim$",
     error="ZIM filename format is incorrect",
 )
+validate_zim_description = validate.Length(max=80)
+validate_zim_longdescription = validate.Length(max=4000)
 
 
 def validate_multiple_of_100(value):

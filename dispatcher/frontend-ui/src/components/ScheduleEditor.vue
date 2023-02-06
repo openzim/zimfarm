@@ -337,6 +337,11 @@
             component_type = "text";
           }
 
+          if (field.type == "long-text") {
+            component = "b-form-textarea";
+            component_type = "text";
+          }
+
           fields.push({
             label: field.label || field.data_key,
             data_key: field.data_key,

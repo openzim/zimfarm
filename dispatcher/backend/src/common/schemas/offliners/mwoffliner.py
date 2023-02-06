@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, ListOfStringEnum, StringEnum
-from common.schemas.fields import validate_output
+from common.schemas import SerializableSchema, ListOfStringEnum, StringEnum, LongString
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_longdescription,
+)
 
 
 class MWOfflinerFlagsSchema(SerializableSchema):
@@ -19,20 +23,30 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         required=True,
         metadata={
             "label": "Admin Email",
-            "description": "Email of the mwoffliner user which will be put in the HTTP user-agent string",
+            "description": "Email of the mwoffliner user which will be put "
+            "in the HTTP user-agent string",
         },
     )
 
     articleList = fields.URL(
         metadata={
             "label": "Article List",
-            "description": "URL to an UTF-8 tsv file containing article names to include (one per line)",
+            "description": "URL to an UTF-8 tsv file containing article names "
+            "to include (one per line)",
+        }
+    )
+    articleListToIgnore = fields.URL(
+        metadata={
+            "label": "Article List to ignore",
+            "description": "URL to an UTF-8 tsv file containing article names "
+            "to ignore (one per line)",
         }
     )
     customMainPage = fields.String(
         metadata={
             "label": "Main Page",
-            "description": "Article Name to use as home page. Automatically built or guessed otherwise.",
+            "description": "Article Name to use as home page. "
+            "Automatically built or guessed otherwise.",
         }
     )
     customZimTitle = fields.String(
@@ -41,11 +55,22 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Custom ZIM title. Wiki name otherwise.",
         }
     )
-    customZimDescription = fields.String(metadata={"label": "ZIM Description"})
+    customZimDescription = fields.String(
+        metadata={"label": "ZIM Description", "description": "Max length is 80 chars"},
+        validate=validate_zim_description,
+    )
+    customZimLongDescription = LongString(
+        metadata={
+            "label": "ZIM Long Description",
+            "description": " Max length is 4000 chars",
+        },
+        validate=validate_zim_longdescription,
+    )
     customZimFavicon = fields.Url(
         metadata={
             "label": "ZIM favicon",
-            "description": "URL to a png to use as favicon. Will be resized to 48x48px.",
+            "description": "URL to a png to use as favicon. "
+            "Will be resized to 48x48px.",
         }
     )
     customZimTags = fields.String(
@@ -85,13 +110,15 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         data_key="format",
         metadata={
             "label": "Flavours",
-            "description": "Which flavours to build, as `<flavour>:<custom-suffix>`. Empty option is full without suffix.",
+            "description": "Which flavours to build, as `<flavour>:<custom-suffix>`. "
+            "Empty option is full without suffix.",
         },
     )
     customFlavour = StringEnum(
         metadata={
             "label": "Custom Flavour",
-            "description": "Custom processor to filter and process articles (see extensions/*.js)",
+            "description": "Custom processor to filter and process articles "
+            "(see extensions/*.js)",
         },
         validate=validate.OneOf(
             ["/tmp/mwoffliner/extensions/wiktionary_fr.js"]  # nosec
@@ -104,15 +131,6 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "S3 Storage URL including credentials and bucket",
             "secret": True,
         }
-    )
-
-    zstd = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Use Zstandard compression",
-            "description": "Use Zstandard as ZIM compression (Lzma otherwise)",
-        },
     )
 
     addNamespaces = fields.String(
@@ -186,26 +204,20 @@ class MWOfflinerFlagsSchema(SerializableSchema):
     osTmpDir = fields.String(
         metadata={
             "label": "OS Temp Dir",
-            "description": "Override default operating system temporary directory path environnement variable",
+            "description": "Override default operating system temporary "
+            "directory path environnement variable",
         }
     )
     outputDirectory = fields.String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
-            "description": "Output folder for ZIM file or build folder. Leave it as `/output`",
+            "description": "Output folder for ZIM file or build folder. "
+            "Leave it as `/output`",
         },
         missing="/output",
         default="/output",
         validate=validate_output,
-    )
-    noLocalParserFallback = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Don't fallback to local Parser",
-            "description": "Don't fall back to a local MCS or Parsoid, only use remote APIs",
-        },
     )
     requestTimeout = fields.Integer(
         metadata={
@@ -217,7 +229,8 @@ class MWOfflinerFlagsSchema(SerializableSchema):
     speed = fields.Float(
         metadata={
             "label": "Speed",
-            "description": "Multiplicator for the number of parallel HTTP requests on Parsoid backend. Otherwise `1`. Reduce on throttled Wikis.",
+            "description": "Multiplicator for the number of parallel HTTP requests "
+            "on Parsoid backend. Otherwise `1`. Reduce on throttled Wikis.",
         }
     )
     withoutZimFullTextIndex = fields.Boolean(

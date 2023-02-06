@@ -13,10 +13,15 @@ class HexColor(fields.String):
     pass
 
 
+class LongString(fields.String):
+    pass
+
+
 class SerializableSchema(Schema):
 
     MAPPING = {
         fields.String: "text",
+        LongString: "long-text",
         StringEnum: "string-enum",
         HexColor: "hex-color",
         fields.Url: "url",
