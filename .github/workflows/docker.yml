@@ -3,7 +3,7 @@ name: Docker
 on:
   push:
     branches:
-      - 'main'
+      - 'master'
     tags:
       - dnscache-v*
       - uploader-v*
@@ -11,9 +11,11 @@ on:
 jobs:
   dnscache:
     name: Deploy dnscache Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -22,16 +24,19 @@ jobs:
           tag-pattern: /^dnscache-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
           context: dnscache
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   uploader:
     name: Deploy uploader Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -40,16 +45,19 @@ jobs:
           tag-pattern: /^uploader-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
           context: uploader
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   dispatcher:
     name: Deploy dispatcher Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -57,16 +65,19 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: dispatcher/backend
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   ui:
     name: Deploy ui Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -74,16 +85,19 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: dispatcher/frontend-ui
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   receiver:
     name: Deploy receiver Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -91,16 +105,19 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: receiver
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   task-worker:
     name: Deploy task-worker Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -109,16 +126,19 @@ jobs:
           restrict-to: openzim/zimfarm
           context: workers
           dockerfile: task-Dockerfile
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   worker-manager:
     name: Deploy worker-manager Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -127,16 +147,19 @@ jobs:
           restrict-to: openzim/zimfarm
           context: workers
           dockerfile: manager-Dockerfile
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   monitor:
     name: Deploy monitor Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -144,16 +167,19 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: monitor
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   watcher:
     name: Deploy watcher Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Publish Docker Image
         uses: openzim/docker-publish-action@v5
         with:
@@ -161,7 +187,8 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: watcher
-          registries: ghcr.io
           credentials:
+            DOCKERIO_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}

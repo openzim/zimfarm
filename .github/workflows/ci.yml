@@ -1,61 +1,73 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v1
-      with:
-        fetch-depth: 1
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r dispatcher/backend/requirements.txt
-        pip install pytest
-    - name: black code formatting check
-      run: |
-        pip install -U "black==22.3.0"
-        black --check .
-    - name: Test with pytest
-      run: |
-        cd dispatcher/backend/src
-        PYTHONPATH=$PWD pytest tests/unit
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dispatcher/backend/requirements.txt
+          pip install pytest
+
+      - name: black code formatting check
+        run: |
+          pip install -U "black==21.5b0"
+          black --check .
+
+      - name: Test with pytest
+        run: |
+          cd dispatcher/backend/src
+          PYTHONPATH=$PWD pytest tests/unit
 
   integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Launch MongoDB
         uses: wbari/start-mongoDB@v0.2
         with:
           mongoDBVersion: "4.2"
 
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
+      - name: Retrieve source code
+        uses: actions/checkout@v3
+
       - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r dispatcher/backend/requirements.txt
           pip install -U pytest pytest-cov
+
       - name: prepare DB
         run: |
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
           PYTHONPATH=$PWD python -c "from utils.database import Initializer; Initializer.initialize()"
+
       - name: run tests
         run: |
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
           PYTHONPATH=$PWD pytest -c tests/integration/pytest.ini tests/ --cov=./
-      - uses: codecov/codecov-action@v1
+
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
