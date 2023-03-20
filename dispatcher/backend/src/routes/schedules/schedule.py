@@ -1,3 +1,4 @@
+import base64
 import logging
 from http import HTTPStatus
 
@@ -235,24 +236,29 @@ class ScheduleImageNames(BaseRoute):
             )
 
         try:
+            token = base64.b64encode(f"v1:{hub_name}:0".encode("UTF-8")).decode()
             resp = requests.get(
-                f"https://hub.docker.com/v2/repositories/{hub_name}/tags/"
+                f"https://ghcr.io/v2/{hub_name}/tags/list",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "User-Agent": "Docker-Client/20.10.2 (linux)",
+                },
             )
         except Exception as exc:
-            logger.error(f"Unable to connect to Docker Hub: {exc}")
+            logger.error(f"Unable to connect to GHCR Tags list: {exc}")
             return make_resp([])
 
         if resp.status_code == HTTPStatus.NOT_FOUND:
             raise ResourceNotFound()
 
         if resp.status_code != HTTPStatus.OK:
-            logger.error(f"Docker Hub responded HTTP {resp.status_code} for {hub_name}")
+            logger.error(f"GHCR responded HTTP {resp.status_code} for {hub_name}")
             return make_resp([])
 
         try:
-            items = list(map(lambda item: item["name"], (resp.json()["results"])))
+            items = [tag for tag in resp.json()["tags"]]
         except Exception as exc:
-            logger.error(f"Unexpected Docker Hub response for {hub_name}: {exc}")
+            logger.error(f"Unexpected GHCR response for {hub_name}: {exc}")
             items = []
 
         return make_resp(items)
