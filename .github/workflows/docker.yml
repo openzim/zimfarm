@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/dnscache
           on-master: latest
@@ -34,10 +34,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/uploader
           on-master: latest
@@ -54,10 +54,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-dispatcher
           on-master: latest
@@ -73,10 +73,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-ui
           on-master: latest
@@ -92,10 +92,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-receiver
           on-master: latest
@@ -111,10 +111,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-task-worker
           on-master: latest
@@ -131,10 +131,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-worker-manager
           on-master: latest
@@ -151,10 +151,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-monitor
           on-master: latest
@@ -170,10 +170,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.4.0
 
       - name: Publish Docker Image
-        uses: openzim/docker-publish-action@v5
+        uses: openzim/docker-publish-action@v10
         with:
           image-name: openzim/zimfarm-watcher
           on-master: latest

@@ -8,13 +8,13 @@ Simple `dnsmasq` container to cache DNS requests for openzim's scrapers.
 At the moment, this container has a static config of **caching every domain for 1day** (86400s).
 
 ``` sh
-docker run --name dnscache openzim/dnscache
+docker run --name dnscache ghcr.io/openzim/dnscache
 ```
 
 It uses the host's DNS configuration (`/etc/resolv.conf`) or a mix of public DNS (CloudFare, Google, OpenDNS – all IPv4) if `USE_PUBLIC_DNS=yes`.
 
 ``` sh
-docker run --name dnscache --env USE_PUBLIC_DNS=yes openzim/dnscache
+docker run --name dnscache --env USE_PUBLIC_DNS=yes ghcr.io/openzim/dnscache
 ```
 
 To use your DNS cache container, you need to run your scraper(s) with the `--dns=` option. This option **only accepts** IPv4 and IPv6 values (no alias).
@@ -30,7 +30,7 @@ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dns
 You can save the extra step and set the `--dns` to output of the previous command:
 
 ``` sh
-docker run --dns=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dnscache) openzim/mwoffliner
+docker run --dns=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dnscache) ghcr.io/openzim/mwoffliner
 ```
 
 You can also retrieve the first IPaddress (what you want unless you're using networks) in python:

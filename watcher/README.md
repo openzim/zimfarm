@@ -1,7 +1,7 @@
 zimfarm-watcher
 ===============
 
-[![Docker](https://img.shields.io/docker/v/openzim/zimfarm-watcher?label=docker&sort=semver)](https://hub.docker.com/r/openzim/zimfarm-watcher)
+[![Docker](https://ghcr-badge.deta.dev/openzim/zimfarm-watcher/latest_tag?label=docker)](https://ghcr.io/openzim/zimfarm-watcher)
 
 Watch StackExchange dump files repository for updates to download/upload all
 

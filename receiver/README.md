@@ -13,7 +13,7 @@ docker run -p 1622:22 \
     -v /data/quarantine:/mnt/quarantine:rw \
     -v /data/check_logs:/mnt/check_logs:rw \
     --env ZIMCHECK_OPTION="-A"
-    openzim/zimfarm-receiver
+    ghcr.io/openzim/zimfarm-receiver
 ```
 
 # Components
