@@ -217,7 +217,7 @@ class Offliner:
 
     @classmethod
     def get_image_prefix(cls, offliner):
-        prefix = os.getenv(f"DOCKER_REGISTRY_{offliner}", "")
+        prefix = os.getenv(f"DOCKER_REGISTRY_{offliner}", "ghcr.io")
         prefix += "/" if prefix else ""
         return prefix
 
