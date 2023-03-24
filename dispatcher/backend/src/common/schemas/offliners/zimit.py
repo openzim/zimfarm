@@ -26,22 +26,14 @@ validate_devicelist = validate.OneOf(
             "Galaxy S9+ landscape",
             "Galaxy Tab S4",
             "Galaxy Tab S4 landscape",
-            "iPad",
-            "iPad landscape",
             "iPad (gen 6)",
             "iPad (gen 6) landscape",
             "iPad (gen 7)",
             "iPad (gen 7) landscape",
             "iPad Mini",
             "iPad Mini landscape",
-            "iPad Pro",
-            "iPad Pro landscape",
             "iPad Pro 11",
             "iPad Pro 11 landscape",
-            "iPhone 4",
-            "iPhone 4 landscape",
-            "iPhone 5",
-            "iPhone 5 landscape",
             "iPhone 6",
             "iPhone 6 landscape",
             "iPhone 6 Plus",
@@ -82,13 +74,12 @@ validate_devicelist = validate.OneOf(
             "iPhone 13 Pro Max landscape",
             "iPhone 13 Mini",
             "iPhone 13 Mini landscape",
-            "JioPhone 2",
-            "JioPhone 2 landscape",
             "Kindle Fire HDX",
             "Kindle Fire HDX landscape",
             "LG Optimus L70",
             "LG Optimus L70 landscape",
             "Microsoft Lumia 550",
+            "Microsoft Lumia 550 landscape",
             "Microsoft Lumia 950",
             "Microsoft Lumia 950 landscape",
             "Nexus 10",
@@ -123,6 +114,13 @@ validate_devicelist = validate.OneOf(
             "Pixel 5 landscape",
             "Moto G4",
             "Moto G4 landscape",
+            "Desktop Chrome HiDPI",
+            "Desktop Edge HiDPI",
+            "Desktop Firefox HiDPI",
+            "Desktop Safari",
+            "Desktop Chrome",
+            "Desktop Edge",
+            "Desktop Firefox",
         ]
     )
 )
@@ -215,16 +213,6 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    new_context = StringEnum(
-        metadata={
-            "label": "New Context",
-            "description": "The context for each new capture. Defaults to page",
-        },
-        validate=validate.OneOf(["page", "session", "browser"]),
-        data_key="newContext",
-        required=False,
-    )
-
     wait_until = fields.String(
         metadata={
             "label": "WaitUntil",
@@ -305,8 +293,8 @@ class ZimitFlagsSchema(SerializableSchema):
     mobile_device = StringEnum(
         metadata={
             "label": "As device",
-            "description": "Device to crawl as. Defaults to `Iphone X`. "
-            "See Pupeeter's DeviceDescriptors.",
+            "description": "Device to crawl as. "
+            "See Playwright's deviceDescriptorsSource",
         },
         data_key="mobileDevice",
         required=False,
