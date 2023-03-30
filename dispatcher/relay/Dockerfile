@@ -1,6 +1,7 @@
 FROM python:3.8-buster
 
-RUN pip install --no-cache-dir -U pip zmq
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY relay.py /usr/local/bin/zimfarm-relay
 
