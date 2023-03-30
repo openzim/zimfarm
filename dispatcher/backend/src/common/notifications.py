@@ -2,28 +2,28 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import os
 import json
 import logging
+import os
 
-import requests
 import humanfriendly
-from marshmallow import ValidationError
+import requests
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from marshmallow import ValidationError
 
-from common.mongo import Tasks, RequestedTasks
-from utils.json import Encoder
-from common.enum import TaskStatus
-from common.emailing import send_email_via_mailgun
-from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
 from common.constants import (
     PUBLIC_URL,
-    ZIM_DOWNLOAD_URL,
-    SLACK_URL,
-    SLACK_USERNAME,
     SLACK_EMOJI,
     SLACK_ICON,
+    SLACK_URL,
+    SLACK_USERNAME,
+    ZIM_DOWNLOAD_URL,
 )
+from common.emailing import send_email_via_mailgun
+from common.enum import TaskStatus
+from common.mongo import RequestedTasks, Tasks
+from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
+from utils.json import Encoder
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(

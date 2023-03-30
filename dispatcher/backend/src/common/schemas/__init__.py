@@ -18,7 +18,6 @@ class LongString(fields.String):
 
 
 class SerializableSchema(Schema):
-
     MAPPING = {
         fields.String: "text",
         LongString: "long-text",

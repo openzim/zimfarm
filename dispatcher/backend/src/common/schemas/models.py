@@ -1,37 +1,37 @@
 import re
 
-from marshmallow import Schema, fields, validate, validates_schema, pre_load
+from marshmallow import Schema, fields, pre_load, validate, validates_schema
 
 from common.enum import DockerImageName, Offliner, Platform
 from common.schemas import SerializableSchema
 from common.schemas.fields import (
-    validate_not_empty,
+    validate_category,
     validate_cpu,
-    validate_memory,
     validate_disk,
     validate_lang_code,
-    validate_schedule_name,
-    validate_category,
-    validate_warehouse_path,
+    validate_memory,
+    validate_not_empty,
     validate_offliner,
     validate_periodicity,
     validate_platform,
     validate_platform_value,
+    validate_schedule_name,
     validate_slack_target,
+    validate_warehouse_path,
 )
 from common.schemas.offliners import (
-    MWOfflinerFlagsSchema,
-    YoutubeFlagsSchema,
-    PhetFlagsSchema,
     GutenbergFlagsSchema,
-    SotokiFlagsSchema,
-    NautilusFlagsSchema,
-    TedFlagsSchema,
-    OpenedxFlagsSchema,
-    ZimitFlagsSchema,
-    KolibriFlagsSchema,
-    WikihowFlagsSchema,
     IFixitFlagsSchema,
+    KolibriFlagsSchema,
+    MWOfflinerFlagsSchema,
+    NautilusFlagsSchema,
+    OpenedxFlagsSchema,
+    PhetFlagsSchema,
+    SotokiFlagsSchema,
+    TedFlagsSchema,
+    WikihowFlagsSchema,
+    YoutubeFlagsSchema,
+    ZimitFlagsSchema,
 )
 
 
@@ -64,7 +64,6 @@ class DockerImageSchema(Schema):
 
 
 class ScheduleConfigSchema(SerializableSchema):
-
     task_name = fields.String(required=True, validate=validate_offliner)
     warehouse_path = fields.String(required=True, validate=validate_warehouse_path)
     image = fields.Nested(DockerImageSchema(), required=True)

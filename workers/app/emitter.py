@@ -4,10 +4,10 @@
 
 """ zmq relay tester: emmit random messages to the `internal` channel """
 
-import os
-import time
-import random
 import logging
+import os
+import random
+import time
 
 import zmq
 

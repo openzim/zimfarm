@@ -2,9 +2,9 @@ import pytest
 from bson import ObjectId
 from flask.testing import FlaskClient
 
-from main import application as app
 from common import mongo
 from common.roles import ROLES
+from main import application as app
 from routes import API_PATH
 from utils.token import LoadedAccessToken
 

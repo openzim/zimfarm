@@ -6,20 +6,20 @@ import logging
 from http import HTTPStatus
 
 import pymongo
-from flask import request, jsonify, make_response, Response
+from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
 
-from common.enum import TaskStatus
 from common.constants import ENABLED_SCHEDULER
-from routes.utils import remove_secrets_from_response
-from utils.token import AccessToken
-from utils.broadcaster import BROADCASTER
-from common.utils import task_event_handler
+from common.enum import TaskStatus
 from common.mongo import RequestedTasks, Tasks
+from common.schemas.parameters import TaskCreateSchema, TasksSchema, TasKUpdateSchema
+from common.utils import task_event_handler
 from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id, require_perm, auth_info_if_supplied
+from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
 from routes.base import BaseRoute
-from common.schemas.parameters import TasksSchema, TaskCreateSchema, TasKUpdateSchema
+from routes.utils import remove_secrets_from_response
+from utils.broadcaster import BROADCASTER
+from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,6 @@ class TaskRoute(BaseRoute):
     @auth_info_if_supplied
     @url_object_id("task_id")
     def get(self, task_id: str, token: AccessToken.Payload = None):
-
         # exclude notification to not expose private information (privacy)
         # on anonymous requests and requests for users without schedules_update
         projection = (
@@ -162,7 +161,6 @@ class TaskRoute(BaseRoute):
     @require_perm("tasks", "update")
     @url_object_id("task_id")
     def patch(self, task_id: str, token: AccessToken.Payload):
-
         task = Tasks().find_one({"_id": task_id}, {"_id": 1})
         if task is None:
             raise TaskNotFound()
@@ -193,7 +191,6 @@ class TaskCancelRoute(BaseRoute):
     @require_perm("tasks", "cancel")
     @url_object_id("task_id")
     def post(self, task_id: str, token: AccessToken.Payload):
-
         task = Tasks().find_one(
             {"status": {"$in": TaskStatus.incomplete()}, "_id": task_id}, {"_id": 1}
         )

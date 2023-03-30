@@ -4,9 +4,9 @@ import json
 import logging
 import typing
 
-from bson import ObjectId
 import requests
-from kiwixstorage import KiwixStorage, AuthenticationError
+from bson import ObjectId
+from kiwixstorage import AuthenticationError, KiwixStorage
 
 from common.constants import (
     CMS_ENDPOINT,
@@ -16,7 +16,7 @@ from common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
-from common.mongo import Workers, Tasks
+from common.mongo import Tasks, Workers
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

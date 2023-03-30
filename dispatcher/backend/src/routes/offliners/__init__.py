@@ -1,6 +1,6 @@
 from routes import API_PATH
 from routes.base import BaseBlueprint
-from routes.offliners.offliner import offlinersRoute, offlinerRoute
+from routes.offliners.offliner import offlinerRoute, offlinersRoute
 
 
 class Blueprint(BaseBlueprint):

@@ -6,10 +6,10 @@
 
     launches a script (passed as $1+) and communicates with supervisor """
 
-import sys
-import pathlib
 import datetime
+import pathlib
 import subprocess
+import sys
 
 
 def to_supervisor(text):

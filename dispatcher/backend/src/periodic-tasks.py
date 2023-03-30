@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import logging
 import datetime
+import logging
 
 import pymongo
 
 from common import getnow
-from common.mongo import Tasks
 from common.enum import TaskStatus
+from common.mongo import Tasks
 
 # constants
 ONE_MN = 60

@@ -1,9 +1,9 @@
 from routes import API_PATH
 from routes.base import BaseBlueprint
 from routes.requested_tasks.requested_task import (
-    RequestedTasksRoute,
     RequestedTaskRoute,
     RequestedTasksForWorkers,
+    RequestedTasksRoute,
 )
 
 

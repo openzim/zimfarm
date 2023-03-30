@@ -1,6 +1,6 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, ListOfStringEnum, StringEnum, LongString
+from common.schemas import ListOfStringEnum, LongString, SerializableSchema, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,

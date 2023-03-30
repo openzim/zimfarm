@@ -1,6 +1,6 @@
 import base64
 import pathlib
-from typing import Dict, Any
+from typing import Any, Dict
 
 from zimscraperlib.zim import Archive
 

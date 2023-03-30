@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Union
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 from bson import ObjectId
-from flask import request, jsonify, Response
+from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash
 
-from common.mongo import Users, RefreshTokens
+from common.mongo import RefreshTokens, Users
+from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
 from utils.token import LoadedAccessToken
-from errors.oauth2 import InvalidRequest, InvalidGrant, UnsupportedGrantType
 
 
 class OAuth2:

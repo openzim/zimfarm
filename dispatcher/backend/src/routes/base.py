@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from flask import request, Response, Blueprint
+from flask import Blueprint, Response, request
 
 
 class BaseRoute:

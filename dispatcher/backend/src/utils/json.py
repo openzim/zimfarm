@@ -1,5 +1,5 @@
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
 
 from bson.objectid import ObjectId
 from flask.json import JSONEncoder

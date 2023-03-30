@@ -1,8 +1,8 @@
-from flask import request, jsonify
+from flask import jsonify, request
 
 from common.mongo import Schedules
-from routes.base import BaseRoute
 from common.schemas.parameters import SkipLimit500Schema
+from routes.base import BaseRoute
 
 
 class LanguagesRoute(BaseRoute):

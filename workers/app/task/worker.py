@@ -2,41 +2,41 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import datetime
+import json
+import pathlib
+import shutil
+import signal
 import sys
 import time
-import json
-import signal
-import shutil
-import pathlib
-import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
 import docker
 import requests
 import ujson
 
 from common import logger
-from common.utils import format_size, format_key
-from common.worker import BaseWorker
-from common.docker import (
-    query_host_mounts,
-    query_host_stats,
-    start_dnscache,
-    get_ip_address,
-    start_scraper,
-    start_uploader,
-    start_checker,
-    RUNNING_STATUSES,
-    get_container_logs,
-    get_container_name,
-    container_logs,
-    start_monitor,
-)
 from common.constants import (
-    PROGRESS_CAPABLE_OFFLINERS,
     CONTAINER_TASK_IDENT,
     MONITORING_KEY,
+    PROGRESS_CAPABLE_OFFLINERS,
 )
+from common.docker import (
+    RUNNING_STATUSES,
+    container_logs,
+    get_container_logs,
+    get_container_name,
+    get_ip_address,
+    query_host_mounts,
+    query_host_stats,
+    start_checker,
+    start_dnscache,
+    start_monitor,
+    start_scraper,
+    start_uploader,
+)
+from common.utils import format_key, format_size
+from common.worker import BaseWorker
 from common.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
@@ -54,7 +54,6 @@ CHK = "check"
 
 class TaskWorker(BaseWorker):
     def __init__(self, **kwargs):
-
         # print config
         self.print_config(**kwargs)
 
@@ -623,7 +622,6 @@ class TaskWorker(BaseWorker):
         time.sleep(1)
 
     def run(self):
-
         # get task detail from URL
         self.get_task()
         if self.task is None:

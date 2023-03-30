@@ -3,7 +3,6 @@ from marshmallow import fields, validate
 from common.schemas import SerializableSchema, StringEnum
 from common.schemas.fields import validate_output, validate_zim_filename
 
-
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
 validate_devicelist = validate.OneOf(
     sorted(

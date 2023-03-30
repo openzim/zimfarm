@@ -1,14 +1,14 @@
 from marshmallow import fields, validate
 
-from common.roles import ROLES
 from common.enum import (
     Offliner,
-    ScheduleCategory,
-    TaskStatus,
-    SchedulePeriodicity,
     Platform,
+    ScheduleCategory,
+    SchedulePeriodicity,
+    TaskStatus,
     WarehousePath,
 )
+from common.roles import ROLES
 
 # validators
 validate_priority = validate.Range(min=0, max=10)

@@ -2,28 +2,28 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import logging
 import datetime
 import functools
+import logging
 
 import pymongo
+from bson.objectid import ObjectId
 from bson.son import SON
 
 from common import getnow
-from bson.objectid import ObjectId
 from common.constants import (
-    PERIODICITIES,
-    ZIM_UPLOAD_URI,
-    ZIM_EXPIRATION,
-    ZIMCHECK_OPTION,
-    LOGS_UPLOAD_URI,
-    LOGS_EXPIRATION,
+    DEFAULT_SCHEDULE_DURATION,
     ENABLED_SCHEDULER,
+    LOGS_EXPIRATION,
+    LOGS_UPLOAD_URI,
+    PERIODICITIES,
+    ZIM_EXPIRATION,
+    ZIM_UPLOAD_URI,
+    ZIMCHECK_OPTION,
 )
-from common.enum import TaskStatus, SchedulePeriodicity, Platform
+from common.enum import Platform, SchedulePeriodicity, TaskStatus
+from common.mongo import RequestedTasks, Schedules, Tasks, Workers
 from utils.offliners import expanded_config
-from common.mongo import Tasks, Schedules, Workers, RequestedTasks
-from common.constants import DEFAULT_SCHEDULE_DURATION
 
 logger = logging.getLogger(__name__)
 

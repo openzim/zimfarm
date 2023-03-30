@@ -1,6 +1,6 @@
 from routes import API_PATH
 from routes.base import BaseBlueprint
-from routes.workers.worker import WorkersRoute, WorkerCheckinRoute
+from routes.workers.worker import WorkerCheckinRoute, WorkersRoute
 
 
 class Blueprint(BaseBlueprint):

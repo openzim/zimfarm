@@ -12,10 +12,10 @@
     - requests it to be associated with a user having zim.upload permission
 """
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 
 import requests
 
@@ -76,7 +76,8 @@ def fetch_public_keys_for(username, raw_fingerprint):
         return
 
     logger.info(
-        f"granted login for {response['username']} via {response['type']} key {response['name']}"
+        f"granted login for {response['username']} via {response['type']} key "
+        f"{response['name']}"
     )
     return [f"ssh-rsa {response['key']} {response['name']}"]
 

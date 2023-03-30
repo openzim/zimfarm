@@ -90,7 +90,7 @@ class TestTaskList:
         "statuses", [[TaskStatus.succeeded], [TaskStatus.succeeded, TaskStatus.started]]
     )
     def test_status(self, client, tasks, statuses):
-        url = f"/tasks/?"
+        url = "/tasks/?"
         for status in statuses:
             url += f"status={status}&"
 

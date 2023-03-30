@@ -1,11 +1,12 @@
 from routes import API_PATH
 from routes.base import BaseBlueprint
+
 from .schedule import (
-    ScheduleRoute,
-    SchedulesRoute,
-    ScheduleImageNames,
-    SchedulesBackupRoute,
     ScheduleCloneRoute,
+    ScheduleImageNames,
+    ScheduleRoute,
+    SchedulesBackupRoute,
+    SchedulesRoute,
 )
 
 

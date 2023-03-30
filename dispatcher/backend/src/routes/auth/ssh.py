@@ -1,23 +1,23 @@
 import base64
-import pathlib
-import logging
-import tempfile
-import datetime
 import binascii
+import datetime
+import logging
+import pathlib
 import subprocess
+import tempfile
 from uuid import uuid4
 
-from flask import request, jsonify
+from flask import jsonify, request
 
-from routes import errors
+from common import getnow
 from common.constants import (
-    OPENSSL_BIN,
     MESSAGE_VALIDITY,
+    OPENSSL_BIN,
     REFRESH_TOKEN_EXPIRY,
     TOKEN_EXPIRY,
 )
-from common import getnow
-from common.mongo import Users, RefreshTokens
+from common.mongo import RefreshTokens, Users
+from routes import errors
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)

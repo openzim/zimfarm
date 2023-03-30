@@ -1,9 +1,9 @@
-import os
 import base64
-import pathlib
 import datetime
-import tempfile
+import os
+import pathlib
 import subprocess
+import tempfile
 
 import pytest
 
@@ -95,7 +95,6 @@ class TestAuthentication:
                 self.do_test_token(client, response.get_json()["access_token"])
 
     def do_test_ssh(self, client, private_key, username):
-
         # build the SSH payload
         now = datetime.datetime.utcnow()
         message = f"{username}:{now.isoformat()}"

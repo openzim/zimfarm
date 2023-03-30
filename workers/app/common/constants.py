@@ -7,8 +7,8 @@ import os
 import pathlib
 import re
 
-import psutil
 import humanfriendly
+import psutil
 
 from common import logger
 from common.utils import as_pos_int, format_size
