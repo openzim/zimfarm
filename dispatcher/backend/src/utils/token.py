@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import random
 import string
 import uuid
@@ -12,8 +13,11 @@ from common.constants import TOKEN_EXPIRY
 
 
 class AccessToken:
-    secret = "".join(
-        [random.choice(string.ascii_letters + string.digits) for _ in range(32)]
+    secret = os.getenv(
+        "JWT_SECRET",
+        "".join(
+            [random.choice(string.ascii_letters + string.digits) for _ in range(32)]
+        ),
     )
     issuer = "dispatcher"
     expire_time_delta = datetime.timedelta(hours=TOKEN_EXPIRY)
