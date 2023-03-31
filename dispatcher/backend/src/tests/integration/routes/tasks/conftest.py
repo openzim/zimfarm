@@ -4,7 +4,7 @@ import pytest
 from bson import ObjectId
 
 from common.enum import TaskStatus
-from common.mongo import Tasks, RequestedTasks
+from common.mongo import RequestedTasks, Tasks
 
 
 @pytest.fixture()

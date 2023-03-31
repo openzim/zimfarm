@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import logging
 import datetime
+import logging
 
 from bson import ObjectId
 
@@ -11,7 +11,7 @@ from common import getnow, to_naive_utc
 from common.constants import INFORM_CMS
 from common.enum import TaskStatus
 from common.external import advertise_book_to_cms
-from common.mongo import Tasks, Schedules
+from common.mongo import Schedules, Tasks
 from common.notifications import handle_notification
 from utils.scheduling import update_schedule_duration
 

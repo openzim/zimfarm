@@ -4,31 +4,31 @@ from http import HTTPStatus
 
 import pymongo
 from bson import ObjectId
-from flask import request, jsonify, make_response, Response
+from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
 
-from common import getnow, WorkersIpChangesCounts
+from common import WorkersIpChangesCounts, getnow
 from common.constants import (
+    ENABLED_SCHEDULER,
     MAX_WORKER_IP_CHANGES_PER_DAY,
     USES_WORKERS_IPS_WHITELIST,
-    ENABLED_SCHEDULER,
 )
-from common.utils import task_event_handler
-from common.mongo import RequestedTasks, Schedules, Workers
 from common.external import update_workers_whitelist
-from errors.http import InvalidRequestJSON, TaskNotFound
-from routes import authenticate, url_object_id, auth_info_if_supplied, require_perm
-from routes.base import BaseRoute
-from routes.errors import NotFound
-from utils.broadcaster import BROADCASTER
-from utils.token import AccessToken
+from common.mongo import RequestedTasks, Schedules, Workers
 from common.schemas.parameters import (
-    RequestedTaskSchema,
     NewRequestedTaskSchema,
+    RequestedTaskSchema,
     UpdateRequestedTaskSchema,
     WorkerRequestedTaskSchema,
 )
-from utils.scheduling import request_a_schedule, find_requested_task_for
+from common.utils import task_event_handler
+from errors.http import InvalidRequestJSON, TaskNotFound
+from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
+from routes.base import BaseRoute
+from routes.errors import NotFound
+from utils.broadcaster import BROADCASTER
+from utils.scheduling import find_requested_task_for, request_a_schedule
+from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,6 @@ class RequestedTasksRoute(BaseRoute):
 
         requested_tasks = []
         for schedule_name in schedule_names:
-
             rq_task = request_a_schedule(
                 schedule_name, token.username, worker, priority
             )
@@ -241,7 +240,6 @@ class RequestedTaskRoute(BaseRoute):
 
     @url_object_id("requested_task_id")
     def get(self, requested_task_id: str):
-
         requested_task = RequestedTasks().find_one({"_id": requested_task_id})
         if requested_task is None:
             raise TaskNotFound()
@@ -252,7 +250,6 @@ class RequestedTaskRoute(BaseRoute):
     @require_perm("tasks", "update")
     @url_object_id("requested_task_id")
     def patch(self, requested_task_id: str, token: AccessToken.Payload):
-
         requested_task = RequestedTasks().count_documents({"_id": requested_task_id})
         if not requested_task:
             raise TaskNotFound()
@@ -274,7 +271,6 @@ class RequestedTaskRoute(BaseRoute):
     @require_perm("tasks", "unrequest")
     @url_object_id("requested_task_id")
     def delete(self, requested_task_id: str, token: AccessToken.Payload):
-
         query = {"_id": requested_task_id}
         task = RequestedTasks().find_one(query, {"_id": 1})
         if task is None:

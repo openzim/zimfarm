@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import argparse
 import os
 import sys
-import argparse
 import traceback
 
 from common import logger
-from task.worker import TaskWorker
 from common.constants import DEFAULT_WEB_API_URL, TASK_WORKER
+from task.worker import TaskWorker
 
 
 def main():

@@ -1,12 +1,12 @@
 from http import HTTPStatus
 
-from flask import request, Response
+from flask import Response, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from routes.base import BaseRoute
-from routes import authenticate, url_object_id, errors
-from utils.token import AccessToken
 from common.mongo import Users
+from routes import authenticate, errors, url_object_id
+from routes.base import BaseRoute
+from utils.token import AccessToken
 
 
 class PasswordRoute(BaseRoute):

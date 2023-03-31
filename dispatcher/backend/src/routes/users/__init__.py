@@ -1,9 +1,8 @@
-from routes.base import BaseBlueprint
-
 from routes import API_PATH
-from routes.users.user import UsersRoute, UserRoute
-from routes.users.keys import KeysRoute, KeyRoute
+from routes.base import BaseBlueprint
+from routes.users.keys import KeyRoute, KeysRoute
 from routes.users.password import PasswordRoute
+from routes.users.user import UserRoute, UsersRoute
 
 
 class Blueprint(BaseBlueprint):

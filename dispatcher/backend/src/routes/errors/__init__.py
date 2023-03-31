@@ -1,10 +1,10 @@
 from http import HTTPStatus
 
+import marshmallow.exceptions
 from flask import Flask, Response, jsonify, make_response
 from jwt import exceptions as jwt_exceptions
 
-from errors import oauth2, http
-import marshmallow.exceptions
+from errors import http, oauth2
 
 
 def register_handlers(app: Flask):

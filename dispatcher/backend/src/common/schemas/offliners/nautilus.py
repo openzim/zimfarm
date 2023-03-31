@@ -1,6 +1,6 @@
 from marshmallow import fields
 
-from common.schemas import SerializableSchema, HexColor
+from common.schemas import HexColor, SerializableSchema
 from common.schemas.fields import validate_output, validate_zim_filename
 
 
@@ -18,7 +18,10 @@ class NautilusFlagsSchema(SerializableSchema):
     collection = fields.Url(
         metadata={
             "label": "Custom Collection",
-            "description": "Different collection JSON URL. Otherwise using `collection.json` from archive",
+            "description": (
+                "Different collection JSON URL. Otherwise using `collection.json` "
+                "from archive"
+            ),
         },
         required=False,
     )
@@ -56,7 +59,9 @@ class NautilusFlagsSchema(SerializableSchema):
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
-            "description": "Output folder for ZIM file or build folder. Leave it as `/output`",
+            "description": (
+                "Output folder for ZIM file or build folder. Leave it as `/output`"
+            ),
         },
         missing="/output",
         default="/output",
@@ -79,7 +84,10 @@ class NautilusFlagsSchema(SerializableSchema):
     locale = fields.String(
         metadata={
             "label": "Locale",
-            "description": "Locale name to use for translations (if avail) and time representations. Defaults to --language or English.",
+            "description": (
+                "Locale name to use for translations (if avail) and time "
+                "representations. Defaults to --language or English."
+            ),
         }
     )
     title = fields.String(
@@ -110,34 +118,46 @@ class NautilusFlagsSchema(SerializableSchema):
     main_logo = fields.Url(
         metadata={
             "label": "Header Logo",
-            "description": "Custom logo. Will be resized to 300x65px. Nautilus otherwise.",
+            "description": (
+                "Custom logo. Will be resized to 300x65px. Nautilus otherwise."
+            ),
         },
         data_key="main-logo",
     )
     secondary_logo = fields.Url(
         metadata={
             "label": "Footer logo",
-            "description": "Custom footer logo. Will be resized to 300x65px. None otherwise",
+            "description": (
+                "Custom footer logo. Will be resized to 300x65px. None otherwise"
+            ),
         },
         data_key="secondary-logo",
     )
     favicon = fields.Url(
         metadata={
             "label": "Favicon",
-            "description": "Custom favicon. Will be resized to 48x48px. Nautilus otherwise.",
+            "description": (
+                "Custom favicon. Will be resized to 48x48px. Nautilus otherwise."
+            ),
         },
     )
     main_color = HexColor(
         metadata={
             "label": "Main Color",
-            "description": "Custom header color. Hex/HTML syntax (#DEDEDE). Default to main-logo's primary color solarized (or #95A5A6 if no logo).",
+            "description": (
+                "Custom header color. Hex/HTML syntax (#DEDEDE). Default to main-logo's"
+                " primary color solarized (or #95A5A6 if no logo)."
+            ),
         },
         data_key="main-color",
     )
     secondary_color = HexColor(
         metadata={
             "label": "Secondary Color",
-            "description": "Custom footer color. Hex/HTML syntax (#DEDEDE). Default to main-logo's primary color solarized (or #95A5A6 if no logo).",
+            "description": (
+                "Custom footer color. Hex/HTML syntax (#DEDEDE). Default to main-logo's"
+                " primary color solarized (or #95A5A6 if no logo)."
+            ),
         },
         data_key="secondary-color",
     )

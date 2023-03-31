@@ -3,38 +3,38 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import os
+import pathlib
 import re
 import time
-import uuid
-import pathlib
 import urllib.parse
+import uuid
 
 import docker
 from docker.types import Mount
 
 from common import logger
 from common.constants import (
-    DEFAULT_CPU_SHARE,
-    CONTAINER_SCRAPER_IDENT,
-    ZIMFARM_DISK_SPACE,
-    ZIMFARM_CPUS,
-    ZIMFARM_TASK_CPUS,
-    ZIMFARM_TASK_CPUSET,
-    ZIMFARM_MEMORY,
-    CONTAINER_TASK_IDENT,
-    USE_PUBLIC_DNS,
-    DISABLE_IPV6,
-    TASK_WORKER_IMAGE,
-    DOCKER_SOCKET,
-    PRIVATE_KEY,
-    DNSCACHE_IMAGE,
-    UPLOADER_IMAGE,
     CHECKER_IMAGE,
+    CONTAINER_SCRAPER_IDENT,
+    CONTAINER_TASK_IDENT,
+    DEFAULT_CPU_SHARE,
+    DISABLE_IPV6,
+    DNSCACHE_IMAGE,
+    DOCKER_SOCKET,
     MONITOR_IMAGE,
     MONITORING_DEST,
     MONITORING_KEY,
+    PRIVATE_KEY,
+    TASK_WORKER_IMAGE,
+    UPLOADER_IMAGE,
+    USE_PUBLIC_DNS,
+    ZIMFARM_CPUS,
+    ZIMFARM_DISK_SPACE,
+    ZIMFARM_MEMORY,
+    ZIMFARM_TASK_CPUS,
+    ZIMFARM_TASK_CPUSET,
 )
-from common.utils import short_id, as_pos_int, format_size
+from common.utils import as_pos_int, format_size, short_id
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused", "removing")
 STOPPED_STATUSES = ("exited", "dead")
@@ -162,7 +162,6 @@ def query_containers_resources(docker_client):
 
 
 def query_host_stats(docker_client, workdir):
-
     # query cpu and ram usage in our containers
     stats = query_containers_resources(docker_client)
 

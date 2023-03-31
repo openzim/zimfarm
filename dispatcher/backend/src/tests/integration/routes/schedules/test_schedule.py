@@ -1,8 +1,8 @@
+import json
 from uuid import uuid4
 
-from bson import ObjectId
 import pytest
-import json
+from bson import ObjectId
 
 from utils.offliners import expanded_config
 
@@ -93,7 +93,6 @@ bad_patch_updates = [
 
 class TestScheduleList:
     def test_list_schedules_no_param(self, client, schedules):
-
         url = "/schedules/"
         response = client.get(url)
         assert response.status_code == 200
@@ -113,7 +112,6 @@ class TestScheduleList:
         [(0, 30, 30), (10, 15, 15), (40, 25, 11), (100, 100, 0)],
     )
     def test_list_schedules_with_param(self, client, schedules, skip, limit, expected):
-
         url = "/schedules/?skip={}&limit={}".format(skip, limit)
         response = client.get(url)
         assert response.status_code == 200
@@ -144,7 +142,6 @@ class TestScheduleList:
         ],
     )
     def test_list_schedules_with_filter(self, client, schedules, params, expected):
-
         url = "/schedules/?{}&limit=50".format(params)
         response = client.get(url)
         assert response.status_code == 200
@@ -336,7 +333,6 @@ class TestSchedulePost:
 
 class TestScheduleGet:
     def test_get_schedule_with_name(self, client, schedule):
-
         url = "/schedules/{}".format(schedule["name"])
         response = client.get(url)
         assert response.status_code == 200
@@ -348,7 +344,6 @@ class TestScheduleGet:
 
 class TestSchedulePatch:
     def _patch_schedule_via_key_with(self, client, access_token, update, schedule, key):
-
         if "name" in update.keys():
             update["name"] += str(uuid4())
 
@@ -369,14 +364,12 @@ class TestSchedulePatch:
 
     @pytest.mark.parametrize("update", good_patch_updates)
     def test_patch_schedule_via_id_with(self, client, access_token, update, schedule):
-
         self._patch_schedule_via_key_with(
             client, access_token, update, schedule, "name"
         )
 
     @pytest.mark.parametrize("update", good_patch_updates)
     def test_patch_schedule_via_name_with(self, client, access_token, update, schedule):
-
         self._patch_schedule_via_key_with(
             client, access_token, update, schedule, "name"
         )
@@ -384,7 +377,6 @@ class TestSchedulePatch:
     def _patch_schedule_via_id_with_errors(
         self, client, access_token, update, schedule, key
     ):
-
         url = "/schedules/{}".format(schedule[key])
         response = client.patch(
             url, json=update, headers={"Authorization": access_token}
@@ -408,7 +400,6 @@ class TestSchedulePatch:
         )
 
     def test_patch_schedule_duplicate_name(self, client, access_token, schedules):
-
         update = {"name": "wikipedia_bm_all_nopic"}  # this one exists in fixtures
         url = "/schedules/wikipedia_fr_all_maxi"
         response = client.patch(

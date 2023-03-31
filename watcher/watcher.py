@@ -21,27 +21,27 @@
     - delete the local file we downloaded
     - schedule matching recipe(s) on the Zimfarm as we now have updated dumps """
 
+import argparse
+import concurrent.futures as cf
+import datetime
+import json
+import logging
+import multiprocessing
 import os
+import pathlib
 import re
+import signal
+import subprocess
 import sys
 import time
-import json
-import signal
-import pathlib
-import logging
-import argparse
-import datetime
-import subprocess
 import traceback
-import multiprocessing
-import concurrent.futures as cf
 
+import humanfriendly
 import jwt
 import requests
-import humanfriendly
+from kiwixstorage import KiwixStorage
 from pif import get_public_ip
 from xml_to_dict import XMLtoDict
-from kiwixstorage import KiwixStorage
 
 VERSION = "1.0"
 DOWNLOAD_URL = os.getenv("DOWNLOAD_URL", "https://archive.org/download/stackexchange")
@@ -520,7 +520,6 @@ class WatcherRunner:
 
 
 def entrypoint():
-
     parser = argparse.ArgumentParser(
         prog="watcher",
         description="StackExchange dumps watcher/downloader",

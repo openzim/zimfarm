@@ -4,8 +4,8 @@
 
 """ zmq relay tester: listens to topic on relay's public channel """
 
-import os
 import logging
+import os
 
 import zmq
 

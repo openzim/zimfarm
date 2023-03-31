@@ -2,16 +2,12 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import argparse
 import os
 import sys
-import argparse
 
 from common import logger
-from common.constants import (
-    DEFAULT_WEB_API_URLS,
-    WORKER_MANAGER,
-    DEFAULT_WORKDIR,
-)
+from common.constants import DEFAULT_WEB_API_URLS, DEFAULT_WORKDIR, WORKER_MANAGER
 from manager.worker import WorkerManager
 
 

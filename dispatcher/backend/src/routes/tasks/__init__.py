@@ -1,6 +1,6 @@
 from routes import API_PATH
 from routes.base import BaseBlueprint
-from routes.tasks.task import TasksRoute, TaskRoute, TaskCancelRoute
+from routes.tasks.task import TaskCancelRoute, TaskRoute, TasksRoute
 
 
 class Blueprint(BaseBlueprint):

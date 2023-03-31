@@ -2,8 +2,9 @@ import os
 import urllib.parse
 
 from pymongo import MongoClient
-from pymongo.database import Database as BaseDatabase
 from pymongo.collection import Collection as BaseCollection
+from pymongo.database import Database as BaseDatabase
+
 from common.enum import TaskStatus
 
 MONGODB_URI = urllib.parse.urlparse(

@@ -76,12 +76,23 @@ def make_user(database):
         document = {
             "_id": ObjectId(),
             "username": username,
-            "password_hash": "pbkdf2:sha256:150000$dEqsZI8W$2d2bbcbadab59281528ecbb27d26ac628472a0b2f0a5e1828edbeeae683dd40f",
+            "password_hash": (
+                "pbkdf2:sha256:150000$dEqsZI8W$2d2bbcbadab59281528ecbb27d26ac628472a0b"
+                "2f0a5e1828edbeeae683dd40f"
+            ),
             "ssh_keys": [
                 {
                     "name": "pytest",
                     "fingerprint": "a4a7cfd26a11ec519b63d4d12f34ecf2",
-                    "key": "AAAAB3NzaC1yc2EAAAADAQABAAABAQC4EYmNPfdscaYcMTXe0NxSpS+5qbVO+WDaMLt/JLbDmorJzzBYFItxsr5hvxKckQ3jgUdcoIqzpwfjg88NhxenPmLlqsaQfkI2IjmOxDwaH4zs1IKG4+BTyY6EFrEnWgO9vJMJPOVzBdv3uUUOULvTnE7ZWpqb+2tRQCk6GUF9AoajmAzTlu+PjD53kRqwRugK/EKrqIjg5Nb/y5F4xGXLTb3otsUp+iFB3TJ65yB9F4C/Q4R5Srr/R3CWBQvoMLHUjya7HppoEW5sl8e+nEYpwKVCVuyJiRv9NuomBuh2ZH7ftfY8zxkVyv6UbVNXwFTvT3QVbwM6pQgVx/nJmzeb",
+                    "key": (
+                        "AAAAB3NzaC1yc2EAAAADAQABAAABAQC4EYmNPfdscaYcMTXe0NxSpS+5qbVO+"
+                        "WDaMLt/JLbDmorJzzBYFItxsr5hvxKckQ3jgUdcoIqzpwfjg88NhxenPmLlqs"
+                        "aQfkI2IjmOxDwaH4zs1IKG4+BTyY6EFrEnWgO9vJMJPOVzBdv3uUUOULvTnE7"
+                        "ZWpqb+2tRQCk6GUF9AoajmAzTlu+PjD53kRqwRugK/EKrqIjg5Nb/y5F4xGXL"
+                        "Tb3otsUp+iFB3TJ65yB9F4C/Q4R5Srr/R3CWBQvoMLHUjya7HppoEW5sl8e+n"
+                        "EYpwKVCVuyJiRv9NuomBuh2ZH7ftfY8zxkVyv6UbVNXwFTvT3QVbwM6pQgVx/"
+                        "nJmzeb"
+                    ),
                     "type": "RSA",
                     "added": datetime.datetime(2019, 1, 1),
                     "last_used": datetime.datetime(2019, 1, 1),

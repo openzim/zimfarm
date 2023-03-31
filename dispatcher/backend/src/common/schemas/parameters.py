@@ -1,36 +1,36 @@
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields
 
 from common.schemas.fields import (
-    skip_field,
+    category_field,
+    email_field,
     limit_field_20_200,
     limit_field_20_500,
-    worker_field,
+    offliner_field,
+    periodicity_field,
     priority_field,
     schedule_name_field,
-    offliner_field,
-    category_field,
-    periodicity_field,
+    skip_field,
     tag_field,
     username_field,
-    email_field,
     validate_cpu,
-    validate_memory,
     validate_disk,
-    validate_priority,
-    validate_not_empty,
-    validate_schedule_name,
-    validate_role,
-    validate_warehouse_path,
-    validate_status,
     validate_event,
-    validate_worker_name,
+    validate_memory,
+    validate_not_empty,
     validate_platform,
+    validate_priority,
+    validate_role,
+    validate_schedule_name,
+    validate_status,
+    validate_warehouse_path,
+    validate_worker_name,
+    worker_field,
 )
 from common.schemas.models import (
-    LanguageSchema,
     DockerImageSchema,
-    ResourcesSchema,
+    LanguageSchema,
     PlatformsLimitSchema,
+    ResourcesSchema,
 )
 
 

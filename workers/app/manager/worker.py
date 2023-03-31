@@ -3,34 +3,33 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import collections
-import os
-import time
-import signal
 import datetime
-import random
+import os
+import signal
+import time
 import urllib.parse
 from typing import Dict
 
 import requests
 
 from common import logger
-from common.utils import format_size, as_pos_int
-from common.worker import BaseWorker
-from common.docker import (
-    query_host_stats,
-    stop_task_worker,
-    start_task_worker,
-    get_label_value,
-    list_containers,
-    remove_container,
-)
 from common.constants import (
+    CANCEL_REQUESTED,
     CANCELED,
     CANCELING,
-    CANCEL_REQUESTED,
-    SUPPORTED_OFFLINERS,
     PLATFORMS_TASKS,
+    SUPPORTED_OFFLINERS,
 )
+from common.docker import (
+    get_label_value,
+    list_containers,
+    query_host_stats,
+    remove_container,
+    start_task_worker,
+    stop_task_worker,
+)
+from common.utils import as_pos_int, format_size
+from common.worker import BaseWorker
 
 TaskIdent = collections.namedtuple("TaskIdent", ["api_uri", "id"])
 

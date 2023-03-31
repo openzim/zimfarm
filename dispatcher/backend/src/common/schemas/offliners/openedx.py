@@ -48,7 +48,9 @@ class OpenedxFlagsSchema(SerializableSchema):
     instance_course_page = fields.String(
         metadata={
             "label": "Course page path",
-            "description": "The path to the course page after the course ID. Must start with /",
+            "description": (
+                "The path to the course page after the course ID. Must start with /"
+            ),
             "placeholder": "/course",
         },
         data_key="instance-course-page",
@@ -57,7 +59,9 @@ class OpenedxFlagsSchema(SerializableSchema):
     instance_course_prefix = fields.String(
         metadata={
             "label": "Course prefix path",
-            "description": "The prefix in the path before the course ID. Must start and end with /",
+            "description": (
+                "The prefix in the path before the course ID. Must start and end with /"
+            ),
             "placeholder": "/courses/",
         },
         data_key="instance-course-prefix",
@@ -66,8 +70,13 @@ class OpenedxFlagsSchema(SerializableSchema):
     favicon_url = fields.Url(
         metadata={
             "label": "Favicon URL",
-            "description": "URL pointing to a favicon image. Recommended size >= (48px x 48px)",
-            "placeholder": "https://github.com/edx/edx-platform/raw/master/lms/static/images/favicon.ico",
+            "description": (
+                "URL pointing to a favicon image. Recommended size >= (48px x 48px)"
+            ),
+            "placeholder": (
+                "https://github.com/edx/edx-platform/raw/master/lms/static/images/"
+                "favicon.ico"
+            ),
         },
         data_key="favicon-url",
     )
@@ -136,7 +145,9 @@ class OpenedxFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={
             "label": "Autoplay videos",
-            "description": "Enable autoplay on videos. Behavior differs on platforms/browsers",
+            "description": (
+                "Enable autoplay on videos. Behavior differs on platforms/browsers"
+            ),
         },
         data_key="autoplay",
     )
@@ -144,7 +155,9 @@ class OpenedxFlagsSchema(SerializableSchema):
     name = fields.String(
         metadata={
             "label": "Name",
-            "description": "ZIM name. Used as identifier and filename (date will be appended)",
+            "description": (
+                "ZIM name. Used as identifier and filename (date will be appended)"
+            ),
             "placeholder": "topic_eng",
         },
         data_key="name",
@@ -178,7 +191,10 @@ class OpenedxFlagsSchema(SerializableSchema):
     tags = fields.String(
         metadata={
             "label": "ZIM Tags",
-            "description": "List of comma-separated Tags for the ZIM file. category:other, and openedx added automatically",
+            "description": (
+                "List of comma-separated Tags for the ZIM file. category:other, and "
+                "openedx added automatically"
+            ),
         },
         data_key="tags",
     )
@@ -186,7 +202,9 @@ class OpenedxFlagsSchema(SerializableSchema):
     optimization_cache = fields.Url(
         metadata={
             "label": "Optimization Cache URL",
-            "description": "URL with credentials and bucket name to S3 Optimization Cache",
+            "description": (
+                "URL with credentials and bucket name to S3 Optimization Cache"
+            ),
             "secret": True,
         },
         data_key="optimization-cache",
@@ -217,7 +235,9 @@ class OpenedxFlagsSchema(SerializableSchema):
     tmp_dir = fields.String(
         metadata={
             "label": "Temp folder",
-            "description": "Where to create temporay build folder. Leave it as `/output`",
+            "description": (
+                "Where to create temporay build folder. Leave it as `/output`"
+            ),
         },
         missing="/output",
         default="/output",

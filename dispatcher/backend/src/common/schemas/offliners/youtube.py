@@ -1,6 +1,6 @@
-from marshmallow import fields, validate, validates_schema, ValidationError
+from marshmallow import ValidationError, fields, validate, validates_schema
 
-from common.schemas import SerializableSchema, StringEnum, HexColor
+from common.schemas import HexColor, SerializableSchema, StringEnum
 from common.schemas.fields import validate_output, validate_zim_filename
 
 

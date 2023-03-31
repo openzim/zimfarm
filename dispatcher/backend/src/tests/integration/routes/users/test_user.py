@@ -28,7 +28,6 @@ class TestUsersList:
         "skip, limit, expected", [(0, 1, 1), (1, 10, 4), (0, 100, 5)]
     )
     def test_list_with_param(self, client, access_token, users, skip, limit, expected):
-
         url = "/users/?skip={}&limit={}".format(skip, limit)
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 200
@@ -39,7 +38,6 @@ class TestUsersList:
 
     @pytest.mark.parametrize("skip, limit", [("", 10), (5, "abc")])
     def test_list_bad_param(self, client, access_token, users, skip, limit):
-
         url = "/users/?skip={}&limit={}".format(skip, limit)
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 400

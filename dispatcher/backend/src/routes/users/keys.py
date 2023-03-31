@@ -1,20 +1,20 @@
-import os
 import base64
 import binascii
-import tempfile
+import os
 import subprocess
-from http import HTTPStatus
+import tempfile
 from datetime import datetime
+from http import HTTPStatus
 
 import paramiko
-from flask import request, jsonify, Response
+from flask import Response, jsonify, request
 from marshmallow import ValidationError
 
-from routes.base import BaseRoute
-from routes import authenticate, url_object_id, errors
 from common.mongo import Users
-from utils.token import AccessToken
 from common.schemas.parameters import KeySchema
+from routes import authenticate, errors, url_object_id
+from routes.base import BaseRoute
+from utils.token import AccessToken
 
 
 class KeysRoute(BaseRoute):

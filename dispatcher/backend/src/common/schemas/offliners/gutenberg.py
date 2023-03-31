@@ -10,14 +10,20 @@ class GutenbergFlagsSchema(SerializableSchema):
     languages = fields.String(
         metadata={
             "label": "Languages",
-            "description": "Comma-separated list of lang codes to filter export to (preferably ISO 639-1, else ISO 639-3) Defaults to all",
+            "description": (
+                "Comma-separated list of lang codes to filter "
+                "export to (preferably ISO 639-1, else ISO 639-3) Defaults to all"
+            ),
         },
     )
 
     formats = fields.String(
         metadata={
             "label": "Formats",
-            "description": "Comma-separated list of formats to filter export to (epub, html, pdf, all) Defaults to all",
+            "description": (
+                "Comma-separated list of formats to filter export to (epub,"
+                " html, pdf, all) Defaults to all"
+            ),
         },
     )
 
@@ -37,7 +43,10 @@ class GutenbergFlagsSchema(SerializableSchema):
     books = fields.String(
         metadata={
             "label": "Books",
-            "description": "Filter to only specific books ; separated by commas, or dashes for intervals. Defaults to all",
+            "description": (
+                "Filter to only specific books ; separated by commas, or dashes "
+                "for intervals. Defaults to all"
+            ),
         },
     )
 
@@ -51,7 +60,9 @@ class GutenbergFlagsSchema(SerializableSchema):
     dlc = fields.Integer(
         metadata={
             "label": "Download Concurrency",
-            "description": "Number of parallel downloads to run (overrides concurrency)",
+            "description": (
+                "Number of parallel downloads to run (overrides concurrency)"
+            ),
         },
         data_key="dlc",
     )

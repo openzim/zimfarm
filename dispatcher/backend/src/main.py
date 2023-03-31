@@ -1,27 +1,27 @@
+import logging
 import os
 import pathlib
-import logging
 
-from flask import Flask, render_template, Response, make_response, redirect
+from flask import Flask, Response, make_response, redirect, render_template
 from flask_cors import CORS
 
 from routes import (
     API_PATH,
     auth,
-    schedules,
-    users,
-    workers,
-    languages,
-    tags,
     errors,
-    tasks,
-    requested_tasks,
+    languages,
     offliners,
     platforms,
+    requested_tasks,
+    schedules,
+    tags,
+    tasks,
+    users,
+    workers,
 )
-from utils.json import Encoder
-from utils.database import Initializer
 from utils.broadcaster import BROADCASTER
+from utils.database import Initializer
+from utils.json import Encoder
 
 if os.getenv("DOCS_DIR"):
     docs_dir = pathlib.Path(os.getenv("DOCS_DIR")).resolve()

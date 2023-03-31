@@ -1,0 +1,49 @@
+name: QA
+
+on: [push, pull_request]
+
+env:
+  # black default
+  MAX_LINE_LENGTH: 88
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          architecture: x64
+
+      - name: Install dependencies
+        run: |
+          pip install black==23.3.0 flake8==6.0.0 isort==5.12.0
+          black --version
+          flake8 --version
+          isort --version
+
+      - name: Check black formatting
+        run: |
+          black --check .
+
+      - name: Check flake8 linting
+        run: |
+          flake8 dispatcher/backend --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 dispatcher/relay --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 maint-scripts --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 receiver/apps --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 uploader --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 watcher --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 workers --count --max-line-length=$MAX_LINE_LENGTH --statistics
+
+      - name: Check import order with isort
+        run: |
+          isort --profile black --check --src dispatcher/backend/src/ dispatcher/backend/
+          isort --profile black --check dispatcher/relay/
+          isort --profile black --check maint-scripts
+          isort --profile black --check receiver/apps
+          isort --profile black --check uploader
+          isort --profile black --check watcher
+          isort --profile black --check --src workers/app workers

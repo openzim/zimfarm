@@ -1,20 +1,20 @@
 from http import HTTPStatus
 
-from flask import request, jsonify, Response
+from flask import Response, jsonify, request
+from marshmallow import ValidationError
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
-from marshmallow import ValidationError
 
 from common.mongo import Users, Workers
-from common.roles import get_role_for, ROLES
-from routes import authenticate, url_object_id, errors, require_perm
-from utils.token import AccessToken
-from routes.base import BaseRoute
+from common.roles import ROLES, get_role_for
 from common.schemas.parameters import (
     SkipLimitSchema,
     UserCreateSchema,
     UserUpdateSchema,
 )
+from routes import authenticate, errors, require_perm, url_object_id
+from routes.base import BaseRoute
+from utils.token import AccessToken
 
 
 class UsersRoute(BaseRoute):
@@ -25,7 +25,6 @@ class UsersRoute(BaseRoute):
     @authenticate
     @require_perm("users", "read")
     def get(self, token: AccessToken.Payload):
-
         request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
 
@@ -53,7 +52,6 @@ class UsersRoute(BaseRoute):
     @authenticate
     @require_perm("users", "create")
     def post(self, token: AccessToken.Payload):
-
         try:
             request_json = UserCreateSchema().load(request.get_json())
         except ValidationError as e:
@@ -103,7 +101,6 @@ class UserRoute(BaseRoute):
     @require_perm("users", "update")
     @url_object_id("username")
     def patch(self, token: AccessToken.Payload, username: str):
-
         # find user based on username
         query = {"username": username}
         if Users().count_documents(query) != 1:

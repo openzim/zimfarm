@@ -3,28 +3,28 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import binascii
-import os
-import sys
-import signal
-import pathlib
 import datetime
+import os
+import pathlib
+import signal
+import sys
 import urllib.parse
 
-import jwt
 import docker
+import jwt
 import paramiko
 import requests
 
 from common import logger
 from common.constants import (
+    DOCKER_CLIENT_TIMEOUT,
     DOCKER_SOCKET,
     PRIVATE_KEY,
-    DOCKER_CLIENT_TIMEOUT,
     access_token,
-    refresh_token,
-    token_payload,
     authenticated_on,
     authentication_expires_on,
+    refresh_token,
+    token_payload,
 )
 from common.dispatcher import get_token_ssh, query_api
 
@@ -99,7 +99,6 @@ class BaseWorker:
                 sys.exit(1)
 
     def check_docker(self):
-
         logger.info(f"testing docker API on {DOCKER_SOCKET}…")
         if (
             not DOCKER_SOCKET.exists()

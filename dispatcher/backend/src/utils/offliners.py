@@ -5,10 +5,10 @@
 import collections
 import pathlib
 
-from common.enum import Offliner
-
 # from common.constants import DISALLOW_CAPABILITIES
 from typing import List
+
+from common.enum import Offliner
 
 od = collections.namedtuple("OfflinerDef", ["cmd", "std_output", "std_stats"])
 OFFLINER_DEFS = {
@@ -92,7 +92,7 @@ def simplified(value):
 
 def compute_flags(flags, use_equals=True):
     """flat list of params from dict of flags"""
-    params: [str] = []
+    params: List[str] = []
     for key, value in flags.items():
         if value is True:
             params.append(f"--{key}")

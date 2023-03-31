@@ -18,19 +18,19 @@
         - --bandwidth
 """
 
+import argparse
+import datetime
+import logging
 import os
+import pathlib
+import signal
+import subprocess
 import sys
+import tempfile
 import time
 import urllib
-import signal
-import logging
-import pathlib
-import argparse
-import tempfile
-import datetime
-import subprocess
 
-from kiwixstorage import KiwixStorage, FileTransferHook
+from kiwixstorage import FileTransferHook, KiwixStorage
 
 try:
     import humanfriendly
@@ -484,7 +484,6 @@ def watched_upload(delay, method, **kwargs):
         # delay without change has not expired
         or datetime.datetime.now() - datetime.timedelta(seconds=delay) < last_change
     ):
-
         # file has changed (or initial), we need to upload
         if not last_upload or last_upload < last_change:
             started_on = datetime.datetime.now()

@@ -1,4 +1,4 @@
-from marshmallow import fields, validate, validates_schema, ValidationError
+from marshmallow import ValidationError, fields, validate, validates_schema
 
 from common.schemas import SerializableSchema, StringEnum
 from common.schemas.fields import validate_output, validate_zim_filename
@@ -21,14 +21,20 @@ class TedFlagsSchema(SerializableSchema):
     topics = fields.String(
         metadata={
             "label": "Topics",
-            "description": "Comma-seperated list of topics to scrape; as given on ted.com/talks. Pass all for all topics",
+            "description": (
+                "Comma-seperated list of topics to scrape; as given on ted.com/talks. "
+                "Pass all for all topics"
+            ),
         },
     )
 
     playlists = fields.String(
         metadata={
             "label": "TED Playlists",
-            "description": "Comma-seperated list of TED playlist IDs to scrape. Pass all for all playlists",
+            "description": (
+                "Comma-seperated list of TED playlist IDs to scrape. Pass all for all "
+                "playlists"
+            ),
         },
     )
 
@@ -44,14 +50,21 @@ class TedFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={
             "label": "Subtitles enough?",
-            "description": "Whether to include videos that have a subtitle in requested language(s) if audio is in another language",
+            "description": (
+                "Whether to include videos that have a subtitle in "
+                "requested language(s) if audio is in another language"
+            ),
         },
     )
 
     subtitles = fields.String(
         metadata={
             "label": "Subtitles Setting",
-            "description": "Language setting for subtitles. all: include all available subtitles, matching (default): only subtitles matching language(s), none: include no subtitle. Also accepts comma-seperated list of language(s)",
+            "description": (
+                "Language setting for subtitles. all: include all available subtitles, "
+                "matching (default): only subtitles matching language(s), none: include"
+                " no subtitle. Also accepts comma-seperated list of language(s)"
+            ),
         },
     )
 
@@ -79,14 +92,19 @@ class TedFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={
             "label": "Auto-play",
-            "description": "Enable autoplay on video articles. Behavior differs on platforms/browsers.",
+            "description": (
+                "Enable autoplay on video articles. Behavior differs on "
+                "platforms/browsers."
+            ),
         },
     )
 
     name = fields.String(
         metadata={
             "label": "Name",
-            "description": "ZIM name. Used as identifier and filename (date will be appended)",
+            "description": (
+                "ZIM name. Used as identifier and filename (date will be appended)"
+            ),
             "placeholder": "topic_eng",
         },
     )
@@ -94,7 +112,10 @@ class TedFlagsSchema(SerializableSchema):
     name_format = fields.String(
         metadata={
             "label": "Name Format",
-            "description": "Format for building individual --name argument. Use variable {identity} for playlist id or topic name",
+            "description": (
+                "Format for building individual --name argument. Use variable "
+                "{identity} for playlist id or topic name"
+            ),
             "placeholder": "{identity}_eng",
         },
         data_key="name-format",
@@ -118,7 +139,9 @@ class TedFlagsSchema(SerializableSchema):
     description = fields.String(
         metadata={
             "label": "Description",
-            "description": "Custom description for your ZIM. Based on selection otherwise",
+            "description": (
+                "Custom description for your ZIM. Based on selection otherwise"
+            ),
         }
     )
 
@@ -140,14 +163,19 @@ class TedFlagsSchema(SerializableSchema):
     tags = fields.String(
         metadata={
             "label": "ZIM Tags",
-            "description": "List of comma-separated Tags for the ZIM file. category:ted, ted, and _videos:yes added automatically",
+            "description": (
+                "List of comma-separated Tags for the ZIM file. category:ted, ted, and"
+                " _videos:yes added automatically"
+            ),
         }
     )
 
     optimization_cache = fields.Url(
         metadata={
             "label": "Optimization Cache URL",
-            "description": "URL with credentials and bucket name to S3 Optimization Cache",
+            "description": (
+                "URL with credentials and bucket name to S3 Optimization Cache"
+            ),
             "secret": True,
         },
         data_key="optimization-cache",
@@ -177,7 +205,9 @@ class TedFlagsSchema(SerializableSchema):
     tmp_dir = fields.String(
         metadata={
             "label": "Temp folder",
-            "description": "Where to create temporay build folder. Leave it as `/output`",
+            "description": (
+                "Where to create temporay build folder. Leave it as `/output`"
+            ),
         },
         missing="/output",
         default="/output",
@@ -188,7 +218,10 @@ class TedFlagsSchema(SerializableSchema):
     metadata_from = fields.String(
         metadata={
             "label": "Metadata JSON",
-            "description": "File path or URL to a JSON file holding custom metadata for individual playlists/topics",
+            "description": (
+                "File path or URL to a JSON file holding custom metadata for individual"
+                " playlists/topics"
+            ),
         },
         data_key="metadata-from",
     )
@@ -205,7 +238,10 @@ class TedFlagsSchema(SerializableSchema):
     zim_file_format = fields.String(
         metadata={
             "label": "ZIM filename format",
-            "description": "Format for building individual --zim-file argument for individual ZIMs. Uses --name-format otherwise",
+            "description": (
+                "Format for building individual --zim-file argument for individual "
+                "ZIMs. Uses --name-format otherwise"
+            ),
         },
         data_key="zim-file-format",
     )

@@ -1,20 +1,20 @@
 import datetime
-from uuid import UUID, uuid4
 from http import HTTPStatus
+from uuid import UUID, uuid4
 
 import flask
 from bson.binary import UUIDLegacy
-from flask import request, jsonify, Response
+from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash
 
-from utils.token import AccessToken
 from common import getnow
-from common.mongo import Users, RefreshTokens
 from common.constants import REFRESH_TOKEN_EXPIRY
+from common.mongo import RefreshTokens, Users
 from routes import API_PATH, authenticate
-from routes.auth import validate, ssh
+from routes.auth import ssh, validate
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
+from utils.token import AccessToken
 
 
 def create_refresh_token(username):

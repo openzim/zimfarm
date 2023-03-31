@@ -1,7 +1,7 @@
 import json
 
-from bson import ObjectId
 import pytest
+from bson import ObjectId
 
 
 class TestRequestedTaskList:
@@ -30,7 +30,6 @@ class TestRequestedTaskList:
         assert response.status_code == 400
 
     def test_list(self, client, requested_tasks):
-
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers)
         assert response.status_code == 200
@@ -109,7 +108,6 @@ class TestRequestedTaskList:
         ],
     )
     def test_list_matching(self, client, requested_tasks, matching, expected):
-
         url = f"{self.url}?"
         for key, value in matching.items():
             if isinstance(value, list):

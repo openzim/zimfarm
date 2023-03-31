@@ -1,4 +1,4 @@
-from bson.objectid import ObjectId, InvalidId
+from bson.objectid import InvalidId, ObjectId
 
 
 class ScheduleQueryMixin:

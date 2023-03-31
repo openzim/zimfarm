@@ -1,5 +1,5 @@
-from typing import Optional
 from http import HTTPStatus
+from typing import Optional
 
 from flask import jsonify
 
@@ -33,7 +33,8 @@ def handler(error: OAuth2Base):
 
 
 class InvalidRequest(OAuth2Base):
-    """The request is missing a parameter so the server can’t proceed with the request."""
+    """The request is missing a parameter so the server can’t proceed with the
+    request."""
 
     def __init__(self, description: str):
         super().__init__(HTTPStatus.BAD_REQUEST, "invalid_request", description)
