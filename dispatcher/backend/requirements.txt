@@ -14,3 +14,6 @@ jinja2>=2.11,<2.12
 # jinja2 dependency (https://github.com/pallets/markupsafe/issues/284)
 markupsafe==2.0.1
 kiwixstorage>=0.8.1,<0.9
+alembic
+SQLAlchemy>=2.0
+asyncpg
