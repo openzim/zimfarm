@@ -6,14 +6,10 @@ import logging
 
 from utils.scheduling import request_tasks_using_schedule
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("periodic-scheduler")
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-handler.setFormatter(
-    logging.Formatter("[%(name)s - %(asctime)s: %(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG, format="[%(name)s - %(asctime)s: %(levelname)s] %(message)s"
 )
-logger.addHandler(handler)
+logger = logging.getLogger("periodic-scheduler")
 
 
 def main():
