@@ -32,12 +32,10 @@ application = Flask(__name__, template_folder=docs_dir)
 application.json_encoder = Encoder
 CORS(application)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG, format="[%(asctime)s: %(levelname)s] %(message)s"
+)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s"))
-logger.addHandler(handler)
 
 
 @application.route(f"{API_PATH}/openapi.yaml")
