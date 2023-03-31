@@ -35,9 +35,7 @@ services:
       DEBUG: 1
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       MONGODB_URI: mongodb://mongodb:27017
-      POSTGRES_DB: zimfarm
-      POSTGRES_USER: zimfarm
-      POSTGRES_PASSWORD: Z8tGs^QhCBgM
+      POSTGRES_URI: postgresql+psycopg://zimfarm:Z8tGs^QhCBgM@postgresdb:5432/zimfarm
     depends_on:
       - postgresdb
       - mongodb

@@ -1,10 +1,13 @@
 from http import HTTPStatus
 
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from marshmallow import ValidationError
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash
 
+import db.models as dbm
 from common.mongo import Users, Workers
 from common.roles import ROLES, get_role_for
 from common.schemas.parameters import (
@@ -12,6 +15,7 @@ from common.schemas.parameters import (
     UserCreateSchema,
     UserUpdateSchema,
 )
+from db import engine
 from routes import authenticate, errors, require_perm, url_object_id
 from routes.base import BaseRoute
 from utils.token import AccessToken
@@ -29,8 +33,20 @@ class UsersRoute(BaseRoute):
         skip, limit = request_args["skip"], request_args["limit"]
 
         # get users from database
+
+        with so.Session(engine) as session:
+            count = session.query(dbm.User).count()
+            sa.select(dbm.User)
+            for user_obj in session.execute(
+                sa.select(dbm.User)
+                .offset(skip)
+                .limit(limit)
+                .options(so.selectinload(dbm.User.ssh_keys))
+            ).scalars():
+                print(user_obj.id)
+
         query = {}
-        count = Users().count_documents(query)
+        # count = Users().count_documents(query)
         cursor = (
             Users()
             .find(query, {"_id": 0, "username": 1, "email": 1, "scope": 1})
