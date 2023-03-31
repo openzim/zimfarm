@@ -1276,7 +1276,7 @@ paths:
             examples:
               username:
                 summary: John Doe
-                value: {"username": "john", "password": "my-long-password", "email": "john@kiwix.org", "scope": {"schedules": {"read": true}}}
+                value: {"username": "john", "password": "my-long-password", "email": "john@kiwix.org", "role": "manager"}
       responses:
         201:
           description: User Created
