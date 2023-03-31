@@ -18,3 +18,4 @@ alembic
 SQLAlchemy>=2.0
 asyncpg
 psycopg>=3.0
+marshmallow-sqlalchemy

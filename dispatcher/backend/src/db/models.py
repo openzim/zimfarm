@@ -24,13 +24,13 @@ class User(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     mongo_val: Mapped[Optional[Dict[str, Any]]]
-    username: Mapped[Optional[str]]
+    username: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
     scope: Mapped[Optional[Dict[str, Any]]]
 
     ssh_keys: Mapped[List["Sshkey"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
+        back_populates="user", cascade="all, delete-orphan", init=False
     )
 
 
@@ -47,6 +47,6 @@ class Sshkey(Base):
     added: Mapped[Optional[datetime]]
     last_used: Mapped[Optional[datetime]]
     pkcs8_key: Mapped[Optional[str]]
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
-    user: Mapped["User"] = relationship(back_populates="ssh_keys")
+    user: Mapped["User"] = relationship(back_populates="ssh_keys", init=False)

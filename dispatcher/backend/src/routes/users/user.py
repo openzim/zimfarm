@@ -5,8 +5,10 @@ import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from marshmallow import ValidationError
 from pymongo.errors import DuplicateKeyError
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
+import common.schemas.orms as cso
 import db.models as dbm
 from common.mongo import Users, Workers
 from common.roles import ROLES, get_role_for
@@ -15,7 +17,7 @@ from common.schemas.parameters import (
     UserCreateSchema,
     UserUpdateSchema,
 )
-from db import engine
+from db.engine import engine
 from routes import authenticate, errors, require_perm, url_object_id
 from routes.base import BaseRoute
 from utils.token import AccessToken
@@ -33,58 +35,42 @@ class UsersRoute(BaseRoute):
         skip, limit = request_args["skip"], request_args["limit"]
 
         # get users from database
-
         with so.Session(engine) as session:
             count = session.query(dbm.User).count()
-            sa.select(dbm.User)
-            for user_obj in session.execute(
-                sa.select(dbm.User)
-                .offset(skip)
-                .limit(limit)
-                .options(so.selectinload(dbm.User.ssh_keys))
-            ).scalars():
-                print(user_obj.id)
 
-        query = {}
-        # count = Users().count_documents(query)
-        cursor = (
-            Users()
-            .find(query, {"_id": 0, "username": 1, "email": 1, "scope": 1})
-            .skip(skip)
-            .limit(limit)
-        )
+            orm_users = session.execute(
+                sa.select(dbm.User).offset(skip).limit(limit)
+            ).scalars()
 
-        # add role to user while removing scope
-        def _add_role(user):
-            user.update({"role": get_role_for(user.pop("scope", {}))})
-            return user
+            api_users = list(map(cso.UserSchemaReadMany().dump, orm_users))
 
-        users = list(map(_add_role, cursor))
-
-        return jsonify(
-            {"meta": {"skip": skip, "limit": limit, "count": count}, "items": users}
-        )
+            return jsonify(
+                {
+                    "meta": {"skip": skip, "limit": limit, "count": count},
+                    "items": api_users,
+                }
+            )
 
     @authenticate
     @require_perm("users", "create")
     def post(self, token: AccessToken.Payload):
-        try:
-            request_json = UserCreateSchema().load(request.get_json())
-        except ValidationError as e:
-            raise errors.InvalidRequestJSON(e.messages)
+        request_json = UserCreateSchema().load(request.get_json())
 
-        # generate password hash
-        password = request_json.pop("password")
-        request_json["password_hash"] = generate_password_hash(password)
+        with so.Session(engine) as session:
+            pgmUser = dbm.User(
+                mongo_val=None,
+                username=request_json["username"],
+                email=request_json["email"],
+                password_hash=generate_password_hash(request_json["password"]),
+                scope=ROLES.get(request_json["role"]),
+            )
+            session.add(pgmUser)
 
-        # fetch permissions
-        request_json["scope"] = ROLES.get(request_json.pop("role"))
-
-        try:
-            user_id = Users().insert_one(request_json).inserted_id
-            return jsonify({"_id": user_id})
-        except DuplicateKeyError:
-            raise errors.BadRequest("User already exists")
+            try:
+                session.commit()
+                return jsonify({"_id": pgmUser.id})
+            except IntegrityError:
+                raise errors.BadRequest("User already exists")
 
 
 class UserRoute(BaseRoute):
@@ -100,50 +86,62 @@ class UserRoute(BaseRoute):
             if not token.get_permission("users", "read"):
                 raise errors.NotEnoughPrivilege()
 
-        # find user based on _id or username
-        user = Users().find_one(
-            {"username": username},
-            {"_id": 0, "username": 1, "email": 1, "scope": 1, "ssh_keys": 1},
-        )
+        # find user based on username
+        with so.Session(engine) as session:
+            orm_user = session.execute(
+                sa.select(dbm.User)
+                .where(dbm.User.username == username)
+                .options(so.selectinload(dbm.User.ssh_keys))
+            ).scalar_one_or_none()
 
-        if user is None:
-            raise errors.NotFound()
+            if orm_user is None:
+                raise errors.NotFound()
 
-        user["role"] = get_role_for(user.get("scope"))
+            api_user = cso.UserSchemaReadOne().dump(orm_user)
 
-        return jsonify(user)
+            return jsonify(api_user)
 
     @authenticate
     @require_perm("users", "update")
     @url_object_id("username")
     def patch(self, token: AccessToken.Payload, username: str):
-        # find user based on username
-        query = {"username": username}
-        if Users().count_documents(query) != 1:
-            raise errors.NotFound()
+        request_json = UserUpdateSchema().load(request.get_json())
 
-        try:
-            request_json = UserUpdateSchema().load(request.get_json())
-        except ValidationError as e:
-            raise errors.BadRequest(e.messages)
+        with so.Session(engine) as session:
+            orm_user = session.execute(
+                sa.select(dbm.User).where(dbm.User.username == username)
+            ).scalar_one_or_none()
 
-        update = {}
-        if "email" in request_json:
-            update["email"] = request_json["email"]
-        if "role" in request_json:
-            update["scope"] = ROLES.get(request_json["role"])
+            if orm_user is None:
+                raise errors.NotFound()
 
-        Users().update_one(query, {"$set": update})
+            if "email" in request_json:
+                orm_user.email = request_json["email"]
+            if "role" in request_json:
+                orm_user.scope = ROLES.get(request_json["role"])
 
-        return Response(status=HTTPStatus.NO_CONTENT)
+            if orm_user in session.dirty:
+                session.commit()
+
+            return Response(status=HTTPStatus.NO_CONTENT)
 
     @authenticate
     @require_perm("users", "delete")
     @url_object_id("username")
     def delete(self, token: AccessToken.Payload, username: str):
         # delete user
-        deleted_count = Users().delete_one({"username": username}).deleted_count
-        if deleted_count == 0:
-            raise errors.NotFound()
-        Workers().delete_many({"username": username})
-        return Response(status=HTTPStatus.NO_CONTENT)
+
+        with so.Session(engine) as session:
+            orm_user = session.execute(
+                sa.delete(dbm.User)
+                .where(dbm.User.username == username)
+                .returning(dbm.User.id)
+            ).scalar_one_or_none()
+            if orm_user is None:
+                raise errors.NotFound()
+
+            session.commit()
+
+            # TODO: Delete workers associated with current user as well
+            # Workers().delete_many({"username": username})
+            return Response(status=HTTPStatus.NO_CONTENT)
