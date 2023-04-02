@@ -17,7 +17,7 @@ from common.schemas.parameters import (
     UserCreateSchema,
     UserUpdateSchema,
 )
-from db.engine import engine
+from db.engine import Session
 from routes import authenticate, errors, require_perm, url_object_id
 from routes.base import BaseRoute
 from utils.token import AccessToken
@@ -35,7 +35,7 @@ class UsersRoute(BaseRoute):
         skip, limit = request_args["skip"], request_args["limit"]
 
         # get users from database
-        with so.Session(engine) as session:
+        with Session.begin() as session:
             count = session.query(dbm.User).count()
 
             orm_users = session.execute(
@@ -56,7 +56,7 @@ class UsersRoute(BaseRoute):
     def post(self, token: AccessToken.Payload):
         request_json = UserCreateSchema().load(request.get_json())
 
-        with so.Session(engine) as session:
+        with Session.begin() as session:
             pgmUser = dbm.User(
                 mongo_val=None,
                 username=request_json["username"],
@@ -67,7 +67,7 @@ class UsersRoute(BaseRoute):
             session.add(pgmUser)
 
             try:
-                session.commit()
+                session.flush()
                 return jsonify({"_id": pgmUser.id})
             except IntegrityError:
                 raise errors.BadRequest("User already exists")
@@ -87,7 +87,7 @@ class UserRoute(BaseRoute):
                 raise errors.NotEnoughPrivilege()
 
         # find user based on username
-        with so.Session(engine) as session:
+        with Session.begin() as session:
             orm_user = session.execute(
                 sa.select(dbm.User)
                 .where(dbm.User.username == username)
@@ -107,7 +107,7 @@ class UserRoute(BaseRoute):
     def patch(self, token: AccessToken.Payload, username: str):
         request_json = UserUpdateSchema().load(request.get_json())
 
-        with so.Session(engine) as session:
+        with Session.begin() as session:
             orm_user = session.execute(
                 sa.select(dbm.User).where(dbm.User.username == username)
             ).scalar_one_or_none()
@@ -120,10 +120,7 @@ class UserRoute(BaseRoute):
             if "role" in request_json:
                 orm_user.scope = ROLES.get(request_json["role"])
 
-            if orm_user in session.dirty:
-                session.commit()
-
-            return Response(status=HTTPStatus.NO_CONTENT)
+        return Response(status=HTTPStatus.NO_CONTENT)
 
     @authenticate
     @require_perm("users", "delete")
@@ -131,7 +128,7 @@ class UserRoute(BaseRoute):
     def delete(self, token: AccessToken.Payload, username: str):
         # delete user
 
-        with so.Session(engine) as session:
+        with Session.begin() as session:
             orm_user = session.execute(
                 sa.delete(dbm.User)
                 .where(dbm.User.username == username)
@@ -140,8 +137,6 @@ class UserRoute(BaseRoute):
             if orm_user is None:
                 raise errors.NotFound()
 
-            session.commit()
-
-            # TODO: Delete workers associated with current user as well
-            # Workers().delete_many({"username": username})
-            return Response(status=HTTPStatus.NO_CONTENT)
+        # TODO: Delete workers associated with current user as well
+        # Workers().delete_many({"username": username})
+        return Response(status=HTTPStatus.NO_CONTENT)
