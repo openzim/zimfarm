@@ -44,12 +44,12 @@ class UsersRoute(BaseRoute):
 
             api_users = list(map(cso.UserSchemaReadMany().dump, orm_users))
 
-            return jsonify(
-                {
-                    "meta": {"skip": skip, "limit": limit, "count": count},
-                    "items": api_users,
-                }
-            )
+        return jsonify(
+            {
+                "meta": {"skip": skip, "limit": limit, "count": count},
+                "items": api_users,
+            }
+        )
 
     @authenticate
     @require_perm("users", "create")
@@ -68,9 +68,12 @@ class UsersRoute(BaseRoute):
 
             try:
                 session.flush()
-                return jsonify({"_id": pgmUser.id})
             except IntegrityError:
                 raise errors.BadRequest("User already exists")
+
+            user_id = pgmUser.id
+
+        return jsonify({"_id": user_id})
 
 
 class UserRoute(BaseRoute):
@@ -99,7 +102,7 @@ class UserRoute(BaseRoute):
 
             api_user = cso.UserSchemaReadOne().dump(orm_user)
 
-            return jsonify(api_user)
+        return jsonify(api_user)
 
     @authenticate
     @require_perm("users", "update")
