@@ -1380,7 +1380,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /users/{username}/keys/:
+  /users/{username}/keys:
     get:
       tags:
       - restricted

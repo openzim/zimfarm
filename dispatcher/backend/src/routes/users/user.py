@@ -3,15 +3,12 @@ from http import HTTPStatus
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import Response, jsonify, request
-from marshmallow import ValidationError
-from pymongo.errors import DuplicateKeyError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
 import common.schemas.orms as cso
 import db.models as dbm
-from common.mongo import Users, Workers
-from common.roles import ROLES, get_role_for
+from common.roles import ROLES
 from common.schemas.parameters import (
     SkipLimitSchema,
     UserCreateSchema,
