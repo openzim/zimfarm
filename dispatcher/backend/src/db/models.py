@@ -24,6 +24,7 @@ class User(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     mongo_val: Mapped[Optional[Dict[str, Any]]]
+    mongo_id: Mapped[Optional[str]] = mapped_column(unique=True)
     username: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
