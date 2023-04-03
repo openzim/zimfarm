@@ -116,7 +116,7 @@ class KeysRoute(BaseRoute):
                 fingerprint=fingerprint,
                 key=key,
                 type="RSA",
-                added=datetime.now(),
+                added=sa.func.current_timestamp(),
                 last_used=None,
                 pkcs8_key=pkcs8_key,
             )

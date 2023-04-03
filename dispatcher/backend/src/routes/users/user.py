@@ -56,6 +56,7 @@ class UsersRoute(BaseRoute):
         with Session.begin() as session:
             pgmUser = dbm.User(
                 mongo_val=None,
+                mongo_id=None,
                 username=request_json["username"],
                 email=request_json["email"],
                 password_hash=generate_password_hash(request_json["password"]),

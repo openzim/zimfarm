@@ -1,9 +1,12 @@
 from http import HTTPStatus
 
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from common.mongo import Users
+import db.models as dbm
+from db.engine import Session
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
 from utils.token import AccessToken
@@ -17,46 +20,39 @@ class PasswordRoute(BaseRoute):
     @authenticate
     @url_object_id(["username"])
     def patch(self, username: str, token: AccessToken.Payload):
-        query = {"username": username}
-        request_json = request.get_json()
-        if username == token.username:
-            # user is trying to set their own password
+        with Session.begin() as session:
+            # get user to modify
+            orm_user = session.execute(
+                sa.select(dbm.User).where(dbm.User.username == username)
+            ).scalar_one_or_none()
 
-            # get current password
-            password_current = request_json.get("current", None)
-            if password_current is None:
-                raise errors.BadRequest()
-
-            # get current password hash
-            user = Users().find_one(query, {"password_hash": 1})
-            if user is None:
+            if orm_user is None:
                 raise errors.NotFound()
 
-            # check current password is valid
-            is_valid = check_password_hash(user["password_hash"], password_current)
-            if not is_valid:
-                raise errors.Unauthorized()
-        else:
-            # user is trying to set other user's password
-            # check permission
-            if not token.get_permission("users", "change_password"):
-                raise errors.NotEnoughPrivilege()
+            request_json = request.get_json()
+            if username == token.username:
+                # user is trying to set their own password
 
-        # get new password
-        password_new = request_json.get("new", None)
-        if password_new is None:
-            raise errors.BadRequest()
+                # get current password
+                password_current = request_json.get("current", None)
+                if password_current is None:
+                    raise errors.BadRequest()
 
-        # set new password
-        matched_count = (
-            Users()
-            .update_one(
-                query, {"$set": {"password_hash": generate_password_hash(password_new)}}
-            )
-            .matched_count
-        )
+                # check current password is valid
+                is_valid = check_password_hash(orm_user.password_hash, "bob")
+                if not is_valid:
+                    raise errors.Unauthorized()
+            else:
+                # user is trying to set other user's password
+                # check permission
+                if not token.get_permission("users", "change_password"):
+                    raise errors.NotEnoughPrivilege()
 
-        # send response
-        if matched_count == 0:
-            raise errors.NotFound()
+            # get new password
+            password_new = request_json.get("new", None)
+            if password_new is None:
+                raise errors.BadRequest()
+
+            orm_user.password_hash = generate_password_hash(password_new)
+
         return Response(status=HTTPStatus.NO_CONTENT)
