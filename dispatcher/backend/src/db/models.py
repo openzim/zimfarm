@@ -34,6 +34,10 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
+    refresh_tokens: Mapped[List["Refreshtoken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", init=False
+    )
+
 
 class Sshkey(Base):
     __tablename__ = "sshkey"
@@ -51,3 +55,17 @@ class Sshkey(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="ssh_keys", init=False)
+
+
+class Refreshtoken(Base):
+    __tablename__ = "refresh_token"
+    id: Mapped[uuid.UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    mongo_val: Mapped[Optional[Dict[str, Any]]]
+    mongo_id: Mapped[Optional[str]] = mapped_column(unique=True)
+    token: Mapped[uuid.UUID] = mapped_column(server_default=text("uuid_generate_v4()"))
+    expire_time: Mapped[datetime]
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
+
+    user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
