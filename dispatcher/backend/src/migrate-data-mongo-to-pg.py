@@ -1,12 +1,11 @@
-import contextlib
 import logging
+from abc import ABC, abstractmethod
 from json import loads
-from typing import Any, Dict
-from uuid import UUID
+from typing import Any, Dict, List, Tuple
 
-import sqlalchemy as sa
 import sqlalchemy.orm as so
 from bson.json_util import dumps
+from pymongo.collection import Collection as BaseCollection
 
 import common.mongo as mongo
 import db.models as dbm
@@ -22,7 +21,12 @@ def get_or_none(obj: Dict[str, Any], key: str) -> Any:
     return obj[key] if key in obj.keys() else None
 
 
-def pre_checks_ok(session: so.Session) -> bool:
+def pre_checks_ok() -> bool:
+    with Session() as session:
+        return pre_checks_ok_internal(session)
+
+
+def pre_checks_ok_internal(session: so.Session) -> bool:
     pre_checks_ok = True
 
     count = session.query(dbm.User).count()
@@ -32,47 +36,105 @@ def pre_checks_ok(session: so.Session) -> bool:
         )
         pre_checks_ok = False
 
-    # count = session.query(dbm.Sshkey).count()
-    # if count > 0:
-    #     logger.warning(
-    #         f"Please empty sshkey table before migration ({count} records found)"
-    #     )
-    #     pre_checks_ok = False
+    count = session.query(dbm.Sshkey).count()
+    if count > 0:
+        logger.warning(
+            f"Please empty sshkey table before migration ({count} records found)"
+        )
+        pre_checks_ok = False
 
     count = session.query(dbm.Refreshtoken).count()
     if count > 0:
         logger.warning(
-            f"Please empty refresh tokens table before migration ({count} records found)"
+            "Please empty refresh tokens table before migration "
+            f"({count} records found)"
         )
         pre_checks_ok = False
 
     return pre_checks_ok
 
 
-def migrate_users():
-    logger.info("\n##################\nMigrating users\n##################")
-    count = mongo.Users().count_documents({})
-    logger.info(f"{count} users found in MongoDB")
+class Migrator(ABC):
+    _commit_every: int
 
-    cnt = 1
-    session: so.Session = Session().begin().session
-    for mongoUser in mongo.Users().find({}, batch_size=100):
-        if len(session.new) > 1000:
-            logger.info(f"Commiting after 1000 objects insert ({cnt})")
-            cnt += 1
-            session.commit()
-            session = Session().begin().session
+    def __init__(self, commit_every: int = 1000) -> None:
+        self._commit_every = commit_every
 
+    @abstractmethod
+    def get_object_name(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_mongo_collection(self) -> BaseCollection:
+        pass
+
+    @abstractmethod
+    def get_sql_tables(self) -> List[Tuple[str, dbm.Base]]:
+        pass
+
+    @abstractmethod
+    def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
+        pass
+
+    def get_next_mongo_doc(self):  # -> Generator[Any | None, None, None]:
+        for mongoObj in self.get_mongo_collection().find({}, batch_size=100):
+            yield mongoObj
+        yield None
+
+    def migrate(self) -> None:
+        logger.info(
+            f"\n##################\nMigrating {self.get_object_name()}"
+            "\n##################"
+        )
+        count = self.get_mongo_collection().count_documents({})
+        logger.info(f"{count} {self.get_object_name()} found in MongoDB")
+
+        cnt = 1
+        next_mongo_doc = self.get_next_mongo_doc()
+
+        with Session() as session:
+            while True:
+                with session.begin():
+                    while len(session.new) < 1000:
+                        next_doc = next_mongo_doc.__next__()
+                        if next_doc is None:
+                            break
+                        self.migrate_one_doc(session, next_doc)
+
+                if next_doc is None:
+                    for sql_table in self.get_sql_tables():
+                        count = session.query(sql_table[1]).count()
+                        logger.info(
+                            f"{count} {sql_table[0]} found in PG after migration"
+                        )
+
+                    break
+
+                logger.info(f"Commiting after 1000 objects insert ({cnt})")
+                cnt += 1
+
+
+class UserMigrator(Migrator):
+    def get_object_name(self) -> str:
+        return "user"
+
+    def get_mongo_collection(self) -> BaseCollection:
+        return mongo.Users()
+
+    def get_sql_tables(self) -> List[Tuple[str, dbm.Base]]:
+        return [("user", dbm.User), ("sshkey", dbm.Sshkey)]
+
+    def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
         pgmUser = dbm.User(
-            mongo_val=loads(dumps(mongoUser)),
-            mongo_id=str(mongoUser["_id"]),
-            username=mongoUser["username"],
-            email=get_or_none(mongoUser, "email"),
-            password_hash=mongoUser["password_hash"],
-            scope=mongoUser["scope"],
+            mongo_val=loads(dumps(mongo_obj)),
+            mongo_id=str(mongo_obj["_id"]),
+            username=mongo_obj["username"],
+            email=get_or_none(mongo_obj, "email"),
+            password_hash=mongo_obj["password_hash"],
+            scope=mongo_obj["scope"],
         )
         session.add(pgmUser)
-        for ssh_key in get_or_none(mongoUser, "ssh_keys") or []:
+        for ssh_key in get_or_none(mongo_obj, "ssh_keys") or []:
             pgmUser.ssh_keys.append(
                 dbm.Sshkey(
                     mongo_val=loads(dumps(ssh_key)),
@@ -86,38 +148,25 @@ def migrate_users():
                 )
             )
 
-    session.commit()
-    session = Session().begin().session
 
-    count = session.query(dbm.User).count()
-    logger.info(f"{count} User found in PG after migration")
-
-    count = session.query(dbm.Sshkey).count()
-    logger.info(f"{count} Sshkey found in PG after migration")
-    # logger.info(f"{len(session.new)} objects to insert")
-    #     print(user["_id"])
-
-
-def migrate_refresh_tokens():
-    logger.info("\n##################\nMigrating refresh tokens\n##################")
-    count = mongo.RefreshTokens().count_documents({})
-    logger.info(f"{count} refresh tokens found in MongoDB")
-
+class RefreshTokenMigrator(Migrator):
     cache: Dict[str, str] = {}
-    cnt = 1
-    session: so.Session = Session().begin().session
-    for mongoRefreshToken in mongo.RefreshTokens().find({}, batch_size=100):
-        if len(session.new) > 1000:
-            logger.info(f"Commiting after 1000 objects insert ({cnt})")
-            cnt += 1
-            session.commit()
-            session = Session().begin().session
 
-        if "user_id" in mongoRefreshToken:
-            mongo_user_id = str(mongoRefreshToken["user_id"])
+    def get_object_name(self) -> str:
+        return "refresh token"
+
+    def get_mongo_collection(self) -> BaseCollection:
+        return mongo.RefreshTokens()
+
+    def get_sql_tables(self) -> List[Tuple[str, dbm.Base]]:
+        return [("refresh token", dbm.Refreshtoken)]
+
+    def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
+        if "user_id" in mongo_obj:
+            mongo_user_id = str(mongo_obj["user_id"])
             cache_key = f"id_{mongo_user_id}"
-            if cache_key in cache:
-                user_id = cache[cache_key]
+            if cache_key in self.cache:
+                user_id = self.cache[cache_key]
             else:
                 user_id = (
                     session.query(dbm.User.id)
@@ -125,16 +174,17 @@ def migrate_refresh_tokens():
                     .scalar()
                 )
                 if user_id:
-                    cache[cache_key] = user_id
+                    self.cache[cache_key] = user_id
                 else:
-                    logger.error(
-                        f"Impossible to find user {mongo_user_id} for refresh token {str(mongoRefreshToken['_id'])}"
+                    raise Exception(
+                        f"Impossible to find user with ID {mongo_user_id} for refresh "
+                        f"token {str(mongo_obj['_id'])}"
                     )
         else:
-            mongo_user_name = mongoRefreshToken["username"]
+            mongo_user_name = mongo_obj["username"]
             cache_key = f"name_{mongo_user_name}"
-            if cache_key in cache:
-                user_id = cache[cache_key]
+            if cache_key in self.cache:
+                user_id = self.cache[cache_key]
             else:
                 user_id = (
                     session.query(dbm.User.id)
@@ -142,72 +192,33 @@ def migrate_refresh_tokens():
                     .scalar()
                 )
                 if user_id:
-                    cache[cache_key] = user_id
+                    self.cache[cache_key] = user_id
                 else:
-                    logger.error(
-                        f"Impossible to find user {mongo_user_name} for refresh token {str(mongoRefreshToken['_id'])}"
+                    raise Exception(
+                        f"Impossible to find user with name {mongo_user_name} for "
+                        f"refresh token {str(mongo_obj['_id'])}"
                     )
 
         pgmRefreshToken = dbm.Refreshtoken(
-            mongo_val=loads(dumps(mongoRefreshToken)),
-            mongo_id=str(mongoRefreshToken["_id"]),
-            token=mongoRefreshToken["token"],
-            expire_time=mongoRefreshToken["expire_time"],
+            mongo_val=loads(dumps(mongo_obj)),
+            mongo_id=str(mongo_obj["_id"]),
+            token=mongo_obj["token"],
+            expire_time=mongo_obj["expire_time"],
         )
         pgmRefreshToken.user_id = user_id
         session.add(pgmRefreshToken)
-
-    session.commit()
-    session = Session().begin().session
-
-    count = session.query(dbm.Refreshtoken).count()
-    logger.info(f"{count} refresh tokens found in PG after migration")
-
-
-def migrate_schedules(session):
-    logger.info("\n##################\nMigrating schedules\n##################")
-    count = mongo.Schedules().count_documents({})
-    logger.info(f"{count} schedules found in MongoDB")
-
-    # count = session.query(pgm.User).count()
-    # logger.info(f"{count} User found in PG before migration")
-
-    # count = session.query(pgm.Sshkey).count()
-    # logger.info(f"{count} Sshkey found in PG before migration")
-
-    # i = 0
-    # for mongoTask in mongo.Schedules().find({}, batch_size=100):
-    #     i += 1
-    #     if i >= 1000:
-    #         break
-
-    # i = 0
-    # for mongoTaskId in mongo.Schedules().find(
-    #     {}, projection={"_id": 1}, batch_size=100
-    # ):
-    #     i += 1
-    #     mongoTask = mongo.Schedules().find_one({"_id": mongoTaskId["_id"]})
-    #     if i >= 1000:
-    #         break
-    # if len(session.new) > 1000:
-    #     logger.info("Commiting after 1000 objects insert")
-    #     session.commit()
-
-    # logger.info(f"Done {i}")
 
 
 def main():
     logger.info("Migrating data from Mongo to PostgreSQL")
 
-    with Session.begin() as session:
-        if not pre_checks_ok(session):
-            logger.error("Please fix warnings before proceeding with the migration")
-            return
+    if not pre_checks_ok():
+        logger.error("Please fix warnings before proceeding with the migration")
+        return
 
-    migrate_users()
-    # migrate_schedules(session)
+    UserMigrator().migrate()
 
-    migrate_refresh_tokens()
+    RefreshTokenMigrator().migrate()
 
 
 if __name__ == "__main__":
