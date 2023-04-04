@@ -3,7 +3,6 @@ import binascii
 import os
 import subprocess
 import tempfile
-from datetime import datetime
 from http import HTTPStatus
 
 import paramiko

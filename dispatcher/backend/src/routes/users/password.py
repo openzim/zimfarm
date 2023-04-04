@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 import sqlalchemy as sa
-import sqlalchemy.orm as so
 from flask import Response, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
