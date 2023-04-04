@@ -10,6 +10,7 @@ from pymongo.collection import Collection as BaseCollection
 import common.mongo as mongo
 import db.models as dbm
 from db.engine import Session
+from utils.database import KeysExporter
 
 logging.basicConfig(
     level=logging.DEBUG, format="[%(name)s - %(asctime)s: %(levelname)s] %(message)s"
@@ -73,6 +74,14 @@ class Migrator(ABC):
         pass
 
     @abstractmethod
+    def get_expected_mongo_keys(self) -> List[str]:
+        pass
+
+    @abstractmethod
+    def get_expected_mongo_json_objects(self) -> List[str]:
+        pass
+
+    @abstractmethod
     def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
         pass
 
@@ -80,6 +89,25 @@ class Migrator(ABC):
         for mongoObj in self.get_mongo_collection().find({}, batch_size=100):
             yield mongoObj
         yield None
+
+    def _key_starts_with(self, key, items):
+        for item in items:
+            if key.startswith(item):
+                return True
+        return False
+
+    def check_one_doc(self, mongo_obj):
+        existing_keys = KeysExporter.get_keys(mongo_obj)
+        expected_keys = self.get_expected_mongo_keys()
+        expected_json_objects = self.get_expected_mongo_json_objects()
+        for existing_key in existing_keys:
+            if existing_key not in expected_keys and not self._key_starts_with(
+                existing_key, expected_json_objects
+            ):
+                raise Exception(
+                    f"Unexpected key {existing_key} found in "
+                    f"{self.get_object_name()} object id {str(mongo_obj['_id'])}"
+                )
 
     def migrate(self) -> None:
         logger.info(
@@ -99,6 +127,7 @@ class Migrator(ABC):
                         next_doc = next_mongo_doc.__next__()
                         if next_doc is None:
                             break
+                        self.check_one_doc(next_doc)
                         self.migrate_one_doc(session, next_doc)
 
                 if next_doc is None:
@@ -123,6 +152,27 @@ class UserMigrator(Migrator):
 
     def get_sql_tables(self) -> List[Tuple[str, dbm.Base]]:
         return [("user", dbm.User), ("sshkey", dbm.Sshkey)]
+
+    def get_expected_mongo_keys(self) -> List[str]:
+        return [
+            "_id",
+            "username",
+            "email",
+            "password_hash",
+            "ssh_keys",
+            "ssh_keys.*.name",
+            "ssh_keys.*.fingerprint",
+            "ssh_keys.*.type",
+            "ssh_keys.*.key",
+            "ssh_keys.*.added",
+            "ssh_keys.*.last_used",
+            "ssh_keys.*.pkcs8_key",
+        ]
+
+    def get_expected_mongo_json_objects(self) -> List[str]:
+        return [
+            "scope",
+        ]
 
     def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
         pgmUser = dbm.User(
@@ -160,6 +210,18 @@ class RefreshTokenMigrator(Migrator):
 
     def get_sql_tables(self) -> List[Tuple[str, dbm.Base]]:
         return [("refresh token", dbm.Refreshtoken)]
+
+    def get_expected_mongo_keys(self) -> List[str]:
+        return [
+            "_id",
+            "user_id",
+            "username",
+            "token",
+            "expire_time",
+        ]
+
+    def get_expected_mongo_json_objects(self) -> List[str]:
+        return []
 
     def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
         if "user_id" in mongo_obj:
