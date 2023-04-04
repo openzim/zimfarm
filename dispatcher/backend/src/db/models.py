@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import DateTime, ForeignKey, String, text
+from sqlalchemy import DateTime, ForeignKey, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,

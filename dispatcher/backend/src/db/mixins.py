@@ -1,4 +1,4 @@
-### temporary mixin, see https://docs.sqlalchemy.org/en/20/orm/dataclasses.html
+# temporary mixin, see https://docs.sqlalchemy.org/en/20/orm/dataclasses.html
 
 import typing
 
@@ -15,4 +15,4 @@ if typing.TYPE_CHECKING:
             pass
 
 else:
-    from sqlalchemy.orm import MappedAsDataclass
+    from sqlalchemy.orm import MappedAsDataclass  # noqa: F401

@@ -1,5 +1,3 @@
-import json
-
 import marshmallow.fields as mf
 from marshmallow import post_dump
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
