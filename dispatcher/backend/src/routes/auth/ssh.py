@@ -5,19 +5,16 @@ import logging
 import pathlib
 import subprocess
 import tempfile
-from uuid import uuid4
 
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import jsonify, request
 
-from common import getnow
-from common.constants import (
-    MESSAGE_VALIDITY,
-    OPENSSL_BIN,
-    REFRESH_TOKEN_EXPIRY,
-    TOKEN_EXPIRY,
-)
-from common.mongo import RefreshTokens, Users
+import db.models as dbm
+from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
+from db.engine import Session
 from routes import errors
+from routes.auth.oauth2 import OAuth2
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -33,7 +30,12 @@ def asymmetric_key_auth():
     - verify username matches our database
     - verify signature of message with username's public keys
     - generate tokens"""
+    with Session.begin() as session:
+        res = _asymmetric_key_auth_inner(session)
+    return res
 
+
+def _asymmetric_key_auth_inner(session: so.Session):
     # check the message's validity
     try:
         message = request.headers["X-SSHAuth-Message"]
@@ -54,13 +56,13 @@ def asymmetric_key_auth():
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
 
-    user = Users().find_one(
-        {"username": username}, {"username": 1, "scope": 1, "ssh_keys": 1}
-    )
-    if user is None:
+    orm_user = session.execute(
+        sa.select(dbm.User)
+        .where(dbm.User.username == username)
+        .options(so.selectinload(dbm.User.ssh_keys))
+    ).scalar_one_or_none()
+    if orm_user is None:
         raise errors.Unauthorized("User not found")  # we shall never get there
-
-    ssh_keys = user.pop("ssh_keys", [])
 
     # check that the message was signed with a known private key
     authenticated = False
@@ -75,8 +77,8 @@ def asymmetric_key_auth():
         with open(signatured_path, "wb") as fp:
             fp.write(signature)
 
-        for ssh_key in ssh_keys:
-            pkcs8_data = ssh_key.get("pkcs8_key")
+        for ssh_key in orm_user.ssh_keys:
+            pkcs8_data = ssh_key.pkcs8_key
             if not pkcs8_data:  # User record has no PKCS8 version
                 continue
 
@@ -106,18 +108,11 @@ def asymmetric_key_auth():
     if not authenticated:
         raise errors.Unauthorized("Could not find matching key for signature")
 
-    # we're now authenticated ; generate tokens
-    access_token = AccessToken.encode(user)
-    refresh_token = uuid4()
+    # we're now authenticated ; generate access token
+    access_token = AccessToken.encode_db(orm_user)
 
-    # store refresh token in database
-    RefreshTokens().insert_one(
-        {
-            "token": refresh_token,
-            "user_id": user["_id"],
-            "expire_time": getnow() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
-        }
-    )
+    # genereate + store refresh token in database
+    refresh_token = OAuth2.generate_refresh_token(orm_user.id, session)
 
     # send response
     response_json = {

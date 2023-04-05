@@ -1,5 +1,6 @@
+from uuid import uuid4
+
 import pytest
-from bson import ObjectId
 from flask.testing import FlaskClient
 
 from common import mongo
@@ -65,7 +66,7 @@ def client():
 
 @pytest.fixture(scope="session")
 def access_token():
-    token = LoadedAccessToken(ObjectId(), "username", ROLES.get("admin")).encode()
+    token = LoadedAccessToken(uuid4(), "username", ROLES.get("admin")).encode()
     yield "Bearer {}".format(token)
 
 
