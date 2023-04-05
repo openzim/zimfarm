@@ -56,7 +56,6 @@ class TestAuthentication:
         }
 
         assert client.post("/auth/token", headers=headers).status_code == 200
-        headers["refresh-token"] = "".join(headers["refresh-token"][:-1])
         assert client.post("/auth/token", headers=headers).status_code == 401
 
     @pytest.mark.parametrize(

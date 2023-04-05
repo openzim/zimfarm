@@ -8,8 +8,10 @@ import uuid
 import jwt
 from bson import ObjectId
 
+import db.models as dbm
 from common import getnow, to_naive_utc
 from common.constants import TOKEN_EXPIRY
+from routes import errors
 
 
 class AccessToken:
@@ -35,22 +37,36 @@ class AccessToken:
     class Payload:
         def __init__(self, data: dict):
             self._data = data
-            self._data["user"]["_id"] = ObjectId(self._data["user"]["_id"])
+            try:
+                self._data["user"]["_id"] = uuid.UUID(self._data["user"]["_id"])
+            except ValueError:
+                raise errors.Unauthorized()
 
         @property
-        def user_id(self) -> ObjectId:
+        def user_id(self) -> uuid:
             return self._data["user"]["_id"]
 
         @property
-        def username(self) -> ObjectId:
+        def username(self) -> str:
             return self._data["user"]["username"]
 
         @property
-        def email(self) -> ObjectId:
+        def email(self) -> str:
             return self._data["user"].get("email", None)
 
         def get_permission(self, namespace: str, name: str, default: bool = False):
             return self._data["user"]["scope"].get(namespace, {}).get(name, default)
+
+    @classmethod
+    def encode_db(cls, user: dbm.User) -> str:
+        return cls.encode(
+            {
+                "_id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "scope": user.scope,
+            }
+        )
 
     @classmethod
     def encode(cls, user: dict) -> str:
@@ -77,7 +93,7 @@ class AccessToken:
 
 
 class LoadedAccessToken(AccessToken):
-    def __init__(self, user_id: ObjectId, username: str, scope: dict):
+    def __init__(self, user_id: uuid.UUID, username: str, scope: dict):
         self.user_id = user_id
         self.username = username
         self.scope = scope
