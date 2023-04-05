@@ -131,12 +131,11 @@ class UserRoute(BaseRoute):
 
         with Session.begin() as session:
             orm_user = session.execute(
-                sa.delete(dbm.User)
-                .where(dbm.User.username == username)
-                .returning(dbm.User.id)
+                sa.select(dbm.User).where(dbm.User.username == username)
             ).scalar_one_or_none()
             if orm_user is None:
                 raise errors.NotFound()
+            session.delete(orm_user)
 
         # TODO: Delete workers associated with current user as well
         # Workers().delete_many({"username": username})
