@@ -3,8 +3,10 @@ from typing import Dict, List
 
 from werkzeug.security import generate_password_hash
 
+import db.models as dbm
 from common import mongo
 from common.roles import ROLES
+from db.engine import Session
 
 
 class Initializer:
@@ -21,15 +23,19 @@ class Initializer:
         username = os.getenv("INIT_USERNAME", "admin")
         password = os.getenv("INIT_PASSWORD", "admin_pass")
 
-        users = mongo.Users()
-        if users.find_one() is None:
-            print(f"creating initial user `{username}`")
-            document = {
-                "username": username,
-                "password_hash": generate_password_hash(password),
-                "scope": ROLES.get("admin"),
-            }
-            users.insert_one(document)
+        with Session.begin() as session:
+            count = session.query(dbm.User).count()
+            if count == 0:
+                print(f"creating initial user `{username}`")
+                pgmUser = dbm.User(
+                    mongo_val=None,
+                    mongo_id=None,
+                    username=username,
+                    email=None,
+                    password_hash=generate_password_hash(password),
+                    scope=ROLES.get("admin"),
+                )
+                session.add(pgmUser)
 
 
 class KeysExporter:
