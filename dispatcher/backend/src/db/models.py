@@ -1,9 +1,10 @@
 from datetime import datetime
+from ipaddress import IPv4Address
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, select, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, select, text
+from sqlalchemy.dialects.postgresql import ARRAY, INET, JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -26,10 +27,20 @@ class Base(MappedAsDataclass, DeclarativeBase):
         datetime: DateTime(
             timezone=False
         ),  # transform Python datetime into PostgreSQL Datetime without timezone
+        List[str]: ARRAY(
+            item_type=String
+        ),  # transform Python List[str] into PostgreSQL Array of strings
+        IPv4Address: INET,  # transform Python IPV4Address into PostgreSQL INET
     }
 
     # This metadata specifies some naming conventions that will be used by
     # alembic to generate constraints names (indexes, unique constraints, ...)
+    type_annotation_map = {
+        Dict[str, Any]: JSONB,
+        datetime: DateTime(timezone=False),
+        List[str]: ARRAY(item_type=String),
+        IPv4Address: INET,
+    }
     metadata = MetaData(
         naming_convention={
             "ix": "ix_%(column_0_label)s",
@@ -63,6 +74,10 @@ class User(Base):
     )
 
     refresh_tokens: Mapped[List["Refreshtoken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", init=False
+    )
+
+    workers: Mapped[List["Worker"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
@@ -128,3 +143,25 @@ class Refreshtoken(Base):
     user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
 
     __table_args__ = (Index(None, user_id, token, unique=True),)
+
+
+class Worker(Base):
+    __tablename__ = "worker"
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    mongo_val: Mapped[Optional[Dict[str, Any]]]
+    mongo_id: Mapped[Optional[str]] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    selfish: Mapped[bool]
+    cpu: Mapped[int]
+    memory: Mapped[int] = mapped_column(type_=BigInteger)
+    disk: Mapped[int] = mapped_column(type_=BigInteger)
+    offliners: Mapped[List[str]]
+    platforms: Mapped[Dict[str, Any]]
+    last_seen: Mapped[Optional[datetime]]
+    last_ip: Mapped[Optional[IPv4Address]]
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+
+    user: Mapped["User"] = relationship(back_populates="workers", init=False)
