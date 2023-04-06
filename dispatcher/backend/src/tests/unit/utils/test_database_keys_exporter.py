@@ -1,6 +1,6 @@
 import pytest
 
-from utils.database import KeysExporter
+from utils.keys_exporter import KeysExporter
 
 
 class TestKeysExporters:
