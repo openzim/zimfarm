@@ -1,17 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Union
 from uuid import UUID, uuid4
 
-import pytz
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash
 
 import db.models as dbm
+from common import getnow
 from db.engine import Session
-
-# from common.mongo import RefreshTokens, Users
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
 from utils.token import LoadedAccessToken
 
@@ -116,7 +114,7 @@ class OAuth2:
 
         # check token is not expired
         expire_time = old_token_document.expire_time
-        if expire_time < datetime.now(tz=pytz.UTC):
+        if expire_time < getnow():
             raise InvalidGrant("Refresh token is expired.")
 
         # check user exists
@@ -135,9 +133,7 @@ class OAuth2:
         # delete old refresh token from database
         session.delete(old_token_document)
         session.execute(
-            sa.delete(dbm.Refreshtoken).where(
-                dbm.Refreshtoken.expire_time < datetime.now(tz=pytz.UTC)
-            )
+            sa.delete(dbm.Refreshtoken).where(dbm.Refreshtoken.expire_time < getnow())
         )
 
         session.flush()
@@ -158,7 +154,7 @@ class OAuth2:
             mongo_val=None,
             mongo_id=None,
             token=refresh_token,
-            expire_time=datetime.now(tz=pytz.UTC) + timedelta(days=30),
+            expire_time=getnow() + timedelta(days=30),
         )
         refresh_token_db.user_id = user_id
         session.add(refresh_token_db)

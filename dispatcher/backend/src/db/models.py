@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import DateTime, ForeignKey, text
+from sqlalchemy import DateTime, ForeignKey, Index, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -11,10 +11,20 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
+from sqlalchemy.sql.schema import MetaData
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
-    type_annotation_map = {Dict[str, Any]: JSONB, datetime: DateTime(timezone=True)}
+    type_annotation_map = {Dict[str, Any]: JSONB, datetime: DateTime(timezone=False)}
+    metadata = MetaData(
+        naming_convention={
+            "ix": "ix_%(column_0_label)s",
+            "uq": "uq_%(table_name)s_%(column_0_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+            "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+            "pk": "pk_%(table_name)s",
+        }
+    )
     pass
 
 
@@ -25,7 +35,7 @@ class User(Base):
     )
     mongo_val: Mapped[Optional[Dict[str, Any]]]
     mongo_id: Mapped[Optional[str]] = mapped_column(unique=True)
-    username: Mapped[str] = mapped_column(unique=True)
+    username: Mapped[str] = mapped_column(unique=True, index=True)
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
     scope: Mapped[Optional[Dict[str, Any]]]
@@ -46,7 +56,7 @@ class Sshkey(Base):
     )
     mongo_val: Mapped[Optional[Dict[str, Any]]]
     name: Mapped[Optional[str]]
-    fingerprint: Mapped[Optional[str]]
+    fingerprint: Mapped[Optional[str]] = mapped_column(index=True)
     type: Mapped[Optional[str]]
     key: Mapped[Optional[str]]
     added: Mapped[Optional[datetime]]
@@ -69,3 +79,5 @@ class Refreshtoken(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
+
+    __table_args__ = (Index(None, user_id, token, unique=True),)

@@ -34,7 +34,7 @@ def upgrade() -> None:
             server_default=sa.text("uuid_generate_v4()"),
             nullable=False,
         ),
-        sa.Column("expire_time", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("expire_time", sa.DateTime(timezone=False), nullable=False),
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.ForeignKeyConstraint(
             ["user_id"],
