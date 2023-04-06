@@ -79,6 +79,7 @@ BROADCASTER.broadcast_dispatcher_started()
 
 
 if __name__ == "__main__":
+    Initializer.check_if_schema_is_up_to_date()
     Initializer.create_initial_user()
     application.run(
         host=os.getenv("BINDING_HOST", "localhost"),
