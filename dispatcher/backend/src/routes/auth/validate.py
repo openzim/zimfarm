@@ -9,6 +9,7 @@ from flask import Response, request
 from marshmallow import Schema, ValidationError, fields, validate
 
 import db.models as dbm
+from common import getnow
 from db.engine import Session
 from routes import errors
 
@@ -51,4 +52,5 @@ def _ssh_key_inner(session: so.Session):
     ).scalar_one_or_none()
     if orm_ssh_key is None:
         raise errors.Unauthorized()
+    orm_ssh_key.last_used = getnow()
     return Response(status=HTTPStatus.NO_CONTENT)
