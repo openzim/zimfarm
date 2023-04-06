@@ -11,6 +11,7 @@ from pymongo.collection import Collection as BaseCollection
 import common.mongo as mongo
 import db.models as dbm
 from db import Session
+from utils.database import Initializer
 
 logging.basicConfig(
     level=logging.DEBUG, format="[%(name)s - %(asctime)s: %(levelname)s] %(message)s"
@@ -85,7 +86,7 @@ class Migrator(ABC):
         self._commit_every = commit_every
 
     @abstractmethod
-    def get_object_name(self) -> str:
+    def get_mongo_object_name(self) -> str:
         pass
 
     @abstractmethod
@@ -129,16 +130,16 @@ class Migrator(ABC):
             ):
                 raise Exception(
                     f"Unexpected key {existing_key} found in "
-                    f"{self.get_object_name()} object id {str(mongo_obj['_id'])}"
+                    f"{self.get_mongo_object_name()} object id {str(mongo_obj['_id'])}"
                 )
 
     def migrate(self) -> None:
         logger.info(
-            f"\n##################\nMigrating {self.get_object_name()}"
+            f"\n##################\nMigrating {self.get_mongo_object_name()} documents"
             "\n##################"
         )
         count = self.get_mongo_collection().count_documents({})
-        logger.info(f"{count} {self.get_object_name()} found in MongoDB")
+        logger.info(f"{count} {self.get_mongo_object_name()} found in MongoDB")
 
         cnt = 1
         next_mongo_doc = self.get_next_mongo_doc()
@@ -167,7 +168,7 @@ class Migrator(ABC):
 
 
 class UserMigrator(Migrator):
-    def get_object_name(self) -> str:
+    def get_mongo_object_name(self) -> str:
         return "user"
 
     def get_mongo_collection(self) -> BaseCollection:
@@ -225,7 +226,7 @@ class UserMigrator(Migrator):
 class RefreshTokenMigrator(Migrator):
     cache: Dict[str, str] = {}
 
-    def get_object_name(self) -> str:
+    def get_mongo_object_name(self) -> str:
         return "refresh token"
 
     def get_mongo_collection(self) -> BaseCollection:
@@ -301,7 +302,7 @@ class RefreshTokenMigrator(Migrator):
 class WorkerMigrator(Migrator):
     cache: Dict[str, str] = {}
 
-    def get_object_name(self) -> str:
+    def get_mongo_object_name(self) -> str:
         return "worker"
 
     def get_mongo_collection(self) -> BaseCollection:
@@ -359,6 +360,8 @@ class WorkerMigrator(Migrator):
 
 def main():
     logger.info("Migrating data from Mongo to PostgreSQL")
+
+    Initializer.check_if_schema_is_up_to_date()
 
     if not pre_checks_ok():
         logger.error("Please fix warnings before proceeding with the migration")
