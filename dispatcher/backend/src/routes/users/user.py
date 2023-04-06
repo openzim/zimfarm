@@ -54,7 +54,7 @@ class UsersRoute(BaseRoute):
         request_json = UserCreateSchema().load(request.get_json())
 
         with Session.begin() as session:
-            pgmUser = dbm.User(
+            orm_user = dbm.User(
                 mongo_val=None,
                 mongo_id=None,
                 username=request_json["username"],
@@ -62,14 +62,14 @@ class UsersRoute(BaseRoute):
                 password_hash=generate_password_hash(request_json["password"]),
                 scope=ROLES.get(request_json["role"]),
             )
-            session.add(pgmUser)
+            session.add(orm_user)
 
             try:
                 session.flush()
             except IntegrityError:
                 raise errors.BadRequest("User already exists")
 
-            user_id = pgmUser.id
+            user_id = orm_user.id
 
         return jsonify({"_id": user_id})
 

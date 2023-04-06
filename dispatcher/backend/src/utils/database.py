@@ -49,7 +49,7 @@ class Initializer:
             count = session.query(dbm.User).count()
             if count == 0:
                 print(f"creating initial user `{username}`")
-                pgmUser = dbm.User(
+                orm_user = dbm.User(
                     mongo_val=None,
                     mongo_id=None,
                     username=username,
@@ -57,7 +57,7 @@ class Initializer:
                     password_hash=generate_password_hash(password),
                     scope=ROLES.get("admin"),
                 )
-                session.add(pgmUser)
+                session.add(orm_user)
 
 
 class KeysExporter:
