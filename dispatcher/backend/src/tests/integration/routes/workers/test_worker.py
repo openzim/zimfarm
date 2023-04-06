@@ -1,5 +1,13 @@
 import pytest
 
+from common.external import build_workers_whitelist
+
+
+class TestWorkersCommon:
+    def test_build_workers_whitelist(self, workers):
+        whitelist = build_workers_whitelist()
+        assert len(whitelist) == len(workers)
+
 
 class TestWorkersList:
     def test_list_tags_no_param(self, client, workers):
@@ -19,6 +27,7 @@ class TestWorkersList:
                 "offliners",
                 "resources",
                 "last_seen",
+                "last_ip",
                 "status",
             }
 
