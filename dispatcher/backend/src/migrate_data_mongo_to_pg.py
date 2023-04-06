@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from json import loads
 from typing import Any, Dict, List, Tuple
 
+import sqlalchemy as sa
 import sqlalchemy.orm as so
 from bson.json_util import dumps
 from pymongo.collection import Collection as BaseCollection
@@ -48,6 +49,13 @@ def pre_checks_ok_internal(session: so.Session) -> bool:
         logger.warning(
             "Please empty refresh tokens table before migration "
             f"({count} records found)"
+        )
+        pre_checks_ok = False
+
+    count = session.query(dbm.Worker).count()
+    if count > 0:
+        logger.warning(
+            "Please empty workers table before migration " f"({count} records found)"
         )
         pre_checks_ok = False
 
@@ -290,6 +298,65 @@ class RefreshTokenMigrator(Migrator):
         session.add(orm_refresh_token)
 
 
+class WorkerMigrator(Migrator):
+    cache: Dict[str, str] = {}
+
+    def get_object_name(self) -> str:
+        return "worker"
+
+    def get_mongo_collection(self) -> BaseCollection:
+        return mongo.Workers()
+
+    def get_sql_tables(self) -> List[Tuple[str, dbm.Base]]:
+        return [("worker", dbm.Worker)]
+
+    def get_expected_mongo_keys(self) -> List[str]:
+        return [
+            "_id",
+            "name",
+            "username",
+            "selfish",
+            "resources",
+            "resources.cpu",
+            "resources.disk",
+            "resources.memory",
+            "offliners",
+            "last_seen",
+            "last_ip",
+        ]
+
+    def get_expected_mongo_json_objects(self) -> List[str]:
+        return ["platforms"]
+
+    def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
+        mongo_user_name = mongo_obj["username"]
+        user_id = session.execute(
+            sa.select(dbm.User.id).where(dbm.User.username == mongo_user_name)
+        ).scalar_one_or_none()
+
+        if not user_id:
+            raise Exception(
+                f"Impossible to find user with name {mongo_user_name} for "
+                f"refresh token {str(mongo_obj['_id'])}"
+            )
+
+        orm_worker = dbm.Worker(
+            mongo_val=loads(dumps(mongo_obj)),
+            mongo_id=str(mongo_obj["_id"]),
+            name=mongo_obj["name"],
+            selfish=mongo_obj["selfish"],
+            cpu=mongo_obj["resources"]["cpu"],
+            memory=mongo_obj["resources"]["memory"],
+            disk=mongo_obj["resources"]["disk"],
+            offliners=mongo_obj["offliners"],
+            platforms=mongo_obj["platforms"],
+            last_seen=mongo_obj["last_seen"],
+            last_ip=mongo_obj["last_ip"],
+        )
+        orm_worker.user_id = user_id
+        session.add(orm_worker)
+
+
 def main():
     logger.info("Migrating data from Mongo to PostgreSQL")
 
@@ -300,6 +367,8 @@ def main():
     UserMigrator().migrate()
 
     RefreshTokenMigrator().migrate()
+
+    WorkerMigrator().migrate()
 
 
 if __name__ == "__main__":
