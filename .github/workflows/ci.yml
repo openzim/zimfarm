@@ -31,12 +31,35 @@ jobs:
           PYTHONPATH=$PWD pytest tests/unit
 
   integration-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    services:
+      postgresdb:
+        image: postgres:15.2
+        env:
+          POSTGRES_DB: zimtest
+          POSTGRES_PASSWORD: Z8tGs^QhCBgM
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: zimfarm
+        ports:
+          - 5432:5432
+
+    env:
+      POSTGRES_URI: postgresql+psycopg://zimfarm:Z8tGs^QhCBgM@localhost:5432/zimtest
+
     steps:
       - name: Launch MongoDB
         uses: wbari/start-mongoDB@v0.2
         with:
           mongoDBVersion: "4.2"
+
+      # - name: Install PostgreSQL
+      #   uses: harmon758/postgresql-action@v1
+      #   with:
+      #     postgresql version: '15.2'
+      #     postgresql db: zimtest
+      #     postgresql user: zimfarm
+      #     postgresql password: Z8tGs^QhCBgM
 
       - name: Retrieve source code
         uses: actions/checkout@v3
@@ -52,10 +75,15 @@ jobs:
           pip install -r dispatcher/backend/requirements.txt
           pip install -U pytest pytest-cov
 
-      - name: prepare DB
+      - name: prepare Mongo DB
         run: |
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
           PYTHONPATH=$PWD python -c "from utils.database import Initializer; Initializer.initialize()"
+
+      - name: prepare Postgresql DB
+        run: |
+          cd $GITHUB_WORKSPACE/dispatcher/backend/src
+          PYTHONPATH=$PWD alembic upgrade head
 
       - name: run tests
         run: |
