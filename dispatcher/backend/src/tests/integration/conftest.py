@@ -7,6 +7,7 @@ from common import mongo
 from common.roles import ROLES
 from main import application as app
 from routes import API_PATH
+from utils.database import Initializer
 from utils.token import LoadedAccessToken
 
 # monley-patching FlaskClient to prefix test URLs with proper API_PATH
@@ -73,3 +74,11 @@ def access_token():
 @pytest.fixture(scope="session")
 def database() -> mongo.Database:
     yield mongo.Database()
+
+
+def pytest_sessionstart(session):
+    """
+    Called after the Session object has been created and
+    before performing collection and entering the run test loop.
+    """
+    Initializer.check_if_schema_is_up_to_date()
