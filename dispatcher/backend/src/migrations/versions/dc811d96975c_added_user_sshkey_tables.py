@@ -47,8 +47,8 @@ def upgrade() -> None:
         sa.Column("fingerprint", sa.String(), nullable=True),
         sa.Column("type", sa.String(), nullable=True),
         sa.Column("key", sa.String(), nullable=True),
-        sa.Column("added", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("last_used", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("added", sa.DateTime(timezone=False), nullable=True),
+        sa.Column("last_used", sa.DateTime(timezone=False), nullable=True),
         sa.Column("pkcs8_key", sa.String(), nullable=True),
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.ForeignKeyConstraint(

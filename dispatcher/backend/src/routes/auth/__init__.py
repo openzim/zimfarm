@@ -1,14 +1,13 @@
-from datetime import datetime
 from http import HTTPStatus
 
 import flask
-import pytz
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash
 
 import db.models as dbm
+from common import getnow
 from db.engine import Session
 from routes import API_PATH, authenticate
 from routes.auth import ssh, validate
@@ -94,7 +93,7 @@ def _refresh_token_inner(session: so.Session):
 
     # check token is not expired
     expire_time = old_token_document.expire_time
-    if expire_time < datetime.now(tz=pytz.UTC):
+    if expire_time < getnow():
         raise Unauthorized("token expired")
 
     # check user exists
@@ -111,9 +110,7 @@ def _refresh_token_inner(session: so.Session):
     # delete old refresh token from database
     session.delete(old_token_document)
     session.execute(
-        sa.delete(dbm.Refreshtoken).where(
-            dbm.Refreshtoken.expire_time < datetime.now(tz=pytz.UTC)
-        )
+        sa.delete(dbm.Refreshtoken).where(dbm.Refreshtoken.expire_time < getnow())
     )
 
     # send response
