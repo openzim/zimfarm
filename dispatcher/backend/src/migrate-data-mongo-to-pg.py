@@ -10,7 +10,7 @@ from pymongo.collection import Collection as BaseCollection
 import common.mongo as mongo
 import db.models as dbm
 from db.engine import Session
-from utils.database import KeysExporter
+from utils.keys_exporter import KeysExporter
 
 logging.basicConfig(
     level=logging.DEBUG, format="[%(name)s - %(asctime)s: %(levelname)s] %(message)s"
