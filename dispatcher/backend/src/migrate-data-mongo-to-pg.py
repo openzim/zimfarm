@@ -175,7 +175,7 @@ class UserMigrator(Migrator):
         ]
 
     def migrate_one_doc(self, session: so.Session, mongo_obj) -> None:
-        pgmUser = dbm.User(
+        orm_user = dbm.User(
             mongo_val=loads(dumps(mongo_obj)),
             mongo_id=str(mongo_obj["_id"]),
             username=mongo_obj["username"],
@@ -183,9 +183,9 @@ class UserMigrator(Migrator):
             password_hash=mongo_obj["password_hash"],
             scope=mongo_obj["scope"],
         )
-        session.add(pgmUser)
+        session.add(orm_user)
         for ssh_key in get_or_none(mongo_obj, "ssh_keys") or []:
-            pgmUser.ssh_keys.append(
+            orm_user.ssh_keys.append(
                 dbm.Sshkey(
                     mongo_val=loads(dumps(ssh_key)),
                     name=get_or_none(ssh_key, "name"),
@@ -261,14 +261,14 @@ class RefreshTokenMigrator(Migrator):
                         f"refresh token {str(mongo_obj['_id'])}"
                     )
 
-        pgmRefreshToken = dbm.Refreshtoken(
+        orm_refresh_token = dbm.Refreshtoken(
             mongo_val=loads(dumps(mongo_obj)),
             mongo_id=str(mongo_obj["_id"]),
             token=mongo_obj["token"],
             expire_time=mongo_obj["expire_time"],
         )
-        pgmRefreshToken.user_id = user_id
-        session.add(pgmRefreshToken)
+        orm_refresh_token.user_id = user_id
+        session.add(orm_refresh_token)
 
 
 def main():
