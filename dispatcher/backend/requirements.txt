@@ -16,6 +16,5 @@ markupsafe==2.0.1
 kiwixstorage>=0.8.1,<0.9
 alembic
 SQLAlchemy>=2.0
-asyncpg
 psycopg>=3.0
 marshmallow-sqlalchemy
