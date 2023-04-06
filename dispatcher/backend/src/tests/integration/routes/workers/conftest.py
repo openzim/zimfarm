@@ -15,6 +15,7 @@ def make_worker(database):
         username: str = "some-user",
         last_seen: datetime = getnow(),
         resources: dict = None,
+        last_ip: str = "192.168.1.1",
     ) -> dict:
         document = {
             "_id": ObjectId(),
@@ -22,6 +23,7 @@ def make_worker(database):
             "username": username,
             "offliners": ["mwoffliner", "youtube"],
             "last_seen": last_seen,
+            "last_ip": last_ip,
             "status": "online",
             "resources": {"cpu": 3, "memory": 1024, "disk": 1024},
         }
@@ -44,6 +46,7 @@ def workers(make_worker, make_config, make_language):
     workers = []
     for index in range(38):
         name = "worker_{}".format(index)
-        worker = make_worker(name)
+        last_ip = f"192.168.1.{index}"
+        worker = make_worker(name, last_ip=last_ip)
         workers.append(worker)
     return workers
