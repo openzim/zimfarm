@@ -247,6 +247,15 @@ class ZimitFlagsSchema(SerializableSchema):
         },
     )
 
+    max_page_limit = fields.Integer(
+        metadata={
+            "label": "Max Page Limit",
+            "description": "Maximum pages to crawl, overriding pageLimit "
+            "if both are set. Defaults to 0",
+        },
+        required=False,
+    )
+
     scope_type = StringEnum(
         metadata={
             "label": "Scope Type",
@@ -349,6 +358,16 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
+    delay = fields.Integer(
+        metadata={
+            "label": "Page Extra Delay",
+            "description": "If >0, amount of time to sleep (in seconds) "
+            "after behaviors before moving on to next page. Defaults to 0",
+        },
+        data_key="delay",
+        required=False,
+    )
+
     size_limit = fields.Integer(
         metadata={
             "label": "Size Limit",
@@ -356,6 +375,16 @@ class ZimitFlagsSchema(SerializableSchema):
             "if size limit exceeds this value, in bytes",
         },
         data_key="sizeLimit",
+        required=False,
+    )
+
+    disk_utilization = fields.Integer(
+        metadata={
+            "label": "Disk Utilization",
+            "description": "If set, save state and exit if disk utilization exceeds "
+            "this percentage value. Defaults to 90",
+        },
+        data_key="diskUtilization",
         required=False,
     )
 
