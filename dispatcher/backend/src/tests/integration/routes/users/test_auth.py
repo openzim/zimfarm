@@ -56,7 +56,7 @@ class TestAuthentication:
         response = client.post(
             "/auth/oauth2",
             headers=headers,
-            data=f"refresh_token={refresh_token}&grant_type=refresh_token",
+            data={"refresh_token": refresh_token, "grant_type": "refresh_token"},
         )
         assert response.status_code == 200
 
