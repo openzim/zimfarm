@@ -7,10 +7,12 @@ from common.roles import get_role_for
 
 
 class BaseSchema(SQLAlchemySchema):
-    SKIP_VALUES = set([None])
-
     @post_dump
     def remove_skip_values(self, data, **kwargs):
+        """This function is associated with the `post_dump` hook of marshmallow.
+        It is responsible to remove all dictionary keys which do not have a value
+        in order to avoid too verbose JSON when many keys are indeed not set.
+        """
         if isinstance(data, (list, tuple, set)):
             return type(data)(self.remove_skip_values(x) for x in data if x)
         elif isinstance(data, dict):
