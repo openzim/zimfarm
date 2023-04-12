@@ -13,10 +13,12 @@ from marshmallow import ValidationError
 
 import common.schemas.orms as cso
 import db.models as dbm
+import errors.http as http_errors
 from common.schemas.parameters import KeySchema
 from db.engine import Session
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
+from routes.utils import raise_if_none
 from utils.token import AccessToken
 
 
@@ -41,8 +43,7 @@ class KeysRoute(BaseRoute):
                 .options(so.selectinload(dbm.User.ssh_keys))
             ).scalar_one_or_none()
 
-            if orm_user is None:
-                raise errors.NotFound()
+            raise_if_none(orm_user, errors.NotFound)
 
             return jsonify(list(map(cso.SshKeyRead().dump, orm_user.ssh_keys)))
 
@@ -57,7 +58,7 @@ class KeysRoute(BaseRoute):
         try:
             request_json = KeySchema().load(request.get_json())
         except ValidationError as e:
-            raise errors.InvalidRequestJSON(e.messages)
+            raise http_errors.InvalidRequestJSON(e.messages)
 
         # parse public key string
         key = request_json["key"]
@@ -194,7 +195,8 @@ class KeyRoute(BaseRoute):
                 .where(dbm.Sshkey.fingerprint == fingerprint)
                 .returning(dbm.Sshkey.id)
             ).scalar_one_or_none()
-            if orm_ssh_key is None:
-                raise errors.NotFound("No SSH key with this fingerprint")
+            raise_if_none(
+                orm_ssh_key, errors.NotFound, "No SSH key with this fingerprint"
+            )
 
         return Response(status=HTTPStatus.NO_CONTENT)

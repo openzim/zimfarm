@@ -9,9 +9,11 @@ from flask import Response, request
 from marshmallow import Schema, ValidationError, fields, validate
 
 import db.models as dbm
+import errors.http as http_errors
 from common import getnow
 from db.engine import Session
 from routes import errors
+from routes.utils import raise_if_none
 
 
 def ssh_key():
@@ -32,7 +34,7 @@ def _ssh_key_inner(session: so.Session):
     try:
         request_json = KeySchema().load(request.get_json())
     except ValidationError as e:
-        raise errors.InvalidRequestJSON(e.messages)
+        raise http_errors.InvalidRequestJSON(e.messages)
 
     # compute fingerprint
     try:
@@ -50,7 +52,6 @@ def _ssh_key_inner(session: so.Session):
         .where(dbm.User.username == username)
         .where(dbm.Sshkey.fingerprint == fingerprint)
     ).scalar_one_or_none()
-    if orm_ssh_key is None:
-        raise errors.Unauthorized()
+    raise_if_none(orm_ssh_key, errors.Unauthorized)
     orm_ssh_key.last_used = getnow()
     return Response(status=HTTPStatus.NO_CONTENT)
