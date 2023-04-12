@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash
 
 import db.models as dbm
 from common import getnow
-from db.engine import Session
+from db.session import dbsession
 from routes import API_PATH, authenticate
 from routes.auth import ssh, validate
 from routes.auth.oauth2 import OAuth2
@@ -17,17 +17,13 @@ from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
-def credentials():
+@dbsession
+def credentials(session: so.Session):
     """
     Authorize a user with username and password
     When success, return json object with access and refresh token
     """
-    with Session.begin() as session:
-        res = _credentials_inner(session)
-    return res
 
-
-def _credentials_inner(session: so.Session):
     # get username and password from request header
     if "application/x-www-form-urlencoded" in request.content_type:
         username = request.form.get("username")
@@ -65,18 +61,14 @@ def _credentials_inner(session: so.Session):
     return response
 
 
-def refresh_token():
+@dbsession
+def refresh_token(session: so.Session):
     """
     Issue a new set of access and refresh token after validating an old refresh token
     Old refresh token can only be used once and hence is removed from database
     Unused but expired refresh token is also deleted from database
     """
-    with Session.begin() as session:
-        res = _refresh_token_inner(session)
-    return res
 
-
-def _refresh_token_inner(session: so.Session):
     # get old refresh token from request header
     old_token = request.headers.get("refresh-token")
     raise_if_none(old_token, BadRequest, "missing refresh-token")
