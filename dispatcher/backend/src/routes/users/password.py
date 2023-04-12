@@ -38,7 +38,7 @@ class PasswordRoute(BaseRoute):
                     raise errors.BadRequest()
 
                 # check current password is valid
-                is_valid = check_password_hash(orm_user.password_hash, "bob")
+                is_valid = check_password_hash(orm_user.password_hash, password_current)
                 if not is_valid:
                     raise errors.Unauthorized()
             else:
