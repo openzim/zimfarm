@@ -44,9 +44,7 @@ class KeysRoute(BaseRoute):
             if orm_user is None:
                 raise errors.NotFound()
 
-            api_ssh_keys = list(map(cso.SshKeyRead().dump, orm_user.ssh_keys))
-
-        return jsonify(api_ssh_keys)
+            return jsonify(list(map(cso.SshKeyRead().dump, orm_user.ssh_keys)))
 
     @authenticate
     @url_object_id(["username"])
@@ -152,22 +150,22 @@ class KeyRoute(BaseRoute):
             if username != "-":
                 stmt = stmt.where(dbm.User.username == username)
 
-            data = session.execute(stmt).fetchone()
+            user_with_key = session.execute(stmt).fetchone()
 
             # no user means no matching SSH key for fingerprint
-            if not data:
+            if not user_with_key:
                 raise errors.NotFound()
 
             for permission in requested_permissions:
                 namespace, perm_name = permission.split(".", 1)
-                if not data.scope.get(namespace, {}).get(perm_name):
+                if not user_with_key.scope.get(namespace, {}).get(perm_name):
                     raise errors.NotEnoughPrivilege(permission)
 
             payload = {
-                "username": data.username,
-                "key": data.key,
-                "type": data.type,
-                "name": data.name,
+                "username": user_with_key.username,
+                "key": user_with_key.key,
+                "type": user_with_key.type,
+                "name": user_with_key.name,
             }
 
         return jsonify(payload)
