@@ -12,7 +12,7 @@ from flask import jsonify, request
 
 import db.models as dbm
 from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
-from db.engine import Session
+from db.session import dbsession
 from routes import errors
 from routes.auth.oauth2 import OAuth2
 from routes.utils import raise_if, raise_if_none
@@ -21,7 +21,8 @@ from utils.token import AccessToken
 logger = logging.getLogger(__name__)
 
 
-def asymmetric_key_auth():
+@dbsession
+def asymmetric_key_auth(session: so.Session):
     """authenticate using signed message and generate tokens
 
     - message in X-SSHAuth-Message HTTP header
@@ -31,12 +32,7 @@ def asymmetric_key_auth():
     - verify username matches our database
     - verify signature of message with username's public keys
     - generate tokens"""
-    with Session.begin() as session:
-        res = _asymmetric_key_auth_inner(session)
-    return res
 
-
-def _asymmetric_key_auth_inner(session: so.Session):
     # check the message's validity
     try:
         message = request.headers["X-SSHAuth-Message"]

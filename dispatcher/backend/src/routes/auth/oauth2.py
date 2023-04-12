@@ -9,20 +9,17 @@ from werkzeug.security import check_password_hash
 
 import db.models as dbm
 from common import getnow
-from db.engine import Session
+from db.session import dbsession
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
 from routes.utils import raise_if, raise_if_none
 from utils.token import LoadedAccessToken
 
 
 class OAuth2:
-    def __call__(self):
+    @dbsession
+    def __call__(self, session: so.Session):
         """Handles OAuth2 authentication"""
-        with Session.begin() as session:
-            res = self.processCallWithSession(session=session)
-        return res
 
-    def processCallWithSession(self, session: so.Session):
         # get grant_type
         if request.is_json:
             grant_type = request.json.get("grant_type")

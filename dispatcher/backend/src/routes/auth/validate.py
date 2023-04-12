@@ -11,21 +11,16 @@ from marshmallow import Schema, ValidationError, fields, validate
 import db.models as dbm
 import errors.http as http_errors
 from common import getnow
-from db.engine import Session
+from db.session import dbsession
 from routes import errors
 from routes.utils import raise_if_none
 
 
-def ssh_key():
+def ssh_key(session: so.Session):
     """
     Validate ssh public keys exists and matches with username
     """
-    with Session.begin() as session:
-        res = _ssh_key_inner(session)
-    return res
 
-
-def _ssh_key_inner(session: so.Session):
     # validate request json
     class KeySchema(Schema):
         username = fields.String(required=True, validate=validate.Length(min=1))

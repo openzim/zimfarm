@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash
 
 import db.models as dbm
 from common.roles import ROLES
-from db.engine import Session
+from db.session import Session
 
 
 @pytest.fixture(scope="module")
