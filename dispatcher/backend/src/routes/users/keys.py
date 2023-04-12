@@ -43,7 +43,7 @@ class KeysRoute(BaseRoute):
             .options(so.selectinload(dbm.User.ssh_keys))
         ).scalar_one_or_none()
 
-        raise_if_none(orm_user, errors.NotFound)
+        raise_if_none(orm_user, errors.NotFound())
 
         return jsonify(list(map(cso.SshKeyRead().dump, orm_user.ssh_keys)))
 
@@ -199,6 +199,6 @@ class KeyRoute(BaseRoute):
             .where(dbm.Sshkey.fingerprint == fingerprint)
             .returning(dbm.Sshkey.id)
         ).scalar_one_or_none()
-        raise_if_none(orm_ssh_key, errors.NotFound, "No SSH key with this fingerprint")
+        raise_if_none(orm_ssh_key, errors.NotFound("No SSH key with this fingerprint"))
 
         return Response(status=HTTPStatus.NO_CONTENT)

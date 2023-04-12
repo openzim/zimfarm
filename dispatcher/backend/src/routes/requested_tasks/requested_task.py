@@ -242,7 +242,7 @@ class RequestedTaskRoute(BaseRoute):
     @url_object_id("requested_task_id")
     def get(self, requested_task_id: str):
         requested_task = RequestedTasks().find_one({"_id": requested_task_id})
-        raise_if_none(requested_task, TaskNotFound)
+        raise_if_none(requested_task, TaskNotFound())
 
         return jsonify(requested_task)
 
@@ -251,7 +251,7 @@ class RequestedTaskRoute(BaseRoute):
     @url_object_id("requested_task_id")
     def patch(self, requested_task_id: str, token: AccessToken.Payload):
         requested_task = RequestedTasks().count_documents({"_id": requested_task_id})
-        raise_if(not requested_task, TaskNotFound)
+        raise_if(not requested_task, TaskNotFound())
 
         try:
             request_json = UpdateRequestedTaskSchema().load(request.get_json())
@@ -272,7 +272,7 @@ class RequestedTaskRoute(BaseRoute):
     def delete(self, requested_task_id: str, token: AccessToken.Payload):
         query = {"_id": requested_task_id}
         task = RequestedTasks().find_one(query, {"_id": 1})
-        raise_if_none(task, TaskNotFound)
+        raise_if_none(task, TaskNotFound())
 
         result = RequestedTasks().delete_one(query)
         return jsonify({"deleted": result.deleted_count})

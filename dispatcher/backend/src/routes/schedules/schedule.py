@@ -119,7 +119,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
 
         query = {"name": schedule_name}
         schedule = Schedules().find_one(query, {"_id": 0})
-        raise_if_none(schedule, ScheduleNotFound)
+        raise_if_none(schedule, ScheduleNotFound())
 
         schedule["config"] = expanded_config(schedule["config"])
         if not token or not token.get_permission("schedules", "update"):
@@ -134,18 +134,17 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
 
         query = {"name": schedule_name}
         schedule = Schedules().find_one(query, {"config.task_name": 1})
-        raise_if(not schedule, ScheduleNotFound)
+        raise_if(not schedule, ScheduleNotFound())
         try:
             update = UpdateSchema().load(request.get_json())  # , partial=True
             # empty dict passes the validator but troubles mongo
-            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
+            raise_if(not request.get_json(), ValidationError("Update can't be empty"))
 
             # ensure we test flags according to new task_name if present
             if "task_name" in update:
                 raise_if(
                     "flags" not in update,
-                    ValidationError,
-                    "Can't update offliner without updating flags",
+                    ValidationError("Can't update offliner without updating flags"),
                 )
                 flags_schema = ScheduleConfigSchema.get_offliner_schema(
                     update["task_name"]
@@ -163,8 +162,9 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         if "name" in update:
             raise_if(
                 Schedules().count_documents({"name": update["name"]}),
-                BadRequest,
-                "Schedule with name `{}` already exists".format(update["name"]),
+                BadRequest(
+                    "Schedule with name `{}` already exists".format(update["name"])
+                ),
             )
 
         config_keys = [
@@ -208,7 +208,7 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
         query = {"name": schedule_name}
         result = Schedules().delete_one(query)
 
-        raise_if(result.deleted_count == 0, ScheduleNotFound)
+        raise_if(result.deleted_count == 0, ScheduleNotFound())
         return Response(status=HTTPStatus.NO_CONTENT)
 
 
@@ -245,7 +245,7 @@ class ScheduleImageNames(BaseRoute):
             logger.error(f"Unable to connect to GHCR Tags list: {exc}")
             return make_resp([])
 
-        raise_if(resp.status_code == HTTPStatus.NOT_FOUND, ResourceNotFound)
+        raise_if(resp.status_code == HTTPStatus.NOT_FOUND, ResourceNotFound())
 
         if resp.status_code != HTTPStatus.OK:
             logger.error(f"GHCR responded HTTP {resp.status_code} for {hub_name}")
@@ -281,8 +281,9 @@ class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
         # ensure it's not a duplicate
         raise_if(
             Schedules().find_one({"name": new_schedule_name}, {"name": 1}),
-            BadRequest,
-            "schedule with name `{}` already exists".format(new_schedule_name),
+            BadRequest(
+                "schedule with name `{}` already exists".format(new_schedule_name)
+            ),
         )
 
         schedule.pop("_id", None)

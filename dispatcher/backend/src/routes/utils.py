@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any
 
 from common.constants import SECRET_REPLACEMENT
 from common.schemas.models import ScheduleConfigSchema
@@ -32,14 +32,10 @@ def remove_secrets_from_response(response: dict):
         )
 
 
-def raise_if_none(
-    object_to_check: Any, exception_class: Type[Exception], *exception_args: object
-) -> None:
-    raise_if(object_to_check is None, exception_class, exception_args)
+def raise_if_none(object_to_check: Any, exception: Exception) -> None:
+    raise_if(object_to_check is None, exception)
 
 
-def raise_if(
-    condition: bool, exception_class: Type[Exception], *exception_args: object
-) -> None:
+def raise_if(condition: bool, exception: Exception) -> None:
     if condition:
-        raise exception_class(*exception_args)
+        raise exception
