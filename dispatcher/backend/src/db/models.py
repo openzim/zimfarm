@@ -15,7 +15,19 @@ from sqlalchemy.sql.schema import MetaData
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
-    type_annotation_map = {Dict[str, Any]: JSONB, datetime: DateTime(timezone=False)}
+    # This map details the specific transformation of types between Python and
+    # PostgreSQL. This is only needed for the case where a specific PostgreSQL
+    # type has to be used or when we want to ensure a specific setting (like the
+    # timezone below)
+    type_annotation_map = {
+        Dict[str, Any]: JSONB,  # transform Python Dict[str, Any] into PostgreSQL JSONB
+        datetime: DateTime(
+            timezone=False
+        ),  # transform Python datetime into PostgreSQL Datetime without timezone
+    }
+
+    # This metadata specifies some naming conventions that will be used by
+    # alembic to generate constraints names (indexes, unique constraints, ...)
     metadata = MetaData(
         naming_convention={
             "ix": "ix_%(column_0_label)s",

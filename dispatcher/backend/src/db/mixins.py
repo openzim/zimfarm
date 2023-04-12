@@ -1,4 +1,5 @@
-# temporary mixin, see https://docs.sqlalchemy.org/en/20/orm/dataclasses.html
+# temporary mixin for mypy type checker,
+# see https://docs.sqlalchemy.org/en/20/orm/dataclasses.html
 
 import typing
 
