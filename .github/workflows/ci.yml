@@ -53,14 +53,6 @@ jobs:
         with:
           mongoDBVersion: "4.2"
 
-      # - name: Install PostgreSQL
-      #   uses: harmon758/postgresql-action@v1
-      #   with:
-      #     postgresql version: '15.2'
-      #     postgresql db: zimtest
-      #     postgresql user: zimfarm
-      #     postgresql password: Z8tGs^QhCBgM
-
       - name: Retrieve source code
         uses: actions/checkout@v3
 
