@@ -93,7 +93,7 @@ class TaskRoute(BaseRoute):
         )
 
         task = Tasks().find_one({"_id": task_id}, projection)
-        raise_if_none(task, TaskNotFound)
+        raise_if_none(task, TaskNotFound())
 
         task["updated_at"] = task["events"][-1]["timestamp"]
 
@@ -114,7 +114,7 @@ class TaskRoute(BaseRoute):
             )
 
         requested_task = RequestedTasks().find_one({"_id": task_id})
-        raise_if_none(requested_task, TaskNotFound)
+        raise_if_none(requested_task, TaskNotFound())
 
         request_args = TaskCreateSchema().load(request.args.to_dict())
 
@@ -160,12 +160,12 @@ class TaskRoute(BaseRoute):
     @url_object_id("task_id")
     def patch(self, task_id: str, token: AccessToken.Payload):
         task = Tasks().find_one({"_id": task_id}, {"_id": 1})
-        raise_if_none(task, TaskNotFound)
+        raise_if_none(task, TaskNotFound())
 
         try:
             request_json = TasKUpdateSchema().load(request.get_json())
             # empty dict passes the validator but troubles mongo
-            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
+            raise_if(not request.get_json(), ValidationError("Update can't be empty"))
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
@@ -190,7 +190,7 @@ class TaskCancelRoute(BaseRoute):
         task = Tasks().find_one(
             {"status": {"$in": TaskStatus.incomplete()}, "_id": task_id}, {"_id": 1}
         )
-        raise_if_none(task, TaskNotFound)
+        raise_if_none(task, TaskNotFound())
 
         task_event_handler(
             task["_id"], TaskStatus.cancel_requested, {"canceled_by": token.username}

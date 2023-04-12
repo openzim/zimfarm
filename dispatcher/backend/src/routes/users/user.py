@@ -101,7 +101,7 @@ class UserRoute(BaseRoute):
             .options(so.selectinload(dbm.User.ssh_keys))
         ).scalar_one_or_none()
 
-        raise_if_none(orm_user, errors.NotFound)
+        raise_if_none(orm_user, errors.NotFound())
 
         api_user = cso.UserSchemaReadOne().dump(orm_user)
 
@@ -118,7 +118,7 @@ class UserRoute(BaseRoute):
             sa.select(dbm.User).where(dbm.User.username == username)
         ).scalar_one_or_none()
 
-        raise_if_none(orm_user, errors.NotFound)
+        raise_if_none(orm_user, errors.NotFound())
 
         if "email" in request_json:
             orm_user.email = request_json["email"]
@@ -137,7 +137,7 @@ class UserRoute(BaseRoute):
         orm_user = session.execute(
             sa.select(dbm.User).where(dbm.User.username == username)
         ).scalar_one_or_none()
-        raise_if_none(orm_user, errors.NotFound)
+        raise_if_none(orm_user, errors.NotFound())
         session.delete(orm_user)
 
         # TODO: Delete workers associated with current user as well

@@ -42,13 +42,11 @@ class OAuth2:
 
             raise_if_none(
                 username,
-                InvalidRequest,
-                'Request was missing the "username" parameter.',
+                InvalidRequest('Request was missing the "username" parameter.'),
             )
             raise_if_none(
                 password,
-                InvalidRequest,
-                'Request was missing the "password" parameter.',
+                InvalidRequest('Request was missing the "password" parameter.'),
             )
 
             return self.password_grant(username, password, session)
@@ -64,8 +62,7 @@ class OAuth2:
 
             raise_if_none(
                 refresh_token,
-                InvalidRequest,
-                'Request was missing the "refresh_token" parameter.',
+                InvalidRequest('Request was missing the "refresh_token" parameter.'),
             )
 
             try:
@@ -87,11 +84,11 @@ class OAuth2:
             sa.select(dbm.User).where(dbm.User.username == username)
         ).scalar_one_or_none()
         # check user exists
-        raise_if_none(orm_user, InvalidGrant, "Username or password is invalid.")
+        raise_if_none(orm_user, InvalidGrant("Username or password is invalid."))
 
         # check password is valid
         is_valid = check_password_hash(orm_user.password_hash, password)
-        raise_if(not is_valid, InvalidGrant, "Username or password is invalid.")
+        raise_if(not is_valid, InvalidGrant("Username or password is invalid."))
 
         # generate token
         access_token = LoadedAccessToken(
@@ -111,17 +108,17 @@ class OAuth2:
                 dbm.Refreshtoken.token == old_refresh_token
             )
         ).scalar_one_or_none()
-        raise_if_none(old_token_document, InvalidGrant, "Refresh token is invalid.")
+        raise_if_none(old_token_document, InvalidGrant("Refresh token is invalid."))
 
         # check token is not expired
         expire_time = old_token_document.expire_time
-        raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
+        raise_if(expire_time < getnow(), InvalidGrant("Refresh token is expired."))
 
         # check user exists
         orm_user = session.execute(
             sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
         ).scalar_one_or_none()
-        raise_if_none(orm_user, InvalidGrant, "Refresh token is invalid.")
+        raise_if_none(orm_user, InvalidGrant("Refresh token is invalid."))
 
         # generate token
         access_token = LoadedAccessToken(

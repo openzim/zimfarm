@@ -46,6 +46,6 @@ def ssh_key(session: so.Session):
         .where(dbm.User.username == username)
         .where(dbm.Sshkey.fingerprint == fingerprint)
     ).scalar_one_or_none()
-    raise_if_none(orm_ssh_key, errors.Unauthorized)
+    raise_if_none(orm_ssh_key, errors.Unauthorized())
     orm_ssh_key.last_used = getnow()
     return Response(status=HTTPStatus.NO_CONTENT)
