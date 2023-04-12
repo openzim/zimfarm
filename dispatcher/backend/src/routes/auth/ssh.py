@@ -15,6 +15,7 @@ from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
 from db.engine import Session
 from routes import errors
 from routes.auth.oauth2 import OAuth2
+from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -61,8 +62,9 @@ def _asymmetric_key_auth_inner(session: so.Session):
         .where(dbm.User.username == username)
         .options(so.selectinload(dbm.User.ssh_keys))
     ).scalar_one_or_none()
-    if orm_user is None:
-        raise errors.Unauthorized("User not found")  # we shall never get there
+    raise_if_none(
+        orm_user, errors.Unauthorized, "User not found"
+    )  # we shall never get there
 
     # check that the message was signed with a known private key
     authenticated = False
@@ -105,8 +107,11 @@ def _asymmetric_key_auth_inner(session: so.Session):
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
                 break
-    if not authenticated:
-        raise errors.Unauthorized("Could not find matching key for signature")
+    raise_if(
+        not authenticated,
+        errors.Unauthorized,
+        "Could not find matching key for signature",
+    )
 
     # we're now authenticated ; generate access token
     access_token = AccessToken.encode_db(orm_user)

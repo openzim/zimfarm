@@ -1,3 +1,5 @@
+from typing import Any, Type
+
 from common.constants import SECRET_REPLACEMENT
 from common.schemas.models import ScheduleConfigSchema
 from utils.offliners import build_str_command
@@ -28,3 +30,16 @@ def remove_secrets_from_response(response: dict):
         response["config"]["str_command"] = build_str_command(
             response["config"]["command"]
         )
+
+
+def raise_if_none(
+    object_to_check: Any, exception_class: Type[Exception], *exception_args: object
+) -> None:
+    raise_if(object_to_check is None, exception_class, exception_args)
+
+
+def raise_if(
+    condition: bool, exception_class: Type[Exception], *exception_args: object
+) -> None:
+    if condition:
+        raise exception_class(*exception_args)
