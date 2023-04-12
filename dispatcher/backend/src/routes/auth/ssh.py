@@ -12,7 +12,7 @@ from flask import jsonify, request
 
 import db.models as dbm
 from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
-from db.session import dbsession
+from db import dbsession
 from routes import errors
 from routes.auth.oauth2 import OAuth2
 from routes.utils import raise_if, raise_if_none

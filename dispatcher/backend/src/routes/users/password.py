@@ -5,7 +5,7 @@ from flask import Response, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db.models as dbm
-from db.session import dbsession
+from db import dbsession
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
 from routes.utils import raise_if, raise_if_none
