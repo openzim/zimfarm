@@ -16,7 +16,7 @@ from common.schemas.parameters import (
     UserCreateSchema,
     UserUpdateSchema,
 )
-from db.session import dbsession
+from db import dbsession
 from routes import authenticate, errors, require_perm, url_object_id
 from routes.base import BaseRoute
 from routes.utils import raise_if_none

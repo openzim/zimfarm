@@ -11,7 +11,6 @@ from marshmallow import Schema, ValidationError, fields, validate
 import db.models as dbm
 import errors.http as http_errors
 from common import getnow
-from db.session import dbsession
 from routes import errors
 from routes.utils import raise_if_none
 

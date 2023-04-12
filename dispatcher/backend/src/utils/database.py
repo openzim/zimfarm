@@ -9,7 +9,7 @@ from werkzeug.security import generate_password_hash
 import db.models as dbm
 from common import mongo
 from common.roles import ROLES
-from db.session import dbsession
+from db import dbsession
 
 logger = logging.getLogger(__name__)
 

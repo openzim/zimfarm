@@ -15,7 +15,7 @@ import common.schemas.orms as cso
 import db.models as dbm
 import errors.http as http_errors
 from common.schemas.parameters import KeySchema
-from db.session import dbsession
+from db import dbsession
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
 from routes.utils import raise_if_none

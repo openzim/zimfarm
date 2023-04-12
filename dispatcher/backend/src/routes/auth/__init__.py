@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash
 
 import db.models as dbm
 from common import getnow
-from db.session import dbsession
+from db import dbsession
 from routes import API_PATH, authenticate
 from routes.auth import ssh, validate
 from routes.auth.oauth2 import OAuth2

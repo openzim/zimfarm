@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash
 
 import db.models as dbm
 from common import getnow
-from db.session import dbsession
+from db import dbsession
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
 from routes.utils import raise_if, raise_if_none
 from utils.token import LoadedAccessToken
