@@ -120,6 +120,7 @@ def make_user(database):
             user.scope = ROLES.get(role)
         with Session.begin() as session:
             session.add(user)
+            session.flush()
             user_id = user.id
             user_ids.append(user_id)
             res_obj = {
