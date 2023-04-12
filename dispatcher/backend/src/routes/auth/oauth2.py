@@ -96,7 +96,6 @@ class OAuth2:
         ).encode()
         refresh_token = OAuth2.generate_refresh_token(orm_user.id, session)
 
-        session.flush()
         return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
@@ -136,7 +135,6 @@ class OAuth2:
             sa.delete(dbm.Refreshtoken).where(dbm.Refreshtoken.expire_time < getnow())
         )
 
-        session.flush()
         return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
