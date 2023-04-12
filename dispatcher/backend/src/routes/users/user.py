@@ -3,11 +3,13 @@ from http import HTTPStatus
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import Response, jsonify, request
+from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
 import common.schemas.orms as cso
 import db.models as dbm
+import errors.http as http_errors
 from common.roles import ROLES
 from common.schemas.parameters import (
     SkipLimitSchema,
@@ -51,7 +53,10 @@ class UsersRoute(BaseRoute):
     @authenticate
     @require_perm("users", "create")
     def post(self, token: AccessToken.Payload):
-        request_json = UserCreateSchema().load(request.get_json())
+        try:
+            request_json = UserCreateSchema().load(request.get_json())
+        except ValidationError as e:
+            raise http_errors.InvalidRequestJSON(e.messages)
 
         with Session.begin() as session:
             orm_user = dbm.User(
