@@ -59,7 +59,7 @@ def asymmetric_key_auth(session: so.Session):
         .options(so.selectinload(dbm.User.ssh_keys))
     ).scalar_one_or_none()
     raise_if_none(
-        orm_user, errors.Unauthorized("User not found")
+        orm_user, errors.Unauthorized, "User not found"
     )  # we shall never get there
 
     # check that the message was signed with a known private key
@@ -105,7 +105,8 @@ def asymmetric_key_auth(session: so.Session):
                 break
     raise_if(
         not authenticated,
-        errors.Unauthorized("Could not find matching key for signature"),
+        errors.Unauthorized,
+        "Could not find matching key for signature",
     )
 
     # we're now authenticated ; generate access token
