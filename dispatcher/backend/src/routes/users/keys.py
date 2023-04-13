@@ -3,17 +3,22 @@ import binascii
 import os
 import subprocess
 import tempfile
-from datetime import datetime
 from http import HTTPStatus
 
 import paramiko
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from marshmallow import ValidationError
 
-from common.mongo import Users
+import common.schemas.orms as cso
+import db.models as dbm
+import errors.http as http_errors
 from common.schemas.parameters import KeySchema
+from db import dbsession
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
+from routes.utils import raise_if_none
 from utils.token import AccessToken
 
 
@@ -23,23 +28,25 @@ class KeysRoute(BaseRoute):
     methods = ["GET", "POST"]
 
     @authenticate
+    @dbsession
     @url_object_id("username")
-    def get(self, username: str, token: AccessToken.Payload):
+    def get(self, username: str, token: AccessToken.Payload, session: so.Session):
         # if user in url is not user in token, check user permission
         if username != token.username:
             if not token.get_permission("users", "ssh_keys"):
                 raise errors.NotEnoughPrivilege()
 
-        user = Users().find_one({"username": username}, {"ssh_keys": 1})
-        if user is None:
-            raise errors.NotFound()
+        # find user based on username
+        orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
 
-        ssh_keys = user.get("ssh_keys", [])
-        return jsonify(ssh_keys)
+        raise_if_none(orm_user, errors.NotFound)
+
+        return jsonify(list(map(cso.SshKeyRead().dump, orm_user.ssh_keys)))
 
     @authenticate
+    @dbsession
     @url_object_id(["username"])
-    def post(self, username: str, token: AccessToken.Payload):
+    def post(self, username: str, token: AccessToken.Payload, session: so.Session):
         # if user in url is not user in token, not allowed to add ssh keys
         if username != token.username:
             if not token.get_permission("users", "ssh_keys"):
@@ -48,7 +55,7 @@ class KeysRoute(BaseRoute):
         try:
             request_json = KeySchema().load(request.get_json())
         except ValidationError as e:
-            raise errors.InvalidRequestJSON(e.messages)
+            raise http_errors.InvalidRequestJSON(e.messages)
 
         # parse public key string
         key = request_json["key"]
@@ -63,33 +70,25 @@ class KeysRoute(BaseRoute):
         except (binascii.Error, paramiko.SSHException):
             raise errors.BadRequest("Invalid RSA key")
 
-        # get existing ssh key fingerprints
-        query = {"username": username}
-        user = Users().find_one(query, {"ssh_keys.fingerprint": 1})
-        if user is None:
-            raise errors.NotFound()
+        # find out if user exist
+        current_user_id = dbm.User.get_id_or_none(session, username)
+
+        if not current_user_id:
+            raise errors.NotFound("User not found")
 
         # find out if new ssh already exist
-        fingerprints = set(
-            [ssh_key["fingerprint"] for ssh_key in user.get("ssh_keys", [])]
-        )
-        if fingerprint in fingerprints:
-            raise errors.BadRequest("SSH key already exists")
+        orm_ssh_key = session.execute(
+            sa.select(dbm.Sshkey)
+            .where(dbm.Sshkey.user_id == current_user_id)
+            .where(dbm.Sshkey.fingerprint == fingerprint)
+        ).scalar_one_or_none()
 
-        # add new ssh key to database
-        ssh_key = {
-            "name": request_json["name"],
-            # ssh-keygen -l -f xxx.pub -E md5 - just data, without dots
-            "fingerprint": fingerprint,
-            "key": key,
-            "type": "RSA",
-            "added": datetime.now(),
-            "last_used": None,
-        }
+        if orm_ssh_key:
+            raise errors.BadRequest("SSH key already exists")
 
         # get PKCS8 - ssh-keygen -e -f xxx.priv -m PKCS8
         with tempfile.NamedTemporaryFile(mode="w", suffix=".pub", delete=False) as fp:
-            fp.write("ssh-rsa {} {}\n".format(ssh_key["key"], ssh_key["name"]))
+            fp.write("ssh-rsa {} {}\n".format(key, request_json["name"]))
         keygen = subprocess.run(
             ["/usr/bin/ssh-keygen", "-e", "-f", fp.name, "-m", "PKCS8"],
             capture_output=True,
@@ -97,10 +96,23 @@ class KeysRoute(BaseRoute):
         )
         if keygen.returncode != 0:
             raise errors.BadRequest(keygen.stderr)
-        ssh_key.update({"pkcs8_key": keygen.stdout})
+        pkcs8_key = keygen.stdout
         os.unlink(fp.name)
 
-        Users().update_one(query, {"$push": {"ssh_keys": ssh_key}})
+        # add new ssh key to database
+        ssh_key = dbm.Sshkey(
+            mongo_val=None,
+            name=request_json["name"],
+            fingerprint=fingerprint,
+            key=key,
+            type="RSA",
+            added=sa.func.current_timestamp(),
+            last_used=None,
+            pkcs8_key=pkcs8_key,
+        )
+        ssh_key.user_id = current_user_id
+
+        session.add(ssh_key)
 
         return Response(status=HTTPStatus.CREATED)
 
@@ -112,65 +124,73 @@ class KeyRoute(BaseRoute):
 
     @url_object_id("username")
     @url_object_id("fingerprint")
-    def get(self, username: str, fingerprint: str):
+    @dbsession
+    def get(self, username: str, fingerprint: str, session: so.Session):
         # list of permission to test the matching user against
         requested_permissions = request.args.getlist("with_permission") or []
 
-        query = {}
-        # request using `-` as username searchs on all users
-        if username != "-":
-            query.update({"username": username})
-
-        query.update({"ssh_keys.fingerprint": fingerprint})
-
-        # database
-        user = Users().find_one(
-            query,
-            {
-                "username": 1,
-                "scope": 1,
-                "ssh_keys": 1,
-            },
+        stmt = (
+            sa.select(
+                dbm.Sshkey.type,
+                dbm.Sshkey.name,
+                dbm.Sshkey.key,
+                dbm.User.username,
+                dbm.User.scope,
+            )
+            .join_from(dbm.Sshkey, dbm.User)
+            .where(dbm.Sshkey.fingerprint == fingerprint)
         )
+        if username != "-":
+            stmt = stmt.where(dbm.User.username == username)
+
+        user_with_key = session.execute(stmt).fetchone()
 
         # no user means no matching SSH key for fingerprint
-        if not user:
+        if not user_with_key:
             raise errors.NotFound()
-
-        key = [key for key in user["ssh_keys"] if key["fingerprint"] == fingerprint][-1]
 
         for permission in requested_permissions:
             namespace, perm_name = permission.split(".", 1)
-            if not user.get("scope", {}).get(namespace, {}).get(perm_name):
+            if not user_with_key.scope.get(namespace, {}).get(perm_name):
                 raise errors.NotEnoughPrivilege(permission)
 
         payload = {
-            "username": user["username"],
-            "key": key["key"],
-            "type": key["type"],
-            "name": key["name"],
+            "username": user_with_key.username,
+            "key": user_with_key.key,
+            "type": user_with_key.type,
+            "name": user_with_key.name,
         }
 
         return jsonify(payload)
 
     @authenticate
+    @dbsession
     @url_object_id("username")
     @url_object_id("fingerprint")
-    def delete(self, username: str, fingerprint: str, token: AccessToken.Payload):
+    def delete(
+        self,
+        username: str,
+        fingerprint: str,
+        token: AccessToken.Payload,
+        session: so.Session,
+    ):
         # if user in url is not user in token, check user permission
         if username != token.username:
             if not token.get_permission("users", "ssh_keys"):
                 raise errors.NotEnoughPrivilege()
 
-        # database
-        result = Users().update_one(
-            {"username": username},
-            {"$pull": {"ssh_keys": {"fingerprint": fingerprint}}},
-        )
+        # find out if user exist
+        current_user_id = dbm.User.get_id_or_none(session, username)
 
-        if result.modified_count > 0:
-            Response(status=HTTPStatus.NO_CONTENT)
-        else:
-            raise errors.NotFound()
+        if not current_user_id:
+            raise errors.NotFound("User not found")
+
+        orm_ssh_key = session.execute(
+            sa.delete(dbm.Sshkey)
+            .where(dbm.Sshkey.user_id == current_user_id)
+            .where(dbm.Sshkey.fingerprint == fingerprint)
+            .returning(dbm.Sshkey.id)
+        ).scalar_one_or_none()
+        raise_if_none(orm_ssh_key, errors.NotFound, "No SSH key with this fingerprint")
 
         return Response(status=HTTPStatus.NO_CONTENT)

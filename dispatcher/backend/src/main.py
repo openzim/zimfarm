@@ -32,12 +32,10 @@ application = Flask(__name__, template_folder=docs_dir)
 application.json_encoder = Encoder
 CORS(application)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG, format="[%(asctime)s: %(levelname)s] %(message)s"
+)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s"))
-logger.addHandler(handler)
 
 
 @application.route(f"{API_PATH}/openapi.yaml")
@@ -81,6 +79,7 @@ BROADCASTER.broadcast_dispatcher_started()
 
 
 if __name__ == "__main__":
+    Initializer.check_if_schema_is_up_to_date()
     Initializer.create_initial_user()
     application.run(
         host=os.getenv("BINDING_HOST", "localhost"),

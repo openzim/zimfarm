@@ -1,0 +1,44 @@
+services:
+  postgresdb:
+    image: postgres:15.2-bullseye
+    ports:
+      - 5432:5432
+    volumes:
+      - pg_data_zimfarm:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=zimfarm
+      - POSTGRES_USER=zimfarm
+      - POSTGRES_PASSWORD=zimpass
+  mongodb:
+    image: mongo:4.2.24-bionic
+    ports:
+      - 27017:27017
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+    depends_on:
+      - mongodb
+  backend:
+    build: ../dispatcher/backend
+    command: python main.py
+    volumes:
+      - ../dispatcher/backend/src:/app
+      - ../dispatcher/backend/docs:/app/docs
+    ports:
+      - 8000:8000
+    environment:
+      BINDING_HOST: 0.0.0.0
+      DEBUG: 1
+      JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
+      MONGODB_URI: mongodb://mongodb:27017
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+    depends_on:
+      - postgresdb
+      - mongodb
+
+volumes:
+  pg_data_zimfarm:

@@ -42,6 +42,24 @@ class TestAuthentication:
 
             self.do_test_token(client, response_json["access_token"])
 
+    def test_oauth2_refresh_token(self, client, user):
+        response = self.do_get_token_with(client, "some-user", "some-password")
+        assert response.status_code == 200
+        response_json = response.get_json()
+        access_token = response_json["access_token"]
+        refresh_token = response_json["refresh_token"]
+
+        headers = {
+            "Authorization": access_token,
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        response = client.post(
+            "/auth/oauth2",
+            headers=headers,
+            data={"refresh_token": refresh_token, "grant_type": "refresh_token"},
+        )
+        assert response.status_code == 200
+
     def test_refresh_token(self, client, user):
         response = self.do_get_token_with(client, "some-user", "some-password")
         assert response.status_code == 200
@@ -56,7 +74,6 @@ class TestAuthentication:
         }
 
         assert client.post("/auth/token", headers=headers).status_code == 200
-        headers["refresh-token"] = "".join(headers["refresh-token"][:-1])
         assert client.post("/auth/token", headers=headers).status_code == 401
 
     @pytest.mark.parametrize(

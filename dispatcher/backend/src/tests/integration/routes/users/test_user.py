@@ -21,6 +21,7 @@ class TestUsersList:
         for item in response_json["items"]:
             assert set(item.keys()) == {
                 "username",
+                "email",
                 "role",
             }
 
