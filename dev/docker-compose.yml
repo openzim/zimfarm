@@ -39,6 +39,32 @@ services:
     depends_on:
       - postgresdb
       - mongodb
+  backend-tools:
+    build:
+      dockerfile: ../../dev/backend-tools/Dockerfile
+      context: ../dispatcher/backend
+    command: tail -f /dev/null
+    volumes:
+      - ../dispatcher/backend/src:/app
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+    depends_on:
+      - postgresdb
+      - mongodb
+  backend-tests:
+    build:
+      dockerfile: ../../dev/backend-tools/Dockerfile
+      context: ../dispatcher/backend
+    command: tail -f /dev/null
+    volumes:
+      - ../dispatcher/backend/src:/app
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/TestsZF
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
+    depends_on:
+      - postgresdb
+      - mongodb
 
 volumes:
   pg_data_zimfarm:
