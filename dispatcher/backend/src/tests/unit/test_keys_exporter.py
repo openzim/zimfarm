@@ -1,6 +1,6 @@
 import pytest
 
-from utils.keys_exporter import KeysExporter
+from migrate_data_mongo_to_pg import KeysExporter
 
 
 class TestKeysExporters:
