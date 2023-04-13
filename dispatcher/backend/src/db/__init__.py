@@ -15,6 +15,13 @@ else:
 
 
 def dbsession(func):
+    """Decorator to create an SQLAlchemy ORM session object and wrap the function
+    inside the session. A `session` argument is automatically set. Commit is
+    automatically performed when the function finish (and before returning to
+    the caller). Should any exception arise, rollback of the transaction is also
+    automatic.
+    """
+
     def inner(*args, **kwargs):
         with Session.begin() as session:
             kwargs["session"] = session

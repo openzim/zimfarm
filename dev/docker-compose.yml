@@ -1,7 +1,7 @@
 services:
   postgresdb:
     image: postgres:15.2-bullseye
-    ports: 
+    ports:
       - 5432:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
@@ -30,7 +30,7 @@ services:
       - ../dispatcher/backend/docs:/app/docs
     ports:
       - 8000:8000
-    environment: 
+    environment:
       BINDING_HOST: 0.0.0.0
       DEBUG: 1
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
@@ -39,6 +39,6 @@ services:
     depends_on:
       - postgresdb
       - mongodb
-    
+
 volumes:
-    pg_data_zimfarm:
+  pg_data_zimfarm:

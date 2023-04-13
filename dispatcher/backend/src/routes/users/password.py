@@ -26,7 +26,7 @@ class PasswordRoute(BaseRoute):
             sa.select(dbm.User).where(dbm.User.username == username)
         ).scalar_one_or_none()
 
-        raise_if_none(orm_user, errors.NotFound())
+        raise_if_none(orm_user, errors.NotFound)
 
         request_json = request.get_json()
         if username == token.username:
@@ -34,22 +34,22 @@ class PasswordRoute(BaseRoute):
 
             # get current password
             password_current = request_json.get("current", None)
-            raise_if_none(password_current, errors.BadRequest())
+            raise_if_none(password_current, errors.BadRequest)
 
             # check current password is valid
             is_valid = check_password_hash(orm_user.password_hash, password_current)
-            raise_if(not is_valid, errors.Unauthorized())
+            raise_if(not is_valid, errors.Unauthorized)
         else:
             # user is trying to set other user's password
             # check permission
             raise_if(
                 not token.get_permission("users", "change_password"),
-                errors.NotEnoughPrivilege(),
+                errors.NotEnoughPrivilege,
             )
 
         # get new password
         password_new = request_json.get("new", None)
-        raise_if_none(password_new, errors.BadRequest())
+        raise_if_none(password_new, errors.BadRequest)
 
         orm_user.password_hash = generate_password_hash(password_new)
 
