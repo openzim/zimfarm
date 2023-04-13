@@ -151,6 +151,9 @@ class OAuth2:
             token=refresh_token,
             expire_time=getnow() + timedelta(days=30),
         )
+        # we set the user_id explicitely (instead of adding the refresh token to the
+        # list of current user refresh tokens) since it allows to not fetch + keep in
+        # memory all refresh tokens of current users (we don't need it)
         refresh_token_db.user_id = user_id
         session.add(refresh_token_db)
         return refresh_token

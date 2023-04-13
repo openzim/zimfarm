@@ -282,6 +282,10 @@ class RefreshTokenMigrator(Migrator):
             token=mongo_obj["token"],
             expire_time=mongo_obj["expire_time"],
         )
+        # we set the user_id explicitely (instead of adding the refresh token to the
+        # list of current user refresh tokens) since it allows to not keep in memory
+        # all users (no big deal for now) + all refresh tokens (this would consume a
+        # lot of memory)
         orm_refresh_token.user_id = user_id
         session.add(orm_refresh_token)
 
