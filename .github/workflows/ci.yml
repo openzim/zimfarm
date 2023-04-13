@@ -41,14 +41,14 @@ jobs:
         image: postgres:15.2
         env:
           POSTGRES_DB: zimtest
-          POSTGRES_PASSWORD: Z8tGs^QhCBgM
+          POSTGRES_PASSWORD: zimpass
           POSTGRES_PORT: 5432
           POSTGRES_USER: zimfarm
         ports:
           - 5432:5432
 
     env:
-      POSTGRES_URI: postgresql+psycopg://zimfarm:Z8tGs^QhCBgM@localhost:5432/zimtest
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
 
     steps:
       - name: Launch MongoDB
