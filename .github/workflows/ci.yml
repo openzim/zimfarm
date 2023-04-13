@@ -10,6 +10,9 @@ jobs:
   unit-tests:
     runs-on: ubuntu-22.04
 
+    env:
+      POSTGRES_URI: nodb
+
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v3
