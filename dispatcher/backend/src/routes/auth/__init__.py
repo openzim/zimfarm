@@ -33,9 +33,7 @@ def credentials(session: so.Session):
         password = request.headers.get("password")
     raise_if(username is None or password is None, BadRequest, "missing username")
 
-    orm_user = session.execute(
-        sa.select(dbm.User).where(dbm.User.username == username)
-    ).scalar_one_or_none()
+    orm_user = dbm.User.get_or_none(session, username)
     # check user exists
     raise_if_none(orm_user, Unauthorized, "this user does not exist")
 

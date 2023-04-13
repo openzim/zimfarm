@@ -1,10 +1,10 @@
 from http import HTTPStatus
 
 import sqlalchemy as sa
-import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 from werkzeug.security import generate_password_hash
 
 import common.schemas.orms as cso
@@ -31,7 +31,7 @@ class UsersRoute(BaseRoute):
     @authenticate
     @dbsession
     @require_perm("users", "read")
-    def get(self, token: AccessToken.Payload, session):
+    def get(self, token: AccessToken.Payload, session: Session):
         request_args = SkipLimitSchema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
 
@@ -52,7 +52,7 @@ class UsersRoute(BaseRoute):
     @authenticate
     @dbsession
     @require_perm("users", "create")
-    def post(self, token: AccessToken.Payload, session):
+    def post(self, token: AccessToken.Payload, session: Session):
         try:
             request_json = UserCreateSchema().load(request.get_json())
         except ValidationError as e:
@@ -86,18 +86,14 @@ class UserRoute(BaseRoute):
     @authenticate
     @dbsession
     @url_object_id("username")
-    def get(self, token: AccessToken.Payload, session, username: str):
+    def get(self, token: AccessToken.Payload, session: Session, username: str):
         # if user in url is not user in token, check user permission
         if username != token.username:
             if not token.get_permission("users", "read"):
                 raise errors.NotEnoughPrivilege()
 
         # find user based on username
-        orm_user = session.execute(
-            sa.select(dbm.User)
-            .where(dbm.User.username == username)
-            .options(so.selectinload(dbm.User.ssh_keys))
-        ).scalar_one_or_none()
+        orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
 
         raise_if_none(orm_user, errors.NotFound)
 
@@ -107,12 +103,10 @@ class UserRoute(BaseRoute):
     @dbsession
     @require_perm("users", "update")
     @url_object_id("username")
-    def patch(self, token: AccessToken.Payload, session, username: str):
+    def patch(self, token: AccessToken.Payload, session: Session, username: str):
         request_json = UserUpdateSchema().load(request.get_json())
 
-        orm_user = session.execute(
-            sa.select(dbm.User).where(dbm.User.username == username)
-        ).scalar_one_or_none()
+        orm_user = dbm.User.get_or_none(session, username)
 
         raise_if_none(orm_user, errors.NotFound)
 
@@ -127,12 +121,10 @@ class UserRoute(BaseRoute):
     @require_perm("users", "delete")
     @dbsession
     @url_object_id("username")
-    def delete(self, token: AccessToken.Payload, session, username: str):
+    def delete(self, token: AccessToken.Payload, session: Session, username: str):
         # delete user
 
-        orm_user = session.execute(
-            sa.select(dbm.User).where(dbm.User.username == username)
-        ).scalar_one_or_none()
+        orm_user = dbm.User.get_or_none(session, username)
         raise_if_none(orm_user, errors.NotFound)
         session.delete(orm_user)
 
