@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-import sqlalchemy as sa
 from flask import Response, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -22,10 +21,7 @@ class PasswordRoute(BaseRoute):
     @url_object_id(["username"])
     def patch(self, session, username: str, token: AccessToken.Payload):
         # get user to modify
-        orm_user = session.execute(
-            sa.select(dbm.User).where(dbm.User.username == username)
-        ).scalar_one_or_none()
-
+        orm_user = dbm.User.get_or_none(session, username)
         raise_if_none(orm_user, errors.NotFound)
 
         request_json = request.get_json()

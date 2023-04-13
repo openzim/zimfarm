@@ -1,15 +1,17 @@
-import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, text
+from sqlalchemy import DateTime, ForeignKey, Index, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     MappedAsDataclass,
+    Session,
     mapped_column,
     relationship,
+    selectinload,
 )
 from sqlalchemy.sql.schema import MetaData
 
@@ -42,7 +44,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 class User(Base):
     __tablename__ = "user"
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     mongo_val: Mapped[
@@ -64,10 +66,31 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
+    @classmethod
+    def get_or_none(
+        cls, session: Session, username: str, fetch_ssh_keys: bool = False
+    ) -> Optional["User"]:
+        """Search DB for a user by username, returns None if not found
+        If `fetch_ssh_keys` argument is True, ssh_keys are also immediately
+        retrieved.
+        """
+        stmt = select(User).where(User.username == username)
+        if fetch_ssh_keys:
+            stmt = stmt.options(selectinload(User.ssh_keys))
+        return session.execute(stmt).scalar_one_or_none()
+
+    @classmethod
+    def get_id_or_none(cls, session: Session, username: str) -> Optional[UUID]:
+        """Search DB for a user by username and return its ID. Returns None if not
+        found.
+        """
+        stmt = select(User.id).where(User.username == username)
+        return session.execute(stmt).scalar_one_or_none()
+
 
 class Sshkey(Base):
     __tablename__ = "sshkey"
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     mongo_val: Mapped[
@@ -82,14 +105,14 @@ class Sshkey(Base):
     added: Mapped[Optional[datetime]]
     last_used: Mapped[Optional[datetime]]
     pkcs8_key: Mapped[Optional[str]]
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="ssh_keys", init=False)
 
 
 class Refreshtoken(Base):
     __tablename__ = "refresh_token"
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     mongo_val: Mapped[
@@ -98,9 +121,9 @@ class Refreshtoken(Base):
     mongo_id: Mapped[Optional[str]] = mapped_column(
         unique=True
     )  # temporary backup of mongo document id
-    token: Mapped[uuid.UUID] = mapped_column(server_default=text("uuid_generate_v4()"))
+    token: Mapped[UUID] = mapped_column(server_default=text("uuid_generate_v4()"))
     expire_time: Mapped[datetime]
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
 

@@ -6,7 +6,6 @@ import pathlib
 import subprocess
 import tempfile
 
-import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import jsonify, request
 
@@ -53,11 +52,7 @@ def asymmetric_key_auth(session: so.Session):
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
 
-    orm_user = session.execute(
-        sa.select(dbm.User)
-        .where(dbm.User.username == username)
-        .options(so.selectinload(dbm.User.ssh_keys))
-    ).scalar_one_or_none()
+    orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
     raise_if_none(
         orm_user, errors.Unauthorized, "User not found"
     )  # we shall never get there

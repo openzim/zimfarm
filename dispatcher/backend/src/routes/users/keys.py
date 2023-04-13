@@ -37,11 +37,7 @@ class KeysRoute(BaseRoute):
                 raise errors.NotEnoughPrivilege()
 
         # find user based on username
-        orm_user = session.execute(
-            sa.select(dbm.User)
-            .where(dbm.User.username == username)
-            .options(so.selectinload(dbm.User.ssh_keys))
-        ).scalar_one_or_none()
+        orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
 
         raise_if_none(orm_user, errors.NotFound)
 
@@ -75,9 +71,7 @@ class KeysRoute(BaseRoute):
             raise errors.BadRequest("Invalid RSA key")
 
         # find out if user exist
-        current_user_id = session.execute(
-            sa.select(dbm.User.id).where(dbm.User.username == username)
-        ).scalar_one_or_none()
+        current_user_id = dbm.User.get_id_or_none(session, username)
 
         if not current_user_id:
             raise errors.NotFound("User not found")
@@ -186,9 +180,7 @@ class KeyRoute(BaseRoute):
                 raise errors.NotEnoughPrivilege()
 
         # find out if user exist
-        current_user_id = session.execute(
-            sa.select(dbm.User.id).where(dbm.User.username == username)
-        ).scalar_one_or_none()
+        current_user_id = dbm.User.get_id_or_none(session, username)
 
         if not current_user_id:
             raise errors.NotFound("User not found")

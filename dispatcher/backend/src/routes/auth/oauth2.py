@@ -83,9 +83,7 @@ class OAuth2:
     def password_grant(username: str, password: str, session: so.Session):
         """Implements logic for password grant."""
 
-        orm_user = session.execute(
-            sa.select(dbm.User).where(dbm.User.username == username)
-        ).scalar_one_or_none()
+        orm_user = dbm.User.get_or_none(session, username)
         # check user exists
         raise_if_none(orm_user, InvalidGrant, "Username or password is invalid.")
 
