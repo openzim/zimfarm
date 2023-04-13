@@ -10,7 +10,6 @@ from pymongo.collection import Collection as BaseCollection
 import common.mongo as mongo
 import db.models as dbm
 from db.engine import Session
-from utils.keys_exporter import KeysExporter
 
 logging.basicConfig(
     level=logging.DEBUG, format="[%(name)s - %(asctime)s: %(levelname)s] %(message)s"
@@ -53,6 +52,22 @@ def pre_checks_ok_internal(session: so.Session) -> bool:
         pre_checks_ok = False
 
     return pre_checks_ok
+
+
+class KeysExporter:
+    @staticmethod
+    def _get_keys_int(obj, curPrefix):
+        if isinstance(obj, Dict):
+            for k, v in obj.items():
+                yield f"{curPrefix}{k}"
+                yield from KeysExporter._get_keys_int(v, f"{curPrefix}{k}.")
+        elif isinstance(obj, List):
+            for v in obj:
+                yield from KeysExporter._get_keys_int(v, f"{curPrefix}*.")
+
+    @staticmethod
+    def get_keys(obj) -> List[str]:
+        return set(KeysExporter._get_keys_int(obj, ""))
 
 
 class Migrator(ABC):
