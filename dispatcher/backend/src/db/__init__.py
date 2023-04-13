@@ -1,5 +1,6 @@
 import os
 
+from bson.json_util import dumps, loads
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -11,7 +12,14 @@ if (
 ):  # this is a hack for cases where we do not need the DB, e.g. unit tests
     Session = None
 else:
-    Session = sessionmaker(bind=create_engine(os.getenv("POSTGRES_URI"), echo=False))
+    Session = sessionmaker(
+        bind=create_engine(
+            os.getenv("POSTGRES_URI"),
+            echo=False,
+            json_serializer=dumps,  # use bson serializer to handle ObjectId + datetime
+            json_deserializer=loads,  # use bson deserializer for same reason
+        )
+    )
 
 
 def dbsession(func):
