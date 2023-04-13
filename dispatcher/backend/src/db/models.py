@@ -45,8 +45,12 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[Optional[Dict[str, Any]]]
-    mongo_id: Mapped[Optional[str]] = mapped_column(unique=True)
+    mongo_val: Mapped[
+        Optional[Dict[str, Any]]
+    ]  # temporary backup of full mongo document
+    mongo_id: Mapped[Optional[str]] = mapped_column(
+        unique=True
+    )  # temporary backup of mongo document id
     username: Mapped[str] = mapped_column(unique=True, index=True)
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
@@ -66,7 +70,11 @@ class Sshkey(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[Optional[Dict[str, Any]]]
+    mongo_val: Mapped[
+        Optional[Dict[str, Any]]
+    ]  # temporary backup of full mongo document
+    # Nota: there is no temporary backup of mongo document id because there is
+    # none since this data was embedded inside the User document in Mongo
     name: Mapped[Optional[str]]
     fingerprint: Mapped[Optional[str]] = mapped_column(index=True)
     type: Mapped[Optional[str]]
@@ -84,8 +92,12 @@ class Refreshtoken(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[Optional[Dict[str, Any]]]
-    mongo_id: Mapped[Optional[str]] = mapped_column(unique=True)
+    mongo_val: Mapped[
+        Optional[Dict[str, Any]]
+    ]  # temporary backup of full mongo document
+    mongo_id: Mapped[Optional[str]] = mapped_column(
+        unique=True
+    )  # temporary backup of mongo document id
     token: Mapped[uuid.UUID] = mapped_column(server_default=text("uuid_generate_v4()"))
     expire_time: Mapped[datetime]
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"), init=False)
