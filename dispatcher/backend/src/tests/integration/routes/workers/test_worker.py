@@ -10,7 +10,7 @@ class TestWorkersCommon:
 
 
 class TestWorkersList:
-    def test_list_tags_no_param(self, client, workers):
+    def test_list_workers_no_param(self, client, workers):
         """Test workers list"""
 
         url = "/workers/"
@@ -34,7 +34,7 @@ class TestWorkersList:
     @pytest.mark.parametrize(
         "skip, limit, expected", [(0, 1, 1), (1, 10, 10), (0, 100, 38)]
     )
-    def test_list_tags_with_param(self, client, workers, skip, limit, expected):
+    def test_list_workers_with_param(self, client, workers, skip, limit, expected):
         """Test workers list with skip and limit"""
 
         url = "/workers/?skip={}&limit={}".format(skip, limit)
@@ -46,8 +46,8 @@ class TestWorkersList:
         assert len(response_json["items"]) == expected
 
     @pytest.mark.parametrize("skip, limit", [("", 10), (5, "abc")])
-    def test_list_tags_bad_param(self, client, schedules, skip, limit):
-        """Test list languages with skip and limit"""
+    def test_list_workers_bad_param(self, client, schedules, skip, limit):
+        """Test workers list with bad skip and limit"""
 
         url = "/workers/?skip={}&limit={}".format(skip, limit)
         response = client.get(url)
@@ -60,7 +60,7 @@ class TestWorkerCheckIn:
     def test_checkin(self, database, client, access_token, worker):
         url = f"/workers/{self.name}/check-in"
         payload = {
-            "username": "a-username",
+            "username": "some-user",
             "cpu": 4,
             "memory": 2048,
             "disk": 4096,
@@ -75,21 +75,28 @@ class TestWorkerCheckIn:
     @pytest.mark.parametrize(
         "payload",
         [
-            {
+            {  # missing username
                 "cpu": 4,
                 "memory": 2048,
                 "disk": 4096,
                 "offliners": ["mwoffliner", "phet"],
             },
-            {
-                "username": "a-username",
+            {  # username not present in DB
+                "username": "bob",
+                "cpu": 4,
+                "memory": 2048,
+                "disk": 4096,
+                "offliners": ["mwoffliner", "phet"],
+            },
+            {  # invalid CPU value
+                "username": "some-user",
                 "cpu": -1,
                 "memory": 2048,
                 "disk": 4096,
                 "offliners": ["mwoffliner", "phet"],
             },
-            {
-                "username": "a-username",
+            {  # invalid offliner value
+                "username": "some-user",
                 "cpu": 4,
                 "memory": 2048,
                 "disk": 4096,

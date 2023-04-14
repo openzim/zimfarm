@@ -180,6 +180,20 @@ class Worker(Base):
         back_populates="worker", cascade="all", init=False
     )
 
+    @classmethod
+    def get_or_none(cls, session: Session, name: str) -> Optional["Worker"]:
+        """Search DB for a worker by name, returns None if not found"""
+        stmt = select(Worker).where(Worker.name == name)
+        return session.execute(stmt).scalar_one_or_none()
+
+    @classmethod
+    def get_id_or_none(cls, session: Session, name: str) -> Optional[UUID]:
+        """Search DB for a worker by name and return its ID. Returns None if not
+        found.
+        """
+        stmt = select(Worker.id).where(Worker.name == name)
+        return session.execute(stmt).scalar_one_or_none()
+
 
 class Task(Base):
     __tablename__ = "task"

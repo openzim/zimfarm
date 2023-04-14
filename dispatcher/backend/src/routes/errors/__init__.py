@@ -92,6 +92,13 @@ class NotFound(Exception):
 
 # 500
 class InternalError(Exception):
+    def __init__(self, message: str = None):
+        self.message = message
+
     @staticmethod
     def handler(e):
+        if isinstance(e, BadRequest) and e.message is not None:
+            return make_response(
+                jsonify({"error": e.message}), HTTPStatus.INTERNAL_SERVER_ERROR
+            )
         return Response(status=HTTPStatus.INTERNAL_SERVER_ERROR)
