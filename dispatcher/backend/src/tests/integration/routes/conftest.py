@@ -1,5 +1,8 @@
 import pytest
-from bson import ObjectId
+import sqlalchemy as sa
+
+import db.models as dbm
+from db import Session
 
 
 @pytest.fixture(scope="module")
@@ -34,7 +37,7 @@ def make_config():
 
 
 @pytest.fixture(scope="module")
-def make_schedule(database, make_language, make_config):
+def make_schedule(make_language, make_config):
     schedule_ids = []
 
     def _make_schedule(
@@ -43,24 +46,49 @@ def make_schedule(database, make_language, make_config):
         tags: list = ["nopic"],
         language: dict = None,
         config: dict = None,
+        periodicity: str = "monthly",
     ) -> dict:
-        document = {
-            "_id": ObjectId(),
-            "name": name,
-            "category": category,
-            "enabled": True,
-            "language": language or make_language(),
-            "tags": tags,
-            "config": config or make_config(),
-            "notification": {},
-        }
-        schedule_id = database.schedules.insert_one(document).inserted_id
-        schedule_ids.append(schedule_id)
+        if not language:
+            language = make_language()
+        schedule = dbm.Schedule(
+            mongo_val=None,
+            mongo_id=None,
+            name=name,
+            category=category,
+            enabled=True,
+            language_code=language["code"],
+            language_name_en=language["name_en"],
+            language_name_native=language["name_native"],
+            tags=tags,
+            config=config or make_config(),
+            periodicity=periodicity,
+            # TODO: notification ?
+        )
+        with Session.begin() as session:
+            session.add(schedule)
+            session.flush()
+            schedule_id = schedule.id
+            schedule_ids.append(schedule_id)
+            document = {
+                "name": schedule.name,
+                "category": schedule.category,
+                "enabled": schedule.enabled,
+                "language_code": schedule.language_code,
+                "language_name_en": schedule.language_name_en,
+                "language_name_native": schedule.language_name_native,
+                "tags": schedule.tags,
+                "config": schedule.config,
+                "periodicity": schedule.periodicity,
+            }
         return document
 
     yield _make_schedule
 
-    database.schedules.delete_many({"_id": {"$in": schedule_ids}})
+    with Session.begin() as session:
+        for schedule in session.execute(
+            sa.select(dbm.Schedule).where(dbm.Schedule.id.in_(schedule_ids))
+        ).scalars():
+            session.delete(schedule)
 
 
 @pytest.fixture(scope="module")
