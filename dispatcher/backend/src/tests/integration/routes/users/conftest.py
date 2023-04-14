@@ -1,12 +1,4 @@
-import datetime
-
 import pytest
-import sqlalchemy as sa
-from werkzeug.security import generate_password_hash
-
-import db.models as dbm
-from common.roles import ROLES
-from db import Session
 
 
 @pytest.fixture(scope="module")
@@ -69,87 +61,6 @@ aTGGweZ1AoGBAIUGMaVsZ6z6wRptbZ+1dRNhMMCPAF6w8xweeHbBdvh/uH4gRXEC
 7XbgvLh8A95Z5kIiGAZKpXpwkBzvN6rwla+jYW6L/8VK0XlBaqY3Hg9YsYQXo7UM
 RhJMRUmh/D3kxUFO/wtSDGfo/HR/1iEraoddi+sA6+R56vA8ziJC51xw
 -----END RSA PRIVATE KEY-----\n"""
-
-
-@pytest.fixture(scope="module")
-def make_user(database):
-    user_ids = []
-
-    def _make_user(username: str = "some-user", role: str = None) -> dict:
-        user = dbm.User(
-            mongo_val=None,
-            mongo_id=None,
-            username=username,
-            password_hash=generate_password_hash("some-password"),
-            # (
-            #     "pbkdf2:sha256:150000$dEqsZI8W$2d2bbcbadab59281528ecbb27d26ac628472a0b"
-            #     "2f0a5e1828edbeeae683dd40f"
-            # ),
-            scope=None,
-            email=f"{username}@acme.com",
-        )
-        user.ssh_keys.append(
-            dbm.Sshkey(
-                mongo_val=None,
-                name="pytest",
-                fingerprint="a4a7cfd26a11ec519b63d4d12f34ecf2",
-                key=(
-                    "AAAAB3NzaC1yc2EAAAADAQABAAABAQC4EYmNPfdscaYcMTXe0NxSpS+5qbVO+"
-                    "WDaMLt/JLbDmorJzzBYFItxsr5hvxKckQ3jgUdcoIqzpwfjg88NhxenPmLlqs"
-                    "aQfkI2IjmOxDwaH4zs1IKG4+BTyY6EFrEnWgO9vJMJPOVzBdv3uUUOULvTnE7"
-                    "ZWpqb+2tRQCk6GUF9AoajmAzTlu+PjD53kRqwRugK/EKrqIjg5Nb/y5F4xGXL"
-                    "Tb3otsUp+iFB3TJ65yB9F4C/Q4R5Srr/R3CWBQvoMLHUjya7HppoEW5sl8e+n"
-                    "EYpwKVCVuyJiRv9NuomBuh2ZH7ftfY8zxkVyv6UbVNXwFTvT3QVbwM6pQgVx/"
-                    "nJmzeb"
-                ),
-                type="RSA",
-                added=datetime.datetime(2019, 1, 1),
-                last_used=datetime.datetime(2019, 1, 1),
-                pkcs8_key="-----BEGIN PUBLIC KEY-----\n"
-                "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc\n"
-                "UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX\n"
-                "pz5i5arGkH5CNiI5jsQ8Gh+M7NSChuPgU8mOhBaxJ1oDvbyTCTzlcwXb97lFDlC7\n"
-                "05xO2Vqam/trUUApOhlBfQKGo5gM05bvj4w+d5EasEboCvxCq6iI4OTW/8uReMRl\n"
-                "y0296LbFKfohQd0yeucgfReAv0OEeUq6/0dwlgUL6DCx1I8mux6aaBFubJfHvpxG\n"
-                "KcClQlbsiYkb/TbqJgbodmR+37X2PM8ZFcr+lG1TV8BU7090FW8DOqUIFcf5yZs3\n"
-                "mwIDAQAB\n"
-                "-----END PUBLIC KEY-----\n",
-            )
-        )
-        if role:
-            user.scope = ROLES.get(role)
-        with Session.begin() as session:
-            session.add(user)
-            session.flush()
-            user_id = user.id
-            user_ids.append(user_id)
-            res_obj = {
-                "username": user.username,
-                "password_hash": user.password_hash,
-                "scope": user.scope,
-                "email": user.email,
-                "ssh_keys": [
-                    {
-                        "name": key.name,
-                        "fingerprint": key.fingerprint,
-                        "key": key.key,
-                        "type": key.type,
-                        "added": key.added,
-                        "last_used": key.last_used,
-                        "pkcs8_key": key.pkcs8_key,
-                    }
-                    for key in user.ssh_keys
-                ],
-            }
-        return res_obj
-
-    yield _make_user
-
-    with Session.begin() as session:
-        for user in session.execute(
-            sa.select(dbm.User).where(dbm.User.id.in_(user_ids))
-        ).scalars():
-            session.delete(user)
 
 
 @pytest.fixture(scope="module")

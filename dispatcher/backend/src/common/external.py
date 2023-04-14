@@ -5,9 +5,12 @@ import logging
 import typing
 
 import requests
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from bson import ObjectId
 from kiwixstorage import AuthenticationError, KiwixStorage
 
+import db.models as dbm
 from common.constants import (
     CMS_ENDPOINT,
     CMS_ZIM_DOWNLOAD_URL,
@@ -16,7 +19,8 @@ from common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
-from common.mongo import Tasks, Workers
+from common.mongo import Tasks
+from db import dbsession
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -27,7 +31,8 @@ def update_workers_whitelist():
     update_wasabi_whitelist(build_workers_whitelist())
 
 
-def build_workers_whitelist() -> typing.List[str]:
+@dbsession
+def build_workers_whitelist(session: so.Session) -> typing.List[str]:
     """list of worker IP adresses and networks (text) to use as whitelist"""
     wl_networks = []
     wl_ips = []
@@ -43,8 +48,10 @@ def build_workers_whitelist() -> typing.List[str]:
                 return True
         return False
 
-    for row in Workers().find({"last_ip": {"$exists": True}}, {"last_ip": 1}):
-        ip_addr = ipaddress.ip_address(row["last_ip"])
+    for row in session.execute(
+        sa.select(dbm.Worker.last_ip).where(dbm.Worker.last_ip.is_not(None))
+    ).scalars():
+        ip_addr = ipaddress.ip_address(row)
         if not is_covered(ip_addr):
             wl_ips.append(ip_addr)
 
