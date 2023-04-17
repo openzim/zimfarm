@@ -66,7 +66,7 @@ def make_schedule(make_language, make_config):
             tags=tags,
             config=config or make_config(),
             periodicity=periodicity,
-            # TODO: notification ?
+            notification=None,
         )
         with Session.begin() as session:
             session.add(schedule)
@@ -77,12 +77,15 @@ def make_schedule(make_language, make_config):
                 "name": schedule.name,
                 "category": schedule.category,
                 "enabled": schedule.enabled,
-                "language_code": schedule.language_code,
-                "language_name_en": schedule.language_name_en,
-                "language_name_native": schedule.language_name_native,
+                "language": {
+                    "code": schedule.language_code,
+                    "name_en": schedule.language_name_en,
+                    "name_native": schedule.language_name_native,
+                },
                 "tags": schedule.tags,
                 "config": schedule.config,
                 "periodicity": schedule.periodicity,
+                "notification": schedule.notification,
             }
         return document
 
@@ -104,9 +107,7 @@ def schedule(make_schedule):
 def schedules(make_schedule, make_config, make_language):
     schedules = []
     for index in range(38):
-        name = "schedule_{}".format(index)
-        schedule = make_schedule(name)
-        schedules.append(schedule)
+        schedules.append(make_schedule(name="schedule_{}".format(index)))
 
     # custom schedules for query lookup
     schedules.append(make_schedule(name="wikipedia_fr_all_maxi"))

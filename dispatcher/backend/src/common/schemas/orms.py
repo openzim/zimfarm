@@ -1,3 +1,4 @@
+import marshmallow as m
 import marshmallow.fields as mf
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
 
@@ -37,3 +38,48 @@ class SshKeyRead(BaseSchema):
 class UserSchemaReadOne(UserSchemaReadMany):
     scope = auto_field()
     ssh_keys = mf.List(mf.Nested(SshKeyRead))
+
+
+class MostRecentTaskSchema(m.Schema):
+    id = mf.String(data_key="_id")
+    status = mf.String()
+    updated_at = mf.DateTime()
+
+
+class ConfigTaskOnlySchema(m.Schema):
+    task_name = mf.String()
+
+
+class LanguageSchema(m.Schema):
+    code = mf.String()
+    name_en = mf.String()
+    name_native = mf.String()
+
+
+class ScheduleLightSchema(m.Schema):
+    name = mf.String()
+    category = mf.String()
+    most_recent_task = mf.Nested(MostRecentTaskSchema)
+    config = mf.Nested(ConfigTaskOnlySchema)
+    language = mf.Nested(LanguageSchema)
+
+
+class ScheduleFullSchema(BaseSchema):
+    class Meta:
+        model = dbm.Schedule
+
+    def get_language(schedule: dbm.Schedule):
+        return {
+            "code": schedule.language_code,
+            "name_en": schedule.language_name_en,
+            "name_native": schedule.language_name_native,
+        }
+
+    name = auto_field()
+    category = auto_field()
+    config = auto_field()
+    enabled = auto_field()
+    tags = auto_field()
+    periodicity = auto_field()
+    notification = auto_field()
+    language = mf.Function(get_language)

@@ -279,6 +279,12 @@ class Schedule(Base):
         back_populates="schedule", cascade="all", init=False
     )
 
+    @classmethod
+    def get_or_none(cls, session: Session, name: str) -> Optional["Schedule"]:
+        """Search DB for a schedule by name, returns None if not found"""
+        stmt = select(Schedule).where(Schedule.name == name)
+        return session.execute(stmt).scalar_one_or_none()
+
 
 class ScheduleDuration(Base):
     __tablename__ = "schedule_duration"
