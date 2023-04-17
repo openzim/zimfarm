@@ -93,7 +93,8 @@ def simplified(value):
 def compute_flags(flags, use_equals=True):
     """flat list of params from dict of flags"""
     params: List[str] = []
-    for key, value in flags.items():
+    # flags are sorted to produce consistent ordering, especially useful for tests
+    for key, value in sorted(flags.items()):
         if value is True:
             params.append(f"--{key}")
             continue

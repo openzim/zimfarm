@@ -3,17 +3,21 @@ import logging
 from http import HTTPStatus
 
 import requests
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
-from common.mongo import RequestedTasks, Schedules, Tasks
+import db.models as dbm
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
+from common.schemas.orms import ScheduleFullSchema, ScheduleLightSchema
 from common.schemas.parameters import CloneSchema, SchedulesSchema, UpdateSchema
+from db import count_from_stmt, dbsession
 from errors.http import InvalidRequestJSON, ResourceNotFound, ScheduleNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.schedules.base import ScheduleQueryMixin
 from routes.utils import raise_if, raise_if_none, remove_secrets_from_response
 from utils.offliners import expanded_config
 from utils.scheduling import get_default_duration
@@ -27,7 +31,8 @@ class SchedulesRoute(BaseRoute):
     name = "schedules"
     methods = ["GET", "POST"]
 
-    def get(self):
+    @dbsession
+    def get(self, session: so.Session):
         """Return a list of schedules"""
 
         request_args = request.args.to_dict()
@@ -44,37 +49,62 @@ class SchedulesRoute(BaseRoute):
             request_args.get("name"),
         )
 
+        stmt = (
+            sa.select(
+                dbm.Schedule.name,
+                dbm.Schedule.category,
+                so.Bundle(
+                    "language",
+                    dbm.Schedule.language_code.label("code"),
+                    dbm.Schedule.language_name_en.label("name_en"),
+                    dbm.Schedule.language_name_native.label("name_native"),
+                ),
+                so.Bundle(
+                    "config",
+                    dbm.Schedule.config["task_name"].label("task_name"),
+                ),
+                so.Bundle(
+                    "most_recent_task",
+                    dbm.Task.id,
+                    dbm.Task.status,
+                    dbm.Task.updated_at,
+                ),
+            )
+            .join(dbm.Task, dbm.Schedule.most_recent_task, isouter=True)
+            .order_by(dbm.Schedule.name)
+        )
+
         # assemble filters
-        query = {}
         if categories:
-            query["category"] = {"$in": categories}
+            stmt = stmt.filter(dbm.Schedule.category.in_(categories))
         if lang:
-            query["language.code"] = {"$in": lang}
+            stmt = stmt.filter(dbm.Schedule.language_code.in_(lang))
         if tags:
-            query["tags"] = {"$all": tags}
+            stmt = stmt.filter(dbm.Schedule.tags.contains(tags))
         if name:
-            query["name"] = {"$regex": r".*{}.*".format(name), "$options": "i"}
+            # "i" flag means case-insensitive search
+            stmt = stmt.filter(dbm.Schedule.name.regexp_match(f".*{name}.*", "i"))
+
+        # get total count of items matching the filters
+        count = count_from_stmt(session, stmt)
 
         # get schedules from database
-        projection = {
-            "_id": 0,
-            "name": 1,
-            "category": 1,
-            "language": 1,
-            "config.task_name": 1,
-            "most_recent_task": 1,
-        }
-        cursor = Schedules().find(query, projection).skip(skip).limit(limit)
-        count = Schedules().count_documents(query)
-        schedules = [schedule for schedule in cursor]
-
         return jsonify(
-            {"meta": {"skip": skip, "limit": limit, "count": count}, "items": schedules}
+            {
+                "meta": {"skip": skip, "limit": limit, "count": count},
+                "items": list(
+                    map(
+                        ScheduleLightSchema().dump,
+                        session.execute(stmt.offset(skip).limit(limit)).all(),
+                    )
+                ),
+            }
         )
 
     @authenticate
+    @dbsession
     @require_perm("schedules", "create")
-    def post(self, token: AccessToken.Payload):
+    def post(self, session: so.Session, token: AccessToken.Payload):
         """create a new schedule"""
 
         try:
@@ -82,16 +112,37 @@ class SchedulesRoute(BaseRoute):
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        # make sure it's not a duplicate
-        if Schedules().find_one({"name": document["name"]}, {"name": 1}):
-            raise BadRequest(
-                "schedule with name `{}` already exists".format(document["name"])
-            )
+        schedule = dbm.Schedule(
+            mongo_val=None,
+            mongo_id=None,
+            name=document["name"],
+            category=document["category"],
+            periodicity=document["periodicity"],
+            tags=document["tags"],
+            enabled=document["enabled"],
+            config=document["config"],
+            notification=document["notification"],
+            language_code=document["language"]["code"],
+            language_name_en=document["language"]["name_en"],
+            language_name_native=document["language"]["name_native"],
+        )
+        session.add(schedule)
 
-        document["duration"] = {"default": get_default_duration(), "workers": {}}
-        schedule_id = Schedules().insert_one(document).inserted_id
+        default_duration = get_default_duration()
+        duration = dbm.ScheduleDuration(
+            mongo_val=None,
+            default=True,
+            value=default_duration["value"],
+            on=default_duration["on"],
+        )
+        schedule.durations.append(duration)
 
-        return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)
+        try:
+            session.flush()
+        except IntegrityError:
+            raise BadRequest("Schedule name already exists")
+
+        return make_response(jsonify({"_id": str(schedule.id)}), HTTPStatus.CREATED)
 
 
 class SchedulesBackupRoute(BaseRoute):
@@ -99,29 +150,37 @@ class SchedulesBackupRoute(BaseRoute):
     name = "schedules_backup"
     methods = ["GET"]
 
-    def get(self):
+    @dbsession
+    def get(self, session: so.Session):
         """Return all schedules backup"""
+        stmt = sa.select(dbm.Schedule).order_by(dbm.Schedule.name)
+        return jsonify(
+            list(
+                map(
+                    ScheduleFullSchema().dump,
+                    session.execute(stmt).scalars(),
+                )
+            )
+        )
 
-        projection = {"most_recent_task": 0}
-        cursor = Schedules().find({}, projection)
-        schedules = [schedule for schedule in cursor]
-        return jsonify(schedules)
 
-
-class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
+class ScheduleRoute(BaseRoute):
     rule = "/<string:schedule_name>"
     name = "schedule"
     methods = ["GET", "PATCH", "DELETE"]
 
     @auth_info_if_supplied
-    def get(self, schedule_name: str, token: AccessToken.Payload):
+    @dbsession
+    def get(self, schedule_name: str, token: AccessToken.Payload, session: so.Session):
         """Get schedule object."""
 
-        query = {"name": schedule_name}
-        schedule = Schedules().find_one(query, {"_id": 0})
+        schedule = dbm.Schedule.get_or_none(session, schedule_name)
         raise_if_none(schedule, ScheduleNotFound)
 
-        schedule["config"] = expanded_config(schedule["config"])
+        schedule.config = expanded_config(schedule.config)
+
+        schedule = ScheduleFullSchema().dump(schedule)
+
         if not token or not token.get_permission("schedules", "update"):
             remove_secrets_from_response(schedule)
 
@@ -129,12 +188,15 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
 
     @authenticate
     @require_perm("schedules", "update")
-    def patch(self, schedule_name: str, token: AccessToken.Payload):
+    @dbsession
+    def patch(
+        self, schedule_name: str, token: AccessToken.Payload, session: so.Session
+    ):
         """Update all properties of a schedule but _id and most_recent_task"""
 
-        query = {"name": schedule_name}
-        schedule = Schedules().find_one(query, {"config.task_name": 1})
-        raise_if(not schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get_or_none(session, schedule_name)
+        raise_if_none(schedule, ScheduleNotFound)
+
         try:
             update = UpdateSchema().load(request.get_json())  # , partial=True
             # empty dict passes the validator but troubles mongo
@@ -152,20 +214,13 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
                 )
             else:
                 flags_schema = ScheduleConfigSchema.get_offliner_schema(
-                    schedule["config"]["task_name"]
+                    schedule.config["task_name"]
                 )
 
             if "flags" in update:
                 flags_schema().load(update["flags"])
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
-
-        if "name" in update:
-            raise_if(
-                Schedules().count_documents({"name": update["name"]}),
-                BadRequest,
-                "Schedule with name `{}` already exists".format(update["name"]),
-            )
 
         config_keys = [
             "task_name",
@@ -176,39 +231,34 @@ class ScheduleRoute(BaseRoute, ScheduleQueryMixin):
             "flags",
             "monitor",
         ]
-        mongo_update = {
-            f"config.{key}" if key in config_keys else key: value
-            for key, value in update.items()
-        }
 
-        matched_count = (
-            Schedules().update_one(query, {"$set": mongo_update}).matched_count
-        )
+        for key, value in update.items():
+            if key in config_keys:
+                schedule.config[key] = value
+            else:
+                setattr(schedule, key, value)
 
-        if matched_count:
-            tasks_query = {"schedule_name": schedule_name}
-            if "name" in update:
-                Tasks().update_many(
-                    tasks_query, {"$set": {"schedule_name": update["name"]}}
-                )
+        schedule.config = schedule.config.copy()
 
-                RequestedTasks().update_many(
-                    tasks_query, {"$set": {"schedule_name": update["name"]}}
-                )
+        try:
+            session.flush()
+        except IntegrityError:
+            raise BadRequest("Schedule conflict with another one")
 
-            return Response(status=HTTPStatus.NO_CONTENT)
-
-        raise ScheduleNotFound()
+        return Response(status=HTTPStatus.NO_CONTENT)
 
     @authenticate
     @require_perm("schedules", "delete")
-    def delete(self, schedule_name: str, token: AccessToken.Payload):
+    @dbsession
+    def delete(
+        self, schedule_name: str, token: AccessToken.Payload, session: so.Session
+    ):
         """Delete a schedule."""
 
-        query = {"name": schedule_name}
-        result = Schedules().delete_one(query)
+        schedule = dbm.Schedule.get_or_none(session, schedule_name)
+        raise_if_none(schedule, ScheduleNotFound)
+        session.delete(schedule)
 
-        raise_if(result.deleted_count == 0, ScheduleNotFound)
         return Response(status=HTTPStatus.NO_CONTENT)
 
 
@@ -260,39 +310,47 @@ class ScheduleImageNames(BaseRoute):
         return make_resp(items)
 
 
-class ScheduleCloneRoute(BaseRoute, ScheduleQueryMixin):
+class ScheduleCloneRoute(BaseRoute):
     rule = "/<string:schedule_name>/clone"
     name = "schedule-clone"
     methods = ["POST"]
 
     @authenticate
     @require_perm("schedules", "create")
-    def post(self, schedule_name: str, token: AccessToken.Payload):
+    @dbsession
+    def post(self, schedule_name: str, token: AccessToken.Payload, session: so.Session):
         """Update all properties of a schedule but _id and most_recent_task"""
 
-        query = {"name": schedule_name}
-        schedule = Schedules().find_one(query)
-        if not schedule:
-            raise ScheduleNotFound()
-
         request_json = CloneSchema().load(request.get_json())
-        new_schedule_name = request_json["name"]
 
-        # ensure it's not a duplicate
-        raise_if(
-            Schedules().find_one({"name": new_schedule_name}, {"name": 1}),
-            BadRequest,
-            "schedule with name `{}` already exists".format(new_schedule_name),
+        schedule = dbm.Schedule.get_or_none(session, schedule_name)
+        raise_if_none(schedule, ScheduleNotFound)
+
+        clone = dbm.Schedule(
+            mongo_id=None,
+            mongo_val=None,
+            name=request_json["name"],
+            category=schedule.category,
+            periodicity=schedule.periodicity,
+            tags=schedule.tags,
+            enabled=schedule.tags,
+            config=schedule.config,
+            notification=schedule.notification,
+            language_code=schedule.language_code,
+            language_name_en=schedule.language_name_en,
+            language_name_native=schedule.language_name_native,
         )
+        session.add(clone)
 
-        schedule.pop("_id", None)
-        schedule.pop("most_recent_task", None)
-        schedule.pop("duration", None)
-        schedule["name"] = new_schedule_name
-        schedule["enabled"] = False
-        schedule["duration"] = {"default": get_default_duration(), "workers": {}}
+        default_duration = get_default_duration()
+        duration = dbm.ScheduleDuration(
+            mongo_val=None,
+            default=True,
+            value=default_duration["value"],
+            on=default_duration["on"],
+        )
+        clone.durations.append(duration)
 
-        # insert document
-        schedule_id = Schedules().insert_one(schedule).inserted_id
+        session.flush()
 
-        return make_response(jsonify({"_id": str(schedule_id)}), HTTPStatus.CREATED)
+        return make_response(jsonify({"_id": str(clone.id)}), HTTPStatus.CREATED)

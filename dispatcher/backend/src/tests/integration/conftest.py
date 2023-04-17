@@ -1,10 +1,13 @@
 from uuid import uuid4
 
 import pytest
+import sqlalchemy as sa
 from flask.testing import FlaskClient
 
+import db.models as dbm
 from common import mongo
 from common.roles import ROLES
+from db import Session
 from main import application as app
 from routes import API_PATH
 from utils.database import Initializer
@@ -74,6 +77,23 @@ def access_token():
 @pytest.fixture(scope="session")
 def database() -> mongo.Database:
     yield mongo.Database()
+
+
+@pytest.fixture()
+def cleanup_create_test():
+    """Utility fixture to delete resources that may have been created during a test.
+    We assume that 'normal' resources created by other fixtures do not have a name
+    ending with 'create_test' and that resources created during creation tests have a
+    name ending with 'create_test'.
+    """
+
+    yield "whatever"
+
+    with Session.begin() as session:
+        for sched in session.execute(
+            sa.select(dbm.Schedule).where(dbm.Schedule.name.endswith("create_test"))
+        ).scalars():
+            session.delete(sched)
 
 
 def pytest_sessionstart(session):
