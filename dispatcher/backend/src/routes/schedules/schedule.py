@@ -257,6 +257,8 @@ class ScheduleRoute(BaseRoute):
 
         schedule = dbm.Schedule.get_or_none(session, schedule_name)
         raise_if_none(schedule, ScheduleNotFound)
+        # First unset most_recent_task to avoid circular dependency issues
+        schedule.most_recent_task = None
         session.delete(schedule)
 
         return Response(status=HTTPStatus.NO_CONTENT)

@@ -40,6 +40,59 @@ class UserSchemaReadOne(UserSchemaReadMany):
     ssh_keys = mf.List(mf.Nested(SshKeyRead))
 
 
+class ConfigResourcesSchema(m.Schema):
+    cpu = mf.Integer()
+    disk = mf.Integer()
+    memory = mf.Integer()
+
+
+class ConfigWithOnlyResourcesSchema(m.Schema):
+    resources = mf.Nested(ConfigResourcesSchema)
+
+
+class ConfigWithOnlyTaskNameAndResourcesSchema(m.Schema):
+    resources = mf.Nested(ConfigResourcesSchema)
+    task_name = mf.String()
+
+
+class TaskLightSchema(m.Schema):
+    id = mf.String(data_key="_id")
+    status = mf.String()
+    timestamp = mf.Dict()
+    schedule_name = mf.String()
+    worker_name = mf.String(data_key="worker")
+    updated_at = mf.DateTime()
+
+
+class TaskFullSchema(TaskLightSchema):
+    config = mf.Dict()
+    events = mf.Dict()
+    debug = mf.Dict()
+    requested_by = mf.String()
+    canceled_by = mf.String()
+    container = mf.Dict()
+    priority = mf.Integer()
+    notification = mf.Dict()
+    files = mf.Dict()
+    upload = mf.Dict()
+
+
+class RequestedTaskLightSchema(m.Schema):
+    id = mf.String(data_key="_id")
+    status = mf.String()
+    config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema)
+    timestamp = mf.Dict()
+    requested_by = mf.String()
+    priority = mf.Integer()
+    schedule_name = mf.String()
+
+
+class RequestedTaskFullSchema(RequestedTaskLightSchema):
+    config = mf.Dict()  # override base
+    events = mf.Dict()
+    upload = mf.Dict()
+
+
 class MostRecentTaskSchema(m.Schema):
     id = mf.String(data_key="_id")
     status = mf.String()

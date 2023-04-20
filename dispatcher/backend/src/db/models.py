@@ -230,6 +230,12 @@ class Task(Base):
 
     worker: Mapped["Worker"] = relationship(back_populates="tasks", init=False)
 
+    @classmethod
+    def get_or_none_by_id(cls, session: Session, id: UUID) -> Optional["Task"]:
+        """Search DB for a task by UUID, returns None if not found"""
+        stmt = select(Task).where(Task.id == id)
+        return session.execute(stmt).scalar_one_or_none()
+
 
 class Schedule(Base):
     __tablename__ = "schedule"
@@ -283,6 +289,13 @@ class Schedule(Base):
     def get_or_none(cls, session: Session, name: str) -> Optional["Schedule"]:
         """Search DB for a schedule by name, returns None if not found"""
         stmt = select(Schedule).where(Schedule.name == name)
+        return session.execute(stmt).scalar_one_or_none()
+
+    @classmethod
+    def get_id_or_none(cls, session: Session, name: str) -> Optional[UUID]:
+        """Search DB for a schedule by name, and return its ID.
+        Returns None if not found"""
+        stmt = select(Schedule.id).where(Schedule.name == name)
         return session.execute(stmt).scalar_one_or_none()
 
 
@@ -347,3 +360,9 @@ class RequestedTask(Base):
     worker: Mapped[Optional["Worker"]] = relationship(
         back_populates="requested_tasks", init=False
     )
+
+    @classmethod
+    def get_or_none_by_id(cls, session: Session, id: UUID) -> Optional["RequestedTask"]:
+        """Search DB for a requested task by UUID, returns None if not found"""
+        stmt = select(RequestedTask).where(RequestedTask.id == id)
+        return session.execute(stmt).scalar_one_or_none()

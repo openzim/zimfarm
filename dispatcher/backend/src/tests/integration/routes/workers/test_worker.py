@@ -55,12 +55,13 @@ class TestWorkersList:
 
 
 class TestWorkerCheckIn:
-    name = "myworker"
+    # name = "worker_name_create_test"
 
-    def test_checkin(self, database, client, access_token, worker):
-        url = f"/workers/{self.name}/check-in"
+    def test_checkin(self, client, access_token, worker, cleanup_create_test):
+        # worker = make_worker(name=self.name)
+        url = f"/workers/{worker['name']}/check-in"
         payload = {
-            "username": "some-user",
+            "username": worker["username"],
             "cpu": 4,
             "memory": 2048,
             "disk": 4096,
@@ -70,7 +71,6 @@ class TestWorkerCheckIn:
             url, json=payload, headers={"Authorization": access_token}
         )
         assert response.status_code == 204
-        database.workers.delete_one({"username": payload["username"]})
 
     @pytest.mark.parametrize(
         "payload",
@@ -104,10 +104,9 @@ class TestWorkerCheckIn:
             },
         ],
     )
-    def test_bad_checkin(self, database, client, access_token, worker, payload):
-        url = f"/workers/{self.name}/check-in"
+    def test_bad_checkin(self, client, access_token, worker, payload):
+        url = f"/workers/{worker['name']}/check-in"
         response = client.put(
             url, json=payload, headers={"Authorization": access_token}
         )
         assert response.status_code == 400
-        database.workers.delete_one({"name": self.name})

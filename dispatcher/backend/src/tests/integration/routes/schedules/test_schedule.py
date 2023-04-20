@@ -207,7 +207,6 @@ class TestSchedulePost:
         response = client.post(
             url, json=document, headers={"Authorization": access_token}
         )
-        print(response.get_json())
         assert response.status_code == 201
 
         url = "/schedules/{}".format(document["name"])
