@@ -209,7 +209,7 @@ class Task(Base):
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[List[Dict[str, Any]]]
     debug: Mapped[Optional[Dict[str, Any]]]
-    status: Mapped[str]
+    status: Mapped[str] = mapped_column(index=True)
     timestamp: Mapped[Dict[str, Any]]
     requested_by: Mapped[Optional[str]]
     canceled_by: Mapped[Optional[str]]
@@ -249,23 +249,22 @@ class Schedule(Base):
         unique=True
     )  # temporary backup of mongo document id
     name: Mapped[str] = mapped_column(unique=True, index=True)
-    category: Mapped[str]
+    category: Mapped[str] = mapped_column(index=True)
     config: Mapped[Dict[str, Any]] = mapped_column(JSON)
     enabled: Mapped[bool]
-    language_code: Mapped[str]
+    language_code: Mapped[str] = mapped_column(index=True)
     language_name_native: Mapped[str]
     language_name_en: Mapped[str]
-    tags: Mapped[List[str]]
+    tags: Mapped[List[str]] = mapped_column(index=True)
     periodicity: Mapped[str]
     notification: Mapped[Optional[Dict[str, Any]]]
 
-    most_recent_task_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("task.id", use_alter=True), init=False
-    )
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration
     # has been partially modified to create the FK afterwards
-
+    most_recent_task_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("task.id", use_alter=True), init=False
+    )
     most_recent_task: Mapped[Optional["Task"]] = relationship(
         init=False, foreign_keys=[most_recent_task_id]
     )

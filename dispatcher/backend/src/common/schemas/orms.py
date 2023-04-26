@@ -46,10 +46,6 @@ class ConfigResourcesSchema(m.Schema):
     memory = mf.Integer()
 
 
-class ConfigWithOnlyResourcesSchema(m.Schema):
-    resources = mf.Nested(ConfigResourcesSchema)
-
-
 class ConfigWithOnlyTaskNameAndResourcesSchema(m.Schema):
     resources = mf.Nested(ConfigResourcesSchema)
     task_name = mf.String()
@@ -88,9 +84,20 @@ class RequestedTaskLightSchema(m.Schema):
 
 
 class RequestedTaskFullSchema(RequestedTaskLightSchema):
+    def get_worker_name(task: dbm.Task) -> str:
+        if task.worker:
+            return task.worker.name
+        else:
+            return None
+
+    def get_schedule_name(task: dbm.Task) -> str:
+        return task.schedule.name
+
     config = mf.Dict()  # override base
     events = mf.Dict()
     upload = mf.Dict()
+    schedule_name = mf.Function(serialize=get_schedule_name)  # override base
+    worker_name = mf.Function(serialize=get_worker_name)
 
 
 class MostRecentTaskSchema(m.Schema):

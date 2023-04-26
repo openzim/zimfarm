@@ -97,7 +97,7 @@ class InternalError(Exception):
 
     @staticmethod
     def handler(e):
-        if isinstance(e, BadRequest) and e.message is not None:
+        if isinstance(e, InternalError) and e.message is not None:
             return make_response(
                 jsonify({"error": e.message}), HTTPStatus.INTERNAL_SERVER_ERROR
             )

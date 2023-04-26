@@ -238,8 +238,6 @@ class ScheduleRoute(BaseRoute):
             else:
                 setattr(schedule, key, value)
 
-        schedule.config = schedule.config.copy()
-
         try:
             session.flush()
         except IntegrityError:

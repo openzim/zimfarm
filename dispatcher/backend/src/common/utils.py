@@ -19,7 +19,7 @@ from utils.scheduling import update_schedule_duration
 logger = logging.getLogger(__name__)
 
 
-def task_event_handler(session, task_id, event, payload):
+def task_event_handler(session: so.Session, task_id: UUID, event: str, payload: dict):
     """ventilate event processing to appropriate handler"""
     handlers = {
         TaskStatus.reserved: task_reserved_event_handler,
@@ -126,8 +126,7 @@ def save_event(
     # - one on file upload complete with name and status=uploaded
     # - one on file check complete with result and log
     if kwargs.get("file", {}).get("name"):
-        # mongo doesn't support `.` in keys (so we replace with Unicode Full Stop)
-        fkey = kwargs["file"]["name"].replace(".", "．")
+        fkey = kwargs["file"]["name"]
         fstatus = kwargs["file"].get("status")
         if fstatus == "created":
             task.files[fkey] = {
@@ -140,7 +139,6 @@ def save_event(
             task.files[fkey]["status"] = fstatus
             task.files[fkey][f"{fstatus}_timestamp"] = timestamp
         elif fstatus == "checked":
-            task.files[fkey]["status"] = fstatus
             task.files[fkey]["check_result"] = kwargs["file"].get("check_result")
             task.files[fkey]["check_log"] = kwargs["file"].get("check_log")
             task.files[fkey]["check_timestamp"] = timestamp
@@ -167,13 +165,13 @@ def task_reserved_event_handler(session, task_id, payload):
     )
 
 
-def task_started_event_handler(session, task_id, payload):
+def task_started_event_handler(session: so.Session, task_id: UUID, payload: dict):
     logger.info(f"Task Started: {task_id}")
 
     save_event(session, task_id, TaskStatus.started, get_timestamp_from_event(payload))
 
 
-def task_suceeded_event_handler(session, task_id, payload):
+def task_suceeded_event_handler(session: so.Session, task_id: UUID, payload: dict):
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task Succeeded: {task_id}, {timestamp}")
 
@@ -182,7 +180,7 @@ def task_suceeded_event_handler(session, task_id, payload):
     )
 
 
-def task_failed_event_handler(session, task_id, payload):
+def task_failed_event_handler(session: so.Session, task_id: UUID, payload: dict):
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task Failed: {task_id}, {timestamp}")
 
@@ -197,7 +195,9 @@ def task_failed_event_handler(session, task_id, payload):
     )
 
 
-def task_cancel_requested_event_handler(session, task_id, payload):
+def task_cancel_requested_event_handler(
+    session: so.Session, task_id: UUID, payload: dict
+):
     requested_by = payload.get("canceled_by")
     logger.info(f"Task Cancellation Requested: {task_id}, by: {requested_by}")
 
@@ -210,7 +210,7 @@ def task_cancel_requested_event_handler(session, task_id, payload):
     )
 
 
-def task_canceled_event_handler(session, task_id, payload):
+def task_canceled_event_handler(session: so.Session, task_id: UUID, payload: dict):
     logger.info(f"Task Cancelled: {task_id}")
 
     # if canceled event carries a `canceled_by` and we have none on the task
@@ -230,7 +230,9 @@ def task_canceled_event_handler(session, task_id, payload):
     )
 
 
-def task_scraper_started_event_handler(session, task_id, payload):
+def task_scraper_started_event_handler(
+    session: so.Session, task_id: UUID, payload: dict
+):
     timestamp = get_timestamp_from_event(payload)
     image = payload.get("image")
     command = payload.get("command")
@@ -246,7 +248,9 @@ def task_scraper_started_event_handler(session, task_id, payload):
     )
 
 
-def task_scraper_running_event_handler(session, task_id, payload):
+def task_scraper_running_event_handler(
+    session: so.Session, task_id: UUID, payload: dict
+):
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task Container ping: {task_id}")
 
@@ -262,7 +266,9 @@ def task_scraper_running_event_handler(session, task_id, payload):
     )
 
 
-def task_scraper_completed_event_handler(session, task_id, payload):
+def task_scraper_completed_event_handler(
+    session: so.Session, task_id: UUID, payload: dict
+):
     timestamp = get_timestamp_from_event(payload)
     exit_code = payload.get("exit_code")
     logger.info(f"Task Container Finished: {task_id}, {exit_code}")
@@ -278,7 +284,9 @@ def task_scraper_completed_event_handler(session, task_id, payload):
     )
 
 
-def task_scraper_killed_event_handler(session, task_id, payload):
+def task_scraper_killed_event_handler(
+    session: so.Session, task_id: UUID, payload: dict
+):
     timestamp = get_timestamp_from_event(payload)
     timeout = payload.get("timeout")
     logger.info(f"Task Container Killed: {task_id}, after {timeout}s")
@@ -286,7 +294,7 @@ def task_scraper_killed_event_handler(session, task_id, payload):
     save_event(session, task_id, TaskStatus.scraper_killed, timestamp, timeout=timeout)
 
 
-def task_created_file_event_handler(session, task_id, payload):
+def task_created_file_event_handler(session: so.Session, task_id: UUID, payload: dict):
     file = payload.get("file", {})
     file["status"] = "created"
     timestamp = get_timestamp_from_event(payload)
@@ -295,7 +303,7 @@ def task_created_file_event_handler(session, task_id, payload):
     save_event(session, task_id, TaskStatus.created_file, timestamp, file=file)
 
 
-def task_uploaded_file_event_handler(session, task_id, payload):
+def task_uploaded_file_event_handler(session: so.Session, task_id: UUID, payload: dict):
     file = {"name": payload.get("filename"), "status": "uploaded"}
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task uploaded file: {task_id}, {file['name']}")
@@ -303,7 +311,7 @@ def task_uploaded_file_event_handler(session, task_id, payload):
     save_event(session, task_id, TaskStatus.uploaded_file, timestamp, file=file)
 
 
-def task_failed_file_event_handler(session, task_id, payload):
+def task_failed_file_event_handler(session: so.Session, task_id: UUID, payload: dict):
     file = {"name": payload.get("filename"), "status": "failed"}
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task file upload failed: {task_id}, {file['name']}")
@@ -311,7 +319,7 @@ def task_failed_file_event_handler(session, task_id, payload):
     save_event(session, task_id, TaskStatus.failed_file, timestamp, file=file)
 
 
-def task_checked_file_event_handler(session, task_id, payload):
+def task_checked_file_event_handler(session: so.Session, task_id: UUID, payload: dict):
     file = {
         "name": payload.get("filename"),
         "status": "checked",
@@ -329,7 +337,7 @@ def task_checked_file_event_handler(session, task_id, payload):
         advertise_book_to_cms(task_id, file["name"])
 
 
-def task_update_event_handler(session, task_id, payload):
+def task_update_event_handler(session: so.Session, task_id: UUID, payload: dict):
     timestamp = get_timestamp_from_event(payload)
     log = payload.get("log")  # filename / S3 key of text file at upload_uri[logs]
     logger.info(f"Task update: {task_id}, log: {log}")
@@ -337,7 +345,7 @@ def task_update_event_handler(session, task_id, payload):
     save_event(session, task_id, TaskStatus.update, timestamp, log=log)
 
 
-def handle_others(task_id, event, payload):
+def handle_others(task_id: UUID, event: str, payload: dict):
     logger.info(f"Other event: {event}")
     logger.info(f"Other event, task_id: {task_id}")
     logger.info(f"Other event, payload keys: {list(payload.keys())}")

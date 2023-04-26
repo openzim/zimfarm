@@ -148,13 +148,13 @@ def cleanup_create_test():
     yield "whatever"
 
     with Session.begin() as session:
-        for sched in session.execute(
-            sa.select(dbm.Schedule).where(dbm.Schedule.name.endswith("create_test"))
+        for schedule in session.execute(
+            sa.select(dbm.Schedule).where(dbm.Schedule.name.endswith("_create_test"))
         ).scalars():
-            sched.most_recent_task = None
-            session.delete(sched)
+            schedule.most_recent_task = None
+            session.delete(schedule)
         for worker in session.execute(
-            sa.select(dbm.Worker).where(dbm.Worker.name.endswith("create_test"))
+            sa.select(dbm.Worker).where(dbm.Worker.name.endswith("_create_test"))
         ).scalars():
             session.delete(worker)
 

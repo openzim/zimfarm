@@ -64,11 +64,6 @@ RhJMRUmh/D3kxUFO/wtSDGfo/HR/1iEraoddi+sA6+R56vA8ziJC51xw
 
 
 @pytest.fixture(scope="module")
-def user(make_user):
-    return make_user()
-
-
-@pytest.fixture(scope="module")
 def users(make_user):
     users = []
     for index in range(5):
