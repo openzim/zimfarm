@@ -32,7 +32,8 @@ This container is a Mongo DB.
 ## Instructions
 
 First start the Docker-Compose stack:
-```
+
+```sh
 cd dev
 docker compose -p zimfarm up -d
 ```
@@ -42,17 +43,20 @@ docker compose -p zimfarm up -d
 If this is your first run or if you made any schema change, you need to set/update the DB schema
 
 Start a shell in the backend-tools container.
-```
+
+```sh
 docker exec -it zimfarm-backend-tools-1 /bin/sh
 ```
 
 Once inside the container, ask Alembic to update the schema
-```
+
+```sh
 alembic upgrade head
 ```
 
 You can also check that everything is ok
-```
+
+```sh
 alembic check
 ```
 
@@ -64,22 +68,26 @@ Just do the same as above with the backend-tests container (instead of the backe
 Do not forget to set/update the test DB schema (see above).
 
 Start a shell in the backend-tests container.
-```
+
+```sh
 docker exec -it zimfarm-backend-tests-1 /bin/sh
 ```
 
 Once inside the container, run the tests
-```
+
+```sh
 python -m pytest
 ```
 
 You can select one specific set of tests by path
-```
+
+```sh
 python -m pytest tests/integration/routes/users
 ```
 
 Or just one specific test function
-```
+
+```sh
 python -m pytest tests/integration/routes/users -k test_list_no_auth
 ```
 
@@ -90,7 +98,7 @@ The configuration to generate a schema of the backend database is stored in disp
 To generate DB schema documentation, you can run the following command once your 
 docker-compose setup is ready (and supposing that your local DB is up-to-date):
 
-```
+```sh
 cd dispatcher/backend
 docker run --network zimfarm_default -v "$(pwd)/docs/schemaspy.properties:/schemaspy.properties" -v "$(pwd)/docs/schemaspy:/output" schemaspy/schemaspy:latest
 ```
