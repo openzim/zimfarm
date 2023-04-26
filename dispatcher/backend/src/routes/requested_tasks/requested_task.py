@@ -172,9 +172,9 @@ class RequestedTasksRoute(BaseRoute):
         requested_tasks = []
         for schedule_name in schedule_names:
             rq_task = request_a_schedule(
+                session=session,
                 schedule_name=schedule_name,
                 requested_by=token.username,
-                session=session,
                 worker_name=worker,
                 priority=priority,
             )
@@ -267,9 +267,6 @@ class RequestedTaskRoute(BaseRoute):
         requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
         raise_if_none(requested_task, TaskNotFound)
         resp = RequestedTaskFullSchema().dump(requested_task)
-        if requested_task.worker:
-            resp["worker_name"] = requested_task.worker.name
-        resp["schedule_name"] = requested_task.schedule.name
         return jsonify(resp)
 
     @authenticate

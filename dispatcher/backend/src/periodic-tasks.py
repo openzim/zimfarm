@@ -51,26 +51,23 @@ def history_cleanup(session: so.Session):
     schedule_ids_stmt = (
         sa.select(dbm.Task.schedule_id)
         .group_by(dbm.Task.schedule_id)
-        .having(sa.func.count(dbm.Task.id) > 10)
+        .having(sa.func.count(dbm.Task.id) > HISTORY_TASK_PER_SCHEDULE)
     )
 
     schedules_with_too_much_tasks = session.execute(
-        sa.select(dbm.Schedule)
-        .filter(dbm.Schedule.id.in_(schedule_ids_stmt))
-        .group_by(dbm.Task.schedule_id)
-        .having(sa.func.count(dbm.Task.id) > HISTORY_TASK_PER_SCHEDULE)
+        sa.select(dbm.Schedule).filter(dbm.Schedule.id.in_(schedule_ids_stmt))
     ).scalars()
 
-    cnt_delete_requests = 0
+    nb_deleted_tasks = 0
     for schedule in schedules_with_too_much_tasks:
-        cnt = 0
+        nb_tasks_kept = 0
         for task in sorted(schedule.tasks, lambda x: -x.updated_at):
-            if cnt < HISTORY_TASK_PER_SCHEDULE:
-                cnt += 1
+            if nb_tasks_kept < HISTORY_TASK_PER_SCHEDULE:
+                nb_tasks_kept += 1
                 continue
             session.delete(task)
-            cnt_delete_requests += 1
-    logger.info(f"::: deleted {cnt_delete_requests} tasks")
+            nb_deleted_tasks += 1
+    logger.info(f"::: deleted {nb_deleted_tasks} tasks")
 
 
 def status_to_cancel(now, status, timeout, session: so.Session):
@@ -123,19 +120,19 @@ def staled_statuses(session: so.Session):
         .filter(dbm.Task.status == status)
         .filter(dbm.Task.timestamp[status].astext <= ago)
     ).scalars()
-    cnt_suceeded = 0
-    cnt_failed = 0
+    nb_suceeded_tasks = 0
+    nb_failed_tasks = 0
     for task in tasks:
         if "exit_code" in task.container and int(task.container["exit_code"]) == 0:
             task.status = TaskStatus.succeeded
             task.timestamp[TaskStatus.succeeded] = now
-            cnt_suceeded += 1
+            nb_suceeded_tasks += 1
         else:
             task.status = TaskStatus.failed
             task.timestamp[TaskStatus.failed] = now
-            cnt_failed += 1
-    logger.info(f"::: succeeded {cnt_suceeded} tasks")
-    logger.info(f"::: failed {cnt_failed} tasks")
+            nb_failed_tasks += 1
+    logger.info(f"::: succeeded {nb_suceeded_tasks} tasks")
+    logger.info(f"::: failed {nb_failed_tasks} tasks")
 
 
 @dbsession

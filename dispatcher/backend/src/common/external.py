@@ -151,7 +151,7 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
 
     Safe to re-run as successful requests are skipped"""
     task = dbm.Task.get_or_none_by_id(session, task_id)
-    for file_name, file_data in task.files:
+    for file_name, file_data in task.files.items():
         advertise_book_to_cms(task, file_name, file_data)
 
 

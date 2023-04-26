@@ -41,6 +41,7 @@ def get_default_duration():
 
 def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
     """update the `duration` object of a schedule by looking at its recent tasks
+
     value is computed with the most recent difference between
     `scraper_completed - started` timestamps"""
 
@@ -57,7 +58,6 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
 
     workers_durations = {}
     for task in tasks:
-        print(task)
         workers_durations[task.worker_id] = {
             "task_id": task.id,
             "value": int(
@@ -69,8 +69,7 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
             "on": task.timestamp[TaskStatus.scraper_completed],
         }
 
-    print(workers_durations)
-
+    # compute values that will be inserted (or updated) in the DB
     inserts_durations = [
         {
             "default": False,
@@ -82,24 +81,28 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         }
         for item in workers_durations.items()
     ]
-    stmt = insert(dbm.ScheduleDuration).values(inserts_durations)
-    stmt = stmt.on_conflict_do_update(
+
+    # let's do an upsert ; conflict on schedule_id + worker_id
+    # on conflict, set the on, value, task_id
+    upsert_stmt = insert(dbm.ScheduleDuration).values(inserts_durations)
+    upsert_stmt = upsert_stmt.on_conflict_do_update(
         index_elements=[
             dbm.ScheduleDuration.schedule_id,
             dbm.ScheduleDuration.worker_id,
         ],
         set_={
-            dbm.ScheduleDuration.on: stmt.excluded.on,
-            dbm.ScheduleDuration.value: stmt.excluded.value,
-            dbm.ScheduleDuration.task_id: stmt.excluded.task_id,
+            dbm.ScheduleDuration.on: upsert_stmt.excluded.on,
+            dbm.ScheduleDuration.value: upsert_stmt.excluded.value,
+            dbm.ScheduleDuration.task_id: upsert_stmt.excluded.task_id,
         },
     )
+    session.execute(upsert_stmt)
 
 
 def request_a_schedule(
-    schedule_name,
-    requested_by: str,
     session: so.Session,
+    schedule_name: str,
+    requested_by: str,
     worker_name: str = None,
     priority: int = 0,
 ):
@@ -171,7 +174,6 @@ def request_a_schedule(
     session.flush()
 
     requested_task_obj = RequestedTaskFullSchema().dump(requested_task)
-    requested_task_obj["schedule_name"] = requested_task.schedule.name
 
     return requested_task_obj
 
@@ -196,7 +198,6 @@ def request_tasks_using_schedule(session: so.Session):
         logger.debug(f"requesting for `{period}` schedules (before {period_start})")
 
         # find non-requested schedules which last run started before our period start
-
         for schedule in session.execute(
             sa.select(dbm.Schedule)
             .filter(dbm.Schedule.enabled)
@@ -216,11 +217,11 @@ def request_tasks_using_schedule(session: so.Session):
                     continue
 
             if request_a_schedule(
+                session=session,
                 schedule_name=schedule["name"],
                 requested_by=requester,
                 worker_name=worker,
                 priority=priority,
-                session=session,
             ):
                 logger.debug(f"requested {schedule['name']}")
             else:

@@ -39,7 +39,7 @@ def dbsession(func):
     return inner
 
 
-def count_from_stmt(session: OrmSession, stmt: SelectBase):
+def count_from_stmt(session: OrmSession, stmt: SelectBase) -> int:
     """Count all records returned by any statement `stmt` passed as parameter"""
     return session.execute(
         select(func.count()).select_from(stmt.subquery())

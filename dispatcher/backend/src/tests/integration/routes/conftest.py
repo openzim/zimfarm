@@ -43,8 +43,6 @@ def make_config():
 
 @pytest.fixture(scope="module")
 def make_schedule(make_language, make_config, garbage_collector):
-    # schedule_ids = []
-
     def _make_schedule(
         name: str = "schedule_name",
         category: str = "wikipedia",
@@ -72,9 +70,7 @@ def make_schedule(make_language, make_config, garbage_collector):
         with Session.begin() as session:
             session.add(schedule)
             session.flush()
-            schedule_id = schedule.id
-            garbage_collector.add_schedule_id(schedule_id)
-            # schedule_ids.append(schedule_id)
+            garbage_collector.add_schedule_id(schedule.id)
             document = {
                 "name": schedule.name,
                 "category": schedule.category,
@@ -92,14 +88,6 @@ def make_schedule(make_language, make_config, garbage_collector):
         return document
 
     yield _make_schedule
-
-    # with Session.begin() as session:
-    #     for schedule in session.execute(
-    #         sa.select(dbm.Schedule).where(dbm.Schedule.id.in_(schedule_ids))
-    #     ).scalars():
-    #         # First unset most_recent_task to avoid circular dependency issues
-    #         schedule.most_recent_task = None
-    #         session.delete(schedule)
 
 
 @pytest.fixture(scope="module")
@@ -144,18 +132,12 @@ def schedules(make_schedule, make_config, make_language):
 
 @pytest.fixture(scope="module")
 def make_user(garbage_collector):
-    # user_ids = []
-
     def _make_user(username: str = "some-user", role: str = None) -> dict:
         user = dbm.User(
             mongo_val=None,
             mongo_id=None,
             username=username,
             password_hash=generate_password_hash("some-password"),
-            # (
-            #     "pbkdf2:sha256:150000$dEqsZI8W$2d2bbcbadab59281528ecbb27d26ac628472a0b"
-            #     "2f0a5e1828edbeeae683dd40f"
-            # ),
             scope=None,
             email=f"{username}@acme.com",
         )
@@ -192,8 +174,7 @@ def make_user(garbage_collector):
         with Session.begin() as session:
             session.add(user)
             session.flush()
-            user_id = user.id
-            garbage_collector.add_user_id(user_id)
+            garbage_collector.add_user_id(user.id)
             res_obj = {
                 "username": user.username,
                 "password_hash": user.password_hash,
@@ -216,11 +197,10 @@ def make_user(garbage_collector):
 
     yield _make_user
 
-    # with Session.begin() as session:
-    #     for user in session.execute(
-    #         sa.select(dbm.User).where(dbm.User.id.in_(user_ids))
-    #     ).scalars():
-    #         session.delete(user)
+
+@pytest.fixture(scope="module")
+def user(make_user):
+    return make_user()
 
 
 @pytest.fixture(scope="module")
@@ -316,9 +296,7 @@ def requested_task(make_requested_task):
 
 
 @pytest.fixture(scope="module")
-def make_worker(make_user, garbage_collector):
-    # worker_ids = []
-
+def make_worker(user, garbage_collector):
     def _make_worker(
         name: str = "worker_name",
         username: str = "some-user",
@@ -328,9 +306,6 @@ def make_worker(make_user, garbage_collector):
     ) -> dict:
         with Session.begin() as session:
             user_id = dbm.User.get_id_or_none(session, username)
-            if user_id is None:
-                make_user(username)
-                user_id = dbm.User.get_id_or_none(session, username)
             worker = dbm.Worker(
                 mongo_val=None,
                 mongo_id=None,
@@ -348,7 +323,6 @@ def make_worker(make_user, garbage_collector):
             session.add(worker)
             session.flush()
             garbage_collector.add_worker_id(worker.id)
-            # worker_ids.append(worker.id)
             document = {
                 "name": worker.name,
                 "username": worker.user.username,
@@ -372,7 +346,9 @@ def worker(make_worker):
 
 
 @pytest.fixture(scope="module")
-def workers(make_worker, make_config, make_language):
+def workers(make_worker, make_user, make_config, make_language):
+    for index in range(2):
+        make_user(f"user_{index}")
     workers = []
     for index in range(38):
         name = f"worker_{index}"

@@ -180,7 +180,7 @@ class TaskRoute(BaseRoute):
         except IntegrityError as exc:
             logger.exception(exc)
             response = jsonify({})
-            response.status_code = 423  # Locked
+            response.status_code = HTTPStatus.LOCKED
             return response
         except Exception as exc:
             logger.exception(exc)

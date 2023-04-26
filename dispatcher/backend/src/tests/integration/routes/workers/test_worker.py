@@ -55,13 +55,24 @@ class TestWorkersList:
 
 
 class TestWorkerCheckIn:
-    # name = "worker_name_create_test"
-
-    def test_checkin(self, client, access_token, worker, cleanup_create_test):
-        # worker = make_worker(name=self.name)
+    def test_checkin_existing_worker(self, client, access_token, worker):
         url = f"/workers/{worker['name']}/check-in"
         payload = {
             "username": worker["username"],
+            "cpu": 4,
+            "memory": 2048,
+            "disk": 4096,
+            "offliners": ["mwoffliner", "phet"],
+        }
+        response = client.put(
+            url, json=payload, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+    def test_checkin_new_worker(self, client, access_token, user, cleanup_create_test):
+        url = "/workers/some_worker_create_test/check-in"
+        payload = {
+            "username": user["username"],
             "cpu": 4,
             "memory": 2048,
             "disk": 4096,

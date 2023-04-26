@@ -105,6 +105,7 @@ class WorkerCheckinRoute(BaseRoute):
         # TODO: is it acceptable that any authenticated user can update the checkin
         # status of any worker ? shouldn't we check authenticated user scope + match
         # between authenticated user id and worker user id
+        # see https://github.com/openzim/zimfarm/issues/764
         try:
             request_json = WorkerCheckInSchema().load(request.get_json())
         except ValidationError as e:
@@ -113,25 +114,38 @@ class WorkerCheckinRoute(BaseRoute):
         user_id = dbm.User.get_id_or_none(session, request_json["username"])
         raise_if_none(user_id, BadRequest, "username not found")
 
-        insert_stmt = (
-            insert(dbm.Worker)
-            .values(
-                mongo_val=None,
-                mongo_id=None,
-                name=name,
-                selfish=request_json["selfish"],
-                cpu=request_json["cpu"],
-                memory=request_json["memory"],
-                disk=request_json["disk"],
-                offliners=request_json["offliners"],
-                platforms=request_json.get("platforms", {}),
-                last_seen=getnow(),
-                last_ip=None,
-                user_id=user_id,
-            )
-            .on_conflict_do_nothing(index_elements=["name"])
+        # let's do an upsert ; conflict on name
+        # on conflict, update the selfish, cpu, memory, disk, ...
+        upsert_stmt = insert(dbm.Worker).values(
+            mongo_val=None,
+            mongo_id=None,
+            name=name,
+            selfish=request_json["selfish"],
+            cpu=request_json["cpu"],
+            memory=request_json["memory"],
+            disk=request_json["disk"],
+            offliners=request_json["offliners"],
+            platforms=request_json.get("platforms", {}),
+            last_seen=getnow(),
+            last_ip=None,
+            user_id=user_id,
         )
-        session.execute(insert_stmt)
+        upsert_stmt = upsert_stmt.on_conflict_do_update(
+            index_elements=[
+                dbm.Worker.name,
+            ],
+            set_={
+                dbm.Worker.selfish: upsert_stmt.excluded.selfish,
+                dbm.Worker.cpu: upsert_stmt.excluded.cpu,
+                dbm.Worker.memory: upsert_stmt.excluded.memory,
+                dbm.Worker.disk: upsert_stmt.excluded.disk,
+                dbm.Worker.offliners: upsert_stmt.excluded.offliners,
+                dbm.Worker.platforms: upsert_stmt.excluded.platforms,
+                dbm.Worker.last_seen: upsert_stmt.excluded.last_seen,
+            },
+        )
+
+        session.execute(upsert_stmt)
 
         worker: dbm.Worker = dbm.Worker.get_or_none(session, name)
         raise_if_none(
