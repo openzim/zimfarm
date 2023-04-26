@@ -41,7 +41,7 @@ services:
       - mongodb
   backend-tools:
     build:
-      dockerfile: ../../dev/backend-tools/Dockerfile
+      dockerfile: ../../dev/backend-tools-tests/Dockerfile
       context: ../dispatcher/backend
     command: tail -f /dev/null
     volumes:
@@ -54,7 +54,7 @@ services:
       - mongodb
   backend-tests:
     build:
-      dockerfile: ../../dev/backend-tools/Dockerfile
+      dockerfile: ../../dev/backend-tools-tests/Dockerfile
       context: ../dispatcher/backend
     command: tail -f /dev/null
     volumes:
