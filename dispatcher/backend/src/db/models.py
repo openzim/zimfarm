@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, select, text
 from sqlalchemy.dialects.postgresql import ARRAY, INET, JSON, JSONB
-from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -24,7 +24,10 @@ class Base(MappedAsDataclass, DeclarativeBase):
     # type has to be used or when we want to ensure a specific setting (like the
     # timezone below)
     type_annotation_map = {
-        Dict[str, Any]: JSONB,  # transform Python Dict[str, Any] into PostgreSQL JSONB
+        Dict[str, Any]: MutableDict.as_mutable(
+            JSONB
+        ),  # transform Python Dict[str, Any] into PostgreSQL JSONB
+        List[Dict[str, Any]]: MutableList.as_mutable(JSONB),
         datetime: DateTime(
             timezone=False
         ),  # transform Python datetime into PostgreSQL Datetime without timezone
@@ -36,13 +39,6 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
     # This metadata specifies some naming conventions that will be used by
     # alembic to generate constraints names (indexes, unique constraints, ...)
-    type_annotation_map = {
-        Dict[str, Any]: MutableDict.as_mutable(JSONB),
-        List[Dict[str, Any]]: ARRAY(item_type=MutableDict.as_mutable(JSONB)),
-        datetime: DateTime(timezone=False),
-        List[str]: ARRAY(item_type=String),
-        IPv4Address: INET,
-    }
     metadata = MetaData(
         naming_convention={
             "ix": "ix_%(column_0_label)s",
