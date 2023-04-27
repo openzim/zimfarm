@@ -39,6 +39,16 @@ services:
     depends_on:
       - postgresdb
       - mongodb
+  frontend-ui:
+    build: ../dispatcher/frontend-ui
+    volumes:
+      - ../dispatcher/frontend-ui/src:/app
+    ports:
+      - 8001:80
+    environment:
+      ZIMFARM_WEBAPI: http://localhost:8000/v1
+    depends_on:
+      - backend
   backend-tools:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
