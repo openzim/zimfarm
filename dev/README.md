@@ -49,7 +49,7 @@ If this is your first run or if you made any schema change, you need to set/upda
 Start a shell in the backend-tools container.
 
 ```sh
-docker exec -it zimfarm-backend-tools-1 /bin/sh
+docker exec -it zf_backend-tools /bin/sh
 ```
 
 Once inside the container, ask Alembic to update the schema
@@ -73,7 +73,7 @@ The backend might typically fail if the DB schema is not up-to-date, or if you c
 
 Restart it with:
 ```sh
-docker start zimfarm-backend-1
+docker restart zf_backend
 ```
 
 Other containers might be restarted the same way.
@@ -92,7 +92,7 @@ Do not forget to set/update the test DB schema (see above).
 Start a shell in the backend-tests container.
 
 ```sh
-docker exec -it zimfarm-backend-tests-1 /bin/sh
+docker exec -it zf_backend-tests /bin/sh
 ```
 
 Once inside the container, run the tests
