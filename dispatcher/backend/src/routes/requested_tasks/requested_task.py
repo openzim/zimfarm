@@ -97,7 +97,7 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
     )
 
     if schedule_names:
-        stmt = stmt.filter(dbm.RequestedTask.schedule.name.in_(schedule_names))
+        stmt = stmt.filter(dbm.Schedule.name.in_(schedule_names))
 
     if priority:
         stmt = stmt.filter(dbm.RequestedTask.priority >= priority)
