@@ -16,6 +16,7 @@ class TestRequestedTaskList:
             "config",
             "requested_by",
             "priority",
+            "worker",
         }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
@@ -29,7 +30,7 @@ class TestRequestedTaskList:
         response = client.get(self.url, headers=headers, query_string=query_param)
         assert response.status_code == 400
 
-    def test_list(self, client, requested_tasks):
+    def test_list_requested_tasks(self, client, requested_tasks):
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers)
         assert response.status_code == 200

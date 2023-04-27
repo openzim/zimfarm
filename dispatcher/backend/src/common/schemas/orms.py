@@ -81,6 +81,7 @@ class RequestedTaskLightSchema(m.Schema):
     requested_by = mf.String()
     priority = mf.Integer()
     schedule_name = mf.String()
+    worker = mf.String()
 
 
 class RequestedTaskFullSchema(RequestedTaskLightSchema):
@@ -97,7 +98,7 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
     events = mf.List(mf.Dict)
     upload = mf.Dict()
     schedule_name = mf.Function(serialize=get_schedule_name)  # override base
-    worker_name = mf.Function(serialize=get_worker_name)
+    worker = mf.Function(serialize=get_worker_name)
 
 
 class MostRecentTaskSchema(m.Schema):
