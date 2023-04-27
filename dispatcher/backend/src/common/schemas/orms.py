@@ -62,7 +62,7 @@ class TaskLightSchema(m.Schema):
 
 class TaskFullSchema(TaskLightSchema):
     config = mf.Dict()
-    events = mf.Dict()
+    events = mf.List(mf.Dict)
     debug = mf.Dict()
     requested_by = mf.String()
     canceled_by = mf.String()
@@ -94,7 +94,7 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
         return task.schedule.name
 
     config = mf.Dict()  # override base
-    events = mf.Dict()
+    events = mf.List(mf.Dict)
     upload = mf.Dict()
     schedule_name = mf.Function(serialize=get_schedule_name)  # override base
     worker_name = mf.Function(serialize=get_worker_name)
