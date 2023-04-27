@@ -58,6 +58,7 @@ class TaskLightSchema(m.Schema):
     schedule_name = mf.String()
     worker_name = mf.String(data_key="worker")
     updated_at = mf.DateTime()
+    config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema, only=["resources"])
 
 
 class TaskFullSchema(TaskLightSchema):
