@@ -73,13 +73,13 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
     inserts_durations = [
         {
             "default": False,
-            "value": item[1]["value"],
-            "on": item[1]["on"],
+            "value": duration_payload["value"],
+            "on": duration_payload["on"],
             "schedule_id": schedule.id,
-            "worker_id": item[0],
-            "task_id": item[1]["task_id"],
+            "worker_id": worker_id,
+            "task_id": duration_payload["task_id"],
         }
-        for item in workers_durations.items()
+        for worker_id, duration_payload in workers_durations.items()
     ]
 
     # let's do an upsert ; conflict on schedule_id + worker_id
