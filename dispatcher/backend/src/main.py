@@ -21,7 +21,7 @@ from routes import (
 )
 from utils.broadcaster import BROADCASTER
 from utils.database import Initializer
-from utils.json import Encoder
+from utils.json import ZimfarmJsonProvider
 
 if os.getenv("DOCS_DIR"):
     docs_dir = pathlib.Path(os.getenv("DOCS_DIR")).resolve()
@@ -29,7 +29,7 @@ else:
     # docs dir outside codebase
     docs_dir = pathlib.Path(__file__).parent.resolve().parent.joinpath("docs")
 application = Flask(__name__, template_folder=docs_dir)
-application.json_encoder = Encoder
+application.json = ZimfarmJsonProvider(application)
 CORS(application)
 
 logging.basicConfig(
