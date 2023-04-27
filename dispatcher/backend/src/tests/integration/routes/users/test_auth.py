@@ -145,7 +145,7 @@ class TestAuthentication:
             raise IOError("unable to sign authentication payload")
 
         with open(signatured_path, "rb") as fp:
-            b64_signature = base64.b64encode(fp.read())
+            b64_signature = base64.b64encode(fp.read()).decode()
 
         headers = {
             "Content-type": "application/json",
