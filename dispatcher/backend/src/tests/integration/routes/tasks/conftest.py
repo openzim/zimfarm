@@ -1,33 +1,19 @@
-from datetime import datetime
-
 import pytest
-from bson import ObjectId
 
+import db.models as dbm
+from common import getnow
 from common.enum import TaskStatus
-from common.mongo import RequestedTasks, Tasks
+from db import Session
+from utils.offliners import expanded_config
 
 
-@pytest.fixture()
-def make_event():
-    def _make_event(code: str, timestamp: datetime, **kwargs):
-        event = {"code": code, "timestamp": timestamp}
-        event.update(kwargs)
-        return event
-
-    return _make_event
-
-
-@pytest.fixture()
-def make_task(database, make_event):
-    task_ids = []
-    tasks = Tasks(database=database)
-
+@pytest.fixture(scope="module")
+def make_task(make_event, make_schedule, make_config, worker, garbage_collector):
     def _make_task(
-        schedule_id=ObjectId(),
-        schedule_name="",
+        schedule_name="schedule_name",
         status=TaskStatus.succeeded,
-        hostname="zimfarm_worker.com",
     ):
+        now = getnow()
         if status == TaskStatus.requested:
             events = [TaskStatus.requested]
         elif status == TaskStatus.reserved:
@@ -49,7 +35,7 @@ def make_task(database, make_event):
                 TaskStatus.failed,
             ]
 
-        timestamp = {event: datetime.now() for event in events}
+        timestamp = {event: now for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
         container = {
             "command": "mwoffliner --mwUrl=https://example.com",
@@ -65,30 +51,53 @@ def make_task(database, make_event):
             debug["traceback"] = "example_traceback"
             files = {}
         else:
-            files = {"mwoffliner_1．zim": {"name": "mwoffliner_1.zim", "size": 1000}}
+            files = {"mwoffliner_1.zim": {"name": "mwoffliner_1.zim", "size": 1000}}
+        config = expanded_config(make_config())
+        with Session.begin() as session:
+            worker_obj = dbm.Worker.get_or_none(session, worker["name"])
+            schedule = dbm.Schedule.get_or_none(session, schedule_name)
+            if schedule is None:
+                make_schedule(schedule_name)
+                schedule = dbm.Schedule.get_or_none(session, schedule_name)
+            task = dbm.Task(
+                mongo_val=None,
+                mongo_id=None,
+                updated_at=now,
+                events=events,
+                debug=debug,
+                status=status,
+                timestamp=timestamp,
+                requested_by="bob",
+                canceled_by=None,
+                container=container,
+                priority=1,
+                config=config,
+                notification={},
+                files=files,
+                upload={},
+            )
+            task.schedule_id = schedule.id
+            task.worker_id = worker_obj.id
+            session.add(task)
+            session.flush()
+            garbage_collector.add_task_id(task.id)
 
-        task = {
-            "_id": ObjectId(),
-            "status": status,
-            "worker": hostname,
-            "schedule_name": schedule_name,
-            "timestamp": timestamp,
-            "events": events,
-            "container": container,
-            "debug": debug,
-            "files": files,
-        }
-
-        tasks.insert_one(task)
-        task_ids.append(task["_id"])
-        return task
+            return {
+                "_id": task.id,
+                "status": task.status,
+                "worker": worker_obj.name,
+                "schedule_name": schedule.name,
+                "timestamp": task.timestamp,
+                "events": task.events,
+                "container": task.container,
+                "debug": task.debug,
+                "files": task.files,
+            }
 
     yield _make_task
 
-    tasks.delete_many({"_id": {"$in": task_ids}})
 
-
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def tasks(make_task):
     tasks = []
     for i in range(5):
@@ -102,54 +111,6 @@ def tasks(make_task):
     return tasks
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def task(make_task):
     return make_task(status=TaskStatus.succeeded)
-
-
-@pytest.fixture()
-def make_requested_task(database, make_event):
-    requested_task_ids = []
-    requested_tasks = RequestedTasks(database=database)
-
-    def _make_requested_task(
-        schedule_id=ObjectId(),
-        schedule_name="",
-        status=TaskStatus.requested,
-        hostname="zimfarm_worker.com",
-    ):
-        events = [TaskStatus.requested]
-        timestamp = {event: datetime.now() for event in events}
-        events = [make_event(event, timestamp[event]) for event in events]
-
-        config = {
-            "config": {
-                "flags": {"api-key": "aaaaaa", "id": "abcde", "type": "channel"},
-                "image": {"name": "openzim/youtube", "tag": "latest"},
-                "task_name": "youtube",
-                "warehouse_path": "/other",
-                "monitor": False,
-            }
-        }
-
-        requested_task = {
-            "_id": ObjectId(),
-            "status": status,
-            "schedule_name": schedule_name,
-            "timestamp": timestamp,
-            "events": events,
-            "config": config,
-        }
-
-        requested_tasks.insert_one(requested_task)
-        requested_task_ids.append(requested_task["_id"])
-        return requested_task
-
-    yield _make_requested_task
-
-    requested_tasks.delete_many({"_id": {"$in": requested_task_ids}})
-
-
-@pytest.fixture()
-def requested_task(make_requested_task):
-    return make_requested_task()

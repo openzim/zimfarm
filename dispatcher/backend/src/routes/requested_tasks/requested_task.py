@@ -2,11 +2,12 @@ import datetime
 import logging
 from http import HTTPStatus
 
-import pymongo
-from bson import ObjectId
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
 
+import db.models as dbm
 from common import WorkersIpChangesCounts, getnow
 from common.constants import (
     ENABLED_SCHEDULER,
@@ -14,7 +15,7 @@ from common.constants import (
     USES_WORKERS_IPS_WHITELIST,
 )
 from common.external import update_workers_whitelist
-from common.mongo import RequestedTasks, Schedules, Workers
+from common.schemas.orms import RequestedTaskFullSchema, RequestedTaskLightSchema
 from common.schemas.parameters import (
     NewRequestedTaskSchema,
     RequestedTaskSchema,
@@ -22,11 +23,12 @@ from common.schemas.parameters import (
     WorkerRequestedTaskSchema,
 )
 from common.utils import task_event_handler
+from db import count_from_stmt, dbsession
 from errors.http import InvalidRequestJSON, TaskNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from routes.utils import raise_if, raise_if_none
+from routes.utils import raise_if_none
 from utils.broadcaster import BROADCASTER
 from utils.scheduling import find_requested_task_for, request_a_schedule
 from utils.token import AccessToken
@@ -49,7 +51,8 @@ def record_ip_change(worker_name):
         )
 
 
-def list_of_requested_tasks(token: AccessToken.Payload = None):
+@dbsession
+def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = None):
     """list of requested tasks"""
 
     request_args = request.args.to_dict()
@@ -57,10 +60,9 @@ def list_of_requested_tasks(token: AccessToken.Payload = None):
 
     # record we've seen a worker, if applicable
     if token and worker:
-        Workers().update_one(
-            {"name": worker, "username": token.username},
-            {"$set": {"last_seen": getnow()}},
-        )
+        worker = dbm.Worker.get_or_none(session, worker)
+        if worker.user.username == token.username:
+            worker.last_seen = getnow()
 
     request_args["matching_offliners"] = request.args.getlist("matching_offliners")
     request_args["schedule_name"] = request.args.getlist("schedule_name")
@@ -72,56 +74,68 @@ def list_of_requested_tasks(token: AccessToken.Payload = None):
     priority = request_args.get("priority")
 
     # get requested tasks from database
-    query = {}
+    stmt = (
+        sa.select(
+            dbm.RequestedTask.id,
+            dbm.RequestedTask.status,
+            so.Bundle(
+                "config",
+                dbm.RequestedTask.config["task_name"].label("task_name"),
+                dbm.RequestedTask.config["resources"].label("resources"),
+            ),
+            dbm.RequestedTask.timestamp,
+            dbm.RequestedTask.requested_by,
+            dbm.RequestedTask.priority,
+            dbm.Schedule.name.label("schedule_name"),
+            dbm.Worker.name.label("worker_name"),
+        )
+        .join(dbm.Worker, dbm.RequestedTask.worker, isouter=True)
+        .join(dbm.Schedule, dbm.RequestedTask.schedule, isouter=True)
+        .order_by(dbm.RequestedTask.priority.desc())
+        .order_by(dbm.RequestedTask.timestamp["reserved"].astext.desc())
+        .order_by(dbm.RequestedTask.timestamp["requested"].astext.desc())
+    )
+
     if schedule_names:
-        query["schedule_name"] = {"$in": schedule_names}
+        stmt = stmt.filter(dbm.RequestedTask.schedule.name.in_(schedule_names))
 
     if priority:
-        query["priority"] = {"$gte": priority}
+        stmt = stmt.filter(dbm.RequestedTask.priority >= priority)
 
     if worker:
-        query["worker"] = {"$in": [None, worker]}
+        stmt = stmt.filter(
+            sa.or_(
+                dbm.RequestedTask.worker == None,  # noqa: E711
+                dbm.Worker.name == worker,
+            )
+        )
 
     for res_key in ("cpu", "memory", "disk"):
         key = f"matching_{res_key}"
         if key in request_args:
-            query[f"config.resources.{res_key}"] = {"$lte": request_args[key]}
+            stmt = stmt.filter(
+                dbm.RequestedTask.config["resources"][res_key].astext.cast(
+                    sa.BigInteger
+                )
+                <= request_args[key]
+            )
     matching_offliners = request_args.get("matching_offliners")
     if matching_offliners:
-        query["config.task_name"] = {"$in": matching_offliners}
+        stmt = stmt.filter(
+            dbm.RequestedTask.config["task_name"].astext.in_(matching_offliners)
+        )
 
-    cursor = (
-        RequestedTasks()
-        .find(
-            query,
-            {
-                "_id": 1,
-                "status": 1,
-                "schedule_name": 1,
-                "config.task_name": 1,
-                "config.resources": 1,
-                "timestamp.requested": 1,
-                "requested_by": 1,
-                "priority": 1,
-                "worker": 1,
-            },
-        )
-        .sort(
-            [
-                ("priority", pymongo.DESCENDING),
-                ("timestamp.reserved", pymongo.DESCENDING),
-                ("timestamp.requested", pymongo.DESCENDING),
-            ]
-        )
-        .skip(skip)
-        .limit(limit)
-    )
-    count = RequestedTasks().count_documents(query)
+    count = count_from_stmt(session, stmt)
 
     return jsonify(
         {
             "meta": {"skip": skip, "limit": limit, "count": count},
-            "items": [task for task in cursor],
+            "items": list(
+                map(
+                    RequestedTaskLightSchema().dump,
+                    session.execute(stmt.offset(skip).limit(limit)).all(),
+                )
+            ),
         }
     )
 
@@ -133,7 +147,8 @@ class RequestedTasksRoute(BaseRoute):
 
     @authenticate
     @require_perm("tasks", "request")
-    def post(self, token: AccessToken.Payload):
+    @dbsession
+    def post(self, session: so.Session, token: AccessToken.Payload):
         """Create requested task from a list of schedule_names"""
 
         try:
@@ -146,15 +161,22 @@ class RequestedTasksRoute(BaseRoute):
         worker = request_json.get("worker")
 
         # raise 404 if nothing to schedule
-        if not Schedules().count_documents(
-            {"name": {"$in": schedule_names}, "enabled": True}
+        if not count_from_stmt(
+            session=session,
+            stmt=sa.select(dbm.Schedule)
+            .filter(dbm.Schedule.name.in_(schedule_names))
+            .filter(dbm.Schedule.enabled),
         ):
             raise NotFound()
 
         requested_tasks = []
         for schedule_name in schedule_names:
             rq_task = request_a_schedule(
-                schedule_name, token.username, worker, priority
+                session=session,
+                schedule_name=schedule_name,
+                requested_by=token.username,
+                worker_name=worker,
+                priority=priority,
             )
             if rq_task is None:
                 continue
@@ -168,17 +190,17 @@ class RequestedTasksRoute(BaseRoute):
 
         # trigger event handler
         for task in requested_tasks:
-            task_event_handler(ObjectId(task["_id"]), "requested", {})
+            task_event_handler(session, task["_id"], "requested", {})
 
         return make_response(
-            jsonify({"requested": [rt["_id"] for rt in requested_tasks]}),
+            jsonify({"requested": [task["_id"] for task in requested_tasks]}),
             HTTPStatus.CREATED,
         )
 
     @auth_info_if_supplied
     def get(self, token: AccessToken.Payload = None):
         """list of requested tasks for API users, no-auth"""
-        return list_of_requested_tasks(token)
+        return list_of_requested_tasks(token=token)
 
 
 class RequestedTasksForWorkers(BaseRoute):
@@ -187,7 +209,8 @@ class RequestedTasksForWorkers(BaseRoute):
     methods = ["GET"]
 
     @authenticate
-    def get(self, token: AccessToken.Payload):
+    @dbsession
+    def get(self, session: so.Session, token: AccessToken.Payload):
         """list of requested tasks to be retrieved by workers, auth-only"""
 
         if not ENABLED_SCHEDULER:
@@ -202,28 +225,27 @@ class RequestedTasksForWorkers(BaseRoute):
         worker_name = request_args.get("worker")
         worker_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
 
-        worker_query = {"name": worker_name, "username": token.username}
-        last_ip = Workers().find_one(worker_query, {"last_ip": 1}).get("last_ip")
-
         # record we've seen a worker, if applicable
         if token and worker_name:
-            Workers().update_one(
-                {"name": worker_name, "username": token.username},
-                {"$set": {"last_seen": getnow(), "last_ip": worker_ip}},
-            )
+            worker = dbm.Worker.get_or_none(session, worker_name)
+            if worker.user.username == token.username:
+                worker.last_seen = getnow()
+                last_ip = worker.last_ip
+                worker.last_ip = worker_ip
 
-        # IP changed since last encounter
-        if USES_WORKERS_IPS_WHITELIST and last_ip != worker_ip:
-            record_ip_change(worker_name)
+                # IP changed since last encounter
+                if USES_WORKERS_IPS_WHITELIST and last_ip != worker_ip:
+                    record_ip_change(worker_name)
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
 
         task = find_requested_task_for(
-            token.username,
-            worker_name,
-            request_args["avail_cpu"],
-            request_args["avail_memory"],
-            request_args["avail_disk"],
+            session=session,
+            username=token.username,
+            worker_name=worker_name,
+            avail_cpu=request_args["avail_cpu"],
+            avail_memory=request_args["avail_memory"],
+            avail_disk=request_args["avail_disk"],
         )
 
         return jsonify(
@@ -240,39 +262,41 @@ class RequestedTaskRoute(BaseRoute):
     methods = ["GET", "PATCH", "DELETE"]
 
     @url_object_id("requested_task_id")
-    def get(self, requested_task_id: str):
-        requested_task = RequestedTasks().find_one({"_id": requested_task_id})
+    @dbsession
+    def get(self, session: so.Session, requested_task_id: str):
+        requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
         raise_if_none(requested_task, TaskNotFound)
-
-        return jsonify(requested_task)
+        resp = RequestedTaskFullSchema().dump(requested_task)
+        return jsonify(resp)
 
     @authenticate
     @require_perm("tasks", "update")
     @url_object_id("requested_task_id")
-    def patch(self, requested_task_id: str, token: AccessToken.Payload):
-        requested_task = RequestedTasks().count_documents({"_id": requested_task_id})
-        raise_if(not requested_task, TaskNotFound)
+    @dbsession
+    def patch(
+        self, session: so.Session, requested_task_id: str, token: AccessToken.Payload
+    ):
+        requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
+        raise_if_none(requested_task, TaskNotFound)
 
         try:
             request_json = UpdateRequestedTaskSchema().load(request.get_json())
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        update = RequestedTasks().update_one(
-            {"_id": requested_task_id},
-            {"$set": {"priority": request_json.get("priority", 0)}},
-        )
-        if update.modified_count:
-            return Response(status=HTTPStatus.ACCEPTED)
-        return Response(status=HTTPStatus.OK)
+        requested_task.priority = request_json.get("priority", 0)
+
+        return Response(status=HTTPStatus.NO_CONTENT)
 
     @authenticate
     @require_perm("tasks", "unrequest")
     @url_object_id("requested_task_id")
-    def delete(self, requested_task_id: str, token: AccessToken.Payload):
-        query = {"_id": requested_task_id}
-        task = RequestedTasks().find_one(query, {"_id": 1})
-        raise_if_none(task, TaskNotFound)
+    @dbsession
+    def delete(
+        self, session: so.Session, requested_task_id: str, token: AccessToken.Payload
+    ):
+        requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
+        raise_if_none(requested_task, TaskNotFound)
+        session.delete(requested_task)
 
-        result = RequestedTasks().delete_one(query)
-        return jsonify({"deleted": result.deleted_count})
+        return jsonify({"deleted": 1})

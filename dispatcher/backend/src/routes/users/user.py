@@ -128,6 +128,4 @@ class UserRoute(BaseRoute):
         raise_if_none(orm_user, errors.NotFound)
         session.delete(orm_user)
 
-        # TODO: Delete workers associated with current user as well
-        # Workers().delete_many({"username": username})
         return Response(status=HTTPStatus.NO_CONTENT)

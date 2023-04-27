@@ -48,6 +48,7 @@ jobs:
           - 5432:5432
 
     env:
+      MONGODB_URI: mongodb://localhost:27017/TestsZF
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
 
     steps:
@@ -83,7 +84,7 @@ jobs:
       - name: run tests
         run: |
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
-          PYTHONPATH=$PWD pytest -c tests/integration/pytest.ini tests/ --cov=./
+          PYTHONPATH=$PWD pytest tests/ --cov=./
 
       - uses: codecov/codecov-action@v3
         with:

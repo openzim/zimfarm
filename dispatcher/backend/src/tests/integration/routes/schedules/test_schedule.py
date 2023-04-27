@@ -2,7 +2,6 @@ import json
 from uuid import uuid4
 
 import pytest
-from bson import ObjectId
 
 from utils.offliners import expanded_config
 
@@ -156,7 +155,7 @@ class TestSchedulePost:
         "document",
         [
             {
-                "name": "wikipedia_bm_test",
+                "name": "wikipedia_bm_create_test",
                 "category": "wikipedia",
                 "enabled": False,
                 "tags": ["full"],
@@ -178,7 +177,7 @@ class TestSchedulePost:
                 "notification": {},
             },
             {
-                "name": "gutenberg_mul",
+                "name": "gutenberg_mul_create_test",
                 "category": "gutenberg",
                 "enabled": True,
                 "tags": ["full", "mul"],
@@ -201,27 +200,24 @@ class TestSchedulePost:
             },
         ],
     )
-    def test_create_schedule(self, database, client, access_token, document):
+    def test_create_schedule_ok(
+        self, client, access_token, document, cleanup_create_test
+    ):
         url = "/schedules/"
         response = client.post(
             url, json=document, headers={"Authorization": access_token}
         )
-        print(response.get_json())
         assert response.status_code == 201
-        schedule_id = response.get_json()["_id"]
 
         url = "/schedules/{}".format(document["name"])
         response = client.get(url, headers={"Authorization": access_token})
+
         assert response.status_code == 200
 
         response_json = response.get_json()
         document["config"] = expanded_config(document["config"])
-        document["notification"] = {}
         response_json.pop("duration", None)  # generated server-side
         assert response_json == document
-
-        # remove from DB to prevent count mismatch on other tests
-        database.schedules.delete_one({"_id": ObjectId(schedule_id)})
 
     @pytest.mark.parametrize(
         "key", ["name", "category", "enabled", "tags", "language", "config"]
@@ -337,7 +333,6 @@ class TestScheduleGet:
         response = client.get(url)
         assert response.status_code == 200
 
-        del schedule["_id"]
         schedule["config"] = expanded_config(schedule["config"])
         assert response.get_json() == schedule
 

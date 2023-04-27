@@ -1,6 +1,8 @@
 import os
 
-from sqlalchemy import create_engine
+from bson.json_util import dumps, loads
+from sqlalchemy import SelectBase, create_engine, func, select
+from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
 if not os.getenv("POSTGRES_URI"):
@@ -11,7 +13,14 @@ if (
 ):  # this is a hack for cases where we do not need the DB, e.g. unit tests
     Session = None
 else:
-    Session = sessionmaker(bind=create_engine(os.getenv("POSTGRES_URI"), echo=False))
+    Session = sessionmaker(
+        bind=create_engine(
+            os.getenv("POSTGRES_URI"),
+            echo=False,
+            json_serializer=dumps,  # use bson serializer to handle ObjectId + datetime
+            json_deserializer=loads,  # use bson deserializer for same reason
+        )
+    )
 
 
 def dbsession(func):
@@ -28,3 +37,10 @@ def dbsession(func):
             return func(*args, **kwargs)
 
     return inner
+
+
+def count_from_stmt(session: OrmSession, stmt: SelectBase) -> int:
+    """Count all records returned by any statement `stmt` passed as parameter"""
+    return session.execute(
+        select(func.count()).select_from(stmt.subquery())
+    ).scalar_one()

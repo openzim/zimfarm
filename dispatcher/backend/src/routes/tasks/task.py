@@ -5,18 +5,23 @@
 import logging
 from http import HTTPStatus
 
-import pymongo
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
+import db.models as dbm
 from common.constants import ENABLED_SCHEDULER
 from common.enum import TaskStatus
-from common.mongo import RequestedTasks, Tasks
+from common.schemas.orms import TaskFullSchema, TaskLightSchema
 from common.schemas.parameters import TaskCreateSchema, TasksSchema, TasKUpdateSchema
 from common.utils import task_event_handler
-from errors.http import InvalidRequestJSON, TaskNotFound
+from db import count_from_stmt, dbsession
+from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
 from routes.base import BaseRoute
+from routes.errors import BadRequest
 from routes.utils import raise_if, raise_if_none, remove_secrets_from_response
 from utils.broadcaster import BROADCASTER
 from utils.token import AccessToken
@@ -29,7 +34,8 @@ class TasksRoute(BaseRoute):
     name = "tasks"
     methods = ["GET"]
 
-    def get(self):
+    @dbsession
+    def get(self, session: so.Session):
         """Return a list of tasks"""
 
         request_args = request.args.to_dict()
@@ -41,38 +47,45 @@ class TasksRoute(BaseRoute):
         statuses = request_args.get("status")
         schedule_name = request_args.get("schedule_name")
 
-        # get tasks from database
-        query = {}
-        if statuses:
-            query["status"] = {"$in": statuses}
-        if schedule_name:
-            query["schedule_name"] = schedule_name
-
-        count = Tasks().count_documents(query)
-
-        cursor = Tasks().aggregate(
-            [
-                {"$match": query},
-                {
-                    "$project": {
-                        "schedule_name": 1,
-                        "status": 1,
-                        "timestamp": 1,
-                        "worker": 1,
-                        "config.resources": 1,
-                        "updated_at": {"$arrayElemAt": ["$events.timestamp", -1]},
-                    }
-                },
-                {"$sort": {"updated_at": pymongo.DESCENDING}},
-                {"$skip": skip},
-                {"$limit": limit},
-            ]
+        stmt = (
+            sa.select(
+                dbm.Task.id,
+                dbm.Task.status,
+                dbm.Task.timestamp,
+                # dbm.Task.config,
+                so.Bundle(
+                    "config",
+                    dbm.Task.config["resources"].label("resources"),
+                ),
+                dbm.Task.updated_at,
+                dbm.Schedule.name.label("schedule_name"),
+                dbm.Worker.name.label("worker_name"),
+            )
+            .join(dbm.Worker, dbm.Task.worker, isouter=True)
+            .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
+            .order_by(dbm.Task.updated_at.desc())
         )
 
-        tasks = list(cursor)
+        # get tasks from database
+        if statuses:
+            stmt = stmt.filter(dbm.Task.status.in_(statuses))
+        if schedule_name:
+            stmt = stmt.filter(dbm.Schedule.name == schedule_name)
 
+        # get total count of items matching the filters
+        count = count_from_stmt(session, stmt)
+
+        # get schedules from database
         return jsonify(
-            {"meta": {"skip": skip, "limit": limit, "count": count}, "items": tasks}
+            {
+                "meta": {"skip": skip, "limit": limit, "count": count},
+                "items": list(
+                    map(
+                        TaskLightSchema().dump,
+                        session.execute(stmt.offset(skip).limit(limit)).all(),
+                    )
+                ),
+            }
         )
 
 
@@ -83,19 +96,39 @@ class TaskRoute(BaseRoute):
 
     @auth_info_if_supplied
     @url_object_id("task_id")
-    def get(self, task_id: str, token: AccessToken.Payload = None):
-        # exclude notification to not expose private information (privacy)
-        # on anonymous requests and requests for users without schedules_update
-        projection = (
-            None
-            if token and token.get_permission("schedules", "update")
-            else {"notification": 0}
-        )
-
-        task = Tasks().find_one({"_id": task_id}, projection)
+    @dbsession
+    def get(self, task_id: str, session: so.Session, token: AccessToken.Payload = None):
+        task = session.execute(
+            sa.select(
+                dbm.Task.id,
+                dbm.Task.status,
+                dbm.Task.timestamp,
+                dbm.Task.config,
+                dbm.Task.events,
+                dbm.Task.debug,
+                dbm.Task.requested_by,
+                dbm.Task.canceled_by,
+                dbm.Task.container,
+                dbm.Task.priority,
+                dbm.Task.notification,
+                dbm.Task.files,
+                dbm.Task.upload,
+                dbm.Task.updated_at,
+                dbm.Schedule.name.label("schedule_name"),
+                dbm.Worker.name.label("worker_name"),
+            )
+            .join(dbm.Worker, dbm.Task.worker, isouter=True)
+            .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
+            .filter(dbm.Task.id == task_id)
+        ).first()
         raise_if_none(task, TaskNotFound)
 
-        task["updated_at"] = task["events"][-1]["timestamp"]
+        task = TaskFullSchema().dump(task)
+
+        # exclude notification to not expose private information (privacy)
+        # on anonymous requests and requests for users without schedules_update
+        if not token or not token.get_permission("schedules", "update"):
+            task["notification"] = None
 
         if not token or not token.get_permission("tasks", "create"):
             remove_secrets_from_response(task)
@@ -105,7 +138,8 @@ class TaskRoute(BaseRoute):
     @authenticate
     @require_perm("tasks", "create")
     @url_object_id("task_id")
-    def post(self, task_id: str, token: AccessToken.Payload):
+    @dbsession
+    def post(self, session: so.Session, task_id: str, token: AccessToken.Payload):
         """create a task from a requested_task_id"""
 
         if not ENABLED_SCHEDULER:
@@ -113,53 +147,71 @@ class TaskRoute(BaseRoute):
                 jsonify({"msg": "scheduler is paused"}), HTTPStatus.NO_CONTENT
             )
 
-        requested_task = RequestedTasks().find_one({"_id": task_id})
-        raise_if_none(requested_task, TaskNotFound)
+        requested_task = dbm.RequestedTask.get_or_none_by_id(session, task_id)
+        raise_if_none(requested_task, BadRequest)
 
         request_args = TaskCreateSchema().load(request.args.to_dict())
-
-        document = {}
-        document.update(requested_task)
+        worker_name = request_args["worker_name"]
+        worker = dbm.Worker.get_or_none(session, worker_name)
+        raise_if_none(worker, WorkerNotFound)
+        task = dbm.Task(
+            mongo_val=None,
+            mongo_id=None,
+            updated_at=requested_task.updated_at,
+            events=requested_task.events,
+            debug=None,
+            status=requested_task.status,
+            timestamp=requested_task.timestamp,
+            requested_by=requested_task.requested_by,
+            canceled_by=None,
+            container=None,
+            priority=requested_task.priority,
+            config=requested_task.config,
+            notification=requested_task.notification,
+            files=None,
+            upload=requested_task.upload,
+        )
+        task.schedule_id = requested_task.schedule_id
+        task.worker_id = worker.id
+        session.add(task)
 
         try:
-            Tasks().insert_one(requested_task)
-        except pymongo.errors.DuplicateKeyError as exc:
+            session.flush()
+        except IntegrityError as exc:
             logger.exception(exc)
             response = jsonify({})
-            response.status_code = 423  # Locked
+            response.status_code = HTTPStatus.LOCKED
             return response
         except Exception as exc:
             logger.exception(exc)
             raise exc
 
+        task_id = task.id
         payload = {"worker": request_args["worker_name"]}
         try:
-            task_event_handler(task_id, TaskStatus.reserved, payload)
+            task_event_handler(
+                session=session,
+                task_id=task_id,
+                event=TaskStatus.reserved,
+                payload=payload,
+            )
         except Exception as exc:
             logger.exception(exc)
             logger.error("unable to create task. reverting.")
-            try:
-                Tasks().delete_one({"_id": task_id})
-            except Exception:
-                logger.debug(f"unable to revert deletion of task {task_id}")
             raise exc
 
-        try:
-            RequestedTasks().delete_one({"_id": task_id})
-        except Exception as exc:
-            logger.exception(exc)  # and pass
+        session.delete(requested_task)
 
         BROADCASTER.broadcast_updated_task(task_id, TaskStatus.reserved, payload)
 
-        return make_response(
-            jsonify(Tasks().find_one({"_id": task_id})), HTTPStatus.CREATED
-        )
+        return make_response(jsonify(TaskFullSchema().dump(task)), HTTPStatus.CREATED)
 
     @authenticate
     @require_perm("tasks", "update")
     @url_object_id("task_id")
-    def patch(self, task_id: str, token: AccessToken.Payload):
-        task = Tasks().find_one({"_id": task_id}, {"_id": 1})
+    @dbsession
+    def patch(self, session: so.Session, task_id: str, token: AccessToken.Payload):
+        task = dbm.Task.get_or_none_by_id(session, task_id)
         raise_if_none(task, TaskNotFound)
 
         try:
@@ -169,10 +221,15 @@ class TaskRoute(BaseRoute):
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        task_event_handler(task["_id"], request_json["event"], request_json["payload"])
+        task_event_handler(
+            session=session,
+            task_id=task.id,
+            event=request_json["event"],
+            payload=request_json["payload"],
+        )
 
         BROADCASTER.broadcast_updated_task(
-            task_id, request_json["event"], request_json["payload"]
+            task.id, request_json["event"], request_json["payload"]
         )
 
         return Response(status=HTTPStatus.NO_CONTENT)
@@ -186,17 +243,21 @@ class TaskCancelRoute(BaseRoute):
     @authenticate
     @require_perm("tasks", "cancel")
     @url_object_id("task_id")
-    def post(self, task_id: str, token: AccessToken.Payload):
-        task = Tasks().find_one(
-            {"status": {"$in": TaskStatus.incomplete()}, "_id": task_id}, {"_id": 1}
-        )
+    @dbsession
+    def post(self, session: so.Session, task_id: str, token: AccessToken.Payload):
+        task = dbm.Task.get_or_none_by_id(session, task_id)
         raise_if_none(task, TaskNotFound)
+        if task.status not in TaskStatus.incomplete():
+            raise TaskNotFound
 
         task_event_handler(
-            task["_id"], TaskStatus.cancel_requested, {"canceled_by": token.username}
+            session=session,
+            task_id=task.id,
+            event=TaskStatus.cancel_requested,
+            payload={"canceled_by": token.username},
         )
 
         # broadcast cancel-request to worker
-        BROADCASTER.broadcast_cancel_task(task_id)
+        BROADCASTER.broadcast_cancel_task(task.id)
 
         return Response(status=HTTPStatus.NO_CONTENT)
