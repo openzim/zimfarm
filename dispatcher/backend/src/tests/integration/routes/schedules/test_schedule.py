@@ -216,7 +216,16 @@ class TestSchedulePost:
 
         response_json = response.get_json()
         document["config"] = expanded_config(document["config"])
-        response_json.pop("duration", None)  # generated server-side
+
+        # these properties are generated server side, we just check they are present
+        assert "duration" in response_json
+        assert "default" in response_json["duration"]
+        assert "workers" in response_json["duration"]
+        assert not response_json["duration"]["available"]
+        assert "most_recent_task" in response_json
+        response_json.pop("duration", None)
+        response_json.pop("most_recent_task", None)
+
         assert response_json == document
 
     @pytest.mark.parametrize(
@@ -334,7 +343,18 @@ class TestScheduleGet:
         assert response.status_code == 200
 
         schedule["config"] = expanded_config(schedule["config"])
-        assert response.get_json() == schedule
+
+        response_json = response.get_json()
+        # these properties are generated server side, we just check they are present
+        assert "duration" in response_json
+        assert "default" in response_json["duration"]
+        assert "workers" in response_json["duration"]
+        assert not response_json["duration"]["available"]
+        assert "most_recent_task" in response_json
+        response_json.pop("duration", None)
+        response_json.pop("most_recent_task", None)
+
+        assert response_json == schedule
 
 
 class TestSchedulePatch:
