@@ -29,6 +29,10 @@ This container is a PostgreSQL DB. DB data is kept in a volume, persistent acros
 
 This container is a Mongo DB.
 
+### frontend-ui
+
+This container hosts the frontend UI for end-users.
+
 ## Instructions
 
 First start the Docker-Compose stack:
@@ -40,7 +44,7 @@ docker compose -p zimfarm up -d
 
 ## Setup Postgresql DB
 
-If this is your first run or if you made any schema change, you need to set/update the DB schema
+If this is your first run or if you made any schema change, you need to set/update the DB schema before having all containers OK.
 
 Start a shell in the backend-tools container.
 
@@ -62,6 +66,24 @@ alembic check
 
 Note that to run integration tests, we use a separate DB, you hence have to set/update the DB schema as well.
 Just do the same as above with the backend-tests container (instead of the backend-tools)
+
+## Restart the backend
+
+The backend might typically fail if the DB schema is not up-to-date, or if you create some nasty bug while modifying the code.
+
+Restart it with:
+```sh
+docker start zimfarm-backend-1
+```
+
+Other containers might be restarted the same way.
+
+## Browse the web UI
+
+Open [the web UI](http://localhost:8001) in your favorite browser.
+
+You can login with username `admin` and password  `admin`.
+
 
 ## Run tests
 
