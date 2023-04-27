@@ -143,8 +143,8 @@ class KolibriFlagsSchema(SerializableSchema):
             "placeholder": "/output",
             "description": "Output folder for ZIM file(s). Leave it as `/output`",
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
     )
 
@@ -155,8 +155,8 @@ class KolibriFlagsSchema(SerializableSchema):
             "description": "Where to create temporay build folder. "
             "Leave it as `/output`",
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
         data_key="tmp-dir",
     )

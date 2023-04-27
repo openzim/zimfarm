@@ -63,8 +63,8 @@ class NautilusFlagsSchema(SerializableSchema):
                 "Output folder for ZIM file or build folder. Leave it as `/output`"
             ),
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
     )
     zim_file = fields.String(
