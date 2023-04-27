@@ -422,8 +422,8 @@ class ZimitFlagsSchema(SerializableSchema):
             "placeholder": "/output",
             "description": "Output folder for ZIM file(s). Leave it as `/output`",
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
     )
 
@@ -435,8 +435,8 @@ class ZimitFlagsSchema(SerializableSchema):
             "Leave it as `/output/task_progress.json`",
         },
         data_key="statsFilename",
-        missing="/output/task_progress.json",
-        default="/output/task_progress.json",
+        load_default="/output/task_progress.json",
+        dump_default="/output/task_progress.json",
         validate=validate.Equal("/output/task_progress.json"),
     )
 

@@ -142,8 +142,8 @@ class SotokiFlagsSchema(SerializableSchema):
             "placeholder": "/output",
             "description": "Output folder for ZIM file(s). Leave it as `/output`",
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
     )
 
@@ -162,8 +162,8 @@ class SotokiFlagsSchema(SerializableSchema):
             "description": "Where to create temporay build folder. "
             "Leave it as `/output`",
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
         data_key="tmp-dir",
     )
@@ -202,8 +202,8 @@ class SotokiFlagsSchema(SerializableSchema):
             "Leave it as `/output/task_progress.json`",
         },
         data_key="stats-filename",
-        missing="/output/task_progress.json",
-        default="/output/task_progress.json",
+        load_default="/output/task_progress.json",
+        dump_default="/output/task_progress.json",
         validate=validate.Equal("/output/task_progress.json"),
     )
 
@@ -213,8 +213,8 @@ class SotokiFlagsSchema(SerializableSchema):
             "description": "Redis URL to use as database. "
             "Keep it as unix:///var/run/redis.sock",
         },
-        missing="unix:///var/run/redis.sock",
-        default="unix:///var/run/redis.sock",
+        load_default="unix:///var/run/redis.sock",
+        dump_default="unix:///var/run/redis.sock",
         validate=validate.Equal("unix:///var/run/redis.sock"),
         data_key="redis-url",
     )
@@ -224,8 +224,8 @@ class SotokiFlagsSchema(SerializableSchema):
             "label": "Defrag redis",
             "description": "Keep it as ENV:REDIS_PID",
         },
-        missing="ENV:REDIS_PID",
-        default="ENV:REDIS_PID",
+        load_default="ENV:REDIS_PID",
+        dump_default="ENV:REDIS_PID",
         validate=validate.Equal("ENV:REDIS_PID"),
         data_key="defrag-redis",
     )
@@ -243,8 +243,8 @@ class SotokiFlagsSchema(SerializableSchema):
             "label": "Keep redis",
             "description": "Don't flush redis DB on exit. Keep it enabled.",
         },
-        missing=True,
-        default=True,
+        load_default=True,
+        dump_default=True,
         validate=validate.Equal(True),
         data_key="keep-redis",
     )

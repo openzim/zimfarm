@@ -47,12 +47,14 @@ def validate_multiple_of_100(value):
 
 
 # reusable fields
-skip_field = fields.Integer(required=False, missing=0, validate=validate.Range(min=0))
+skip_field = fields.Integer(
+    required=False, load_default=0, validate=validate.Range(min=0)
+)
 limit_field_20_500 = fields.Integer(
-    required=False, missing=20, validate=validate.Range(min=0, max=500)
+    required=False, load_default=20, validate=validate.Range(min=0, max=500)
 )
 limit_field_20_200 = fields.Integer(
-    required=False, missing=20, validate=validate.Range(min=0, max=200)
+    required=False, load_default=20, validate=validate.Range(min=0, max=200)
 )
 priority_field = fields.Integer(required=False, validate=validate_priority)
 worker_field = fields.String(required=False, validate=validate_worker_name)
