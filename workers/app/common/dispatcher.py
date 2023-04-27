@@ -50,7 +50,7 @@ def get_token_ssh(webapi_uri, username, private_key):
             raise IOError("unable to sign authentication payload")
 
         with open(signatured_path, "rb") as fp:
-            b64_signature = base64.b64encode(fp.read())
+            b64_signature = base64.b64encode(fp.read()).decode()
 
         req = requests.post(
             url=f"{webapi_uri}/auth/ssh_authorize",
