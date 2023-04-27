@@ -87,18 +87,18 @@ You can login with username `admin` and password  `admin`.
 
 ## Run tests
 
-Do not forget to set/update the test DB schema (see above).
+Do not forget to set/update the test DB schema
+
+```sh
+docker exec -it zf_postgresdb psql -U zimfarm -c "\set autocommit off; DROP DATABASE IF EXISTS zimtest; CREATE DATABASE zimtest;"
+docker exec -it -e "POSTGRES_URI=postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest" \
+  zf_backend-tools /bin/sh -c "alembic upgrade head && alembic check"
+```
 
 Start a shell in the backend-tests container.
 
 ```sh
-docker exec -it zf_backend-tests /bin/sh
-```
-
-Once inside the container, run the tests
-
-```sh
-python -m pytest
+docker exec -it zf_backend-tests python -m pytest
 ```
 
 You can select one specific set of tests by path
