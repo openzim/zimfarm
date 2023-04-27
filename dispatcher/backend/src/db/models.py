@@ -215,7 +215,7 @@ class Task(Base):
     canceled_by: Mapped[Optional[str]]
     container: Mapped[Optional[Dict[str, Any]]]
     priority: Mapped[int]
-    config: Mapped[Dict[str, Any]] = mapped_column(JSON)
+    config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     notification: Mapped[Optional[Dict[str, Any]]]
     files: Mapped[Optional[Dict[str, Any]]]
     upload: Mapped[Optional[Dict[str, Any]]]
@@ -250,7 +250,7 @@ class Schedule(Base):
     )  # temporary backup of mongo document id
     name: Mapped[str] = mapped_column(unique=True, index=True)
     category: Mapped[str] = mapped_column(index=True)
-    config: Mapped[Dict[str, Any]] = mapped_column(JSON)
+    config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str] = mapped_column(index=True)
     language_name_native: Mapped[str]
@@ -342,7 +342,7 @@ class RequestedTask(Base):
     events: Mapped[List[Dict[str, Any]]]
     requested_by: Mapped[str]
     priority: Mapped[int]
-    config: Mapped[Dict[str, Any]] = mapped_column(JSON)
+    config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     upload: Mapped[Dict[str, Any]]
     notification: Mapped[Optional[Dict[str, Any]]]
 
