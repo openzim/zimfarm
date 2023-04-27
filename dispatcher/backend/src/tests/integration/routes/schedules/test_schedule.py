@@ -338,61 +338,49 @@ class TestScheduleGet:
 
 
 class TestSchedulePatch:
-    def _patch_schedule_via_key_with(self, client, access_token, update, schedule, key):
+    @pytest.mark.parametrize("update", good_patch_updates)
+    def test_patch_schedule_via_name_with(self, client, access_token, update, schedule):
         if "name" in update.keys():
             update["name"] += str(uuid4())
 
-        url = "/schedules/{}".format(schedule[key])
+        url = "/schedules/{}".format(schedule["name"])
         response = client.patch(
             url, json=update, headers={"Authorization": access_token}
         )
         assert response.status_code == 204
 
-        if key == "name" and "name" in update.keys():
+        if "name" in update.keys():
             url = "/schedules/{}".format(update["name"])
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 200
 
+        # let's reapply manually the changes that should have been done by the patch
+        # so that we can confirm it has been done
         document = response.get_json()
+        config_keys = [
+            "task_name",
+            "warehouse_path",
+            "image",
+            "resources",
+            "platform",
+            "flags",
+            "monitor",
+        ]
+        # these keys must not be applied since they are somewhere else is the document
+        for key in config_keys:
+            update.pop(key, None)
         document.update(update)
         assert response.get_json() == document
-
-    @pytest.mark.parametrize("update", good_patch_updates)
-    def test_patch_schedule_via_id_with(self, client, access_token, update, schedule):
-        self._patch_schedule_via_key_with(
-            client, access_token, update, schedule, "name"
-        )
-
-    @pytest.mark.parametrize("update", good_patch_updates)
-    def test_patch_schedule_via_name_with(self, client, access_token, update, schedule):
-        self._patch_schedule_via_key_with(
-            client, access_token, update, schedule, "name"
-        )
-
-    def _patch_schedule_via_id_with_errors(
-        self, client, access_token, update, schedule, key
-    ):
-        url = "/schedules/{}".format(schedule[key])
-        response = client.patch(
-            url, json=update, headers={"Authorization": access_token}
-        )
-        assert response.status_code == 400
-
-    @pytest.mark.parametrize("update", bad_patch_updates)
-    def test_patch_schedule_via_id_with_errors(
-        self, client, access_token, update, schedule
-    ):
-        self._patch_schedule_via_id_with_errors(
-            client, access_token, update, schedule, "name"
-        )
 
     @pytest.mark.parametrize("update", bad_patch_updates)
     def test_patch_schedule_via_name_with_errors(
         self, client, access_token, update, schedule
     ):
-        self._patch_schedule_via_id_with_errors(
-            client, access_token, update, schedule, "name"
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
         )
+        assert response.status_code == 400
 
     def test_patch_schedule_duplicate_name(self, client, access_token, schedules):
         update = {"name": "wikipedia_bm_all_nopic"}  # this one exists in fixtures
