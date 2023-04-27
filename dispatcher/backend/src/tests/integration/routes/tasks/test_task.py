@@ -39,6 +39,7 @@ class TestTaskList:
             "_id",
             "timestamp",
             "status",
+            "config",
             "schedule_name",
             "worker",
             "updated_at",

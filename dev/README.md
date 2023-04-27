@@ -29,6 +29,10 @@ This container is a PostgreSQL DB. DB data is kept in a volume, persistent acros
 
 This container is a Mongo DB.
 
+### frontend-ui
+
+This container hosts the frontend UI for end-users.
+
 ## Instructions
 
 First start the Docker-Compose stack:
@@ -40,12 +44,12 @@ docker compose -p zimfarm up -d
 
 ## Setup Postgresql DB
 
-If this is your first run or if you made any schema change, you need to set/update the DB schema
+If this is your first run or if you made any schema change, you need to set/update the DB schema before having all containers OK.
 
 Start a shell in the backend-tools container.
 
 ```sh
-docker exec -it zimfarm-backend-tools-1 /bin/sh
+docker exec -it zf_backend-tools /bin/sh
 ```
 
 Once inside the container, ask Alembic to update the schema
@@ -63,20 +67,38 @@ alembic check
 Note that to run integration tests, we use a separate DB, you hence have to set/update the DB schema as well.
 Just do the same as above with the backend-tests container (instead of the backend-tools)
 
+## Restart the backend
+
+The backend might typically fail if the DB schema is not up-to-date, or if you create some nasty bug while modifying the code.
+
+Restart it with:
+```sh
+docker restart zf_backend
+```
+
+Other containers might be restarted the same way.
+
+## Browse the web UI
+
+Open [the web UI](http://localhost:8001) in your favorite browser.
+
+You can login with username `admin` and password  `admin`.
+
+
 ## Run tests
 
-Do not forget to set/update the test DB schema (see above).
+Do not forget to set/update the test DB schema
+
+```sh
+docker exec -it zf_postgresdb psql -U zimfarm -c "\set autocommit off; DROP DATABASE IF EXISTS zimtest; CREATE DATABASE zimtest;"
+docker exec -it -e "POSTGRES_URI=postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest" \
+  zf_backend-tools /bin/sh -c "alembic upgrade head && alembic check"
+```
 
 Start a shell in the backend-tests container.
 
 ```sh
-docker exec -it zimfarm-backend-tests-1 /bin/sh
-```
-
-Once inside the container, run the tests
-
-```sh
-python -m pytest
+docker exec -it zf_backend-tests python -m pytest
 ```
 
 You can select one specific set of tests by path

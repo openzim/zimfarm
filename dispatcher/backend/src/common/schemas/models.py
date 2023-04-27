@@ -114,12 +114,12 @@ class ScheduleSchema(Schema):
     category = fields.String(required=True, validate=validate_category)
     periodicity = fields.String(required=True, validate=validate_periodicity)
     tags = fields.List(
-        fields.String(validate=validate_not_empty), required=True, default=[]
+        fields.String(validate=validate_not_empty), required=True, dump_default=[]
     )
     enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
     config = fields.Nested(ScheduleConfigSchema(), required=True)
     notification = fields.Nested(
-        ScheduleNotificationSchema(), required=False, default={}, missing={}
+        ScheduleNotificationSchema(), required=False, dump_default={}, load_default={}
     )
 
 

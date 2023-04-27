@@ -1,6 +1,7 @@
 services:
   postgresdb:
     image: postgres:15.2-bullseye
+    container_name: zf_postgresdb
     ports:
       - 5432:5432
     volumes:
@@ -11,10 +12,12 @@ services:
       - POSTGRES_PASSWORD=zimpass
   mongodb:
     image: mongo:4.2.24-bionic
+    container_name: zf_mongodb
     ports:
       - 27017:27017
   mongo-express:
     image: mongo-express
+    container_name: zf_mongo-express
     restart: always
     ports:
       - 8081:8081
@@ -24,6 +27,7 @@ services:
       - mongodb
   backend:
     build: ../dispatcher/backend
+    container_name: zf_backend
     command: python main.py
     volumes:
       - ../dispatcher/backend/src:/app
@@ -39,10 +43,22 @@ services:
     depends_on:
       - postgresdb
       - mongodb
+  frontend-ui:
+    build: ../dispatcher/frontend-ui
+    container_name: zf_frontend-ui
+    volumes:
+      - ../dispatcher/frontend-ui/src:/app
+    ports:
+      - 8001:80
+    environment:
+      ZIMFARM_WEBAPI: http://localhost:8000/v1
+    depends_on:
+      - backend
   backend-tools:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
       context: ../dispatcher/backend
+    container_name: zf_backend-tools
     command: tail -f /dev/null
     volumes:
       - ../dispatcher/backend/src:/app
@@ -56,6 +72,7 @@ services:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
       context: ../dispatcher/backend
+    container_name: zf_backend-tests
     command: tail -f /dev/null
     volumes:
       - ../dispatcher/backend/src:/app

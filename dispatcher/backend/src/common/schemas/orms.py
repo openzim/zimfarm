@@ -58,11 +58,12 @@ class TaskLightSchema(m.Schema):
     schedule_name = mf.String()
     worker_name = mf.String(data_key="worker")
     updated_at = mf.DateTime()
+    config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema, only=["resources"])
 
 
 class TaskFullSchema(TaskLightSchema):
     config = mf.Dict()
-    events = mf.Dict()
+    events = mf.List(mf.Dict)
     debug = mf.Dict()
     requested_by = mf.String()
     canceled_by = mf.String()
@@ -81,6 +82,7 @@ class RequestedTaskLightSchema(m.Schema):
     requested_by = mf.String()
     priority = mf.Integer()
     schedule_name = mf.String()
+    worker = mf.String()
 
 
 class RequestedTaskFullSchema(RequestedTaskLightSchema):
@@ -94,10 +96,10 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
         return task.schedule.name
 
     config = mf.Dict()  # override base
-    events = mf.Dict()
+    events = mf.List(mf.Dict)
     upload = mf.Dict()
     schedule_name = mf.Function(serialize=get_schedule_name)  # override base
-    worker_name = mf.Function(serialize=get_worker_name)
+    worker = mf.Function(serialize=get_worker_name)
 
 
 class MostRecentTaskSchema(m.Schema):
@@ -135,6 +137,31 @@ class ScheduleFullSchema(BaseSchema):
             "name_native": schedule.language_name_native,
         }
 
+    def get_one_duration(duration: dbm.ScheduleDuration):
+        one_duration_res = {}
+        one_duration_res["value"] = duration.value
+        one_duration_res["on"] = duration.on
+        if duration.worker:
+            one_duration_res["worker"] = duration.worker.name
+        if duration.task:
+            one_duration_res["task"] = duration.task.id
+        return one_duration_res
+
+    def get_duration(schedule: dbm.Schedule):
+        duration_res = {}
+        duration_res["available"] = False
+        duration_res["default"] = {}
+        duration_res["workers"] = {}
+        for duration in schedule.durations:
+            if duration.default:
+                duration_res["default"] = ScheduleFullSchema.get_one_duration(duration)
+            if duration.worker:
+                duration_res["available"] = True
+                duration_res["workers"][
+                    duration.worker.name
+                ] = ScheduleFullSchema.get_one_duration(duration)
+        return duration_res
+
     name = auto_field()
     category = auto_field()
     config = auto_field()
@@ -143,3 +170,5 @@ class ScheduleFullSchema(BaseSchema):
     periodicity = auto_field()
     notification = auto_field()
     language = mf.Function(get_language)
+    most_recent_task = mf.Nested(MostRecentTaskSchema)
+    duration = mf.Function(get_duration)

@@ -235,6 +235,10 @@ class ScheduleRoute(BaseRoute):
         for key, value in update.items():
             if key in config_keys:
                 schedule.config[key] = value
+            elif key == "language":
+                schedule.language_code = value["code"]
+                schedule.language_name_en = value["name_en"]
+                schedule.language_name_native = value["name_native"]
             else:
                 setattr(schedule, key, value)
 
@@ -333,7 +337,7 @@ class ScheduleCloneRoute(BaseRoute):
             category=schedule.category,
             periodicity=schedule.periodicity,
             tags=schedule.tags,
-            enabled=schedule.tags,
+            enabled=schedule.enabled,
             config=schedule.config,
             notification=schedule.notification,
             language_code=schedule.language_code,

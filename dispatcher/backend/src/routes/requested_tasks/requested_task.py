@@ -87,7 +87,7 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
             dbm.RequestedTask.requested_by,
             dbm.RequestedTask.priority,
             dbm.Schedule.name.label("schedule_name"),
-            dbm.Worker.name.label("worker_name"),
+            dbm.Worker.name.label("worker"),
         )
         .join(dbm.Worker, dbm.RequestedTask.worker, isouter=True)
         .join(dbm.Schedule, dbm.RequestedTask.schedule, isouter=True)
@@ -97,7 +97,7 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
     )
 
     if schedule_names:
-        stmt = stmt.filter(dbm.RequestedTask.schedule.name.in_(schedule_names))
+        stmt = stmt.filter(dbm.Schedule.name.in_(schedule_names))
 
     if priority:
         stmt = stmt.filter(dbm.RequestedTask.priority >= priority)

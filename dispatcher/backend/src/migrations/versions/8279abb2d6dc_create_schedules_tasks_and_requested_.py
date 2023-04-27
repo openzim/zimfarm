@@ -59,7 +59,7 @@ def upgrade() -> None:
         sa.Column("timestamp", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "events",
-            postgresql.ARRAY(postgresql.JSONB(astext_type=sa.Text())),
+            postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
         ),
         sa.Column("requested_by", sa.String(), nullable=False),
@@ -97,7 +97,7 @@ def upgrade() -> None:
         sa.Column("mongo_id", sa.String(), nullable=True),
         sa.Column(
             "events",
-            postgresql.ARRAY(postgresql.JSONB(astext_type=sa.Text())),
+            postgresql.JSONB(astext_type=sa.Text()),
             nullable=False,
         ),
         sa.Column("debug", postgresql.JSONB(astext_type=sa.Text()), nullable=True),

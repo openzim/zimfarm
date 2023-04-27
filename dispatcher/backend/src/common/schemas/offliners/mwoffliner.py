@@ -215,8 +215,8 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Output folder for ZIM file or build folder. "
             "Leave it as `/output`",
         },
-        missing="/output",
-        default="/output",
+        load_default="/output",
+        dump_default="/output",
         validate=validate_output,
     )
     requestTimeout = fields.Integer(
