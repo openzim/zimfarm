@@ -76,7 +76,7 @@ def status_to_cancel(now, status, timeout, session: so.Session):
     tasks = session.execute(
         sa.select(dbm.Task)
         .filter(dbm.Task.status == status)
-        .filter(dbm.Task.timestamp[status].astext <= ago)
+        .filter(dbm.Task.timestamp[status].astext.cast(sa.DateTime) <= ago)
     ).scalars()
     for task in tasks:
         task.status = TaskStatus.canceled
