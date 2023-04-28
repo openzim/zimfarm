@@ -53,7 +53,9 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         .where(dbm.Task.timestamp.has_key(TaskStatus.scraper_completed))
         .where(dbm.Task.container["exit_code"].astext.cast(sa.Integer) == 0)
         .where(dbm.Task.schedule_id == schedule.id)
-        .order_by(dbm.Task.timestamp[TaskStatus.scraper_completed].astext)
+        .order_by(
+            dbm.Task.timestamp[TaskStatus.scraper_completed].astext.cast(sa.DateTime)
+        )
     ).scalars()
 
     workers_durations = {}
@@ -304,16 +306,19 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker):
     stmt = sa.select(dbm.RequestedTask)
 
     stmt = stmt.filter(
-        dbm.RequestedTask.config["resources"]["cpu"].as_text <= worker.cpu
+        dbm.RequestedTask.config["resources"]["cpu"].astext.cast(sa.Integer)
+        <= worker.cpu
     )
     stmt = stmt.filter(
-        dbm.RequestedTask.config["resources"]["memory"].as_text <= worker.memory
+        dbm.RequestedTask.config["resources"]["memory"].astext.cast(sa.BigInteger)
+        <= worker.memory
     )
     stmt = stmt.filter(
-        dbm.RequestedTask.config["resources"]["disk"].as_text <= worker.disk
+        dbm.RequestedTask.config["resources"]["disk"].astext.cast(sa.BigInteger)
+        <= worker.disk
     )
     stmt = stmt.filter(
-        dbm.RequestedTask.config["task_name"].as_text.in_(worker.offliners)
+        dbm.RequestedTask.config["task_name"].astext.in_(worker.offliners)
     )
 
     if worker.selfish:
