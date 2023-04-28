@@ -76,8 +76,15 @@ def status_to_cancel(now, status, timeout, session: so.Session):
     tasks = session.execute(
         sa.select(dbm.Task)
         .filter(dbm.Task.status == status)
-        .filter(dbm.Task.timestamp[status].astext.cast(sa.DateTime) <= ago)
+        .filter(
+            sa.func.to_timestamp(
+                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger)
+            )
+            <= ago
+        )
     ).scalars()
+
+    nb_canceled_tasks = 0
     for task in tasks:
         task.status = TaskStatus.canceled
         task.canceled_by = NAME
@@ -89,8 +96,9 @@ def status_to_cancel(now, status, timeout, session: so.Session):
             }
         )
         task.updated_at = now
+        nb_canceled_tasks += 1
 
-    logger.info(f"::: canceled {len(tasks)} tasks")
+    logger.info(f"::: canceled {nb_canceled_tasks} tasks")
 
 
 def staled_statuses(session: so.Session):
@@ -118,7 +126,12 @@ def staled_statuses(session: so.Session):
     tasks = session.execute(
         sa.select(dbm.Task)
         .filter(dbm.Task.status == status)
-        .filter(dbm.Task.timestamp[status].astext.cast(sa.DateTime) <= ago)
+        .filter(
+            sa.func.to_timestamp(
+                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger)
+            )
+            <= ago
+        )
     ).scalars()
     nb_suceeded_tasks = 0
     nb_failed_tasks = 0

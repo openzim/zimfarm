@@ -54,7 +54,9 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         .where(dbm.Task.container["exit_code"].astext.cast(sa.Integer) == 0)
         .where(dbm.Task.schedule_id == schedule.id)
         .order_by(
-            dbm.Task.timestamp[TaskStatus.scraper_completed].astext.cast(sa.DateTime)
+            dbm.Task.timestamp[TaskStatus.scraper_completed]["$date"].astext.cast(
+                sa.BigInteger
+            )
         )
     ).scalars()
 
@@ -332,7 +334,7 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker):
         )
 
     return list(
-        sorted(map(get_document, session.execute(stmt))),
+        sorted(map(get_document, session.execute(stmt).scalars())),
         key=lambda x: (-x["priority"], -x["duration"]["value"]),
     )
 
