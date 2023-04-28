@@ -255,7 +255,7 @@ def get_duration_for(session, schedule_name, worker_name):
 
 def get_duration_for_with_schedule(schedule, worker_name):
     for duration in schedule.durations:
-        if duration.worker.name == worker_name:
+        if duration.worker and duration.worker.name == worker_name:
             return map_duration(duration)
     for duration in schedule.durations:
         if duration.default:
