@@ -118,7 +118,7 @@ def staled_statuses(session: so.Session):
     tasks = session.execute(
         sa.select(dbm.Task)
         .filter(dbm.Task.status == status)
-        .filter(dbm.Task.timestamp[status].astext <= ago)
+        .filter(dbm.Task.timestamp[status].astext.cast(sa.DateTime) <= ago)
     ).scalars()
     nb_suceeded_tasks = 0
     nb_failed_tasks = 0
