@@ -1,9 +1,19 @@
+from typing import Optional, Union
+
 import marshmallow as m
 import marshmallow.fields as mf
+import pytz
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
 
 import db.models as dbm
 from common.roles import get_role_for
+
+
+class MadeAwareDateTime(mf.DateTime):
+    def _serialize(self, unaware, attr, obj, **kwargs) -> Optional[Union[str, float]]:
+        """Make the datetime localized so that it is serialized with a trailing 'Z'"""
+        aware = pytz.utc.localize(unaware)
+        return super()._serialize(aware, attr, obj, **kwargs)
 
 
 class BaseSchema(SQLAlchemySchema):
@@ -57,7 +67,7 @@ class TaskLightSchema(m.Schema):
     timestamp = mf.Dict()
     schedule_name = mf.String()
     worker_name = mf.String(data_key="worker")
-    updated_at = mf.DateTime()
+    updated_at = MadeAwareDateTime()
     config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema, only=["resources"])
 
 
@@ -105,7 +115,7 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
 class MostRecentTaskSchema(m.Schema):
     id = mf.String(data_key="_id")
     status = mf.String()
-    updated_at = mf.DateTime()
+    updated_at = MadeAwareDateTime()
 
 
 class ConfigTaskOnlySchema(m.Schema):
