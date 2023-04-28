@@ -292,9 +292,9 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker):
             "status": task.status,
             "schedule_name": task.schedule.name,
             "config": {
-                "task_name": task.config["task_name"],
-                "platform": task.config["platform"],
-                "resources": task.config["resources"],
+                "task_name": task.config.get("task_name"),
+                "platform": task.config.get("platform"),
+                "resources": task.config.get("resources"),
             },
             "timestamp": task.timestamp,
             "requested_by": task.requested_by,
