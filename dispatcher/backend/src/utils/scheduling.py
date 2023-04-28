@@ -5,6 +5,7 @@
 import datetime
 import functools
 import logging
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy as sa
 import sqlalchemy.orm as so
@@ -282,7 +283,7 @@ def get_task_eta(session, task, worker_name=None):
     return {"duration": duration, "remaining": remaining, "eta": eta}
 
 
-def get_reqs_doable_by(session: so.Session, worker: dbm.Worker):
+def get_reqs_doable_by(session: so.Session, worker: dbm.Worker) -> List[Dict[str, Any]]:
     """cursor of RequestedTasks() doable by a worker using all its resources
 
     - sorted by priority
@@ -341,7 +342,9 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker):
     )
 
 
-def get_currently_running_tasks(session: so.Session, worker_name=None):
+def get_currently_running_tasks(
+    session: so.Session, worker_name: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """list of tasks being run by worker at this moment, including ETA"""
 
     def extract_data(task: dbm.Task):
@@ -377,7 +380,12 @@ def get_possible_task_with(tasks_worker_could_do, available_resources, available
             logger.debug(f"{temp_candidate['schedule_name']} would take too long")
 
 
-def does_platform_allow_worker_to_run(worker, all_running_tasks, running_tasks, task):
+def does_platform_allow_worker_to_run(
+    worker: dbm.Worker,
+    all_running_tasks: List[Dict[str, Any]],
+    running_tasks: List[Dict[str, Any]],
+    task,
+) -> bool:
     """whether worker can now run task according to platform limitations"""
     platform = task["config"].get("platform")
     if not platform:
@@ -397,7 +405,7 @@ def does_platform_allow_worker_to_run(worker, all_running_tasks, running_tasks, 
             return False
 
     # check whether we have a per-worker limit for this platform
-    worker_limit = worker.get("platforms", {}).get(
+    worker_limit = worker.platforms.get(
         platform, Platform.get_max_per_worker_tasks_for(platform)
     )
     if worker_limit is None:
