@@ -334,8 +334,10 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker):
         )
 
     return list(
-        sorted(map(get_document, session.execute(stmt).scalars())),
-        key=lambda x: (-x["priority"], -x["duration"]["value"]),
+        sorted(
+            map(get_document, session.execute(stmt).scalars()),
+            key=lambda x: (-x["priority"], -x["duration"]["value"]),
+        )
     )
 
 
