@@ -353,7 +353,7 @@ def get_currently_running_tasks(session: so.Session, worker_name=None):
 
     # calculate ETAs of the tasks we are currently running
     for task in running_tasks:
-        task.update(get_task_eta(task, worker_name))
+        task.update(get_task_eta(session, task, worker_name))
 
     return running_tasks
 
