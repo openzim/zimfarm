@@ -92,11 +92,9 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
         .join(dbm.Worker, dbm.RequestedTask.worker, isouter=True)
         .join(dbm.Schedule, dbm.RequestedTask.schedule, isouter=True)
         .order_by(dbm.RequestedTask.priority.desc())
+        .order_by(dbm.Task.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger))
         .order_by(
-            dbm.RequestedTask.timestamp["reserved"].astext.cast(sa.DateTime).desc()
-        )
-        .order_by(
-            dbm.RequestedTask.timestamp["requested"].astext.cast(sa.DateTime).desc()
+            dbm.RequestedTask.timestamp["requested"]["$date"].astext.cast(sa.BigInteger)
         )
     )
 
