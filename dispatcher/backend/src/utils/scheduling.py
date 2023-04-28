@@ -240,7 +240,7 @@ def map_duration(duration: dbm.ScheduleDuration):
     return {
         "value": duration.value,
         "on": duration.on,
-        "worker": duration.worker.name,
+        "worker": duration.worker.name if duration.worker else None,
         "task_id": duration.task_id,
     }
 

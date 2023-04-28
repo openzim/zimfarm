@@ -61,7 +61,7 @@ def history_cleanup(session: so.Session):
     nb_deleted_tasks = 0
     for schedule in schedules_with_too_much_tasks:
         nb_tasks_kept = 0
-        for task in sorted(schedule.tasks, key=lambda x: -x.updated_at):
+        for task in sorted(schedule.tasks, key=lambda x: x.updated_at, reverse=True):
             if nb_tasks_kept < HISTORY_TASK_PER_SCHEDULE:
                 nb_tasks_kept += 1
                 continue
