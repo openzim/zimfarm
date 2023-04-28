@@ -3,7 +3,7 @@ name: Docker (db-migration)
 on:
   push:
     tags:
-      - db-migration
+      - db-migration-tag
 
 jobs:
 
