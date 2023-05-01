@@ -1,4 +1,4 @@
-Flask==1.1.4
+Flask==2.3.2
 flask-cors==3.0.9
 paramiko==2.11.0
 PyJWT==2.4.0
