@@ -1,8 +1,8 @@
-import boto3
 import logging
 import os
 import pathlib
 
+import boto3
 from flask import Flask, Response, make_response, redirect, render_template
 from flask_cors import CORS
 
