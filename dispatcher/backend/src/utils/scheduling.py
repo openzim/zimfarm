@@ -475,7 +475,7 @@ def find_requested_task_for(
         # candidate is task[0]
         candidate = next(tasks_worker_could_do)
     except StopIteration:
-        logger.debug(f"no request doable by worker (selfish={worker.get('selfish')})")
+        logger.debug(f"no request doable by worker (selfish={worker.selfish})")
         return None
 
     # can worker do task[0] ?
