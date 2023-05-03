@@ -25,7 +25,7 @@ from utils.database import Initializer
 from utils.json import ZimfarmJsonProvider
 
 # TEMP fix awaiting kiwixstorage
-boto3.set_stream_logger('', logging.CRITICAL)
+boto3.set_stream_logger("", logging.CRITICAL)
 
 if os.getenv("DOCS_DIR"):
     docs_dir = pathlib.Path(os.getenv("DOCS_DIR")).resolve()
