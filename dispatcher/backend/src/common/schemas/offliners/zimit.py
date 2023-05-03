@@ -150,7 +150,7 @@ class ZimitFlagsSchema(SerializableSchema):
         metadata={
             "label": "Language",
             "description": "ISO-639-3 (3 chars) language code of content. "
-            "Defaults to `eng`",
+            "If unspecified, will attempt to detect from main page, or use 'eng'",
         }
     )
 
