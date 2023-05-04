@@ -78,7 +78,7 @@ def status_to_cancel(now, status, timeout, session: so.Session):
         .filter(dbm.Task.status == status)
         .filter(
             sa.func.to_timestamp(
-                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger)
+                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger) / 1000
             )
             <= ago
         )
@@ -128,7 +128,7 @@ def staled_statuses(session: so.Session):
         .filter(dbm.Task.status == status)
         .filter(
             sa.func.to_timestamp(
-                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger)
+                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger) / 1000
             )
             <= ago
         )
