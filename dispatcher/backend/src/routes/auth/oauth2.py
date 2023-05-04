@@ -86,6 +86,7 @@ class OAuth2:
         orm_user = dbm.User.get_or_none(session, username)
         # check user exists
         raise_if_none(orm_user, InvalidGrant, "Username or password is invalid.")
+        raise_if(orm_user.deleted, InvalidGrant, "Username or password is invalid.")
 
         # check password is valid
         is_valid = check_password_hash(orm_user.password_hash, password)
@@ -117,10 +118,9 @@ class OAuth2:
         raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
 
         # check user exists
-        orm_user = session.execute(
-            sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
-        ).scalar_one_or_none()
+        orm_user = old_token_document.user
         raise_if_none(orm_user, InvalidGrant, "Refresh token is invalid.")
+        raise_if(orm_user.deleted, InvalidGrant, "Refresh token is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(

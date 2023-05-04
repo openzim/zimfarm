@@ -18,7 +18,7 @@ from common.schemas.parameters import KeySchema
 from db import dbsession
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
-from routes.utils import raise_if_none
+from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
@@ -40,6 +40,7 @@ class KeysRoute(BaseRoute):
         orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
 
         raise_if_none(orm_user, errors.NotFound)
+        raise_if(orm_user.deleted, errors.NotFound)
 
         return jsonify(list(map(cso.SshKeyRead().dump, orm_user.ssh_keys)))
 
@@ -71,15 +72,15 @@ class KeysRoute(BaseRoute):
             raise errors.BadRequest("Invalid RSA key")
 
         # find out if user exist
-        current_user_id = dbm.User.get_id_or_none(session, username)
+        current_user = dbm.User.get_or_none(session, username)
 
-        if not current_user_id:
-            raise errors.NotFound("User not found")
+        raise_if_none(current_user, errors.NotFound, "User not found")
+        raise_if(current_user.deleted, errors.NotFound)
 
         # find out if new ssh already exist
         orm_ssh_key = session.execute(
             sa.select(dbm.Sshkey)
-            .where(dbm.Sshkey.user_id == current_user_id)
+            .where(dbm.Sshkey.user_id == current_user.id)
             .where(dbm.Sshkey.fingerprint == fingerprint)
         ).scalar_one_or_none()
 
@@ -110,7 +111,7 @@ class KeysRoute(BaseRoute):
             last_used=None,
             pkcs8_key=pkcs8_key,
         )
-        ssh_key.user_id = current_user_id
+        ssh_key.user_id = current_user.id
 
         session.add(ssh_key)
 
@@ -136,6 +137,7 @@ class KeyRoute(BaseRoute):
                 dbm.Sshkey.key,
                 dbm.User.username,
                 dbm.User.scope,
+                dbm.User.deleted,
             )
             .join_from(dbm.Sshkey, dbm.User)
             .where(dbm.Sshkey.fingerprint == fingerprint)
@@ -146,8 +148,8 @@ class KeyRoute(BaseRoute):
         user_with_key = session.execute(stmt).fetchone()
 
         # no user means no matching SSH key for fingerprint
-        if not user_with_key:
-            raise errors.NotFound()
+        raise_if_none(user_with_key, errors.NotFound)
+        raise_if(user_with_key.deleted, errors.NotFound)
 
         for permission in requested_permissions:
             namespace, perm_name = permission.split(".", 1)
@@ -180,14 +182,14 @@ class KeyRoute(BaseRoute):
                 raise errors.NotEnoughPrivilege()
 
         # find out if user exist
-        current_user_id = dbm.User.get_id_or_none(session, username)
+        current_user = dbm.User.get_or_none(session, username)
 
-        if not current_user_id:
-            raise errors.NotFound("User not found")
+        raise_if_none(current_user, errors.NotFound, "User not found")
+        raise_if(current_user.deleted, errors.NotFound)
 
         orm_ssh_key = session.execute(
             sa.delete(dbm.Sshkey)
-            .where(dbm.Sshkey.user_id == current_user_id)
+            .where(dbm.Sshkey.user_id == current_user.id)
             .where(dbm.Sshkey.fingerprint == fingerprint)
             .returning(dbm.Sshkey.id)
         ).scalar_one_or_none()

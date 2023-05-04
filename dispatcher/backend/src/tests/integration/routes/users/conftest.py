@@ -71,3 +71,13 @@ def users(make_user):
         user = make_user(username)
         users.append(user)
     return users
+
+
+@pytest.fixture(scope="module")
+def deleted_users(make_user):
+    users = []
+    for index in range(5):
+        username = "del_user_{}".format(index)
+        user = make_user(username, deleted=True)
+        users.append(user)
+    return users

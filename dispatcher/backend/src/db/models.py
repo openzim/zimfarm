@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     String,
     UniqueConstraint,
+    false,
     select,
     text,
 )
@@ -76,6 +77,7 @@ class User(Base):
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
     scope: Mapped[Optional[Dict[str, Any]]]
+    deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     ssh_keys: Mapped[List["Sshkey"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
@@ -175,6 +177,7 @@ class Worker(Base):
     platforms: Mapped[Dict[str, Any]]
     last_seen: Mapped[Optional[datetime]]
     last_ip: Mapped[Optional[IPv4Address]]
+    deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 

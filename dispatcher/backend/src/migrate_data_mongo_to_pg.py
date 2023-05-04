@@ -299,6 +299,7 @@ class UserMigrator(Migrator):
             email=get_or_none(mongo_obj, "email"),
             password_hash=mongo_obj["password_hash"],
             scope=mongo_obj["scope"],
+            deleted=False,
         )
         session.add(orm_user)
         for ssh_key in get_or_none(mongo_obj, "ssh_keys") or []:
@@ -433,6 +434,7 @@ class WorkerMigrator(Migrator):
             platforms=mongo_obj["platforms"],
             last_seen=mongo_obj["last_seen"],
             last_ip=mongo_obj["last_ip"],
+            deleted=False,
         )
         orm_worker.user_id = user_id
         session.add(orm_worker)

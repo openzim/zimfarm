@@ -23,6 +23,7 @@ class PasswordRoute(BaseRoute):
         # get user to modify
         orm_user = dbm.User.get_or_none(session, username)
         raise_if_none(orm_user, errors.NotFound)
+        raise_if(orm_user.deleted, errors.NotFound)
 
         request_json = request.get_json()
         if username == token.username:
