@@ -12,6 +12,8 @@ from common.roles import get_role_for
 class MadeAwareDateTime(mf.DateTime):
     def _serialize(self, unaware, attr, obj, **kwargs) -> Optional[Union[str, float]]:
         """Make the datetime localized so that it is serialized with a trailing 'Z'"""
+        if not unaware:
+            return None
         aware = pytz.utc.localize(unaware)
         return super()._serialize(aware, attr, obj, **kwargs)
 
