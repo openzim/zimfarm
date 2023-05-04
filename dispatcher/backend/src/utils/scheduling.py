@@ -223,14 +223,14 @@ def request_tasks_using_schedule(session: so.Session):
 
             if request_a_schedule(
                 session=session,
-                schedule_name=schedule["name"],
+                schedule_name=schedule.name,
                 requested_by=requester,
                 worker_name=worker,
                 priority=priority,
             ):
-                logger.debug(f"requested {schedule['name']}")
+                logger.debug(f"requested {schedule.name}")
             else:
-                logger.debug(f"could not request {schedule['name']}")
+                logger.debug(f"could not request {schedule.name}")
 
 
 def can_run(task, resources):
