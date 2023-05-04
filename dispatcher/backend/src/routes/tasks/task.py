@@ -171,6 +171,7 @@ class TaskRoute(BaseRoute):
             files=None,
             upload=requested_task.upload,
         )
+        task.id = requested_task.id
         task.schedule_id = requested_task.schedule_id
         task.worker_id = worker.id
         session.add(task)
