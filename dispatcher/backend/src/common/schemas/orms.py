@@ -153,8 +153,6 @@ class ScheduleFullSchema(BaseSchema):
         one_duration_res["on"] = duration.on
         if duration.worker:
             one_duration_res["worker"] = duration.worker.name
-        if duration.task:
-            one_duration_res["task"] = duration.task.id
         return one_duration_res
 
     def get_duration(schedule: dbm.Schedule):

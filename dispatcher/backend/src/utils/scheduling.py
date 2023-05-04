@@ -64,7 +64,6 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
     workers_durations = {}
     for task in tasks:
         workers_durations[task.worker_id] = {
-            "task_id": task.id,
             "value": int(
                 (
                     task.timestamp[TaskStatus.scraper_completed]
@@ -82,7 +81,6 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
             "on": duration_payload["on"],
             "schedule_id": schedule.id,
             "worker_id": worker_id,
-            "task_id": duration_payload["task_id"],
         }
         for worker_id, duration_payload in workers_durations.items()
     ]
@@ -98,7 +96,6 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         set_={
             dbm.ScheduleDuration.on: upsert_stmt.excluded.on,
             dbm.ScheduleDuration.value: upsert_stmt.excluded.value,
-            dbm.ScheduleDuration.task_id: upsert_stmt.excluded.task_id,
         },
     )
     session.execute(upsert_stmt)
@@ -246,7 +243,6 @@ def map_duration(duration: dbm.ScheduleDuration):
         "value": duration.value,
         "on": duration.on,
         "worker": duration.worker.name if duration.worker else None,
-        "task_id": duration.task_id,
     }
 
 

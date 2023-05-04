@@ -316,10 +316,6 @@ class ScheduleDuration(Base):
 
     worker: Mapped[Optional["Worker"]] = relationship(init=False)
 
-    task_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("task.id"), init=False)
-
-    task: Mapped[Optional["Task"]] = relationship(init=False)
-
 
 class RequestedTask(Base):
     __tablename__ = "requested_task"
