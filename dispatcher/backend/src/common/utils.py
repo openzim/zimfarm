@@ -334,7 +334,8 @@ def task_checked_file_event_handler(session: so.Session, task_id: UUID, payload:
     save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
 
     if INFORM_CMS:
-        advertise_book_to_cms(task_id, file["name"])
+        task = dbm.Task.get_or_none_by_id(session, task_id)
+        advertise_book_to_cms(task, file["name"])
 
 
 def task_update_event_handler(session: so.Session, task_id: UUID, payload: dict):
