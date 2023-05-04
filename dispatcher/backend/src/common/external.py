@@ -3,7 +3,6 @@ import ipaddress
 import json
 import logging
 import typing
-from typing import Any, Dict
 from uuid import UUID
 
 import requests
@@ -151,14 +150,16 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
 
     Safe to re-run as successful requests are skipped"""
     task = dbm.Task.get_or_none_by_id(session, task_id)
-    for file_name, file_data in task.files.items():
-        advertise_book_to_cms(task, file_name, file_data)
+    for file_name in task.files.keys():
+        advertise_book_to_cms(task, file_name)
 
 
-def advertise_book_to_cms(task: dbm.Task, file_name, file_data: Dict[str, Any]):
+def advertise_book_to_cms(task: dbm.Task, file_name):
     """inform openZIM CMS (or compatible) of a created ZIM in the farm
 
     Safe to re-run as successful requests are skipped"""
+
+    file_data = task.files[file_name]
 
     # skip if already advertised to CMS
     if file_data.get("cms"):
