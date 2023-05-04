@@ -3,7 +3,16 @@ from ipaddress import IPv4Address
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, select, text
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+    select,
+    text,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, INET, JSON, JSONB
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import (
@@ -11,6 +20,7 @@ from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
     Session,
+    declared_attr,
     mapped_column,
     relationship,
     selectinload,
@@ -140,7 +150,9 @@ class Refreshtoken(Base):
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
 
-    __table_args__ = (Index(None, user_id, token, unique=True),)
+    @declared_attr
+    def __table_args__(cls):
+        return (Index(None, cls.user_id, cls.token, unique=True),)
 
 
 class Worker(Base):
@@ -315,6 +327,10 @@ class ScheduleDuration(Base):
     )
 
     worker: Mapped[Optional["Worker"]] = relationship(init=False)
+
+    @declared_attr
+    def __table_args__(cls):
+        return (UniqueConstraint(cls.schedule_id, cls.worker_id),)
 
 
 class RequestedTask(Base):
