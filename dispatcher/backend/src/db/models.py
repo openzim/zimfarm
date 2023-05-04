@@ -121,13 +121,13 @@ class Sshkey(Base):
     ]  # temporary backup of full mongo document
     # Nota: there is no temporary backup of mongo document id because there is
     # none since this data was embedded inside the User document in Mongo
-    name: Mapped[Optional[str]]
-    fingerprint: Mapped[Optional[str]] = mapped_column(index=True)
-    type: Mapped[Optional[str]]
-    key: Mapped[Optional[str]]
-    added: Mapped[Optional[datetime]]
+    name: Mapped[str]
+    fingerprint: Mapped[str] = mapped_column(index=True)
+    type: Mapped[str]
+    key: Mapped[str]
+    added: Mapped[datetime]
     last_used: Mapped[Optional[datetime]]
-    pkcs8_key: Mapped[Optional[str]]
+    pkcs8_key: Mapped[str]
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="ssh_keys", init=False)
@@ -216,17 +216,18 @@ class Task(Base):
     )  # temporary backup of mongo document id
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[List[Dict[str, Any]]]
-    debug: Mapped[Optional[Dict[str, Any]]]
+    debug: Mapped[Dict[str, Any]]
     status: Mapped[str] = mapped_column(index=True)
     timestamp: Mapped[Dict[str, Any]]
-    requested_by: Mapped[Optional[str]]
+    requested_by: Mapped[str]
     canceled_by: Mapped[Optional[str]]
-    container: Mapped[Optional[Dict[str, Any]]]
+    container: Mapped[Dict[str, Any]]
     priority: Mapped[int]
+    # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
-    notification: Mapped[Optional[Dict[str, Any]]]
-    files: Mapped[Optional[Dict[str, Any]]]
-    upload: Mapped[Optional[Dict[str, Any]]]
+    notification: Mapped[Dict[str, Any]]
+    files: Mapped[Dict[str, Any]]
+    upload: Mapped[Dict[str, Any]]
 
     schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
 
@@ -258,6 +259,7 @@ class Schedule(Base):
     )  # temporary backup of mongo document id
     name: Mapped[str] = mapped_column(unique=True, index=True)
     category: Mapped[str] = mapped_column(index=True)
+    # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str] = mapped_column(index=True)
@@ -350,9 +352,10 @@ class RequestedTask(Base):
     events: Mapped[List[Dict[str, Any]]]
     requested_by: Mapped[str]
     priority: Mapped[int]
+    # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     upload: Mapped[Dict[str, Any]]
-    notification: Mapped[Optional[Dict[str, Any]]]
+    notification: Mapped[Dict[str, Any]]
 
     schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
 
