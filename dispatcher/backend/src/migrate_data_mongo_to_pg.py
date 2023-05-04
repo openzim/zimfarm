@@ -518,17 +518,6 @@ class ScheduleMigrator(Migrator):
                     # do not insert duration of workers which are not knowm anymore
                     return
 
-        if "task" in mongo_duration and mongo_duration["task"]:
-            # we do not use a cache since we do not expect to use the same task twice
-            task_id = session.execute(
-                sa.select(dbm.Task.id).where(
-                    dbm.Task.mongo_id == str(mongo_duration["task"])
-                )
-            ).scalar_one_or_none()
-            if task_id:
-                duration.task_id = task_id
-            # nota: we don't mind if the task_id is not set, it is not a mandatory
-            # information
         session.add(duration)
 
     def migrate_one_doc_phase_2(self, session: so.Session, mongo_obj) -> None:
