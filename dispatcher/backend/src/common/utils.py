@@ -7,6 +7,7 @@ import logging
 from uuid import UUID
 
 import sqlalchemy.orm as so
+from sqlalchemy.orm.attributes import flag_modified
 
 import db.models as dbm
 from common import getnow, to_naive_utc
@@ -144,6 +145,8 @@ def save_event(
             task.files[fkey]["check_timestamp"] = timestamp
             task.files[fkey]["check_details"] = kwargs["file"].get("check_details")
             task.files[fkey]["info"] = kwargs["file"].get("info")
+
+        flag_modified(task, "files")  # mark 'files' as modified
 
     session.flush()  # we have to flush first to avoid circular dependency
     schedule.most_recent_task = task
