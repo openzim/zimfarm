@@ -48,7 +48,11 @@ def build_workers_whitelist(session: so.Session) -> typing.List[str]:
         return False
 
     for row in session.execute(
-        sa.select(dbm.Worker.last_ip).where(dbm.Worker.last_ip.is_not(None))
+        sa.select(dbm.Worker.last_ip)
+        .join(dbm.User)
+        .filter(dbm.Worker.last_ip.is_not(None))
+        .filter(dbm.User.deleted == False)  # noqa: E712
+        .filter(dbm.Worker.deleted == False)  # noqa: E712
     ).scalars():
         ip_addr = ipaddress.ip_address(row)
         if not is_covered(ip_addr):

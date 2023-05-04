@@ -36,6 +36,7 @@ def credentials(session: so.Session):
     orm_user = dbm.User.get_or_none(session, username)
     # check user exists
     raise_if_none(orm_user, Unauthorized, "this user does not exist")
+    raise_if(orm_user.deleted, Unauthorized, "this user does not exist")
 
     # check password is valid
     is_valid = check_password_hash(orm_user.password_hash, password)
@@ -86,6 +87,7 @@ def refresh_token(session: so.Session):
         sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
     ).scalar_one_or_none()
     raise_if_none(orm_user, Unauthorized, "user not found")
+    raise_if(orm_user.deleted, Unauthorized, "user not found")
 
     # generate token
     access_token = AccessToken.encode_db(orm_user)

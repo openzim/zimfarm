@@ -6,12 +6,11 @@ import pathlib
 import subprocess
 import tempfile
 
-import sqlalchemy.orm as so
-from flask import jsonify, request
-
 import db.models as dbm
+import sqlalchemy.orm as so
 from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
 from db import dbsession
+from flask import jsonify, request
 from routes import errors
 from routes.auth.oauth2 import OAuth2
 from routes.utils import raise_if, raise_if_none
@@ -56,6 +55,7 @@ def asymmetric_key_auth(session: so.Session):
     raise_if_none(
         orm_user, errors.Unauthorized, "User not found"
     )  # we shall never get there
+    raise_if(orm_user.deleted, errors.Unauthorized, "User not found")
 
     # check that the message was signed with a known private key
     authenticated = False

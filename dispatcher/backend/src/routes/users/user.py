@@ -16,10 +16,10 @@ from common.schemas.parameters import (
     UserCreateSchema,
     UserUpdateSchema,
 )
-from db import dbsession
+from db import count_from_stmt, dbsession
 from routes import authenticate, errors, require_perm, url_object_id
 from routes.base import BaseRoute
-from routes.utils import raise_if_none
+from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
@@ -36,11 +36,11 @@ class UsersRoute(BaseRoute):
         skip, limit = request_args["skip"], request_args["limit"]
 
         # get users from database
-        count = session.query(dbm.User).count()
+        stmt = sa.select(dbm.User).filter(dbm.User.deleted == False)  # noqa: E712
 
-        orm_users = session.execute(
-            sa.select(dbm.User).offset(skip).limit(limit)
-        ).scalars()
+        count = count_from_stmt(session, stmt)
+
+        orm_users = session.execute(stmt.offset(skip).limit(limit)).scalars()
 
         return jsonify(
             {
@@ -65,6 +65,7 @@ class UsersRoute(BaseRoute):
             email=request_json["email"],
             password_hash=generate_password_hash(request_json["password"]),
             scope=ROLES.get(request_json["role"]),
+            deleted=False,
         )
         session.add(orm_user)
 
@@ -96,6 +97,7 @@ class UserRoute(BaseRoute):
         orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
 
         raise_if_none(orm_user, errors.NotFound)
+        raise_if(orm_user.deleted, errors.NotFound)
 
         return jsonify(cso.UserSchemaReadOne().dump(orm_user))
 
@@ -109,6 +111,7 @@ class UserRoute(BaseRoute):
         orm_user = dbm.User.get_or_none(session, username)
 
         raise_if_none(orm_user, errors.NotFound)
+        raise_if(orm_user.deleted, errors.NotFound)
 
         if "email" in request_json:
             orm_user.email = request_json["email"]
@@ -126,6 +129,6 @@ class UserRoute(BaseRoute):
 
         orm_user = dbm.User.get_or_none(session, username)
         raise_if_none(orm_user, errors.NotFound)
-        session.delete(orm_user)
+        orm_user.deleted = True
 
         return Response(status=HTTPStatus.NO_CONTENT)

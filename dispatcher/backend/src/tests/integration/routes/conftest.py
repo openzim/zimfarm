@@ -131,8 +131,47 @@ def schedules(make_schedule, make_config, make_language):
 
 
 @pytest.fixture(scope="module")
-def make_user(garbage_collector):
-    def _make_user(username: str = "some-user", role: str = None) -> dict:
+def make_key():
+    def _make_key() -> dict:
+        return {
+            "name": "pytest",
+            "fingerprint": "a4a7cfd26a11ec519b63d4d12f34ecf2",
+            "key": (
+                "AAAAB3NzaC1yc2EAAAADAQABAAABAQC4EYmNPfdscaYcMTXe0NxSpS+5qbVO+"
+                "WDaMLt/JLbDmorJzzBYFItxsr5hvxKckQ3jgUdcoIqzpwfjg88NhxenPmLlqs"
+                "aQfkI2IjmOxDwaH4zs1IKG4+BTyY6EFrEnWgO9vJMJPOVzBdv3uUUOULvTnE7"
+                "ZWpqb+2tRQCk6GUF9AoajmAzTlu+PjD53kRqwRugK/EKrqIjg5Nb/y5F4xGXL"
+                "Tb3otsUp+iFB3TJ65yB9F4C/Q4R5Srr/R3CWBQvoMLHUjya7HppoEW5sl8e+n"
+                "EYpwKVCVuyJiRv9NuomBuh2ZH7ftfY8zxkVyv6UbVNXwFTvT3QVbwM6pQgVx/"
+                "nJmzeb"
+            ),
+            "type": "RSA",
+            "added": datetime.datetime(2019, 1, 1),
+            "last_used": datetime.datetime(2019, 1, 1),
+            "pkcs8_key": "-----BEGIN PUBLIC KEY-----\n"
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc\n"
+            "UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX\n"
+            "pz5i5arGkH5CNiI5jsQ8Gh+M7NSChuPgU8mOhBaxJ1oDvbyTCTzlcwXb97lFDlC7\n"
+            "05xO2Vqam/trUUApOhlBfQKGo5gM05bvj4w+d5EasEboCvxCq6iI4OTW/8uReMRl\n"
+            "y0296LbFKfohQd0yeucgfReAv0OEeUq6/0dwlgUL6DCx1I8mux6aaBFubJfHvpxG\n"
+            "KcClQlbsiYkb/TbqJgbodmR+37X2PM8ZFcr+lG1TV8BU7090FW8DOqUIFcf5yZs3\n"
+            "mwIDAQAB\n"
+            "-----END PUBLIC KEY-----\n",
+        }
+
+    yield _make_key
+
+
+@pytest.fixture(scope="module")
+def key(make_key):
+    return make_key()
+
+
+@pytest.fixture(scope="module")
+def make_user(garbage_collector, key):
+    def _make_user(
+        username: str = "some-user", role: str = None, deleted: bool = False
+    ) -> dict:
         user = dbm.User(
             mongo_val=None,
             mongo_id=None,
@@ -140,33 +179,18 @@ def make_user(garbage_collector):
             password_hash=generate_password_hash("some-password"),
             scope=None,
             email=f"{username}@acme.com",
+            deleted=deleted,
         )
         user.ssh_keys.append(
             dbm.Sshkey(
                 mongo_val=None,
-                name="pytest",
-                fingerprint="a4a7cfd26a11ec519b63d4d12f34ecf2",
-                key=(
-                    "AAAAB3NzaC1yc2EAAAADAQABAAABAQC4EYmNPfdscaYcMTXe0NxSpS+5qbVO+"
-                    "WDaMLt/JLbDmorJzzBYFItxsr5hvxKckQ3jgUdcoIqzpwfjg88NhxenPmLlqs"
-                    "aQfkI2IjmOxDwaH4zs1IKG4+BTyY6EFrEnWgO9vJMJPOVzBdv3uUUOULvTnE7"
-                    "ZWpqb+2tRQCk6GUF9AoajmAzTlu+PjD53kRqwRugK/EKrqIjg5Nb/y5F4xGXL"
-                    "Tb3otsUp+iFB3TJ65yB9F4C/Q4R5Srr/R3CWBQvoMLHUjya7HppoEW5sl8e+n"
-                    "EYpwKVCVuyJiRv9NuomBuh2ZH7ftfY8zxkVyv6UbVNXwFTvT3QVbwM6pQgVx/"
-                    "nJmzeb"
-                ),
-                type="RSA",
-                added=datetime.datetime(2019, 1, 1),
-                last_used=datetime.datetime(2019, 1, 1),
-                pkcs8_key="-----BEGIN PUBLIC KEY-----\n"
-                "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc\n"
-                "UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX\n"
-                "pz5i5arGkH5CNiI5jsQ8Gh+M7NSChuPgU8mOhBaxJ1oDvbyTCTzlcwXb97lFDlC7\n"
-                "05xO2Vqam/trUUApOhlBfQKGo5gM05bvj4w+d5EasEboCvxCq6iI4OTW/8uReMRl\n"
-                "y0296LbFKfohQd0yeucgfReAv0OEeUq6/0dwlgUL6DCx1I8mux6aaBFubJfHvpxG\n"
-                "KcClQlbsiYkb/TbqJgbodmR+37X2PM8ZFcr+lG1TV8BU7090FW8DOqUIFcf5yZs3\n"
-                "mwIDAQAB\n"
-                "-----END PUBLIC KEY-----\n",
+                name=key["name"],
+                fingerprint=key["fingerprint"],
+                key=key["key"],
+                type=key["type"],
+                added=key["added"],
+                last_used=key["last_used"],
+                pkcs8_key=key["pkcs8_key"],
             )
         )
         if role:
@@ -201,6 +225,11 @@ def make_user(garbage_collector):
 @pytest.fixture(scope="module")
 def user(make_user):
     return make_user()
+
+
+@pytest.fixture(scope="module")
+def deleted_user(make_user):
+    return make_user(username="del_some-user", deleted=True)
 
 
 @pytest.fixture(scope="module")
@@ -303,6 +332,7 @@ def make_worker(user, garbage_collector):
         last_seen: datetime = getnow(),
         resources: dict = None,
         last_ip: str = "192.168.1.1",
+        deleted: bool = False,
     ) -> dict:
         with Session.begin() as session:
             user_id = dbm.User.get_id_or_none(session, username)
@@ -318,6 +348,7 @@ def make_worker(user, garbage_collector):
                 platforms={},
                 last_seen=last_seen,
                 last_ip=last_ip,
+                deleted=deleted,
             )
             worker.user_id = user_id
             session.add(worker)
@@ -346,7 +377,7 @@ def worker(make_worker):
 
 
 @pytest.fixture(scope="module")
-def workers(make_worker, make_user, make_config, make_language):
+def workers(make_worker, make_user, make_config, make_language, deleted_user):
     for index in range(2):
         make_user(f"user_{index}")
     workers = []
@@ -355,7 +386,28 @@ def workers(make_worker, make_user, make_config, make_language):
         username = (
             f"user_{index%2}"  # build some users as well but not as many as workers
         )
-        last_ip = f"192.168.1.{index}"
+        last_ip = (
+            (
+                # tweak one IP to have duplicates
+                f"192.168.1.{index if index != 2 else 1}"
+            )
+            # tweak one IP to be missing (worker without any last_ip for now)
+            if index != 3
+            else None
+        )
         worker = make_worker(name, username=username, last_ip=last_ip)
         workers.append(worker)
+
+    # add one deleted worker
+    name = "deleted_worker"
+    worker = make_worker(name=name, deleted=True, last_ip="192.168.1.254")
+    workers.append(worker)
+
+    # add one worker on a deleted user
+    name = "worker_from_deleted_user"
+    worker = make_worker(
+        name=name, username=deleted_user["username"], last_ip="192.168.1.253"
+    )
+    workers.append(worker)
+
     return workers

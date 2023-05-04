@@ -23,7 +23,7 @@ from errors.http import InvalidRequestJSON
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
 from routes.errors import BadRequest, InternalError
-from routes.utils import raise_if_none
+from routes.utils import raise_if, raise_if_none
 from utils.broadcaster import BROADCASTER
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,9 @@ class WorkersRoute(BaseRoute):
 
         stmt = (
             sa.select(dbm.Worker)
-            .options(so.selectinload(dbm.Worker.user))
+            .join(dbm.User)
+            .filter(dbm.User.deleted == False)  # noqa: E712
+            .filter(dbm.Worker.deleted == False)  # noqa: E712
             .order_by(dbm.Worker.name)
         )
 
@@ -111,8 +113,23 @@ class WorkerCheckinRoute(BaseRoute):
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        user_id = dbm.User.get_id_or_none(session, request_json["username"])
-        raise_if_none(user_id, BadRequest, "username not found")
+        user = dbm.User.get_or_none(session, request_json["username"])
+        raise_if_none(user, BadRequest, "username not found")
+        raise_if(user.deleted, BadRequest, "username not found")
+
+        worker: dbm.Worker = dbm.Worker.get_or_none(session, name)
+        if worker:
+            raise_if(
+                worker.deleted,
+                BadRequest,
+                "worker has been marked as deleted",
+            )
+            # TODO: should we refuse to alter the worker user_id ?
+            # raise_if(
+            #     worker.user_id != user.id,
+            #     BadRequest,
+            #     "worker with same name already exists for another user",
+            # )
 
         # let's do an upsert ; conflict on name
         # on conflict, update the selfish, cpu, memory, disk, ...
@@ -128,7 +145,7 @@ class WorkerCheckinRoute(BaseRoute):
             platforms=request_json.get("platforms", {}),
             last_seen=getnow(),
             last_ip=None,
-            user_id=user_id,
+            user_id=user.id,
         )
         upsert_stmt = upsert_stmt.on_conflict_do_update(
             index_elements=[
