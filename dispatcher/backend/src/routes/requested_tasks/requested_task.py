@@ -238,7 +238,7 @@ class RequestedTasksForWorkers(BaseRoute):
                 worker.last_ip = worker_ip
 
                 # IP changed since last encounter
-                if USES_WORKERS_IPS_WHITELIST and last_ip != worker_ip:
+                if USES_WORKERS_IPS_WHITELIST and str(last_ip) != worker_ip:
                     record_ip_change(worker_name)
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
