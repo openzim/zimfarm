@@ -162,7 +162,7 @@ def handle_notification(task_id, event, session: so.Session):
     # serialize/unserialize task so we use a safe version from now-on
     task_safe = TaskFullSchema().dump(task)
     global_notifs = GlobalNotifications.entries.get(event, {})
-    task_notifs = task_safe.get("notification", {}).get(event, {})
+    task_notifs = (task_safe.get("notification") or {}).get(event, {})
 
     # exit early if we don't have notification requests for the event
     if not global_notifs and not task_notifs:
