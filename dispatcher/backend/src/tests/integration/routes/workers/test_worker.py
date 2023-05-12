@@ -6,7 +6,12 @@ from common.external import build_workers_whitelist
 class TestWorkersCommon:
     def test_build_workers_whitelist(self, workers):
         whitelist = build_workers_whitelist()
-        assert len(whitelist) == 36
+        # - 4 because:
+        # 2 workers have a duplicate IP
+        # 1 worker has an IP missing
+        # 1 worker is marked as deleted
+        # 1 worker has its user marked as deleted
+        assert len(whitelist) == len(workers) - 4
 
 
 class TestWorkersList:
