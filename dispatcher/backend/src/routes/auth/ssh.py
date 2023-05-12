@@ -14,6 +14,7 @@ from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
 from db import dbsession
 from routes import errors
 from routes.auth.oauth2 import OAuth2
+from utils.check import raise_if
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ def asymmetric_key_auth(session: so.Session):
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
                 break
-    dbm.raise_if(
+    raise_if(
         not authenticated,
         errors.Unauthorized,
         "Could not find matching key for signature",

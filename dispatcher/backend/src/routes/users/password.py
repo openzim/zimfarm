@@ -7,6 +7,7 @@ import db.models as dbm
 from db import dbsession
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
+from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
@@ -28,22 +29,22 @@ class PasswordRoute(BaseRoute):
 
             # get current password
             password_current = request_json.get("current", None)
-            dbm.raise_if_none(password_current, errors.BadRequest)
+            raise_if_none(password_current, errors.BadRequest)
 
             # check current password is valid
             is_valid = check_password_hash(orm_user.password_hash, password_current)
-            dbm.raise_if(not is_valid, errors.Unauthorized)
+            raise_if(not is_valid, errors.Unauthorized)
         else:
             # user is trying to set other user's password
             # check permission
-            dbm.raise_if(
+            raise_if(
                 not token.get_permission("users", "change_password"),
                 errors.NotEnoughPrivilege,
             )
 
         # get new password
         password_new = request_json.get("new", None)
-        dbm.raise_if_none(password_new, errors.BadRequest)
+        raise_if_none(password_new, errors.BadRequest)
 
         orm_user.password_hash = generate_password_hash(password_new)
 

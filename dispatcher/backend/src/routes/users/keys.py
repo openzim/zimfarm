@@ -18,6 +18,7 @@ from common.schemas.parameters import KeySchema
 from db import dbsession
 from routes import authenticate, errors, url_object_id
 from routes.base import BaseRoute
+from utils.check import raise_if_none
 from utils.token import AccessToken
 
 
@@ -142,7 +143,7 @@ class KeyRoute(BaseRoute):
         user_with_key = session.execute(stmt).fetchone()
 
         # no user means no matching SSH key for fingerprint
-        dbm.User.check_user(user_with_key, errors.NotFound)
+        dbm.User.check(user_with_key, errors.NotFound)
 
         for permission in requested_permissions:
             namespace, perm_name = permission.split(".", 1)
@@ -185,8 +186,6 @@ class KeyRoute(BaseRoute):
             .where(dbm.Sshkey.fingerprint == fingerprint)
             .returning(dbm.Sshkey.id)
         ).scalar_one_or_none()
-        dbm.raise_if_none(
-            orm_ssh_key, errors.NotFound, "No SSH key with this fingerprint"
-        )
+        raise_if_none(orm_ssh_key, errors.NotFound, "No SSH key with this fingerprint")
 
         return Response(status=HTTPStatus.NO_CONTENT)

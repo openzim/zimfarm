@@ -24,6 +24,7 @@ from routes.base import BaseRoute
 from routes.errors import BadRequest
 from routes.utils import remove_secrets_from_response
 from utils.broadcaster import BROADCASTER
+from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ class TaskRoute(BaseRoute):
             .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
             .filter(dbm.Task.id == task_id)
         ).first()
-        dbm.raise_if_none(task, TaskNotFound)
+        raise_if_none(task, TaskNotFound)
 
         task = TaskFullSchema().dump(task)
 
@@ -215,9 +216,7 @@ class TaskRoute(BaseRoute):
         try:
             request_json = TasKUpdateSchema().load(request.get_json())
             # empty dict passes the validator but troubles mongo
-            dbm.raise_if(
-                not request.get_json(), ValidationError, "Update can't be empty"
-            )
+            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 

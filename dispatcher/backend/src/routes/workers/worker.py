@@ -24,6 +24,7 @@ from routes import authenticate, url_object_id
 from routes.base import BaseRoute
 from routes.errors import BadRequest, InternalError
 from utils.broadcaster import BROADCASTER
+from utils.check import raise_if
 
 logger = logging.getLogger(__name__)
 OFFLINE_DELAY = 20 * 60
@@ -116,15 +117,15 @@ class WorkerCheckinRoute(BaseRoute):
             session, request_json["username"], BadRequest, "username not found"
         )
 
-        worker: dbm.Worker = dbm.Worker.get(session, name, do_checks=False)
+        worker: dbm.Worker = dbm.Worker.get(session, name, run_checks=False)
         if worker:
-            dbm.raise_if(
+            raise_if(
                 worker.deleted,
                 BadRequest,
                 "worker has been marked as deleted",
             )
             # TODO: should we refuse to alter the worker user_id ?
-            # dbm.raise_if(
+            # raise_if(
             #     worker.user_id != user.id,
             #     BadRequest,
             #     "worker with same name already exists for another user",
@@ -168,7 +169,7 @@ class WorkerCheckinRoute(BaseRoute):
             name,
             InternalError,
             "something bad happened, the worker has been set but can't be found",
-            do_checks=True,
+            run_checks=True,
         )
 
         document = {

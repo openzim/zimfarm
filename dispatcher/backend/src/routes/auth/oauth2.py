@@ -11,6 +11,7 @@ import db.models as dbm
 from common import getnow
 from db import dbsession
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
+from utils.check import raise_if, raise_if_none
 from utils.token import LoadedAccessToken
 
 
@@ -38,12 +39,12 @@ class OAuth2:
                 username = request.headers.get("username")
                 password = request.headers.get("password")
 
-            dbm.raise_if_none(
+            raise_if_none(
                 username,
                 InvalidRequest,
                 'Request was missing the "username" parameter.',
             )
-            dbm.raise_if_none(
+            raise_if_none(
                 password,
                 InvalidRequest,
                 'Request was missing the "password" parameter.',
@@ -60,7 +61,7 @@ class OAuth2:
             else:
                 refresh_token = request.headers.get("refresh_token")
 
-            dbm.raise_if_none(
+            raise_if_none(
                 refresh_token,
                 InvalidRequest,
                 'Request was missing the "refresh_token" parameter.',
@@ -88,7 +89,7 @@ class OAuth2:
 
         # check password is valid
         is_valid = check_password_hash(orm_user.password_hash, password)
-        dbm.raise_if(not is_valid, InvalidGrant, "Username or password is invalid.")
+        raise_if(not is_valid, InvalidGrant, "Username or password is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(
@@ -109,15 +110,15 @@ class OAuth2:
                 dbm.Refreshtoken.token == old_refresh_token
             )
         ).scalar_one_or_none()
-        dbm.raise_if_none(old_token_document, InvalidGrant, "Refresh token is invalid.")
+        raise_if_none(old_token_document, InvalidGrant, "Refresh token is invalid.")
 
         # check token is not expired
         expire_time = old_token_document.expire_time
-        dbm.raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
+        raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
 
         # check user exists
         orm_user = old_token_document.user
-        dbm.User.check_user(orm_user, InvalidGrant, "Refresh token is invalid.")
+        dbm.User.check(orm_user, InvalidGrant, "Refresh token is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(

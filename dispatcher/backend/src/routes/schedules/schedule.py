@@ -19,6 +19,7 @@ from routes import auth_info_if_supplied, authenticate, require_perm
 from routes.base import BaseRoute
 from routes.errors import BadRequest
 from routes.utils import remove_secrets_from_response
+from utils.check import raise_if
 from utils.offliners import expanded_config
 from utils.scheduling import get_default_duration
 from utils.token import AccessToken
@@ -198,13 +199,11 @@ class ScheduleRoute(BaseRoute):
         try:
             update = UpdateSchema().load(request.get_json())  # , partial=True
             # empty dict passes the validator but troubles mongo
-            dbm.raise_if(
-                not request.get_json(), ValidationError, "Update can't be empty"
-            )
+            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
 
             # ensure we test flags according to new task_name if present
             if "task_name" in update:
-                dbm.raise_if(
+                raise_if(
                     "flags" not in update,
                     ValidationError,
                     "Can't update offliner without updating flags",
@@ -298,7 +297,7 @@ class ScheduleImageNames(BaseRoute):
             logger.error(f"Unable to connect to GHCR Tags list: {exc}")
             return make_resp([])
 
-        dbm.raise_if(resp.status_code == HTTPStatus.NOT_FOUND, ResourceNotFound)
+        raise_if(resp.status_code == HTTPStatus.NOT_FOUND, ResourceNotFound)
 
         if resp.status_code != HTTPStatus.OK:
             logger.error(f"GHCR responded HTTP {resp.status_code} for {hub_name}")
