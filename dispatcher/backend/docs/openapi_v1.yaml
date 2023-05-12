@@ -280,7 +280,7 @@ paths:
                 type: object
                 properties:
                   _id:
-                    $ref: '#/components/schemas/MongoId'
+                    $ref: '#/components/schemas/Uuid'
         401:
           description: Unauthorized
         400:
@@ -616,7 +616,7 @@ paths:
                   requested:
                     type: array
                     items:
-                      $ref: '#/components/schemas/MongoId'
+                      $ref: '#/components/schemas/Uuid'
         400:
           description: Bad Request (invalid input)
           content:
@@ -858,7 +858,7 @@ paths:
                 type: object
                 properties:
                   _id:
-                    $ref: '#/components/schemas/MongoId'
+                    $ref: '#/components/schemas/Uuid'
         400:
           description: Bad Request (invalid input)
           content:
@@ -1286,7 +1286,7 @@ paths:
                 type: object
                 properties:
                   _id:
-                    $ref: '#/components/schemas/MongoId'
+                    $ref: '#/components/schemas/Uuid'
         400:
           description: Bad Request (invalid input)
           content:
@@ -1776,7 +1776,7 @@ components:
             - updated_at
           properties:
             _id:
-              $ref: '#/components/schemas/MongoId'
+              $ref: '#/components/schemas/Uuid'
             status:
               $ref: '#/components/schemas/TaskStatus'
             updated_at:
@@ -1832,7 +1832,7 @@ components:
             - updated_at
           properties:
             _id:
-              $ref: '#/components/schemas/MongoId'
+              $ref: '#/components/schemas/Uuid'
             status:
               $ref: '#/components/schemas/TaskStatus'
             updated_at:
@@ -1933,7 +1933,7 @@ components:
         - timestamp
       properties:
         _id:
-          $ref: '#/components/schemas/MongoId'
+          $ref: '#/components/schemas/Uuid'
         status:
           $ref: '#/components/schemas/TaskStatus'
         timestamp:
@@ -1956,7 +1956,7 @@ components:
         - worker
       properties:
         _id:
-          $ref: '#/components/schemas/MongoId'
+          $ref: '#/components/schemas/Uuid'
         status:
           $ref: '#/components/schemas/TaskStatus'
         schedule_name:
@@ -2004,7 +2004,7 @@ components:
         - updated_at
       properties:
         _id:
-          $ref: '#/components/schemas/MongoId'
+          $ref: '#/components/schemas/Uuid'
         config:
           $ref: '#/components/schemas/Config'
         status:
@@ -2113,7 +2113,7 @@ components:
       minimum: 0
       example: 0
       default: 0
-    MongoId:
+    Uuid:
       type: string
       format: uuid
       example: 5dbc599b3b61e21c362703e4
@@ -2216,7 +2216,7 @@ components:
         on:
           $ref: '#/components/schemas/SingleTimestamp'
         task:
-          $ref: '#/components/schemas/MongoId'
+          $ref: '#/components/schemas/Uuid'
         worker:
           $ref: '#/components/schemas/WorkerName'
     Email:

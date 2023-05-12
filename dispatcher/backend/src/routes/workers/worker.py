@@ -133,8 +133,6 @@ class WorkerCheckinRoute(BaseRoute):
         # let's do an upsert ; conflict on name
         # on conflict, update the selfish, cpu, memory, disk, ...
         upsert_stmt = insert(dbm.Worker).values(
-            mongo_val=None,
-            mongo_id=None,
             name=name,
             selfish=request_json["selfish"],
             cpu=request_json["cpu"],

@@ -69,12 +69,6 @@ class User(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    mongo_id: Mapped[Optional[str]] = mapped_column(
-        unique=True
-    )  # temporary backup of mongo document id
     username: Mapped[str] = mapped_column(unique=True, index=True)
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
@@ -134,11 +128,6 @@ class Sshkey(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    # Nota: there is no temporary backup of mongo document id because there is
-    # none since this data was embedded inside the User document in Mongo
     name: Mapped[str]
     fingerprint: Mapped[str] = mapped_column(index=True)
     type: Mapped[str]
@@ -156,12 +145,6 @@ class Refreshtoken(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    mongo_id: Mapped[Optional[str]] = mapped_column(
-        unique=True
-    )  # temporary backup of mongo document id
     token: Mapped[UUID] = mapped_column(server_default=text("uuid_generate_v4()"))
     expire_time: Mapped[datetime]
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
@@ -178,12 +161,6 @@ class Worker(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    mongo_id: Mapped[Optional[str]] = mapped_column(
-        unique=True
-    )  # temporary backup of mongo document id
     name: Mapped[str] = mapped_column(unique=True, index=True)
     selfish: Mapped[bool]
     cpu: Mapped[int]
@@ -234,12 +211,6 @@ class Task(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    mongo_id: Mapped[Optional[str]] = mapped_column(
-        unique=True
-    )  # temporary backup of mongo document id
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[List[Dict[str, Any]]]
     debug: Mapped[Dict[str, Any]]
@@ -289,12 +260,6 @@ class Schedule(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    mongo_id: Mapped[Optional[str]] = mapped_column(
-        unique=True
-    )  # temporary backup of mongo document id
     name: Mapped[str] = mapped_column(unique=True, index=True)
     category: Mapped[str] = mapped_column(index=True)
     # config must be JSON instead of JSONB so that we can query on dict item value
@@ -359,9 +324,6 @@ class ScheduleDuration(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
     default: Mapped[bool]
     value: Mapped[int]
     on: Mapped[datetime]
@@ -386,12 +348,6 @@ class RequestedTask(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    mongo_val: Mapped[
-        Optional[Dict[str, Any]]
-    ]  # temporary backup of full mongo document
-    mongo_id: Mapped[Optional[str]] = mapped_column(
-        unique=True
-    )  # temporary backup of mongo document id
     status: Mapped[str]
     timestamp: Mapped[Dict[str, Any]]
     updated_at: Mapped[datetime] = mapped_column(index=True)

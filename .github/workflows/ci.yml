@@ -48,15 +48,9 @@ jobs:
           - 5432:5432
 
     env:
-      MONGODB_URI: mongodb://localhost:27017/TestsZF
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
 
     steps:
-      - name: Launch MongoDB
-        uses: wbari/start-mongoDB@v0.2
-        with:
-          mongoDBVersion: "4.2"
-
       - name: Retrieve source code
         uses: actions/checkout@v3
 
@@ -70,11 +64,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dispatcher/backend/requirements.txt
           pip install -U pytest pytest-cov
-
-      - name: prepare Mongo DB
-        run: |
-          cd $GITHUB_WORKSPACE/dispatcher/backend/src
-          PYTHONPATH=$PWD python -c "from utils.database import Initializer; Initializer.initialize()"
 
       - name: prepare Postgresql DB
         run: |

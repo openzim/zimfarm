@@ -149,8 +149,6 @@ def request_a_schedule(
     now = getnow()
 
     requested_task = dbm.RequestedTask(
-        mongo_val=None,
-        mongo_id=None,
         status=TaskStatus.requested,
         timestamp={TaskStatus.requested: now},
         events=[{"code": TaskStatus.requested, "timestamp": now}],

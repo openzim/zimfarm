@@ -95,7 +95,6 @@ class KeysRoute(BaseRoute):
 
         # add new ssh key to database
         ssh_key = dbm.Sshkey(
-            mongo_val=None,
             name=request_json["name"],
             fingerprint=fingerprint,
             key=key,

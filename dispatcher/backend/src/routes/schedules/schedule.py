@@ -114,8 +114,6 @@ class SchedulesRoute(BaseRoute):
             raise InvalidRequestJSON(e.messages)
 
         schedule = dbm.Schedule(
-            mongo_val=None,
-            mongo_id=None,
             name=document["name"],
             category=document["category"],
             periodicity=document["periodicity"],
@@ -131,7 +129,6 @@ class SchedulesRoute(BaseRoute):
 
         default_duration = get_default_duration()
         duration = dbm.ScheduleDuration(
-            mongo_val=None,
             default=True,
             value=default_duration["value"],
             on=default_duration["on"],
@@ -211,8 +208,7 @@ class ScheduleRoute(BaseRoute):
         schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         try:
-            update = UpdateSchema().load(request.get_json())  # , partial=True
-            # empty dict passes the validator but troubles mongo
+            update = UpdateSchema().load(request.get_json())
             raise_if(not request.get_json(), ValidationError, "Update can't be empty")
 
             # ensure we test flags according to new task_name if present
@@ -342,8 +338,6 @@ class ScheduleCloneRoute(BaseRoute):
         schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         clone = dbm.Schedule(
-            mongo_id=None,
-            mongo_val=None,
             name=request_json["name"],
             category=schedule.category,
             periodicity=schedule.periodicity,
@@ -359,7 +353,6 @@ class ScheduleCloneRoute(BaseRoute):
 
         default_duration = get_default_duration()
         duration = dbm.ScheduleDuration(
-            mongo_val=None,
             default=True,
             value=default_duration["value"],
             on=default_duration["on"],

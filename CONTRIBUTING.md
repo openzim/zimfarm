@@ -15,13 +15,13 @@ We have a very limited number of contributors so rules are quite limited:
 
 Setting up the zimfarm locally is a bit complicated due to the number of moving parts. But you don't need all of those depending on what you plan on working on.
 
-An alternate way to run all this locally is to use a fully docker-based stack. See [dev](dev/README.md) folder for details.
+An alternate way to run all this locally (as described below) is to use a fully docker-based stack. See [dev](dev/README.md) folder for details.
 
 You'll need [docker](https://www.docker.com/) and [python3.8](https://www.python.org/) for almost all parts so secure that first.
 
 ### backend API
 
-* Install [mongodb](https://www.mongodb.com/)
+* Install [PostgreSQL](https://www.postgresql.org/)
 * Setup a python3 environment
 * `pip install dispatcher/backend/requirements.txt`
 * Create initial user
@@ -58,40 +58,10 @@ you now have a working backend with an admin user at http://127.0.0.1/v1
 
 ### import schedules backup
 
-* Download a copy of the production schedules
-``` sh
-curl https://api.farm.openzim.org/v1/schedules/backup/ > all_schedules.json
-```
-* import those into your mongo database
+It is possible to download and import a backup of production schedules, so that you have some data
+locally to test the UI for instance.
 
-```sh
-cd dispatcher/backend/src
-python
-```
-
-* Type-in the following code to import it
-
-```py
-import json
-import pathlib
-
-import bson
-
-from common import mongo
-
-# delete existing
-mongo.Schedules().drop()
-# create collection
-mongo.Schedules().initialize()
-
-with open(pathlib.Path("dump_schedules.json"), "r") as backup:
-    for backup_schedule in json.load(backup):
-        backup_schedule.update({"_id": bson.ObjectId(backup_schedule["_id"])})
-        mongo.Schedules().insert_one(backup_schedule)
-        print(f"inserted {backup_schedule['name']}")
-```
-
-You're all set!
+Detailed instructions are provided in the [Jupyter notebook](dispatcher/backend/src/import_schedules.ipynb), which must be ran from the same folder `dispatcher/backend/src`, with all dispatcher backend requirements installed.
 
 ## frontend-ui
 
