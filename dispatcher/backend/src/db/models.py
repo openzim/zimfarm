@@ -28,35 +28,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql.schema import MetaData
 
-
-def raise_if_none(
-    object_to_check: Any, exception_class: Type[Exception], *exception_args: object
-) -> None:
-    """Checks if the `object_to_check` argument is None.
-    If it is None, then raises a new object of type `exception_class` initialized
-    with `exception_args`.
-
-    Arguments:
-    object_to_check -- the object to check if None or not
-    exception_class -- the exception to create and raise if the object_to_check is None
-    exception_args -- the args to create the exception
-    """
-    raise_if(object_to_check is None, exception_class, *exception_args)
-
-
-def raise_if(
-    condition: bool, exception_class: Type[Exception], *exception_args: object
-) -> None:
-    """Checks if the `condition` argument is True.
-    If it is True, then it raises the exception.
-
-    Arguments:
-    condition -- the condition to check if True
-    exception_class -- the exception to create and raise if the condition is True
-    exception_args -- the args to create the exception
-    """
-    if condition:
-        raise exception_class(*exception_args)
+from utils.check import raise_if, raise_if_none
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -122,7 +94,7 @@ class User(Base):
     )
 
     @classmethod
-    def check_user(
+    def check(
         cls,
         user: "User",
         exception_class: Type[Exception] = Exception,
@@ -140,7 +112,7 @@ class User(Base):
         exception_class: Type[Exception] = Exception,
         *exception_args: object,
         fetch_ssh_keys: bool = False,
-        do_checks: bool = True,
+        run_checks: bool = True,
     ) -> Optional["User"]:
         """Search DB for a user by username
 
@@ -152,8 +124,8 @@ class User(Base):
         if fetch_ssh_keys:
             stmt = stmt.options(selectinload(User.ssh_keys))
         user = session.execute(stmt).scalar_one_or_none()
-        if do_checks:
-            cls.check_user(user, exception_class, *exception_args)
+        if run_checks:
+            cls.check(user, exception_class, *exception_args)
         return user
 
 
@@ -236,24 +208,13 @@ class Worker(Base):
     )
 
     @classmethod
-    def check(
-        cls,
-        worker: "Worker",
-        exception_class: Type[Exception] = Exception,
-        *exception_args: object,
-    ) -> None:
-        """Raise the exception passed in parameters if worker is None or deleted."""
-        raise_if_none(worker, exception_class, *exception_args)
-        raise_if(worker.deleted, exception_class, *exception_args)
-
-    @classmethod
     def get(
         cls,
         session: Session,
         name: str,
         exception_class: Type[Exception] = Exception,
         *exception_args: object,
-        do_checks: bool = True,
+        run_checks: bool = True,
     ) -> Optional["RequestedTask"]:
         """Search DB for a worker by name
 
@@ -262,8 +223,9 @@ class Worker(Base):
         """
         stmt = select(Worker).where(Worker.name == name)
         task = session.execute(stmt).scalar_one_or_none()
-        if do_checks:
-            cls.check(task, exception_class, *exception_args)
+        if run_checks:
+            raise_if_none(task, exception_class, *exception_args)
+            raise_if(task.deleted, exception_class, *exception_args)
         return task
 
 
@@ -304,16 +266,6 @@ class Task(Base):
     worker: Mapped["Worker"] = relationship(back_populates="tasks", init=False)
 
     @classmethod
-    def check(
-        cls,
-        task: "Task",
-        exception_class: Type[Exception] = Exception,
-        *exception_args: object,
-    ) -> None:
-        """Raise the exception passed in parameters if task is None."""
-        raise_if_none(task, exception_class, *exception_args)
-
-    @classmethod
     def get(
         cls,
         session: Session,
@@ -326,7 +278,7 @@ class Task(Base):
         If the check of the task is not ok, raise thes exception passed in parameters"""
         stmt = select(Task).where(Task.id == id)
         task = session.execute(stmt).scalar_one_or_none()
-        cls.check(task, exception_class, *exception_args)
+        raise_if_none(task, exception_class, *exception_args)
         return task
 
 
@@ -379,23 +331,13 @@ class Schedule(Base):
     )
 
     @classmethod
-    def check(
-        cls,
-        schedule: "Schedule",
-        exception_class: Type[Exception] = Exception,
-        *exception_args: object,
-    ) -> None:
-        """Raise the exception passed in parameters if schedule is None."""
-        raise_if_none(schedule, exception_class, *exception_args)
-
-    @classmethod
     def get(
         cls,
         session: Session,
         name: str,
         exception_class: Type[Exception] = Exception,
         *exception_args: object,
-        do_checks: bool = True,
+        run_checks: bool = True,
     ) -> Optional["Schedule"]:
         """Search DB for a schedule by name
 
@@ -403,8 +345,8 @@ class Schedule(Base):
         parameters"""
         stmt = select(Schedule).where(Schedule.name == name)
         schedule = session.execute(stmt).scalar_one_or_none()
-        if do_checks:
-            cls.check(schedule, exception_class, *exception_args)
+        if run_checks:
+            raise_if_none(schedule, exception_class, *exception_args)
         return schedule
 
 
@@ -472,16 +414,6 @@ class RequestedTask(Base):
     )
 
     @classmethod
-    def check(
-        cls,
-        task: "RequestedTask",
-        exception_class: Type[Exception] = Exception,
-        *exception_args: object,
-    ) -> None:
-        """Raise the exception passed in parameters if task is None."""
-        raise_if_none(task, exception_class, *exception_args)
-
-    @classmethod
     def get(
         cls,
         session: Session,
@@ -496,5 +428,5 @@ class RequestedTask(Base):
         """
         stmt = select(RequestedTask).where(RequestedTask.id == id)
         task = session.execute(stmt).scalar_one_or_none()
-        cls.check(task, exception_class, *exception_args)
+        raise_if_none(task, exception_class, *exception_args)
         return task

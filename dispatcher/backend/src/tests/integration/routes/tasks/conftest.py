@@ -55,7 +55,7 @@ def make_task(make_event, make_schedule, make_config, worker, garbage_collector)
         config = expanded_config(make_config())
         with Session.begin() as session:
             worker_obj = dbm.Worker.get(session, worker["name"])
-            schedule = dbm.Schedule.get(session, schedule_name, do_checks=False)
+            schedule = dbm.Schedule.get(session, schedule_name, run_checks=False)
             if schedule is None:
                 make_schedule(schedule_name)
                 schedule = dbm.Schedule.get(session, schedule_name)

@@ -266,7 +266,7 @@ def make_requested_task(make_event, make_schedule, garbage_collector):
         }
 
         with Session.begin() as session:
-            schedule = dbm.Schedule.get(session, schedule_name, do_checks=False)
+            schedule = dbm.Schedule.get(session, schedule_name, run_checks=False)
             if schedule is None:
                 make_schedule(schedule_name)
                 schedule = dbm.Schedule.get(session, schedule_name)
@@ -335,7 +335,7 @@ def make_worker(user, garbage_collector):
         deleted: bool = False,
     ) -> dict:
         with Session.begin() as session:
-            user = dbm.User.get(session, username, do_checks=False)
+            user = dbm.User.get(session, username, run_checks=False)
             worker = dbm.Worker(
                 mongo_val=None,
                 mongo_id=None,
