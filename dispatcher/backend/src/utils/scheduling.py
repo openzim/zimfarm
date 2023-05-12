@@ -61,6 +61,10 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         )
     ).scalars()
 
+    # if there is no matching task for this schedule, just exit
+    if len(tasks) == 0:
+        return
+
     workers_durations = {}
     for task in tasks:
         workers_durations[task.worker_id] = {
