@@ -20,6 +20,7 @@ from common.constants import (
     WHITELISTED_IPS,
 )
 from db import dbsession
+from errors.http import TaskNotFound
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -48,7 +49,11 @@ def build_workers_whitelist(session: so.Session) -> typing.List[str]:
         return False
 
     for row in session.execute(
-        sa.select(dbm.Worker.last_ip).where(dbm.Worker.last_ip.is_not(None))
+        sa.select(dbm.Worker.last_ip)
+        .join(dbm.User)
+        .filter(dbm.Worker.last_ip.is_not(None))
+        .filter(dbm.User.deleted == False)  # noqa: E712
+        .filter(dbm.Worker.deleted == False)  # noqa: E712
     ).scalars():
         ip_addr = ipaddress.ip_address(row)
         if not is_covered(ip_addr):
@@ -149,7 +154,7 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
     """inform openZIM CMS of all created ZIMs in the farm for this task
 
     Safe to re-run as successful requests are skipped"""
-    task = dbm.Task.get_or_none_by_id(session, task_id)
+    task = dbm.Task.get(session, task_id, TaskNotFound)
     for file_name in task.files.keys():
         advertise_book_to_cms(task, file_name)
 

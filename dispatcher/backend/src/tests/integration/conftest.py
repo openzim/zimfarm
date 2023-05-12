@@ -69,9 +69,17 @@ def client():
 
 
 @pytest.fixture(scope="session")
-def access_token():
-    token = LoadedAccessToken(uuid4(), "username", ROLES.get("admin")).encode()
-    yield "Bearer {}".format(token)
+def make_access_token():
+    def _make_access_token(username: str, role: str = "editor"):
+        token = LoadedAccessToken(uuid4(), username, ROLES.get(role)).encode()
+        return "Bearer {}".format(token)
+
+    yield _make_access_token
+
+
+@pytest.fixture(scope="session")
+def access_token(make_access_token):
+    yield make_access_token("username", "admin")
 
 
 @pytest.fixture(scope="session")
@@ -157,6 +165,10 @@ def cleanup_create_test():
             sa.select(dbm.Worker).where(dbm.Worker.name.endswith("_create_test"))
         ).scalars():
             session.delete(worker)
+        for user in session.execute(
+            sa.select(dbm.User).where(dbm.User.username.endswith("_create_test"))
+        ).scalars():
+            session.delete(user)
 
 
 def pytest_sessionstart(session):

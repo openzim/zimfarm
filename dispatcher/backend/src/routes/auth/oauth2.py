@@ -11,7 +11,7 @@ import db.models as dbm
 from common import getnow
 from db import dbsession
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
-from routes.utils import raise_if, raise_if_none
+from utils.check import raise_if, raise_if_none
 from utils.token import LoadedAccessToken
 
 
@@ -83,9 +83,9 @@ class OAuth2:
     def password_grant(username: str, password: str, session: so.Session):
         """Implements logic for password grant."""
 
-        orm_user = dbm.User.get_or_none(session, username)
-        # check user exists
-        raise_if_none(orm_user, InvalidGrant, "Username or password is invalid.")
+        orm_user = dbm.User.get(
+            session, username, InvalidGrant, "Username or password is invalid."
+        )
 
         # check password is valid
         is_valid = check_password_hash(orm_user.password_hash, password)
@@ -117,10 +117,8 @@ class OAuth2:
         raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
 
         # check user exists
-        orm_user = session.execute(
-            sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
-        ).scalar_one_or_none()
-        raise_if_none(orm_user, InvalidGrant, "Refresh token is invalid.")
+        orm_user = old_token_document.user
+        dbm.User.check(orm_user, InvalidGrant, "Refresh token is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(

@@ -22,8 +22,9 @@ from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.utils import raise_if, raise_if_none, remove_secrets_from_response
+from routes.utils import remove_secrets_from_response
 from utils.broadcaster import BROADCASTER
+from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -147,13 +148,11 @@ class TaskRoute(BaseRoute):
                 jsonify({"msg": "scheduler is paused"}), HTTPStatus.NO_CONTENT
             )
 
-        requested_task = dbm.RequestedTask.get_or_none_by_id(session, task_id)
-        raise_if_none(requested_task, BadRequest)
+        requested_task = dbm.RequestedTask.get(session, task_id, BadRequest)
 
         request_args = TaskCreateSchema().load(request.args.to_dict())
         worker_name = request_args["worker_name"]
-        worker = dbm.Worker.get_or_none(session, worker_name)
-        raise_if_none(worker, WorkerNotFound)
+        worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
         task = dbm.Task(
             mongo_val=None,
             mongo_id=None,
@@ -212,8 +211,7 @@ class TaskRoute(BaseRoute):
     @url_object_id("task_id")
     @dbsession
     def patch(self, session: so.Session, task_id: str, token: AccessToken.Payload):
-        task = dbm.Task.get_or_none_by_id(session, task_id)
-        raise_if_none(task, TaskNotFound)
+        task = dbm.Task.get(session, task_id, TaskNotFound)
 
         try:
             request_json = TasKUpdateSchema().load(request.get_json())
@@ -246,8 +244,7 @@ class TaskCancelRoute(BaseRoute):
     @url_object_id("task_id")
     @dbsession
     def post(self, session: so.Session, task_id: str, token: AccessToken.Payload):
-        task = dbm.Task.get_or_none_by_id(session, task_id)
-        raise_if_none(task, TaskNotFound)
+        task = dbm.Task.get(session, task_id, TaskNotFound)
         if task.status not in TaskStatus.incomplete():
             raise TaskNotFound
 

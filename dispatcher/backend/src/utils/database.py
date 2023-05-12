@@ -56,5 +56,6 @@ class Initializer:
                 email=None,
                 password_hash=generate_password_hash(password),
                 scope=ROLES.get("admin"),
+                deleted=False,
             )
             session.add(orm_user)

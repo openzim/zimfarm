@@ -18,7 +18,8 @@ from errors.http import InvalidRequestJSON, ResourceNotFound, ScheduleNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.utils import raise_if, raise_if_none, remove_secrets_from_response
+from routes.utils import remove_secrets_from_response
+from utils.check import raise_if
 from utils.offliners import expanded_config
 from utils.scheduling import get_default_duration
 from utils.token import AccessToken
@@ -174,8 +175,7 @@ class ScheduleRoute(BaseRoute):
     def get(self, schedule_name: str, token: AccessToken.Payload, session: so.Session):
         """Get schedule object."""
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         schedule.config = expanded_config(schedule.config)
 
@@ -194,8 +194,7 @@ class ScheduleRoute(BaseRoute):
     ):
         """Update all properties of a schedule but _id and most_recent_task"""
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         try:
             update = UpdateSchema().load(request.get_json())  # , partial=True
@@ -257,8 +256,7 @@ class ScheduleRoute(BaseRoute):
     ):
         """Delete a schedule."""
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
         # First unset most_recent_task to avoid circular dependency issues
         schedule.most_recent_task = None
         session.delete(schedule)
@@ -327,8 +325,7 @@ class ScheduleCloneRoute(BaseRoute):
 
         request_json = CloneSchema().load(request.get_json())
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         clone = dbm.Schedule(
             mongo_id=None,

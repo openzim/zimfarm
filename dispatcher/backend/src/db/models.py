@@ -1,6 +1,6 @@
 from datetime import datetime
 from ipaddress import IPv4Address
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 from uuid import UUID
 
 from sqlalchemy import (
@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     String,
     UniqueConstraint,
+    false,
     select,
     text,
 )
@@ -26,6 +27,8 @@ from sqlalchemy.orm import (
     selectinload,
 )
 from sqlalchemy.sql.schema import MetaData
+
+from utils.check import raise_if, raise_if_none
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -76,6 +79,7 @@ class User(Base):
     password_hash: Mapped[Optional[str]]
     email: Mapped[Optional[str]]
     scope: Mapped[Optional[Dict[str, Any]]]
+    deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     ssh_keys: Mapped[List["Sshkey"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
@@ -90,25 +94,39 @@ class User(Base):
     )
 
     @classmethod
-    def get_or_none(
-        cls, session: Session, username: str, fetch_ssh_keys: bool = False
+    def check(
+        cls,
+        user: "User",
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> None:
+        """Raise the exception passed in parameters if user is None or deleted."""
+        raise_if_none(user, exception_class, *exception_args)
+        raise_if(user.deleted, exception_class, *exception_args)
+
+    @classmethod
+    def get(
+        cls,
+        session: Session,
+        username: str,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+        fetch_ssh_keys: bool = False,
+        run_checks: bool = True,
     ) -> Optional["User"]:
-        """Search DB for a user by username, returns None if not found
-        If `fetch_ssh_keys` argument is True, ssh_keys are also immediately
-        retrieved.
+        """Search DB for a user by username
+
+        If the check of the user is not ok, raises the exception passed in
+        parameters.
+        SSH keys may be fetched from DB in the same call with `fetch_ssh_keys`
         """
         stmt = select(User).where(User.username == username)
         if fetch_ssh_keys:
             stmt = stmt.options(selectinload(User.ssh_keys))
-        return session.execute(stmt).scalar_one_or_none()
-
-    @classmethod
-    def get_id_or_none(cls, session: Session, username: str) -> Optional[UUID]:
-        """Search DB for a user by username and return its ID. Returns None if not
-        found.
-        """
-        stmt = select(User.id).where(User.username == username)
-        return session.execute(stmt).scalar_one_or_none()
+        user = session.execute(stmt).scalar_one_or_none()
+        if run_checks:
+            cls.check(user, exception_class, *exception_args)
+        return user
 
 
 class Sshkey(Base):
@@ -121,13 +139,13 @@ class Sshkey(Base):
     ]  # temporary backup of full mongo document
     # Nota: there is no temporary backup of mongo document id because there is
     # none since this data was embedded inside the User document in Mongo
-    name: Mapped[Optional[str]]
-    fingerprint: Mapped[Optional[str]] = mapped_column(index=True)
-    type: Mapped[Optional[str]]
-    key: Mapped[Optional[str]]
-    added: Mapped[Optional[datetime]]
+    name: Mapped[str]
+    fingerprint: Mapped[str] = mapped_column(index=True)
+    type: Mapped[str]
+    key: Mapped[str]
+    added: Mapped[datetime]
     last_used: Mapped[Optional[datetime]]
-    pkcs8_key: Mapped[Optional[str]]
+    pkcs8_key: Mapped[str]
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="ssh_keys", init=False)
@@ -175,6 +193,7 @@ class Worker(Base):
     platforms: Mapped[Dict[str, Any]]
     last_seen: Mapped[Optional[datetime]]
     last_ip: Mapped[Optional[IPv4Address]]
+    deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
@@ -189,18 +208,25 @@ class Worker(Base):
     )
 
     @classmethod
-    def get_or_none(cls, session: Session, name: str) -> Optional["Worker"]:
-        """Search DB for a worker by name, returns None if not found"""
-        stmt = select(Worker).where(Worker.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+    def get(
+        cls,
+        session: Session,
+        name: str,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+        run_checks: bool = True,
+    ) -> Optional["RequestedTask"]:
+        """Search DB for a worker by name
 
-    @classmethod
-    def get_id_or_none(cls, session: Session, name: str) -> Optional[UUID]:
-        """Search DB for a worker by name and return its ID. Returns None if not
-        found.
+        If the check of the worker are ok, raise thes exception passed
+        in parameters
         """
-        stmt = select(Worker.id).where(Worker.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+        stmt = select(Worker).where(Worker.name == name)
+        task = session.execute(stmt).scalar_one_or_none()
+        if run_checks:
+            raise_if_none(task, exception_class, *exception_args)
+            raise_if(task.deleted, exception_class, *exception_args)
+        return task
 
 
 class Task(Base):
@@ -216,17 +242,18 @@ class Task(Base):
     )  # temporary backup of mongo document id
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[List[Dict[str, Any]]]
-    debug: Mapped[Optional[Dict[str, Any]]]
+    debug: Mapped[Dict[str, Any]]
     status: Mapped[str] = mapped_column(index=True)
     timestamp: Mapped[Dict[str, Any]]
-    requested_by: Mapped[Optional[str]]
+    requested_by: Mapped[str]
     canceled_by: Mapped[Optional[str]]
-    container: Mapped[Optional[Dict[str, Any]]]
+    container: Mapped[Dict[str, Any]]
     priority: Mapped[int]
+    # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
-    notification: Mapped[Optional[Dict[str, Any]]]
-    files: Mapped[Optional[Dict[str, Any]]]
-    upload: Mapped[Optional[Dict[str, Any]]]
+    notification: Mapped[Dict[str, Any]]
+    files: Mapped[Dict[str, Any]]
+    upload: Mapped[Dict[str, Any]]
 
     schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
 
@@ -239,10 +266,20 @@ class Task(Base):
     worker: Mapped["Worker"] = relationship(back_populates="tasks", init=False)
 
     @classmethod
-    def get_or_none_by_id(cls, session: Session, id: UUID) -> Optional["Task"]:
-        """Search DB for a task by UUID, returns None if not found"""
+    def get(
+        cls,
+        session: Session,
+        id: UUID,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> "Task":
+        """Search DB for a task by UUID
+
+        If the check of the task is not ok, raise thes exception passed in parameters"""
         stmt = select(Task).where(Task.id == id)
-        return session.execute(stmt).scalar_one_or_none()
+        task = session.execute(stmt).scalar_one_or_none()
+        raise_if_none(task, exception_class, *exception_args)
+        return task
 
 
 class Schedule(Base):
@@ -258,6 +295,7 @@ class Schedule(Base):
     )  # temporary backup of mongo document id
     name: Mapped[str] = mapped_column(unique=True, index=True)
     category: Mapped[str] = mapped_column(index=True)
+    # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str] = mapped_column(index=True)
@@ -293,17 +331,23 @@ class Schedule(Base):
     )
 
     @classmethod
-    def get_or_none(cls, session: Session, name: str) -> Optional["Schedule"]:
-        """Search DB for a schedule by name, returns None if not found"""
-        stmt = select(Schedule).where(Schedule.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+    def get(
+        cls,
+        session: Session,
+        name: str,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+        run_checks: bool = True,
+    ) -> Optional["Schedule"]:
+        """Search DB for a schedule by name
 
-    @classmethod
-    def get_id_or_none(cls, session: Session, name: str) -> Optional[UUID]:
-        """Search DB for a schedule by name, and return its ID.
-        Returns None if not found"""
-        stmt = select(Schedule.id).where(Schedule.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+        If the check of the schedule is not ok, raise thes exception passed in
+        parameters"""
+        stmt = select(Schedule).where(Schedule.name == name)
+        schedule = session.execute(stmt).scalar_one_or_none()
+        if run_checks:
+            raise_if_none(schedule, exception_class, *exception_args)
+        return schedule
 
 
 class ScheduleDuration(Base):
@@ -350,9 +394,10 @@ class RequestedTask(Base):
     events: Mapped[List[Dict[str, Any]]]
     requested_by: Mapped[str]
     priority: Mapped[int]
+    # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     upload: Mapped[Dict[str, Any]]
-    notification: Mapped[Optional[Dict[str, Any]]]
+    notification: Mapped[Dict[str, Any]]
 
     schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
 
@@ -369,7 +414,19 @@ class RequestedTask(Base):
     )
 
     @classmethod
-    def get_or_none_by_id(cls, session: Session, id: UUID) -> Optional["RequestedTask"]:
-        """Search DB for a requested task by UUID, returns None if not found"""
+    def get(
+        cls,
+        session: Session,
+        id: UUID,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> "RequestedTask":
+        """Search DB for a requested task by UUID
+
+        If the check of the requested task is not ok, raise thes exception passed
+        in parameters
+        """
         stmt = select(RequestedTask).where(RequestedTask.id == id)
-        return session.execute(stmt).scalar_one_or_none()
+        task = session.execute(stmt).scalar_one_or_none()
+        raise_if_none(task, exception_class, *exception_args)
+        return task

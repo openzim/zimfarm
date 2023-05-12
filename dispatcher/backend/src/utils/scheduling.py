@@ -126,14 +126,14 @@ def request_a_schedule(
     if count_from_stmt(session, stmt):
         return None
 
-    schedule = dbm.Schedule.get_or_none(session=session, name=schedule_name)
+    schedule = dbm.Schedule.get(session=session, name=schedule_name, run_checks=False)
     # schedule might be disabled
     if schedule is None or not schedule.enabled:
         return None
 
     worker = None
     if worker_name is not None:
-        worker = dbm.Worker.get_or_none(session=session, name=worker_name)
+        worker = dbm.Worker.get(session=session, name=worker_name, run_checks=False)
         # worker might not exist
         if worker is None:
             return None
@@ -248,7 +248,7 @@ def map_duration(duration: dbm.ScheduleDuration):
 
 def get_duration_for(session, schedule_name, worker_name):
     """duration doc for a schedule and worker (or default one)"""
-    schedule = dbm.Schedule.get_or_none(session, schedule_name)
+    schedule = dbm.Schedule.get(session, schedule_name, run_checks=False)
     if schedule is None:
         return get_default_duration()
     return get_duration_for_with_schedule(schedule, worker_name)

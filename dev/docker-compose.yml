@@ -6,6 +6,7 @@ services:
       - 5432:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
+      - ./postgres-initdb:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_DB=zimfarm
       - POSTGRES_USER=zimfarm

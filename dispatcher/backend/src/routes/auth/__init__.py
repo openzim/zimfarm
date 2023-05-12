@@ -13,7 +13,7 @@ from routes import API_PATH, authenticate
 from routes.auth import ssh, validate
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
-from routes.utils import raise_if, raise_if_none
+from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
@@ -33,9 +33,7 @@ def credentials(session: so.Session):
         password = request.headers.get("password")
     raise_if(username is None or password is None, BadRequest, "missing username")
 
-    orm_user = dbm.User.get_or_none(session, username)
-    # check user exists
-    raise_if_none(orm_user, Unauthorized, "this user does not exist")
+    orm_user = dbm.User.get(session, username, Unauthorized, "this user does not exist")
 
     # check password is valid
     is_valid = check_password_hash(orm_user.password_hash, password)
@@ -85,7 +83,7 @@ def refresh_token(session: so.Session):
     orm_user = session.execute(
         sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
     ).scalar_one_or_none()
-    raise_if_none(orm_user, Unauthorized, "user not found")
+    dbm.User.check(orm_user, Unauthorized, "user not found")
 
     # generate token
     access_token = AccessToken.encode_db(orm_user)

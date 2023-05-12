@@ -54,11 +54,11 @@ def make_task(make_event, make_schedule, make_config, worker, garbage_collector)
             files = {"mwoffliner_1.zim": {"name": "mwoffliner_1.zim", "size": 1000}}
         config = expanded_config(make_config())
         with Session.begin() as session:
-            worker_obj = dbm.Worker.get_or_none(session, worker["name"])
-            schedule = dbm.Schedule.get_or_none(session, schedule_name)
+            worker_obj = dbm.Worker.get(session, worker["name"])
+            schedule = dbm.Schedule.get(session, schedule_name, run_checks=False)
             if schedule is None:
                 make_schedule(schedule_name)
-                schedule = dbm.Schedule.get_or_none(session, schedule_name)
+                schedule = dbm.Schedule.get(session, schedule_name)
             task = dbm.Task(
                 mongo_val=None,
                 mongo_id=None,
