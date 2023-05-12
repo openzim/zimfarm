@@ -61,10 +61,6 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         )
     ).scalars()
 
-    # if there is no matching task for this schedule, just exit
-    if len(tasks) == 0:
-        return
-
     workers_durations = {}
     for task in tasks:
         workers_durations[task.worker_id] = {
@@ -88,6 +84,10 @@ def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
         }
         for worker_id, duration_payload in workers_durations.items()
     ]
+
+    # if there is no matching task for this schedule, just exit
+    if len(inserts_durations) == 0:
+        return
 
     # let's do an upsert ; conflict on schedule_id + worker_id
     # on conflict, set the on, value, task_id
