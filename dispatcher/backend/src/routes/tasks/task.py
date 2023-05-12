@@ -4,6 +4,7 @@
 
 import logging
 from http import HTTPStatus
+from uuid import UUID
 
 import sqlalchemy as sa
 import sqlalchemy.orm as so
@@ -19,7 +20,7 @@ from common.schemas.parameters import TaskCreateSchema, TasksSchema, TasKUpdateS
 from common.utils import task_event_handler
 from db import count_from_stmt, dbsession
 from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
-from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
+from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import BadRequest
 from routes.utils import remove_secrets_from_response
@@ -96,9 +97,11 @@ class TaskRoute(BaseRoute):
     methods = ["GET", "POST", "PATCH"]
 
     @auth_info_if_supplied
-    @url_object_id("task_id")
+    @url_uuid("task_id")
     @dbsession
-    def get(self, task_id: str, session: so.Session, token: AccessToken.Payload = None):
+    def get(
+        self, task_id: UUID, session: so.Session, token: AccessToken.Payload = None
+    ):
         task = session.execute(
             sa.select(
                 dbm.Task.id,
@@ -138,9 +141,9 @@ class TaskRoute(BaseRoute):
 
     @authenticate
     @require_perm("tasks", "create")
-    @url_object_id("task_id")
+    @url_uuid("task_id")
     @dbsession
-    def post(self, session: so.Session, task_id: str, token: AccessToken.Payload):
+    def post(self, session: so.Session, task_id: UUID, token: AccessToken.Payload):
         """create a task from a requested_task_id"""
 
         if not ENABLED_SCHEDULER:
@@ -208,9 +211,9 @@ class TaskRoute(BaseRoute):
 
     @authenticate
     @require_perm("tasks", "update")
-    @url_object_id("task_id")
+    @url_uuid("task_id")
     @dbsession
-    def patch(self, session: so.Session, task_id: str, token: AccessToken.Payload):
+    def patch(self, session: so.Session, task_id: UUID, token: AccessToken.Payload):
         task = dbm.Task.get(session, task_id, TaskNotFound)
 
         try:
@@ -241,9 +244,9 @@ class TaskCancelRoute(BaseRoute):
 
     @authenticate
     @require_perm("tasks", "cancel")
-    @url_object_id("task_id")
+    @url_uuid("task_id")
     @dbsession
-    def post(self, session: so.Session, task_id: str, token: AccessToken.Payload):
+    def post(self, session: so.Session, task_id: UUID, token: AccessToken.Payload):
         task = dbm.Task.get(session, task_id, TaskNotFound)
         if task.status not in TaskStatus.incomplete():
             raise TaskNotFound

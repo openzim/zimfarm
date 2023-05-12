@@ -17,7 +17,7 @@ from common.schemas.parameters import (
     UserUpdateSchema,
 )
 from db import count_from_stmt, dbsession
-from routes import authenticate, errors, require_perm, url_object_id
+from routes import authenticate, errors, require_perm
 from routes.base import BaseRoute
 from utils.token import AccessToken
 
@@ -85,7 +85,6 @@ class UserRoute(BaseRoute):
 
     @authenticate
     @dbsession
-    @url_object_id("username")
     def get(self, token: AccessToken.Payload, session: Session, username: str):
         # if user in url is not user in token, check user permission
         if username != token.username:
@@ -100,7 +99,6 @@ class UserRoute(BaseRoute):
     @authenticate
     @dbsession
     @require_perm("users", "update")
-    @url_object_id("username")
     def patch(self, token: AccessToken.Payload, session: Session, username: str):
         request_json = UserUpdateSchema().load(request.get_json())
 
@@ -116,7 +114,6 @@ class UserRoute(BaseRoute):
     @authenticate
     @require_perm("users", "delete")
     @dbsession
-    @url_object_id("username")
     def delete(self, token: AccessToken.Payload, session: Session, username: str):
         # delete user
 

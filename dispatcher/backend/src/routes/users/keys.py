@@ -16,7 +16,7 @@ import db.models as dbm
 import errors.http as http_errors
 from common.schemas.parameters import KeySchema
 from db import dbsession
-from routes import authenticate, errors, url_object_id
+from routes import authenticate, errors
 from routes.base import BaseRoute
 from utils.check import raise_if_none
 from utils.token import AccessToken
@@ -29,7 +29,6 @@ class KeysRoute(BaseRoute):
 
     @authenticate
     @dbsession
-    @url_object_id("username")
     def get(self, username: str, token: AccessToken.Payload, session: so.Session):
         # if user in url is not user in token, check user permission
         if username != token.username:
@@ -42,7 +41,6 @@ class KeysRoute(BaseRoute):
 
     @authenticate
     @dbsession
-    @url_object_id(["username"])
     def post(self, username: str, token: AccessToken.Payload, session: so.Session):
         # if user in url is not user in token, not allowed to add ssh keys
         if username != token.username:
@@ -118,8 +116,6 @@ class KeyRoute(BaseRoute):
     name = "key"
     methods = ["GET", "DELETE"]
 
-    @url_object_id("username")
-    @url_object_id("fingerprint")
     @dbsession
     def get(self, username: str, fingerprint: str, session: so.Session):
         # list of permission to test the matching user against
@@ -161,8 +157,6 @@ class KeyRoute(BaseRoute):
 
     @authenticate
     @dbsession
-    @url_object_id("username")
-    @url_object_id("fingerprint")
     def delete(
         self,
         username: str,
