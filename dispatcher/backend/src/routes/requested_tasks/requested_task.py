@@ -1,6 +1,7 @@
 import datetime
 import logging
 from http import HTTPStatus
+from uuid import UUID
 
 import sqlalchemy as sa
 import sqlalchemy.orm as so
@@ -25,7 +26,7 @@ from common.schemas.parameters import (
 from common.utils import task_event_handler
 from db import count_from_stmt, dbsession
 from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
-from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
+from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
 from utils.broadcaster import BROADCASTER
@@ -264,19 +265,19 @@ class RequestedTaskRoute(BaseRoute):
     name = "requested_task"
     methods = ["GET", "PATCH", "DELETE"]
 
-    @url_object_id("requested_task_id")
+    @url_uuid("requested_task_id")
     @dbsession
-    def get(self, session: so.Session, requested_task_id: str):
+    def get(self, session: so.Session, requested_task_id: UUID):
         requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
         resp = RequestedTaskFullSchema().dump(requested_task)
         return jsonify(resp)
 
     @authenticate
     @require_perm("tasks", "update")
-    @url_object_id("requested_task_id")
+    @url_uuid("requested_task_id")
     @dbsession
     def patch(
-        self, session: so.Session, requested_task_id: str, token: AccessToken.Payload
+        self, session: so.Session, requested_task_id: UUID, token: AccessToken.Payload
     ):
         requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
 
@@ -291,10 +292,10 @@ class RequestedTaskRoute(BaseRoute):
 
     @authenticate
     @require_perm("tasks", "unrequest")
-    @url_object_id("requested_task_id")
+    @url_uuid("requested_task_id")
     @dbsession
     def delete(
-        self, session: so.Session, requested_task_id: str, token: AccessToken.Payload
+        self, session: so.Session, requested_task_id: UUID, token: AccessToken.Payload
     ):
         requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
         session.delete(requested_task)

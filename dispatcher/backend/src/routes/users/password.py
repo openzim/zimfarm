@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import db.models as dbm
 from db import dbsession
-from routes import authenticate, errors, url_object_id
+from routes import authenticate, errors
 from routes.base import BaseRoute
 from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
@@ -18,7 +18,6 @@ class PasswordRoute(BaseRoute):
 
     @authenticate
     @dbsession
-    @url_object_id(["username"])
     def patch(self, session, username: str, token: AccessToken.Payload):
         # get user to modify
         orm_user = dbm.User.get(session, username, errors.NotFound)

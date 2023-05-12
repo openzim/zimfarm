@@ -1,13 +1,13 @@
 from functools import wraps
 from typing import Union
+from uuid import UUID
 
-from bson.objectid import InvalidId, ObjectId
 from flask import request
 from jwt import exceptions as jwt_exceptions
 
 from utils.token import AccessToken
 
-from .errors import NotEnoughPrivilege, Unauthorized
+from .errors import BadRequest, NotEnoughPrivilege, Unauthorized
 
 API_PATH = "/v1"
 
@@ -72,7 +72,7 @@ def auth_info_if_supplied(f):
     return wrapper
 
 
-def url_object_id(names: Union[list, str]):
+def url_uuid(names: Union[list, str]):
     if isinstance(names, str):
         names = [names]
 
@@ -81,10 +81,9 @@ def url_object_id(names: Union[list, str]):
         def wrapper(*args, **kwargs):
             for name in names:
                 try:
-                    object_id = ObjectId(kwargs.get(name, None))
-                    kwargs[name] = object_id
-                except InvalidId:
-                    pass
+                    kwargs[name] = UUID(kwargs.get(name, None))
+                except ValueError as e:
+                    raise BadRequest(e.args[0])
             return f(*args, **kwargs)
 
         return wrapper

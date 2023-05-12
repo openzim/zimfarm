@@ -20,7 +20,7 @@ from common.schemas.orms import BaseSchema
 from common.schemas.parameters import SkipLimitSchema, WorkerCheckInSchema
 from db import count_from_stmt, dbsession
 from errors.http import InvalidRequestJSON
-from routes import authenticate, url_object_id
+from routes import authenticate
 from routes.base import BaseRoute
 from routes.errors import BadRequest, InternalError
 from utils.broadcaster import BROADCASTER
@@ -102,7 +102,6 @@ class WorkerCheckinRoute(BaseRoute):
 
     @authenticate
     @dbsession
-    @url_object_id("name")
     def put(self, session: so.Session, name: str, *args, **kwargs):
         # TODO: is it acceptable that any authenticated user can update the checkin
         # status of any worker ? shouldn't we check authenticated user scope + match

@@ -128,6 +128,14 @@ class TestTaskGet:
         response = client.get(url, headers=headers)
         assert response.status_code == 404
 
+    def test_not_uuid(self, client):
+        url = "/tasks/imnotauuid"
+        headers = {"Content-Type": "application/json"}
+        response = client.get(url, headers=headers)
+        assert response.status_code == 400
+        response_json = response.get_json()
+        assert "error" in response_json
+
     def test_get(self, client, task):
         url = "/tasks/{}".format(task["_id"])
         headers = {"Content-Type": "application/json"}
