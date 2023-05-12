@@ -6,7 +6,6 @@ import string
 import uuid
 
 import jwt
-from bson import ObjectId
 
 import db.models as dbm
 from common import getnow, to_naive_utc
@@ -28,8 +27,6 @@ class AccessToken:
         def default(self, o):
             if isinstance(o, datetime.datetime):
                 return int(o.timestamp())
-            if isinstance(o, ObjectId):
-                return str(o)
             if isinstance(o, uuid.UUID):
                 return str(o)
             super().default(o)
