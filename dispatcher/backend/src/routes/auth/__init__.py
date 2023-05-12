@@ -13,7 +13,6 @@ from routes import API_PATH, authenticate
 from routes.auth import ssh, validate
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
-from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
@@ -31,16 +30,13 @@ def credentials(session: so.Session):
     else:
         username = request.headers.get("username")
         password = request.headers.get("password")
-    raise_if(username is None or password is None, BadRequest, "missing username")
+    dbm.raise_if(username is None or password is None, BadRequest, "missing username")
 
-    orm_user = dbm.User.get_or_none(session, username)
-    # check user exists
-    raise_if_none(orm_user, Unauthorized, "this user does not exist")
-    raise_if(orm_user.deleted, Unauthorized, "this user does not exist")
+    orm_user = dbm.User.get(session, username, Unauthorized, "this user does not exist")
 
     # check password is valid
     is_valid = check_password_hash(orm_user.password_hash, password)
-    raise_if(not is_valid, Unauthorized, "password does not match")
+    dbm.raise_if(not is_valid, Unauthorized, "password does not match")
 
     # generate token
     access_token = AccessToken.encode_db(orm_user)
@@ -70,24 +66,23 @@ def refresh_token(session: so.Session):
 
     # get old refresh token from request header
     old_token = request.headers.get("refresh-token")
-    raise_if_none(old_token, BadRequest, "missing refresh-token")
+    dbm.raise_if_none(old_token, BadRequest, "missing refresh-token")
 
     # check token exists in database and get expire time and user id
     old_token_document = session.execute(
         sa.select(dbm.Refreshtoken).where(dbm.Refreshtoken.token == old_token)
     ).scalar_one_or_none()
-    raise_if_none(old_token_document, Unauthorized, "refresh-token invalid")
+    dbm.raise_if_none(old_token_document, Unauthorized, "refresh-token invalid")
 
     # check token is not expired
     expire_time = old_token_document.expire_time
-    raise_if(expire_time < getnow(), Unauthorized, "token expired")
+    dbm.raise_if(expire_time < getnow(), Unauthorized, "token expired")
 
     # check user exists
     orm_user = session.execute(
         sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
     ).scalar_one_or_none()
-    raise_if_none(orm_user, Unauthorized, "user not found")
-    raise_if(orm_user.deleted, Unauthorized, "user not found")
+    dbm.User.check_user(orm_user, Unauthorized, "user not found")
 
     # generate token
     access_token = AccessToken.encode_db(orm_user)

@@ -12,7 +12,6 @@ import db.models as dbm
 import errors.http as http_errors
 from common import getnow
 from routes import errors
-from routes.utils import raise_if, raise_if_none
 
 
 def ssh_key(session: so.Session):
@@ -46,7 +45,7 @@ def ssh_key(session: so.Session):
         .where(dbm.User.username == username)
         .where(dbm.Sshkey.fingerprint == fingerprint)
     ).scalar_one_or_none()
-    raise_if_none(orm_ssh_key, errors.Unauthorized)
-    raise_if(orm_ssh_key.user.deleted, errors.Unauthorized)
+    dbm.raise_if_none(orm_ssh_key, errors.Unauthorized)
+    dbm.User.check_user(orm_ssh_key.user, errors.Unauthorized)
     orm_ssh_key.last_used = getnow()
     return Response(status=HTTPStatus.NO_CONTENT)

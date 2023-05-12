@@ -24,11 +24,10 @@ from common.schemas.parameters import (
 )
 from common.utils import task_event_handler
 from db import count_from_stmt, dbsession
-from errors.http import InvalidRequestJSON, TaskNotFound
+from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from routes.utils import raise_if_none
 from utils.broadcaster import BROADCASTER
 from utils.scheduling import find_requested_task_for, request_a_schedule
 from utils.token import AccessToken
@@ -60,7 +59,7 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
 
     # record we've seen a worker, if applicable
     if token and worker:
-        worker = dbm.Worker.get_or_none(session, worker)
+        worker = dbm.Worker.get(session, worker, WorkerNotFound)
         if worker.user.username == token.username:
             worker.last_seen = getnow()
 
@@ -231,7 +230,7 @@ class RequestedTasksForWorkers(BaseRoute):
 
         # record we've seen a worker, if applicable
         if token and worker_name:
-            worker = dbm.Worker.get_or_none(session, worker_name)
+            worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
             if worker.user.username == token.username:
                 worker.last_seen = getnow()
                 last_ip = worker.last_ip
@@ -268,8 +267,7 @@ class RequestedTaskRoute(BaseRoute):
     @url_object_id("requested_task_id")
     @dbsession
     def get(self, session: so.Session, requested_task_id: str):
-        requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
-        raise_if_none(requested_task, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
         resp = RequestedTaskFullSchema().dump(requested_task)
         return jsonify(resp)
 
@@ -280,8 +278,7 @@ class RequestedTaskRoute(BaseRoute):
     def patch(
         self, session: so.Session, requested_task_id: str, token: AccessToken.Payload
     ):
-        requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
-        raise_if_none(requested_task, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
 
         try:
             request_json = UpdateRequestedTaskSchema().load(request.get_json())
@@ -299,8 +296,7 @@ class RequestedTaskRoute(BaseRoute):
     def delete(
         self, session: so.Session, requested_task_id: str, token: AccessToken.Payload
     ):
-        requested_task = dbm.RequestedTask.get_or_none_by_id(session, requested_task_id)
-        raise_if_none(requested_task, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
         session.delete(requested_task)
 
         return jsonify({"deleted": 1})

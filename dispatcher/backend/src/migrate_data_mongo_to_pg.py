@@ -10,7 +10,6 @@ from pymongo.collection import Collection as BaseCollection
 import common.mongo as mongo
 import db.models as dbm
 from db import Session, dbsession
-from routes.utils import raise_if_none
 from utils.database import Initializer
 
 logging.basicConfig(
@@ -599,7 +598,7 @@ class RequestedTaskMigrator(Migrator):
             worker_id = None
 
         updated_at = get_updated_at(mongo_obj)
-        raise_if_none(
+        dbm.raise_if_none(
             updated_at,
             Exception,
             "impossible to compute 'updated_at' for requested task",

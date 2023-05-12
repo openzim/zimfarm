@@ -19,7 +19,6 @@ from common.schemas.parameters import (
 from db import count_from_stmt, dbsession
 from routes import authenticate, errors, require_perm, url_object_id
 from routes.base import BaseRoute
-from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
@@ -94,10 +93,7 @@ class UserRoute(BaseRoute):
                 raise errors.NotEnoughPrivilege()
 
         # find user based on username
-        orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
-
-        raise_if_none(orm_user, errors.NotFound)
-        raise_if(orm_user.deleted, errors.NotFound)
+        orm_user = dbm.User.get(session, username, errors.NotFound, fetch_ssh_keys=True)
 
         return jsonify(cso.UserSchemaReadOne().dump(orm_user))
 
@@ -108,10 +104,7 @@ class UserRoute(BaseRoute):
     def patch(self, token: AccessToken.Payload, session: Session, username: str):
         request_json = UserUpdateSchema().load(request.get_json())
 
-        orm_user = dbm.User.get_or_none(session, username)
-
-        raise_if_none(orm_user, errors.NotFound)
-        raise_if(orm_user.deleted, errors.NotFound)
+        orm_user = dbm.User.get(session, username, errors.NotFound)
 
         if "email" in request_json:
             orm_user.email = request_json["email"]
@@ -127,8 +120,7 @@ class UserRoute(BaseRoute):
     def delete(self, token: AccessToken.Payload, session: Session, username: str):
         # delete user
 
-        orm_user = dbm.User.get_or_none(session, username)
-        raise_if_none(orm_user, errors.NotFound)
+        orm_user = dbm.User.get(session, username, errors.NotFound)
         orm_user.deleted = True
 
         return Response(status=HTTPStatus.NO_CONTENT)

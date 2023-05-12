@@ -11,7 +11,6 @@ import db.models as dbm
 from common import getnow
 from db import dbsession
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
-from routes.utils import raise_if, raise_if_none
 from utils.token import LoadedAccessToken
 
 
@@ -39,12 +38,12 @@ class OAuth2:
                 username = request.headers.get("username")
                 password = request.headers.get("password")
 
-            raise_if_none(
+            dbm.raise_if_none(
                 username,
                 InvalidRequest,
                 'Request was missing the "username" parameter.',
             )
-            raise_if_none(
+            dbm.raise_if_none(
                 password,
                 InvalidRequest,
                 'Request was missing the "password" parameter.',
@@ -61,7 +60,7 @@ class OAuth2:
             else:
                 refresh_token = request.headers.get("refresh_token")
 
-            raise_if_none(
+            dbm.raise_if_none(
                 refresh_token,
                 InvalidRequest,
                 'Request was missing the "refresh_token" parameter.',
@@ -83,14 +82,13 @@ class OAuth2:
     def password_grant(username: str, password: str, session: so.Session):
         """Implements logic for password grant."""
 
-        orm_user = dbm.User.get_or_none(session, username)
-        # check user exists
-        raise_if_none(orm_user, InvalidGrant, "Username or password is invalid.")
-        raise_if(orm_user.deleted, InvalidGrant, "Username or password is invalid.")
+        orm_user = dbm.User.get(
+            session, username, InvalidGrant, "Username or password is invalid."
+        )
 
         # check password is valid
         is_valid = check_password_hash(orm_user.password_hash, password)
-        raise_if(not is_valid, InvalidGrant, "Username or password is invalid.")
+        dbm.raise_if(not is_valid, InvalidGrant, "Username or password is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(
@@ -111,16 +109,15 @@ class OAuth2:
                 dbm.Refreshtoken.token == old_refresh_token
             )
         ).scalar_one_or_none()
-        raise_if_none(old_token_document, InvalidGrant, "Refresh token is invalid.")
+        dbm.raise_if_none(old_token_document, InvalidGrant, "Refresh token is invalid.")
 
         # check token is not expired
         expire_time = old_token_document.expire_time
-        raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
+        dbm.raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
 
         # check user exists
         orm_user = old_token_document.user
-        raise_if_none(orm_user, InvalidGrant, "Refresh token is invalid.")
-        raise_if(orm_user.deleted, InvalidGrant, "Refresh token is invalid.")
+        dbm.User.check_user(orm_user, InvalidGrant, "Refresh token is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(

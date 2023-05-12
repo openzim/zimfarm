@@ -22,7 +22,7 @@ from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_object_id
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.utils import raise_if, raise_if_none, remove_secrets_from_response
+from routes.utils import remove_secrets_from_response
 from utils.broadcaster import BROADCASTER
 from utils.token import AccessToken
 
@@ -121,7 +121,7 @@ class TaskRoute(BaseRoute):
             .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
             .filter(dbm.Task.id == task_id)
         ).first()
-        raise_if_none(task, TaskNotFound)
+        dbm.raise_if_none(task, TaskNotFound)
 
         task = TaskFullSchema().dump(task)
 
@@ -147,13 +147,11 @@ class TaskRoute(BaseRoute):
                 jsonify({"msg": "scheduler is paused"}), HTTPStatus.NO_CONTENT
             )
 
-        requested_task = dbm.RequestedTask.get_or_none_by_id(session, task_id)
-        raise_if_none(requested_task, BadRequest)
+        requested_task = dbm.RequestedTask.get(session, task_id, BadRequest)
 
         request_args = TaskCreateSchema().load(request.args.to_dict())
         worker_name = request_args["worker_name"]
-        worker = dbm.Worker.get_or_none(session, worker_name)
-        raise_if_none(worker, WorkerNotFound)
+        worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
         task = dbm.Task(
             mongo_val=None,
             mongo_id=None,
@@ -212,13 +210,14 @@ class TaskRoute(BaseRoute):
     @url_object_id("task_id")
     @dbsession
     def patch(self, session: so.Session, task_id: str, token: AccessToken.Payload):
-        task = dbm.Task.get_or_none_by_id(session, task_id)
-        raise_if_none(task, TaskNotFound)
+        task = dbm.Task.get(session, task_id, TaskNotFound)
 
         try:
             request_json = TasKUpdateSchema().load(request.get_json())
             # empty dict passes the validator but troubles mongo
-            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
+            dbm.raise_if(
+                not request.get_json(), ValidationError, "Update can't be empty"
+            )
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
@@ -246,8 +245,7 @@ class TaskCancelRoute(BaseRoute):
     @url_object_id("task_id")
     @dbsession
     def post(self, session: so.Session, task_id: str, token: AccessToken.Payload):
-        task = dbm.Task.get_or_none_by_id(session, task_id)
-        raise_if_none(task, TaskNotFound)
+        task = dbm.Task.get(session, task_id, TaskNotFound)
         if task.status not in TaskStatus.incomplete():
             raise TaskNotFound
 

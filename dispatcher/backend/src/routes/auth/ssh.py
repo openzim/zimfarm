@@ -14,7 +14,6 @@ from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
 from db import dbsession
 from routes import errors
 from routes.auth.oauth2 import OAuth2
-from routes.utils import raise_if, raise_if_none
 from utils.token import AccessToken
 
 logger = logging.getLogger(__name__)
@@ -52,11 +51,9 @@ def asymmetric_key_auth(session: so.Session):
             f"message too old or peers desyncrhonised: {MESSAGE_VALIDITY}s"
         )
 
-    orm_user = dbm.User.get_or_none(session, username, fetch_ssh_keys=True)
-    raise_if_none(
-        orm_user, errors.Unauthorized, "User not found"
-    )  # we shall never get there
-    raise_if(orm_user.deleted, errors.Unauthorized, "User not found")
+    orm_user = dbm.User.get(
+        session, username, errors.Unauthorized, "User not found", fetch_ssh_keys=True
+    )
 
     # check that the message was signed with a known private key
     authenticated = False
@@ -99,7 +96,7 @@ def asymmetric_key_auth(session: so.Session):
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
                 break
-    raise_if(
+    dbm.raise_if(
         not authenticated,
         errors.Unauthorized,
         "Could not find matching key for signature",

@@ -1,6 +1,6 @@
 from datetime import datetime
 from ipaddress import IPv4Address
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 from uuid import UUID
 
 from sqlalchemy import (
@@ -27,6 +27,36 @@ from sqlalchemy.orm import (
     selectinload,
 )
 from sqlalchemy.sql.schema import MetaData
+
+
+def raise_if_none(
+    object_to_check: Any, exception_class: Type[Exception], *exception_args: object
+) -> None:
+    """Checks if the `object_to_check` argument is None.
+    If it is None, then raises a new object of type `exception_class` initialized
+    with `exception_args`.
+
+    Arguments:
+    object_to_check -- the object to check if None or not
+    exception_class -- the exception to create and raise if the object_to_check is None
+    exception_args -- the args to create the exception
+    """
+    raise_if(object_to_check is None, exception_class, *exception_args)
+
+
+def raise_if(
+    condition: bool, exception_class: Type[Exception], *exception_args: object
+) -> None:
+    """Checks if the `condition` argument is True.
+    If it is True, then it raises the exception.
+
+    Arguments:
+    condition -- the condition to check if True
+    exception_class -- the exception to create and raise if the condition is True
+    exception_args -- the args to create the exception
+    """
+    if condition:
+        raise exception_class(*exception_args)
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -92,25 +122,39 @@ class User(Base):
     )
 
     @classmethod
-    def get_or_none(
-        cls, session: Session, username: str, fetch_ssh_keys: bool = False
-    ) -> Optional["User"]:
-        """Search DB for a user by username, returns None if not found
-        If `fetch_ssh_keys` argument is True, ssh_keys are also immediately
-        retrieved.
+    def check_user(
+        cls,
+        user: "User",
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> None:
+        """Raise the exception passed in parameters if user is None or deleted."""
+        raise_if_none(user, exception_class, *exception_args)
+        raise_if(user.deleted, exception_class, *exception_args)
+
+    @classmethod
+    def get(
+        cls,
+        session: Session,
+        username: str,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+        fetch_ssh_keys: bool = False,
+        do_checks: bool = True,
+    ) -> "User":
+        """Search DB for a user by username
+
+        If the check of the user is not ok, raises the exception passed in
+        parameters.
+        SSH keys may be fetched from DB in the same call with `fetch_ssh_keys`
         """
         stmt = select(User).where(User.username == username)
         if fetch_ssh_keys:
             stmt = stmt.options(selectinload(User.ssh_keys))
-        return session.execute(stmt).scalar_one_or_none()
-
-    @classmethod
-    def get_id_or_none(cls, session: Session, username: str) -> Optional[UUID]:
-        """Search DB for a user by username and return its ID. Returns None if not
-        found.
-        """
-        stmt = select(User.id).where(User.username == username)
-        return session.execute(stmt).scalar_one_or_none()
+        user = session.execute(stmt).scalar_one_or_none()
+        if do_checks:
+            cls.check_user(user, exception_class, *exception_args)
+        return user
 
 
 class Sshkey(Base):
@@ -192,18 +236,35 @@ class Worker(Base):
     )
 
     @classmethod
-    def get_or_none(cls, session: Session, name: str) -> Optional["Worker"]:
-        """Search DB for a worker by name, returns None if not found"""
-        stmt = select(Worker).where(Worker.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+    def check(
+        cls,
+        worker: "Worker",
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> None:
+        """Raise the exception passed in parameters if worker is None or deleted."""
+        raise_if_none(worker, exception_class, *exception_args)
+        raise_if(worker.deleted, exception_class, *exception_args)
 
     @classmethod
-    def get_id_or_none(cls, session: Session, name: str) -> Optional[UUID]:
-        """Search DB for a worker by name and return its ID. Returns None if not
-        found.
+    def get(
+        cls,
+        session: Session,
+        name: str,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+        do_checks: bool = True,
+    ) -> "RequestedTask":
+        """Search DB for a worker by name
+
+        If the check of the worker are ok, raise thes exception passed
+        in parameters
         """
-        stmt = select(Worker.id).where(Worker.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+        stmt = select(Worker).where(Worker.name == name)
+        task = session.execute(stmt).scalar_one_or_none()
+        if do_checks:
+            cls.check(task, exception_class, *exception_args)
+        return task
 
 
 class Task(Base):
@@ -243,10 +304,30 @@ class Task(Base):
     worker: Mapped["Worker"] = relationship(back_populates="tasks", init=False)
 
     @classmethod
-    def get_or_none_by_id(cls, session: Session, id: UUID) -> Optional["Task"]:
-        """Search DB for a task by UUID, returns None if not found"""
+    def check(
+        cls,
+        task: "Task",
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> None:
+        """Raise the exception passed in parameters if task is None."""
+        raise_if_none(task, exception_class, *exception_args)
+
+    @classmethod
+    def get(
+        cls,
+        session: Session,
+        id: UUID,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> "Task":
+        """Search DB for a task by UUID
+
+        If the check of the task is not ok, raise thes exception passed in parameters"""
         stmt = select(Task).where(Task.id == id)
-        return session.execute(stmt).scalar_one_or_none()
+        task = session.execute(stmt).scalar_one_or_none()
+        cls.check(task, exception_class, *exception_args)
+        return task
 
 
 class Schedule(Base):
@@ -298,17 +379,33 @@ class Schedule(Base):
     )
 
     @classmethod
-    def get_or_none(cls, session: Session, name: str) -> Optional["Schedule"]:
-        """Search DB for a schedule by name, returns None if not found"""
-        stmt = select(Schedule).where(Schedule.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+    def check(
+        cls,
+        schedule: "Schedule",
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> None:
+        """Raise the exception passed in parameters if schedule is None."""
+        raise_if_none(schedule, exception_class, *exception_args)
 
     @classmethod
-    def get_id_or_none(cls, session: Session, name: str) -> Optional[UUID]:
-        """Search DB for a schedule by name, and return its ID.
-        Returns None if not found"""
-        stmt = select(Schedule.id).where(Schedule.name == name)
-        return session.execute(stmt).scalar_one_or_none()
+    def get(
+        cls,
+        session: Session,
+        name: str,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+        do_checks: bool = True,
+    ) -> "Task":
+        """Search DB for a schedule by name
+
+        If the check of the schedule is not ok, raise thes exception passed in
+        parameters"""
+        stmt = select(Schedule).where(Schedule.name == name)
+        schedule = session.execute(stmt).scalar_one_or_none()
+        if do_checks:
+            cls.check(schedule, exception_class, *exception_args)
+        return schedule
 
 
 class ScheduleDuration(Base):
@@ -375,7 +472,29 @@ class RequestedTask(Base):
     )
 
     @classmethod
-    def get_or_none_by_id(cls, session: Session, id: UUID) -> Optional["RequestedTask"]:
-        """Search DB for a requested task by UUID, returns None if not found"""
+    def check(
+        cls,
+        task: "RequestedTask",
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> None:
+        """Raise the exception passed in parameters if task is None."""
+        raise_if_none(task, exception_class, *exception_args)
+
+    @classmethod
+    def get(
+        cls,
+        session: Session,
+        id: UUID,
+        exception_class: Type[Exception] = Exception,
+        *exception_args: object,
+    ) -> "RequestedTask":
+        """Search DB for a requested task by UUID
+
+        If the check of the requested task is not ok, raise thes exception passed
+        in parameters
+        """
         stmt = select(RequestedTask).where(RequestedTask.id == id)
-        return session.execute(stmt).scalar_one_or_none()
+        task = session.execute(stmt).scalar_one_or_none()
+        cls.check(task, exception_class, *exception_args)
+        return task

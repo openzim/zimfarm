@@ -20,6 +20,7 @@ from common.constants import (
     WHITELISTED_IPS,
 )
 from db import dbsession
+from errors.http import TaskNotFound
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -153,7 +154,7 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
     """inform openZIM CMS of all created ZIMs in the farm for this task
 
     Safe to re-run as successful requests are skipped"""
-    task = dbm.Task.get_or_none_by_id(session, task_id)
+    task = dbm.Task.get(session, task_id, TaskNotFound)
     for file_name in task.files.keys():
         advertise_book_to_cms(task, file_name)
 
