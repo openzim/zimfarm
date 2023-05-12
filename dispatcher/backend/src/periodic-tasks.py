@@ -5,11 +5,13 @@
 import datetime
 import logging
 
-import pymongo
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 
+import db.models as dbm
 from common import getnow
 from common.enum import TaskStatus
-from common.mongo import Tasks
+from db import dbsession
 
 # constants
 ONE_MN = 60
@@ -39,78 +41,81 @@ handler.setFormatter(
 logger.addHandler(handler)
 
 
-def history_cleanup():
+def history_cleanup(session: so.Session):
     """removes tasks for which the schedule has been run multiple times after
 
     Uses HISTORY_TASK_PER_SCHEDULE"""
 
     logger.info(f":: removing tasks history (>{HISTORY_TASK_PER_SCHEDULE})")
-    cursor = Tasks().aggregate(
-        [
-            {"$group": {"_id": "$schedule_name", "count": {"$sum": 1}}},
-            {"$match": {"count": {"$gt": HISTORY_TASK_PER_SCHEDULE}}},
-        ]
+
+    schedule_ids_stmt = (
+        sa.select(dbm.Task.schedule_id)
+        .group_by(dbm.Task.schedule_id)
+        .having(sa.func.count(dbm.Task.id) > HISTORY_TASK_PER_SCHEDULE)
     )
 
-    schedules_with_too_much_tasks = [s["_id"] for s in cursor]
+    schedules_with_too_much_tasks = session.execute(
+        sa.select(dbm.Schedule).filter(dbm.Schedule.id.in_(schedule_ids_stmt))
+    ).scalars()
 
-    task_ids_to_delete = []
-    for schedule_name in schedules_with_too_much_tasks:
-        cursor = Tasks().aggregate(
-            [
-                {"$match": {"schedule_name": schedule_name}},
-                {
-                    "$project": {
-                        "schedule_name": 1,
-                        "updated_at": {"$arrayElemAt": ["$events.timestamp", -1]},
-                    }
-                },
-                {"$sort": {"updated_at": pymongo.DESCENDING}},
-                {"$skip": HISTORY_TASK_PER_SCHEDULE},
-            ]
-        )
-        task_ids_to_delete += [t["_id"] for t in cursor]
-
-    result = Tasks().delete_many({"_id": {"$in": task_ids_to_delete}})
-    logger.info(f"::: deleted {result.deleted_count}/{len(task_ids_to_delete)} tasks")
+    nb_deleted_tasks = 0
+    for schedule in schedules_with_too_much_tasks:
+        nb_tasks_kept = 0
+        for task in sorted(schedule.tasks, key=lambda x: x.updated_at, reverse=True):
+            if nb_tasks_kept < HISTORY_TASK_PER_SCHEDULE:
+                nb_tasks_kept += 1
+                continue
+            session.delete(task)
+            nb_deleted_tasks += 1
+    logger.info(f"::: deleted {nb_deleted_tasks} tasks")
 
 
-def status_to_cancel(now, status, timeout):
+def status_to_cancel(now, status, timeout, session: so.Session):
     logger.info(f":: canceling tasks `{status}` for more than {timeout}s")
     ago = now - datetime.timedelta(seconds=timeout)
-    query = {"status": status, f"timestamp.{status}": {"$lte": ago}}
-    result = Tasks().update_many(
-        query,
-        {
-            "$set": {
-                "status": TaskStatus.canceled,
-                "canceled_by": NAME,
-                f"timestamp.{TaskStatus.canceled}": now,
-            },
-            "$push": {
-                "events": {
-                    "code": TaskStatus.canceled,
-                    "timestamp": now,
-                }
-            },
-        },
-    )
-    logger.info(f"::: canceled {result.modified_count}/{result.matched_count} tasks")
+    tasks = session.execute(
+        sa.select(dbm.Task)
+        .filter(dbm.Task.status == status)
+        .filter(
+            sa.func.to_timestamp(
+                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger) / 1000
+            )
+            <= ago
+        )
+    ).scalars()
+
+    nb_canceled_tasks = 0
+    for task in tasks:
+        task.status = TaskStatus.canceled
+        task.canceled_by = NAME
+        task.timestamp[TaskStatus.canceled] = now
+        task.events.append(
+            {
+                "code": TaskStatus.canceled,
+                "timestamp": now,
+            }
+        )
+        task.updated_at = now
+        nb_canceled_tasks += 1
+
+    logger.info(f"::: canceled {nb_canceled_tasks} tasks")
 
 
-def staled_statuses():
+def staled_statuses(session: so.Session):
     """set the status for tasks in an unfinished state"""
 
     now = getnow()
 
     # `started` statuses
-    status_to_cancel(now, TaskStatus.started, STALLED_STARTED_TIMEOUT)
+    status_to_cancel(now, TaskStatus.started, STALLED_STARTED_TIMEOUT, session)
 
     # `reserved` statuses
-    status_to_cancel(now, TaskStatus.reserved, STALLED_RESERVED_TIMEOUT)
+    status_to_cancel(now, TaskStatus.reserved, STALLED_RESERVED_TIMEOUT, session)
 
     # `cancel_requested` statuses
-    status_to_cancel(now, TaskStatus.cancel_requested, STALLED_CANCELREQ_TIMEOUT)
+    status_to_cancel(
+        now, TaskStatus.cancel_requested, STALLED_CANCELREQ_TIMEOUT, session
+    )
 
     # `scraper_completed` statuses: either success or failure
     status = TaskStatus.scraper_completed
@@ -118,34 +123,38 @@ def staled_statuses():
         f":: closing tasks `{status}` for more than {STALLED_COMPLETED_TIMEOUT}s"
     )
     ago = now - datetime.timedelta(seconds=STALLED_COMPLETED_TIMEOUT)
-    query = {"status": status, f"timestamp.{status}": {"$lte": ago}}
-    query_success = {"container.exit_code": 0}
-    query_success.update(query)
-    result = Tasks().update_many(
-        query_success,
-        {
-            "$set": {
-                "status": TaskStatus.succeeded,
-                f"timestamp.{TaskStatus.succeeded}": now,
-            }
-        },
-    )
-    logger.info(f"::: succeeded {result.modified_count}/{result.matched_count} tasks")
-    query_failed = {"container.exit_code": {"$ne": 0}}
-    query_failed.update(query)
-    result = Tasks().update_many(
-        query_failed,
-        {"$set": {"status": TaskStatus.failed, f"timestamp.{TaskStatus.failed}": now}},
-    )
-    logger.info(f"::: failed {result.modified_count}/{result.matched_count} tasks")
+    tasks = session.execute(
+        sa.select(dbm.Task)
+        .filter(dbm.Task.status == status)
+        .filter(
+            sa.func.to_timestamp(
+                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger) / 1000
+            )
+            <= ago
+        )
+    ).scalars()
+    nb_suceeded_tasks = 0
+    nb_failed_tasks = 0
+    for task in tasks:
+        if "exit_code" in task.container and int(task.container["exit_code"]) == 0:
+            task.status = TaskStatus.succeeded
+            task.timestamp[TaskStatus.succeeded] = now
+            nb_suceeded_tasks += 1
+        else:
+            task.status = TaskStatus.failed
+            task.timestamp[TaskStatus.failed] = now
+            nb_failed_tasks += 1
+    logger.info(f"::: succeeded {nb_suceeded_tasks} tasks")
+    logger.info(f"::: failed {nb_failed_tasks} tasks")
 
 
-def main():
+@dbsession
+def main(session: so.Session):
     logger.info("running periodic tasks-cleaner")
 
-    history_cleanup()
+    history_cleanup(session)
 
-    staled_statuses()
+    staled_statuses(session)
 
 
 if __name__ == "__main__":

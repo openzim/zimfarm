@@ -58,7 +58,7 @@ class SerializableSchema(Schema):
             desc["choices"] = field.validate.choices
 
         if field.metadata:
-            desc.update(field.metadata.get("metadata"))
+            desc.update(field.metadata)
 
         return desc
 

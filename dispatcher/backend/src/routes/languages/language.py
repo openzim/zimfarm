@@ -1,7 +1,10 @@
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import jsonify, request
 
-from common.mongo import Schedules
+import db.models as dbm
 from common.schemas.parameters import SkipLimit500Schema
+from db import count_from_stmt, dbsession
 from routes.base import BaseRoute
 
 
@@ -10,48 +13,39 @@ class LanguagesRoute(BaseRoute):
     name = "languages"
     methods = ["GET"]
 
-    def get(self, *args, **kwargs):
+    @dbsession
+    def get(self, session: so.Session, *args, **kwargs):
         """return a list of languages"""
 
         request_args = SkipLimit500Schema().load(request.args.to_dict())
         skip, limit = request_args["skip"], request_args["limit"]
 
-        group = {
-            "$group": {
-                "_id": "$language.code",
-                "name_en": {"$first": "$language.name_en"},
-                "name_native": {"$first": "$language.name_native"},
-            }
-        }
+        # we select the distinct languages from schedules:
+        # - we need the distinct on language code to select only one if there is a case
+        #   where two schedules have different name_en or name_native for the same
+        #   language_code
+        # - we also sort by schedule id just to have a consistent result if the
+        #   condition above arises
+        stmt = (
+            sa.select(
+                dbm.Schedule.language_code,
+                dbm.Schedule.language_name_en,
+                dbm.Schedule.language_name_native,
+            )
+            .distinct(dbm.Schedule.language_code)  # distinct on language_code
+            .order_by(dbm.Schedule.language_code, dbm.Schedule.id)
+        )
 
-        try:
-            nb_languages = next(Schedules().aggregate([group, {"$count": "count"}]))[
-                "count"
-            ]
-        except StopIteration:
-            nb_languages = 0
-
-        if nb_languages == 0:
-            languages = []
-        else:
-            pipeline = [
-                group,
-                {"$sort": {"name_en": 1}},
-                {"$skip": skip},
-                {"$limit": limit},
-            ]
-            languages = [
-                {
-                    "code": s["_id"],
-                    "name_en": s["name_en"],
-                    "name_native": s["name_native"],
-                }
-                for s in Schedules().aggregate(pipeline)
-            ]
+        nb_languages = count_from_stmt(session, stmt)
 
         return jsonify(
             {
                 "meta": {"skip": skip, "limit": limit, "count": nb_languages},
-                "items": languages,
+                "items": list(
+                    map(
+                        lambda x: {"code": x[0], "name_en": x[1], "name_native": x[2]},
+                        session.execute(stmt.offset(skip).limit(limit)).all(),
+                    )
+                ),
             }
         )

@@ -1,9 +1,4 @@
-import datetime
-
 import pytest
-from bson import ObjectId
-
-from common.roles import ROLES
 
 
 @pytest.fixture(scope="module")
@@ -69,66 +64,20 @@ RhJMRUmh/D3kxUFO/wtSDGfo/HR/1iEraoddi+sA6+R56vA8ziJC51xw
 
 
 @pytest.fixture(scope="module")
-def make_user(database):
-    user_ids = []
-
-    def _make_user(username: str = "some-user", role: str = None) -> dict:
-        document = {
-            "_id": ObjectId(),
-            "username": username,
-            "password_hash": (
-                "pbkdf2:sha256:150000$dEqsZI8W$2d2bbcbadab59281528ecbb27d26ac628472a0b"
-                "2f0a5e1828edbeeae683dd40f"
-            ),
-            "ssh_keys": [
-                {
-                    "name": "pytest",
-                    "fingerprint": "a4a7cfd26a11ec519b63d4d12f34ecf2",
-                    "key": (
-                        "AAAAB3NzaC1yc2EAAAADAQABAAABAQC4EYmNPfdscaYcMTXe0NxSpS+5qbVO+"
-                        "WDaMLt/JLbDmorJzzBYFItxsr5hvxKckQ3jgUdcoIqzpwfjg88NhxenPmLlqs"
-                        "aQfkI2IjmOxDwaH4zs1IKG4+BTyY6EFrEnWgO9vJMJPOVzBdv3uUUOULvTnE7"
-                        "ZWpqb+2tRQCk6GUF9AoajmAzTlu+PjD53kRqwRugK/EKrqIjg5Nb/y5F4xGXL"
-                        "Tb3otsUp+iFB3TJ65yB9F4C/Q4R5Srr/R3CWBQvoMLHUjya7HppoEW5sl8e+n"
-                        "EYpwKVCVuyJiRv9NuomBuh2ZH7ftfY8zxkVyv6UbVNXwFTvT3QVbwM6pQgVx/"
-                        "nJmzeb"
-                    ),
-                    "type": "RSA",
-                    "added": datetime.datetime(2019, 1, 1),
-                    "last_used": datetime.datetime(2019, 1, 1),
-                    "pkcs8_key": "-----BEGIN PUBLIC KEY-----\n"
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc\n"
-                    "UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX\n"
-                    "pz5i5arGkH5CNiI5jsQ8Gh+M7NSChuPgU8mOhBaxJ1oDvbyTCTzlcwXb97lFDlC7\n"
-                    "05xO2Vqam/trUUApOhlBfQKGo5gM05bvj4w+d5EasEboCvxCq6iI4OTW/8uReMRl\n"
-                    "y0296LbFKfohQd0yeucgfReAv0OEeUq6/0dwlgUL6DCx1I8mux6aaBFubJfHvpxG\n"
-                    "KcClQlbsiYkb/TbqJgbodmR+37X2PM8ZFcr+lG1TV8BU7090FW8DOqUIFcf5yZs3\n"
-                    "mwIDAQAB\n"
-                    "-----END PUBLIC KEY-----\n",
-                }
-            ],
-        }
-        if role:
-            document["scope"] = ROLES.get(role)
-        user_id = database.users.insert_one(document).inserted_id
-        user_ids.append(user_id)
-        return document
-
-    yield _make_user
-
-    database.users.delete_many({"_id": {"$in": user_ids}})
-
-
-@pytest.fixture(scope="module")
-def user(make_user):
-    return make_user()
-
-
-@pytest.fixture(scope="module")
 def users(make_user):
     users = []
     for index in range(5):
         username = "user_{}".format(index)
         user = make_user(username)
+        users.append(user)
+    return users
+
+
+@pytest.fixture(scope="module")
+def deleted_users(make_user):
+    users = []
+    for index in range(5):
+        username = "del_user_{}".format(index)
+        user = make_user(username, deleted=True)
         users.append(user)
     return users

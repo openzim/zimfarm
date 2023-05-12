@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 
+# import boto3
 from flask import Flask, Response, make_response, redirect, render_template
 from flask_cors import CORS
 
@@ -21,7 +22,10 @@ from routes import (
 )
 from utils.broadcaster import BROADCASTER
 from utils.database import Initializer
-from utils.json import Encoder
+from utils.json import ZimfarmJsonProvider
+
+# TEMP fix awaiting kiwixstorage
+# boto3.set_stream_logger("", logging.CRITICAL)
 
 if os.getenv("DOCS_DIR"):
     docs_dir = pathlib.Path(os.getenv("DOCS_DIR")).resolve()
@@ -29,15 +33,13 @@ else:
     # docs dir outside codebase
     docs_dir = pathlib.Path(__file__).parent.resolve().parent.joinpath("docs")
 application = Flask(__name__, template_folder=docs_dir)
-application.json_encoder = Encoder
+application.json = ZimfarmJsonProvider(application)
 CORS(application)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG, format="[%(asctime)s: %(levelname)s] %(message)s"
+)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("[%(asctime)s: %(levelname)s] %(message)s"))
-logger.addHandler(handler)
 
 
 @application.route(f"{API_PATH}/openapi.yaml")
@@ -81,6 +83,7 @@ BROADCASTER.broadcast_dispatcher_started()
 
 
 if __name__ == "__main__":
+    Initializer.check_if_schema_is_up_to_date()
     Initializer.create_initial_user()
     application.run(
         host=os.getenv("BINDING_HOST", "localhost"),

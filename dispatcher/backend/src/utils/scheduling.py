@@ -5,11 +5,13 @@
 import datetime
 import functools
 import logging
+from typing import Any, Dict, List, Optional
 
-import pymongo
-from bson.objectid import ObjectId
-from bson.son import SON
+import sqlalchemy as sa
+import sqlalchemy.orm as so
+from sqlalchemy.dialects.postgresql import insert
 
+import db.models as dbm
 from common import getnow
 from common.constants import (
     DEFAULT_SCHEDULE_DURATION,
@@ -22,7 +24,8 @@ from common.constants import (
     ZIMCHECK_OPTION,
 )
 from common.enum import Platform, SchedulePeriodicity, TaskStatus
-from common.mongo import RequestedTasks, Schedules, Tasks, Workers
+from common.schemas.orms import RequestedTaskFullSchema
+from db import count_from_stmt, dbsession
 from utils.offliners import expanded_config
 
 logger = logging.getLogger(__name__)
@@ -37,59 +40,73 @@ def get_default_duration():
     }
 
 
-def update_schedule_duration(schedule_name):
-    """set/update the `duration` object of a schedule by looking at its recent tasks
+def update_schedule_duration(session: so.Session, schedule: dbm.Schedule):
+    """update the `duration` object of a schedule by looking at its recent tasks
 
-    value is computed with `scraper_completed - started` timestamps"""
+    value is computed with the most recent difference between
+    `scraper_completed - started` timestamps"""
 
-    schedule_query = {"name": schedule_name}
-
-    # retrieve last tasks that completed the resources intensive part
-    query = {
-        "schedule_name": schedule_name,
-        f"timestamp.{TaskStatus.scraper_completed}": {"$exists": True},
-        f"timestamp.{TaskStatus.started}": {"$exists": True},
-        "container.exit_code": 0,
-    }
-
-    document = {
-        "default": get_default_duration(),
-    }
-
-    # we have no finished task for this schedule, using default duration
-    if Tasks().count_documents(query) == 0:
-        document.update({"available": False, "workers": {}})
-
-    # compute duration from last completed tasks
-    else:
-        tasks = (
-            Tasks()
-            .find(query, {"timestamp": 1, "worker": 1})
-            .sort(f"timestamp.{TaskStatus.scraper_completed}", pymongo.ASCENDING)
+    # retrieve tasks that completed the resources intensive part
+    # we don't mind to retrieve all of them because they are regularly purged
+    tasks = session.execute(
+        sa.select(dbm.Task)
+        .where(dbm.Task.timestamp.has_key(TaskStatus.started))  # noqa: W601
+        .where(dbm.Task.timestamp.has_key(TaskStatus.scraper_completed))
+        .where(dbm.Task.container["exit_code"].astext.cast(sa.Integer) == 0)
+        .where(dbm.Task.schedule_id == schedule.id)
+        .order_by(
+            dbm.Task.timestamp[TaskStatus.scraper_completed]["$date"].astext.cast(
+                sa.BigInteger
+            )
         )
+    ).scalars()
 
-        workers = {
-            task["worker"]: {
-                "worker": task["worker"],
-                "task": task["_id"],
-                "value": int(
-                    (
-                        task["timestamp"]["scraper_completed"]
-                        - task["timestamp"]["started"]
-                    ).total_seconds()
-                ),
-                "on": task["timestamp"][TaskStatus.scraper_completed],
-            }
-            for task in tasks
+    workers_durations = {}
+    for task in tasks:
+        workers_durations[task.worker_id] = {
+            "value": int(
+                (
+                    task.timestamp[TaskStatus.scraper_completed]
+                    - task.timestamp[TaskStatus.started]
+                ).total_seconds()
+            ),
+            "on": task.timestamp[TaskStatus.scraper_completed],
         }
-        if workers:
-            document.update({"available": True, "workers": workers})
 
-    Schedules().update_one(schedule_query, {"$set": {"duration": document}})
+    # compute values that will be inserted (or updated) in the DB
+    inserts_durations = [
+        {
+            "default": False,
+            "value": duration_payload["value"],
+            "on": duration_payload["on"],
+            "schedule_id": schedule.id,
+            "worker_id": worker_id,
+        }
+        for worker_id, duration_payload in workers_durations.items()
+    ]
+
+    # let's do an upsert ; conflict on schedule_id + worker_id
+    # on conflict, set the on, value, task_id
+    upsert_stmt = insert(dbm.ScheduleDuration).values(inserts_durations)
+    upsert_stmt = upsert_stmt.on_conflict_do_update(
+        index_elements=[
+            dbm.ScheduleDuration.schedule_id,
+            dbm.ScheduleDuration.worker_id,
+        ],
+        set_={
+            dbm.ScheduleDuration.on: upsert_stmt.excluded.on,
+            dbm.ScheduleDuration.value: upsert_stmt.excluded.value,
+        },
+    )
+    session.execute(upsert_stmt)
 
 
 def request_a_schedule(
-    schedule_name, requested_by: str, worker: str = None, priority: int = 0
+    session: so.Session,
+    schedule_name: str,
+    requested_by: str,
+    worker_name: str = None,
+    priority: int = 0,
 ):
     """created requested_task for schedule_name if possible else None
 
@@ -97,36 +114,46 @@ def request_a_schedule(
     schedule can't be requested if already requested on same worker"""
 
     # skip if already requested
-    if RequestedTasks().count_documents(
-        {"schedule_name": schedule_name, "worker": worker}
-    ):
-        return None
-
-    schedule = Schedules().find_one(
-        {"name": schedule_name, "enabled": True}, {"config": 1, "notification": 1}
+    stmt = (
+        sa.select(dbm.RequestedTask, dbm.Schedule)
+        .join(dbm.Schedule, dbm.RequestedTask.schedule)
+        .filter(dbm.Schedule.name == schedule_name)
     )
-    # schedule might be disabled
-    if not schedule:
+    if worker_name is not None:
+        stmt = stmt.join(dbm.Worker, dbm.RequestedTask.worker).filter(
+            dbm.Worker.name == worker_name
+        )
+    if count_from_stmt(session, stmt):
         return None
 
-    config = schedule["config"]
+    schedule = dbm.Schedule.get(session=session, name=schedule_name, run_checks=False)
+    # schedule might be disabled
+    if schedule is None or not schedule.enabled:
+        return None
+
+    worker = None
+    if worker_name is not None:
+        worker = dbm.Worker.get(session=session, name=worker_name, run_checks=False)
+        # worker might not exist
+        if worker is None:
+            return None
+
+    config = schedule.config
     # build and save command-information to config
     config = expanded_config(config)
 
     now = getnow()
 
-    document = {
-        "schedule_name": schedule_name,
-        "status": TaskStatus.requested,
-        "timestamp": {TaskStatus.requested: now},
-        "events": [{"code": TaskStatus.requested, "timestamp": now}],
-        "requested_by": requested_by,
-        "priority": priority,
-        "worker": worker,
-        "config": config,
-        # reverse ObjectId to randomize task ids
-        "_id": ObjectId(str(ObjectId())[::-1]),
-        "upload": {
+    requested_task = dbm.RequestedTask(
+        mongo_val=None,
+        mongo_id=None,
+        status=TaskStatus.requested,
+        timestamp={TaskStatus.requested: now},
+        events=[{"code": TaskStatus.requested, "timestamp": now}],
+        requested_by=requested_by,
+        priority=priority,
+        config=config,
+        upload={
             "zim": {
                 "upload_uri": ZIM_UPLOAD_URI,
                 "expiration": ZIM_EXPIRATION,
@@ -137,19 +164,24 @@ def request_a_schedule(
                 "expiration": LOGS_EXPIRATION,
             },
         },
-        "notification": schedule.get("notification", {}),
-    }
+        notification=schedule.notification if schedule.notification else {},
+        updated_at=now,
+    )
+    requested_task.schedule = schedule
 
     if worker:
-        document["worker"] = worker
+        requested_task.worker = worker
 
-    rt_id = RequestedTasks().insert_one(document).inserted_id
+    session.add(requested_task)
+    session.flush()
 
-    document.update({"_id": str(rt_id)})
-    return document
+    requested_task_obj = RequestedTaskFullSchema().dump(requested_task)
+
+    return requested_task_obj
 
 
-def request_tasks_using_schedule():
+@dbsession
+def request_tasks_using_schedule(session: so.Session):
     """create requested_tasks based on schedule's periodicity field
 
     Expected to be ran periodically to compute what needs to be scheduled"""
@@ -157,9 +189,6 @@ def request_tasks_using_schedule():
     requester = "period-scheduler"
     priority = 0
     worker = None
-
-    query = {"enabled": True}
-    projection = {"name": 1, "config": 1, "most_recent_task": 1}
 
     for period, period_data in {
         p: PERIODICITIES.get(p) for p in SchedulePeriodicity.all()
@@ -171,33 +200,34 @@ def request_tasks_using_schedule():
         logger.debug(f"requesting for `{period}` schedules (before {period_start})")
 
         # find non-requested schedules which last run started before our period start
-        query["periodicity"] = period
-        for schedule in Schedules().find(query, projection):
-            # don't bother if the schedule's already requested
-            if (
-                RequestedTasks().count_documents({"schedule_name": schedule["name"]})
-                > 0
-            ):
-                continue
-
-            if schedule.get("most_recent_task"):
-                last_run = Tasks().find_one(
-                    {"_id": schedule["most_recent_task"]["_id"]}, {"timestamp": 1}
-                )
+        for schedule in session.execute(
+            sa.select(dbm.Schedule)
+            .filter(dbm.Schedule.enabled)
+            .filter(dbm.Schedule.periodicity == period)
+            .filter(
+                ~sa.exists().where(dbm.RequestedTask.schedule_id == dbm.Schedule.id)
+            )
+        ).scalars():
+            if schedule.most_recent_task_id is not None:
+                last_run = schedule.most_recent_task
                 # don't bother if it started after this rolling period's start
                 if (
                     last_run
-                    and last_run["timestamp"].get(
-                        "started", datetime.datetime(2019, 1, 1)
-                    )
+                    and last_run.timestamp.get("started", datetime.datetime(2019, 1, 1))
                     > period_start
                 ):
                     continue
 
-            if request_a_schedule(schedule["name"], requester, worker, priority):
-                logger.debug(f"requested {schedule['name']}")
+            if request_a_schedule(
+                session=session,
+                schedule_name=schedule.name,
+                requested_by=requester,
+                worker_name=worker,
+                priority=priority,
+            ):
+                logger.debug(f"requested {schedule.name}")
             else:
-                logger.debug(f"could not request {schedule['name']}")
+                logger.debug(f"could not request {schedule.name}")
 
 
 def can_run(task, resources):
@@ -208,22 +238,38 @@ def can_run(task, resources):
     return True
 
 
-def get_duration_for(schedule_name, worker_name):
+def map_duration(duration: dbm.ScheduleDuration):
+    return {
+        "value": duration.value,
+        "on": duration.on,
+        "worker": duration.worker.name if duration.worker else None,
+    }
+
+
+def get_duration_for(session, schedule_name, worker_name):
     """duration doc for a schedule and worker (or default one)"""
-    schedule = Schedules().find_one({"name": schedule_name}, {"duration": 1})
-    if not schedule:
+    schedule = dbm.Schedule.get(session, schedule_name, run_checks=False)
+    if schedule is None:
         return get_default_duration()
-    return schedule["duration"]["workers"].get(
-        worker_name, schedule["duration"]["default"]
-    )
+    return get_duration_for_with_schedule(schedule, worker_name)
 
 
-def get_task_eta(task, worker_name=None):
+def get_duration_for_with_schedule(schedule, worker_name):
+    for duration in schedule.durations:
+        if duration.worker and duration.worker.name == worker_name:
+            return map_duration(duration)
+    for duration in schedule.durations:
+        if duration.default:
+            return map_duration(duration)
+    raise Exception(f"No default duration found for schedule {schedule.name}")
+
+
+def get_task_eta(session, task, worker_name=None):
     """compute task duration (dict), remaining (seconds) and eta (datetime)"""
     now = getnow()
     if not worker_name:
         worker_name = task.get("worker")
-    duration = get_duration_for(task["schedule_name"], worker_name)
+    duration = get_duration_for(session, task["schedule_name"], worker_name)
     # delta
     elapsed = now - task["timestamp"].get("started", task["timestamp"]["reserved"])
     remaining = max([duration["value"] - elapsed.total_seconds(), 60])  # seconds
@@ -233,98 +279,89 @@ def get_task_eta(task, worker_name=None):
     return {"duration": duration, "remaining": remaining, "eta": eta}
 
 
-def get_reqs_doable_by(worker):
+def get_reqs_doable_by(session: so.Session, worker: dbm.Worker) -> List[Dict[str, Any]]:
     """cursor of RequestedTasks() doable by a worker using all its resources
 
     - sorted by priority
     - sorted by duration (longest first)"""
-    query = {}
-    for res_key in ("cpu", "memory", "disk"):
-        query[f"config.resources.{res_key}"] = {"$lte": worker["resources"][res_key]}
 
-    query["config.task_name"] = {"$in": worker["offliners"]}
-
-    if worker.get("selfish", False):
-        query["worker"] = worker["name"]
-    else:
-        query["worker"] = {"$in": [worker["name"], None]}
-
-    projection = {
-        "_id": 1,
-        "status": 1,
-        "schedule_name": 1,
-        "config.task_name": 1,
-        "config.platform": 1,
-        "config.resources": 1,
-        "timestamp.requested": 1,
-        "requested_by": 1,
-        "priority": 1,
-        "worker": 1,
-    }
-
-    # make schedule available directly (lookup returned array)
-    extract_schedule_proj = {
-        "schedule": {"$arrayElemAt": ["$schedules", 0]},
-    }
-    extract_schedule_proj.update(projection)
-    # add a single int value for duration (real or default) for comparisons
-    duration_value_proj = {
-        "duration": {
-            "$mergeObjects": [
-                {"value": "$schedule.duration.default.value"},
-                {"value": f"$schedule.duration.workers.{worker['name']}.value"},
-            ]
-        },
-    }
-    duration_value_proj.update(projection)
-
-    return RequestedTasks().aggregate(
-        [
-            {"$match": query},
-            # inner join on schedules
-            {
-                "$lookup": {
-                    "from": "schedules",
-                    "localField": "schedule_name",
-                    "foreignField": "name",
-                    "as": "schedules",
-                }
+    def get_document(task: dbm.RequestedTask):
+        return {
+            "_id": task.id,
+            "status": task.status,
+            "schedule_name": task.schedule.name,
+            "config": {
+                "task_name": task.config.get("task_name"),
+                "platform": task.config.get("platform"),
+                "resources": task.config.get("resources"),
             },
-            {"$project": extract_schedule_proj},
-            {"$project": duration_value_proj},
-            {
-                "$sort": SON(
-                    [
-                        ("priority", pymongo.DESCENDING),
-                        ("duration.value", pymongo.DESCENDING),
-                    ]
-                )
-            },
-        ]
+            "timestamp": task.timestamp,
+            "requested_by": task.requested_by,
+            "priority": task.priority,
+            "worker": task.worker.name if task.worker else None,
+            "duration": get_duration_for_with_schedule(task.schedule, worker.name),
+        }
+
+    stmt = sa.select(dbm.RequestedTask)
+
+    stmt = stmt.filter(
+        dbm.RequestedTask.config["resources"]["cpu"].astext.cast(sa.Integer)
+        <= worker.cpu
+    )
+    stmt = stmt.filter(
+        dbm.RequestedTask.config["resources"]["memory"].astext.cast(sa.BigInteger)
+        <= worker.memory
+    )
+    stmt = stmt.filter(
+        dbm.RequestedTask.config["resources"]["disk"].astext.cast(sa.BigInteger)
+        <= worker.disk
+    )
+    stmt = stmt.filter(
+        dbm.RequestedTask.config["task_name"].astext.in_(worker.offliners)
     )
 
+    if worker.selfish:
+        stmt = stmt.filter(dbm.RequestedTask.worker_id == worker.id)
+    else:
+        stmt = stmt.filter(
+            sa.or_(
+                dbm.RequestedTask.worker_id == worker.id,
+                dbm.RequestedTask.worker_id == None,  # noqa: E711
+            )
+        )
 
-def get_currently_running_tasks(worker_name=None):
-    """list of tasks being run by worker at this moment, including ETA"""
-    query = {"status": {"$nin": TaskStatus.complete()}}
-    if worker_name:
-        query.update({"worker": worker_name})
-    running_tasks = list(
-        Tasks().find(
-            query,
-            {
-                "config.resources": 1,
-                "config.platform": 1,
-                "schedule_name": 1,
-                "timestamp": 1,
-                "worker": 1,
-            },
+    return list(
+        sorted(
+            map(get_document, session.execute(stmt).scalars()),
+            key=lambda x: (-x["priority"], -x["duration"]["value"]),
         )
     )
 
+
+def get_currently_running_tasks(
+    session: so.Session, worker_name: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """list of tasks being run by worker at this moment, including ETA"""
+
+    def extract_data(task: dbm.Task):
+        return {
+            "config": {
+                "resources": task.config.get("resources", {}),
+                "platform": task.config.get("platform", None),
+            },
+            "schedule_name": task.schedule.name,
+            "timestamp": task.timestamp,
+            "worker": task.worker.name,
+        }
+
+    stmt = sa.select(dbm.Task).filter(dbm.Task.status.notin_(TaskStatus.complete()))
+    if worker_name:
+        stmt = stmt.join(dbm.Worker).filter(dbm.Worker.name == worker_name)
+    running_tasks = list(map(extract_data, session.execute(stmt).scalars()))
+
     # calculate ETAs of the tasks we are currently running
     for task in running_tasks:
-        task.update(get_task_eta(task, worker_name))
+        task.update(get_task_eta(session, task, worker_name))
 
     return running_tasks
 
@@ -339,7 +376,12 @@ def get_possible_task_with(tasks_worker_could_do, available_resources, available
             logger.debug(f"{temp_candidate['schedule_name']} would take too long")
 
 
-def does_platform_allow_worker_to_run(worker, all_running_tasks, running_tasks, task):
+def does_platform_allow_worker_to_run(
+    worker: dbm.Worker,
+    all_running_tasks: List[Dict[str, Any]],
+    running_tasks: List[Dict[str, Any]],
+    task,
+) -> bool:
     """whether worker can now run task according to platform limitations"""
     platform = task["config"].get("platform")
     if not platform:
@@ -359,7 +401,7 @@ def does_platform_allow_worker_to_run(worker, all_running_tasks, running_tasks, 
             return False
 
     # check whether we have a per-worker limit for this platform
-    worker_limit = worker.get("platforms", {}).get(
+    worker_limit = worker.platforms.get(
         platform, Platform.get_max_per_worker_tasks_for(platform)
     )
     if worker_limit is None:
@@ -375,7 +417,9 @@ def does_platform_allow_worker_to_run(worker, all_running_tasks, running_tasks, 
     return nb_worker_running < worker_limit
 
 
-def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avail_disk):
+def find_requested_task_for(
+    session: so.Session, username, worker_name, avail_cpu, avail_memory, avail_disk
+):
     """optimal requested_task to run now for a given worker
 
     Accounts for:
@@ -389,17 +433,12 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         return None
 
     # get total resources for that worker
-    worker = Workers().find_one(
-        {"username": username, "name": worker_name},
-        {
-            "resources": 1,
-            "offliners": 1,
-            "last_seen": 1,
-            "name": 1,
-            "selfish": 1,
-            "platforms": 1,
-        },
-    )
+    worker = session.execute(
+        sa.select(dbm.Worker)
+        .join(dbm.User)
+        .filter(dbm.Worker.name == worker_name)
+        .filter(dbm.User.username == username)
+    ).scalar_one_or_none()
 
     # worker is not checked-in
     if worker is None:
@@ -407,7 +446,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         return None
 
     # retrieve list of all running tasks with associated resources
-    all_running_tasks = get_currently_running_tasks()
+    all_running_tasks = get_currently_running_tasks(session)
 
     # retrieve list of tasks we are currently running with associated resources
     running_tasks = [
@@ -417,7 +456,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
     # find all requested tasks that this worker can do with its total resources
     #   sorted by priorities
     #   sorted by max durations
-    tasks_worker_could_do = get_reqs_doable_by(worker)
+    tasks_worker_could_do = get_reqs_doable_by(session=session, worker=worker)
 
     # filter-out requested tasks that are not doable now due to platform limitations
     worker_platform_filter = functools.partial(
@@ -432,7 +471,7 @@ def find_requested_task_for(username, worker_name, avail_cpu, avail_memory, avai
         # candidate is task[0]
         candidate = next(tasks_worker_could_do)
     except StopIteration:
-        logger.debug(f"no request doable by worker (selfish={worker.get('selfish')})")
+        logger.debug(f"no request doable by worker (selfish={worker.selfish})")
         return None
 
     # can worker do task[0] ?

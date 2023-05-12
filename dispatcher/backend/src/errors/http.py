@@ -29,7 +29,7 @@ class InvalidRequestJSON(HTTPBase):
 
 
 class ResourceNotFound(HTTPBase):
-    def __init__(self, error: str):
+    def __init__(self, error: Optional[str] = None):
         if error is None:
             error = "Resource Not Found"
         super().__init__(HTTPStatus.NOT_FOUND, error)
@@ -43,3 +43,8 @@ class ScheduleNotFound(ResourceNotFound):
 class TaskNotFound(ResourceNotFound):
     def __init__(self):
         super().__init__("Task Not Found")
+
+
+class WorkerNotFound(ResourceNotFound):
+    def __init__(self):
+        super().__init__("Worker Not Found")

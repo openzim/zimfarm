@@ -15,6 +15,8 @@ We have a very limited number of contributors so rules are quite limited:
 
 Setting up the zimfarm locally is a bit complicated due to the number of moving parts. But you don't need all of those depending on what you plan on working on.
 
+An alternate way to run all this locally is to use a fully docker-based stack. See [dev](dev/README.md) folder for details.
+
 You'll need [docker](https://www.docker.com/) and [python3.8](https://www.python.org/) for almost all parts so secure that first.
 
 ### backend API

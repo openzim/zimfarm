@@ -1,13 +1,17 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Union
 from uuid import UUID, uuid4
 
-from bson import ObjectId
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash
 
-from common.mongo import RefreshTokens, Users
+import db.models as dbm
+from common import getnow
+from db import dbsession
 from errors.oauth2 import InvalidGrant, InvalidRequest, UnsupportedGrantType
+from utils.check import raise_if, raise_if_none
 from utils.token import LoadedAccessToken
 
 
@@ -35,10 +39,16 @@ class OAuth2:
                 username = request.headers.get("username")
                 password = request.headers.get("password")
 
-            if username is None:
-                raise InvalidRequest('Request was missing the "username" parameter.')
-            if password is None:
-                raise InvalidRequest('Request was missing the "password" parameter.')
+            raise_if_none(
+                username,
+                InvalidRequest,
+                'Request was missing the "username" parameter.',
+            )
+            raise_if_none(
+                password,
+                InvalidRequest,
+                'Request was missing the "password" parameter.',
+            )
 
             return self.password_grant(username, password)
 
@@ -51,10 +61,11 @@ class OAuth2:
             else:
                 refresh_token = request.headers.get("refresh_token")
 
-            if refresh_token is None:
-                raise InvalidRequest(
-                    'Request was missing the "refresh_token" parameter.'
-                )
+            raise_if_none(
+                refresh_token,
+                InvalidRequest,
+                'Request was missing the "refresh_token" parameter.',
+            )
 
             try:
                 refresh_token = UUID(refresh_token)
@@ -68,65 +79,63 @@ class OAuth2:
         )
 
     @staticmethod
-    def password_grant(username: str, password: str):
+    @dbsession
+    def password_grant(username: str, password: str, session: so.Session):
         """Implements logic for password grant."""
 
-        # check user exists
-        user = Users().find_one({"username": username})
-        if user is None:
-            raise InvalidGrant("Username or password is invalid.")
+        orm_user = dbm.User.get(
+            session, username, InvalidGrant, "Username or password is invalid."
+        )
 
         # check password is valid
-        password_hash = user.pop("password_hash")
-        is_valid = check_password_hash(password_hash, password)
-        if not is_valid:
-            raise InvalidGrant("Username or password is invalid.")
+        is_valid = check_password_hash(orm_user.password_hash, password)
+        raise_if(not is_valid, InvalidGrant, "Username or password is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(
-            user["_id"], user["username"], user.get("scope", {})
+            orm_user.id, orm_user.username, orm_user.scope or {}
         ).encode()
-        refresh_token = OAuth2.generate_refresh_token(user["_id"])
+        refresh_token = OAuth2.generate_refresh_token(orm_user.id, session)
 
         return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
-    def refresh_token_grant(old_refresh_token: UUID):
+    @dbsession
+    def refresh_token_grant(old_refresh_token: UUID, session: so.Session):
         """Implements logic for refresh token grant."""
 
         # check token exists in database and get expire time and user id
-        collection = RefreshTokens()
-        old_token_document = collection.find_one(
-            {"token": old_refresh_token}, {"expire_time": 1, "user_id": 1}
-        )
-        if old_token_document is None:
-            raise InvalidGrant("Refresh token is invalid.")
+        old_token_document = session.execute(
+            sa.select(dbm.Refreshtoken).where(
+                dbm.Refreshtoken.token == old_refresh_token
+            )
+        ).scalar_one_or_none()
+        raise_if_none(old_token_document, InvalidGrant, "Refresh token is invalid.")
 
         # check token is not expired
-        expire_time = old_token_document["expire_time"]
-        if expire_time < datetime.now():
-            raise InvalidGrant("Refresh token is expired.")
+        expire_time = old_token_document.expire_time
+        raise_if(expire_time < getnow(), InvalidGrant, "Refresh token is expired.")
 
         # check user exists
-        user_id = old_token_document["user_id"]
-        user = Users().find_one({"_id": user_id}, {"password_hash": 0})
-        if user is None:
-            raise InvalidGrant("Refresh token is invalid.")
+        orm_user = old_token_document.user
+        dbm.User.check(orm_user, InvalidGrant, "Refresh token is invalid.")
 
         # generate token
         access_token = LoadedAccessToken(
-            user["_id"], user["username"], user.get("scope", {})
+            orm_user.id, orm_user.username, orm_user.scope or {}
         ).encode()
-        refresh_token = OAuth2.generate_refresh_token(user["_id"])
+        refresh_token = OAuth2.generate_refresh_token(orm_user.id, session)
 
         # delete old refresh token from database
-        collection.delete_one({"token": old_refresh_token})
-        collection.delete_many({"expire_time": {"$lte": datetime.now()}})
+        session.delete(old_token_document)
+        session.execute(
+            sa.delete(dbm.Refreshtoken).where(dbm.Refreshtoken.expire_time < getnow())
+        )
 
         return OAuth2.success_response(access_token, refresh_token)
 
     @staticmethod
-    def generate_refresh_token(user_id: ObjectId) -> UUID:
+    def generate_refresh_token(user_id: UUID, session: so.Session) -> UUID:
         """Generate and store refresh token in database.
 
         :param user_id: id of user to associate the refresh token with
@@ -134,23 +143,29 @@ class OAuth2:
         """
 
         refresh_token = uuid4()
-        RefreshTokens().insert_one(
-            {
-                "token": refresh_token,
-                "user_id": user_id,
-                "expire_time": datetime.now() + timedelta(days=30),
-            }
+
+        # TODO: fetch "now" from database
+        refresh_token_db = dbm.Refreshtoken(
+            mongo_val=None,
+            mongo_id=None,
+            token=refresh_token,
+            expire_time=getnow() + timedelta(days=30),
         )
+        # we set the user_id explicitely (instead of adding the refresh token to the
+        # list of current user refresh tokens) since it allows to not fetch + keep in
+        # memory all refresh tokens of current users (we don't need it)
+        refresh_token_db.user_id = user_id
+        session.add(refresh_token_db)
         return refresh_token
 
     @staticmethod
     def success_response(
-        access_token: str, refresh_token: Union[str, UUID]
+        access_token: str, refresh_token: Union[str, dbm.Refreshtoken]
     ) -> Response:
         """Create a response when grant success."""
 
-        if isinstance(refresh_token, UUID):
-            refresh_token = str(refresh_token)
+        if isinstance(refresh_token, dbm.Refreshtoken):
+            refresh_token = refresh_token.token
 
         response = jsonify(
             {

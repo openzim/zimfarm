@@ -1,7 +1,7 @@
 import json
+from uuid import uuid4
 
 import pytest
-from bson import ObjectId
 
 from common.enum import TaskStatus
 
@@ -17,21 +17,13 @@ def _find_matches(sequencea, sequenceb, column):
 
 
 class TestTaskCreate:
-    @pytest.fixture()
-    def requested_task(self, make_requested_task):
-        requested_task = make_requested_task()
-        return requested_task
-
-    def test_create_from_schedule(self, database, client, access_token, requested_task):
+    def test_create_from_schedule(self, client, access_token, worker, requested_task):
         url = "/tasks/{}".format(str(requested_task["_id"]))
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         response = client.post(
-            url, headers=headers, query_string={"worker_name": "zimfarm_worker.com"}
+            url, headers=headers, query_string={"worker_name": "worker_name"}
         )
         assert response.status_code == 201
-
-        data = json.loads(response.data)
-        database.tasks.delete_one({"_id": ObjectId(data["_id"])})
 
     def test_create_with_missing_worker(self, client, access_token, requested_task):
         url = "/tasks/{}".format(str(requested_task["_id"]))
@@ -47,6 +39,7 @@ class TestTaskList:
             "_id",
             "timestamp",
             "status",
+            "config",
             "schedule_name",
             "worker",
             "updated_at",
@@ -98,19 +91,19 @@ class TestTaskList:
         response = client.get(url, headers=headers)
         assert response.status_code == 200
 
-        tasks = {task["_id"]: task for task in tasks if task["status"] in statuses}
+        tasks = {str(task["_id"]): task for task in tasks if task["status"] in statuses}
         items = json.loads(response.data)["items"]
 
         assert len(tasks) == len(items)
         for item in items:
-            task = tasks[ObjectId(item["_id"])]
+            task = tasks[item["_id"]]
             self._assert_task(task, item)
 
     def test_schedule_name(self, client, make_task):
         """Test list tasks with schedule_name as filter"""
 
         # generate tasks with two schedule ids
-        schedule_name, another_schedule_name = str(ObjectId()), str(ObjectId())
+        schedule_name, another_schedule_name = str(uuid4()), str(uuid4())
         for _ in range(5):
             make_task(schedule_name=schedule_name)
         for _ in range(10):
@@ -130,10 +123,18 @@ class TestTaskList:
 
 class TestTaskGet:
     def test_not_found(self, client):
-        url = "/tasks/task_id"
+        url = f"/tasks/{uuid4()}"
         headers = {"Content-Type": "application/json"}
         response = client.get(url, headers=headers)
         assert response.status_code == 404
+
+    def test_not_uuid(self, client):
+        url = "/tasks/imnotauuid"
+        headers = {"Content-Type": "application/json"}
+        response = client.get(url, headers=headers)
+        assert response.status_code == 400
+        response_json = response.get_json()
+        assert "error" in response_json
 
     def test_get(self, client, task):
         url = "/tasks/{}".format(task["_id"])
@@ -156,7 +157,7 @@ class TestTaskCancel:
         assert response.status_code == 401
 
     def test_not_found(self, client, access_token):
-        url = "/tasks/task_id/cancel"
+        url = f"/tasks/{uuid4()}/cancel"
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         response = client.post(url, headers=headers)
         assert response.status_code == 404

@@ -1,7 +1,7 @@
 import json
+from uuid import uuid4
 
 import pytest
-from bson import ObjectId
 
 
 class TestRequestedTaskList:
@@ -16,6 +16,7 @@ class TestRequestedTaskList:
             "config",
             "requested_by",
             "priority",
+            "worker",
         }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
@@ -24,12 +25,12 @@ class TestRequestedTaskList:
     @pytest.mark.parametrize(
         "query_param", [{"matching_cpu": "-2"}, {"matching_memory": -1}]
     )
-    def test_bad_rquest(self, client, query_param):
+    def test_bad_request(self, client, query_param):
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers, query_string=query_param)
         assert response.status_code == 400
 
-    def test_list(self, client, requested_tasks):
+    def test_list_requested_tasks(self, client, requested_tasks):
         headers = {"Content-Type": "application/json"}
         response = client.get(self.url, headers=headers)
         assert response.status_code == 200
@@ -135,10 +136,18 @@ class TestRequestedTaskList:
 
 class TestRequestedTaskGet:
     def test_not_found(self, client):
-        url = "/requested-tasks/task_id"
+        url = f"/requested-tasks/{uuid4()}"
         headers = {"Content-Type": "application/json"}
         response = client.get(url, headers=headers)
         assert response.status_code == 404
+
+    def test_not_uuid(self, client):
+        url = "/requested-tasks/imnotauuid"
+        headers = {"Content-Type": "application/json"}
+        response = client.get(url, headers=headers)
+        assert response.status_code == 400
+        response_json = response.get_json()
+        assert "error" in response_json
 
     def test_get(self, client, requested_task):
         url = "/requested-tasks/{}".format(requested_task["_id"])
@@ -149,6 +158,7 @@ class TestRequestedTaskGet:
         data = json.loads(response.data)
         assert data["_id"] == str(requested_task["_id"])
         assert data["status"] == requested_task["status"]
+        assert "schedule_name" in data
         assert data["schedule_name"] == requested_task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data
@@ -160,7 +170,7 @@ class TestRequestedTaskCreate:
         requested_task = make_requested_task()
         return requested_task
 
-    def test_create_from_schedule(self, database, client, access_token, schedule):
+    def test_create_from_schedule(self, client, access_token, schedule):
         url = "/requested-tasks/"
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         response = client.post(
@@ -169,9 +179,6 @@ class TestRequestedTaskCreate:
             data=json.dumps({"schedule_names": [schedule["name"]]}),
         )
         assert response.status_code == 201
-
-        data = json.loads(response.data)
-        database.requested_tasks.delete_one({"_id": ObjectId(data["requested"][0])})
 
     def test_create_with_wrong_schedule(self, client, access_token, schedule):
         url = "/requested-tasks/"

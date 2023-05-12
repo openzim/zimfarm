@@ -2,7 +2,6 @@ import json
 from uuid import uuid4
 
 import pytest
-from bson import ObjectId
 
 from utils.offliners import expanded_config
 
@@ -156,7 +155,7 @@ class TestSchedulePost:
         "document",
         [
             {
-                "name": "wikipedia_bm_test",
+                "name": "wikipedia_bm_create_test",
                 "category": "wikipedia",
                 "enabled": False,
                 "tags": ["full"],
@@ -178,7 +177,7 @@ class TestSchedulePost:
                 "notification": {},
             },
             {
-                "name": "gutenberg_mul",
+                "name": "gutenberg_mul_create_test",
                 "category": "gutenberg",
                 "enabled": True,
                 "tags": ["full", "mul"],
@@ -201,27 +200,33 @@ class TestSchedulePost:
             },
         ],
     )
-    def test_create_schedule(self, database, client, access_token, document):
+    def test_create_schedule_ok(
+        self, client, access_token, document, cleanup_create_test
+    ):
         url = "/schedules/"
         response = client.post(
             url, json=document, headers={"Authorization": access_token}
         )
-        print(response.get_json())
         assert response.status_code == 201
-        schedule_id = response.get_json()["_id"]
 
         url = "/schedules/{}".format(document["name"])
         response = client.get(url, headers={"Authorization": access_token})
+
         assert response.status_code == 200
 
         response_json = response.get_json()
         document["config"] = expanded_config(document["config"])
-        document["notification"] = {}
-        response_json.pop("duration", None)  # generated server-side
-        assert response_json == document
 
-        # remove from DB to prevent count mismatch on other tests
-        database.schedules.delete_one({"_id": ObjectId(schedule_id)})
+        # these properties are generated server side, we just check they are present
+        assert "duration" in response_json
+        assert "default" in response_json["duration"]
+        assert "workers" in response_json["duration"]
+        assert not response_json["duration"]["available"]
+        assert "most_recent_task" in response_json
+        response_json.pop("duration", None)
+        response_json.pop("most_recent_task", None)
+
+        assert response_json == document
 
     @pytest.mark.parametrize(
         "key", ["name", "category", "enabled", "tags", "language", "config"]
@@ -337,67 +342,65 @@ class TestScheduleGet:
         response = client.get(url)
         assert response.status_code == 200
 
-        del schedule["_id"]
         schedule["config"] = expanded_config(schedule["config"])
-        assert response.get_json() == schedule
+
+        response_json = response.get_json()
+        # these properties are generated server side, we just check they are present
+        assert "duration" in response_json
+        assert "default" in response_json["duration"]
+        assert "workers" in response_json["duration"]
+        assert not response_json["duration"]["available"]
+        assert "most_recent_task" in response_json
+        response_json.pop("duration", None)
+        response_json.pop("most_recent_task", None)
+
+        assert response_json == schedule
 
 
 class TestSchedulePatch:
-    def _patch_schedule_via_key_with(self, client, access_token, update, schedule, key):
+    @pytest.mark.parametrize("update", good_patch_updates)
+    def test_patch_schedule_via_name_with(self, client, access_token, update, schedule):
         if "name" in update.keys():
             update["name"] += str(uuid4())
 
-        url = "/schedules/{}".format(schedule[key])
+        url = "/schedules/{}".format(schedule["name"])
         response = client.patch(
             url, json=update, headers={"Authorization": access_token}
         )
         assert response.status_code == 204
 
-        if key == "name" and "name" in update.keys():
+        if "name" in update.keys():
             url = "/schedules/{}".format(update["name"])
         response = client.get(url, headers={"Authorization": access_token})
         assert response.status_code == 200
 
+        # let's reapply manually the changes that should have been done by the patch
+        # so that we can confirm it has been done
         document = response.get_json()
+        config_keys = [
+            "task_name",
+            "warehouse_path",
+            "image",
+            "resources",
+            "platform",
+            "flags",
+            "monitor",
+        ]
+        # these keys must not be applied since they are somewhere else is the document
+        for key in config_keys:
+            update.pop(key, None)
         document.update(update)
         assert response.get_json() == document
-
-    @pytest.mark.parametrize("update", good_patch_updates)
-    def test_patch_schedule_via_id_with(self, client, access_token, update, schedule):
-        self._patch_schedule_via_key_with(
-            client, access_token, update, schedule, "name"
-        )
-
-    @pytest.mark.parametrize("update", good_patch_updates)
-    def test_patch_schedule_via_name_with(self, client, access_token, update, schedule):
-        self._patch_schedule_via_key_with(
-            client, access_token, update, schedule, "name"
-        )
-
-    def _patch_schedule_via_id_with_errors(
-        self, client, access_token, update, schedule, key
-    ):
-        url = "/schedules/{}".format(schedule[key])
-        response = client.patch(
-            url, json=update, headers={"Authorization": access_token}
-        )
-        assert response.status_code == 400
-
-    @pytest.mark.parametrize("update", bad_patch_updates)
-    def test_patch_schedule_via_id_with_errors(
-        self, client, access_token, update, schedule
-    ):
-        self._patch_schedule_via_id_with_errors(
-            client, access_token, update, schedule, "name"
-        )
 
     @pytest.mark.parametrize("update", bad_patch_updates)
     def test_patch_schedule_via_name_with_errors(
         self, client, access_token, update, schedule
     ):
-        self._patch_schedule_via_id_with_errors(
-            client, access_token, update, schedule, "name"
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
         )
+        assert response.status_code == 400
 
     def test_patch_schedule_duplicate_name(self, client, access_token, schedules):
         update = {"name": "wikipedia_bm_all_nopic"}  # this one exists in fixtures

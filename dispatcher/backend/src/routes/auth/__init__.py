@@ -1,39 +1,24 @@
-import datetime
 from http import HTTPStatus
-from uuid import UUID, uuid4
 
 import flask
-from bson.binary import UUIDLegacy
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash
 
+import db.models as dbm
 from common import getnow
-from common.constants import REFRESH_TOKEN_EXPIRY
-from common.mongo import RefreshTokens, Users
+from db import dbsession
 from routes import API_PATH, authenticate
 from routes.auth import ssh, validate
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
+from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
 
-def create_refresh_token(username):
-    token = uuid4()
-    RefreshTokens().insert_one(
-        {
-            "token": token,
-            "username": username,
-            "expire_time": getnow() + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY),
-        }
-    )
-
-    # delete old refresh token from database
-    RefreshTokens().delete_many({"expire_time": {"$lte": getnow()}})
-
-    return token
-
-
-def credentials():
+@dbsession
+def credentials(session: so.Session):
     """
     Authorize a user with username and password
     When success, return json object with access and refresh token
@@ -46,26 +31,18 @@ def credentials():
     else:
         username = request.headers.get("username")
         password = request.headers.get("password")
-    if username is None or password is None:
-        raise BadRequest("missing username or password")
+    raise_if(username is None or password is None, BadRequest, "missing username")
 
-    # check user exists
-    user = Users().find_one(
-        {"username": username}, {"username": 1, "scope": 1, "password_hash": 1}
-    )
-    if user is None:
-        raise Unauthorized("this user does not exist")
+    orm_user = dbm.User.get(session, username, Unauthorized, "this user does not exist")
 
     # check password is valid
-    password_hash = user.pop("password_hash")
-    is_valid = check_password_hash(password_hash, password)
-    if not is_valid:
-        raise Unauthorized("password does not match")
+    is_valid = check_password_hash(orm_user.password_hash, password)
+    raise_if(not is_valid, Unauthorized, "password does not match")
 
     # generate token
-    access_token = AccessToken.encode(user)
+    access_token = AccessToken.encode_db(orm_user)
     access_expires = AccessToken.get_expiry(access_token)
-    refresh_token = create_refresh_token(user["username"])
+    refresh_token = OAuth2.generate_refresh_token(orm_user.id, session)
 
     # send response
     response_json = {
@@ -80,7 +57,8 @@ def credentials():
     return response
 
 
-def refresh_token():
+@dbsession
+def refresh_token(session: so.Session):
     """
     Issue a new set of access and refresh token after validating an old refresh token
     Old refresh token can only be used once and hence is removed from database
@@ -89,35 +67,33 @@ def refresh_token():
 
     # get old refresh token from request header
     old_token = request.headers.get("refresh-token")
-    if old_token is None:
-        raise BadRequest("missing refresh-token")
+    raise_if_none(old_token, BadRequest, "missing refresh-token")
 
     # check token exists in database and get expire time and user id
-    try:
-        old_token_document = RefreshTokens().find_one(
-            {"token": UUIDLegacy(UUID(old_token))}, {"expire_time": 1, "username": 1}
-        )
-        if old_token_document is None:
-            raise Unauthorized("refresh-token invalid")
-    except Exception:
-        raise Unauthorized("refresh-token invalid")
+    old_token_document = session.execute(
+        sa.select(dbm.Refreshtoken).where(dbm.Refreshtoken.token == old_token)
+    ).scalar_one_or_none()
+    raise_if_none(old_token_document, Unauthorized, "refresh-token invalid")
 
     # check token is not expired
-    if old_token_document["expire_time"] < getnow():
-        raise Unauthorized("token expired")
+    expire_time = old_token_document.expire_time
+    raise_if(expire_time < getnow(), Unauthorized, "token expired")
 
     # check user exists
-    user = Users().find_one(
-        {"username": old_token_document["username"]}, {"username": 1, "scope": 1}
-    )
-    if user is None:
-        raise Unauthorized("user not found")
+    orm_user = session.execute(
+        sa.select(dbm.User).where(dbm.User.id == old_token_document.user_id)
+    ).scalar_one_or_none()
+    dbm.User.check(orm_user, Unauthorized, "user not found")
 
     # generate token
-    access_token = AccessToken.encode(user)
-    refresh_token = create_refresh_token(user["username"])
+    access_token = AccessToken.encode_db(orm_user)
+    refresh_token = OAuth2.generate_refresh_token(orm_user.id, session)
+
     # delete old refresh token from database
-    RefreshTokens().delete_one({"token": UUID(old_token)})
+    session.delete(old_token_document)
+    session.execute(
+        sa.delete(dbm.Refreshtoken).where(dbm.Refreshtoken.expire_time < getnow())
+    )
 
     # send response
     response_json = {

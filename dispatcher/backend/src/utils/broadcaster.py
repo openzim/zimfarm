@@ -8,7 +8,7 @@ import os
 
 import zmq
 
-from utils.json import Encoder
+from utils.json import ZimfarmJsonEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,9 @@ class MessageBroadcaster:
             logger.debug(f"[DUMMY] {key} {payload}")
             return
         try:
-            self.socket.send_string(f"{key} {json.dumps(payload, cls=Encoder)}")
+            self.socket.send_string(
+                f"{key} {json.dumps(payload, cls=ZimfarmJsonEncoder)}"
+            )
         except Exception as exc:
             logger.error(f"unable to brodcast on `{key}` with payload={payload}")
             logger.exception(exc)

@@ -1,17 +1,21 @@
 import base64
 import binascii
-from datetime import datetime
 from http import HTTPStatus
 
 import paramiko
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 from flask import Response, request
 from marshmallow import Schema, ValidationError, fields, validate
 
-from common.mongo import Users
+import db.models as dbm
+import errors.http as http_errors
+from common import getnow
 from routes import errors
+from utils.check import raise_if_none
 
 
-def ssh_key():
+def ssh_key(session: so.Session):
     """
     Validate ssh public keys exists and matches with username
     """
@@ -24,7 +28,7 @@ def ssh_key():
     try:
         request_json = KeySchema().load(request.get_json())
     except ValidationError as e:
-        raise errors.InvalidRequestJSON(e.messages)
+        raise http_errors.InvalidRequestJSON(e.messages)
 
     # compute fingerprint
     try:
@@ -36,14 +40,13 @@ def ssh_key():
 
     # database
     username = request_json["username"]
-    user = Users().update_one(
-        {
-            "username": username,
-            "ssh_keys": {"$elemMatch": {"fingerprint": fingerprint}},
-        },
-        {"$set": {"ssh_keys.$.last_used": datetime.now()}},
-    )
-
-    if user.matched_count == 0:
-        raise errors.Unauthorized()
+    orm_ssh_key = session.execute(
+        sa.select(dbm.Sshkey)
+        .join(dbm.User)
+        .where(dbm.User.username == username)
+        .where(dbm.Sshkey.fingerprint == fingerprint)
+    ).scalar_one_or_none()
+    raise_if_none(orm_ssh_key, errors.Unauthorized)
+    dbm.User.check(orm_ssh_key.user, errors.Unauthorized)
+    orm_ssh_key.last_used = getnow()
     return Response(status=HTTPStatus.NO_CONTENT)

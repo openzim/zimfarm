@@ -21,7 +21,7 @@ def remove_secrets_from_response(response: dict):
             index = command.index(f'--{field}="{flags[field]}"')
             command[index] = f'--{field}="{SECRET_REPLACEMENT}"'
             flags[field] = SECRET_REPLACEMENT
-            if "container" in response:
+            if response.get("container"):
                 response["container"]["command"][
                     index
                 ] = f'--{field}="{SECRET_REPLACEMENT}"'

@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import json
 import logging
 import os
 
 import humanfriendly
 import requests
+import sqlalchemy.orm as so
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from marshmallow import ValidationError
 
+import db.models as dbm
 from common.constants import (
     PUBLIC_URL,
     SLACK_EMOJI,
@@ -21,9 +22,10 @@ from common.constants import (
 )
 from common.emailing import send_email_via_mailgun
 from common.enum import TaskStatus
-from common.mongo import RequestedTasks, Tasks
 from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
-from utils.json import Encoder
+from common.schemas.orms import TaskFullSchema
+from db import dbsession
+from errors.http import TaskNotFound
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -143,7 +145,8 @@ def handle_slack_notification(task, channels):
             logger.exception(exc)
 
 
-def handle_notification(task_id, event):
+@dbsession
+def handle_notification(task_id, event, session: so.Session):
     # alias for all complete status
     if event in TaskStatus.complete():
         event = "ended"
@@ -152,16 +155,14 @@ def handle_notification(task_id, event):
     if event not in GlobalNotifications.events:
         return
 
-    task = Tasks().find_one({"_id": task_id}) or RequestedTasks().find_one(
-        {"_id": task_id}
-    )
+    task = dbm.Task.get(session, task_id, TaskNotFound)
     if not task:
         return
 
     # serialize/unserialize task so we use a safe version from now-on
-    task = json.loads(json.dumps(task, cls=Encoder))
+    task_safe = TaskFullSchema().dump(task)
     global_notifs = GlobalNotifications.entries.get(event, {})
-    task_notifs = task.get("notification", {}).get(event, {})
+    task_notifs = task_safe.get("notification", {}).get(event, {})
 
     # exit early if we don't have notification requests for the event
     if not global_notifs and not task_notifs:
@@ -174,7 +175,7 @@ def handle_notification(task_id, event):
             "slack": handle_slack_notification,
         }.get(method)
         if func and recipients:
-            func(task, recipients)
+            func(task_safe, recipients)
 
 
 # fill-up GlobalNotifications from environ on module load
