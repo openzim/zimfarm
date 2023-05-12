@@ -266,10 +266,10 @@ def make_requested_task(make_event, make_schedule, garbage_collector):
         }
 
         with Session.begin() as session:
-            schedule = dbm.Schedule.get_or_none(session, schedule_name)
+            schedule = dbm.Schedule.get(session, schedule_name, do_checks=False)
             if schedule is None:
                 make_schedule(schedule_name)
-                schedule = dbm.Schedule.get_or_none(session, schedule_name)
+                schedule = dbm.Schedule.get(session, schedule_name)
             requested_task = dbm.RequestedTask(
                 mongo_val=None,
                 mongo_id=None,
@@ -335,7 +335,7 @@ def make_worker(user, garbage_collector):
         deleted: bool = False,
     ) -> dict:
         with Session.begin() as session:
-            user_id = dbm.User.get_id_or_none(session, username)
+            user = dbm.User.get(session, username, do_checks=False)
             worker = dbm.Worker(
                 mongo_val=None,
                 mongo_id=None,
@@ -350,7 +350,7 @@ def make_worker(user, garbage_collector):
                 last_ip=last_ip,
                 deleted=deleted,
             )
-            worker.user_id = user_id
+            worker.user_id = user.id
             session.add(worker)
             session.flush()
             garbage_collector.add_worker_id(worker.id)

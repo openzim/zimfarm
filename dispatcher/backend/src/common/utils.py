@@ -15,6 +15,7 @@ from common.constants import INFORM_CMS
 from common.enum import TaskStatus
 from common.external import advertise_book_to_cms
 from common.notifications import handle_notification
+from errors.http import TaskNotFound, WorkerNotFound
 from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ def save_event(
 ):
     """save event and its accompagning data to database"""
 
-    task = dbm.Task.get_or_none_by_id(session, task_id)
+    task = dbm.Task.get(session, task_id, TaskNotFound)
     schedule = task.schedule
 
     # neither file events nor scraper_running should update timestamp list (not unique)
@@ -92,7 +93,7 @@ def save_event(
             task.debug[debug_key] = kwargs[kwargs_key]
 
     if "worker" in kwargs:
-        task.worker = dbm.Worker.get_or_none(session, kwargs["worker"])
+        task.worker = dbm.Worker.get(session, kwargs["worker"], WorkerNotFound)
     if "canceled_by" in kwargs:
         task.canceled_by = kwargs["canceled_by"]
 
@@ -219,7 +220,7 @@ def task_canceled_event_handler(session: so.Session, task_id: UUID, payload: dic
     # if canceled event carries a `canceled_by` and we have none on the task
     # then store it, otherwise keep what's in the task (manual request)
     canceled_by = None
-    task = dbm.Task.get_or_none_by_id(session, task_id)
+    task = dbm.Task.get(session, task_id, TaskNotFound)
     if payload.get("canceled_by") and task and not task.canceled_by:
         canceled_by = payload.get("canceled_by")
 
@@ -337,7 +338,7 @@ def task_checked_file_event_handler(session: so.Session, task_id: UUID, payload:
     save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
 
     if INFORM_CMS:
-        task = dbm.Task.get_or_none_by_id(session, task_id)
+        task = dbm.Task.get(session, task_id, TaskNotFound)
         advertise_book_to_cms(task, file["name"])
 
 

@@ -18,7 +18,7 @@ from errors.http import InvalidRequestJSON, ResourceNotFound, ScheduleNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.utils import raise_if, raise_if_none, remove_secrets_from_response
+from routes.utils import remove_secrets_from_response
 from utils.offliners import expanded_config
 from utils.scheduling import get_default_duration
 from utils.token import AccessToken
@@ -174,8 +174,7 @@ class ScheduleRoute(BaseRoute):
     def get(self, schedule_name: str, token: AccessToken.Payload, session: so.Session):
         """Get schedule object."""
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         schedule.config = expanded_config(schedule.config)
 
@@ -194,17 +193,18 @@ class ScheduleRoute(BaseRoute):
     ):
         """Update all properties of a schedule but _id and most_recent_task"""
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         try:
             update = UpdateSchema().load(request.get_json())  # , partial=True
             # empty dict passes the validator but troubles mongo
-            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
+            dbm.raise_if(
+                not request.get_json(), ValidationError, "Update can't be empty"
+            )
 
             # ensure we test flags according to new task_name if present
             if "task_name" in update:
-                raise_if(
+                dbm.raise_if(
                     "flags" not in update,
                     ValidationError,
                     "Can't update offliner without updating flags",
@@ -257,8 +257,7 @@ class ScheduleRoute(BaseRoute):
     ):
         """Delete a schedule."""
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
         # First unset most_recent_task to avoid circular dependency issues
         schedule.most_recent_task = None
         session.delete(schedule)
@@ -299,7 +298,7 @@ class ScheduleImageNames(BaseRoute):
             logger.error(f"Unable to connect to GHCR Tags list: {exc}")
             return make_resp([])
 
-        raise_if(resp.status_code == HTTPStatus.NOT_FOUND, ResourceNotFound)
+        dbm.raise_if(resp.status_code == HTTPStatus.NOT_FOUND, ResourceNotFound)
 
         if resp.status_code != HTTPStatus.OK:
             logger.error(f"GHCR responded HTTP {resp.status_code} for {hub_name}")
@@ -327,8 +326,7 @@ class ScheduleCloneRoute(BaseRoute):
 
         request_json = CloneSchema().load(request.get_json())
 
-        schedule = dbm.Schedule.get_or_none(session, schedule_name)
-        raise_if_none(schedule, ScheduleNotFound)
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         clone = dbm.Schedule(
             mongo_id=None,

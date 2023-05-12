@@ -25,6 +25,7 @@ from common.enum import TaskStatus
 from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
 from common.schemas.orms import TaskFullSchema
 from db import dbsession
+from errors.http import TaskNotFound
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -154,7 +155,7 @@ def handle_notification(task_id, event, session: so.Session):
     if event not in GlobalNotifications.events:
         return
 
-    task = dbm.Task.get_or_none_by_id(session, task_id)
+    task = dbm.Task.get(session, task_id, TaskNotFound)
     if not task:
         return
 

@@ -23,7 +23,6 @@ from errors.http import InvalidRequestJSON
 from routes import authenticate, url_object_id
 from routes.base import BaseRoute
 from routes.errors import BadRequest, InternalError
-from routes.utils import raise_if, raise_if_none
 from utils.broadcaster import BROADCASTER
 
 logger = logging.getLogger(__name__)
@@ -113,19 +112,19 @@ class WorkerCheckinRoute(BaseRoute):
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        user = dbm.User.get_or_none(session, request_json["username"])
-        raise_if_none(user, BadRequest, "username not found")
-        raise_if(user.deleted, BadRequest, "username not found")
+        user = dbm.User.get(
+            session, request_json["username"], BadRequest, "username not found"
+        )
 
-        worker: dbm.Worker = dbm.Worker.get_or_none(session, name)
+        worker: dbm.Worker = dbm.Worker.get(session, name, do_checks=False)
         if worker:
-            raise_if(
+            dbm.raise_if(
                 worker.deleted,
                 BadRequest,
                 "worker has been marked as deleted",
             )
             # TODO: should we refuse to alter the worker user_id ?
-            # raise_if(
+            # dbm.raise_if(
             #     worker.user_id != user.id,
             #     BadRequest,
             #     "worker with same name already exists for another user",
@@ -164,11 +163,12 @@ class WorkerCheckinRoute(BaseRoute):
 
         session.execute(upsert_stmt)
 
-        worker: dbm.Worker = dbm.Worker.get_or_none(session, name)
-        raise_if_none(
-            worker,
+        worker: dbm.Worker = dbm.Worker.get(
+            session,
+            name,
             InternalError,
             "something bad happened, the worker has been set but can't be found",
+            do_checks=True,
         )
 
         document = {
