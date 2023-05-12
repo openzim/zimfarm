@@ -141,7 +141,7 @@ class User(Base):
         *exception_args: object,
         fetch_ssh_keys: bool = False,
         do_checks: bool = True,
-    ) -> "User":
+    ) -> Optional["User"]:
         """Search DB for a user by username
 
         If the check of the user is not ok, raises the exception passed in
@@ -254,7 +254,7 @@ class Worker(Base):
         exception_class: Type[Exception] = Exception,
         *exception_args: object,
         do_checks: bool = True,
-    ) -> "RequestedTask":
+    ) -> Optional["RequestedTask"]:
         """Search DB for a worker by name
 
         If the check of the worker are ok, raise thes exception passed
@@ -396,7 +396,7 @@ class Schedule(Base):
         exception_class: Type[Exception] = Exception,
         *exception_args: object,
         do_checks: bool = True,
-    ) -> "Task":
+    ) -> Optional["Schedule"]:
         """Search DB for a schedule by name
 
         If the check of the schedule is not ok, raise thes exception passed in
