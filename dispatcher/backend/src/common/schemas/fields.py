@@ -17,7 +17,7 @@ validate_priority = validate.Range(min=0, max=10)
 def validate_schedule_name(value) -> bool:
     if value == "none":
         raise ValidationError("`none` is a restricted keyword")
-    if value != value.strip():
+    if not value.strip() or value != value.strip():
         raise ValidationError(
             "Recipe name cannot contain leading and/or trailing space(s)"
         )
