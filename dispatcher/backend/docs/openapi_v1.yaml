@@ -295,7 +295,7 @@ paths:
       - public
       summary: dump schedules
       operationId: dumpSchedules
-      description: Dump all Schedules (without `most_recent_task`) in a single request
+      description: Dump all Schedules (without `most_recent_task`) in a single request. (Notfication is removed and Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without schedules.update permission)
       responses:
         200:
           description: Complete list of Schedules
@@ -311,7 +311,7 @@ paths:
       - public
       summary: list schedules
       operationId: getSchedule
-      description: Retrieve a Schedule's details (Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without schedules.update permission)
+      description: Retrieve a Schedule's details (Notfication is removed and Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without schedules.update permission)
       parameters:
         - $ref: '#/components/parameters/ScheduleNameParameter'
       responses:

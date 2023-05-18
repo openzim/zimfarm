@@ -151,14 +151,25 @@ class SchedulesBackupRoute(BaseRoute):
     name = "schedules_backup"
     methods = ["GET"]
 
+    @auth_info_if_supplied
     @dbsession
-    def get(self, session: so.Session):
+    def get(self, token: AccessToken.Payload, session: so.Session):
         """Return all schedules backup"""
+
+        def dump(schedule):
+            payload = ScheduleFullSchema().dump
+            if not token or not token.get_permission("schedules", "update"):
+                payload["notification"] = None
+
+            if not token or not token.get_permission("schedules", "update"):
+                remove_secrets_from_response(schedule)
+            return schedule
+
         stmt = sa.select(dbm.Schedule).order_by(dbm.Schedule.name)
         return jsonify(
             list(
                 map(
-                    ScheduleFullSchema().dump,
+                    dump,
                     session.execute(stmt).scalars(),
                 )
             )
@@ -180,6 +191,9 @@ class ScheduleRoute(BaseRoute):
         schedule.config = expanded_config(schedule.config)
 
         schedule = ScheduleFullSchema().dump(schedule)
+
+        if not token or not token.get_permission("schedules", "update"):
+            schedule["notification"] = None
 
         if not token or not token.get_permission("schedules", "update"):
             remove_secrets_from_response(schedule)
