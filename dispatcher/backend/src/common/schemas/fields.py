@@ -1,4 +1,4 @@
-from marshmallow import fields, validate, ValidationError
+from marshmallow import ValidationError, fields, validate
 
 from common.enum import (
     Offliner,
