@@ -255,7 +255,9 @@ class Task(Base):
     files: Mapped[Dict[str, Any]]
     upload: Mapped[Dict[str, Any]]
 
-    schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
+    schedule_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("schedule.id"), init=False
+    )
 
     schedule: Mapped["Schedule"] = relationship(
         back_populates="tasks", init=False, foreign_keys=[schedule_id]
@@ -317,7 +319,7 @@ class Schedule(Base):
 
     tasks: Mapped[List["Task"]] = relationship(
         back_populates="schedule",
-        cascade="all",
+        cascade="save-update, merge, refresh-expire",
         init=False,
         foreign_keys=[Task.schedule_id],
     )
