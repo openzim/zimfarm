@@ -293,7 +293,7 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker) -> List[Dict[str
         return {
             "_id": task.id,
             "status": task.status,
-            "schedule_name": task.schedule.name,
+            "schedule_name": getattr(task.schedule, "name", "none"),
             "config": {
                 "task_name": task.config.get("task_name"),
                 "platform": task.config.get("platform"),
@@ -353,7 +353,7 @@ def get_currently_running_tasks(
                 "resources": task.config.get("resources", {}),
                 "platform": task.config.get("platform", None),
             },
-            "schedule_name": task.schedule.name,
+            "schedule_name": getattr(task.schedule, "name", "none"),
             "timestamp": task.timestamp,
             "worker": task.worker.name,
         }
@@ -375,9 +375,15 @@ def get_possible_task_with(tasks_worker_could_do, available_resources, available
     for temp_candidate in tasks_worker_could_do:
         if can_run(temp_candidate, available_resources):
             if temp_candidate["duration"]["value"] <= available_time:
-                logger.debug(f"{temp_candidate['schedule_name']} it is!")
+                logger.debug(
+                    f"{temp_candidate['_id']}"
+                    f"@{temp_candidate['schedule_name']} it is!"
+                )
                 return temp_candidate
-            logger.debug(f"{temp_candidate['schedule_name']} would take too long")
+            logger.debug(
+                f"{temp_candidate['_id']}"
+                f"@{temp_candidate['schedule_name']} would take too long"
+            )
 
 
 def does_platform_allow_worker_to_run(

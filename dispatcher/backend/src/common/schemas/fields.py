@@ -1,4 +1,4 @@
-from marshmallow import fields, validate
+from marshmallow import fields, validate, ValidationError
 
 from common.enum import (
     Offliner,
@@ -12,10 +12,18 @@ from common.roles import ROLES
 
 # validators
 validate_priority = validate.Range(min=0, max=10)
-validate_schedule_name = validate.Regexp(
-    regex=r"^(?! ).+(?<! )$",
-    error="Recipe name cannot contain leading and/or trailing space(s)",
-)
+
+
+def validate_schedule_name(value) -> bool:
+    if value == "none":
+        raise ValidationError("`none` is a restricted keyword")
+    if value != value.strip():
+        raise ValidationError(
+            "Recipe name cannot contain leading and/or trailing space(s)"
+        )
+    return True
+
+
 validate_not_empty = validate.Length(min=1)
 validate_role = validate.OneOf(ROLES.keys())
 validate_cpu = validate.Range(min=0)

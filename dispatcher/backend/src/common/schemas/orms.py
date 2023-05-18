@@ -105,7 +105,7 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
             return None
 
     def get_schedule_name(task: dbm.Task) -> str:
-        return getattr(task.schedule, "name", None)
+        return getattr(task.schedule, "name", "none")
 
     config = mf.Dict()  # override base
     events = mf.List(mf.Dict)
