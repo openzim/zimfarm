@@ -686,10 +686,6 @@ class TaskMigrator(Migrator):
             )
         except KeyNotFoundException:
             schedule_id = None
-        if schedule_id is None:
-            # do not migrate tasks which are associated with a schedule which does not
-            # exists anymore
-            return
         try:
             worker_id = self._cache.get_pg_worker_id_by_workername(
                 session=session,
