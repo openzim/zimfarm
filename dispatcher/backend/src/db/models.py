@@ -325,7 +325,9 @@ class Schedule(Base):
     )
 
     requested_tasks: Mapped[List["RequestedTask"]] = relationship(
-        back_populates="schedule", cascade="all", init=False
+        back_populates="schedule",
+        cascade="save-update, merge, refresh-expire",
+        init=False,
     )
 
     durations: Mapped[List["ScheduleDuration"]] = relationship(
@@ -401,7 +403,9 @@ class RequestedTask(Base):
     upload: Mapped[Dict[str, Any]]
     notification: Mapped[Dict[str, Any]]
 
-    schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
+    schedule_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("schedule.id"), init=False
+    )
 
     schedule: Mapped["Schedule"] = relationship(
         back_populates="requested_tasks", init=False
