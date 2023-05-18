@@ -90,7 +90,8 @@ You can login with username `admin` and password  `admin`.
 Do not forget to set/update the test DB schema
 
 ```sh
-docker exec -it zf_postgresdb psql -U zimfarm -c "\set autocommit off; DROP DATABASE IF EXISTS zimtest; CREATE DATABASE zimtest;"
+docker exec -it zf_postgresdb dropdb -e -U zimfarm zimtest
+docker exec -it zf_postgresdb psql -e -U zimfarm -c "CREATE DATABASE zimtest;"
 docker exec -it -e "POSTGRES_URI=postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest" \
   zf_backend-tools /bin/sh -c "alembic upgrade head && alembic check"
 ```
