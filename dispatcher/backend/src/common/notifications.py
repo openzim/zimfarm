@@ -25,7 +25,6 @@ from common.emailing import send_email_via_mailgun
 from common.enum import TaskStatus
 from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
 from common.schemas.orms import TaskFullSchema
-from db import dbsession
 from errors.http import TaskNotFound
 
 logger = logging.getLogger(__name__)
