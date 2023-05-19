@@ -150,7 +150,6 @@ def handle_slack_notification(task, channels):
             logger.exception(exc)
 
 
-@dbsession
 def handle_notification(task_id, event, session: so.Session):
     # alias for all complete status
     if event in TaskStatus.complete():

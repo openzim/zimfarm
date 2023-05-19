@@ -47,8 +47,11 @@ def task_event_handler(session: so.Session, task_id: UUID, event: str, payload: 
     else:
         ret = func(session, task_id, payload)
 
+    # we need event to be saved in DB before running notifications
+    session.flush()
+
     # fire notifications after event has been handled
-    handle_notification(task_id, event)
+    handle_notification(task_id, event, session)
 
     return ret
 
