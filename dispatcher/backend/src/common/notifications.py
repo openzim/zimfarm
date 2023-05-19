@@ -8,6 +8,7 @@ import os
 import humanfriendly
 import requests
 import sqlalchemy.orm as so
+from flask.json import dumps
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from marshmallow import ValidationError
 
@@ -91,7 +92,11 @@ def handle_mailgun_notification(task, recipients):
 def handle_webhook_notification(task, urls):
     for url in urls:
         try:
-            resp = requests.post(url, json=task)
+            resp = requests.post(
+                url,
+                data=dumps(task).encode("UTF-8"),
+                headers={"Content-Type": "application/json"},
+            )
             resp.raise_for_status()
         except Exception as exc:
             logger.error(f"Webhook failed with: {exc}")
