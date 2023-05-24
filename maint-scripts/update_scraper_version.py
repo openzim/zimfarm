@@ -1,42 +1,46 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# vim: ai ts=4 sts=4 et sw=4 nu
 
-""" update scrapver version for all recipes and unstarted tasks
+""" update scraper version for all recipes and unstarted tasks
 
-    ./update_scraper_version.py mwoffliner 1.2.4
-"""
+    ./update_scraper_version.py mwoffliner 1.2.4"""
 
-import os
 import sys
 
-from pymongo import MongoClient
+import sqlalchemy as sa
+import sqlalchemy.orm as so
+from sqlalchemy.orm.attributes import flag_modified
+
+import db.models as dbm
+from db import dbsession
 
 
-def update_scraper_tag(scraper: str, tag: str):
-    print(f"setting {scraper} tag: {tag}")
-    schedules = client["Zimfarm"]["schedules"]
-    requested_tasks = client["Zimfarm"]["requested_tasks"]
+@dbsession
+def update_scraper_tag(session: so.Session, scraper: str, tag: str):
+    print(f"setting {scraper} {tag=}")
 
-    update = {"config.image.tag": tag}
+    nums = {}
+    for model in (dbm.Schedule, dbm.RequestedTask):
+        nums[model.__name__] = 0
 
-    result = schedules.update_many({"config.task_name": scraper}, {"$set": update})
-    print("schedules updated:", result.matched_count)
-    result = requested_tasks.update_many(
-        {"status": "requested", "config.task_name": scraper},
-        {"$set": update},
-    )
-    print("requested_tasks updated:", result.matched_count)
+        for entry in session.execute(
+            sa.select(model).filter(model.config["task_name"].astext == scraper)
+        ).scalars():
+            # print(entry.config["task_name"], entry.config["image"])
+            entry.config["image"]["tag"] = tag
+            flag_modified(entry, "config")
+            nums[model.__name__] += 1
+
+    print("modified " + ", ".join({f"{num} {name}(s)" for name, num in nums.items()}))
+
+    return
 
 
 if __name__ == "__main__":
     try:
-        scraper = sys.argv[1]
-        tag = sys.argv[2]
-    except IndexError:
-        print("You need to pass a scraper name and version tag")
+        scraper, tag = sys.argv[1:]
+    except (IndexError, ValueError):
+        print(f"Usage: {sys.argv[0]} SCRAPER_NAME VERSION_TAG")
         sys.exit(1)
 
-    with MongoClient(os.getenv("ZF_MONGO_URI")) as client:
-        update_scraper_tag(scraper=scraper, tag=tag)
+    update_scraper_tag(scraper=scraper, tag=tag)
     print("FINISH!")
