@@ -79,6 +79,12 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Semi-colon separated list of ZIM tags",
         }
     )
+    customZimLanguage = fields.String(
+        metadata={
+            "label": "ZIM Language metadata",
+            "description": "Custom ISO-639-3 language code for the ZIM",
+        }
+    )
     publisher = fields.String(
         metadata={
             "label": "Publisher",
