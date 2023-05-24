@@ -16,15 +16,19 @@ def remove_secrets_from_response(response: dict):
 
     for field in fields:
         flags = response["config"]["flags"]
-        command = response["config"]["command"]
+        command = response["config"].get("command", [])
         if field in flags:
-            index = command.index(f'--{field}="{flags[field]}"')
-            command[index] = f'--{field}="{SECRET_REPLACEMENT}"'
             flags[field] = SECRET_REPLACEMENT
+            try:
+                index = command.index(f'--{field}="{flags[field]}"')
+                command[index] = f'--{field}="{SECRET_REPLACEMENT}"'
+            except ValueError:
+                continue
             if response.get("container"):
                 response["container"]["command"][
                     index
                 ] = f'--{field}="{SECRET_REPLACEMENT}"'
-        response["config"]["str_command"] = build_str_command(
-            response["config"]["command"]
-        )
+        if command:
+            response["config"]["str_command"] = build_str_command(
+                response["config"]["command"]
+            )
