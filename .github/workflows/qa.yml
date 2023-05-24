@@ -42,7 +42,7 @@ jobs:
         run: |
           isort --profile black --check --src dispatcher/backend/src/ dispatcher/backend/
           isort --profile black --check dispatcher/relay/
-          isort --profile black --check maint-scripts
+          isort --profile black --check --src dispatcher/backend/src/ maint-scripts
           isort --profile black --check receiver/apps
           isort --profile black --check uploader
           isort --profile black --check watcher
