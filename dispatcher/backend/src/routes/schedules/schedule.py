@@ -162,8 +162,8 @@ class SchedulesBackupRoute(BaseRoute):
                 payload["notification"] = None
 
             if not token or not token.get_permission("schedules", "update"):
-                remove_secrets_from_response(schedule)
-            return schedule
+                remove_secrets_from_response(payload)
+            return payload
 
         stmt = sa.select(dbm.Schedule).order_by(dbm.Schedule.name)
         return jsonify(
