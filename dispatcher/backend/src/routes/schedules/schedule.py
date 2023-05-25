@@ -157,7 +157,7 @@ class SchedulesBackupRoute(BaseRoute):
         """Return all schedules backup"""
 
         def dump(schedule):
-            payload = ScheduleFullSchema().dump(schedule)
+            payload = ScheduleFullSchema(exclude=("most_recent_task",)).dump(schedule)
             if not token or not token.get_permission("schedules", "update"):
                 payload["notification"] = None
 

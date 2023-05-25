@@ -431,3 +431,16 @@ class TestScheduleDelete:
         response = client.delete(url)
         assert response.status_code == 401
         assert response.get_json() == {"error": "token invalid"}
+
+
+class TestScheduleBackup:
+    def test_schedule_backup(self, client, access_token, schedules):
+        """Test get a backup of all schedules"""
+        response = client.get(
+            "/schedules/backup/", headers={"Authorization": access_token}
+        )
+        assert response.status_code == 200
+        schedules_retrieved = response.get_json()
+        assert type(schedules_retrieved) is list
+        for schedule_retrieved in schedules_retrieved:
+            assert "most_recent_task" not in schedule_retrieved
