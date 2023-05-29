@@ -86,6 +86,13 @@ class TaskFullSchema(TaskLightSchema):
     upload = mf.Dict()
 
 
+class ScheduleAwareTaskFullSchema(TaskFullSchema):
+    def get_schedule_name(task: dbm.Task) -> str:
+        return getattr(task.schedule, "name", "none")
+
+    schedule_name = mf.Function(serialize=get_schedule_name)  # override base
+
+
 class RequestedTaskLightSchema(m.Schema):
     id = mf.String(data_key="_id")
     status = mf.String()

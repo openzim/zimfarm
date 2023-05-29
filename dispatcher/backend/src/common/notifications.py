@@ -24,7 +24,7 @@ from common.constants import (
 from common.emailing import send_email_via_mailgun
 from common.enum import TaskStatus
 from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
-from common.schemas.orms import TaskFullSchema
+from common.schemas.orms import ScheduleAwareTaskFullSchema
 from errors.http import TaskNotFound
 
 logger = logging.getLogger(__name__)
@@ -163,7 +163,7 @@ def handle_notification(task_id, event, session: so.Session):
         return
 
     # serialize/unserialize task so we use a safe version from now-on
-    task_safe = TaskFullSchema().dump(task)
+    task_safe = ScheduleAwareTaskFullSchema().dump(task)
     global_notifs = GlobalNotifications.entries.get(event, {})
     task_notifs = (task_safe.get("notification") or {}).get(event, {})
 
