@@ -17,6 +17,7 @@ services:
     command: python main.py
     volumes:
       - ../dispatcher/backend/src:/app
+      - ../dispatcher/backend/prestart.sh:/app/prestart.sh
       - ../dispatcher/backend/docs:/app/docs
     ports:
       - 8000:8000
@@ -25,6 +26,7 @@ services:
       DEBUG: 1
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+      ALEMBIC_UPGRADE_HEAD_ON_START: "1"
     depends_on:
       - postgresdb
   frontend-ui:
