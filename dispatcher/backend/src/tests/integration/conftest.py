@@ -5,7 +5,6 @@ import sqlalchemy as sa
 from flask.testing import FlaskClient
 
 import db.models as dbm
-from common import mongo
 from common.roles import ROLES
 from db import Session
 from main import application as app
@@ -80,11 +79,6 @@ def make_access_token():
 @pytest.fixture(scope="session")
 def access_token(make_access_token):
     yield make_access_token("username", "admin")
-
-
-@pytest.fixture(scope="session")
-def database() -> mongo.Database:
-    yield mongo.Database()
 
 
 class GarbageCollector:

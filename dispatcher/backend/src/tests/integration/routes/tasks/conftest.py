@@ -60,8 +60,6 @@ def make_task(make_event, make_schedule, make_config, worker, garbage_collector)
                 make_schedule(schedule_name)
                 schedule = dbm.Schedule.get(session, schedule_name)
             task = dbm.Task(
-                mongo_val=None,
-                mongo_id=None,
                 updated_at=now,
                 events=events,
                 debug=debug,

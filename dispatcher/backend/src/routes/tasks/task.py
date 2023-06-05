@@ -157,8 +157,6 @@ class TaskRoute(BaseRoute):
         worker_name = request_args["worker_name"]
         worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
         task = dbm.Task(
-            mongo_val=None,
-            mongo_id=None,
             updated_at=requested_task.updated_at,
             events=requested_task.events,
             debug={},
@@ -218,7 +216,6 @@ class TaskRoute(BaseRoute):
 
         try:
             request_json = TasKUpdateSchema().load(request.get_json())
-            # empty dict passes the validator but troubles mongo
             raise_if(not request.get_json(), ValidationError, "Update can't be empty")
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)

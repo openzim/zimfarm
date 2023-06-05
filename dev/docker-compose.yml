@@ -11,21 +11,6 @@ services:
       - POSTGRES_DB=zimfarm
       - POSTGRES_USER=zimfarm
       - POSTGRES_PASSWORD=zimpass
-  mongodb:
-    image: mongo:4.2.24-bionic
-    container_name: zf_mongodb
-    ports:
-      - 27017:27017
-  mongo-express:
-    image: mongo-express
-    container_name: zf_mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
-    depends_on:
-      - mongodb
   backend:
     build: ../dispatcher/backend
     container_name: zf_backend
@@ -39,11 +24,9 @@ services:
       BINDING_HOST: 0.0.0.0
       DEBUG: 1
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-      MONGODB_URI: mongodb://mongodb:27017
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
     depends_on:
       - postgresdb
-      - mongodb
   frontend-ui:
     build: ../dispatcher/frontend-ui
     container_name: zf_frontend-ui
@@ -64,11 +47,9 @@ services:
     volumes:
       - ../dispatcher/backend/src:/app
     environment:
-      MONGODB_URI: mongodb://mongodb:27017
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
     depends_on:
       - postgresdb
-      - mongodb
   backend-tests:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
@@ -78,11 +59,9 @@ services:
     volumes:
       - ../dispatcher/backend/src:/app
     environment:
-      MONGODB_URI: mongodb://mongodb:27017/TestsZF
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
     depends_on:
       - postgresdb
-      - mongodb
 
 volumes:
   pg_data_zimfarm:

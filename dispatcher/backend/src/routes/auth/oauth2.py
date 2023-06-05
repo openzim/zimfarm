@@ -146,8 +146,6 @@ class OAuth2:
 
         # TODO: fetch "now" from database
         refresh_token_db = dbm.Refreshtoken(
-            mongo_val=None,
-            mongo_id=None,
             token=refresh_token,
             expire_time=getnow() + timedelta(days=30),
         )

@@ -7,7 +7,6 @@ from alembic.runtime import migration
 from werkzeug.security import generate_password_hash
 
 import db.models as dbm
-from common import mongo
 from common.roles import ROLES
 from db import dbsession
 
@@ -15,14 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class Initializer:
-    @staticmethod
-    def initialize():
-        print("Running pre-start initialization...")
-        mongo.Users().initialize()
-        mongo.Schedules().initialize()
-        mongo.Tasks().initialize()
-        mongo.RequestedTasks().initialize()
-
     @staticmethod
     @dbsession
     def check_if_schema_is_up_to_date(session: so.Session):
@@ -50,8 +41,6 @@ class Initializer:
         if count == 0:
             print(f"creating initial user `{username}`")
             orm_user = dbm.User(
-                mongo_val=None,
-                mongo_id=None,
                 username=username,
                 email=None,
                 password_hash=generate_password_hash(password),

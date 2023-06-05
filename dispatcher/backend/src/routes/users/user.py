@@ -58,8 +58,6 @@ class UsersRoute(BaseRoute):
             raise http_errors.InvalidRequestJSON(e.messages)
 
         orm_user = dbm.User(
-            mongo_val=None,
-            mongo_id=None,
             username=request_json["username"],
             email=request_json["email"],
             password_hash=generate_password_hash(request_json["password"]),

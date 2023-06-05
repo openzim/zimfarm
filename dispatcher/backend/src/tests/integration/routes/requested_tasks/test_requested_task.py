@@ -40,7 +40,7 @@ class TestRequestedTaskList:
         assert data["meta"]["skip"] == 0
 
         items = data["items"]
-        # items ordering is done by mongo and not important to us
+        # items ordering is done by DB and not important to us
         # but we need to match our requests with result to test resulting data
         sorted_requested_tasks = list(
             map(

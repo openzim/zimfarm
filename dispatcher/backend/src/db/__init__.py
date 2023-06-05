@@ -9,6 +9,9 @@ if not os.getenv("POSTGRES_URI"):
     raise EnvironmentError("Please set the POSTGRES_URI environment variable")
 
 
+# custom overload of bson deserializer to make naive datetime
+# this is needed to have objects from the DB with naive datetime properties
+# (otherwise the deserialization produces aware datetimes based on local TZ)
 def my_loads(s, *args, **kwargs):
     return loads(
         s,
@@ -27,8 +30,8 @@ else:
         bind=create_engine(
             os.getenv("POSTGRES_URI"),
             echo=False,
-            json_serializer=dumps,  # use bson serializer to handle ObjectId + datetime
-            json_deserializer=my_loads,  # use bson deserializer for same reason
+            json_serializer=dumps,  # use bson serializer to handle datetime naively
+            json_deserializer=my_loads,  # use custom bson deserializer for same reason
         )
     )
 

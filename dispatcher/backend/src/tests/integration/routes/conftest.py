@@ -54,8 +54,6 @@ def make_schedule(make_language, make_config, garbage_collector):
         if not language:
             language = make_language()
         schedule = dbm.Schedule(
-            mongo_val=None,
-            mongo_id=None,
             name=name,
             category=category,
             enabled=True,
@@ -173,8 +171,6 @@ def make_user(garbage_collector, key):
         username: str = "some-user", role: str = None, deleted: bool = False
     ) -> dict:
         user = dbm.User(
-            mongo_val=None,
-            mongo_id=None,
             username=username,
             password_hash=generate_password_hash("some-password"),
             scope=None,
@@ -183,7 +179,6 @@ def make_user(garbage_collector, key):
         )
         user.ssh_keys.append(
             dbm.Sshkey(
-                mongo_val=None,
                 name=key["name"],
                 fingerprint=key["fingerprint"],
                 key=key["key"],
@@ -271,8 +266,6 @@ def make_requested_task(make_event, make_schedule, garbage_collector):
                 make_schedule(schedule_name)
                 schedule = dbm.Schedule.get(session, schedule_name)
             requested_task = dbm.RequestedTask(
-                mongo_val=None,
-                mongo_id=None,
                 status=status,
                 timestamp=timestamp,
                 updated_at=now,
@@ -337,8 +330,6 @@ def make_worker(user, garbage_collector):
         with Session.begin() as session:
             user = dbm.User.get(session, username, run_checks=False)
             worker = dbm.Worker(
-                mongo_val=None,
-                mongo_id=None,
                 name=name,
                 selfish=False,
                 cpu=3,

@@ -13,7 +13,6 @@ COPY docs /app/docs
 WORKDIR /app/
 
 ENV DOCS_DIR /app/docs
-ENV MONGODB_URI mongodb://localhost
 ENV SOCKET_URI tcp://localhost:5000
 ENV INIT_PASSWORD admin
 

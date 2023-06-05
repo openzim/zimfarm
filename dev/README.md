@@ -25,10 +25,6 @@ tests locally.
 
 This container is a PostgreSQL DB. DB data is kept in a volume, persistent across containers restarts.
 
-### mongodb
-
-This container is a Mongo DB.
-
 ### frontend-ui
 
 This container hosts the frontend UI for end-users.
