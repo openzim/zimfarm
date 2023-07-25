@@ -6,6 +6,6 @@ Most expects an environment variable with the URL/credentials to the DB and [`py
 
 ```sh
 pip install -r requirements.txt
-export ZF_MONGO_URI="mongodb://login:password@somehost:21017/Zimfarm"
-./update_scraper_version.py sotoki dev
+ export POSTGRES_URI="postgresql+psycopg://login:password@somehost:5432/zimfarm"
+PYTHONPATH=../dispatcher/backend/src/ ./update_scraper_version.py sotoki dev
 ```
