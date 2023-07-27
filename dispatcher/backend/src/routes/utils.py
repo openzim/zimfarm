@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 def remove_secrets_from_response(response: dict):
     """replaces or removes (in-place) all occurences of secrets"""
-    remove_upload_secrets_from_flags_and_commands(response)
-    remove_upload_secrets_from_response(response)
+    remove_secret_flags(response)
+    remove_upload_secrets(response)
 
 
-def remove_upload_secrets_from_flags_and_commands(response: dict):
-    """replaces (in-place) all occurences of secrets in flags/commands with stars"""
+def remove_secret_flags(response: dict):
+    """replaces (in-place) all occurences of secret flags with stars"""
 
     # we need flags to retrieve the secret value and replace it where we find it
     # in commands
@@ -38,24 +38,18 @@ def remove_upload_secrets_from_flags_and_commands(response: dict):
 
         flags[field] = SECRET_REPLACEMENT
 
-        secret_command_value = f'--{field}="{secret_flag_value}"'
+        for separator in ["", "'", '"']:
+            secret_command_value = (
+                f"--{field}={separator}{secret_flag_value}{separator}"
+            )
+            remove_secret_flag_from_command(
+                response, "config", field, secret_command_value
+            )
 
-        if (
-            "command" in response["config"]
-            and secret_command_value in response["config"]["command"]
-        ):
-            index = response["config"]["command"].index(secret_command_value)
-            response["config"]["command"][index] = f'--{field}="{SECRET_REPLACEMENT}"'
-
-        if (
-            "container" in response
-            and "command" in response["container"]
-            and secret_command_value in response["container"]["command"]
-        ):
-            index = response["container"]["command"].index(secret_command_value)
-            response["container"]["command"][
-                index
-            ] = f'--{field}="{SECRET_REPLACEMENT}"'
+            if "container" in response:
+                remove_secret_flag_from_command(
+                    response, "container", field, secret_command_value
+                )
 
     # rebuild str_command from command
     if "str_command" in response["config"]:
@@ -64,7 +58,20 @@ def remove_upload_secrets_from_flags_and_commands(response: dict):
         )
 
 
-def remove_upload_secrets_from_response(response: dict):
+def remove_secret_flag_from_command(
+    response: dict, root_key_value: str, field_name: str, secret_value: str
+):
+    if "command" not in response[root_key_value]:
+        return
+    if secret_value not in response[root_key_value]["command"]:
+        return
+    index = response[root_key_value]["command"].index(secret_value)
+    response[root_key_value]["command"][
+        index
+    ] = f'--{field_name}="{SECRET_REPLACEMENT}"'
+
+
+def remove_upload_secrets(response: dict):
     """remove keyId and secretAccessKey upload_uri, since we upload logs to
     S3 but still need the rest of the URL to download scraper logs"""
     if (

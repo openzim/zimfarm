@@ -1,5 +1,4 @@
 import pytest
-
 from routes.utils import remove_secrets_from_response
 
 
@@ -7,7 +6,7 @@ from routes.utils import remove_secrets_from_response
     "response",
     [
         {
-            "name": "normal_schedule",
+            "name": "normal_schedule_with_double_quotes",
             "config": {
                 "task_name": "kolibri",
                 "flags": {
@@ -18,6 +17,36 @@ from routes.utils import remove_secrets_from_response
                     "kolibri2zim",
                     '--name="khanacademy_en_all"',
                     '--optimization-cache="this_is_super_secret"',
+                ],
+            },
+        },
+        {
+            "name": "normal_schedule_with_single_quotes",
+            "config": {
+                "task_name": "kolibri",
+                "flags": {
+                    "name": "khanacademy_en_all",
+                    "optimization-cache": "this_is_super_secret",
+                },
+                "command": [
+                    "kolibri2zim",
+                    '--name="khanacademy_en_all"',
+                    "--optimization-cache='this_is_super_secret'",
+                ],
+            },
+        },
+        {
+            "name": "normal_schedule_no_quotes",
+            "config": {
+                "task_name": "kolibri",
+                "flags": {
+                    "name": "khanacademy_en_all",
+                    "optimization-cache": "this_is_super_secret",
+                },
+                "command": [
+                    "kolibri2zim",
+                    '--name="khanacademy_en_all"',
+                    "--optimization-cache=this_is_super_secret",
                 ],
             },
         },
@@ -71,6 +100,57 @@ from routes.utils import remove_secrets_from_response
                     "kolibri2zim",
                     '--name="khanacademy_en_all"',
                     '--optimization-cache="this_is_super_secret"',
+                ],
+            },
+        },
+        {
+            "name": "task_with_container_double_quotes",
+            "config": {
+                "task_name": "kolibri",
+                "flags": {
+                    "name": "khanacademy_en_all",
+                    "optimization-cache": "this_is_super_secret",
+                },
+            },
+            "container": {
+                "command": [
+                    "kolibri2zim",
+                    '--name="khanacademy_en_all"',
+                    '--optimization-cache="this_is_super_secret"',
+                ],
+            },
+        },
+        {
+            "name": "task_with_container_single_quotes",
+            "config": {
+                "task_name": "kolibri",
+                "flags": {
+                    "name": "khanacademy_en_all",
+                    "optimization-cache": "this_is_super_secret",
+                },
+            },
+            "container": {
+                "command": [
+                    "kolibri2zim",
+                    '--name="khanacademy_en_all"',
+                    "--optimization-cache='this_is_super_secret'",
+                ],
+            },
+        },
+        {
+            "name": "task_with_container_no_quotes",
+            "config": {
+                "task_name": "kolibri",
+                "flags": {
+                    "name": "khanacademy_en_all",
+                    "optimization-cache": "this_is_super_secret",
+                },
+            },
+            "container": {
+                "command": [
+                    "kolibri2zim",
+                    '--name="khanacademy_en_all"',
+                    "--optimization-cache=this_is_super_secret",
                 ],
             },
         },
