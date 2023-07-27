@@ -1,4 +1,5 @@
 import pytest
+
 from routes.utils import remove_secrets_from_response
 
 
