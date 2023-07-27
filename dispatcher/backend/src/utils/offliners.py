@@ -12,6 +12,7 @@ from common.enum import Offliner
 
 od = collections.namedtuple("OfflinerDef", ["cmd", "std_output", "std_stats"])
 OFFLINER_DEFS = {
+    Offliner.freecodecamp: od("fcc2zim", "output-dir", False),
     Offliner.gutenberg: od("gutenberg2zim", False, False),
     Offliner.sotoki: od("sotoki", True, True),
     Offliner.wikihow: od("wikihow2zim", True, True),

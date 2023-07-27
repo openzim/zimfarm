@@ -1,4 +1,5 @@
 from common.schemas import SerializableSchema
+from common.schemas.offliners.freecodecamp import FreeCodeCampFlagsSchema
 from common.schemas.offliners.gutenberg import GutenbergFlagsSchema
 from common.schemas.offliners.ifixit import IFixitFlagsSchema
 from common.schemas.offliners.kolibri import KolibriFlagsSchema
@@ -12,6 +13,7 @@ from common.schemas.offliners.youtube import YoutubeFlagsSchema
 from common.schemas.offliners.zimit import ZimitFlagsSchema
 
 __all__ = (
+    "FreeCodeCampFlagsSchema",
     "GutenbergFlagsSchema",
     "IFixitFlagsSchema",
     "KolibriFlagsSchema",
