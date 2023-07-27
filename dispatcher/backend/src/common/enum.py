@@ -112,6 +112,7 @@ class ScheduleCategory:
     wikivoyage = "wikivoyage"
     wiktionary = "wiktionary"
     ifixit = "ifixit"
+    freecodecamp = "freecodecamp"
 
     @classmethod
     def all(cls):
@@ -135,6 +136,7 @@ class ScheduleCategory:
             cls.wikivoyage,
             cls.wiktionary,
             cls.ifixit,
+            cls.freecodecamp,
         ]
 
     @classmethod
@@ -165,6 +167,7 @@ class DockerImageName:
     kolibri = "openzim/kolibri"
     wikihow = "openzim/wikihow"
     ifixit = "openzim/ifixit"
+    freecodecamp = "openzim/freecodecamp"
 
     @classmethod
     def all(cls) -> set:
@@ -181,6 +184,7 @@ class DockerImageName:
             cls.kolibri,
             cls.wikihow,
             cls.ifixit,
+            cls.freecodecamp,
         }
 
 
@@ -197,6 +201,7 @@ class Offliner:
     kolibri = "kolibri"
     wikihow = "wikihow"
     ifixit = "ifixit"
+    freecodecamp = "freecodecamp"
 
     @classmethod
     def all(cls):
@@ -213,6 +218,7 @@ class Offliner:
             cls.kolibri,
             cls.wikihow,
             cls.ifixit,
+            cls.freecodecamp,
         ]
 
     @classmethod
@@ -236,6 +242,7 @@ class Offliner:
             cls.kolibri: DockerImageName.kolibri,
             cls.wikihow: DockerImageName.wikihow,
             cls.ifixit: DockerImageName.ifixit,
+            cls.freecodecamp: DockerImageName.freecodecamp,
         }.get(offliner, "-")
 
 
