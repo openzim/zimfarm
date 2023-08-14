@@ -32,7 +32,6 @@ jobs:
         run: |
           flake8 dispatcher/backend --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 dispatcher/relay --count --max-line-length=$MAX_LINE_LENGTH --statistics
-          flake8 maint-scripts --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 receiver/apps --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 uploader --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 watcher --count --max-line-length=$MAX_LINE_LENGTH --statistics
@@ -42,7 +41,6 @@ jobs:
         run: |
           isort --profile black --check --src dispatcher/backend/src/ dispatcher/backend/
           isort --profile black --check dispatcher/relay/
-          isort --profile black --check --src dispatcher/backend/src/ maint-scripts
           isort --profile black --check receiver/apps
           isort --profile black --check uploader
           isort --profile black --check watcher
