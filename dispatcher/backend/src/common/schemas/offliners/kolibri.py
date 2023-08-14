@@ -41,12 +41,23 @@ class KolibriFlagsSchema(SerializableSchema):
             "description": "Custom title for your ZIM. Kolibri channel name otherwise",
         }
     )
+
     description = fields.String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. "
             "Kolibri channel description otherwise",
         }
+    )
+
+    long_description = fields.String(
+        metadata={
+            "label": "Long description",
+            "description": "Custom long description for your ZIM. "
+            "If not provided, either not set or Kolibri channel description if it was "
+            "too long to fit entirely in ZIM description",
+        },
+        data_key="long-description",
     )
 
     favicon = fields.Url(
