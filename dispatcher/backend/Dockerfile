@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY src /app/
 COPY docs /app/docs
+COPY maint-scripts /app/maint-scripts
 WORKDIR /app/
 
 ENV DOCS_DIR /app/docs
