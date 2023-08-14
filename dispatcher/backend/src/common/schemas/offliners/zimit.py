@@ -4,6 +4,8 @@ from common.schemas import SerializableSchema, StringEnum
 from common.schemas.fields import validate_output, validate_zim_filename
 
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
+# https://github.com/puppeteer/puppeteer/blob/
+# main/packages/puppeteer-core/src/common/Device.ts
 validate_devicelist = validate.OneOf(
     sorted(
         [
@@ -25,14 +27,22 @@ validate_devicelist = validate.OneOf(
             "Galaxy S9+ landscape",
             "Galaxy Tab S4",
             "Galaxy Tab S4 landscape",
+            "iPad",
+            "iPad landscape",
             "iPad (gen 6)",
             "iPad (gen 6) landscape",
             "iPad (gen 7)",
             "iPad (gen 7) landscape",
             "iPad Mini",
             "iPad Mini landscape",
+            "iPad Pro",
+            "iPad Pro landscape",
             "iPad Pro 11",
             "iPad Pro 11 landscape",
+            "iPhone 4",
+            "iPhone 4 landscape",
+            "iPhone 5",
+            "iPhone 5 landscape",
             "iPhone 6",
             "iPhone 6 landscape",
             "iPhone 6 Plus",
@@ -73,12 +83,13 @@ validate_devicelist = validate.OneOf(
             "iPhone 13 Pro Max landscape",
             "iPhone 13 Mini",
             "iPhone 13 Mini landscape",
+            "JioPhone 2",
+            "JioPhone 2 landscape",
             "Kindle Fire HDX",
             "Kindle Fire HDX landscape",
             "LG Optimus L70",
             "LG Optimus L70 landscape",
             "Microsoft Lumia 550",
-            "Microsoft Lumia 550 landscape",
             "Microsoft Lumia 950",
             "Microsoft Lumia 950 landscape",
             "Nexus 10",
@@ -113,13 +124,6 @@ validate_devicelist = validate.OneOf(
             "Pixel 5 landscape",
             "Moto G4",
             "Moto G4 landscape",
-            "Desktop Chrome HiDPI",
-            "Desktop Edge HiDPI",
-            "Desktop Firefox HiDPI",
-            "Desktop Safari",
-            "Desktop Chrome",
-            "Desktop Edge",
-            "Desktop Firefox",
         ]
     )
 )
@@ -301,8 +305,7 @@ class ZimitFlagsSchema(SerializableSchema):
     mobile_device = StringEnum(
         metadata={
             "label": "As device",
-            "description": "Device to crawl as. "
-            "See Playwright's deviceDescriptorsSource",
+            "description": "Device to crawl as. See Pupeeter's Device.ts for a list",
         },
         data_key="mobileDevice",
         required=False,
