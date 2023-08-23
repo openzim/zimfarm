@@ -1,3 +1,0 @@
-[<{{ base_url }}/pipeline/{{ task._id }}|#{{ task._id|short_id }}>] `{{ task.schedule_name }}` *{{ task.status }}*{% if task.files %}{% for file in task.files.values() %}
- - <{{ download_url }}{{ task.config.warehouse_path }}/{{ file.name }}|{{ file.name }}> ({{ file.size|format_size }}){% endfor %}
-{% endif %}
