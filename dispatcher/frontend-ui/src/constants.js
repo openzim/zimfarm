@@ -2,6 +2,11 @@ import filesize from 'filesize'
 import querystring from 'querystring'
 const { DateTime, Duration, Interval } = require("luxon");
 
+function isFirefoxOnIOS() {
+  let ua = navigator.userAgent.toLowerCase();
+  return (ua.indexOf("mobile") >= 0 && ua.indexOf("mozilla") >= 0 && ua.indexOf("applewebkit") >= 0)
+}
+
 function format_dt(value) { // display a datetime in a standard format
   if (!value)
     return '';
@@ -521,4 +526,5 @@ export default {
   tz_details: get_timezone_details(),
   fromSeconds: DateTime.fromSeconds,
   to_timestamp: to_timestamp,
+  is_ios_firefox: isFirefoxOnIOS(),
 };

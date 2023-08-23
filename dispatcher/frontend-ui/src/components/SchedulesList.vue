@@ -97,6 +97,7 @@
 </template>
 
 <script type="text/javascript">
+  import Constants from '../constants.js'
   import Multiselect from 'vue-multiselect'
 
   import ZimfarmMixins from '../components/Mixins.js'
@@ -198,7 +199,7 @@
         this.loadSchedules();
       },
       update_url(){
-        if (this.block_url_updates)
+        if (this.block_url_updates || Constants.is_ios_firefox)
           return;
 
         let parent = this;
