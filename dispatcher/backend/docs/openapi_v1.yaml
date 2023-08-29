@@ -849,6 +849,7 @@ paths:
         - oauth: []
       parameters:
       - $ref: '#/components/parameters/TaskIdParameter'
+      - $ref: '#/components/parameters/WorkerNameParameter'
       responses:
         201:
           description: Task Created
@@ -1617,6 +1618,12 @@ components:
     TaskIdParameter:
       in: path
       name: taskId
+      required: true
+      schema:
+        type: string
+    WorkerNameParameter:
+      in: query
+      name: worker_name
       required: true
       schema:
         type: string
