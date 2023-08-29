@@ -183,7 +183,7 @@ def request_a_schedule(
 
 
 @dbsession
-def request_tasks_using_schedule(session: so.Session):
+def request_tasks_using_schedule(session: so.Session, logger: logging.Logger):
     """create requested_tasks based on schedule's periodicity field
 
     Expected to be ran periodically to compute what needs to be scheduled"""

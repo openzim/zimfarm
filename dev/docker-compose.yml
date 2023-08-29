@@ -20,6 +20,7 @@ services:
       - ../dispatcher/backend/prestart.sh:/app/prestart.sh
       - ../dispatcher/backend/docs:/app/docs
       - ../dispatcher/backend/maint-scripts:/app/maint-scripts
+      - ./debug-scripts:/app/debug-scripts
     ports:
       - 8000:8000
     environment:

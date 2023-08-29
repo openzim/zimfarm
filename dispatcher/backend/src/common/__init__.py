@@ -1,11 +1,14 @@
 import datetime
 
 import pytz
-
+import os
 
 def getnow():
     """naive UTC now"""
-    return datetime.datetime.utcnow()
+    if "DATETIMENOW" in os.environ:
+        return datetime.datetime.fromisoformat(os.getenv("DATETIMENOW"))
+    else:
+        return datetime.datetime.utcnow()
 
 
 def to_naive_utc(timestamp_or_iso):
