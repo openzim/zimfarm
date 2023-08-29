@@ -31,6 +31,7 @@ jobs:
       - name: Check flake8 linting
         run: |
           flake8 dispatcher/backend --count --max-line-length=$MAX_LINE_LENGTH --statistics
+          flake8 dev/debug-scripts --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 dispatcher/relay --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 receiver/apps --count --max-line-length=$MAX_LINE_LENGTH --statistics
           flake8 uploader --count --max-line-length=$MAX_LINE_LENGTH --statistics
@@ -40,6 +41,7 @@ jobs:
       - name: Check import order with isort
         run: |
           isort --profile black --check --src dispatcher/backend/src/ dispatcher/backend/
+          isort --profile black --check --src dispatcher/backend/src/ dev/debug-scripts
           isort --profile black --check dispatcher/relay/
           isort --profile black --check receiver/apps
           isort --profile black --check uploader

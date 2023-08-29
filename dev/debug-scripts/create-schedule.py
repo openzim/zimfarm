@@ -1,5 +1,6 @@
 import json
 import logging
+
 import requests
 
 API_HOST = "localhost"
@@ -24,20 +25,20 @@ SCHEDULE_DEFINITION = {
 }
 
 SCHEDULE_ACTIVATION_PAYLOAD = {
-    "enabled":True,
-    "flags":{
-        "output-dir":"/output",
+    "enabled": True,
+    "flags": {
+        "output-dir": "/output",
         "course": (
             "regular-expressions,basic-javascript,basic-data-structures,debugging,"
             "functional-programming,object-oriented-programming,"
             "basic-algorithm-scripting,intermediate-algorithm-scripting,"
             "javascript-algorithms-and-data-structures-projects"
         ),
-        "language":"eng",
-        "name":"fcc_en_javascript",
-        "title":"freeCodeCamp Javascript",
-        "description":"FCC Javascript Courses"
-    }
+        "language": "eng",
+        "name": "fcc_en_javascript",
+        "title": "freeCodeCamp Javascript",
+        "description": "FCC Javascript Courses",
+    },
 }
 
 ADMIN_NAME = "admin"
@@ -123,13 +124,10 @@ class Tool:
         )
         resp.raise_for_status()
 
-
     def main(self):
         try:
             logger.info("")
-            logger.info(
-                "### Prepare base objects (admin access token)"
-            )
+            logger.info("### Prepare base objects (admin access token)")
 
             self.get_token(ADMIN_NAME, ADMIN_PASSWORD)
 

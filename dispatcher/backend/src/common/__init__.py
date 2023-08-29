@@ -1,7 +1,8 @@
 import datetime
+import os
 
 import pytz
-import os
+
 
 def getnow():
     """naive UTC now"""
