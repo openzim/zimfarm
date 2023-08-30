@@ -237,6 +237,9 @@ class RequestedTasksForWorkers(BaseRoute):
                 last_ip = worker.last_ip
                 worker.last_ip = worker_ip
 
+                # flush to DB so that record_ip_change has access to updated IP
+                session.flush()
+
                 # IP changed since last encounter
                 if USES_WORKERS_IPS_WHITELIST and str(last_ip) != worker_ip:
                     record_ip_change(worker_name)
