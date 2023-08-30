@@ -234,14 +234,14 @@ class RequestedTasksForWorkers(BaseRoute):
             worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
             if worker.user.username == token.username:
                 worker.last_seen = getnow()
-                last_ip = worker.last_ip
+                previous_ip = str(worker.last_ip)
                 worker.last_ip = worker_ip
 
                 # flush to DB so that record_ip_change has access to updated IP
                 session.flush()
 
                 # IP changed since last encounter
-                if USES_WORKERS_IPS_WHITELIST and str(last_ip) != worker_ip:
+                if USES_WORKERS_IPS_WHITELIST and previous_ip != worker_ip:
                     record_ip_change(worker_name)
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
