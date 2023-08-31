@@ -31,6 +31,8 @@ jobs:
       id: filter
       with:
         filters: |
+          dispatcher_backend:
+            - 'dispatcher/backend/**'
           dispatcher_frontend_ui:
             - 'dispatcher/frontend_ui/**'
           dnscache:
