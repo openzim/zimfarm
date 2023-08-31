@@ -24,7 +24,10 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
     language = fields.String(
         metadata={
             "label": "Language",
-            "description": "Language of zim file and curriculum",
+            "description": "Language of zim file and curriculum. Either (without "
+            "quotes) 'ara' (arabic), 'cmn' (chinese), 'lzh' (chinese-traditional), "
+            "'eng' (english), 'spa' (espanol), 'deu' (german), 'ita' (italian), "
+            "'jpn' (japanese), 'por' (portuguese), 'ukr' (ukranian).",
         },
         required=True,
     )
