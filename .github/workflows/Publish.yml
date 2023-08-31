@@ -34,7 +34,7 @@ jobs:
           dispatcher_backend:
             - 'dispatcher/backend/**'
           dispatcher_frontend_ui:
-            - 'dispatcher/frontend_ui/**'
+            - 'dispatcher/frontend-ui/**'
           dnscache:
             - 'dnscache/**'
           monitor:
@@ -51,7 +51,7 @@ jobs:
             - 'workers/**'
 
   dnscache:
-    name: Deploy dnscache Image
+    name: Dnscache build
     runs-on: ubuntu-22.04
     needs: paths-filter
     if: needs.paths-filter.outputs.dnscache == 'true'
@@ -73,7 +73,7 @@ jobs:
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   uploader:
-    name: Build and push uploader Image
+    name: Uploader build
     runs-on: ubuntu-22.04
     needs: paths-filter
     if: needs.paths-filter.outputs.uploader == 'true'
