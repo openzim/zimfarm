@@ -8,7 +8,12 @@ from typing import Optional, Sequence
 import requests
 from werkzeug.datastructures import MultiDict
 
-from common.constants import MAILGUN_API_KEY, MAILGUN_API_URL, MAILGUN_FROM
+from common.constants import (
+    MAILGUN_API_KEY,
+    MAILGUN_API_URL,
+    MAILGUN_FROM,
+    WEB_NOTIFICATIONS_TIMEOUT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +57,7 @@ def send_email_via_mailgun(
             ]
             if attachments
             else [],
+            timeout=WEB_NOTIFICATIONS_TIMEOUT,
         )
         resp.raise_for_status()
     except Exception as exc:

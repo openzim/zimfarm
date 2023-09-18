@@ -39,6 +39,8 @@ ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
 
 # NOTIFICATIONS
 
+WEB_NOTIFICATIONS_TIMEOUT = int(os.getenv("WEB_NOTIFICATIONS_TIMEOUT", 5))
+
 # in-notification URLs
 PUBLIC_URL = os.getenv("PUBLIC_URL", "https://farm.openzim.org")
 ZIM_DOWNLOAD_URL = os.getenv(

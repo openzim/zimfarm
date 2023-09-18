@@ -19,6 +19,7 @@ from common.constants import (
     SLACK_ICON,
     SLACK_URL,
     SLACK_USERNAME,
+    WEB_NOTIFICATIONS_TIMEOUT,
     ZIM_DOWNLOAD_URL,
 )
 from common.emailing import send_email_via_mailgun
@@ -95,6 +96,7 @@ def handle_webhook_notification(task, urls):
                 url,
                 data=dumps(task).encode("UTF-8"),
                 headers={"Content-Type": "application/json"},
+                timeout=WEB_NOTIFICATIONS_TIMEOUT,
             )
             resp.raise_for_status()
         except Exception as exc:
@@ -112,6 +114,7 @@ def handle_slack_notification(task, channels):
         try:
             requests.post(
                 SLACK_URL,
+                timeout=WEB_NOTIFICATIONS_TIMEOUT,
                 json={
                     # destination. prefix with # for chans or @ for account
                     "channel": channel,
