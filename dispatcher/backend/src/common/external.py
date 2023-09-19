@@ -14,6 +14,7 @@ import db.models as dbm
 from common.constants import (
     CMS_ENDPOINT,
     CMS_ZIM_DOWNLOAD_URL,
+    REQ_TIMEOUT_CMS,
     WASABI_URL,
     WASABI_WHITELIST_POLICY_ARN,
     WASABI_WHITELIST_STATEMENT_ID,
@@ -183,7 +184,9 @@ def advertise_book_to_cms(task: dbm.Task, file_name):
     }
     try:
         resp = requests.post(
-            CMS_ENDPOINT, json=get_openzimcms_payload(file_data, download_prefix)
+            CMS_ENDPOINT,
+            json=get_openzimcms_payload(file_data, download_prefix),
+            timeout=REQ_TIMEOUT_CMS,
         )
     except Exception as exc:
         logger.error(f"Unable to query CMS at {CMS_ENDPOINT}: {exc}")

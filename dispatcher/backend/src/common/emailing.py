@@ -12,7 +12,7 @@ from common.constants import (
     MAILGUN_API_KEY,
     MAILGUN_API_URL,
     MAILGUN_FROM,
-    WEB_NOTIFICATIONS_TIMEOUT,
+    REQ_TIMEOUT_NOTIFICATIONS,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ def send_email_via_mailgun(
             ]
             if attachments
             else [],
-            timeout=WEB_NOTIFICATIONS_TIMEOUT,
+            timeout=REQ_TIMEOUT_NOTIFICATIONS,
         )
         resp.raise_for_status()
     except Exception as exc:

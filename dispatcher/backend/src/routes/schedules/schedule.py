@@ -10,6 +10,7 @@ from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 import db.models as dbm
+from common.constants import REQ_TIMEOUT_GHCR
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.orms import ScheduleFullSchema, ScheduleLightSchema
 from common.schemas.parameters import CloneSchema, SchedulesSchema, UpdateSchema
@@ -302,6 +303,7 @@ class ScheduleImageNames(BaseRoute):
                     "Authorization": f"Bearer {token}",
                     "User-Agent": "Docker-Client/20.10.2 (linux)",
                 },
+                timeout=REQ_TIMEOUT_GHCR,
             )
         except Exception as exc:
             logger.error(f"Unable to connect to GHCR Tags list: {exc}")

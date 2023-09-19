@@ -15,11 +15,11 @@ from marshmallow import ValidationError
 import db.models as dbm
 from common.constants import (
     PUBLIC_URL,
+    REQ_TIMEOUT_NOTIFICATIONS,
     SLACK_EMOJI,
     SLACK_ICON,
     SLACK_URL,
     SLACK_USERNAME,
-    WEB_NOTIFICATIONS_TIMEOUT,
     ZIM_DOWNLOAD_URL,
 )
 from common.emailing import send_email_via_mailgun
@@ -96,7 +96,7 @@ def handle_webhook_notification(task, urls):
                 url,
                 data=dumps(task).encode("UTF-8"),
                 headers={"Content-Type": "application/json"},
-                timeout=WEB_NOTIFICATIONS_TIMEOUT,
+                timeout=REQ_TIMEOUT_NOTIFICATIONS,
             )
             resp.raise_for_status()
         except Exception as exc:
@@ -114,7 +114,7 @@ def handle_slack_notification(task, channels):
         try:
             requests.post(
                 SLACK_URL,
-                timeout=WEB_NOTIFICATIONS_TIMEOUT,
+                timeout=REQ_TIMEOUT_NOTIFICATIONS,
                 json={
                     # destination. prefix with # for chans or @ for account
                     "channel": channel,
