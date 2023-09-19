@@ -39,8 +39,6 @@ ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
 
 # NOTIFICATIONS
 
-WEB_NOTIFICATIONS_TIMEOUT = int(os.getenv("WEB_NOTIFICATIONS_TIMEOUT", 5))
-
 # in-notification URLs
 PUBLIC_URL = os.getenv("PUBLIC_URL", "https://farm.openzim.org")
 ZIM_DOWNLOAD_URL = os.getenv(
@@ -94,3 +92,8 @@ CMS_ZIM_DOWNLOAD_URL = os.getenv(
 
 # [DEBUG] prevent scraper containers from running wit extended capabilities
 DISALLOW_CAPABILITIES = bool(os.getenv("ZIMFARM_DISALLOW_CAPABILITIES"))
+
+# Timeout for requests to other services
+REQ_TIMEOUT_NOTIFICATIONS = int(os.getenv("REQ_TIMEOUT_NOTIFICATIONS", 5))
+REQ_TIMEOUT_CMS = int(os.getenv("REQ_TIMEOUT_CMS", 10))
+REQ_TIMEOUT_GHCR = int(os.getenv("REQ_TIMEOUT_GHCR", 10))
