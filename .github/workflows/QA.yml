@@ -39,7 +39,7 @@ jobs:
 
       - name: Check import order with isort
         run: |
-          isort --profile black --check --src dispatcher/backend/src/ dispatcher/backend/
+          isort --profile black --check --src dispatcher/backend/src/ --src dispatcher/backend/maint-scripts dispatcher/backend/
           isort --profile black --check dispatcher/relay/
           isort --profile black --check receiver/apps
           isort --profile black --check uploader

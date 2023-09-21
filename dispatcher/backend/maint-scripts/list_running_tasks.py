@@ -1,6 +1,7 @@
 import sys
 
 import requests
+
 from get_token import get_token, get_token_headers, get_url
 
 running_statuses = [
