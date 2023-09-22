@@ -23,7 +23,6 @@ from errors.http import InvalidRequestJSON
 from routes import authenticate
 from routes.base import BaseRoute
 from routes.errors import BadRequest, InternalError
-from utils.broadcaster import BROADCASTER
 from utils.check import raise_if
 
 logger = logging.getLogger(__name__)
@@ -168,21 +167,5 @@ class WorkerCheckinRoute(BaseRoute):
             "something bad happened, the worker has been set but can't be found",
             run_checks=True,
         )
-
-        document = {
-            "name": worker.name,
-            "username": worker.user.username,
-            "selfish": worker.selfish,
-            "resources": {
-                "cpu": worker.cpu,
-                "memory": worker.memory,
-                "disk": worker.disk,
-            },
-            "offliners": worker.offliners,
-            "platforms": worker.platforms,
-            "last_seen": worker.last_seen,
-        }
-
-        BROADCASTER.broadcast_worker_checkin(document)
 
         return Response(status=HTTPStatus.NO_CONTENT)

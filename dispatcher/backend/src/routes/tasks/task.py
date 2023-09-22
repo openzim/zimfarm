@@ -24,7 +24,6 @@ from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import BadRequest
 from routes.utils import remove_secrets_from_response
-from utils.broadcaster import BROADCASTER
 from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
@@ -203,8 +202,6 @@ class TaskRoute(BaseRoute):
 
         session.delete(requested_task)
 
-        BROADCASTER.broadcast_updated_task(task_id, TaskStatus.reserved, payload)
-
         return make_response(jsonify(TaskFullSchema().dump(task)), HTTPStatus.CREATED)
 
     @authenticate
@@ -225,10 +222,6 @@ class TaskRoute(BaseRoute):
             task_id=task.id,
             event=request_json["event"],
             payload=request_json["payload"],
-        )
-
-        BROADCASTER.broadcast_updated_task(
-            task.id, request_json["event"], request_json["payload"]
         )
 
         return Response(status=HTTPStatus.NO_CONTENT)
@@ -254,8 +247,5 @@ class TaskCancelRoute(BaseRoute):
             event=TaskStatus.cancel_requested,
             payload={"canceled_by": token.username},
         )
-
-        # broadcast cancel-request to worker
-        BROADCASTER.broadcast_cancel_task(task.id)
 
         return Response(status=HTTPStatus.NO_CONTENT)
