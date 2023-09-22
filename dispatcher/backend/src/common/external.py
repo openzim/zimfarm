@@ -194,13 +194,14 @@ def advertise_book_to_cms(task: dbm.Task, file_name):
     else:
         file_data["cms"]["status_code"] = resp.status_code
         file_data["cms"]["succeeded"] = resp.status_code == 201
-        try:
-            data = resp.json()
-            file_data["cms"]["book_id"] = data.get("uuid")
-            file_data["cms"]["title_ident"] = data.get("title")
-        except Exception as exc:
-            logger.error(f"Unable to parse CMS response: {exc}")
-            logger.exception(exc)
+        if resp.status_code < 400:
+            try:
+                data = resp.json()
+                file_data["cms"]["book_id"] = data.get("uuid")
+                file_data["cms"]["title_ident"] = data.get("title")
+            except Exception as exc:
+                logger.error(f"Unable to parse CMS response: {exc}")
+                logger.exception(exc)
 
     # record request result
     task.files[file_name] = file_data

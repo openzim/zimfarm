@@ -8,7 +8,6 @@ pymongo==3.12.0
 pytest>=7.3,<7.4
 pytest-env>=0.8,<0.9
 pytz==2023.3
-zmq
 marshmallow>=3.19.0,<3.20
 requests>=2.29.0,<2.30
 humanfriendly>=10.0,<10.1

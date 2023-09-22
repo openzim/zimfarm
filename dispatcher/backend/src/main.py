@@ -20,7 +20,6 @@ from routes import (
     users,
     workers,
 )
-from utils.broadcaster import BROADCASTER
 from utils.database import Initializer
 from utils.json import ZimfarmJsonProvider
 
@@ -77,9 +76,6 @@ application.register_blueprint(offliners.Blueprint())
 application.register_blueprint(platforms.Blueprint())
 
 errors.register_handlers(application)
-
-logger.info(f"connected broadcaster to {BROADCASTER.uri}")
-BROADCASTER.broadcast_dispatcher_started()
 
 
 if __name__ == "__main__":

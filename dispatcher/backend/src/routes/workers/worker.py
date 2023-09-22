@@ -23,7 +23,6 @@ from errors.http import InvalidRequestJSON
 from routes import authenticate
 from routes.base import BaseRoute
 from routes.errors import BadRequest, InternalError
-from utils.broadcaster import BROADCASTER
 from utils.check import raise_if
 
 logger = logging.getLogger(__name__)
@@ -103,10 +102,6 @@ class WorkerCheckinRoute(BaseRoute):
     @authenticate
     @dbsession
     def put(self, session: so.Session, name: str, *args, **kwargs):
-        # TODO: is it acceptable that any authenticated user can update the checkin
-        # status of any worker ? shouldn't we check authenticated user scope + match
-        # between authenticated user id and worker user id
-        # see https://github.com/openzim/zimfarm/issues/764
         try:
             request_json = WorkerCheckInSchema().load(request.get_json())
         except ValidationError as e:
@@ -123,7 +118,7 @@ class WorkerCheckinRoute(BaseRoute):
                 BadRequest,
                 "worker has been marked as deleted",
             )
-            # TODO: should we refuse to alter the worker user_id ?
+            # should we refuse to alter the worker user_id ?
             # raise_if(
             #     worker.user_id != user.id,
             #     BadRequest,
@@ -168,21 +163,5 @@ class WorkerCheckinRoute(BaseRoute):
             "something bad happened, the worker has been set but can't be found",
             run_checks=True,
         )
-
-        document = {
-            "name": worker.name,
-            "username": worker.user.username,
-            "selfish": worker.selfish,
-            "resources": {
-                "cpu": worker.cpu,
-                "memory": worker.memory,
-                "disk": worker.disk,
-            },
-            "offliners": worker.offliners,
-            "platforms": worker.platforms,
-            "last_seen": worker.last_seen,
-        }
-
-        BROADCASTER.broadcast_worker_checkin(document)
 
         return Response(status=HTTPStatus.NO_CONTENT)

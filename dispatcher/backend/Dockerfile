@@ -14,7 +14,6 @@ COPY maint-scripts /app/maint-scripts
 WORKDIR /app/
 
 ENV DOCS_DIR /app/docs
-ENV SOCKET_URI tcp://localhost:5000
 ENV INIT_PASSWORD admin
 
 # from uwsgi-nginx

@@ -29,7 +29,6 @@ from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from utils.broadcaster import BROADCASTER
 from utils.scheduling import find_requested_task_for, request_a_schedule
 from utils.token import AccessToken
 
@@ -186,11 +185,6 @@ class RequestedTasksRoute(BaseRoute):
                 continue
 
             requested_tasks.append(rq_task)
-
-        if len(requested_tasks) > 1:
-            BROADCASTER.broadcast_requested_tasks(requested_tasks)
-        elif len(requested_tasks) == 1:
-            BROADCASTER.broadcast_requested_task(requested_tasks[0])
 
         # trigger event handler
         for task in requested_tasks:
