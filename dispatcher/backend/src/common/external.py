@@ -202,6 +202,11 @@ def advertise_book_to_cms(task: dbm.Task, file_name):
             except Exception as exc:
                 logger.error(f"Unable to parse CMS response: {exc}")
                 logger.exception(exc)
+        else:
+            logger.error(
+                f"CMS returned an error {resp.status_code} for book"
+                f"{file_data['info']['id']}"
+            )
 
     # record request result
     task.files[file_name] = file_data
