@@ -3,7 +3,7 @@ services:
     image: postgres:15.2-bullseye
     container_name: zf_postgresdb
     ports:
-      - 5432:5432
+      - 127.0.0.1:5432:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
       - ./postgres-initdb:/docker-entrypoint-initdb.d
@@ -14,16 +14,22 @@ services:
   backend:
     build: ../dispatcher/backend
     container_name: zf_backend
-    command: python main.py
+    command: 
+      - gunicorn 
+      - --conf 
+      - /app/gunicorn_conf.py
+      - --bind
+      - 0.0.0.0:8000
+      - --reload
+      - main:application
     volumes:
       - ../dispatcher/backend/src:/app
-      - ../dispatcher/backend/prestart.sh:/app/prestart.sh
+      #- ../dispatcher/backend/prestart.sh:/app/prestart.sh
       - ../dispatcher/backend/docs:/app/docs
       - ../dispatcher/backend/maint-scripts:/app/maint-scripts
     ports:
-      - 8000:8000
+      - 127.0.0.1:8000:8000
     environment:
-      BINDING_HOST: 0.0.0.0
       DEBUG: 1
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
@@ -36,7 +42,7 @@ services:
     volumes:
       - ../dispatcher/frontend-ui/src:/app
     ports:
-      - 8001:80
+      - 127.0.0.1:8001:80
     environment:
       ZIMFARM_WEBAPI: http://localhost:8000/v1
     depends_on:

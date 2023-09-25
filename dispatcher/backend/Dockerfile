@@ -1,9 +1,8 @@
-FROM rgaudin/uwsgi-nginx:python3.8
+FROM python:3.8-slim-bookworm
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
-RUN pip install --no-cache-dir -U pip
-RUN pip install --no-cache-dir uwsgi==2.0.18
+RUN pip install --no-cache-dir -U pip gunicorn==21.2.0
 
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r /app/requirements.txt
@@ -15,16 +14,6 @@ WORKDIR /app/
 
 ENV DOCS_DIR /app/docs
 ENV INIT_PASSWORD admin
-
-# from uwsgi-nginx
-ENV UWSGI_INI /app/uwsgi.ini
-ENV UWSGI_CHEAPER 4
-ENV UWSGI_CHEAPER_STEP 2
-ENV UWSGI_PROCESSES 32
-ENV NGINX_MAX_UPLOAD 0
-ENV NGINX_WORKER_PROCESSES 1
-ENV LISTEN_PORT 80
-ENV NGINV_ENABLE_GZIP 1
 
 # mailgun for notifications
 ENV MAILGUN_API_URL https://api.mailgun.net/v3/mg.farm.openzim.org
@@ -52,3 +41,5 @@ RUN chmod +x /app/prestart.sh
 COPY supervisor-listener.py /usr/local/bin/supervisor-listener
 RUN chmod +x /usr/local/bin/supervisor-listener
 COPY periodic.conf /etc/supervisor/conf.d/periodic.conf
+
+CMD ["gunicorn", "--conf", "/app/gunicorn_conf.py", "--bind", "0.0.0.0:8000", "main:application"]
