@@ -170,7 +170,9 @@ class TestRequestedTaskCreate:
         requested_task = make_requested_task()
         return requested_task
 
-    def test_create_from_schedule(self, client, access_token, schedule):
+    def test_create_from_schedule(
+        self, client, access_token, schedule, garbage_collector
+    ):
         url = "/requested-tasks/"
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         response = client.post(
@@ -179,6 +181,10 @@ class TestRequestedTaskCreate:
             data=json.dumps({"schedule_names": [schedule["name"]]}),
         )
         assert response.status_code == 201
+        assert "requested" in response.json
+        assert len(response.json["requested"]) == 1
+        requested_task_id = response.json["requested"][0]
+        garbage_collector.add_requested_task_id(requested_task_id)
 
     def test_create_with_wrong_schedule(self, client, access_token, schedule):
         url = "/requested-tasks/"
