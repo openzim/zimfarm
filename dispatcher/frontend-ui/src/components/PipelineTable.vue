@@ -32,7 +32,8 @@
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task._id">
-          <td><router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">{{ task.schedule_name }}</router-link></td>
+          <td v-if="task.schedule_name === null || task.schedule_name == 'none'">{{ task.original_schedule_name }}</td>
+          <td v-else><router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">{{ task.schedule_name }}</router-link></td>
           <td v-if="selectedTable == 'todo'"
               v-tooltip="{content: format_dt(task.timestamp.requested), delay: 10}">{{ task.timestamp.requested | from_now }}</td>
           <td v-if="selectedTable == 'todo'">{{ task.requested_by }}</td>

@@ -12,6 +12,7 @@ class TestRequestedTaskList:
             "_id",
             "status",
             "schedule_name",
+            "original_schedule_name",
             "timestamp",
             "config",
             "requested_by",
@@ -21,6 +22,7 @@ class TestRequestedTaskList:
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
         assert item["schedule_name"] == task["schedule_name"]
+        assert item["original_schedule_name"] == task["schedule_name"]
 
     @pytest.mark.parametrize(
         "query_param", [{"matching_cpu": "-2"}, {"matching_memory": -1}]
@@ -160,6 +162,7 @@ class TestRequestedTaskGet:
         assert data["status"] == requested_task["status"]
         assert "schedule_name" in data
         assert data["schedule_name"] == requested_task["schedule_name"]
+        assert data["original_schedule_name"] == requested_task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data
 

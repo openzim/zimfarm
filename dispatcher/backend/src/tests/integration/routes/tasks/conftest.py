@@ -73,6 +73,7 @@ def make_task(make_event, make_schedule, make_config, worker, garbage_collector)
                 notification={},
                 files=files,
                 upload={},
+                original_schedule_name=schedule_name,
             )
             task.schedule_id = schedule.id
             task.worker_id = worker_obj.id

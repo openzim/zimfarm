@@ -85,6 +85,7 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
             dbm.RequestedTask.timestamp,
             dbm.RequestedTask.requested_by,
             dbm.RequestedTask.priority,
+            dbm.RequestedTask.original_schedule_name,
             dbm.Schedule.name.label("schedule_name"),
             dbm.Worker.name.label("worker"),
         )

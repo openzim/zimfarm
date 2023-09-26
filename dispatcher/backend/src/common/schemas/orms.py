@@ -71,6 +71,7 @@ class TaskLightSchema(m.Schema):
     worker_name = mf.String(data_key="worker")
     updated_at = MadeAwareDateTime()
     config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema, only=["resources"])
+    original_schedule_name = mf.String()
 
 
 class TaskFullSchema(TaskLightSchema):
@@ -101,6 +102,7 @@ class RequestedTaskLightSchema(m.Schema):
     requested_by = mf.String()
     priority = mf.Integer()
     schedule_name = mf.String()
+    original_schedule_name = mf.String()
     worker = mf.String()
 
 

@@ -43,9 +43,11 @@ class TestTaskList:
             "schedule_name",
             "worker",
             "updated_at",
+            "original_schedule_name",
         }
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
+        assert item["original_schedule_name"] == task["schedule_name"]
 
     @pytest.mark.parametrize("query_param", [{"schedule_id": "a"}, {"status": 123}])
     def test_bad_request(self, client, query_param):
@@ -146,6 +148,7 @@ class TestTaskGet:
         assert data["_id"] == str(task["_id"])
         assert data["status"] == task["status"]
         assert data["schedule_name"] == task["schedule_name"]
+        assert data["original_schedule_name"] == task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data
 
