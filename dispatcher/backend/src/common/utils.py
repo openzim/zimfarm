@@ -206,15 +206,15 @@ def task_failed_event_handler(session: so.Session, task_id: UUID, payload: dict)
 def task_cancel_requested_event_handler(
     session: so.Session, task_id: UUID, payload: dict
 ):
-    requested_by = payload.get("canceled_by")
-    logger.info(f"Task Cancellation Requested: {task_id}, by: {requested_by}")
+    canceled_by = payload.get("canceled_by")
+    logger.info(f"Task Cancellation Requested: {task_id}, by: {canceled_by}")
 
     save_event(
         session,
         task_id,
         TaskStatus.cancel_requested,
         get_timestamp_from_event(payload),
-        canceled_by=requested_by,
+        canceled_by=canceled_by,
     )
 
 
