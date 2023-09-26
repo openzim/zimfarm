@@ -223,10 +223,10 @@ def task_canceled_event_handler(session: so.Session, task_id: UUID, payload: dic
 
     # if canceled event carries a `canceled_by` and we have none on the task
     # then store it, otherwise keep what's in the task (manual request)
-    canceled_by = None
     task = dbm.Task.get(session, task_id, TaskNotFound)
-    if payload.get("canceled_by") and task and not task.canceled_by:
-        canceled_by = payload.get("canceled_by")
+    kwargs = {}
+    if not task.canceled_by and payload.get("canceled_by"):
+        kwargs["canceled_by"] = payload.get("canceled_by")
 
     save_event(
         session,
@@ -234,7 +234,7 @@ def task_canceled_event_handler(session: so.Session, task_id: UUID, payload: dic
         TaskStatus.canceled,
         get_timestamp_from_event(payload),
         task_log=payload.get("log"),
-        canceled_by=canceled_by,
+        **kwargs,
     )
 
 

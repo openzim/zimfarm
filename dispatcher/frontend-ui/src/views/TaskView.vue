@@ -56,6 +56,7 @@
               <tr v-for="event in task.events" v-bind:key="event.code">
                 <td><code>{{ event.code }}</code></td><td>{{ event.timestamp | format_dt }}</td>
                 <td v-if="event.code == 'requested'">{{ task.requested_by }}</td>
+                <td v-else-if="event.code == 'cancel_requested' && task.status =='cancel_requested'">{{ task.canceled_by }}</td>
                 <td v-else-if="event.code == 'canceled'">{{ task.canceled_by }}</td>
                 <td v-else />
               </tr>
