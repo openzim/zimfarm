@@ -41,6 +41,20 @@ services:
       ZIMFARM_WEBAPI: http://localhost:8000/v1
     depends_on:
       - backend
+  frontend-ui-dev:
+    build:
+      dockerfile: ../../dev/frontend-ui-dev/Dockerfile
+      context: ../dispatcher/frontend-ui
+    # build: ../dispatcher/frontend-ui
+    container_name: zf_frontend-ui-dev
+    volumes:
+      - ../dispatcher/frontend-ui/src:/app/src
+    ports:
+      - 8002:80
+    environment:
+      ZIMFARM_WEBAPI: http://localhost:8000/v1
+    depends_on:
+      - backend
   backend-tools:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
