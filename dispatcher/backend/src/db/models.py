@@ -225,6 +225,7 @@ class Task(Base):
     notification: Mapped[Dict[str, Any]]
     files: Mapped[Dict[str, Any]]
     upload: Mapped[Dict[str, Any]]
+    original_schedule_name: Mapped[str]
 
     schedule_id: Mapped[Optional[UUID]] = mapped_column(
         ForeignKey("schedule.id"), init=False
@@ -358,6 +359,7 @@ class RequestedTask(Base):
     config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     upload: Mapped[Dict[str, Any]]
     notification: Mapped[Dict[str, Any]]
+    original_schedule_name: Mapped[str]
 
     schedule_id: Mapped[Optional[UUID]] = mapped_column(
         ForeignKey("schedule.id"), init=False

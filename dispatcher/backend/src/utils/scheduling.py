@@ -168,6 +168,7 @@ def request_a_schedule(
         },
         notification=schedule.notification if schedule.notification else {},
         updated_at=now,
+        original_schedule_name=schedule.name,
     )
     requested_task.schedule = schedule
 

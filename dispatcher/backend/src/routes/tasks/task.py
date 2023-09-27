@@ -53,6 +53,7 @@ class TasksRoute(BaseRoute):
                 dbm.Task.id,
                 dbm.Task.status,
                 dbm.Task.timestamp,
+                dbm.Task.original_schedule_name,
                 # dbm.Task.config,
                 so.Bundle(
                     "config",
@@ -117,6 +118,7 @@ class TaskRoute(BaseRoute):
                 dbm.Task.files,
                 dbm.Task.upload,
                 dbm.Task.updated_at,
+                dbm.Task.original_schedule_name,
                 dbm.Schedule.name.label("schedule_name"),
                 dbm.Worker.name.label("worker_name"),
             )
@@ -169,6 +171,7 @@ class TaskRoute(BaseRoute):
             notification=requested_task.notification,
             files={},
             upload=requested_task.upload,
+            original_schedule_name=requested_task.original_schedule_name,
         )
         task.id = requested_task.id
         task.schedule_id = requested_task.schedule_id

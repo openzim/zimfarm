@@ -76,10 +76,11 @@ Other containers might be restarted the same way.
 
 ## Browse the web UI
 
-Open [the web UI](http://localhost:8001) in your favorite browser.
+To develop: open [the development web UI](http://localhost:8002). This version has hot reload of UI code changes.
 
-You can login with username `admin` and password  `admin`.
+To test build version: open [the web UI](http://localhost:8001) in your favorite browser.
 
+You can login with username `admin` and password `admin`.
 
 ## Run tests
 

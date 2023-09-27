@@ -1,11 +1,10 @@
 #!/bin/sh
 
-JS_PATH=/usr/share/nginx/html/environ.json
-echo "dump ZIMFARM_* environ variables to $JS_PATH"
+echo "dump ZIMFARM_* environ variables to $ENVIRON_PATH"
 
-python3 -c 'import os; import json; print(json.dumps({k: v for k, v in os.environ.items() if k.startswith("ZIMFARM_")}, indent=4))' > $JS_PATH
+python3 -c 'import os; import json; print(json.dumps({k: v for k, v in os.environ.items() if k.startswith("ZIMFARM_")}, indent=4))' > $ENVIRON_PATH
 
-cat $JS_PATH
+cat $ENVIRON_PATH
 echo "-----"
 
 exec "$@"

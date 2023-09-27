@@ -275,6 +275,7 @@ def make_requested_task(make_event, make_schedule, garbage_collector):
                 config=config,
                 upload={},
                 notification={},
+                original_schedule_name=schedule_name,
             )
             requested_task.schedule = schedule
             session.add(requested_task)

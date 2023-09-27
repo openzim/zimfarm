@@ -12,6 +12,7 @@ class TestRequestedTaskList:
             "_id",
             "status",
             "schedule_name",
+            "original_schedule_name",
             "timestamp",
             "config",
             "requested_by",
@@ -21,6 +22,7 @@ class TestRequestedTaskList:
         assert item["_id"] == str(task["_id"])
         assert item["status"] == task["status"]
         assert item["schedule_name"] == task["schedule_name"]
+        assert item["original_schedule_name"] == task["schedule_name"]
 
     @pytest.mark.parametrize(
         "query_param", [{"matching_cpu": "-2"}, {"matching_memory": -1}]
@@ -160,6 +162,7 @@ class TestRequestedTaskGet:
         assert data["status"] == requested_task["status"]
         assert "schedule_name" in data
         assert data["schedule_name"] == requested_task["schedule_name"]
+        assert data["original_schedule_name"] == requested_task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data
 
@@ -170,7 +173,9 @@ class TestRequestedTaskCreate:
         requested_task = make_requested_task()
         return requested_task
 
-    def test_create_from_schedule(self, client, access_token, schedule):
+    def test_create_from_schedule(
+        self, client, access_token, schedule, garbage_collector
+    ):
         url = "/requested-tasks/"
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         response = client.post(
@@ -179,6 +184,10 @@ class TestRequestedTaskCreate:
             data=json.dumps({"schedule_names": [schedule["name"]]}),
         )
         assert response.status_code == 201
+        assert "requested" in response.json
+        assert len(response.json["requested"]) == 1
+        requested_task_id = response.json["requested"][0]
+        garbage_collector.add_requested_task_id(requested_task_id)
 
     def test_create_with_wrong_schedule(self, client, access_token, schedule):
         url = "/requested-tasks/"
