@@ -8,7 +8,6 @@ RUN yarn install && yarn cache clean
 COPY *.js /app/
 COPY public /app/public
 COPY src /app/src
-#CMD ["sleep", "infinity"]
 ENV ENVIRON_PATH /app/public/environ.json
 ENTRYPOINT [ "entrypoint.sh" ]
 CMD ["yarn", "serve", "--host", "0.0.0.0", "--port", "80"]

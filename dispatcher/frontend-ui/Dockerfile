@@ -20,6 +20,7 @@ COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v1
+ENV ENVIRON_PATH /usr/share/nginx/html/environ.json
 EXPOSE 80
 
 ENTRYPOINT ["entrypoint.sh"]

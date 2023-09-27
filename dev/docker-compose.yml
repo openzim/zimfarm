@@ -45,7 +45,6 @@ services:
     build:
       dockerfile: ../../dev/frontend-ui-dev/Dockerfile
       context: ../dispatcher/frontend-ui
-    # build: ../dispatcher/frontend-ui
     container_name: zf_frontend-ui-dev
     volumes:
       - ../dispatcher/frontend-ui/src:/app/src
