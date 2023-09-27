@@ -30,7 +30,7 @@ def upgrade() -> None:
     # set original_schedule_name for requested tasks with existing schedule
     session.execute(
         sa.update(RequestedTask)
-        .where(RequestedTask.schedule_id is not None)
+        .where(RequestedTask.schedule_id != None)  # noqa: E711
         .values(
             original_schedule_name=sa.select(Schedule.name)
             .where(Schedule.id == RequestedTask.schedule_id)
@@ -41,7 +41,7 @@ def upgrade() -> None:
     # set original_schedule_name for requested tasks without existing schedule
     session.execute(
         sa.update(RequestedTask)
-        .where(RequestedTask.schedule_id is None)
+        .where(RequestedTask.schedule_id == None)  # noqa: E711
         .values(original_schedule_name="<unknown>")
     )
 
@@ -56,7 +56,7 @@ def upgrade() -> None:
     # set original_schedule_name for requested tasks with existing schedule
     session.execute(
         sa.update(Task)
-        .where(Task.schedule_id is not None)
+        .where(Task.schedule_id != None)  # noqa: E711
         .values(
             original_schedule_name=sa.select(Schedule.name)
             .where(Schedule.id == Task.schedule_id)
@@ -67,7 +67,7 @@ def upgrade() -> None:
     # set original_schedule_name for requested tasks without existing schedule
     session.execute(
         sa.update(Task)
-        .where(Task.schedule_id is None)
+        .where(Task.schedule_id == None)  # noqa: E711
         .values(original_schedule_name="<unknown>")
     )
 
