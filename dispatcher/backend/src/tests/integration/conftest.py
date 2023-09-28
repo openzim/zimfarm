@@ -76,9 +76,17 @@ def make_access_token():
     yield _make_access_token
 
 
+USERNAME = "username"
+
+
 @pytest.fixture(scope="session")
 def access_token(make_access_token):
-    yield make_access_token("username", "admin")
+    yield make_access_token(USERNAME, "admin")
+
+
+@pytest.fixture(scope="session")
+def username():
+    yield USERNAME
 
 
 class GarbageCollector:
