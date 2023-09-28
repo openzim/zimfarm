@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+import sqlalchemy as sa
 from werkzeug.security import generate_password_hash
 
 import db.models as dbm
@@ -93,6 +94,31 @@ def make_schedule(make_language, make_config, garbage_collector):
 @pytest.fixture(scope="module")
 def schedule(make_schedule):
     return make_schedule()
+
+
+@pytest.fixture
+def temp_schedule(make_schedule):
+    """build a temporary schedule which will be deleted at the end of the test
+
+    NB: associated tasks and requested tasks are also deleted
+    """
+    schedule = make_schedule(name="periodic_sched_test")
+    yield schedule
+    with Session.begin() as session:
+        schedule_obj = dbm.Schedule.get(session, schedule["name"])
+        schedule_obj.most_recent_task = None
+        session.flush()
+        session.execute(
+            sa.delete(dbm.RequestedTask).where(
+                dbm.RequestedTask.schedule_id == schedule["_id"]
+            )
+        )
+        session.execute(
+            sa.delete(dbm.Task).where(dbm.Task.schedule_id == schedule["_id"])
+        )
+        session.execute(
+            sa.delete(dbm.Schedule).where(dbm.Schedule.id == schedule["_id"])
+        )
 
 
 @pytest.fixture(scope="module")
