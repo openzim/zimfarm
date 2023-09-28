@@ -1,6 +1,7 @@
 from marshmallow import fields
 
 from common.schemas import SerializableSchema, String
+from common.schemas.fields import validate_zim_description
 
 
 class GutenbergFlagsSchema(SerializableSchema):
@@ -38,6 +39,7 @@ class GutenbergFlagsSchema(SerializableSchema):
     zim_desc = String(
         metadata={"label": "Description", "description": "Description for ZIM"},
         data_key="zim-desc",
+        validate=validate_zim_description,
     )
 
     books = String(
