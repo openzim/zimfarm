@@ -220,6 +220,13 @@ def request_tasks_using_schedule(session: so.Session):
                     > period_start
                 ):
                     continue
+                # don't request a task if the most_recent_task is still running
+                if last_run.status not in TaskStatus.complete():
+                    logger.debug(
+                        f"{schedule.name} not requested because most_recent_task "
+                        f"{last_run.id} did not complete"
+                    )
+                    continue
 
             if request_a_schedule(
                 session=session,
