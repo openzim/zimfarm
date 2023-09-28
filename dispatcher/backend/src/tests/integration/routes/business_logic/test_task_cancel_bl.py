@@ -68,11 +68,13 @@ class TestTaskBusiness:
         assert "status" in response.json
         assert response.json["status"] == "cancel_requested"
         assert "canceled_by" in response.json
+        # canceled_by is automatically populated based on value in access token
         assert response.json["canceled_by"] == username
 
         patch_to_status("canceled", payload={"canceled_by": "bob"})
         response = get_task()
         assert "canceled_by" in response.json
+        # canceled_by is not computed based on payload because a value is already there
         assert response.json["canceled_by"] == username
 
     def test_task_cancel_in_db(self, client, headers, username, task):
@@ -118,8 +120,11 @@ class TestTaskBusiness:
         assert "status" in response.json
         assert response.json["status"] == "cancel_requested"
 
-        CANCELED_BY = "bob"
-        patch_to_status("canceled", payload={"canceled_by": CANCELED_BY})
+        canceled_by = "bob"
+        patch_to_status("canceled", payload={"canceled_by": canceled_by})
         response = get_task()
         assert "canceled_by" in response.json
-        assert response.json["canceled_by"] == CANCELED_BY
+        # canceled_by is populated based on payload because we have no access token
+        # this mimics the situation where it is the periodic scheduler which requests
+        # this cancelation directly in the code, not through the API
+        assert response.json["canceled_by"] == canceled_by
