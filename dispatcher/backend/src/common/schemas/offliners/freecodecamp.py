@@ -1,12 +1,25 @@
-from marshmallow import fields
+from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema
+from common.schemas import SerializableSchema, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
     validate_zim_longdescription,
 )
+
+FCC_LANG_MAP = {
+    "ara": "arabic",
+    "cmn": "chinese",
+    "lzh": "chinese-traditional",
+    "eng": "english",
+    "spa": "espanol",
+    "deu": "german",
+    "ita": "italian",
+    "jpn": "japanese",
+    "por": "portuguese",
+    "ukr": "ukranian",
+}
 
 
 class FreeCodeCampFlagsSchema(SerializableSchema):
@@ -21,15 +34,15 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    language = fields.String(
+    language = StringEnum(
         metadata={
             "label": "Language",
-            "description": "Language of zim file and curriculum. Either (without "
-            "quotes) 'ara' (arabic), 'cmn' (chinese), 'lzh' (chinese-traditional), "
-            "'eng' (english), 'spa' (espanol), 'deu' (german), 'ita' (italian), "
-            "'jpn' (japanese), 'por' (portuguese), 'ukr' (ukranian).",
+            "description": "Language of zim file and curriculum. One of "
+            + ", ".join([f"'{key}' ({desc})" for key, desc in FCC_LANG_MAP.items()])
+            + ".",
         },
         required=True,
+        validate=validate.OneOf(list(FCC_LANG_MAP.keys())),
     )
 
     name = fields.String(
