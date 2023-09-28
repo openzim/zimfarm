@@ -153,7 +153,7 @@ def save_event(
         flag_modified(task, "files")  # mark 'files' as modified
 
     session.flush()  # we have to flush first to avoid circular dependency
-    if schedule:
+    if schedule and code == TaskStatus.reserved:
         schedule.most_recent_task = task
 
     if code == TaskStatus.scraper_completed and schedule:
