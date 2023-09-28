@@ -353,6 +353,7 @@ class TestScheduleGet:
         assert "most_recent_task" in response_json
         response_json.pop("duration", None)
         response_json.pop("most_recent_task", None)
+        schedule.pop("_id")
 
         assert response_json == schedule
 
