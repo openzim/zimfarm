@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class WikihowFlagsSchema(SerializableSchema):
@@ -38,6 +42,7 @@ class WikihowFlagsSchema(SerializableSchema):
             "description": "Custom description for your ZIM. "
             "Wikihow homepage description (meta) otherwise",
         },
+        validate=validate_zim_description,
     )
 
     icon = fields.Url(

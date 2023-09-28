@@ -1,7 +1,12 @@
 from marshmallow import fields
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+    validate_zim_longdescription,
+)
 
 
 class KolibriFlagsSchema(SerializableSchema):
@@ -47,7 +52,8 @@ class KolibriFlagsSchema(SerializableSchema):
             "label": "Description",
             "description": "Custom description for your ZIM. "
             "Kolibri channel description otherwise",
-        }
+        },
+        validate=validate_zim_description,
     )
 
     long_description = fields.String(
@@ -58,6 +64,7 @@ class KolibriFlagsSchema(SerializableSchema):
             "too long to fit entirely in ZIM description",
         },
         data_key="long-description",
+        validate=validate_zim_longdescription,
     )
 
     favicon = fields.Url(

@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class OpenedxFlagsSchema(SerializableSchema):
@@ -178,6 +182,7 @@ class OpenedxFlagsSchema(SerializableSchema):
             "description": "Custom description for your ZIM. Based on MOOC otherwise",
         },
         data_key="description",
+        validate=validate_zim_description,
     )
 
     creator = fields.String(

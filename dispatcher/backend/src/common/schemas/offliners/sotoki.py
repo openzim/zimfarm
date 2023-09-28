@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class SotokiFlagsSchema(SerializableSchema):
@@ -36,6 +40,7 @@ class SotokiFlagsSchema(SerializableSchema):
             "label": "Description",
             "description": "Custom description for your ZIM. Site tagline otherwise",
         },
+        validate=validate_zim_description,
     )
 
     favicon = fields.Url(

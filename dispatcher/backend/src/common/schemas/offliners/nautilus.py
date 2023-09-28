@@ -1,7 +1,11 @@
 from marshmallow import fields
 
 from common.schemas import HexColor, SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class NautilusFlagsSchema(SerializableSchema):
@@ -100,7 +104,8 @@ class NautilusFlagsSchema(SerializableSchema):
         metadata={
             "label": "Description",
             "description": "Description for your project and ZIM.",
-        }
+        },
+        validate=validate_zim_description,
     )
     creator = fields.String(
         metadata={

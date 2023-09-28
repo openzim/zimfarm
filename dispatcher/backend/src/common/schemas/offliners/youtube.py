@@ -1,7 +1,11 @@
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from common.schemas import HexColor, SerializableSchema, StringEnum
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class YoutubeFlagsSchema(SerializableSchema):
@@ -206,7 +210,8 @@ class YoutubeFlagsSchema(SerializableSchema):
     )
 
     description = fields.String(
-        metadata={"label": "Description", "description": "Description for ZIM"}
+        metadata={"label": "Description", "description": "Description for ZIM"},
+        validate=validate_zim_description,
     )
     playlists_description = fields.String(
         metadata={

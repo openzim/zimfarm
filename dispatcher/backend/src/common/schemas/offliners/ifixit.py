@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 def validate_percent(value):
@@ -42,6 +46,7 @@ class IFixitFlagsSchema(SerializableSchema):
             "description": "Custom description for your ZIM. "
             "iFixIt homepage description (meta) otherwise",
         },
+        validate=validate_zim_description,
     )
 
     icon = fields.Url(

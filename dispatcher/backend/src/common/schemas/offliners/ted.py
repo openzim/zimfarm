@@ -1,7 +1,11 @@
 from marshmallow import ValidationError, fields, validate, validates_schema
 
 from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class TedFlagsSchema(SerializableSchema):
@@ -142,7 +146,8 @@ class TedFlagsSchema(SerializableSchema):
             "description": (
                 "Custom description for your ZIM. Based on selection otherwise"
             ),
-        }
+        },
+        validate=validate_zim_description,
     )
 
     description_format = fields.String(

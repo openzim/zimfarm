@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
 # https://github.com/puppeteer/puppeteer/blob/
@@ -164,8 +168,10 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Custom title for ZIM. Defaults to title of main page",
         }
     )
+
     description = fields.String(
-        metadata={"label": "Description", "description": "Description for ZIM"}
+        metadata={"label": "Description", "description": "Description for ZIM"},
+        validate=validate_zim_description,
     )
 
     favicon = fields.Url(
