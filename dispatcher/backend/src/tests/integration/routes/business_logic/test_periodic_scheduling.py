@@ -59,7 +59,7 @@ class TestPeriodicScheduling:
     def test_periodic_scheduling_most_recent_overdue_complete(
         self, temp_schedule, make_task
     ):
-        """most recent task is overdue but still running => request a new execution"""
+        """most recent task is overdue and not running => request a new execution"""
         most_recent = make_task(temp_schedule["name"])
         now = getnow()
         with Session.begin() as session:

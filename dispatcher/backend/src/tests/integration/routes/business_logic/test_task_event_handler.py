@@ -5,7 +5,9 @@ from db import Session
 
 
 class TestTaskEvents:
-    def test_task_event_reserved(self, temp_schedule, make_task, worker):
+    def test_task_event_reserved_updates_most_recent_task(
+        self, temp_schedule, make_task, worker
+    ):
         task = make_task(schedule_name=temp_schedule["name"])
         with Session.begin() as session:
             schedule = dbm.Schedule.get(session, temp_schedule["name"])
@@ -15,7 +17,9 @@ class TestTaskEvents:
             )
             assert schedule.most_recent_task_id == task["_id"]
 
-    def test_task_event_started(self, temp_schedule, make_task, worker):
+    def test_task_event_started_does_not_updates_most_recent_task(
+        self, temp_schedule, make_task, worker
+    ):
         task = make_task(schedule_name=temp_schedule["name"])
         with Session.begin() as session:
             schedule = dbm.Schedule.get(session, temp_schedule["name"])
