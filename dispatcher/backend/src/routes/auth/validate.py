@@ -6,11 +6,12 @@ import paramiko
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import Response, request
-from marshmallow import Schema, ValidationError, fields, validate
+from marshmallow import Schema, ValidationError, validate
 
 import db.models as dbm
 import errors.http as http_errors
 from common import getnow
+from common.schemas import String
 from routes import errors
 from utils.check import raise_if_none
 
@@ -22,8 +23,8 @@ def ssh_key(session: so.Session):
 
     # validate request json
     class KeySchema(Schema):
-        username = fields.String(required=True, validate=validate.Length(min=1))
-        key = fields.String(required=True, validate=validate.Length(min=1))
+        username = String(required=True, validate=validate.Length(min=1))
+        key = String(required=True, validate=validate.Length(min=1))
 
     try:
         request_json = KeySchema().load(request.get_json())

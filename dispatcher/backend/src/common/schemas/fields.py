@@ -9,6 +9,7 @@ from common.enum import (
     WarehousePath,
 )
 from common.roles import ROLES
+from common.schemas import String
 
 # validators
 validate_priority = validate.Range(min=0, max=10)
@@ -65,11 +66,11 @@ limit_field_20_200 = fields.Integer(
     required=False, load_default=20, validate=validate.Range(min=0, max=200)
 )
 priority_field = fields.Integer(required=False, validate=validate_priority)
-worker_field = fields.String(required=False, validate=validate_worker_name)
-schedule_name_field = fields.String(validate=validate_schedule_name)
-category_field = fields.String(required=False, validate=validate_category)
-periodicity_field = fields.String(required=False, validate=validate_periodicity)
-tag_field = fields.List(fields.String(validate=validate_not_empty), required=False)
-offliner_field = fields.String(required=False, validate=validate_offliner)
+worker_field = String(required=False, validate=validate_worker_name)
+schedule_name_field = String(validate=validate_schedule_name)
+category_field = String(required=False, validate=validate_category)
+periodicity_field = String(required=False, validate=validate_periodicity)
+tag_field = fields.List(String(validate=validate_not_empty), required=False)
+offliner_field = String(required=False, validate=validate_offliner)
 email_field = fields.Email(required=False, validate=validate_not_empty)
-username_field = fields.String(required=True, validate=validate_not_empty)
+username_field = String(required=True, validate=validate_not_empty)

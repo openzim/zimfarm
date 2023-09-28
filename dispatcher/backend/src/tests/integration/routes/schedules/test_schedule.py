@@ -87,6 +87,19 @@ bad_patch_updates = [
         "image": {"name": "openzim/youtube", "tag": "latest"},
         "resources": {"cpu": -1, "memory": MIN_RAM, "disk": ONE_GiB},
     },
+    {"name": "new\u0000name"},
+    {
+        "flags": {
+            "mwUrl": "https://fr.wiki\u0000pedia.org",
+            "adminEmail": "hello@test.de",
+        }
+    },
+    {
+        "flags": {
+            "mwUrl": "https://fr.wikipedia.org",
+            "adminEmail": "he\u0000llo@test.de",
+        }
+    },
 ]
 
 

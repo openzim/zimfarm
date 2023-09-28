@@ -1,6 +1,6 @@
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from common.schemas import HexColor, SerializableSchema, StringEnum
+from common.schemas import HexColor, SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -31,7 +31,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="type",
         required=True,
     )
-    ident = fields.String(
+    ident = String(
         metadata={
             "label": "Youtube ID",
             "description": "Youtube ID of the collection. "
@@ -40,20 +40,20 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="id",
         required=True,
     )
-    api_key = fields.String(
+    api_key = String(
         metadata={"label": "API Key", "description": "Youtube API Token"},
         data_key="api-key",
         required=True,
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "ZIM Name",
             "description": "Used as identifier and filename (date will be appended)",
             "placeholder": "mychannel_eng_all",
         },
     )
-    playlists_name = fields.String(
+    playlists_name = String(
         metadata={
             "label": "Playlists name",
             "description": "Format for building individual --name argument. "
@@ -87,7 +87,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         },
     )
 
-    dateafter = fields.String(
+    dateafter = String(
         metadata={
             "label": "Only after date",
             "description": "Custom filter to download videos uploaded on "
@@ -139,7 +139,7 @@ class YoutubeFlagsSchema(SerializableSchema):
             "(home never have autoplay).",
         },
     )
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -149,7 +149,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         dump_default="/output",
         validate=validate_output,
     )
-    tmp_dir = fields.String(
+    tmp_dir = String(
         metadata={
             "label": "Temp folder",
             "placeholder": "/output",
@@ -162,7 +162,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided). "
@@ -171,7 +171,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="zim-file",
         validate=validate_zim_filename,
     )
-    playlists_zim_file = fields.String(
+    playlists_zim_file = String(
         metadata={
             "label": "Playlists ZIM filename",
             "description": "Format for building individual --zim-file argument. "
@@ -180,13 +180,13 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="playlists-zim-file",
     )
 
-    language = fields.String(
+    language = String(
         metadata={
             "label": "Language",
             "description": "ISO-639-3 (3 chars) language code of content",
         }
     )
-    locale = fields.String(
+    locale = String(
         metadata={
             "label": "Locale",
             "description": "Locale name to use for translations (if avail) "
@@ -194,14 +194,14 @@ class YoutubeFlagsSchema(SerializableSchema):
         }
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your project and ZIM. Default to "
             "Channel name (of first video if playlists)",
         }
     )
-    playlists_title = fields.String(
+    playlists_title = String(
         metadata={
             "label": "Playlists title",
             "description": "Custom title format for individual playlist ZIM",
@@ -209,11 +209,11 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="playlists-title",
     )
 
-    description = fields.String(
+    description = String(
         metadata={"label": "Description", "description": "Description for ZIM"},
         validate=validate_zim_description,
     )
-    playlists_description = fields.String(
+    playlists_description = String(
         metadata={
             "label": "Playlists description",
             "description": "Custom description format for individual playlist ZIM",
@@ -221,14 +221,14 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="playlists-description",
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. Defaults to Channel name "
             "or “Youtue Channels”",
         }
     )
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": "List of Tags for the ZIM file. "
@@ -236,7 +236,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         }
     )
 
-    metadata_from = fields.String(
+    metadata_from = String(
         metadata={
             "label": "Metadata JSON",
             "description": "File path or URL to a JSON file holding custom metadata "

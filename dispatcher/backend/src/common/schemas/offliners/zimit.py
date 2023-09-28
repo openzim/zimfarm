@@ -1,6 +1,6 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, StringEnum
+from common.schemas import SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -145,7 +145,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": "Name of the ZIM. "
@@ -154,7 +154,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    lang = fields.String(
+    lang = String(
         metadata={
             "label": "Language",
             "description": "ISO-639-3 (3 chars) language code of content. "
@@ -162,14 +162,14 @@ class ZimitFlagsSchema(SerializableSchema):
         }
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for ZIM. Defaults to title of main page",
         }
     )
 
-    description = fields.String(
+    description = String(
         metadata={"label": "Description", "description": "Description for ZIM"},
         validate=validate_zim_description,
     )
@@ -183,7 +183,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided). "
@@ -193,21 +193,21 @@ class ZimitFlagsSchema(SerializableSchema):
         validate=validate_zim_filename,
     )
 
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": "List of Tags for the ZIM file.",
         }
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator.",
         }
     )
 
-    source = fields.String(
+    source = String(
         metadata={
             "label": "Content Source",
             "description": "Source name/URL of content",
@@ -222,7 +222,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    wait_until = fields.String(
+    wait_until = String(
         metadata={
             "label": "WaitUntil",
             "description": "Puppeteer page.goto() condition to wait for "
@@ -279,7 +279,7 @@ class ZimitFlagsSchema(SerializableSchema):
         ),
     )
 
-    include = fields.String(
+    include = String(
         metadata={
             "label": "Include",
             "description": "Regex of page URLs that should be "
@@ -288,7 +288,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    exclude = fields.String(
+    exclude = String(
         metadata={
             "label": "Exclude",
             "description": "Regex of page URLs that should be excluded from the crawl",
@@ -318,7 +318,7 @@ class ZimitFlagsSchema(SerializableSchema):
         validate=validate_devicelist,
     )
 
-    user_agent = fields.String(
+    user_agent = String(
         metadata={
             "label": "User Agent",
             "description": "Override user-agent with specified",
@@ -327,7 +327,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    user_agent_suffix = fields.String(
+    user_agent_suffix = String(
         metadata={
             "label": "User Agent Suffix",
             "description": "Append suffix to existing browser user-agent. "
@@ -347,7 +347,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    behaviors = fields.String(
+    behaviors = String(
         metadata={
             "label": "Behaviors",
             "description": "Which background behaviors to enable on each page. "
@@ -425,7 +425,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -436,7 +436,7 @@ class ZimitFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    stats_filename = fields.String(
+    stats_filename = String(
         metadata={
             "label": "Stats filename",
             "placeholder": "/output/task_progress.json",
@@ -459,7 +459,7 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    admin_email = fields.String(
+    admin_email = String(
         metadata={
             "label": "Admin Email",
             "description": "Admin Email for crawler: used in UserAgent "

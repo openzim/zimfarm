@@ -1,6 +1,6 @@
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from common.schemas import SerializableSchema, StringEnum
+from common.schemas import SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -22,7 +22,7 @@ class TedFlagsSchema(SerializableSchema):
         data_key="indiv-zims",
     )
 
-    topics = fields.String(
+    topics = String(
         metadata={
             "label": "Topics",
             "description": (
@@ -32,7 +32,7 @@ class TedFlagsSchema(SerializableSchema):
         },
     )
 
-    playlists = fields.String(
+    playlists = String(
         metadata={
             "label": "TED Playlists",
             "description": (
@@ -42,7 +42,7 @@ class TedFlagsSchema(SerializableSchema):
         },
     )
 
-    languages = fields.String(
+    languages = String(
         metadata={
             "label": "Languages",
             "description": "Comma-seperated list of languages to filter videos",
@@ -61,7 +61,7 @@ class TedFlagsSchema(SerializableSchema):
         },
     )
 
-    subtitles = fields.String(
+    subtitles = String(
         metadata={
             "label": "Subtitles Setting",
             "description": (
@@ -103,7 +103,7 @@ class TedFlagsSchema(SerializableSchema):
         },
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": (
@@ -113,7 +113,7 @@ class TedFlagsSchema(SerializableSchema):
         },
     )
 
-    name_format = fields.String(
+    name_format = String(
         metadata={
             "label": "Name Format",
             "description": (
@@ -125,14 +125,14 @@ class TedFlagsSchema(SerializableSchema):
         data_key="name-format",
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. Based on selection otherwise",
         }
     )
 
-    title_format = fields.String(
+    title_format = String(
         metadata={
             "label": "Title Format",
             "description": "Custom title format for individual ZIMs",
@@ -140,7 +140,7 @@ class TedFlagsSchema(SerializableSchema):
         data_key="title-format",
     )
 
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": (
@@ -150,7 +150,7 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate_zim_description,
     )
 
-    description_format = fields.String(
+    description_format = String(
         metadata={
             "label": "Description Format",
             "description": "Custom description format for individual ZIMs",
@@ -158,14 +158,14 @@ class TedFlagsSchema(SerializableSchema):
         data_key="description-format",
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. Defaults to TED",
         }
     )
 
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": (
@@ -196,7 +196,7 @@ class TedFlagsSchema(SerializableSchema):
         data_key="use-any-optimized-version",
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -207,7 +207,7 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    tmp_dir = fields.String(
+    tmp_dir = String(
         metadata={
             "label": "Temp folder",
             "description": (
@@ -220,7 +220,7 @@ class TedFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    metadata_from = fields.String(
+    metadata_from = String(
         metadata={
             "label": "Metadata JSON",
             "description": (
@@ -231,7 +231,7 @@ class TedFlagsSchema(SerializableSchema):
         data_key="metadata-from",
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on ZIM name if not provided)",
@@ -240,7 +240,7 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate_zim_filename,
     )
 
-    zim_file_format = fields.String(
+    zim_file_format = String(
         metadata={
             "label": "ZIM filename format",
             "description": (
@@ -265,7 +265,7 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate.Range(min=1),
     )
 
-    locale = fields.String(
+    locale = String(
         metadata={
             "label": "Locale",
             "description": "The locale to use for the translations in ZIM",

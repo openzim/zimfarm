@@ -1,6 +1,6 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema
+from common.schemas import SerializableSchema, String
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -12,7 +12,7 @@ class WikihowFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    language = fields.String(
+    language = String(
         metadata={
             "label": "Language",
             "description": "wikiHow website to build from. 2-letters language code.",
@@ -20,7 +20,7 @@ class WikihowFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": "ZIM name. Used as identifier and filename "
@@ -28,7 +28,7 @@ class WikihowFlagsSchema(SerializableSchema):
         },
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. "
@@ -36,7 +36,7 @@ class WikihowFlagsSchema(SerializableSchema):
         },
     )
 
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. "
@@ -53,21 +53,21 @@ class WikihowFlagsSchema(SerializableSchema):
         }
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Creator",
             "description": "Name of content creator. “wikiHow” otherwise",
         },
     )
 
-    publisher = fields.String(
+    publisher = String(
         metadata={
             "label": "Publisher",
             "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
         },
     )
 
-    tag = fields.String(
+    tag = String(
         metadata={
             "label": "ZIM Tags",
             "description": "List of semi-colon-separated Tags for the ZIM file. "
@@ -121,7 +121,7 @@ class WikihowFlagsSchema(SerializableSchema):
         data_key="low-quality",
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -132,7 +132,7 @@ class WikihowFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    tmp_dir = fields.String(
+    tmp_dir = String(
         metadata={
             "label": "Temp folder",
             "placeholder": "/output",
@@ -145,7 +145,7 @@ class WikihowFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided). "
@@ -164,7 +164,7 @@ class WikihowFlagsSchema(SerializableSchema):
         data_key="optimization-cache",
     )
 
-    category = fields.String(
+    category = String(
         metadata={
             "label": "Categories",
             "description": "Only scrape those categories (comma-separated). "
@@ -174,7 +174,7 @@ class WikihowFlagsSchema(SerializableSchema):
         },
     )
 
-    stats_filename = fields.String(
+    stats_filename = String(
         metadata={
             "label": "Stats filename",
             "placeholder": "/output/task_progress.json",
