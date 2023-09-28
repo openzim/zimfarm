@@ -1,6 +1,6 @@
 from marshmallow import fields
 
-from common.schemas import SerializableSchema
+from common.schemas import SerializableSchema, LongString
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -56,7 +56,7 @@ class KolibriFlagsSchema(SerializableSchema):
         validate=validate_zim_description,
     )
 
-    long_description = fields.String(
+    long_description = LongString(
         metadata={
             "label": "Long description",
             "description": "Custom long description for your ZIM. "

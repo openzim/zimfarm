@@ -1,6 +1,6 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, StringEnum
+from common.schemas import SerializableSchema, StringEnum, LongString
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -70,7 +70,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         validate=validate_zim_description,
     )
 
-    long_description = fields.String(
+    long_description = LongString(
         metadata={
             "label": "Long description",
             "description": "Optional long description for your ZIM",
