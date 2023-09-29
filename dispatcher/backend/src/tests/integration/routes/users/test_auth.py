@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 import pytest
-
+import json
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "openssl")
 
 
@@ -227,3 +227,44 @@ class TestAuthentication:
             "X-SSHAuth-Signature": b64_signature,
         }
         return client.post("/auth/ssh_authorize", headers=headers)
+
+
+    @pytest.mark.parametrize(
+        "username, key_to_use, assert_code",
+        [
+            ("some-user", "good", 204),
+            # ("some-user2", "good", 400),
+            # ("some-user", "bad", 400),
+            # ("some-user", "none", 400),
+            # ("del_user_0", "good", 400),
+        ],
+    )
+    def test_ssh_validate(
+        self,
+        client,
+        user,
+        deleted_users,
+        working_public_key,
+        not_working_public_key,
+        username,
+        key_to_use,
+        assert_code,
+    ):
+        
+        headers = {
+            "Content-type": "application/json",
+        }
+        if key_to_use == "bad":
+            key = base64.b64encode(bytes(not_working_public_key, 'utf-8')).decode()
+        elif key_to_use == "good":
+            key = base64.b64encode(bytes(working_public_key, 'utf-8')).decode()
+        else:
+            key = None
+
+        response = client.post("/auth/validate/ssh_key", headers={
+            "Content-type": "application/json",
+        }, data=json.dumps({"username": username, "key": key}),)
+        if response.status_code != assert_code:
+            print(response.get_json())
+        assert response.status_code == assert_code
+    

@@ -3,6 +3,7 @@ import binascii
 from http import HTTPStatus
 
 import paramiko
+import paramiko.pkey
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from flask import Response, request
@@ -13,8 +14,9 @@ import errors.http as http_errors
 from common import getnow
 from routes import errors
 from utils.check import raise_if_none
+from db import dbsession
 
-
+@dbsession
 def ssh_key(session: so.Session):
     """
     Validate ssh public keys exists and matches with username
@@ -33,9 +35,14 @@ def ssh_key(session: so.Session):
     # compute fingerprint
     try:
         key = request_json["key"]
+        print(key)
+        print(base64.b64decode(key))
         rsa_key = paramiko.RSAKey(data=base64.b64decode(key))
+        # rsa_key = paramiko.pkey.PublicBlob(type_ = "RSA", blob=base64.b64decode(key))
+        # print(rsa_key.)
         fingerprint = binascii.hexlify(rsa_key.get_fingerprint()).decode()
-    except (binascii.Error, paramiko.SSHException):
+    except (binascii.Error, paramiko.SSHException) as exc:
+        print(exc)
         raise errors.BadRequest("Invalid RSA key")
 
     # database

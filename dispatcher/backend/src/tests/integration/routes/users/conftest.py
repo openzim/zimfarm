@@ -31,6 +31,17 @@ DZ3RC9/1xkWuaA94v0RnYNoGs5IImYCc9Irf+vtudw/dzs2vIA8N1vlLRYMtjUPk
 nRWOIhuCIVxmalSW0B2wFNRk5tYCvYieDfOqLWEtMLzuN3AZktVRHg==
 -----END RSA PRIVATE KEY-----\n"""
 
+@pytest.fixture(scope="module")
+def working_public_key():
+    yield """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc
+UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX
+pz5i5arGkH5CNiI5jsQ8Gh+M7NSChuPgU8mOhBaxJ1oDvbyTCTzlcwXb97lFDlC7
+05xO2Vqam/trUUApOhlBfQKGo5gM05bvj4w+d5EasEboCvxCq6iI4OTW/8uReMRl
+y0296LbFKfohQd0yeucgfReAv0OEeUq6/0dwlgUL6DCx1I8mux6aaBFubJfHvpxG
+KcClQlbsiYkb/TbqJgbodmR+37X2PM8ZFcr+lG1TV8BU7090FW8DOqUIFcf5yZs3
+mwIDAQAB
+-----END PUBLIC KEY-----\n"""
 
 @pytest.fixture(scope="module")
 def not_working_private_key():
@@ -62,6 +73,18 @@ aTGGweZ1AoGBAIUGMaVsZ6z6wRptbZ+1dRNhMMCPAF6w8xweeHbBdvh/uH4gRXEC
 RhJMRUmh/D3kxUFO/wtSDGfo/HR/1iEraoddi+sA6+R56vA8ziJC51xw
 -----END RSA PRIVATE KEY-----\n"""
 
+
+@pytest.fixture(scope="module")
+def not_working_public_key():
+    yield """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc
+UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX
+pz5i5arGkH5CNiI5jsQ8Gh+M7NSChuPgU8mOhBaxJ1oDvbyTCTzlcwXb97lFDlC7
+05xO2Vqam/trUUApOhlBfQKGo5gM05bvj4w+d5EasEboCvxCq6iI4OTW/8uReMRl
+y0296LbFKfohQd0yeucgfReAv0OEeUq6/0dwlgUL6DCx1I8mux6aaBFubJfHvpxG
+KcClQlbsiYkb/TbqJgbodmR+37X2PM8ZFcr+lG1TV8BU7090FW8DOqUIFcf5yZs3
+mwIDAQAB
+-----END PUBLIC KEY-----\n"""
 
 @pytest.fixture(scope="module")
 def users(make_user):

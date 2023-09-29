@@ -10,6 +10,8 @@ import sqlalchemy.orm as so
 from flask import jsonify, request
 
 import db.models as dbm
+from common import getnow
+
 from common.constants import MESSAGE_VALIDITY, OPENSSL_BIN, TOKEN_EXPIRY
 from db import dbsession
 from routes import errors
@@ -96,6 +98,7 @@ def asymmetric_key_auth(session: so.Session):
             )
             if pkey_util.returncode == 0:  # signature verified
                 authenticated = True
+                #ssh_key.last_used = getnow()
                 break
     raise_if(
         not authenticated,
