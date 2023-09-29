@@ -118,6 +118,7 @@ class TestScheduleList:
             assert isinstance(item["language"]["code"], str)
             assert isinstance(item["language"]["name_en"], str)
             assert isinstance(item["language"]["name_native"], str)
+            assert isinstance(item["is_requested"], bool)
 
     @pytest.mark.parametrize(
         "skip, limit, expected",
@@ -238,6 +239,9 @@ class TestSchedulePost:
         assert "most_recent_task" in response_json
         response_json.pop("duration", None)
         response_json.pop("most_recent_task", None)
+        assert "is_requested" in response_json
+        assert response_json["is_requested"] is False
+        response_json.pop("is_requested")
 
         assert response_json == document
 
@@ -367,6 +371,9 @@ class TestScheduleGet:
         response_json.pop("duration", None)
         response_json.pop("most_recent_task", None)
         schedule.pop("_id")
+        assert "is_requested" in response_json
+        assert response_json["is_requested"] is False
+        response_json.pop("is_requested")
 
         assert response_json == schedule
 
