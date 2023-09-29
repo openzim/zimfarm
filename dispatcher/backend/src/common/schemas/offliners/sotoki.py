@@ -1,14 +1,18 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas import SerializableSchema, String
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class SotokiFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    domain = fields.String(
+    domain = String(
         metadata={
             "label": "Domain",
             "description": "Domain name from StackExchange to scrape.",
@@ -16,7 +20,7 @@ class SotokiFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": "ZIM name. Used as identifier and filename "
@@ -24,18 +28,19 @@ class SotokiFlagsSchema(SerializableSchema):
         },
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. Site name otherwise",
         },
     )
 
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. Site tagline otherwise",
         },
+        validate=validate_zim_description,
     )
 
     favicon = fields.Url(
@@ -45,21 +50,21 @@ class SotokiFlagsSchema(SerializableSchema):
         }
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Creator",
             "description": "Name of content creator. “Stack Exchange” otherwise",
         },
     )
 
-    publisher = fields.String(
+    publisher = String(
         metadata={
             "label": "Publisher",
             "description": "Custom publisher name (ZIM metadata). “OpenZIM” otherwise",
         },
     )
 
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": "List of comma-separated Tags for the ZIM file. "
@@ -136,7 +141,7 @@ class SotokiFlagsSchema(SerializableSchema):
         data_key="censor-words-list",
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -155,7 +160,7 @@ class SotokiFlagsSchema(SerializableSchema):
         }
     )
 
-    tmp_dir = fields.String(
+    tmp_dir = String(
         metadata={
             "label": "Temp folder",
             "placeholder": "/output",
@@ -168,7 +173,7 @@ class SotokiFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided). "
@@ -194,7 +199,7 @@ class SotokiFlagsSchema(SerializableSchema):
         },
     )
 
-    stats_filename = fields.String(
+    stats_filename = String(
         metadata={
             "label": "Stats filename",
             "placeholder": "/output/task_progress.json",
@@ -207,7 +212,7 @@ class SotokiFlagsSchema(SerializableSchema):
         validate=validate.Equal("/output/task_progress.json"),
     )
 
-    redis_url = fields.String(
+    redis_url = String(
         metadata={
             "label": "Redis URL",
             "description": "Redis URL to use as database. "
@@ -219,7 +224,7 @@ class SotokiFlagsSchema(SerializableSchema):
         data_key="redis-url",
     )
 
-    defrag_redis = fields.String(
+    defrag_redis = String(
         metadata={
             "label": "Defrag redis",
             "description": "Keep it as ENV:REDIS_PID",

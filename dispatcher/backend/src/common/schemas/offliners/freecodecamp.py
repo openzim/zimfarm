@@ -1,6 +1,6 @@
-from marshmallow import fields
+from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema
+from common.schemas import LongString, SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -8,12 +8,25 @@ from common.schemas.fields import (
     validate_zim_longdescription,
 )
 
+FCC_LANG_MAP = {
+    "ara": "arabic",
+    "cmn": "chinese",
+    "lzh": "chinese-traditional",
+    "eng": "english",
+    "spa": "espanol",
+    "deu": "german",
+    "ita": "italian",
+    "jpn": "japanese",
+    "por": "portuguese",
+    "ukr": "ukranian",
+}
+
 
 class FreeCodeCampFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    course = fields.String(
+    course = String(
         metadata={
             "label": "Course(s)",
             "description": "Course or course list (separated by commas)",
@@ -21,18 +34,18 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    language = fields.String(
+    language = StringEnum(
         metadata={
             "label": "Language",
-            "description": "Language of zim file and curriculum. Either (without "
-            "quotes) 'ara' (arabic), 'cmn' (chinese), 'lzh' (chinese-traditional), "
-            "'eng' (english), 'spa' (espanol), 'deu' (german), 'ita' (italian), "
-            "'jpn' (japanese), 'por' (portuguese), 'ukr' (ukranian).",
+            "description": "Language of zim file and curriculum. One of "
+            + ", ".join([f"'{key}' ({desc})" for key, desc in FCC_LANG_MAP.items()])
+            + ".",
         },
         required=True,
+        validate=validate.OneOf(list(FCC_LANG_MAP.keys())),
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": "ZIM name",
@@ -40,7 +53,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "ZIM title",
@@ -48,7 +61,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": "Description for your ZIM",
@@ -57,7 +70,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         validate=validate_zim_description,
     )
 
-    long_description = fields.String(
+    long_description = LongString(
         metadata={
             "label": "Long description",
             "description": "Optional long description for your ZIM",
@@ -66,14 +79,14 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         data_key="long-description",
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. “freeCodeCamp” otherwise",
         }
     )
 
-    publisher = fields.String(
+    publisher = String(
         metadata={
             "label": "Publisher",
             "description": "Custom publisher name (ZIM metadata). “OpenZIM” otherwise",
@@ -86,7 +99,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
-    output_dir = fields.String(
+    output_dir = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -98,7 +111,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided). "

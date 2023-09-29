@@ -3,7 +3,7 @@ import re
 from marshmallow import Schema, fields, pre_load, validate, validates_schema
 
 from common.enum import DockerImageName, Offliner, Platform
-from common.schemas import SerializableSchema
+from common.schemas import SerializableSchema, String
 from common.schemas.fields import (
     validate_category,
     validate_cpu,
@@ -37,9 +37,9 @@ from common.schemas.offliners import (
 
 
 class LanguageSchema(Schema):
-    code = fields.String(required=True, validate=validate_lang_code)
-    name_en = fields.String(required=True, validate=validate_not_empty)
-    name_native = fields.String(required=True, validate=validate_not_empty)
+    code = String(required=True, validate=validate_lang_code)
+    name_en = String(required=True, validate=validate_not_empty)
+    name_native = String(required=True, validate=validate_not_empty)
 
 
 class ResourcesSchema(Schema):
@@ -47,13 +47,13 @@ class ResourcesSchema(Schema):
     memory = fields.Integer(required=True, validate=validate_memory)
     disk = fields.Integer(required=True, validate=validate_disk)
     shm = fields.Integer(required=False, validate=validate_memory)
-    cap_add = fields.List(fields.String(), required=False)
-    cap_drop = fields.List(fields.String(), required=False)
+    cap_add = fields.List(String(), required=False)
+    cap_drop = fields.List(String(), required=False)
 
 
 class DockerImageSchema(Schema):
-    name = fields.String(required=True, validate=validate.OneOf(DockerImageName.all()))
-    tag = fields.String(required=True)
+    name = String(required=True, validate=validate.OneOf(DockerImageName.all()))
+    tag = String(required=True)
 
     @pre_load
     def strip_prefix(self, in_data, **kwargs):
@@ -65,12 +65,12 @@ class DockerImageSchema(Schema):
 
 
 class ScheduleConfigSchema(SerializableSchema):
-    task_name = fields.String(required=True, validate=validate_offliner)
-    warehouse_path = fields.String(required=True, validate=validate_warehouse_path)
+    task_name = String(required=True, validate=validate_offliner)
+    warehouse_path = String(required=True, validate=validate_warehouse_path)
     image = fields.Nested(DockerImageSchema(), required=True)
     resources = fields.Nested(ResourcesSchema(), required=True)
     flags = fields.Dict(required=True)
-    platform = fields.String(required=True, allow_none=True, validate=validate_platform)
+    platform = String(required=True, allow_none=True, validate=validate_platform)
     monitor = fields.Boolean(required=True, truthy=[True], falsy=[False])
 
     @staticmethod
@@ -101,7 +101,7 @@ class ScheduleConfigSchema(SerializableSchema):
 class EventNotificationSchema(SerializableSchema):
     mailgun = fields.List(fields.Email(), required=False)
     webhook = fields.List(fields.Url(), required=False)
-    slack = fields.List(fields.String(validate=validate_slack_target), required=False)
+    slack = fields.List(String(validate=validate_slack_target), required=False)
 
 
 class ScheduleNotificationSchema(SerializableSchema):
@@ -111,12 +111,12 @@ class ScheduleNotificationSchema(SerializableSchema):
 
 
 class ScheduleSchema(Schema):
-    name = fields.String(required=True, validate=validate_schedule_name)
+    name = String(required=True, validate=validate_schedule_name)
     language = fields.Nested(LanguageSchema(), required=True)
-    category = fields.String(required=True, validate=validate_category)
-    periodicity = fields.String(required=True, validate=validate_periodicity)
+    category = String(required=True, validate=validate_category)
+    periodicity = String(required=True, validate=validate_periodicity)
     tags = fields.List(
-        fields.String(validate=validate_not_empty), required=True, dump_default=[]
+        String(validate=validate_not_empty), required=True, dump_default=[]
     )
     enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
     config = fields.Nested(ScheduleConfigSchema(), required=True)

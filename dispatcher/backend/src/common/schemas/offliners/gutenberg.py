@@ -1,13 +1,14 @@
 from marshmallow import fields
 
-from common.schemas import SerializableSchema
+from common.schemas import SerializableSchema, String
+from common.schemas.fields import validate_zim_description
 
 
 class GutenbergFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    languages = fields.String(
+    languages = String(
         metadata={
             "label": "Languages",
             "description": (
@@ -17,7 +18,7 @@ class GutenbergFlagsSchema(SerializableSchema):
         },
     )
 
-    formats = fields.String(
+    formats = String(
         metadata={
             "label": "Formats",
             "description": (
@@ -27,7 +28,7 @@ class GutenbergFlagsSchema(SerializableSchema):
         },
     )
 
-    zim_title = fields.String(
+    zim_title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your project and ZIM.",
@@ -35,12 +36,13 @@ class GutenbergFlagsSchema(SerializableSchema):
         data_key="zim-title",
     )
 
-    zim_desc = fields.String(
+    zim_desc = String(
         metadata={"label": "Description", "description": "Description for ZIM"},
         data_key="zim-desc",
+        validate=validate_zim_description,
     )
 
-    books = fields.String(
+    books = String(
         metadata={
             "label": "Books",
             "description": (

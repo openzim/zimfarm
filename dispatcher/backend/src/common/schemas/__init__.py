@@ -1,24 +1,52 @@
 from marshmallow import Schema, fields
+from marshmallow.validate import And, ValidationError, Validator
+
+
+class NoNullChar(Validator):
+    """Validate that string value does not contains Unicode null character"""
+
+    def __call__(self, value: str) -> str:
+        if "\u0000" in value:
+            raise ValidationError("Null character is not allowed")
+
+        return value
+
+
+class String(fields.String):
+    """A custom String field for our needs
+
+    In addition to base type checks, it also ensures that value does not contains
+    Unicode null character
+    """
+
+    @property
+    def _validate_all(self):
+        return And(
+            NoNullChar(),
+            *self.validators,
+            error=self.error_messages["validator_failed"]
+        )
 
 
 class ListOfStringEnum(fields.List):
     pass
 
 
-class StringEnum(fields.String):
+class StringEnum(String):
     pass
 
 
-class HexColor(fields.String):
+class HexColor(String):
     pass
 
 
-class LongString(fields.String):
+class LongString(String):
     pass
 
 
 class SerializableSchema(Schema):
     MAPPING = {
+        String: "text",
         fields.String: "text",
         LongString: "long-text",
         StringEnum: "string-enum",

@@ -1,5 +1,6 @@
 from marshmallow import Schema, fields
 
+from common.schemas import String
 from common.schemas.fields import (
     category_field,
     email_field,
@@ -63,7 +64,7 @@ class RequestedTaskSchema(Schema):
 
 # requested-tasks for worker
 class WorkerRequestedTaskSchema(Schema):
-    worker = fields.String(required=True, validate=validate_worker_name)
+    worker = String(required=True, validate=validate_worker_name)
     avail_cpu = fields.Integer(required=True, validate=validate_cpu)
     avail_memory = fields.Integer(required=True, validate=validate_memory)
     avail_disk = fields.Integer(required=True, validate=validate_disk)
@@ -87,7 +88,7 @@ class SchedulesSchema(Schema):
     limit = limit_field_20_200
     category = fields.List(category_field, required=False)
     tag = tag_field
-    lang = fields.List(fields.String(validate=validate_not_empty), required=False)
+    lang = fields.List(String(validate=validate_not_empty), required=False)
     name = schedule_name_field
 
 
@@ -100,11 +101,9 @@ class UpdateSchema(Schema):
     tags = tag_field
     enabled = fields.Boolean(required=False, truthy={True}, falsy={False})
     task_name = offliner_field
-    warehouse_path = fields.String(required=False, validate=validate_warehouse_path)
+    warehouse_path = String(required=False, validate=validate_warehouse_path)
     image = fields.Nested(DockerImageSchema, required=False)
-    platform = fields.String(
-        required=False, validate=validate_platform, allow_none=True
-    )
+    platform = String(required=False, validate=validate_platform, allow_none=True)
     resources = fields.Nested(ResourcesSchema, required=False)
     monitor = fields.Boolean(required=False, truthy={True}, falsy={False})
     flags = fields.Dict(required=False)
@@ -112,46 +111,46 @@ class UpdateSchema(Schema):
 
 # schedule clone
 class CloneSchema(Schema):
-    name = fields.String(required=True, validate=validate_schedule_name)
+    name = String(required=True, validate=validate_schedule_name)
 
 
 # tasks GET
 class TasksSchema(Schema):
     skip = skip_field
     limit = limit_field_20_200
-    status = fields.List(fields.String(validate=validate_status), required=False)
+    status = fields.List(String(validate=validate_status), required=False)
     schedule_name = schedule_name_field
 
 
 # tasks POST
 class TaskCreateSchema(Schema):
-    worker_name = fields.String(required=True, validate=validate_worker_name)
+    worker_name = String(required=True, validate=validate_worker_name)
 
 
 # tasks PATCH
 class TasKUpdateSchema(Schema):
-    event = fields.String(required=True, validate=validate_event)
+    event = String(required=True, validate=validate_event)
     payload = fields.Dict(required=True)
 
 
 # users keys POST
 class KeySchema(Schema):
-    name = fields.String(required=True, validate=validate_not_empty)
-    key = fields.String(required=True, validate=validate_not_empty)
+    name = String(required=True, validate=validate_not_empty)
+    key = String(required=True, validate=validate_not_empty)
 
 
 # users POST
 class UserCreateSchema(Schema):
     username = username_field
-    password = fields.String(required=True, validate=validate_not_empty)
+    password = String(required=True, validate=validate_not_empty)
     email = email_field
-    role = fields.String(required=True, validate=validate_role)
+    role = String(required=True, validate=validate_role)
 
 
 # users PATCH
 class UserUpdateSchema(Schema):
     email = email_field
-    role = fields.String(required=False, validate=validate_role)
+    role = String(required=False, validate=validate_role)
 
 
 # workers checkin

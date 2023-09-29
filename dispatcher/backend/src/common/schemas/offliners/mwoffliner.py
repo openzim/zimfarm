@@ -1,6 +1,12 @@
 from marshmallow import fields, validate
 
-from common.schemas import ListOfStringEnum, LongString, SerializableSchema, StringEnum
+from common.schemas import (
+    ListOfStringEnum,
+    LongString,
+    SerializableSchema,
+    String,
+    StringEnum,
+)
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -42,20 +48,20 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "to ignore (one per line)",
         }
     )
-    customMainPage = fields.String(
+    customMainPage = String(
         metadata={
             "label": "Main Page",
             "description": "Article Name to use as home page. "
             "Automatically built or guessed otherwise.",
         }
     )
-    customZimTitle = fields.String(
+    customZimTitle = String(
         metadata={
             "label": "ZIM Title",
             "description": "Custom ZIM title. Wiki name otherwise.",
         }
     )
-    customZimDescription = fields.String(
+    customZimDescription = String(
         metadata={"label": "ZIM Description", "description": "Max length is 80 chars"},
         validate=validate_zim_description,
     )
@@ -73,32 +79,32 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "Will be resized to 48x48px.",
         }
     )
-    customZimTags = fields.String(
+    customZimTags = String(
         metadata={
             "label": "ZIM Tags",
             "description": "Semi-colon separated list of ZIM tags",
         }
     )
-    customZimLanguage = fields.String(
+    customZimLanguage = String(
         metadata={
             "label": "ZIM Language metadata",
             "description": "Custom ISO-639-3 language code for the ZIM",
         }
     )
-    publisher = fields.String(
+    publisher = String(
         metadata={
             "label": "Publisher",
             "description": "ZIM publisher metadata. `Kiwix` otherwise.",
         }
     )
-    filenamePrefix = fields.String(
+    filenamePrefix = String(
         metadata={
             "label": "Filename prefix",
             "description": "Custome filename up to the formats and date parts.",
         }
     )
     formats = ListOfStringEnum(
-        fields.String(
+        String(
             validate=validate.OneOf(
                 [
                     "nodet,nopic:mini",
@@ -139,7 +145,7 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         }
     )
 
-    addNamespaces = fields.String(
+    addNamespaces = String(
         metadata={
             "label": "Add Namespaces",
             "description": "Include addional namespaces (comma separated numbers)",
@@ -170,51 +176,51 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         },
     )
 
-    mwWikiPath = fields.String(
+    mwWikiPath = String(
         metadata={
             "label": "Wiki Path",
             "description": "Mediawiki wiki base path. Otherwise `/wiki/`.",
         }
     )
-    mwApiPath = fields.String(
+    mwApiPath = String(
         metadata={
             "label": "API Path",
             "description": "Mediawiki API path. Otherwise `/w/api.php`.",
         }
     )
-    mwModulePath = fields.String(
+    mwModulePath = String(
         metadata={
             "label": "Module Path",
             "description": "Mediawiki module load path. Otherwise `/w/load.php`.",
         }
     )
-    mwDomain = fields.String(
+    mwDomain = String(
         metadata={
             "label": "User Domain",
             "description": "Mediawiki user domain (for private wikis)",
         }
     )
-    mwUsername = fields.String(
+    mwUsername = String(
         metadata={
             "label": "Username",
             "description": "Mediawiki username (for private wikis)",
         }
     )
-    mwPassword = fields.String(
+    mwPassword = String(
         metadata={
             "label": "Password",
             "description": "Mediawiki user password (for private wikis)",
         }
     )
 
-    osTmpDir = fields.String(
+    osTmpDir = String(
         metadata={
             "label": "OS Temp Dir",
             "description": "Override default operating system temporary "
             "directory path environnement variable",
         }
     )
-    outputDirectory = fields.String(
+    outputDirectory = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",

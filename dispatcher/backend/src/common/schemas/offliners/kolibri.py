@@ -1,14 +1,19 @@
 from marshmallow import fields
 
-from common.schemas import SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas import LongString, SerializableSchema, String
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+    validate_zim_longdescription,
+)
 
 
 class KolibriFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    channel_id = fields.String(
+    channel_id = String(
         metadata={
             "label": "Channel ID",
             "description": "The Kolibri channel ID that you want to scrape",
@@ -17,7 +22,7 @@ class KolibriFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    root_id = fields.String(
+    root_id = String(
         metadata={
             "label": "Root ID",
             "description": "The node ID (usually Topic) from where to start "
@@ -26,7 +31,7 @@ class KolibriFlagsSchema(SerializableSchema):
         data_key="root-id",
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": "ZIM name. Used as identifier "
@@ -35,22 +40,23 @@ class KolibriFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. Kolibri channel name otherwise",
         }
     )
 
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. "
             "Kolibri channel description otherwise",
-        }
+        },
+        validate=validate_zim_description,
     )
 
-    long_description = fields.String(
+    long_description = LongString(
         metadata={
             "label": "Long description",
             "description": "Custom long description for your ZIM. "
@@ -58,6 +64,7 @@ class KolibriFlagsSchema(SerializableSchema):
             "too long to fit entirely in ZIM description",
         },
         data_key="long-description",
+        validate=validate_zim_longdescription,
     )
 
     favicon = fields.Url(
@@ -91,7 +98,7 @@ class KolibriFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. Kolibri "
@@ -99,14 +106,14 @@ class KolibriFlagsSchema(SerializableSchema):
         }
     )
 
-    publisher = fields.String(
+    publisher = String(
         metadata={
             "label": "Publisher",
             "description": "Custom publisher name (ZIM metadata). “OpenZIM” otherwise",
         }
     )
 
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": "List of comma-separated Tags for the ZIM file. "
@@ -148,7 +155,7 @@ class KolibriFlagsSchema(SerializableSchema):
         falsy=[False],
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -159,7 +166,7 @@ class KolibriFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    tmp_dir = fields.String(
+    tmp_dir = String(
         metadata={
             "label": "Temp folder",
             "placeholder": "/output",
@@ -172,7 +179,7 @@ class KolibriFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided). "

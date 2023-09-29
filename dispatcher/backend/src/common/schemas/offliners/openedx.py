@@ -1,7 +1,11 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, StringEnum
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas import SerializableSchema, String, StringEnum
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class OpenedxFlagsSchema(SerializableSchema):
@@ -17,7 +21,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    email = fields.String(
+    email = String(
         metadata={
             "label": "Registered e-mail",
             "description": "The registered e-mail ID on the openedx instance",
@@ -26,7 +30,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    password = fields.String(
+    password = String(
         metadata={
             "label": "Password",
             "description": "Password to the account registered on the openedx instance",
@@ -36,7 +40,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    instance_login_page = fields.String(
+    instance_login_page = String(
         metadata={
             "label": "Login page path",
             "description": "The login path in the instance. Must start with /",
@@ -45,7 +49,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="instance-login-page",
     )
 
-    instance_course_page = fields.String(
+    instance_course_page = String(
         metadata={
             "label": "Course page path",
             "description": (
@@ -56,7 +60,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="instance-course-page",
     )
 
-    instance_course_prefix = fields.String(
+    instance_course_prefix = String(
         metadata={
             "label": "Course prefix path",
             "description": (
@@ -152,7 +156,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="autoplay",
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "Name",
             "description": (
@@ -164,7 +168,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. Based on MOOC otherwise",
@@ -172,15 +176,16 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="title",
     )
 
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": "Custom description for your ZIM. Based on MOOC otherwise",
         },
         data_key="description",
+        validate=validate_zim_description,
     )
 
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator. Defaults to edX",
@@ -188,7 +193,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="creator",
     )
 
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": (
@@ -220,7 +225,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="use-any-optimized-version",
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -232,7 +237,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="output",
     )
 
-    tmp_dir = fields.String(
+    tmp_dir = String(
         metadata={
             "label": "Temp folder",
             "description": (
@@ -245,7 +250,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on ZIM name if not provided)",
@@ -268,7 +273,7 @@ class OpenedxFlagsSchema(SerializableSchema):
         validate=validate.Range(min=1),
     )
 
-    locale = fields.String(
+    locale = String(
         metadata={
             "label": "Locale",
             "description": "The locale to use for the translations in ZIM",

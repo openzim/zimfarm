@@ -1,7 +1,11 @@
 from marshmallow import fields
 
-from common.schemas import HexColor, SerializableSchema
-from common.schemas.fields import validate_output, validate_zim_filename
+from common.schemas import HexColor, SerializableSchema, String
+from common.schemas.fields import (
+    validate_output,
+    validate_zim_description,
+    validate_zim_filename,
+)
 
 
 class NautilusFlagsSchema(SerializableSchema):
@@ -26,7 +30,7 @@ class NautilusFlagsSchema(SerializableSchema):
         required=False,
     )
 
-    name = fields.String(
+    name = String(
         metadata={
             "label": "ZIM Name",
             "description": "Used as identifier and filename (date will be appended)",
@@ -55,7 +59,7 @@ class NautilusFlagsSchema(SerializableSchema):
         data_key="show-description",
     )
 
-    output = fields.String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -67,7 +71,7 @@ class NautilusFlagsSchema(SerializableSchema):
         dump_default="/output",
         validate=validate_output,
     )
-    zim_file = fields.String(
+    zim_file = String(
         metadata={
             "label": "ZIM filename",
             "description": "ZIM file name (based on --name if not provided)",
@@ -75,13 +79,13 @@ class NautilusFlagsSchema(SerializableSchema):
         data_key="zim-file",
         validate=validate_zim_filename,
     )
-    language = fields.String(
+    language = String(
         metadata={
             "label": "Language",
             "description": "ISO-639-3 (3 chars) language code of content",
         }
     )
-    locale = fields.String(
+    locale = String(
         metadata={
             "label": "Locale",
             "description": (
@@ -90,25 +94,26 @@ class NautilusFlagsSchema(SerializableSchema):
             ),
         }
     )
-    title = fields.String(
+    title = String(
         metadata={
             "label": "Title",
             "description": "Title for your project and ZIM. Otherwise --name.",
         }
     )
-    description = fields.String(
+    description = String(
         metadata={
             "label": "Description",
             "description": "Description for your project and ZIM.",
-        }
+        },
+        validate=validate_zim_description,
     )
-    creator = fields.String(
+    creator = String(
         metadata={
             "label": "Content Creator",
             "description": "Name of content creator.",
         }
     )
-    tags = fields.String(
+    tags = String(
         metadata={
             "label": "ZIM Tags",
             "description": "List of comma-separated Tags for the ZIM file.",
