@@ -100,7 +100,6 @@ class KeysRoute(BaseRoute):
             key=key,
             type="RSA",
             added=sa.func.current_timestamp(),
-            last_used=None,
             pkcs8_key=pkcs8_key,
         )
         ssh_key.user_id = current_user.id

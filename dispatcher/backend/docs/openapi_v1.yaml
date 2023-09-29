@@ -156,40 +156,6 @@ paths:
                 $ref: '#/components/schemas/InputError'
         401:
           description: Unauthorized
-  /auth/validate/ssh_key:
-    post:
-      tags:
-        - auth
-      summary: verify public key
-      operationId: validateKey
-      description: Checks that provided RSA public key is valid for User
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - username
-                - key
-              properties:
-                username:
-                  $ref: '#/components/schemas/Username'
-                key:
-                  type: string
-                  format: base64 encoded RSA public key text
-                  minLength: 1
-                  example: QUFBQUIzTnphQzF5YzJFQUFBQURBUUFCQUFBQkFRRERJUlNhbStHY0tBQW5tMGpGL1ZCMTJydFhDenBGRTFnc1Q5Q25GdzVkWWJQb2NudWdkbDY0UVpxNjVSdGN5T1BJVEJ0Yk1SOUw2ZEowejI2b21mZFhYd2VFcE5JR0N0SmRtNldzWTNrc0JyNHAvREhFRUVzSDkraGR3RVovQzd3YXlpbDZ3dUlwY3BMNXJLZ2xIRnlZVVJsNDQ5Nis0c0RjMG1YbllGdmVSMkdHRmNsdmwvcTdEejNla1RaNXV4THBhRFl4Y3NrZm5LVm1PQW82b04yYzRhbmtkZ2ozRkxmemRQeHFlakovUmRXVFF4dEtGQmt5VEZ0Wmt2SW9Ub2NXRENISWw0K1k1RExOYzlFTm1TZnlDbFdsYVRxaVlBZm4rY3QvZXNrZHFxK0dHY0pkVnAwREFSWUdMb3NNV3JQbm01WWdRL3EwOHEzcmNIZ1NzOG1I
-      responses:
-        204:
-          description: Public key is valid for User
-        400:
-          description: Bad Request (invalid input)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InputError'
-        401:
-          description: Unauthorized
 
   /schedules/:
     get:
@@ -1406,7 +1372,6 @@ paths:
                     - added
                     - fingerprint
                     - key
-                    - last_used
                     - name
                     - pkcs8_key
                     - type
@@ -1421,10 +1386,6 @@ paths:
                     key:
                       type: string
                       example: AAAAB3NzaC1yc2EAAAADAQABAAABAQDDIRSam+GcKAAnm0jF\/VB12rtXCzpFE1gsT9CnFw5dYbP
-                    last_used:
-                      type: string
-                      format: date-time
-                      example: "2019-08-12T08:22:10.519000Z"
                     name:
                       type: string
                       example: my-key

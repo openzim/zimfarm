@@ -41,7 +41,6 @@ class SshKeyRead(BaseSchema):
     added = auto_field()
     fingerprint = auto_field()
     key = auto_field()
-    last_used = auto_field()
     name = auto_field()
     pkcs8_key = auto_field()
     type = auto_field()

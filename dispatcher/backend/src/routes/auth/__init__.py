@@ -10,7 +10,7 @@ import db.models as dbm
 from common import getnow
 from db import dbsession
 from routes import API_PATH, authenticate
-from routes.auth import ssh, validate
+from routes.auth import ssh
 from routes.auth.oauth2 import OAuth2
 from routes.errors import BadRequest, Unauthorized
 from utils.check import raise_if, raise_if_none
@@ -125,6 +125,3 @@ class Blueprint(flask.Blueprint):
         self.add_url_rule("/test", "test_auth", test, methods=["GET"])
         self.add_url_rule("/token", "auth_with_token", refresh_token, methods=["POST"])
         self.add_url_rule("/oauth2", "oauth2", OAuth2(), methods=["POST"])
-        self.add_url_rule(
-            "/validate/ssh_key", "validate_ssh_key", validate.ssh_key, methods=["POST"]
-        )
