@@ -82,7 +82,7 @@
           <td>{{ schedule.category }}</td>
           <td>{{ schedule.language.name_en }}</td>
           <td>{{ schedule.config.task_name }}</td>
-          <td><font-awesome-icon v-if="has_requested_task(schedule.name)" icon="check"/></td>
+          <td><font-awesome-icon v-if="schedule.is_requested" icon="check"/></td>
           <td v-if="schedule.most_recent_task">
             <code :class="statusClass(schedule.most_recent_task.status)">{{ schedule.most_recent_task.status }}</code>
           </td>
@@ -115,7 +115,6 @@
         error: null,  // API originated error message
         meta: {}, // API query metadata (count, skip, limit)
         schedules: [],  // list of schedules returned by the API
-        requested_tasks: [],  // list of schedule_names with requested tasks
         block_url_updates: false,
       };
     },
@@ -186,7 +185,6 @@
       selectedTags() { return this.selectedTagsOptions.map((x) => x.value); },
     },
     methods: {
-      has_requested_task(schedule_name) { return this.requested_tasks.indexOf(schedule_name) != -1;},
       clearSelection() {
         this.selectedName = "";
         this.selectedCategoriesOptions = [];
@@ -277,18 +275,6 @@
                 parent.schedules = [];
                 parent.meta = response.data.meta;
                 parent.schedules = response.data.items;
-
-                parent.queryAPI('get', '/requested-tasks/', {params: {
-                    limit: parent.selectedLimit,
-                    'schedule_name': parent.selection}})
-                  .then(function (response) {
-                    parent.requested_tasks = response.data.items.map((item) => {
-                      return item["schedule_name"];
-                    });
-                  })
-                  .catch(function () {
-                    parent.requested_tasks = [];
-                  })
           })
           .catch(function (error) {
             parent.schedules = [];

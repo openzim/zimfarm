@@ -1722,6 +1722,7 @@ components:
         - language
         - name
         - category
+        - is_requested
       properties:
         config:
           type: object
@@ -1736,6 +1737,8 @@ components:
           $ref: '#/components/schemas/Language'
         name:
           type: string
+        is_requested:
+          type: boolean
         most_recent_task:
           type: object
           required:
@@ -1780,6 +1783,7 @@ components:
         - language
         - name
         - tags
+        - is_requested
       properties:
         category:
           $ref: '#/components/schemas/ScheduleCategory'
@@ -1792,6 +1796,8 @@ components:
           $ref: '#/components/schemas/Language'
         name:
           $ref: '#/components/schemas/ScheduleName'
+        is_requested:
+          type: boolean
         most_recent_task:
           type: object
           required:

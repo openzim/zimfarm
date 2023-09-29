@@ -51,6 +51,15 @@ class SchedulesRoute(BaseRoute):
             request_args.get("name"),
         )
 
+        subq = (
+            sa.select(
+                sa.func.count(dbm.RequestedTask.id).label("count_requested_task"),
+                dbm.RequestedTask.schedule_id,
+            )
+            .group_by(dbm.RequestedTask.schedule_id)
+            .subquery("requested_task_count")
+        )
+
         stmt = (
             sa.select(
                 dbm.Schedule.name,
@@ -71,8 +80,12 @@ class SchedulesRoute(BaseRoute):
                     dbm.Task.status,
                     dbm.Task.updated_at,
                 ),
+                sa.func.coalesce(subq.c.count_requested_task, 0).label(
+                    "count_requested_task"
+                ),
             )
             .join(dbm.Task, dbm.Schedule.most_recent_task, isouter=True)
+            .join(subq, subq.c.schedule_id == dbm.Schedule.id, isouter=True)
             .order_by(dbm.Schedule.name)
         )
 

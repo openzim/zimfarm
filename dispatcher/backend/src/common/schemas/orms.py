@@ -139,11 +139,15 @@ class LanguageSchema(m.Schema):
 
 
 class ScheduleLightSchema(m.Schema):
+    def get_is_requested(schedule: dbm.Schedule):
+        return schedule.count_requested_task > 0
+
     name = mf.String()
     category = mf.String()
     most_recent_task = mf.Nested(MostRecentTaskSchema)
     config = mf.Nested(ConfigTaskOnlySchema)
     language = mf.Nested(LanguageSchema)
+    is_requested = mf.Function(get_is_requested)
 
 
 class ScheduleFullSchema(BaseSchema):
@@ -180,6 +184,9 @@ class ScheduleFullSchema(BaseSchema):
                 ] = ScheduleFullSchema.get_one_duration(duration)
         return duration_res
 
+    def get_is_requested(schedule: dbm.Schedule):
+        return len(schedule.requested_tasks) > 0
+
     name = auto_field()
     category = auto_field()
     config = auto_field()
@@ -190,3 +197,4 @@ class ScheduleFullSchema(BaseSchema):
     language = mf.Function(get_language)
     most_recent_task = mf.Nested(MostRecentTaskSchema)
     duration = mf.Function(get_duration)
+    is_requested = mf.Function(get_is_requested)
