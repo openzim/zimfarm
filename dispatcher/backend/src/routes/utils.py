@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Dict, List
 from urllib.parse import urlparse
 
 from common.constants import SECRET_REPLACEMENT
@@ -6,6 +7,20 @@ from common.schemas.models import ScheduleConfigSchema
 from utils.offliners import build_str_command
 
 logger = logging.getLogger(__name__)
+
+
+def has_dict_sub_key(data: Dict[str, Any], keys: List[str]):
+    """check if dictionnary has the list of sub-keys present
+
+    Very permisive in terms of dict structure, i.e. any key in the path might be either
+    missing or None, this will work
+    """
+    cur_data = data
+    for key in keys:
+        if key not in cur_data or not cur_data[key]:
+            return False
+        cur_data = cur_data[key]
+    return True
 
 
 def remove_secrets_from_response(response: dict):
@@ -52,7 +67,7 @@ def remove_secret_flags(response: dict):
                 )
 
     # rebuild str_command from command
-    if "str_command" in response["config"]:
+    if has_dict_sub_key(response, ["config", "str_command"]):
         response["config"]["str_command"] = build_str_command(
             response["config"]["command"]
         )
@@ -61,7 +76,8 @@ def remove_secret_flags(response: dict):
 def remove_secret_flag_from_command(
     response: dict, root_key_value: str, field_name: str, secret_value: str
 ):
-    if "command" not in response[root_key_value]:
+    """remove one secret flag from command (either for container or config)"""
+    if not has_dict_sub_key(response, [root_key_value, "command"]):
         return
     if secret_value not in response[root_key_value]["command"]:
         return
@@ -74,19 +90,16 @@ def remove_secret_flag_from_command(
 def remove_upload_secrets(response: dict):
     """remove keyId and secretAccessKey upload_uri, since we upload logs to
     S3 but still need the rest of the URL to download scraper logs"""
-    if (
-        "upload" in response
-        and "logs" in response["upload"]
-        and "upload_uri" in response["upload"]["logs"]
-    ):
-        url = urlparse(response["upload"]["logs"]["upload_uri"])
-        response["upload"]["logs"]["upload_uri"] = url._replace(
-            query="&".join(
-                [
-                    param
-                    for param in url.query.split("&")
-                    if not param.lower().startswith("keyid")
-                    and not param.lower().startswith("secretaccesskey")
-                ]
-            )
-        ).geturl()
+    if not has_dict_sub_key(response, ["upload", "logs", "upload_uri"]):
+        return
+    url = urlparse(response["upload"]["logs"]["upload_uri"])
+    response["upload"]["logs"]["upload_uri"] = url._replace(
+        query="&".join(
+            [
+                param
+                for param in url.query.split("&")
+                if not param.lower().startswith("keyid")
+                and not param.lower().startswith("secretaccesskey")
+            ]
+        )
+    ).geturl()

@@ -2123,7 +2123,7 @@ components:
     Uuid:
       type: string
       format: uuid
-      example: 5dbc599b3b61e21c362703e4
+      example: 75473fd8-0a40-41fc-abfe-073849369b8c
     Username:
       type: string
       example: john

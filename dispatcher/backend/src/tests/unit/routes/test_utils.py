@@ -1,6 +1,6 @@
 import pytest
 
-from routes.utils import remove_secrets_from_response
+from routes.utils import has_dict_sub_key, remove_secrets_from_response
 
 
 @pytest.mark.parametrize(
@@ -20,6 +20,7 @@ from routes.utils import remove_secrets_from_response
                     '--optimization-cache="this_is_super_secret"',
                 ],
             },
+            "upload": None,
         },
         {
             "name": "normal_schedule_with_single_quotes",
@@ -218,3 +219,87 @@ def test_remove_secrets(response):
     remove_secrets_from_response(response)
     assert r"""'name': 'khanacademy_en_all'""" in str(response)
     assert "this_is_super_secret" not in str(response)
+
+
+@pytest.mark.parametrize(
+    "data, keys, has",
+    [
+        (
+            {
+                "config": {
+                    "task_name": "kolibri",
+                },
+                "upload": None,
+            },
+            ["config", "task_name"],
+            True,
+        ),
+        (
+            {
+                "config": {
+                    "task_name": "kolibri",
+                },
+                "upload": None,
+            },
+            ["config", "something"],
+            False,
+        ),
+        (
+            {
+                "config": {
+                    "task_name": "kolibri",
+                    "flags": {
+                        "name": "khanacademy_en_all",
+                    },
+                },
+                "upload": None,
+            },
+            ["config", "flags"],
+            True,
+        ),
+        (
+            {
+                "config": {
+                    "task_name": "kolibri",
+                    "flags": {
+                        "name": "khanacademy_en_all",
+                    },
+                },
+                "upload": None,
+            },
+            ["config", "flags", "name"],
+            True,
+        ),
+        (
+            {
+                "config": {
+                    "task_name": "kolibri",
+                    "flags": {
+                        "name": "khanacademy_en_all",
+                    },
+                },
+                "upload": None,
+            },
+            ["config", "flags", "language"],
+            False,
+        ),
+        (
+            {
+                "config": {"task_name": "kolibri", "flags": None},
+                "upload": None,
+            },
+            ["config", "flags", "name"],
+            False,
+        ),
+        (
+            {
+                "config": {"task_name": "kolibri", "flags": None},
+                "upload": None,
+            },
+            ["upload", "command"],
+            False,
+        ),
+    ],
+)
+def test_has_dict_sub_key(data, keys, has):
+    assert has == has_dict_sub_key(data, keys)
