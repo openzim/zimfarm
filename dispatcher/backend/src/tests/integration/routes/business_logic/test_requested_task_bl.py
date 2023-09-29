@@ -8,12 +8,12 @@ class TestRequestedTaskBusiness:
     def headers(self, access_token):
         return {"Authorization": access_token, "Content-Type": "application/json"}
 
-    @pytest.fixture(scope="module")
-    def requested_task(self, client, headers, schedule):
+    @pytest.fixture
+    def temp_requested_task(self, client, headers, temp_schedule):
         response = client.post(
             "/requested-tasks/",
             headers=headers,
-            data=json.dumps({"schedule_names": [schedule["name"]]}),
+            data=json.dumps({"schedule_names": [temp_schedule["name"]]}),
         )
         assert response.status_code == 201
         assert "requested" in response.json
@@ -28,29 +28,29 @@ class TestRequestedTaskBusiness:
         assert response.status_code == 200
 
     def test_requested_task_with_schedule(
-        self, client, headers, schedule, requested_task
+        self, client, headers, temp_schedule, temp_requested_task
     ):
-        url = f"/requested-tasks/{requested_task}"
+        url = f"/requested-tasks/{temp_requested_task}"
         response = client.get(
             url,
             headers=headers,
         )
         assert response.status_code == 200
         assert "schedule_name" in response.json
-        assert response.json["schedule_name"] == schedule["name"]
+        assert response.json["schedule_name"] == temp_schedule["name"]
         assert "original_schedule_name" in response.json
-        assert response.json["original_schedule_name"] == schedule["name"]
+        assert response.json["original_schedule_name"] == temp_schedule["name"]
 
     def test_requested_task_without_schedule(
-        self, client, headers, schedule, requested_task
+        self, client, headers, temp_schedule, temp_requested_task
     ):
-        url = f"/schedules/{schedule['name']}"
+        url = f"/schedules/{temp_schedule['name']}"
         response = client.delete(
             url,
             headers=headers,
         )
         assert response.status_code == 204
-        url = f"/requested-tasks/{requested_task}"
+        url = f"/requested-tasks/{temp_requested_task}"
         response = client.get(
             url,
             headers=headers,
@@ -59,4 +59,4 @@ class TestRequestedTaskBusiness:
         assert "schedule_name" in response.json
         assert response.json["schedule_name"] == "none"
         assert "original_schedule_name" in response.json
-        assert response.json["original_schedule_name"] == schedule["name"]
+        assert response.json["original_schedule_name"] == temp_schedule["name"]

@@ -103,22 +103,20 @@ def temp_schedule(make_schedule):
     NB: associated tasks and requested tasks are also deleted
     """
     schedule = make_schedule(name="periodic_sched_test")
+    schedule_id = schedule["_id"]
     yield schedule
     with Session.begin() as session:
-        schedule_obj = dbm.Schedule.get(session, schedule["name"])
-        schedule_obj.most_recent_task = None
-        session.flush()
+        schedule_obj = dbm.Schedule.get(session, schedule["name"], run_checks=False)
+        if schedule_obj:
+            schedule_obj.most_recent_task = None
+            session.flush()
         session.execute(
             sa.delete(dbm.RequestedTask).where(
-                dbm.RequestedTask.schedule_id == schedule["_id"]
+                dbm.RequestedTask.schedule_id == schedule_id
             )
         )
-        session.execute(
-            sa.delete(dbm.Task).where(dbm.Task.schedule_id == schedule["_id"])
-        )
-        session.execute(
-            sa.delete(dbm.Schedule).where(dbm.Schedule.id == schedule["_id"])
-        )
+        session.execute(sa.delete(dbm.Task).where(dbm.Task.schedule_id == schedule_id))
+        session.execute(sa.delete(dbm.Schedule).where(dbm.Schedule.id == schedule_id))
 
 
 @pytest.fixture(scope="module")
