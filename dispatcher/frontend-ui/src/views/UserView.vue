@@ -59,7 +59,6 @@
           <thead>
             <tr>
               <th>SSH Key</th>
-              <th>Last Used</th>
               <th>Fingerprint</th>
               <th v-if="canSSHKeyUsers">Delete</th>
             </tr>
@@ -67,7 +66,6 @@
           <tbody>
             <tr v-for="ssh_key in user.ssh_keys" :key="ssh_key.name">
               <td>{{ ssh_key.name }}</td>
-              <td v-tooltip="format_dt(ssh_key.last_used)">{{ ssh_key.last_used | from_now }}</td>
               <td ><code>{{ ssh_key.fingerprint }}</code></td>
               <td v-if="canSSHKeyUsers"><b-button variant="danger" size="sm" @click.prevent="confirmDelete(ssh_key)">Delete</b-button></td>
             </tr>

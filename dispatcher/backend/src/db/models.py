@@ -133,7 +133,6 @@ class Sshkey(Base):
     type: Mapped[str]
     key: Mapped[str]
     added: Mapped[datetime]
-    last_used: Mapped[Optional[datetime]]
     pkcs8_key: Mapped[str]
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 

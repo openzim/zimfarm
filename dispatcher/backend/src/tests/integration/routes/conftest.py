@@ -173,7 +173,6 @@ def make_key():
             ),
             "type": "RSA",
             "added": datetime.datetime(2019, 1, 1),
-            "last_used": datetime.datetime(2019, 1, 1),
             "pkcs8_key": "-----BEGIN PUBLIC KEY-----\n"
             "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBGJjT33bHGmHDE13tDc\n"
             "UqUvuam1Tvlg2jC7fyS2w5qKyc8wWBSLcbK+Yb8SnJEN44FHXKCKs6cH44PPDYcX\n"
@@ -212,7 +211,6 @@ def make_user(garbage_collector, key):
                 key=key["key"],
                 type=key["type"],
                 added=key["added"],
-                last_used=key["last_used"],
                 pkcs8_key=key["pkcs8_key"],
             )
         )
@@ -234,7 +232,6 @@ def make_user(garbage_collector, key):
                         "key": key.key,
                         "type": key.type,
                         "added": key.added,
-                        "last_used": key.last_used,
                         "pkcs8_key": key.pkcs8_key,
                     }
                     for key in user.ssh_keys
