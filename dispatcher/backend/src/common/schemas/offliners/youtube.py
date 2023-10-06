@@ -12,6 +12,26 @@ class YoutubeFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
+    optimization_cache = fields.Url(
+        metadata={
+            "label": "Optimization Cache URL",
+            "description": "Technical Flag: S3 Storage URL including credentials and "
+            "bucket",
+            "secret": True,
+        },
+        data_key="optimization-cache",
+    )
+
+    api_key = String(
+        metadata={
+            "label": "API Key",
+            "description": "Technical flag: Youtube API Token",
+            "secret": True,
+        },
+        data_key="api-key",
+        required=True,
+    )
+
     indiv_playlists = fields.Boolean(
         truthy=[True],
         falsy=[False],
@@ -54,7 +74,7 @@ class YoutubeFlagsSchema(SerializableSchema):
     name = String(
         metadata={
             "label": "ZIM Name",
-            "description": "Normal mode: Used as identifier and filename (date will "
+            "description": "Single mode: Used as identifier and filename (date will "
             "be appended)",
             "placeholder": "mychannel_eng_all",
         },
@@ -63,7 +83,7 @@ class YoutubeFlagsSchema(SerializableSchema):
     zim_file = String(
         metadata={
             "label": "ZIM Filename",
-            "description": "Normal mode: ZIM file name (optional, based on ZIM Name "
+            "description": "Single mode: ZIM file name (optional, based on ZIM Name "
             "if not provided). Include {period} to insert date period dynamically",
         },
         data_key="zim-file",
@@ -73,7 +93,7 @@ class YoutubeFlagsSchema(SerializableSchema):
     title = String(
         metadata={
             "label": "ZIM Title",
-            "description": "Normal mode: Custom title for your project and ZIM. "
+            "description": "Single mode: Custom title for your ZIM. "
             "Default to Channel name (of first video if playlists)",
         }
     )
@@ -81,7 +101,7 @@ class YoutubeFlagsSchema(SerializableSchema):
     description = String(
         metadata={
             "label": "ZIM Description",
-            "description": "Normal mode: Description for ZIM",
+            "description": "Single mode: Description for ZIM",
         },
         validate=validate_zim_description,
     )
@@ -262,26 +282,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         data_key="metadata-from",
     )
 
-    api_key = String(
-        metadata={
-            "label": "API Key",
-            "description": "Expert flag: Youtube API Token",
-            "secret": True,
-        },
-        data_key="api-key",
-        required=True,
-    )
-
-    optimization_cache = fields.Url(
-        metadata={
-            "label": "Optimization Cache URL",
-            "description": "Expert Flag: S3 Storage URL including credentials and "
-            "bucket",
-            "secret": True,
-        },
-        data_key="optimization-cache",
-    )
-
     concurrency = fields.Integer(
         metadata={
             "label": "Concurrency",
@@ -305,7 +305,7 @@ class YoutubeFlagsSchema(SerializableSchema):
         metadata={
             "label": "Temp folder",
             "placeholder": "/output",
-            "description": "Expert flag: Where to create temporay build folder. "
+            "description": "Technical flag: Where to create temporay build folder. "
             "Leave it as `/output`",
         },
         load_default="/output",
@@ -321,4 +321,4 @@ class YoutubeFlagsSchema(SerializableSchema):
                 raise ValidationError("playlists-name required in playlists mode")
         else:
             if not data.get("name"):
-                raise ValidationError("name required in normal mode")
+                raise ValidationError("name required in single mode")
