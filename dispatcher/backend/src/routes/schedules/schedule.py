@@ -1,4 +1,5 @@
 import base64
+import copy
 import logging
 from http import HTTPStatus
 
@@ -168,7 +169,9 @@ class SchedulesBackupRoute(BaseRoute):
         """Return all schedules backup"""
 
         def dump(schedule):
-            payload = ScheduleFullSchema(exclude=("most_recent_task",)).dump(schedule)
+            payload = copy.deepcopy(
+                ScheduleFullSchema(exclude=("most_recent_task",)).dump(schedule)
+            )
             if not token or not token.get_permission("schedules", "update"):
                 payload["notification"] = None
 
@@ -177,7 +180,7 @@ class SchedulesBackupRoute(BaseRoute):
             return payload
 
         stmt = sa.select(dbm.Schedule).order_by(dbm.Schedule.name)
-        return jsonify(
+        result = jsonify(
             list(
                 map(
                     dump,
@@ -185,6 +188,11 @@ class SchedulesBackupRoute(BaseRoute):
                 )
             )
         )
+
+        if session.new or session.dirty or session.deleted:
+            raise BadRequest("Unexpected modifications occured")
+
+        return result
 
 
 class ScheduleRoute(BaseRoute):
