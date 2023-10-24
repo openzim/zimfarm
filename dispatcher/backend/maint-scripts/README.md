@@ -9,7 +9,7 @@ Most script expects an environment variable with the URL/credentials to the DB a
 ```sh
 pip install -r requirements.txt
  export POSTGRES_URI="postgresql+psycopg://login:password@somehost:5432/zimfarm"
-PYTHONPATH=../dispatcher/backend/src/ ./update_scraper_version.py sotoki dev
+PYTHONPATH=../src/ ./update_scraper_version.py sotoki dev
 ```
 
 ## Running from inside the API container
