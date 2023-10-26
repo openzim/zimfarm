@@ -2,7 +2,7 @@
 
 """ Find all schedules which are enabled and have at least the last two tasks which
     failed in a row
-    
+
     ./find_schedules_in_errors"""
 
 import sqlalchemy as sa
@@ -14,7 +14,7 @@ from db import dbsession
 
 @dbsession
 def find_schedules_in_errors(session: so.Session):
-    print(f"looking after schedules with bad status")
+    print("Looking after schedules with bad status")
 
     stmt = (
         sa.select(dbm.Schedule).where(dbm.Schedule.enabled).order_by(dbm.Schedule.name)
@@ -32,7 +32,8 @@ def find_schedules_in_errors(session: so.Session):
 
         if nb_success == 0:
             print(
-                f"Never succeeded: schedule {schedule.name} (periodicity={schedule.periodicity}) never succeeded out of {total} attempts"
+                f"Never succeeded: schedule {schedule.name} (periodicity="
+                f"{schedule.periodicity}) never succeeded out of {total} attempts"
             )
             continue
 
@@ -45,7 +46,10 @@ def find_schedules_in_errors(session: so.Session):
 
             if nb_failures_in_a_row > 1:
                 print(
-                    f"Many failures in a row: schedule {schedule.name} (periodicity={schedule.periodicity}) failed {nb_failures_in_a_row} times in a row, nb_success: {nb_success}, nb_failed: {nb_failed}, total: {total}"
+                    f"Many failures in a row: schedule {schedule.name} (periodicity="
+                    f"{schedule.periodicity}) failed {nb_failures_in_a_row} times in"
+                    f" a row, nb_success: {nb_success}, nb_failed: {nb_failed},"
+                    f" total: {total}"
                 )
                 continue
 

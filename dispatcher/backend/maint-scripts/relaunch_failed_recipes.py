@@ -23,7 +23,7 @@ from utils.scheduling import request_a_schedule
 
 @dbsession
 def relaunch_failed_recipes(session: so.Session, start_date: str):
-    print(f"Loading tasks that have failed since start_date")
+    print("Loading tasks that have failed since start_date")
 
     start_datetime = datetime.datetime.fromisoformat(start_date)
     stmt = (
@@ -46,7 +46,8 @@ def relaunch_failed_recipes(session: so.Session, start_date: str):
         ).total_seconds()
         if scraper_duration > 60:
             print(
-                f"Ignoring schedule {task.schedule.name}, duration was {scraper_duration}"
+                f"Ignoring schedule {task.schedule.name}, duration was "
+                f"{scraper_duration}"
             )
             continue
 
@@ -60,7 +61,8 @@ def relaunch_failed_recipes(session: so.Session, start_date: str):
 
         if nb_success == 0:
             print(
-                f"Ignoring schedule {task.schedule.name}, never succeeded out of {total} attempts"
+                f"Ignoring schedule {task.schedule.name}, never succeeded out of "
+                f"{total} attempts"
             )
             continue
 
@@ -73,12 +75,16 @@ def relaunch_failed_recipes(session: so.Session, start_date: str):
 
         if nb_failures_in_a_row > 1:
             print(
-                f"Ignoring schedule {task.schedule.name}, too many failures in a row, failed: {nb_failed}, failure_in_a_row: {nb_failures_in_a_row}, nb_success: {nb_success}, total: {total}"
+                f"Ignoring schedule {task.schedule.name}, too many failures in a row,"
+                f" failed: {nb_failed}, failure_in_a_row: {nb_failures_in_a_row},"
+                f" nb_success: {nb_success}, total: {total}"
             )
             continue
 
         print(
-            f"Requesting schedule {task.schedule.name} failed: {nb_failed}, failure_in_a_row: {nb_failures_in_a_row}, nb_success: {nb_success}, total: {total}"
+            f"Requesting schedule {task.schedule.name} failed: {nb_failed}, "
+            f"failure_in_a_row: {nb_failures_in_a_row}, nb_success: {nb_success},"
+            f" total: {total}"
         )
 
         # Uncomment below to really request the schedule
