@@ -28,11 +28,12 @@ from db import dbsession
 def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=False):
     jinja_env = Environment(loader=FileSystemLoader("./"), autoescape=True)
     jinja_template = jinja_env.get_template("report_youtube_api_keys.txt")
-    github_repo = os.environ["GITHUB_REPO"]
-    github_token = os.environ["GITHUB_TOKEN"]
-    github_issue_assignees = os.environ.get("GITHUB_ISSUE_ASSIGNEES", "").split(",")
-    github_issue_labels = os.environ.get("GITHUB_ISSUE_LABELS", "").split(",")
     create_issue = os.environ.get("CREATE_ISSUE", "false").lower() == "true"
+    if create_issue:
+        github_repo = os.environ["GITHUB_REPO"]
+        github_token = os.environ["GITHUB_TOKEN"]
+        github_issue_assignees = os.environ.get("GITHUB_ISSUE_ASSIGNEES", "").split(",")
+        github_issue_labels = os.environ.get("GITHUB_ISSUE_LABELS", "").split(",")
 
     known_api_keys = json.loads(
         pathlib.Path("report_youtube_api_keys.conf.json").read_text()
