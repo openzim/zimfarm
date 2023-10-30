@@ -40,6 +40,7 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
     print("Listing schedules")
     stmt = (
         sa.select(dbm.Schedule)
+        .where(dbm.Schedule.config["task_name"].astext == "youtube")
         .where(dbm.Schedule.config["flags"]["api-key"].astext.is_not(None))
         .order_by(dbm.Schedule.config["flags"]["api-key"].astext)
     )
