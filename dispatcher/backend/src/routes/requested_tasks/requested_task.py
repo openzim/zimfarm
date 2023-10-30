@@ -35,14 +35,14 @@ from utils.token import AccessToken
 logger = logging.getLogger(__name__)
 
 
-def record_ip_change(worker_name):
+def record_ip_change(session: so.Session, worker_name: str):
     """record that this worker changed its IP and trigger whitelist changes"""
     today = datetime.date.today()
     # counts and limits are per-day so reset it if date changed
     if today != WorkersIpChangesCounts.today:
         WorkersIpChangesCounts.reset()
     if WorkersIpChangesCounts.add(worker_name) <= MAX_WORKER_IP_CHANGES_PER_DAY:
-        update_workers_whitelist()
+        update_workers_whitelist(session)
     else:
         logger.error(
             f"Worker {worker_name} IP changes for {today} "
@@ -229,15 +229,16 @@ class RequestedTasksForWorkers(BaseRoute):
             worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
             if worker.user.username == token.username:
                 worker.last_seen = getnow()
-                previous_ip = str(worker.last_ip)
-                worker.last_ip = worker_ip
-
-                # flush to DB so that record_ip_change has access to updated IP
-                session.flush()
 
                 # IP changed since last encounter
-                if USES_WORKERS_IPS_WHITELIST and previous_ip != worker_ip:
-                    record_ip_change(worker_name)
+                if str(worker.last_ip) != worker_ip:
+                    logger.info(
+                        f"Worker IP changed detected for {worker_name}: "
+                        f"IP changed from {worker.last_ip} to {worker_ip}"
+                    )
+                    worker.last_ip = worker_ip
+                    if USES_WORKERS_IPS_WHITELIST():
+                        record_ip_change(session=session, worker_name=worker_name)
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
 

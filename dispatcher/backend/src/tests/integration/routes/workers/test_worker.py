@@ -1,11 +1,14 @@
+import os
+from typing import List
+
 import pytest
 
-from common.external import build_workers_whitelist
+from common.external import IpUpdater, build_workers_whitelist
 
 
 class TestWorkersCommon:
-    def test_build_workers_whitelist(self, workers):
-        whitelist = build_workers_whitelist()
+    def test_build_workers_whitelist(self, workers, dbsession):
+        whitelist = build_workers_whitelist(session=dbsession)
         # - 4 because:
         # 2 workers have a duplicate IP
         # 1 worker has an IP missing
@@ -206,3 +209,59 @@ class TestWorkerCheckIn:
         #     response.get_json()["error"]
         #     == "worker with same name already exists for another user"
         # )
+
+
+class TestWorkerRequestedTasks:
+    def test_requested_task_worker_as_admin(self, client, access_token, worker):
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={"Authorization": access_token},
+        )
+        assert response.status_code == 200
+
+    def test_requested_task_worker_as_worker(self, client, make_access_token, worker):
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={"Authorization": make_access_token(worker["username"], "worker")},
+        )
+        assert response.status_code == 200
+
+    new_ip_address = "88.88.88.88"
+
+    def custom_ip_update(self, ip_addresses: List):
+        self.ip_updated = True
+        assert TestWorkerRequestedTasks.new_ip_address in ip_addresses
+
+    def test_requested_task_worker_update_ip_whitelist(
+        self, client, make_access_token, worker
+    ):
+        self.ip_updated = False
+        IpUpdater.update_fn = self.custom_ip_update
+        os.environ["USES_WORKERS_IPS_WHITELIST"] = "1"
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={
+                "Authorization": make_access_token(worker["username"], "worker"),
+                "X-Forwarded-For": TestWorkerRequestedTasks.new_ip_address,
+            },
+        )
+        assert response.status_code == 200
+        assert self.ip_updated
