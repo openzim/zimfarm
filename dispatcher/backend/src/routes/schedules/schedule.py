@@ -382,6 +382,9 @@ class ScheduleCloneRoute(BaseRoute):
         )
         clone.durations.append(duration)
 
-        session.flush()
+        try:
+            session.flush()
+        except IntegrityError:
+            raise BadRequest("Schedule name already exists")
 
         return make_response(jsonify({"_id": str(clone.id)}), HTTPStatus.CREATED)
