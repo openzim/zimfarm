@@ -303,6 +303,43 @@ class TestSchedulePost:
         )
         assert response.status_code == 400
 
+    def test_create_schedule_flags_ko(self, client, access_token):
+        schedule = {
+            "name": "ifixit flags ko",
+            "category": "ifixit",
+            "enabled": False,
+            "tags": [],
+            "language": {
+                "code": "en",
+                "name_en": "English",
+                "name_native": "English",
+            },
+            "config": {
+                "task_name": "ifixit",
+                "warehouse_path": "/ifixit",
+                "flags": {},
+                "image": {"name": "openzim/ifixit", "tag": "latest"},
+                "monitor": False,
+                "platform": "ifixit",
+                "resources": {"cpu": 3, "memory": 1024, "disk": 0},
+            },
+            "periodicity": "quarterly",
+        }
+
+        url = "/schedules/"
+        response = client.post(
+            url, json=schedule, headers={"Authorization": access_token}
+        )
+        response_data = response.get_json()
+        print(response_data)
+        assert response.status_code == 400
+        assert "error_description" in response_data
+        assert "language" in response_data["error_description"]
+        assert (
+            "Missing data for required field."
+            in response_data["error_description"]["language"]
+        )
+
     def test_image_names(self, client, schedule, access_token):
         url = "/schedules/{}/image-names".format(schedule["name"])
         response = client.get(
