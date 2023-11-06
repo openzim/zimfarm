@@ -125,10 +125,6 @@ class SchedulesRoute(BaseRoute):
 
         try:
             document = ScheduleSchema().load(request.get_json())
-            flags_schema = ScheduleConfigSchema.get_offliner_schema(
-                document["config"]["task_name"]
-            )
-            flags_schema().load(document["config"]["flags"])
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
