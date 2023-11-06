@@ -277,7 +277,6 @@ class TestSchedulePost:
             url, json=schedule, headers={"Authorization": access_token}
         )
         response_data = response.get_json()
-        print(response_data)
         assert response.status_code == 400
         assert "error_description" in response_data
         assert key in response_data["error_description"]
@@ -316,7 +315,6 @@ class TestSchedulePost:
             url, json=schedule, headers={"Authorization": access_token}
         )
         response_data = response.get_json()
-        print(response_data)
         assert response.status_code == 400
         assert "error_description" in response_data
         assert "config" in response_data["error_description"]
@@ -354,7 +352,6 @@ class TestSchedulePost:
             url, json=schedule, headers={"Authorization": access_token}
         )
         response_data = response.get_json()
-        print(response_data)
         assert response.status_code == 400
         assert "error_description" in response_data
         assert "language" in response_data["error_description"]

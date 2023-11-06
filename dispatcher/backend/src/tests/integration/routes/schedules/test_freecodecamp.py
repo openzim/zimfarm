@@ -31,7 +31,6 @@ class TestFreeCodeCamp:
             url, json=schedule, headers={"Authorization": access_token}
         )
         response_data = response.get_json()
-        print(response_data)
         if "_id" in response_data:
             garbage_collector.add_schedule_id(response_data["_id"])
         assert response.status_code == 201
@@ -94,7 +93,6 @@ class TestFreeCodeCamp:
             url, json=schedule, headers={"Authorization": access_token}
         )
         response_data = response.get_json()
-        print(response_data)
         if "_id" in response_data:
             garbage_collector.add_schedule_id(response_data["_id"])
         assert response.status_code == 400
