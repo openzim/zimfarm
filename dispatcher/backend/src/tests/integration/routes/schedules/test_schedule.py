@@ -265,7 +265,10 @@ class TestSchedulePost:
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},
                 "monitor": False,
+                "platform": None,
+                "resources": {"cpu": 3, "memory": 1024, "disk": 0},
             },
+            "periodicity": "quarterly",
         }
 
         del schedule[key]
@@ -273,7 +276,15 @@ class TestSchedulePost:
         response = client.post(
             url, json=schedule, headers={"Authorization": access_token}
         )
+        response_data = response.get_json()
+        print(response_data)
         assert response.status_code == 400
+        assert "error_description" in response_data
+        assert key in response_data["error_description"]
+        assert (
+            "Missing data for required field."
+            in response_data["error_description"][key]
+        )
 
     @pytest.mark.parametrize("key", ["warehouse_path", "flags", "image"])
     def test_create_schedule_missing_config_keys(self, client, access_token, key):
@@ -293,7 +304,10 @@ class TestSchedulePost:
                 "flags": {},
                 "image": {"name": "openzim/phet", "tag": "latest"},
                 "monitor": False,
+                "platform": None,
+                "resources": {"cpu": 3, "memory": 1024, "disk": 0},
             },
+            "periodicity": "quarterly",
         }
 
         del schedule["config"][key]
@@ -301,7 +315,16 @@ class TestSchedulePost:
         response = client.post(
             url, json=schedule, headers={"Authorization": access_token}
         )
+        response_data = response.get_json()
+        print(response_data)
         assert response.status_code == 400
+        assert "error_description" in response_data
+        assert "config" in response_data["error_description"]
+        assert key in response_data["error_description"]["config"]
+        assert (
+            "Missing data for required field."
+            in response_data["error_description"]["config"][key]
+        )
 
     def test_create_schedule_flags_ko(self, client, access_token):
         schedule = {
