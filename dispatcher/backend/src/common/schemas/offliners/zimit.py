@@ -1,5 +1,6 @@
 from marshmallow import fields, validate
 
+from common.constants import ZIMIT_DISABLE_ZIM_FILENAME_CHECK
 from common.schemas import SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
@@ -190,7 +191,9 @@ class ZimitFlagsSchema(SerializableSchema):
             "Make sure to end with _{period}.zim",
         },
         data_key="zim-file",
-        validate=validate_zim_filename,
+        validate=validate_zim_filename
+        if not ZIMIT_DISABLE_ZIM_FILENAME_CHECK
+        else None,
     )
 
     tags = String(
