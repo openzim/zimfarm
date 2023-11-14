@@ -9,12 +9,8 @@ from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
 
 import db.models as dbm
-from common import WorkersIpChangesCounts, getnow
-from common.constants import (
-    ENABLED_SCHEDULER,
-    MAX_WORKER_IP_CHANGES_PER_DAY,
-    USES_WORKERS_IPS_WHITELIST,
-)
+from common import WorkersIpChangesCounts, constants, getnow
+from common.constants import ENABLED_SCHEDULER, MAX_WORKER_IP_CHANGES_PER_DAY
 from common.external import update_workers_whitelist
 from common.schemas.orms import RequestedTaskFullSchema, RequestedTaskLightSchema
 from common.schemas.parameters import (
@@ -25,7 +21,7 @@ from common.schemas.parameters import (
 )
 from common.utils import task_event_handler
 from db import count_from_stmt, dbsession, dbsession_manual
-from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound, HTTPBase
+from errors.http import HTTPBase, InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound

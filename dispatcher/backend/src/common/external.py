@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 def update_workers_whitelist(session: so.Session):
     """update whitelist of workers on external services"""
-    IpUpdater.update_fn(build_workers_whitelist(session=session))
+    ExternalIpUpdater.update_fn(build_workers_whitelist(session=session))
 
 
 def build_workers_whitelist(session: so.Session) -> typing.List[str]:
@@ -149,7 +149,7 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
     )
 
 
-class IpUpdater:
+class ExternalIpUpdater:
     update_fn = update_wasabi_whitelist
 
 

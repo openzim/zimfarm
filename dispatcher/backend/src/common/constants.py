@@ -3,12 +3,6 @@ import os
 
 from common.enum import SchedulePeriodicity
 
-
-def refreshable_constant(fn):
-    """Refreshable constants helper for those we have interest to live update"""
-    return fn
-
-
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
 MESSAGE_VALIDITY = 60  # number of seconds before a message expire
 
@@ -72,11 +66,7 @@ SECRET_REPLACEMENT = "********"  # nosec
 # using the following, it is possible to automate
 # the update of a whitelist of workers IPs on Wasabi (S3 provider)
 # enable this feature (default is off)
-# Nota: this is a refreshable constant so that it can be dynamically updated
-# (including in tests)
-USES_WORKERS_IPS_WHITELIST = refreshable_constant(
-    lambda: bool(os.getenv("USES_WORKERS_IPS_WHITELIST", ""))
-)
+USES_WORKERS_IPS_WHITELIST = bool(os.getenv("USES_WORKERS_IPS_WHITELIST"))
 MAX_WORKER_IP_CHANGES_PER_DAY = 4
 # wasabi URL with credentials to update policy
 WASABI_URL = os.getenv("WASABI_URL", "")
