@@ -10,7 +10,7 @@ from common.schemas.offliners.sotoki import SotokiFlagsSchema
 from common.schemas.offliners.ted import TedFlagsSchema
 from common.schemas.offliners.wikihow import WikihowFlagsSchema
 from common.schemas.offliners.youtube import YoutubeFlagsSchema
-from common.schemas.offliners.zimit import ZimitFlagsSchema
+from common.schemas.offliners.zimit import ZimitFlagsSchema, ZimitFlagsSchemaRelaxed
 
 __all__ = (
     "FreeCodeCampFlagsSchema",
@@ -25,6 +25,7 @@ __all__ = (
     "WikihowFlagsSchema",
     "YoutubeFlagsSchema",
     "ZimitFlagsSchema",
+    "ZimitFlagsSchemaRelaxed",
 )
 
 

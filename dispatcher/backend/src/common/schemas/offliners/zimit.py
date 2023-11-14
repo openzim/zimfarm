@@ -1,6 +1,5 @@
 from marshmallow import fields, validate
 
-from common.constants import ZIMIT_DISABLE_ZIM_FILENAME_CHECK
 from common.schemas import SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
@@ -191,9 +190,7 @@ class ZimitFlagsSchema(SerializableSchema):
             "Make sure to end with _{period}.zim",
         },
         data_key="zim-file",
-        validate=validate_zim_filename
-        if not ZIMIT_DISABLE_ZIM_FILENAME_CHECK
-        else None,
+        validate=validate_zim_filename,
     )
 
     tags = String(
@@ -470,4 +467,20 @@ class ZimitFlagsSchema(SerializableSchema):
         },
         data_key="adminEmail",
         required=False,
+    )
+
+
+class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
+    """A Zimit flags schema with relaxed constraints on validation
+
+    For now, only zim_file name is not checked anymore. Typically used for youzim.it
+    """
+
+    zim_file = String(
+        metadata={
+            "label": "ZIM filename",
+            "description": "ZIM file name (based on --name if not provided). "
+            "Make sure to end with _{period}.zim",
+        },
+        data_key="zim-file",
     )
