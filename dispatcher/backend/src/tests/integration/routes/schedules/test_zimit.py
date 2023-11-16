@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from collections import namedtuple
 from typing import List
 
 import pytest
@@ -7,6 +7,10 @@ from common import constants
 
 
 def update_dict(dict: dict, key_path: str, new_value: any):
+    """Update a nested key value in a dictionary
+
+    E.g if key_path is 'key1.subkey2', then dict['key1']['subkey2'] will be set"""
+
     # Split the key path into individual keys
     keys = key_path.split(".")
 
@@ -22,52 +26,33 @@ def update_dict(dict: dict, key_path: str, new_value: any):
 
 
 class TestZimit:
-    @dataclass
-    class Modification:
-        key_path: str
-        new_value: str
+    mod = namedtuple("Modification", ["key_path", "new_value"])
 
     @pytest.mark.parametrize(
         "modifications, relaxed_schema, succeeds",
         [
             (
-                [
-                    Modification(
-                        key_path="name", new_value="zimit_test_good_name_not_relaxed"
-                    )
-                ],
+                [mod(key_path="name", new_value="zimit_test_good_name_not_relaxed")],
                 False,
                 True,
             ),
             (
-                [
-                    Modification(
-                        key_path="name", new_value="zimit_test_good_name_relaxed"
-                    )
-                ],
+                [mod(key_path="name", new_value="zimit_test_good_name_relaxed")],
                 True,
                 True,
             ),
             (
                 [
-                    Modification(
-                        key_path="name", new_value="zimit_test_bad_name_not_relaxed"
-                    ),
-                    Modification(
-                        key_path="config.flags.zim-file", new_value="bad_name"
-                    ),
+                    mod(key_path="name", new_value="zimit_test_bad_name_not_relaxed"),
+                    mod(key_path="config.flags.zim-file", new_value="bad_name"),
                 ],
                 False,
                 False,
             ),
             (
                 [
-                    Modification(
-                        key_path="name", new_value="zimit_test_bad_name_relaxed"
-                    ),
-                    Modification(
-                        key_path="config.flags.zim-file", new_value="bad_name"
-                    ),
+                    mod(key_path="name", new_value="zimit_test_bad_name_relaxed"),
+                    mod(key_path="config.flags.zim-file", new_value="bad_name"),
                 ],
                 True,
                 True,
@@ -79,7 +64,7 @@ class TestZimit:
         client,
         access_token,
         garbage_collector,
-        modifications: List[Modification],
+        modifications: List[mod],
         relaxed_schema: bool,
         succeeds: bool,
     ):
