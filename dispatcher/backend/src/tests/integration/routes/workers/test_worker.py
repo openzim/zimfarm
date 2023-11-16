@@ -296,7 +296,7 @@ class TestWorkerRequestedTasks:
         # setup custom ip updater to intercept Wasabi operations
         updater = IpUpdaterAndChecker(should_fail=external_update_fails)
         assert TestWorkerRequestedTasks.new_ip_address not in updater.ip_addresses
-        ExternalIpUpdater.update_fn = updater.ip_update
+        ExternalIpUpdater.update = updater.ip_update
         constants.USES_WORKERS_IPS_WHITELIST = external_update_enabled
 
         # call it once to set next_ip
