@@ -212,8 +212,6 @@ class TestWorkerCheckIn:
 
 
 class TestWorkerRequestedTasks:
-    new_ip_address = "88.88.88.88"
-
     def test_requested_task_worker_as_admin(self, client, access_token, worker):
         response = client.get(
             "/requested-tasks/worker",
@@ -239,13 +237,6 @@ class TestWorkerRequestedTasks:
             headers={"Authorization": make_access_token(worker["username"], "worker")},
         )
         assert response.status_code == 200
-
-    def custom_ip_update(self, ip_addresses: List):
-        self.ip_updated = True
-        assert TestWorkerRequestedTasks.new_ip_address in ip_addresses
-
-    def custom_failing_ip_update(self, ip_addresses: List):
-        raise Exception()
 
     @pytest.mark.parametrize(
         "prev_ip, new_ip, external_update_enabled, external_update_fails,"
@@ -295,7 +286,7 @@ class TestWorkerRequestedTasks:
 
         # setup custom ip updater to intercept Wasabi operations
         updater = IpUpdaterAndChecker(should_fail=external_update_fails)
-        assert TestWorkerRequestedTasks.new_ip_address not in updater.ip_addresses
+        assert new_ip not in updater.ip_addresses
         ExternalIpUpdater.update = updater.ip_update
         constants.USES_WORKERS_IPS_WHITELIST = external_update_enabled
 
