@@ -2,6 +2,7 @@ import re
 
 from marshmallow import Schema, fields, pre_load, validate, validates_schema
 
+from common import constants
 from common.enum import DockerImageName, Offliner, Platform
 from common.schemas import SerializableSchema, String
 from common.schemas.fields import (
@@ -33,6 +34,7 @@ from common.schemas.offliners import (
     WikihowFlagsSchema,
     YoutubeFlagsSchema,
     ZimitFlagsSchema,
+    ZimitFlagsSchemaRelaxed,
 )
 
 
@@ -84,7 +86,9 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.nautilus: NautilusFlagsSchema,
             Offliner.ted: TedFlagsSchema,
             Offliner.openedx: OpenedxFlagsSchema,
-            Offliner.zimit: ZimitFlagsSchema,
+            Offliner.zimit: ZimitFlagsSchemaRelaxed
+            if constants.ZIMIT_USE_RELAXED_SCHEMA
+            else ZimitFlagsSchema,
             Offliner.kolibri: KolibriFlagsSchema,
             Offliner.wikihow: WikihowFlagsSchema,
             Offliner.ifixit: IFixitFlagsSchema,

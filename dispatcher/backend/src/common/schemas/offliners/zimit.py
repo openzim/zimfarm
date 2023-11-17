@@ -468,3 +468,19 @@ class ZimitFlagsSchema(SerializableSchema):
         data_key="adminEmail",
         required=False,
     )
+
+
+class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
+    """A Zimit flags schema with relaxed constraints on validation
+
+    For now, only zim_file name is not checked anymore. Typically used for youzim.it
+    """
+
+    zim_file = String(
+        metadata={
+            "label": "ZIM filename",
+            "description": "ZIM file name (based on --name if not provided). "
+            "Make sure to end with _{period}.zim",
+        },
+        data_key="zim-file",
+    )
