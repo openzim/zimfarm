@@ -65,6 +65,7 @@ class SchedulesRoute(BaseRoute):
             sa.select(
                 dbm.Schedule.name,
                 dbm.Schedule.category,
+                dbm.Schedule.enabled,
                 so.Bundle(
                     "language",
                     dbm.Schedule.language_code.label("code"),

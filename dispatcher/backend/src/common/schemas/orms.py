@@ -148,6 +148,7 @@ class ScheduleLightSchema(m.Schema):
     config = mf.Nested(ConfigTaskOnlySchema)
     language = mf.Nested(LanguageSchema)
     is_requested = mf.Function(get_is_requested)
+    enabled = mf.Boolean()
 
 
 class ScheduleFullSchema(BaseSchema):
