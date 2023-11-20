@@ -76,7 +76,10 @@
         <tr v-for="schedule in schedules" :key="schedule._id">
           <td>
             <router-link :to="{name: 'schedule-detail', params: {'schedule_name': schedule.name}}">
-              {{ schedule.name }}
+              <span style="display: flex; align-items: center">
+                {{ schedule.name }}
+                <font-awesome-icon v-if="!schedule.enabled" icon="pause" style="margin-left: 5px; color: orange"/>
+              </span>
             </router-link>
           </td>
           <td>{{ schedule.category }}</td>
