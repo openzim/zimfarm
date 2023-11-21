@@ -27,12 +27,11 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def update_workers_whitelist():
+def update_workers_whitelist(session: so.Session):
     """update whitelist of workers on external services"""
-    update_wasabi_whitelist(build_workers_whitelist())
+    ExternalIpUpdater.update(build_workers_whitelist(session=session))
 
 
-@dbsession
 def build_workers_whitelist(session: so.Session) -> typing.List[str]:
     """list of worker IP adresses and networks (text) to use as whitelist"""
     wl_networks = []
@@ -148,6 +147,16 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
         PolicyDocument=new_policy,
         SetAsDefault=True,
     )
+
+
+class ExternalIpUpdater:
+    """Class responsible to push IP updates to external system(s)
+
+    `update` is called with the new list of all workers IPs everytime
+    a change is detected.
+    By default, this class update our IPs whitelist in Wasabi"""
+
+    update = update_wasabi_whitelist
 
 
 @dbsession

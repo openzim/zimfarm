@@ -9,12 +9,8 @@ from flask import Response, jsonify, make_response, request
 from marshmallow import ValidationError
 
 import db.models as dbm
-from common import WorkersIpChangesCounts, getnow
-from common.constants import (
-    ENABLED_SCHEDULER,
-    MAX_WORKER_IP_CHANGES_PER_DAY,
-    USES_WORKERS_IPS_WHITELIST,
-)
+from common import WorkersIpChangesCounts, constants, getnow
+from common.constants import ENABLED_SCHEDULER, MAX_WORKER_IP_CHANGES_PER_DAY
 from common.external import update_workers_whitelist
 from common.schemas.orms import RequestedTaskFullSchema, RequestedTaskLightSchema
 from common.schemas.parameters import (
@@ -24,8 +20,8 @@ from common.schemas.parameters import (
     WorkerRequestedTaskSchema,
 )
 from common.utils import task_event_handler
-from db import count_from_stmt, dbsession
-from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
+from db import count_from_stmt, dbsession, dbsession_manual
+from errors.http import HTTPBase, InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
@@ -35,14 +31,14 @@ from utils.token import AccessToken
 logger = logging.getLogger(__name__)
 
 
-def record_ip_change(worker_name):
+def record_ip_change(session: so.Session, worker_name: str):
     """record that this worker changed its IP and trigger whitelist changes"""
     today = datetime.date.today()
     # counts and limits are per-day so reset it if date changed
     if today != WorkersIpChangesCounts.today:
         WorkersIpChangesCounts.reset()
     if WorkersIpChangesCounts.add(worker_name) <= MAX_WORKER_IP_CHANGES_PER_DAY:
-        update_workers_whitelist()
+        update_workers_whitelist(session)
     else:
         logger.error(
             f"Worker {worker_name} IP changes for {today} "
@@ -208,7 +204,7 @@ class RequestedTasksForWorkers(BaseRoute):
     methods = ["GET"]
 
     @authenticate
-    @dbsession
+    @dbsession_manual
     def get(self, session: so.Session, token: AccessToken.Payload):
         """list of requested tasks to be retrieved by workers, auth-only"""
 
@@ -229,15 +225,26 @@ class RequestedTasksForWorkers(BaseRoute):
             worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
             if worker.user.username == token.username:
                 worker.last_seen = getnow()
-                previous_ip = str(worker.last_ip)
-                worker.last_ip = worker_ip
-
-                # flush to DB so that record_ip_change has access to updated IP
-                session.flush()
 
                 # IP changed since last encounter
-                if USES_WORKERS_IPS_WHITELIST and previous_ip != worker_ip:
-                    record_ip_change(worker_name)
+                if str(worker.last_ip) != worker_ip:
+                    logger.info(
+                        f"Worker IP changed detected for {worker_name}: "
+                        f"IP changed from {worker.last_ip} to {worker_ip}"
+                    )
+                    worker.last_ip = worker_ip
+                    # commit explicitely since we are not using an explicit transaction,
+                    # and do it before calling Wasabi so that changes are propagated
+                    # quickly and transaction is not blocking
+                    session.commit()
+                    if constants.USES_WORKERS_IPS_WHITELIST:
+                        try:
+                            record_ip_change(session=session, worker_name=worker_name)
+                        except Exception:
+                            raise HTTPBase(
+                                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+                                error="Recording IP changes failed",
+                            )
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
 

@@ -52,6 +52,20 @@ def dbsession(func):
     return inner
 
 
+def dbsession_manual(func):
+    """Decorator to create an SQLAlchemy ORM session object and wrap the function
+    inside the session. A `session` argument is automatically set. Transaction must
+    be managed by the developer (e.g. perform a commit / rollback).
+    """
+
+    def inner(*args, **kwargs):
+        with Session() as session:
+            kwargs["session"] = session
+            return func(*args, **kwargs)
+
+    return inner
+
+
 def count_from_stmt(session: OrmSession, stmt: SelectBase) -> int:
     """Count all records returned by any statement `stmt` passed as parameter"""
     return session.execute(

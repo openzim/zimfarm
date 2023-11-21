@@ -1,11 +1,14 @@
+from typing import List
+
 import pytest
 
-from common.external import build_workers_whitelist
+from common import constants
+from common.external import ExternalIpUpdater, build_workers_whitelist
 
 
 class TestWorkersCommon:
-    def test_build_workers_whitelist(self, workers):
-        whitelist = build_workers_whitelist()
+    def test_build_workers_whitelist(self, workers, dbsession):
+        whitelist = build_workers_whitelist(session=dbsession)
         # - 4 because:
         # 2 workers have a duplicate IP
         # 1 worker has an IP missing
@@ -206,3 +209,130 @@ class TestWorkerCheckIn:
         #     response.get_json()["error"]
         #     == "worker with same name already exists for another user"
         # )
+
+
+class TestWorkerRequestedTasks:
+    def test_requested_task_worker_as_admin(self, client, access_token, worker):
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={"Authorization": access_token},
+        )
+        assert response.status_code == 200
+
+    def test_requested_task_worker_as_worker(self, client, make_access_token, worker):
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={"Authorization": make_access_token(worker["username"], "worker")},
+        )
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "prev_ip, new_ip, external_update_enabled, external_update_fails,"
+        " external_update_called",
+        [
+            ("77.77.77.77", "88.88.88.88", False, False, False),  # ip update disabled
+            ("77.77.77.77", "77.77.77.77", True, False, False),  # ip did not changed
+            ("77.77.77.77", "88.88.88.88", True, False, True),  # ip should be updated
+            ("77.77.77.77", "88.88.88.88", True, True, False),  # ip update fails
+        ],
+    )
+    def test_requested_task_worker_update_ip_whitelist(
+        self,
+        client,
+        make_access_token,
+        worker,
+        prev_ip,
+        new_ip,
+        external_update_enabled,
+        external_update_fails,
+        external_update_called,
+    ):
+        # call it once to set prev_ip
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={
+                "Authorization": make_access_token(worker["username"], "worker"),
+                "X-Forwarded-For": prev_ip,
+            },
+        )
+        assert response.status_code == 200
+
+        # check prev_ip has been set
+        response = client.get("/workers/")
+        assert response.status_code == 200
+        response_data = response.get_json()
+        for item in response_data["items"]:
+            if item["name"] != worker["name"]:
+                continue
+            assert item["last_ip"] == prev_ip
+
+        # setup custom ip updater to intercept Wasabi operations
+        updater = IpUpdaterAndChecker(should_fail=external_update_fails)
+        assert new_ip not in updater.ip_addresses
+        ExternalIpUpdater.update = updater.ip_update
+        constants.USES_WORKERS_IPS_WHITELIST = external_update_enabled
+
+        # call it once to set next_ip
+        response = client.get(
+            "/requested-tasks/worker",
+            query_string={
+                "worker": worker["name"],
+                "avail_cpu": 4,
+                "avail_memory": 2048,
+                "avail_disk": 4096,
+            },
+            headers={
+                "Authorization": make_access_token(worker["username"], "worker"),
+                "X-Forwarded-For": new_ip,
+            },
+        )
+        if external_update_fails:
+            assert response.status_code == 503
+        else:
+            assert response.status_code == 200
+            assert updater.ips_updated == external_update_called
+            if external_update_called:
+                assert new_ip in updater.ip_addresses
+
+        # check new_ip has been set (even if ip update is disabled or has failed)
+        response = client.get("/workers/")
+        assert response.status_code == 200
+        response_data = response.get_json()
+        for item in response_data["items"]:
+            if item["name"] != worker["name"]:
+                continue
+            assert item["last_ip"] == new_ip
+
+
+class IpUpdaterAndChecker:
+    """Helper class to intercept Wasabi operations and perform assertions"""
+
+    def __init__(self, should_fail: bool) -> None:
+        self.ips_updated = False
+        self.should_fail = should_fail
+        self.ip_addresses = []
+
+    def ip_update(self, ip_addresses: List):
+        if self.should_fail:
+            raise Exception()
+        else:
+            self.ips_updated = True
+            self.ip_addresses = ip_addresses
