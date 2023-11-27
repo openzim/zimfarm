@@ -223,20 +223,27 @@ class RequestedTasksForWorkers(BaseRoute):
         # record we've seen a worker, if applicable
         if token and worker_name:
             worker = dbm.Worker.get(session, worker_name, WorkerNotFound)
+
+            # Update worker properties only if called as the worker itself, not as an
+            # admin
             if worker.user.username == token.username:
                 worker.last_seen = getnow()
 
                 # IP changed since last encounter
-                if str(worker.last_ip) != worker_ip:
+                ip_changed = str(worker.last_ip) != worker_ip
+                if ip_changed:
                     logger.info(
                         f"Worker IP changed detected for {worker_name}: "
                         f"IP changed from {worker.last_ip} to {worker_ip}"
                     )
                     worker.last_ip = worker_ip
-                    # commit explicitely since we are not using an explicit transaction,
-                    # and do it before calling Wasabi so that changes are propagated
-                    # quickly and transaction is not blocking
-                    session.commit()
+
+                # commit explicitely last_ip and last_seen changes, since we are not
+                # using an explicit transaction, and do it before calling Wasabi so
+                # that changes are propagated quickly and transaction is not blocking
+                session.commit()
+
+                if ip_changed:
                     if constants.USES_WORKERS_IPS_WHITELIST:
                         try:
                             record_ip_change(session=session, worker_name=worker_name)
