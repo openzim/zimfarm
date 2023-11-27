@@ -238,9 +238,9 @@ class RequestedTasksForWorkers(BaseRoute):
                     )
                     worker.last_ip = worker_ip
 
-                # commit explicitely since we are not using an explicit transaction,
-                # and do it before calling Wasabi so that changes are propagated
-                # quickly and transaction is not blocking
+                # commit explicitely last_ip and last_seen changes, since we are not
+                # using an explicit transaction, and do it before calling Wasabi so
+                # that changes are propagated quickly and transaction is not blocking
                 session.commit()
 
                 if ip_changed:
