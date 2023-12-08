@@ -38,7 +38,7 @@ class TestFreeCodeCamp:
         patch_data = {
             "enabled": True,
             "flags": {
-                "output-dir": "/output",
+                "output": "/output",
                 "course": (
                     "regular-expressions,basic-javascript,basic-data-structures,"
                     "debugging,functional-programming,object-oriented-programming,"
