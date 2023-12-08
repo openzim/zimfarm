@@ -99,7 +99,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
-    output_dir = String(
+    output = String(
         metadata={
             "label": "Output folder",
             "placeholder": "/output",
@@ -107,7 +107,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         },
         load_default="/output",
         dump_default="/output",
-        data_key="output-dir",
+        data_key="output",
         validate=validate_output,
     )
 
