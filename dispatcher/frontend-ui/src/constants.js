@@ -295,6 +295,10 @@ function get_timezone_details() {
   return {tz: dt.zoneName, offset: dt.o, offsetstr: offsetstr}
 }
 
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
 var DEFAULT_CPU_SHARE = 1024;
 
 var ZIMFARM_WEBAPI = window.environ.ZIMFARM_WEBAPI || "https://api.farm.openzim.org/v1";
@@ -527,4 +531,5 @@ export default {
   fromSeconds: DateTime.fromSeconds,
   to_timestamp: to_timestamp,
   is_ios_firefox: isFirefoxOnIOS(),
+  delay: delay,
 };

@@ -180,12 +180,20 @@
       },
       async loadLastRuns() {
         let parent = this;
+        parent.last_runs_loaded = false;
         let schedule_names = parent.tasks.map(function (item) { return item.schedule_name; }).unique();
 
         parent.toggleLoader("fetching last runs…");
-        let requests = schedule_names.map(function (schedule_name) {
-            return parent.queryAPI('get', "/schedules/" + schedule_name);
-          });
+        const chunkSize = 5;
+        let requests = []
+        for (let i = 0; i < schedule_names.length; i += chunkSize) {
+            const chunk = schedule_names.slice(i, i + chunkSize);
+            for (let iChunk in chunk) {
+              requests.push(parent.queryAPI('get', "/schedules/" + chunk[iChunk]))
+            }
+            await Constants.delay(500)
+        }
+
         const results = await Promise.all(requests.map(p => p.catch(e => e)));
 
         results.forEach(function (response, index) {
