@@ -184,14 +184,14 @@
         let schedule_names = parent.tasks.map(function (item) { return item.schedule_name; }).unique();
 
         parent.toggleLoader("fetching last runs…");
-        const chunkSize = 5;
+        const chunkSize = Constants.TASKS_LOAD_SCHEDULES_CHUNK_SIZE;
         let requests = []
         for (let i = 0; i < schedule_names.length; i += chunkSize) {
             const chunk = schedule_names.slice(i, i + chunkSize);
             for (let iChunk in chunk) {
               requests.push(parent.queryAPI('get', "/schedules/" + chunk[iChunk]))
             }
-            await Constants.delay(500)
+            await Constants.getDelay(Constants.TASKS_LOAD_SCHEDULES_DELAY)
         }
 
         const results = await Promise.all(requests.map(p => p.catch(e => e)));

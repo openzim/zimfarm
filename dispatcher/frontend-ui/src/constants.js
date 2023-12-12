@@ -295,8 +295,8 @@ function get_timezone_details() {
   return {tz: dt.zoneName, offset: dt.o, offsetstr: offsetstr}
 }
 
-function delay(time) {
-  return new Promise(resolve => setTimeout(resolve, time));
+function getDelay(milliseconds) { // retrieve a promise making a pause in milliseconds
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
 var DEFAULT_CPU_SHARE = 1024;
@@ -311,6 +311,8 @@ export default {
   },
   zimfarm_webapi: ZIMFARM_WEBAPI,
   kiwix_download_url:  window.environ.ZIMFARM_KIWIX_DOWNLOAD_URL || "https://download.kiwix.org/zim",
+  TASKS_LOAD_SCHEDULES_CHUNK_SIZE: parseInt(window.environ.ZIMFARM_TASKS_LOAD_SCHEDULES_CHUNK_SIZE, 10) || 5,
+  TASKS_LOAD_SCHEDULES_DELAY: parseInt(window.environ.ZIMFARM_TASKS_LOAD_SCHEDULES_DELAY, 10) || 100,
   DEFAULT_CPU_SHARE: DEFAULT_CPU_SHARE,  // used to generate docker cpu-shares
   DEFAULT_FIRE_PRIORITY: 5,
   DEFAULT_LIMIT: 20,
@@ -531,5 +533,5 @@ export default {
   fromSeconds: DateTime.fromSeconds,
   to_timestamp: to_timestamp,
   is_ios_firefox: isFirefoxOnIOS(),
-  delay: delay,
+  getDelay: getDelay,
 };
