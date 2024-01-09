@@ -17,7 +17,7 @@
     "core-js": "^3.3.2",
     "deep-diff": "^1.0.2",
     "filesize": "^6.0.1",
-    "follow-redirects": "1.14.9",
+    "follow-redirects": "1.15.4",
     "glob-parent": "^6.0.1",
     "jsonwebtoken": "^8.5.1",
     "luxon": "^2.5.2",
