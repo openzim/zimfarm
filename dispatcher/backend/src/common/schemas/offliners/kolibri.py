@@ -31,6 +31,14 @@ class KolibriFlagsSchema(SerializableSchema):
         data_key="root-id",
     )
 
+    lang = String(
+        metadata={
+            "label": "Language",
+            "description": "ISO-639-3 (3 chars) language code of content. "
+            "If unspecified, will attempt to detect from main page, or use 'eng'",
+        }
+    )
+
     name = String(
         metadata={
             "label": "Name",
