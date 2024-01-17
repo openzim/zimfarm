@@ -31,13 +31,6 @@ from utils.offliners import command_for
             "openZIM",
             ["fcc2zim", '--output="/"', '--publisher="Kiwix"'],
         ),  # publisher is already set "manually" in the configuration
-        (Offliner.gutenberg, {}, None, ["gutenberg2zim"]),
-        (
-            Offliner.gutenberg,
-            {},
-            "openZIM",
-            ["gutenberg2zim"],
-        ),  # offliner does not support the publisher flag
     ],
 )
 def test_command_for(
