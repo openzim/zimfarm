@@ -11,22 +11,20 @@ from typing import List
 from common import constants
 from common.enum import Offliner
 
-od = collections.namedtuple(
-    "OfflinerDef", ["cmd", "std_output", "std_stats", "publisher_flag"]
-)
+od = collections.namedtuple("OfflinerDef", ["cmd", "std_output", "std_stats"])
 OFFLINER_DEFS = {
-    Offliner.freecodecamp: od("fcc2zim", True, False, True),
-    Offliner.gutenberg: od("gutenberg2zim", False, False, False),
-    Offliner.sotoki: od("sotoki", True, True, True),
-    Offliner.wikihow: od("wikihow2zim", True, True, True),
-    Offliner.ifixit: od("ifixit2zim", True, True, True),
-    Offliner.mwoffliner: od("mwoffliner", "outputDirectory", False, True),
-    Offliner.youtube: od("youtube2zim-playlists", True, False, True),
-    Offliner.ted: od("ted2zim-multi", True, False, True),
-    Offliner.openedx: od("openedx2zim", True, False, True),
-    Offliner.nautilus: od("nautiluszim", True, False, True),
-    Offliner.zimit: od("zimit", True, "statsFilename", True),
-    Offliner.kolibri: od("kolibri2zim", True, False, True),
+    Offliner.freecodecamp: od("fcc2zim", True, False),
+    Offliner.gutenberg: od("gutenberg2zim", False, False),
+    Offliner.sotoki: od("sotoki", True, True),
+    Offliner.wikihow: od("wikihow2zim", True, True),
+    Offliner.ifixit: od("ifixit2zim", True, True),
+    Offliner.mwoffliner: od("mwoffliner", "outputDirectory", False),
+    Offliner.youtube: od("youtube2zim-playlists", True, False),
+    Offliner.ted: od("ted2zim-multi", True, False),
+    Offliner.openedx: od("openedx2zim", True, False),
+    Offliner.nautilus: od("nautiluszim", True, False),
+    Offliner.zimit: od("zimit", True, "statsFilename"),
+    Offliner.kolibri: od("kolibri2zim", True, False),
 }
 
 
@@ -85,24 +83,14 @@ def command_for(offliner, flags, mount_point):
 def _command_for_set_default_publisher(flags, offliner_def):
     """Set a default publisher in the command
 
-    The "publisher" flag is set if a default is provided in the local environment, if
-    the scraper supports it, and if it is not already set manually.
+    The "publisher" flag is set if a default is provided in the local environment and
+    if it is not already set manually.
 
-    The "publisher" flag might have a different name, configured in the offliner
-    definition.
+    For a scraper to be integrated into Zimfarm it is now a requirement that a flag
+    "publisher" is present and named like this.
     """
-
-    flag_name = (
-        offliner_def.publisher_flag
-        if isinstance(offliner_def.publisher_flag, str)
-        else "publisher"
-    )
-    if (
-        constants.DEFAULT_PUBLISHER
-        and offliner_def.publisher_flag
-        and flag_name not in flags
-    ):
-        flags[flag_name] = constants.DEFAULT_PUBLISHER
+    if constants.DEFAULT_PUBLISHER and "publisher" not in flags:
+        flags["publisher"] = constants.DEFAULT_PUBLISHER
 
 
 def docker_config_for(offliner):
