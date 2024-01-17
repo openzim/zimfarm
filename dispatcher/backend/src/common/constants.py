@@ -37,6 +37,9 @@ except Exception:
 # empty ZIMCHECK_OPTION means no zimcheck
 ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
 
+# Publisher value to "force" in all scrapers if not set in the recipe
+DEFAULT_PUBLISHER = os.getenv("DEFAULT_PUBLISHER")
+
 # NOTIFICATIONS
 
 # in-notification URLs
