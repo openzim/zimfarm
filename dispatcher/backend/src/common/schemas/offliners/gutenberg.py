@@ -125,3 +125,10 @@ class GutenbergFlagsSchema(SerializableSchema):
     use_any_optimized_version = fields.Boolean(
         truthy=[True], falsy=[False], data_key="--use-any-optimized-version"
     )
+
+    publisher = String(
+        metadata={
+            "label": "Publisher",
+            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        }
+    )

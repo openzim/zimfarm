@@ -16,7 +16,7 @@ od = collections.namedtuple(
 )
 OFFLINER_DEFS = {
     Offliner.freecodecamp: od("fcc2zim", True, False, True),
-    Offliner.gutenberg: od("gutenberg2zim", False, False, False),
+    Offliner.gutenberg: od("gutenberg2zim", False, False, True),
     Offliner.sotoki: od("sotoki", True, True, True),
     Offliner.wikihow: od("wikihow2zim", True, True, True),
     Offliner.ifixit: od("ifixit2zim", True, True, True),
