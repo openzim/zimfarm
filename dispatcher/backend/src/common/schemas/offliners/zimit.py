@@ -207,6 +207,13 @@ class ZimitFlagsSchema(SerializableSchema):
         }
     )
 
+    publisher = String(
+        metadata={
+            "label": "Publisher",
+            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        }
+    )
+
     source = String(
         metadata={
             "label": "Content Source",

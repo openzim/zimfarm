@@ -193,6 +193,13 @@ class OpenedxFlagsSchema(SerializableSchema):
         data_key="creator",
     )
 
+    publisher = String(
+        metadata={
+            "label": "Publisher",
+            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        }
+    )
+
     tags = String(
         metadata={
             "label": "ZIM Tags",

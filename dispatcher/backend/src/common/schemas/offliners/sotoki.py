@@ -60,7 +60,7 @@ class SotokiFlagsSchema(SerializableSchema):
     publisher = String(
         metadata={
             "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “OpenZIM” otherwise",
+            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
         },
     )
 

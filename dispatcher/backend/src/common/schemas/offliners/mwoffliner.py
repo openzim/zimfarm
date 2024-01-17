@@ -94,7 +94,7 @@ class MWOfflinerFlagsSchema(SerializableSchema):
     publisher = String(
         metadata={
             "label": "Publisher",
-            "description": "ZIM publisher metadata. `Kiwix` otherwise.",
+            "description": "ZIM publisher metadata. `openZIM` otherwise.",
         }
     )
     filenamePrefix = String(
