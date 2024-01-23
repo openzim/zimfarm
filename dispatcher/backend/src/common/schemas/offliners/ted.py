@@ -59,6 +59,7 @@ class TedFlagsSchema(SerializableSchema):
                 "requested language(s) if audio is in another language"
             ),
         },
+        data_key="subtitles-enough",
     )
 
     subtitles = String(
