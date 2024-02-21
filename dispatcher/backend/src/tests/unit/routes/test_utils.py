@@ -211,6 +211,15 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                         "&bucketName=org-kiwix-zimfarm-logs"
                     ),
                 },
+                "artifacts": {
+                    "expiration": 20,
+                    "upload_uri": (
+                        "s3://s3.us-west-1.wasabisys.com/"
+                        "?keyId=this_is_super_secret"
+                        "&secretAccessKey=this_is_super_secret"
+                        "&bucketName=org-kiwix-zimfarm-artifacts"
+                    ),
+                },
             },
         },
     ],

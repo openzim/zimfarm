@@ -117,6 +117,9 @@ def save_event(
         task=task, kwargs_key="timeout", container_key="timeout"
     )
     add_to_container_if_present(task=task, kwargs_key="log", container_key="log")
+    add_to_container_if_present(
+        task=task, kwargs_key="artifacts", container_key="artifacts"
+    )
     add_to_debug_if_present(task=task, kwargs_key="task_log", debug_key="log")
     add_to_debug_if_present(task=task, kwargs_key="task_name", debug_key="task_name")
     add_to_debug_if_present(task=task, kwargs_key="task_args", debug_key="task_args")
@@ -348,10 +351,17 @@ def task_checked_file_event_handler(session: so.Session, task_id: UUID, payload:
 
 def task_update_event_handler(session: so.Session, task_id: UUID, payload: dict):
     timestamp = get_timestamp_from_event(payload)
-    log = payload.get("log")  # filename / S3 key of text file at upload_uri[logs]
-    logger.info(f"Task update: {task_id}, log: {log}")
+    if "log" in payload:
+        log = payload.get("log")  # filename / S3 key of text file at upload_uri[logs]
+        logger.info(f"Task update: {task_id}, log: {log}")
+        save_event(session, task_id, TaskStatus.update, timestamp, log=log)
 
-    save_event(session, task_id, TaskStatus.update, timestamp, log=log)
+    if "artifacts" in payload:
+        artifacts = payload.get(
+            "artifacts"
+        )  # filename / S3 key of text file at upload_uri[logs]
+        logger.info(f"Task update: {task_id}, artifacts: {artifacts}")
+        save_event(session, task_id, TaskStatus.update, timestamp, artifacts=artifacts)
 
 
 def handle_others(task_id: UUID, event: str, payload: dict):

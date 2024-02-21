@@ -8,6 +8,7 @@ import pathlib
 import shutil
 import signal
 import sys
+import tarfile
 import time
 from typing import Any, Dict
 
@@ -104,6 +105,7 @@ class TaskWorker(BaseWorker):
 
         self.scraper = None  # scraper container
         self.log_uploader = None  # scraper log uploader container
+        self.artifacts_uploader = None  # scraper artifacts uploader container
         self.host_logsdir = None  # path on host where logs are stored
         self.scraper_succeeded = None  # whether scraper succeeded
 
@@ -338,6 +340,7 @@ class TaskWorker(BaseWorker):
             "dnscache",
             "scraper",
             "log_uploader",
+            "artifacts_uploader",
             "uploader",
             "checker",
         ):
@@ -458,6 +461,87 @@ class TaskWorker(BaseWorker):
             {
                 "event": "update",
                 "payload": {"log": filename},
+            }
+        )
+
+    def upload_scraper_artifacts(self):
+        if not self.scraper:
+            logger.error("No scraper to upload its artifacts…")
+            return  # scraper gone, we can't access artifacts
+
+        artifacts_globs = self.task["config"].get("artifacts_globs", None)
+        if not artifacts_globs:
+            logger.debug("No artifacts configured for upload")
+            return
+        else:
+            logger.debug(f"Archiving files matching {artifacts_globs}")
+
+        logger.debug("Creating a tar of requested artifacts")
+        filename = f"{self.task['_id']}_{self.task['config']['task_name']}.tar"
+        try:
+            files_to_tar = [
+                file
+                for pattern in artifacts_globs
+                for file in self.task_workdir.glob(pattern)
+            ]
+            if len(files_to_tar) == 0:
+                logger.debug("No files found to archive")
+                return
+
+            fpath = self.task_workdir / filename
+            with tarfile.open(fpath, "w") as tar:
+                for file in files_to_tar:
+                    tar.add(file, arcname=file.relative_to(self.task_workdir))
+                    try:
+                        file.unlink()
+                    except Exception as exc:
+                        logger.debug(
+                            "Unable to delete file after archiving", exc_info=exc
+                        )
+        except Exception as exc:
+            logger.error(f"Unable to archive artifacts to {fpath}")
+            logger.exception(exc)
+            return False
+
+        logger.debug("Starting artifacts uploader container…")
+        self.artifacts_uploader = start_uploader(
+            self.docker,
+            self.task,
+            "artifacts",
+            self.username,
+            host_workdir=self.host_task_workdir,
+            upload_dir="",
+            filename=filename,
+            move=False,
+            delete=True,
+            compress=True,
+            resume=True,
+        )
+
+    def check_scraper_artifacts_upload(self):
+        if not self.artifacts_uploader or self.container_running("artifacts_uploader"):
+            return
+
+        try:
+            self.artifacts_uploader.reload()
+            exit_code = self.artifacts_uploader.attrs["State"]["ExitCode"]
+            filename = self.artifacts_uploader.labels["filename"]
+        except docker.errors.NotFound:
+            # prevent race condition if re-entering between this and container removal
+            return
+        logger.info(f"Scraper artifacts upload complete: {exit_code}")
+        if exit_code != 0:
+            logger.error(
+                f"Artifacts Uploader:: "
+                f"{get_container_logs(self.docker, self.artifacts_uploader.name)}"
+            )
+        self.stop_container("artifacts_uploader")
+
+        logger.info(f"Sending scraper artifacts filename: {filename}")
+        self.patch_task(
+            {
+                "event": "update",
+                "payload": {"artifacts": filename},
             }
         )
 
@@ -619,6 +703,7 @@ class TaskWorker(BaseWorker):
         self.mark_scraper_completed(exit_code, stdout, stderr)
         self.scraper_succeeded = exit_code == 0
         self.upload_scraper_log()
+        self.upload_scraper_artifacts()
 
     def sleep(self):
         time.sleep(1)
@@ -670,6 +755,7 @@ class TaskWorker(BaseWorker):
             or self.container_running("uploader")
             or self.container_running("checker")
             or self.container_running("log_uploader")
+            or self.container_running("artifacts_uploader")
         ):
             now = datetime.datetime.now()
             if (now - last_check).total_seconds() < SLEEP_INTERVAL:
@@ -679,10 +765,12 @@ class TaskWorker(BaseWorker):
             last_check = now
             self.handle_files()
             self.check_scraper_log_upload()
+            self.check_scraper_artifacts_upload()
 
         # make sure we submit upload status for last zim and scraper log
         self.handle_files()
         self.check_scraper_log_upload()
+        self.check_scraper_artifacts_upload()
 
         # done with processing, cleaning-up and exiting
         self.shutdown("succeeded" if self.scraper_succeeded else "failed")

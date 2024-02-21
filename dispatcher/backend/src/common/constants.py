@@ -33,6 +33,13 @@ try:
     LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
 except Exception:
     LOGS_EXPIRATION = 30
+ARTIFACTS_UPLOAD_URI = os.getenv(
+    "ARTIFACTS_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/artifacts"
+)
+try:
+    ARTIFACTS_EXPIRATION = int(os.getenv("ARTIFACTS_EXPIRATION", "30"))
+except Exception:
+    ARTIFACTS_EXPIRATION = 30
 
 # empty ZIMCHECK_OPTION means no zimcheck
 ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
