@@ -78,6 +78,7 @@ def command_for(offliner, flags, mount_point):
     if offliner == Offliner.zimit:
         if "adminEmail" not in flags:
             flags["adminEmail"] = "contact+zimfarm@kiwix.org"
+        flags["keep"] = True  # always keep temporary files, they will be deleted anyway
 
     _command_for_set_default_publisher(flags, offliner_def)
 
