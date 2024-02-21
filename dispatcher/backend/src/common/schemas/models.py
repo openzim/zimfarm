@@ -86,9 +86,11 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.nautilus: NautilusFlagsSchema,
             Offliner.ted: TedFlagsSchema,
             Offliner.openedx: OpenedxFlagsSchema,
-            Offliner.zimit: ZimitFlagsSchemaRelaxed
-            if constants.ZIMIT_USE_RELAXED_SCHEMA
-            else ZimitFlagsSchema,
+            Offliner.zimit: (
+                ZimitFlagsSchemaRelaxed
+                if constants.ZIMIT_USE_RELAXED_SCHEMA
+                else ZimitFlagsSchema
+            ),
             Offliner.kolibri: KolibriFlagsSchema,
             Offliner.wikihow: WikihowFlagsSchema,
             Offliner.ifixit: IFixitFlagsSchema,

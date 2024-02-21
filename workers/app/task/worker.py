@@ -469,9 +469,11 @@ class TaskWorker(BaseWorker):
                     {
                         fpath.name: {
                             UP: PENDING,
-                            CHK: PENDING
-                            if self.task["upload"]["zim"]["zimcheck"]
-                            else SKIPPED,
+                            CHK: (
+                                PENDING
+                                if self.task["upload"]["zim"]["zimcheck"]
+                                else SKIPPED
+                            ),
                         }
                     }
                 )

@@ -144,10 +144,10 @@ class BaseWorker:
                     options={"verify_signature": False},
                 )
                 self.connections[webapi_uri][authenticated_on] = datetime.datetime.now()
-                self.connections[webapi_uri][
-                    authentication_expires_on
-                ] = datetime.datetime.fromtimestamp(
-                    self.connections[webapi_uri][token_payload]["exp"]
+                self.connections[webapi_uri][authentication_expires_on] = (
+                    datetime.datetime.fromtimestamp(
+                        self.connections[webapi_uri][token_payload]["exp"]
+                    )
                 )
                 return True
             except Exception as exc:

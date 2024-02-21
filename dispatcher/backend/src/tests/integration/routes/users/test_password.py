@@ -76,9 +76,9 @@ class TestPassword:
             url,
             json=document,
             headers={
-                "Authorization": access_token
-                if use_admin_token
-                else make_access_token(username)
+                "Authorization": (
+                    access_token if use_admin_token else make_access_token(username)
+                )
             },
         )
         assert response.status_code == expected_status_code

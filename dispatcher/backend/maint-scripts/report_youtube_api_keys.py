@@ -55,9 +55,11 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
         if hashed_api_key not in schedules_by_api_key.keys():
             schedules_by_api_key[hashed_api_key] = {
                 "api_key": api_key,
-                "key_name": known_api_keys[hashed_api_key]
-                if hashed_api_key in known_api_keys
-                else "unknown",
+                "key_name": (
+                    known_api_keys[hashed_api_key]
+                    if hashed_api_key in known_api_keys
+                    else "unknown"
+                ),
                 "schedules": [],
             }
         schedules_by_api_key[hashed_api_key]["schedules"].append(schedule.name)
@@ -69,9 +71,11 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
     for hashed_api_key, data in schedules_by_api_key.items():
         report_data["keys"].append(
             {
-                "name": known_api_keys[hashed_api_key]
-                if hashed_api_key in known_api_keys.keys()
-                else "unknown",
+                "name": (
+                    known_api_keys[hashed_api_key]
+                    if hashed_api_key in known_api_keys.keys()
+                    else "unknown"
+                ),
                 "schedules": sorted(data["schedules"]),
             }
         )

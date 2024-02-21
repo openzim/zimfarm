@@ -47,15 +47,19 @@ def command_for(offliner, flags, mount_point):
     cmd = offliner_def.cmd
     if offliner_def.std_output:
         flags[
-            offliner_def.std_output
-            if isinstance(offliner_def.std_output, str)
-            else "output"
+            (
+                offliner_def.std_output
+                if isinstance(offliner_def.std_output, str)
+                else "output"
+            )
         ] = str(mount_point)
     if offliner_def.std_stats:
         flags[
-            offliner_def.std_stats
-            if isinstance(offliner_def.std_stats, str)
-            else "stats-filename"
+            (
+                offliner_def.std_stats
+                if isinstance(offliner_def.std_stats, str)
+                else "stats-filename"
+            )
         ] = str(mount_point_for(offliner) / "task_progress.json")
 
     if offliner == Offliner.gutenberg:

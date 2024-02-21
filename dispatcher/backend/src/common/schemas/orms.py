@@ -180,9 +180,9 @@ class ScheduleFullSchema(BaseSchema):
                 duration_res["default"] = ScheduleFullSchema.get_one_duration(duration)
             if duration.worker:
                 duration_res["available"] = True
-                duration_res["workers"][
-                    duration.worker.name
-                ] = ScheduleFullSchema.get_one_duration(duration)
+                duration_res["workers"][duration.worker.name] = (
+                    ScheduleFullSchema.get_one_duration(duration)
+                )
         return duration_res
 
     def get_is_requested(schedule: dbm.Schedule):

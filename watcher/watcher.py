@@ -563,9 +563,9 @@ def entrypoint():
         "Defaults to 1 inside Docker as we can't guess available CPUs",
         dest="nb_threads",
         type=int,
-        default=1
-        if is_running_inside_container()
-        else multiprocessing.cpu_count() - 1 or 1,
+        default=(
+            1 if is_running_inside_container() else multiprocessing.cpu_count() - 1 or 1
+        ),
     )
 
     parser.add_argument(
