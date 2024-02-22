@@ -541,6 +541,60 @@ class TestSchedulePatch:
         assert response.status_code == 401
         assert response.get_json() == {"error": "token invalid"}
 
+    def test_patch_schedule_does_not_set_null_config_keys(
+        self, client, access_token, schedule
+    ):
+
+        update = {"platform": None}
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+        response = client.get(url, headers={"Authorization": access_token})
+        assert response.status_code == 200
+
+        document = response.get_json()
+
+        assert "config" in document
+        assert "platform" not in document["config"]
+
+    def test_patch_schedule_remove_null_config_keys(
+        self, client, access_token, schedule
+    ):
+
+        update = {"platform": "ifixit"}
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+        response = client.get(url, headers={"Authorization": access_token})
+        assert response.status_code == 200
+
+        document = response.get_json()
+
+        assert "config" in document
+        assert "platform" in document["config"]
+        assert document["config"]["platform"] == "ifixit"
+
+        update = {"platform": None}
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+        response = client.get(url, headers={"Authorization": access_token})
+        assert response.status_code == 200
+
+        document = response.get_json()
+
+        assert "config" in document
+        assert "platform" not in document["config"]
+
 
 class TestScheduleDelete:
     def test_delete_schedule(self, client, access_token, schedule):

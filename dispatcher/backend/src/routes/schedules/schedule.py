@@ -291,12 +291,18 @@ class ScheduleRoute(BaseRoute):
 
         for key, value in update.items():
             if key in config_keys:
-                schedule.config[key] = value
+                if value is None:
+                    if key in schedule.config:
+                        del schedule.config[key]
+                else:
+                    schedule.config[key] = value
             elif key == "language":
                 schedule.language_code = value["code"]
                 schedule.language_name_en = value["name_en"]
                 schedule.language_name_native = value["name_native"]
             else:
+                # we do not handle yet the case where a key is set to null because it is
+                # not allowed (yet) in UpdateSchema, only config keys can be set to null
                 setattr(schedule, key, value)
 
         try:
