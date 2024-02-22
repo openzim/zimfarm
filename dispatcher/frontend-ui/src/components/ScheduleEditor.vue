@@ -193,6 +193,17 @@
       </b-col>
     </b-row>
 
+    <b-row>
+      <b-col>
+        <b-form-group label="Artifacts:"
+                      label-for="artifacts"
+                      description="Globs of artifacts to archive, one glob expression per line.">
+          <b-form-textarea id="artifacts"
+                         v-model="edit_schedule.config.artifacts_globs_str"></b-form-textarea>
+        </b-form-group>
+      </b-col>
+    </b-row>
+
     <hr />
 
     <b-row v-if="edit_flags_fields.length > 0"><b-col><h2><code>{{ edit_task_name}}</code> command flags</h2></b-col></b-row>
@@ -433,6 +444,15 @@
               parent.edit_schedule.config.resources.disk != parent.schedule.config.resources.disk ||
               parent.edit_schedule.config.resources.shm != parent.schedule.config.resources.shm) {
             payload.resources = parent.edit_schedule.config.resources;
+        }
+
+        // artifacts globs needs to be transformed into a real list
+        let new_artifacts_globs = null;
+        if (parent.edit_schedule.config.artifacts_globs_str && parent.edit_schedule.config.artifacts_globs_str.trim() !== "") {
+          new_artifacts_globs = parent.edit_schedule.config.artifacts_globs_str.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        }
+        if (new_artifacts_globs != parent.schedule.config.artifacts_globs) {
+            payload.artifacts_globs = new_artifacts_globs;
         }
 
         if (this.flags_payload)
