@@ -37,6 +37,7 @@ good_patch_updates = [
     {"flags": {"mwUrl": "https://fr.wikipedia.org", "adminEmail": "hello@test.de"}},
     {"warehouse_path": "/phet"},
     {"image": {"name": "openzim/mwoffliner", "tag": "1.12.2"}},
+    {"artifacts_globs": ["*.json", "**/*.json"]},
     {"resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB}},
     {
         "task_name": "gutenberg",
@@ -238,6 +239,7 @@ class TestSchedulePost:
                     "platform": None,
                     "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
                     "monitor": False,
+                    "artifacts_globs": ["**/*.json"],
                 },
                 "notification": {},
             },
@@ -494,6 +496,7 @@ class TestSchedulePatch:
             "platform",
             "flags",
             "monitor",
+            "artifacts_globs",
         ]
         for key, value in update.items():
             if key in config_keys:

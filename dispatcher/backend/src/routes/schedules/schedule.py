@@ -287,6 +287,7 @@ class ScheduleRoute(BaseRoute):
             "platform",
             "flags",
             "monitor",
+            "artifacts_globs",
         ]
 
         for key, value in update.items():

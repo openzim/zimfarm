@@ -73,6 +73,7 @@ class ScheduleConfigSchema(SerializableSchema):
     resources = fields.Nested(ResourcesSchema(), required=True)
     flags = fields.Dict(required=True)
     platform = String(required=True, allow_none=True, validate=validate_platform)
+    artifacts_globs = fields.List(String(validate=validate_not_empty), required=False)
     monitor = fields.Boolean(required=True, truthy=[True], falsy=[False])
 
     @staticmethod
