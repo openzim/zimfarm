@@ -225,60 +225,56 @@ class ScheduleRoute(BaseRoute):
 
         return jsonify(schedule)
 
-    @authenticate
-    @require_perm("schedules", "update")
-    @dbsession
-    def patch(
-        self, schedule_name: str, token: AccessToken.Payload, session: so.Session
-    ):
-        """Update all properties of a schedule but _id and most_recent_task"""
+    def _get_and_validate_patch(self, schedule, request):
+        """Check patch request is valid
 
-        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
+        Current schedule is needed to check validity since the patch contains only
+        changes and some combination of fields are needed under some conditions, e.g.
+        you cannot change the task_name (offliner) without changing flags and image name
+        """
+        update = UpdateSchema().load(request.get_json())
+        raise_if(not request.get_json(), ValidationError, "Update can't be empty")
 
-        try:
-            update = UpdateSchema().load(request.get_json())
-            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
+        # ensure we test flags according to new task_name if present
+        if (
+            "task_name" in update
+            and update["task_name"] != schedule.config["task_name"]
+        ):
+            raise_if(
+                "flags" not in update,
+                ValidationError,
+                "Can't update offliner without updating flags",
+            )
+            raise_if(
+                "image" not in update or "name" not in update["image"],
+                ValidationError,
+                "Image name must be updated when offliner is changed",
+            )
 
-            # ensure we test flags according to new task_name if present
-            if (
-                "task_name" in update
-                and update["task_name"] != schedule.config["task_name"]
-            ):
-                raise_if(
-                    "flags" not in update,
-                    ValidationError,
-                    "Can't update offliner without updating flags",
-                )
-                raise_if(
-                    "image" not in update or "name" not in update["image"],
-                    ValidationError,
-                    "Image name must be updated when offliner is changed",
-                )
+            flags_schema = ScheduleConfigSchema.get_offliner_schema(update["task_name"])
+        else:
+            flags_schema = ScheduleConfigSchema.get_offliner_schema(
+                schedule.config["task_name"]
+            )
 
-                flags_schema = ScheduleConfigSchema.get_offliner_schema(
-                    update["task_name"]
-                )
+        if "flags" in update:
+            flags_schema().load(update["flags"])
+
+        if "image" in update and "name" in update["image"]:
+            if "task_name" in update:
+                future_task_name = update["task_name"]
             else:
-                flags_schema = ScheduleConfigSchema.get_offliner_schema(
-                    schedule.config["task_name"]
-                )
+                future_task_name = schedule.config["task_name"]
 
-            if "flags" in update:
-                flags_schema().load(update["flags"])
+            if Offliner.get_image_prefix(future_task_name) + update["image"][
+                "name"
+            ] != Offliner.get_image_name(future_task_name):
+                raise ValidationError("Image name must match selected offliner")
 
-            if "image" in update and "name" in update["image"]:
-                if "task_name" in update:
-                    future_task_name = update["task_name"]
-                else:
-                    future_task_name = schedule.config["task_name"]
+        return update
 
-                if Offliner.get_image_prefix(future_task_name) + update["image"][
-                    "name"
-                ] != Offliner.get_image_name(future_task_name):
-                    raise ValidationError("Image name must match selected offliner")
-        except ValidationError as e:
-            raise InvalidRequestJSON(e.messages)
-
+    def _apply_patch_to_schedule(self, schedule, update):
+        """Apply the patch update to the schedule"""
         config_keys = [
             "task_name",
             "warehouse_path",
@@ -305,6 +301,23 @@ class ScheduleRoute(BaseRoute):
                 # we do not handle yet the case where a key is set to null because it is
                 # not allowed (yet) in UpdateSchema, only config keys can be set to null
                 setattr(schedule, key, value)
+
+    @authenticate
+    @require_perm("schedules", "update")
+    @dbsession
+    def patch(
+        self, schedule_name: str, token: AccessToken.Payload, session: so.Session
+    ):
+        """Update all properties of a schedule but _id and most_recent_task"""
+
+        schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
+
+        try:
+            update = self._get_and_validate_patch(schedule=schedule, request=request)
+        except ValidationError as e:
+            raise InvalidRequestJSON(e.messages)
+
+        self._apply_patch_to_schedule(schedule=schedule, update=update)
 
         try:
             session.flush()
