@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 import db.models as dbm
 from common.constants import REQ_TIMEOUT_GHCR
+from common.enum import Offliner
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.orms import ScheduleFullSchema, ScheduleLightSchema
 from common.schemas.parameters import CloneSchema, SchedulesSchema, UpdateSchema
@@ -239,12 +240,21 @@ class ScheduleRoute(BaseRoute):
             raise_if(not request.get_json(), ValidationError, "Update can't be empty")
 
             # ensure we test flags according to new task_name if present
-            if "task_name" in update:
+            if (
+                "task_name" in update
+                and update["task_name"] != schedule.config["task_name"]
+            ):
                 raise_if(
                     "flags" not in update,
                     ValidationError,
                     "Can't update offliner without updating flags",
                 )
+                raise_if(
+                    "image" not in update or "name" not in update["image"],
+                    ValidationError,
+                    "Image name must be updated when offliner is changed",
+                )
+
                 flags_schema = ScheduleConfigSchema.get_offliner_schema(
                     update["task_name"]
                 )
@@ -255,6 +265,17 @@ class ScheduleRoute(BaseRoute):
 
             if "flags" in update:
                 flags_schema().load(update["flags"])
+
+            if "image" in update and "name" in update["image"]:
+                if "task_name" in update:
+                    future_task_name = update["task_name"]
+                else:
+                    future_task_name = schedule.config["task_name"]
+
+                if Offliner.get_image_prefix(future_task_name) + update["image"][
+                    "name"
+                ] != Offliner.get_image_name(future_task_name):
+                    raise ValidationError("Image name must match selected offliner")
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
