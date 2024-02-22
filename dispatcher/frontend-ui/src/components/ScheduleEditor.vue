@@ -131,7 +131,7 @@
         </b-form-group>
       </b-col>
       <b-col>
-         <b-form-group label="Image Tag" label-for="es_imagetag" description="Input image name first to have proper values">
+         <b-form-group label="Image Tag:" label-for="es_imagetag" description="Input image name first to have proper values">
           <b-form-select id="es_category"
                          v-model="edit_schedule.config.image.tag"
                          required
@@ -140,7 +140,7 @@
         </b-form-group>
       </b-col>
       <b-col>
-         <b-form-group label="Monitoring" label-for="es_monitor" description="Attach a monitoring companion to scraper">
+         <b-form-group label="Monitoring:" label-for="es_monitor" description="Attach a monitoring companion to scraper">
           <SwitchButton v-model="edit_schedule.config.monitor">{{ edit_schedule.config.monitor|yes_no("Enabled", "Disabled") }}</SwitchButton>
         </b-form-group>
       </b-col>
