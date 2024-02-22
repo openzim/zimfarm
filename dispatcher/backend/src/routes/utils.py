@@ -26,7 +26,7 @@ def has_dict_sub_key(data: Dict[str, Any], keys: List[str]):
 def remove_secrets_from_response(response: dict):
     """replaces or removes (in-place) all occurences of secrets"""
     remove_secret_flags(response)
-    remove_upload_secrets(response)
+    remove_s3_secrets(response)
 
 
 def remove_secret_flags(response: dict):
@@ -87,19 +87,24 @@ def remove_secret_flag_from_command(
     ] = f'--{field_name}="{SECRET_REPLACEMENT}"'
 
 
-def remove_upload_secrets(response: dict):
-    """remove keyId and secretAccessKey upload_uri, since we upload logs to
-    S3 but still need the rest of the URL to download scraper logs"""
-    if not has_dict_sub_key(response, ["upload", "logs", "upload_uri"]):
-        return
-    url = urlparse(response["upload"]["logs"]["upload_uri"])
-    response["upload"]["logs"]["upload_uri"] = url._replace(
-        query="&".join(
-            [
-                param
-                for param in url.query.split("&")
-                if not param.lower().startswith("keyid")
-                and not param.lower().startswith("secretaccesskey")
-            ]
-        )
-    ).geturl()
+def remove_s3_secrets(response: dict):
+    """remove keyId and secretAccessKey query params from any URL we might find"""
+    for key in response.keys():
+        if not response[key]:
+            continue
+        if isinstance(response[key], dict):
+            remove_s3_secrets(response[key])
+        else:
+            if not isinstance(response[key], str) or "://" not in response[key]:
+                continue
+            url = urlparse(response[key])
+            response[key] = url._replace(
+                query="&".join(
+                    [
+                        param
+                        for param in url.query.split("&")
+                        if not param.lower().startswith("keyid")
+                        and not param.lower().startswith("secretaccesskey")
+                    ]
+                )
+            ).geturl()

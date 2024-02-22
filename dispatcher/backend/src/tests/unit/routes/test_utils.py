@@ -222,6 +222,25 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                 },
             },
         },
+        {
+            "config": {
+                "task_name": "kolibri",
+                "flags": {
+                    "name": "khanacademy_en_all",
+                    "optimization-cache": "this_is_super_secret",
+                },
+            },
+            "i_am_not_a_real": {
+                "response_but": {
+                    "please_clean_me": (
+                        "s3://s3.us-west-1.wasabisys.com/"
+                        "?keyId=this_is_super_secret"
+                        "&secretAccessKey=this_is_super_secret"
+                        "&bucketName=org-kiwix-zimfarm-logs"
+                    ),
+                },
+            },
+        },
     ],
 )
 def test_remove_secrets(response):
