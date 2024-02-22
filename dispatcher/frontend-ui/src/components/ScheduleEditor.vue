@@ -120,7 +120,7 @@
     </b-row>
     <b-row>
       <b-col>
-        <b-form-group label="Image Name:" label-for="es_image" description="Just the image name (repo/name)">
+        <b-form-group label="Image Name:" label-for="es_image" description="Image name without tag (docker_repo/name)">
           <b-form-input v-model="edit_schedule.config.image.name"
                         id="es_image"
                         type="text"
@@ -131,7 +131,7 @@
         </b-form-group>
       </b-col>
       <b-col>
-         <b-form-group label="Image Tag" label-for="es_imagetag" description="Just the tag name. `latest` usually.">
+         <b-form-group label="Image Tag" label-for="es_imagetag" description="Input image name first to have proper values">
           <b-form-select id="es_category"
                          v-model="edit_schedule.config.image.tag"
                          required
