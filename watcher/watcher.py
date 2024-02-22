@@ -26,7 +26,6 @@ import concurrent.futures as cf
 import datetime
 import json
 import logging
-import multiprocessing
 import os
 import pathlib
 import re
@@ -62,21 +61,6 @@ logger = logging.getLogger("watcher")
 # disable boto3's verbose logging
 for logger_name in set(["urllib3", "boto3", "botocore", "s3transfer"]):
     logging.getLogger(logger_name).setLevel(logging.WARNING)
-
-
-def is_running_inside_container():
-    """whether running inside a Docker container"""
-    fpath = pathlib.Path("/proc/self/cgroup")
-    if not fpath.exists():
-        return False
-    try:
-        with open(fpath, "r") as fh:
-            for line in fh.readlines():
-                if line.strip().rsplit(":", 1)[-1] != "/":
-                    return True
-    finally:
-        pass
-    return False
 
 
 def get_version_for(url):
@@ -559,13 +543,10 @@ def entrypoint():
     )
     parser.add_argument(
         "--threads",
-        help="How many threads to run to parallelize download/upload? "
-        "Defaults to 1 inside Docker as we can't guess available CPUs",
+        help="How many threads to run to parallelize download/upload? Defaults to 1",
         dest="nb_threads",
         type=int,
-        default=(
-            1 if is_running_inside_container() else multiprocessing.cpu_count() - 1 or 1
-        ),
+        default=1,
     )
 
     parser.add_argument(
