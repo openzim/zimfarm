@@ -252,13 +252,12 @@ def get_scraper_container_name(task):
     )
 
 
-def upload_container_name(task_id, filename, unique):
-    ident = "zimup" if filename.endswith(".zim") else "logup"
+def upload_container_name(task_id, filename, kind, unique):
     if unique:
         filename = f"{uuid.uuid4().hex}{pathlib.Path(filename).suffix}"
     else:
         filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", filename)
-    return f"{short_id(task_id)}_{ident}_{filename}"
+    return f"{short_id(task_id)}_{kind}up_{filename}"
 
 
 def get_ip_address(docker_client, name):
@@ -562,7 +561,7 @@ def start_uploader(
     resume,
     watch=False,
 ):
-    container_name = upload_container_name(task["_id"], filename, False)
+    container_name = upload_container_name(task["_id"], filename, kind, False)
 
     # remove container should it exists (should not)
     try:

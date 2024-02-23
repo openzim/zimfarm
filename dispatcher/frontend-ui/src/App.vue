@@ -141,6 +141,11 @@
           .then(function (response) {
               // parent.error = null;
               let schedule = response.data;
+
+              if (schedule.config.artifacts_globs) {
+                schedule.config.artifacts_globs_str = schedule.config.artifacts_globs.join("\n")
+              }
+
               parent.$store.dispatch('setSchedule', schedule);
 
               if (on_success) { on_success(); }

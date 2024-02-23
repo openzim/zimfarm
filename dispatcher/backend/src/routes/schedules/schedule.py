@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 import db.models as dbm
 from common.constants import REQ_TIMEOUT_GHCR
+from common.enum import Offliner
 from common.schemas.models import ScheduleConfigSchema, ScheduleSchema
 from common.schemas.orms import ScheduleFullSchema, ScheduleLightSchema
 from common.schemas.parameters import CloneSchema, SchedulesSchema, UpdateSchema
@@ -224,6 +225,83 @@ class ScheduleRoute(BaseRoute):
 
         return jsonify(schedule)
 
+    def _get_and_validate_patch(self, schedule, request):
+        """Check patch request is valid
+
+        Current schedule is needed to check validity since the patch contains only
+        changes and some combination of fields are needed under some conditions, e.g.
+        you cannot change the task_name (offliner) without changing flags and image name
+        """
+        update = UpdateSchema().load(request.get_json())
+        raise_if(not request.get_json(), ValidationError, "Update can't be empty")
+
+        # ensure we test flags according to new task_name if present
+        if (
+            "task_name" in update
+            and update["task_name"] != schedule.config["task_name"]
+        ):
+            raise_if(
+                "flags" not in update,
+                ValidationError,
+                "Can't update offliner without updating flags",
+            )
+            raise_if(
+                "image" not in update or "name" not in update["image"],
+                ValidationError,
+                "Image name must be updated when offliner is changed",
+            )
+
+            flags_schema = ScheduleConfigSchema.get_offliner_schema(update["task_name"])
+        else:
+            flags_schema = ScheduleConfigSchema.get_offliner_schema(
+                schedule.config["task_name"]
+            )
+
+        if "flags" in update:
+            flags_schema().load(update["flags"])
+
+        if "image" in update and "name" in update["image"]:
+            if "task_name" in update:
+                future_task_name = update["task_name"]
+            else:
+                future_task_name = schedule.config["task_name"]
+
+            if Offliner.get_image_prefix(future_task_name) + update["image"][
+                "name"
+            ] != Offliner.get_image_name(future_task_name):
+                raise ValidationError("Image name must match selected offliner")
+
+        return update
+
+    def _apply_patch_to_schedule(self, schedule, update):
+        """Apply the patch update to the schedule"""
+        config_keys = [
+            "task_name",
+            "warehouse_path",
+            "image",
+            "resources",
+            "platform",
+            "flags",
+            "monitor",
+            "artifacts_globs",
+        ]
+
+        for key, value in update.items():
+            if key in config_keys:
+                if value is None:
+                    if key in schedule.config:
+                        del schedule.config[key]
+                else:
+                    schedule.config[key] = value
+            elif key == "language":
+                schedule.language_code = value["code"]
+                schedule.language_name_en = value["name_en"]
+                schedule.language_name_native = value["name_native"]
+            else:
+                # we do not handle yet the case where a key is set to null because it is
+                # not allowed (yet) in UpdateSchema, only config keys can be set to null
+                setattr(schedule, key, value)
+
     @authenticate
     @require_perm("schedules", "update")
     @dbsession
@@ -235,48 +313,11 @@ class ScheduleRoute(BaseRoute):
         schedule = dbm.Schedule.get(session, schedule_name, ScheduleNotFound)
 
         try:
-            update = UpdateSchema().load(request.get_json())
-            raise_if(not request.get_json(), ValidationError, "Update can't be empty")
-
-            # ensure we test flags according to new task_name if present
-            if "task_name" in update:
-                raise_if(
-                    "flags" not in update,
-                    ValidationError,
-                    "Can't update offliner without updating flags",
-                )
-                flags_schema = ScheduleConfigSchema.get_offliner_schema(
-                    update["task_name"]
-                )
-            else:
-                flags_schema = ScheduleConfigSchema.get_offliner_schema(
-                    schedule.config["task_name"]
-                )
-
-            if "flags" in update:
-                flags_schema().load(update["flags"])
+            update = self._get_and_validate_patch(schedule=schedule, request=request)
         except ValidationError as e:
             raise InvalidRequestJSON(e.messages)
 
-        config_keys = [
-            "task_name",
-            "warehouse_path",
-            "image",
-            "resources",
-            "platform",
-            "flags",
-            "monitor",
-        ]
-
-        for key, value in update.items():
-            if key in config_keys:
-                schedule.config[key] = value
-            elif key == "language":
-                schedule.language_code = value["code"]
-                schedule.language_name_en = value["name_en"]
-                schedule.language_name_native = value["name_native"]
-            else:
-                setattr(schedule, key, value)
+        self._apply_patch_to_schedule(schedule=schedule, update=update)
 
         try:
             session.flush()

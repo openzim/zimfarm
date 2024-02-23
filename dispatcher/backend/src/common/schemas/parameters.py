@@ -107,6 +107,9 @@ class UpdateSchema(Schema):
     resources = fields.Nested(ResourcesSchema, required=False)
     monitor = fields.Boolean(required=False, truthy={True}, falsy={False})
     flags = fields.Dict(required=False)
+    artifacts_globs = fields.List(
+        String(validate=validate_not_empty), required=False, allow_none=True
+    )
 
 
 # schedule clone

@@ -51,12 +51,14 @@ def send_email_via_mailgun(
             url=f"{MAILGUN_API_URL}/messages",
             auth=("api", MAILGUN_API_KEY),
             data=data,
-            files=[
-                ("attachment", (fpath.name, open(fpath, "rb").read()))
-                for fpath in attachments
-            ]
-            if attachments
-            else [],
+            files=(
+                [
+                    ("attachment", (fpath.name, open(fpath, "rb").read()))
+                    for fpath in attachments
+                ]
+                if attachments
+                else []
+            ),
             timeout=REQ_TIMEOUT_NOTIFICATIONS,
         )
         resp.raise_for_status()

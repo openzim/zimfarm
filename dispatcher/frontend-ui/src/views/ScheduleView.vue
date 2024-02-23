@@ -131,6 +131,7 @@
               <span class="badge badge-warning mr-2" v-if="config.monitor || false"><font-awesome-icon icon="bug" size="sm" /> monitored</span>
             </td>
           </tr>
+          <tr v-if="schedule.config.artifacts_globs" ><th>Artifacts</th><td><code>{{ schedule.config.artifacts_globs }}</code></td></tr>
           <tr><th>Config</th><td><FlagsList :flags="config.flags" :secret_fields="secret_fields" /></td></tr>
           <tr><th>Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand(command)"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ command }}</code></td></tr>
           <tr><th>Offliner Command <button class="btn btn-light btn-sm" @click.prevent="copyCommand(offliner_command)"><font-awesome-icon icon="copy" size="sm" /> Copy</button></th><td><code class="command">{{ offliner_command }}</code></td></tr>

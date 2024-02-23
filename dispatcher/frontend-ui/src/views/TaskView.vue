@@ -127,6 +127,7 @@
             </th>
             <td><pre class="stderr">{{ task_container.stderr }}</pre></td></tr>
           <tr v-if="task_container.log"><th>Scraper&nbsp;Log</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_logs_url">Download log</a></td></tr>
+          <tr v-if="task_container.artifacts"><th>Scraper&nbsp;Artifacts</th><td><a class="btn btn-secondary btn-sm" target="_blank" :href="zimfarm_artifacts_url">Download artifacts</a></td></tr>
           <tr v-if="task_debug.exception"><th>Exception</th><td><pre>{{ task_debug.exception }}</pre></td></tr>
           <tr v-if="task_debug.traceback"><th>Traceback</th><td><pre>{{ task_debug.traceback }}</pre></td></tr>
           <tr v-if="task_debug.log"><th>Task-worker Log</th><td><pre>{{ task_debug.log }}</pre></td></tr>
@@ -210,6 +211,7 @@
       secret_fields() { return Constants.secret_fields_for(this.offliner_def); },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.logs_url(this.task); },
+      zimfarm_artifacts_url() { return Constants.artifacts_url(this.task); },
       kiwix_download_url() { return Constants.kiwix_download_url; },
       webapi_url() { return Constants.zimfarm_webapi; },
       command() { return this.task_container.command.join(" "); },

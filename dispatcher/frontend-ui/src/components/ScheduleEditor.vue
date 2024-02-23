@@ -120,7 +120,7 @@
     </b-row>
     <b-row>
       <b-col>
-        <b-form-group label="Image Name:" label-for="es_image" description="Just the image name (repo/name)">
+        <b-form-group label="Image Name:" label-for="es_image" description="Image name without tag (docker_repo/name)">
           <b-form-input v-model="edit_schedule.config.image.name"
                         id="es_image"
                         type="text"
@@ -131,7 +131,7 @@
         </b-form-group>
       </b-col>
       <b-col>
-         <b-form-group label="Image Tag" label-for="es_imagetag" description="Just the tag name. `latest` usually.">
+         <b-form-group label="Image Tag:" label-for="es_imagetag" description="Set image name first to get existing values">
           <b-form-select id="es_category"
                          v-model="edit_schedule.config.image.tag"
                          required
@@ -140,7 +140,7 @@
         </b-form-group>
       </b-col>
       <b-col>
-         <b-form-group label="Monitoring" label-for="es_monitor" description="Attach a monitoring companion to scraper">
+         <b-form-group label="Monitoring:" label-for="es_monitor" description="Attach a monitoring companion to scraper">
           <SwitchButton v-model="edit_schedule.config.monitor">{{ edit_schedule.config.monitor|yes_no("Enabled", "Disabled") }}</SwitchButton>
         </b-form-group>
       </b-col>
@@ -189,6 +189,17 @@
                          v-model="edit_schedule.config.resources.shm"
                          :options="memoryOptions"
                          size="sm"></b-form-select>
+        </b-form-group>
+      </b-col>
+    </b-row>
+
+    <b-row>
+      <b-col>
+        <b-form-group label="Artifacts:"
+                      label-for="artifacts"
+                      description="Globs of artifacts to archive, one glob expression per line.">
+          <b-form-textarea id="artifacts"
+                         v-model="edit_schedule.config.artifacts_globs_str"></b-form-textarea>
         </b-form-group>
       </b-col>
     </b-row>
@@ -433,6 +444,15 @@
               parent.edit_schedule.config.resources.disk != parent.schedule.config.resources.disk ||
               parent.edit_schedule.config.resources.shm != parent.schedule.config.resources.shm) {
             payload.resources = parent.edit_schedule.config.resources;
+        }
+
+        // artifacts globs needs to be transformed into a real list
+        let new_artifacts_globs = null;
+        if (parent.edit_schedule.config.artifacts_globs_str && parent.edit_schedule.config.artifacts_globs_str.trim() !== "") {
+          new_artifacts_globs = parent.edit_schedule.config.artifacts_globs_str.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        }
+        if (new_artifacts_globs != parent.schedule.config.artifacts_globs) {
+            payload.artifacts_globs = new_artifacts_globs;
         }
 
         if (this.flags_payload)

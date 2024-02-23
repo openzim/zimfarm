@@ -14,6 +14,8 @@ from sqlalchemy.dialects.postgresql import insert
 import db.models as dbm
 from common import getnow
 from common.constants import (
+    ARTIFACTS_EXPIRATION,
+    ARTIFACTS_UPLOAD_URI,
     DEFAULT_SCHEDULE_DURATION,
     ENABLED_SCHEDULER,
     LOGS_EXPIRATION,
@@ -164,6 +166,10 @@ def request_a_schedule(
             "logs": {
                 "upload_uri": LOGS_UPLOAD_URI,
                 "expiration": LOGS_EXPIRATION,
+            },
+            "artifacts": {
+                "upload_uri": ARTIFACTS_UPLOAD_URI,
+                "expiration": ARTIFACTS_EXPIRATION,
             },
         },
         notification=schedule.notification if schedule.notification else {},

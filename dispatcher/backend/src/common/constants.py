@@ -23,6 +23,7 @@ ZIM_UPLOAD_URI = os.getenv(
     "ZIM_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/zim"
 )
 try:
+    # ZIM files expiration, 0 to disable expiration
     ZIM_EXPIRATION = int(os.getenv("ZIM_EXPIRATION", "0"))
 except Exception:
     ZIM_EXPIRATION = 0
@@ -30,9 +31,16 @@ LOGS_UPLOAD_URI = os.getenv(
     "LOGS_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/logs"
 )
 try:
+    # log files expiration, 0 to disable expiration
     LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
 except Exception:
     LOGS_EXPIRATION = 30
+ARTIFACTS_UPLOAD_URI = os.getenv("ARTIFACTS_UPLOAD_URI", None)
+try:
+    # artifact files expiration, 0 to disable expiration
+    ARTIFACTS_EXPIRATION = int(os.getenv("ARTIFACTS_EXPIRATION", "30"))
+except Exception:
+    ARTIFACTS_EXPIRATION = 30
 
 # empty ZIMCHECK_OPTION means no zimcheck
 ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")

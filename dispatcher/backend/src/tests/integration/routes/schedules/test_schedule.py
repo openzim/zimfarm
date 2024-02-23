@@ -1,7 +1,9 @@
 import json
+from copy import deepcopy
 from uuid import uuid4
 
 import pytest
+from utils_for_tests import patch_dict
 
 from utils.offliners import expanded_config
 
@@ -24,76 +26,104 @@ good_patch_updates = [
     {"tags": ["full"]},
     {"tags": ["full", "small"]},
     {"tags": ["full", "small"], "category": "vikidia", "enabled": False},
-    {"task_name": "phet", "flags": {}},
+    {
+        "task_name": "mwoffliner",
+    },
+    {
+        "task_name": "phet",
+        "flags": {},
+        "image": {"name": "openzim/phet", "tag": "1.1.2"},
+    },
     {"flags": {"mwUrl": "https://fr.wikipedia.org", "adminEmail": "hello@test.de"}},
     {"warehouse_path": "/phet"},
-    {"image": {"name": "openzim/phet", "tag": "latest"}},
+    {"image": {"name": "openzim/mwoffliner", "tag": "1.12.2"}},
+    {"artifacts_globs": ["*.json", "**/*.json"]},
     {"resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB}},
     {
         "task_name": "gutenberg",
         "warehouse_path": "/gutenberg",
         "flags": {},
-        "image": {"name": "openzim/gutenberg", "tag": "latest"},
+        "image": {"name": "openzim/gutenberg", "tag": "1.1.2"},
         "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
     {"name": "new_name"},
 ]
 
 bad_patch_updates = [
+    # Empty patch not allowed
     {},
+    # wrong languages combinations
     {"language": {"name_en": "Bambara", "name_native": "Bamanankan"}},
     {"language": {"code": "bm", "name_en": "", "name_native": "Bamanankan"}},
     {"language": {"code": "bm", "name_en": "Bambara"}},
+    # enabled flag must be a boolean, not a string
     {"enabled": "False"},
+    # illegal category
     {"category": "ubuntu"},
+    # empty tags not allowed
     {"tags": ""},
+    # tags must be strings
     {"tags": ["full", 1]},
+    # tags must be a list
     {"tags": "full,small"},
+    # name cannot be empty
     {"name": ""},
+    # config cannot be empty
     {"config": ""},
+    # mwoffliner does not supports empty flags
     {"flags": {}},
+    # cannot change only offliner, image must be changed as well
+    {"task_name": "phet", "flags": {}},
+    # cannot change only image name, offliner must be changed as well
+    {"flags": {}, "image": {"name": "openzim/phet", "tag": "latest"}},
+    # illegal offliner name
     {
         "task_name": "hop",
-        "warehouse_path": "/phet",
         "flags": {},
-        "image": {"name": "openzim/phet", "tag": "latest"},
-        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
+        "image": {"name": "openzim/hop", "tag": "latest"},
     },
+    # wrong warehouse_path
     {
-        "task_name": "phet",
         "warehouse_path": "/ubuntu",
-        "flags": {},
-        "image": {"name": "openzim/phet", "tag": "latest"},
-        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
+    # wrong mwUrl flag for phet
     {
         "task_name": "phet",
-        "warehouse_path": "/phet",
         "flags": {"mwUrl": "http://fr.wikipedia.org"},
         "image": {"name": "openzim/phet", "tag": "latest"},
-        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
     },
-    {
-        "task_name": "phet",
-        "warehouse_path": "/phet",
-        "flags": {},
-        "image": {"name": "openzim/youtuba", "tag": "latest"},
-        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
-    },
+    # image name not aligned with task name
     {
         "task_name": "gutenberg",
-        "warehouse_path": "/gutenberg",
         "flags": {},
         "image": {"name": "openzim/youtube", "tag": "latest"},
+    },
+    # bad cpu value
+    {
         "resources": {"cpu": -1, "memory": MIN_RAM, "disk": ONE_GiB},
     },
+    # bad mem value
+    {
+        "resources": {"cpu": 3, "memory": -1, "disk": ONE_GiB},
+    },
+    # bad disk value
+    {
+        "resources": {"cpu": 3, "memory": MIN_RAM, "disk": -1},
+    },
+    # one resource missing
+    {
+        "resources": {"cpu": 3, "memory": MIN_RAM},
+    },
+    # illegal characters in name
     {"name": "new\u0000name"},
+    # illegal characters in mwUrl
     {
         "flags": {
             "mwUrl": "https://fr.wiki\u0000pedia.org",
             "adminEmail": "hello@test.de",
         }
     },
+    # illegal characters in adminEmail
     {
         "flags": {
             "mwUrl": "https://fr.wikipedia.org",
@@ -209,6 +239,7 @@ class TestSchedulePost:
                     "platform": None,
                     "resources": {"cpu": 3, "memory": MIN_RAM, "disk": ONE_GiB},
                     "monitor": False,
+                    "artifacts_globs": ["**/*.json"],
                 },
                 "notification": {},
             },
@@ -455,6 +486,8 @@ class TestSchedulePatch:
         # let's reapply manually the changes that should have been done by the patch
         # so that we can confirm it has been done
         document = response.get_json()
+
+        update_patch = {}
         config_keys = [
             "task_name",
             "warehouse_path",
@@ -463,12 +496,29 @@ class TestSchedulePatch:
             "platform",
             "flags",
             "monitor",
+            "artifacts_globs",
         ]
-        # these keys must not be applied since they are somewhere else is the document
-        for key in config_keys:
-            update.pop(key, None)
-        document.update(update)
-        assert response.get_json() == document
+        for key, value in update.items():
+            if key in config_keys:
+                if "config" not in update_patch:
+                    update_patch["config"] = {}
+                update_patch["config"][key] = value
+            else:
+                update_patch[key] = value
+
+        # handle special situation for config image name
+        if (
+            "config" in update_patch
+            and "image" in update_patch["config"]
+            and "name" in update_patch["config"]["image"]
+        ):
+            update_patch["config"]["image"]["name"] = (
+                "ghcr.io/" + update_patch["config"]["image"]["name"]
+            )
+
+        patch_result = deepcopy(document)
+        patch_dict(patch_result, update_patch)
+        assert document == patch_result
 
     @pytest.mark.parametrize("update", bad_patch_updates)
     def test_patch_schedule_via_name_with_errors(
@@ -494,6 +544,60 @@ class TestSchedulePatch:
         response = client.patch(url, json=language)
         assert response.status_code == 401
         assert response.get_json() == {"error": "token invalid"}
+
+    def test_patch_schedule_does_not_set_null_config_keys(
+        self, client, access_token, schedule
+    ):
+
+        update = {"platform": None}
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+        response = client.get(url, headers={"Authorization": access_token})
+        assert response.status_code == 200
+
+        document = response.get_json()
+
+        assert "config" in document
+        assert "platform" not in document["config"]
+
+    def test_patch_schedule_remove_null_config_keys(
+        self, client, access_token, schedule
+    ):
+
+        update = {"platform": "ifixit"}
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+        response = client.get(url, headers={"Authorization": access_token})
+        assert response.status_code == 200
+
+        document = response.get_json()
+
+        assert "config" in document
+        assert "platform" in document["config"]
+        assert document["config"]["platform"] == "ifixit"
+
+        update = {"platform": None}
+        url = "/schedules/{}".format(schedule["name"])
+        response = client.patch(
+            url, json=update, headers={"Authorization": access_token}
+        )
+        assert response.status_code == 204
+
+        response = client.get(url, headers={"Authorization": access_token})
+        assert response.status_code == 200
+
+        document = response.get_json()
+
+        assert "config" in document
+        assert "platform" not in document["config"]
 
 
 class TestScheduleDelete:

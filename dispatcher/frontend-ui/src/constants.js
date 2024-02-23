@@ -113,7 +113,15 @@ function image_url(config) {
 }
 
 function logs_url(task) {
-  let url = new URL(task.upload.logs.upload_uri);
+  return upload_url(task.upload.logs.upload_uri, task.container.log)
+}
+
+function artifacts_url(task) {
+  return upload_url(task.upload.artifacts.upload_uri, task.container.artifacts)
+}
+
+function upload_url(uri, filename) {
+  let url = new URL(uri);
   let scheme = url.protocol.replace(/:$/, "");
 
   if (["http", "https"].indexOf(scheme) == -1)
@@ -124,10 +132,10 @@ function logs_url(task) {
     let bucketName = url.searchParams.get("bucketName");
     if (bucketName)
       log_url += bucketName + "/";
-    return log_url + task.container.log;
+    return log_url + filename;
   }
 
-  return task.container.log;
+  return filename;
 }
 
 function build_command_without(config, secret_fields) {
@@ -520,6 +528,7 @@ export default {
   image_human: image_human,
   image_url: image_url,
   logs_url: logs_url,
+  artifacts_url: artifacts_url,
   build_docker_command: build_docker_command,
   build_command_without: build_command_without,
   trim_command: trim_command,
