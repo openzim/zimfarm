@@ -131,7 +131,7 @@
         </b-form-group>
       </b-col>
       <b-col>
-         <b-form-group label="Image Tag:" label-for="es_imagetag" description="Input image name first to have proper values">
+         <b-form-group label="Image Tag:" label-for="es_imagetag" description="Set image name first to get existing values">
           <b-form-select id="es_category"
                          v-model="edit_schedule.config.image.tag"
                          required

@@ -1,4 +1,14 @@
 def patch_dict(data, patch):
+    """Apply a patch to a dictionnary
+
+    - data is the dictionnary to modify (in-place)
+    - patch is a dictionnary of modifications to apply (could contain nested dictionnary
+    when the value to modify is deep inside the data dictionnary)
+
+    E.g. if data is { "key1": { "subkey1": "value1", subkey2": "value2" } } and patch is
+    { "key1": { "subkey2": "newvalue2"}} then after the operation data will become
+    { "key1": { "subkey1": "value1", subkey2": "newvalue2" } }
+    """
     for key, patch_value in patch.items():
         if key in data:
             if patch_value is None:
@@ -18,4 +28,3 @@ def patch_dict(data, patch):
             # If the key is not present in the original dictionary, set it with the
             # patch value
             data[key] = patch_value
-    return data

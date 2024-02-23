@@ -516,7 +516,8 @@ class TestSchedulePatch:
                 "ghcr.io/" + update_patch["config"]["image"]["name"]
             )
 
-        patch_result = patch_dict(deepcopy(document), update_patch)
+        patch_result = deepcopy(document)
+        patch_dict(patch_result, update_patch)
         assert document == patch_result
 
     @pytest.mark.parametrize("update", bad_patch_updates)

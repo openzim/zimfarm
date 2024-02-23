@@ -479,21 +479,21 @@ class TaskWorker(BaseWorker):
         logger.debug("Creating a tar of requested artifacts")
         filename = f"{self.task['_id']}_{self.task['config']['task_name']}.tar"
         try:
-            files_to_tar = [
+            files_to_archive = [
                 file
                 for pattern in artifacts_globs
                 for file in self.task_workdir.glob(pattern)
             ]
-            if len(files_to_tar) == 0:
+            if len(files_to_archive) == 0:
                 logger.debug("No files found to archive")
                 return
 
             fpath = self.task_workdir / filename
             with tarfile.open(fpath, "w") as tar:
-                for file in files_to_tar:
+                for file in files_to_archive:
                     tar.add(file, arcname=file.relative_to(self.task_workdir))
                     try:
-                        file.unlink()
+                        file.unlink(missing_ok=True)
                     except Exception as exc:
                         logger.debug(
                             "Unable to delete file after archiving", exc_info=exc
@@ -501,7 +501,7 @@ class TaskWorker(BaseWorker):
         except Exception as exc:
             logger.error(f"Unable to archive artifacts to {fpath}")
             logger.exception(exc)
-            return False
+            return
 
         logger.debug("Starting artifacts uploader container…")
         self.artifacts_uploader = start_uploader(
