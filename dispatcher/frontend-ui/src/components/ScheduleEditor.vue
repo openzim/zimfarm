@@ -197,7 +197,7 @@
       <b-col>
         <b-form-group label="Artifacts:"
                       label-for="artifacts"
-                      description="Globs of artifacts to archive, one glob expression per line.">
+                      description="! Experts only ! Beware to not include your ZIM files and logs ! Globs of artifacts to archive, one glob expression per line.">
           <b-form-textarea id="artifacts"
                          v-model="edit_schedule.config.artifacts_globs_str"></b-form-textarea>
         </b-form-group>
