@@ -24,6 +24,8 @@ ZIM_UPLOAD_URI = os.getenv(
 )
 try:
     # ZIM files expiration, 0 to disable expiration
+    # only working in Wasabi S3 for now, works only if retention compliance is activated
+    # on the bucket and the bucket retention is smaller than value below
     ZIM_EXPIRATION = int(os.getenv("ZIM_EXPIRATION", "0"))
 except Exception:
     ZIM_EXPIRATION = 0
@@ -32,12 +34,16 @@ LOGS_UPLOAD_URI = os.getenv(
 )
 try:
     # log files expiration, 0 to disable expiration
+    # only working in Wasabi S3 for now, works only if retention compliance is activated
+    # on the bucket and the bucket retention is smaller than value below
     LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
 except Exception:
     LOGS_EXPIRATION = 30
 ARTIFACTS_UPLOAD_URI = os.getenv("ARTIFACTS_UPLOAD_URI", None)
 try:
     # artifact files expiration, 0 to disable expiration
+    # only working in Wasabi S3 for now, works only if retention compliance is activated
+    # on the bucket and the bucket retention is smaller than value below
     ARTIFACTS_EXPIRATION = int(os.getenv("ARTIFACTS_EXPIRATION", "30"))
 except Exception:
     ARTIFACTS_EXPIRATION = 30
