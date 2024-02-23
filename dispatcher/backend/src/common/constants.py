@@ -35,9 +35,7 @@ try:
     LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
 except Exception:
     LOGS_EXPIRATION = 30
-ARTIFACTS_UPLOAD_URI = os.getenv(
-    "ARTIFACTS_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/artifacts"
-)
+ARTIFACTS_UPLOAD_URI = os.getenv("ARTIFACTS_UPLOAD_URI", None)
 try:
     # artifact files expiration, 0 to disable expiration
     ARTIFACTS_EXPIRATION = int(os.getenv("ARTIFACTS_EXPIRATION", "30"))
