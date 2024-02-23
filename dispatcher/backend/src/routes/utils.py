@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from common.constants import SECRET_REPLACEMENT
 from common.schemas.models import ScheduleConfigSchema
@@ -101,10 +101,10 @@ def remove_s3_secrets(response: dict):
             response[key] = url._replace(
                 query="&".join(
                     [
-                        param
-                        for param in url.query.split("&")
-                        if not param.lower().startswith("keyid")
-                        and not param.lower().startswith("secretaccesskey")
+                        f"{key}={value}"
+                        for key, values in parse_qs(url.query).items()
+                        if str(key).lower() not in ["keyid", "secretaccesskey"]
+                        for value in values
                     ]
                 )
             ).geturl()

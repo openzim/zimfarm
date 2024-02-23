@@ -250,6 +250,68 @@ def test_remove_secrets(response):
 
 
 @pytest.mark.parametrize(
+    "response_before,response_after",
+    [
+        (
+            {
+                "please_clean_me1": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?keyId=this_is_super_secret"
+                    "&secretAccessKey=this_is_super_secret"
+                    "&bucketName=org-kiwix-zimfarm-logs"
+                ),
+                "please_clean_me2": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "&keyId=this_is_super_secret"
+                    "&secretAccessKey=this_is_super_secret"
+                ),
+                "please_clean_me3": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "&keyId=this_is_super_secret"
+                    "&secretAccessKey=this_is_super_secret"
+                    "&something=somevalue"
+                ),
+                "please_clean_me4": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "&secretAccessKey=this_is_super_secret"
+                    "&something=somevalue"
+                    "&keyId=this_is_super_secret"
+                    "&something2=somevalue2"
+                ),
+            },
+            {
+                "please_clean_me1": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                ),
+                "please_clean_me2": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                ),
+                "please_clean_me3": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "&something=somevalue"
+                ),
+                "please_clean_me4": (
+                    "s3://s3.us-west-1.wasabisys.com/"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "&something=somevalue"
+                    "&something2=somevalue2"
+                ),
+            },
+        ),
+    ],
+)
+def test_remove_secrets_url_kept(response_before, response_after):
+    remove_secrets_from_response(response_before)
+    assert response_before == response_after
+
+
+@pytest.mark.parametrize(
     "data, keys, has",
     [
         (
