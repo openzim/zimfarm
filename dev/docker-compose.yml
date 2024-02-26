@@ -28,6 +28,9 @@ services:
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "1"
+      ARTIFACTS_UPLOAD_URI: scp://root@ssh-host:22/artifacts/
+      LOGS_UPLOAD_URI: scp://root@ssh-host:22/logs/
+      ZIM_UPLOAD_URI: scp://root@ssh-host:22/zims/
     depends_on:
       - postgresdb
   frontend-ui:
@@ -78,6 +81,13 @@ services:
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
     depends_on:
       - postgresdb
+  ssh-host:
+    build:
+      context: ssh-host
+    container_name: zf_ssh_host
+    ports:
+      - 127.0.0.1:8022:22
+
 
 volumes:
   pg_data_zimfarm:
