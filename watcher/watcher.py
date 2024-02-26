@@ -506,7 +506,7 @@ class WatcherRunner:
 
         checked_on = datetime.datetime.now()
         self.check_and_go()
-        while self.running:
+        while self.running and not self.runonce:
             if datetime.datetime.now() > checked_on + self.duration:
                 checked_on = datetime.datetime.now()
                 self.check_and_go()
@@ -582,6 +582,13 @@ def entrypoint():
     )
     parser.add_argument(
         "--debug", help="Enable verbose output", action="store_true", default=False
+    )
+
+    parser.add_argument(
+        "--runonce",
+        help="Run only one check and stops",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
