@@ -469,7 +469,12 @@ class TaskWorker(BaseWorker):
             logger.error("No scraper to upload its artifacts…")
             return  # scraper gone, we can't access artifacts
 
-        if not self.task["upload"]["artifacts"]["upload_uri"]:
+        if (
+            "upload" not in self.task
+            or "artifacts" not in self.task["upload"]
+            or "upload_uri" not in self.task["upload"]["artifacts"]
+            or not self.task["upload"]["artifacts"]["upload_uri"]
+        ):
             logger.debug("No artifacts upload URI configured")
             return
 
