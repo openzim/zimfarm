@@ -1,4 +1,4 @@
-FROM python:3.8-buster
+FROM python:3.12-slim-bookworm
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 

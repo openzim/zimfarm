@@ -29,6 +29,10 @@ This container is a PostgreSQL DB. DB data is kept in a volume, persistent acros
 
 This container hosts the frontend UI for end-users.
 
+### ssh-host
+
+This container hosts a minimal SSH server, usefull for uploading Zimfarm artifacts locally during tests.
+
 ## Instructions
 
 First start the Docker-Compose stack:

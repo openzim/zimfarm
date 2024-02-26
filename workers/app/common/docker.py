@@ -614,24 +614,26 @@ def start_uploader(
     if task["upload"][kind]["expiration"]:
         command += ["--delete-after", str(task["upload"][kind]["expiration"])]
 
-    return run_container(
-        docker_client,
-        image=docker_image,
-        command=command,
-        detach=True,
-        environment={"RSA_KEY": str(PRIVATE_KEY)},
-        labels={
+    kwargs = {
+        "image": docker_image,
+        "command": command,
+        "detach": True,
+        "environment": {"RSA_KEY": str(PRIVATE_KEY)},
+        "labels": {
             "zimfarm": "",
             "task_id": task["_id"],
             "tid": short_id(task["_id"]),
             "schedule_name": task["schedule_name"],
             "filename": filename,
         },
-        mem_swappiness=0,
-        mounts=mounts,
-        name=container_name,
-        remove=False,
-    )
+        "mem_swappiness": 0,
+        "mounts": mounts,
+        "name": container_name,
+        "remove": False,
+    }
+    if "DOCKER_NETWORK" in os.environ:
+        kwargs["network"] = os.getenv("DOCKER_NETWORK")
+    return run_container(docker_client, **kwargs)
 
 
 def get_container_logs(docker_client, container_name, tail="all"):
