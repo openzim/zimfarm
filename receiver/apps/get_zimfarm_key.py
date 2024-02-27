@@ -84,7 +84,7 @@ def fetch_public_keys_for(username, raw_fingerprint):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        logger.error(f"Usage: {sys.argv[1]} <username> <fingerprint>")
+        logger.error(f"Usage: {sys.argv[0]} <username> <fingerprint>")
         sys.exit(1)
 
     sys.exit(print_keys_for(*sys.argv[1:]))
