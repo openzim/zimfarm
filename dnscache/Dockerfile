@@ -13,6 +13,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # --no-daemon and --keep-in-foreground are similar
 # but no-deamon has debug enabled (and thus starts with useful output)
 
+
 ENTRYPOINT ["entrypoint.sh"]
 
 CMD ["dnsmasq", "--no-daemon", "--user=root", "--conf-file=/etc/dnsmasq.conf", "--resolv-file=/etc/resolv.dnsmasq", "--domain-needed", "--bogus-priv", "--no-hosts", "--cache-size=1500", "--neg-ttl=600", "--no-poll"]
