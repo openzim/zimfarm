@@ -28,9 +28,11 @@ services:
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "1"
-      ARTIFACTS_UPLOAD_URI: scp://root@ssh-host:22/artifacts/
-      LOGS_UPLOAD_URI: scp://root@ssh-host:22/logs/
-      ZIM_UPLOAD_URI: scp://root@ssh-host:22/zims/
+      # upload artifacts, logs and zim to receiver for simplicity
+      ARTIFACTS_UPLOAD_URI: sftp://uploader@receiver:22/logs/ # reusing logs dir, kind of a hack
+      LOGS_UPLOAD_URI: sftp://uploader@receiver:22/logs/
+      ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
+      ZIMCHECK_OPTION: --all
     depends_on:
       - postgresdb
   frontend-ui:
@@ -81,13 +83,47 @@ services:
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
     depends_on:
       - postgresdb
-  ssh-host:
-    build:
-      context: ssh-host
-    container_name: zf_ssh_host
+  receiver:
+    build: ../receiver
+    container_name: zf_receiver
     ports:
-      - 127.0.0.1:8022:22
+      - 127.0.0.1:8222:22
+    volumes:
+      - ./receiver/create-warehouse-paths.sh:/contrib/create-warehouse-paths.sh
+    environment:
+      - ZIMFARM_WEBAPI=http://backend:8000/v1
+    depends_on:
+      - backend
 
+  # # uncomment this only if you want to run a worker manager
+  # worker_mgr:
+  #   build:
+  #     context: ../workers
+  #     dockerfile: manager-Dockerfile
+  #   container_name: zf_worker_mgr
+  #   depends_on:
+  #     - backend
+  #   command: worker-manager --webapi-uri 'http://backend:8000/v1' --username test_worker --name test_worker
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
+
+  # # uncomment this only if you want to run a 'standalone' task worker
+  # # you have to modify the <your_task_id> in the command with a real requested task
+  # task_worker:
+  #   build:
+  #     context: ../workers
+  #     dockerfile: task-Dockerfile
+  #   container_name: zf_task_worker
+  #   depends_on:
+  #     - backend
+  #   command: task-worker --webapi-uri 'http://backend:8000/v1' --username test_worker --task-id <your_task_id>
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
+  #   environment:
+  #     - DEBUG=1
+  #     - DOCKER_NETWORK=zimfarm_default
 
 volumes:
   pg_data_zimfarm:

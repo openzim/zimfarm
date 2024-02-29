@@ -21,8 +21,8 @@ TASK_WORKER = "task-worker"
 TASK_WORKER_IMAGE = (
     os.getenv("TASK_WORKER_IMAGE") or "ghcr.io/openzim/zimfarm-task-worker:latest"
 )
-DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE") or "ghcr.io/openzim/dnscache:1.0.1"
-UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE") or "ghcr.io/openzim/uploader:1.2"
+DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE") or "ghcr.io/openzim/dnscache:latest"
+UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE") or "ghcr.io/openzim/uploader:latest"
 CHECKER_IMAGE = os.getenv("CHECKER_IMAGE") or "ghcr.io/openzim/zim-tools:3.3.0"
 MONITOR_IMAGE = os.getenv("MONITOR_IMAGE") or "ghcr.io/openzim/zimfarm-monitor:latest"
 

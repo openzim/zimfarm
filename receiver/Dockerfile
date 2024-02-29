@@ -1,10 +1,10 @@
-FROM python:3.8-buster
+FROM python:3.12-slim-bookworm
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
 # system dependencies
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends openssh-sftp-server openssh-server wget cron parallel \
+    && apt-get install -y --no-install-recommends openssh-sftp-server openssh-server wget cron parallel build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,10 +19,10 @@ RUN printf "allowscp\nallowsftp\n" > /etc/rssh.conf
 
 WORKDIR /
 # setup a chroot jail at /jail
-RUN wget -nv https://olivier.sessink.nl/jailkit/jailkit-2.21.tar.gz
-RUN tar xf jailkit-2.21.tar.gz
-RUN cd jailkit-2.21 && ./configure && make && make install
-RUN rm -rf /jailkit-2.21 && rm -f jailkit-2.21.tar.gz
+RUN wget -nv https://olivier.sessink.nl/jailkit/jailkit-2.23.tar.gz
+RUN tar xf jailkit-2.23.tar.gz
+RUN cd jailkit-2.23 && ./configure && make && make install
+RUN rm -rf /jailkit-2.23 && rm -f jailkit-2.23.tar.gz
 # patch ini file
 RUN sed -i.bak -e '116d' /etc/jailkit/jk_init.ini
 RUN printf "\n[rssh]\npaths = /bin/rssh, /etc/rssh.conf\n" >> /etc/jailkit/jk_init.ini

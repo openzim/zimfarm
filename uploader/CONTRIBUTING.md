@@ -47,7 +47,7 @@ It should succeed. If you run the same test a second time, it will fail due to c
 Following test upload should succeed.
 
 ```
-docker run -it --rm -v $PWD:/data -v $PWD/../dev/ssh-host/id_rsa:/etc/ssh/keys/id_rsa -v $PWD/../dev/ssh-host/known_hosts:/etc/ssh/known_hosts --network zimfarm_default local-zf-uploader uploader --file /data/CONTRIBUTING.md --upload-uri scp://root@ssh-host:22/CONTRIBUTING.md --move
+docker run -it --rm -v $PWD:/data -v $PWD/dev/test_worker-identity/id_rsa:/etc/ssh/keys/id_rsa --network zimfarm_default local-zf-uploader uploader --file /data/CONTRIBUTING.md --upload-uri scp://uploader@receiver:22/logs/CONTRIBUTING.md --move
 ```
 
 ## SFTP test
@@ -55,5 +55,5 @@ docker run -it --rm -v $PWD:/data -v $PWD/../dev/ssh-host/id_rsa:/etc/ssh/keys/i
 Following test upload should succeed.
 
 ```
-docker run -it --rm -v $PWD:/data -v $PWD/../dev/ssh-host/id_rsa:/etc/ssh/keys/id_rsa -v $PWD/../dev/ssh-host/known_hosts:/etc/ssh/known_hosts --network zimfarm_default local-zf-uploader uploader --file /data/CONTRIBUTING.md --upload-uri sftp://root@ssh-host:22/CONTRIBUTING.md
+docker run -it --rm -v $PWD/CONTRIBUTING.md:/data/CONTRIBUTING.md -v $PWD/dev/test_worker-identity/id_rsa:/etc/ssh/keys/id_rsa --network zimfarm_default local-zf-uploader uploader --file /data/CONTRIBUTING.md --upload-uri sftp://uploader@receiver:22/logs/CONTRIBUTING.md
 ```
