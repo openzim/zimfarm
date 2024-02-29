@@ -116,7 +116,7 @@ services:
   #   container_name: zf_task_worker
   #   depends_on:
   #     - backend
-  #   command: task-worker --webapi-uri 'http://backend:8000/v1' --username test_worker --task-id 4581334b-d15e-4fa5-b87c-93e0b4040592
+  #   command: task-worker --webapi-uri 'http://backend:8000/v1' --username test_worker --task-id <your_task_id>
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
