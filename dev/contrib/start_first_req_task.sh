@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Call as many times as necessary to transition the first (oldest) requested task in the
+# database into a reserved task, assigned to the `test_worker` worker.
+#
+# Displays the whole task JSON.
+
 set -e
 
 echo "Retrieving access token"

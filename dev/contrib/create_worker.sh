@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Call it once to create a `test_worker`:
+# - retrieve an admin token
+# - create the `test_worker`` user
+# - create the associated worker object
+# - upload a test public key. 
+#
+# To be used to have a "real" test worker for local development, typically to start
+# a worker manager or a task manager or simply assign tasks to a worker in the UI/API
+
 set -e
 
 echo "Retrieving admin access token"
