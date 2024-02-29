@@ -32,6 +32,7 @@ services:
       ARTIFACTS_UPLOAD_URI: sftp://uploader@receiver:22/logs/ # reusing logs dir, kind of a hack
       LOGS_UPLOAD_URI: sftp://uploader@receiver:22/logs/
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
+      ZIMCHECK_OPTION: --all
     depends_on:
       - postgresdb
   frontend-ui:
