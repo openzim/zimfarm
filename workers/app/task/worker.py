@@ -38,7 +38,7 @@ from common.docker import (
 )
 from common.utils import format_key, format_size
 from common.worker import BaseWorker
-from common.zim import get_zim_info
+from task.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 PENDING = "pending"
