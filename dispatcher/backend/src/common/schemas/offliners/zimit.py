@@ -432,6 +432,17 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
+    keep = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Keep",
+            "description": "Should be True. Developer option: must be True if we want "
+            "to keep the WARC files for artifacts archiving.",
+        },
+        required=False,
+    )
+
     output = String(
         metadata={
             "label": "Output folder",
