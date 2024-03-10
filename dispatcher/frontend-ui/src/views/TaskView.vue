@@ -306,5 +306,6 @@
   .stdout, .stderr {
     max-height: 9rem;
     overflow: scroll;
+    max-width: 120rem;
   }
 </style>
