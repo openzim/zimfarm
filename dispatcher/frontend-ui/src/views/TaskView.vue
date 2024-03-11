@@ -107,7 +107,7 @@
           </tr>
           <tr v-if="task.config"><th>Platform</th><td>{{ task.config.platform || "-" }}</td></tr>
           <tr v-if="task.config"><th>Config</th><td><FlagsList :flags="task.config.flags" :secret_fields="secret_fields" :shrink="false"/></td></tr>
-          <tr v-if="task_container.command"><th>Command </th><td><code class="command">{{ command }}</code></td></tr>
+          <tr v-if="task_container.command"><th>Command </th><td class="truncate"><code class="command">{{ command }}</code></td></tr>
           <tr v-if="task_container.exit_code != null"><th>Exit-code</th><td><code>{{ task_container.exit_code }}</code></td></tr>
           <tr v-if="max_memory != null">
             <th>Stats</th>
@@ -120,7 +120,7 @@
             <th>Scraper&nbsp;stdout
                 <b-button variant="neutral" v-tooltip="'Copy stdout to clipboard'" @click.prevent="copyOutput(task_container.stdout, 'stdout')"><font-awesome-icon icon="copy" /></b-button>
             </th>
-            <td><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
+            <td class="truncate"><pre class="stdout">{{ task_container.stdout }}</pre></td></tr>
           <tr v-if="task_container.stderr">
             <th>Scraper&nbsp;stderr
                 <b-button variant="neutral" v-tooltip="'Copy stderr to clipboard'" @click.prevent="copyOutput(task_container.stderr, 'stderr')"><font-awesome-icon icon="copy" /></b-button>
@@ -306,5 +306,10 @@
   .stdout, .stderr {
     max-height: 9rem;
     overflow: scroll;
+  }
+  .truncate {
+    white-space: nowrap;  /* disable wrap around text */
+    overflow-x: auto;     /* enable horizontal scroll */
+    max-width: 200px      /* limit width */
   }
 </style>
