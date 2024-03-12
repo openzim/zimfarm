@@ -443,14 +443,18 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                         "expiration": 60,
                         "upload_uri": (
                             "s3://s3.us-west-1.wasabisys.com/"
-                            "?bucketName=org-kiwix-zimfarm-logs"
+                            "?keyId=********"
+                            "&secretAccessKey=********"
+                            "&bucketName=org-kiwix-zimfarm-logs"
                         ),
                     },
                     "artifacts": {
                         "expiration": 20,
                         "upload_uri": (
                             "s3://s3.us-west-1.wasabisys.com/"
-                            "?bucketName=org-kiwix-zimfarm-artifacts"
+                            "?keyId=********"
+                            "&secretAccessKey=********"
+                            "&bucketName=org-kiwix-zimfarm-artifacts"
                         ),
                     },
                 },
@@ -470,7 +474,7 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                         "please_clean_me": (
                             "something\nwhat s3://s3.us-west-1.wasabisys.com/"
                             "?keyId=this_is_super_secret"
-                            "&secretAccessKey=this_is_super_secret"
+                            "&secretAccessKey=this_is_a_super_secret"
                             "&bucketName=org-kiwix-zimfarm-logs what\n"
                             "something\n"
                         ),
@@ -489,7 +493,9 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "response_but": {
                         "please_clean_me": (
                             "something\nwhat s3://s3.us-west-1.wasabisys.com/"
-                            "?bucketName=org-kiwix-zimfarm-logs what\n"
+                            "?keyId=********"
+                            "&secretAccessKey=********"
+                            "&bucketName=org-kiwix-zimfarm-logs what\n"
                             "something\n"
                         ),
                     },
@@ -566,45 +572,70 @@ def test_remove_secrets(response, expected_response):
                     "&keyId=this_is_super_secret \n"
                     "something"
                 ),
+                "please_clean_me8": (
+                    " ftp://username:password@hostname:123/path not encoded?"
+                    "param=val%26ue#anchor "
+                ),
             },
             {
                 "please_clean_me1": (
                     "s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "?keyId=********"
+                    "&secretAccessKey=********"
+                    "&bucketName=org-kiwix-zimfarm-logs"
                 ),
                 "please_clean_me2": (
                     "s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
+                    "&keyId=********"
+                    "&secretAccessKey=********"
                 ),
                 "please_clean_me3": (
                     "s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
+                    "&keyId=********"
+                    "&secretAccessKey=********"
                     "&something=somevalue"
                 ),
                 "please_clean_me4": (
                     "s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
+                    "&secretAccessKey=********"
                     "&something=somevalue"
+                    "&keyId=********"
                     "&something2=somevalue2"
                 ),
                 "please_clean_me5": (
                     " s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "?keyId=********"
+                    "&secretAccessKey=********"
+                    "&bucketName=org-kiwix-zimfarm-logs"
                 ),
                 "please_clean_me6": (
                     "s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs "
+                    "?keyId=********"
+                    "&secretAccessKey=********"
+                    "&bucketName=org-kiwix-zimfarm-logs "
                 ),
                 "please_clean_me7": (
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs \n"
+                    "?keyId=********"
+                    "&secretAccessKey=********"
+                    "&bucketName=org-kiwix-zimfarm-logs \n"
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs \n"
+                    "?secretAccessKey=********"
+                    "&bucketName=org-kiwix-zimfarm-logs \n"
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs \n"
+                    "?keyId=********"
+                    "&bucketName=org-kiwix-zimfarm-logs \n"
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?bucketName=org-kiwix-zimfarm-logs \n"
+                    "?bucketName=org-kiwix-zimfarm-logs"
+                    "&keyId=******** \n"
                     "something"
+                ),
+                "please_clean_me8": (
+                    " ftp://username:--------@hostname:123/path not encoded?param="
+                    "val%26ue#anchor "
                 ),
             },
         ),
