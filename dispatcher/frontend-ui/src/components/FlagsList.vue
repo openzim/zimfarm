@@ -3,8 +3,8 @@
     <tbody>
       <tr v-for="(value, name) in flags" :key="name">
         <td><code>{{ name }}</code></td>
-        <td v-if="is_protected_key(name)" v-tooltip="'Actual content hidden'">{{ value }}</td>
-        <td v-else>{{ value }}</td>
+        <td class="value" v-if="is_protected_key(name)" v-tooltip="'Actual content hidden'">{{ value }}</td>
+        <td class="value" v-else>{{ value }}</td>
       </tr>
     </tbody>
   </table>
@@ -27,3 +27,9 @@
     },
   }
 </script>
+
+<style type="text/css">
+  .value {
+    word-break: break-all;
+  }
+</style>
