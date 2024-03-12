@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 from common.constants import SECRET_REPLACEMENT
 from common.schemas.models import ScheduleConfigSchema
@@ -26,7 +26,7 @@ def has_dict_sub_key(data: Dict[str, Any], keys: List[str]):
 def remove_secrets_from_response(response: dict):
     """replaces or removes (in-place) all occurences of secrets"""
     remove_secret_flags(response)
-    remove_s3_secrets(response)
+    remove_url_secrets(response)
 
 
 def remove_secret_flags(response: dict):
@@ -87,24 +87,45 @@ def remove_secret_flag_from_command(
     ] = f'--{field_name}="{SECRET_REPLACEMENT}"'
 
 
-def remove_s3_secrets(response: dict):
-    """remove keyId and secretAccessKey query params from any URL we might find"""
+def remove_url_secrets(response: dict):
+    """remove secrets from any URL we might find
+
+    For now we remove:
+    - password if passed in the network location
+    - keyId and secretAccessKey query params (probably used for S3)
+    """
     for key in response.keys():
         if not response[key]:
             continue
         if isinstance(response[key], dict):
-            remove_s3_secrets(response[key])
+            remove_url_secrets(response[key])
         else:
             if not isinstance(response[key], str) or "://" not in response[key]:
                 continue
-            url = urlparse(response[key])
-            response[key] = url._replace(
-                query="&".join(
-                    [
-                        f"{key}={value}"
-                        for key, values in parse_qs(url.query).items()
-                        if str(key).lower() not in ["keyid", "secretaccesskey"]
+            for url in [word for word in response[key].split() if "://" in word]:
+                urlparts = urlsplit(url)
+                newquery = urlencode(
+                    {
+                        key: (
+                            value
+                            if str(key).lower() not in ["keyid", "secretaccesskey"]
+                            else SECRET_REPLACEMENT
+                        )
+                        for key, values in parse_qs(urlparts.query).items()
                         for value in values
-                    ]
+                    },
+                    doseq=True,
                 )
-            ).geturl()
+                newnetloc: str | None = urlparts.netloc
+                if newnetloc and urlparts.password:
+                    newnetloc = newnetloc.replace(urlparts.password, SECRET_REPLACEMENT)
+                secured_url = urlunsplit(
+                    (
+                        urlparts.scheme,
+                        newnetloc,
+                        urlparts.path,
+                        newquery,
+                        urlparts.fragment,
+                    )
+                )
+                response[key] = response[key].replace(url, secured_url)

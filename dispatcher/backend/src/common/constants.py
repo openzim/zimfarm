@@ -75,7 +75,7 @@ SLACK_EMOJI = os.getenv("SLACK_EMOJI")
 SLACK_ICON = os.getenv("SLACK_ICON")
 
 # string to replace hidden secrets with
-SECRET_REPLACEMENT = "********"  # nosec
+SECRET_REPLACEMENT = "--------"  # nosec
 
 # ###
 # workers whitelist management
