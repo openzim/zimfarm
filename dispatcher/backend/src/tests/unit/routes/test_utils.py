@@ -29,12 +29,12 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
                 "upload": None,
@@ -62,12 +62,12 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -94,12 +94,12 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -127,13 +127,13 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                         "flag_missing_in_commang": "some_value",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -156,7 +156,7 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                         "flag_missing_in_commang": "some_value",
                     },
                 },
@@ -195,23 +195,23 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                     "str_command": (
                         'kolibri2zim --name="khanacademy_en_all" '
-                        '--optimization-cache="********"'
+                        '--optimization-cache="--------"'
                     ),
                 },
                 "container": {
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -240,14 +240,14 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                 },
                 "container": {
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -276,14 +276,14 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                 },
                 "container": {
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -312,14 +312,14 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                 },
                 "container": {
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -358,16 +358,16 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                     "str_command": (
                         'kolibri2zim --name="khanacademy_en_all" '
-                        '--optimization-cache="********"'
+                        '--optimization-cache="--------"'
                     ),
                 },
                 "container": {
@@ -375,7 +375,7 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                         "something",
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                 },
             },
@@ -426,16 +426,16 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                     "command": [
                         "kolibri2zim",
                         '--name="khanacademy_en_all"',
-                        '--optimization-cache="********"',
+                        '--optimization-cache="--------"',
                     ],
                     "str_command": (
                         'kolibri2zim --name="khanacademy_en_all" '
-                        '--optimization-cache="********"'
+                        '--optimization-cache="--------"'
                     ),
                 },
                 "upload": {
@@ -443,8 +443,8 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                         "expiration": 60,
                         "upload_uri": (
                             "s3://s3.us-west-1.wasabisys.com/"
-                            "?keyId=********"
-                            "&secretAccessKey=********"
+                            "?keyId=--------"
+                            "&secretAccessKey=--------"
                             "&bucketName=org-kiwix-zimfarm-logs"
                         ),
                     },
@@ -452,8 +452,8 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                         "expiration": 20,
                         "upload_uri": (
                             "s3://s3.us-west-1.wasabisys.com/"
-                            "?keyId=********"
-                            "&secretAccessKey=********"
+                            "?keyId=--------"
+                            "&secretAccessKey=--------"
                             "&bucketName=org-kiwix-zimfarm-artifacts"
                         ),
                     },
@@ -486,15 +486,15 @@ from routes.utils import has_dict_sub_key, remove_secrets_from_response
                     "task_name": "kolibri",
                     "flags": {
                         "name": "khanacademy_en_all",
-                        "optimization-cache": "********",
+                        "optimization-cache": "--------",
                     },
                 },
                 "i_am_not_a_real": {
                     "response_but": {
                         "please_clean_me": (
                             "something\nwhat s3://s3.us-west-1.wasabisys.com/"
-                            "?keyId=********"
-                            "&secretAccessKey=********"
+                            "?keyId=--------"
+                            "&secretAccessKey=--------"
                             "&bucketName=org-kiwix-zimfarm-logs what\n"
                             "something\n"
                         ),
@@ -580,57 +580,57 @@ def test_remove_secrets(response, expected_response):
             {
                 "please_clean_me1": (
                     "s3://s3.us-west-1.wasabisys.com/"
-                    "?keyId=********"
-                    "&secretAccessKey=********"
+                    "?keyId=--------"
+                    "&secretAccessKey=--------"
                     "&bucketName=org-kiwix-zimfarm-logs"
                 ),
                 "please_clean_me2": (
                     "s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
-                    "&keyId=********"
-                    "&secretAccessKey=********"
+                    "&keyId=--------"
+                    "&secretAccessKey=--------"
                 ),
                 "please_clean_me3": (
                     "s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
-                    "&keyId=********"
-                    "&secretAccessKey=********"
+                    "&keyId=--------"
+                    "&secretAccessKey=--------"
                     "&something=somevalue"
                 ),
                 "please_clean_me4": (
                     "s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
-                    "&secretAccessKey=********"
+                    "&secretAccessKey=--------"
                     "&something=somevalue"
-                    "&keyId=********"
+                    "&keyId=--------"
                     "&something2=somevalue2"
                 ),
                 "please_clean_me5": (
                     " s3://s3.us-west-1.wasabisys.com/"
-                    "?keyId=********"
-                    "&secretAccessKey=********"
+                    "?keyId=--------"
+                    "&secretAccessKey=--------"
                     "&bucketName=org-kiwix-zimfarm-logs"
                 ),
                 "please_clean_me6": (
                     "s3://s3.us-west-1.wasabisys.com/"
-                    "?keyId=********"
-                    "&secretAccessKey=********"
+                    "?keyId=--------"
+                    "&secretAccessKey=--------"
                     "&bucketName=org-kiwix-zimfarm-logs "
                 ),
                 "please_clean_me7": (
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?keyId=********"
-                    "&secretAccessKey=********"
+                    "?keyId=--------"
+                    "&secretAccessKey=--------"
                     "&bucketName=org-kiwix-zimfarm-logs \n"
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?secretAccessKey=********"
+                    "?secretAccessKey=--------"
                     "&bucketName=org-kiwix-zimfarm-logs \n"
                     "something s3://s3.us-west-1.wasabisys.com/"
-                    "?keyId=********"
+                    "?keyId=--------"
                     "&bucketName=org-kiwix-zimfarm-logs \n"
                     "something s3://s3.us-west-1.wasabisys.com/"
                     "?bucketName=org-kiwix-zimfarm-logs"
-                    "&keyId=******** \n"
+                    "&keyId=-------- \n"
                     "something"
                 ),
                 "please_clean_me8": (
