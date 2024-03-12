@@ -97,14 +97,16 @@ def remove_s3_secrets(response: dict):
         else:
             if not isinstance(response[key], str) or "://" not in response[key]:
                 continue
-            url = urlparse(response[key])
-            response[key] = url._replace(
-                query="&".join(
-                    [
-                        f"{key}={value}"
-                        for key, values in parse_qs(url.query).items()
-                        if str(key).lower() not in ["keyid", "secretaccesskey"]
-                        for value in values
-                    ]
-                )
-            ).geturl()
+            for part in [part for part in response[key].split() if "://" in part]:
+                url = urlparse(part)
+                url = url._replace(
+                    query="&".join(
+                        [
+                            f"{key}={value}"
+                            for key, values in parse_qs(url.query).items()
+                            if str(key).lower() not in ["keyid", "secretaccesskey"]
+                            for value in values
+                        ]
+                    )
+                ).geturl()
+                response[key] = response[key].replace(part, url)
