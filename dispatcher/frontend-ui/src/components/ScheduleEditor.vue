@@ -290,7 +290,9 @@
       schedule() { return this.$store.getters.schedule || null; },
       editorReady() { return this.schedule && this.edit_schedule && this.flags_definition !== null; },
       edit_task_name() { return this.edit_schedule.config.task_name || this.schedule.config.task_name; },
-      flags_definition() { return this.$store.getters.offliners_defs[this.edit_task_name] || null },
+      offliner_definition() { return this.$store.getters.offliners_defs[this.edit_task_name] || null },
+      flags_definition() { return this.offliner_definition ? this.offliner_definition.flags : null },
+      help() { return this.offliner_definition ? this.offliner_definition.help : null },
       edit_flags_fields() {
         let fields = [];
         for (var i=0;i<this.flags_definition.length;i++) {

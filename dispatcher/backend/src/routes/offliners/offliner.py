@@ -35,4 +35,12 @@ class offlinerRoute(BaseRoute):
 
         schema = ScheduleConfigSchema.get_offliner_schema(offliner)()
 
-        return jsonify(schema.to_desc())
+        return jsonify(
+            {
+                "flags": schema.to_desc(),
+                "help": (  # dynamic + sourced from backend because it might be custom
+                    f"https://github.com/openzim/{offliner}/wiki"
+                    "/Frequently-Asked-Questions"
+                ),
+            }
+        )

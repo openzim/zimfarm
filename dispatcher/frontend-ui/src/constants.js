@@ -274,10 +274,10 @@ function schedule_durations_dict(duration) {
   return multiple_durations(min_value, max_value, duration.workers);
 }
 
-function secret_fields_for(offliner_def) {
-  if (offliner_def === null)
+function secret_fields_for(offliner_flags_definition) {
+  if (offliner_flags_definition === null)
     return [];
-  return offliner_def
+  return offliner_flags_definition
     .filter(function (item) { return "secret" in item && item.secret === true; })
     .map(function (item) { return item.data_key});
 }
