@@ -307,4 +307,8 @@
     max-height: 9rem;
     overflow: scroll;
   }
+  pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 </style>
