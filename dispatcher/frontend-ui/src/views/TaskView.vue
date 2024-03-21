@@ -178,7 +178,8 @@
         return `You are ${Constants.tz_details.offsetstr} (${Constants.tz_details.tz}).`
       },
       offliner() { return this.task.config.task_name; },
-      offliner_def() { return this.$store.getters.offliners_defs[this.offliner] || null; },
+      offliner_definition() { return this.$store.getters.offliners_defs[this.edit_task_name] || null },
+      flags_definition() { return this.offliner_definition ? this.offliner_definition.flags : null },
       sorted_files() { return Object.values(this.task.files).sortBy('created_timestamp'); },
       short_id() { return Constants.short_id(this._id); },
       is_running() { return ["failed", "canceled", "succeeded", "cancel_requested"].indexOf(this.task.status) == -1; },
@@ -208,7 +209,7 @@
         return Constants.format_duration_between(first, last);
       },
       started_on() { return this.task.timestamp.started || this.task.timestamp.reserved; },
-      secret_fields() { return Constants.secret_fields_for(this.offliner_def); },
+      secret_fields() { return Constants.secret_fields_for(this.flags_definition); },
       pipe_duration() { return Constants.format_duration_between(this.task.timestamp.requested, this.task.timestamp.started); },
       zimfarm_logs_url() { return Constants.logs_url(this.task); },
       zimfarm_artifacts_url() { return Constants.artifacts_url(this.task); },

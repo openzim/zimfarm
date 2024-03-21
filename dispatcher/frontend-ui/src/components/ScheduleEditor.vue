@@ -15,6 +15,19 @@
       </b-col>
     </b-row>
 
+    <hr />
+
+    <b-row>
+      <b-col cols="10" class="mt-2"><h2>Content settings</h2></b-col>
+      <b-col cols="2" class="text-right mb-2">
+        <b-button
+          href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Content-settings"
+          target="_blank"
+          variant="primary">Help
+        </b-button>
+      </b-col>
+    </b-row>
+
     <b-row>
       <b-col>
         <b-form-group label="Recipe Name:"
@@ -93,7 +106,18 @@
       </b-col>
     </b-row>
 
-  <hr />
+    <hr />
+
+    <b-row>
+      <b-col cols="10" class="mt-2"><h2>Task settings</h2></b-col>
+      <b-col cols="2" class="text-right mb-2">
+        <b-button
+          href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Task-settings"
+          target="_blank"
+          variant="primary">Help
+        </b-button>
+      </b-col>
+    </b-row>
 
     <b-row>
       <b-col>
@@ -206,7 +230,16 @@
 
     <hr />
 
-    <b-row v-if="edit_flags_fields.length > 0"><b-col><h2><code>{{ edit_task_name}}</code> command flags</h2></b-col></b-row>
+    <b-row v-if="edit_flags_fields.length > 0">
+      <b-col cols="10" class="mt-2"><h2>Scraper settings: <code>{{ edit_task_name}}</code> command flags</h2></b-col>
+      <b-col cols="2" class="text-right mb-2">
+        <b-button
+          :href="help"
+          target="_blank"
+          variant="primary">Help
+        </b-button>
+      </b-col>
+    </b-row>
 
     <table class="table table-striped table-hover table-sm table-responsive-md">
       <tbody>
@@ -290,7 +323,9 @@
       schedule() { return this.$store.getters.schedule || null; },
       editorReady() { return this.schedule && this.edit_schedule && this.flags_definition !== null; },
       edit_task_name() { return this.edit_schedule.config.task_name || this.schedule.config.task_name; },
-      flags_definition() { return this.$store.getters.offliners_defs[this.edit_task_name] || null },
+      offliner_definition() { return this.$store.getters.offliners_defs[this.edit_task_name] || null },
+      flags_definition() { return this.offliner_definition ? this.offliner_definition.flags : null },
+      help() { return this.offliner_definition ? this.offliner_definition.help : null },
       edit_flags_fields() {
         let fields = [];
         for (var i=0;i<this.flags_definition.length;i++) {

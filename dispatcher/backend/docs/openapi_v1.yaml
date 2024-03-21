@@ -1033,62 +1033,69 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  additionalProperties: true
-                  required:
-                    - key
-                    - type
-                    - label
-                    - required
-                  properties:
-                    key:
-                      type: string
-                      example: username
-                      description: ID/name of the field
-                    type:
-                      type: string
-                      enum:
-                        - text
-                        - hex-color
-                        - url
-                        - email
-                        - integer
-                        - float
-                        - boolean
-                        - string-enum
-                        - list-of-string-enum
-                      description: the type of the field
-                      example: url
-                    label:
-                      type: string
-                      example: Content URL
-                      description: Human representation of the key/name
-                    required:
-                      type: boolean
-                      example: true
-                      description: whether this field's value is required
-                    description:
-                      type: string
-                      example: URL of some information
-                      description: Description to help fill the field
-                    placeholder:
-                      type: string
-                      description: the field's placeholder
-                      example: http://somecontent.tld/here
-                    choices:
-                      description: list of choices to choose a value from
-                      type: array
-                      items:
-                        type: string
-                        example:
-                          - some-value
-                          - another-value
-                    data_key:
-                      type: string
-                      description: actual param name (for when key cant be named the same)
-                      example: api-key
+                type: object
+                properties:
+                  help:
+                    type: string
+                    example: https://github.com/openzim/ted/wiki/Frequently-Asked-Questions
+                    description: URL where help to configure offliner can be found
+                  flags:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                      required:
+                        - key
+                        - type
+                        - label
+                        - required
+                      properties:
+                        key:
+                          type: string
+                          example: username
+                          description: ID/name of the field
+                        type:
+                          type: string
+                          enum:
+                            - text
+                            - hex-color
+                            - url
+                            - email
+                            - integer
+                            - float
+                            - boolean
+                            - string-enum
+                            - list-of-string-enum
+                          description: the type of the field
+                          example: url
+                        label:
+                          type: string
+                          example: Content URL
+                          description: Human representation of the key/name
+                        required:
+                          type: boolean
+                          example: true
+                          description: whether this field's value is required
+                        description:
+                          type: string
+                          example: URL of some information
+                          description: Description to help fill the field
+                        placeholder:
+                          type: string
+                          description: the field's placeholder
+                          example: http://somecontent.tld/here
+                        choices:
+                          description: list of choices to choose a value from
+                          type: array
+                          items:
+                            type: string
+                            example:
+                              - some-value
+                              - another-value
+                        data_key:
+                          type: string
+                          description: actual param name (for when key cant be named the same)
+                          example: api-key
         404:
           description: Not Found
           content:
