@@ -1,4 +1,4 @@
-from marshmallow import ValidationError, fields, validate, validates_schema
+from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, String, StringEnum
 from common.schemas.fields import (
@@ -12,21 +12,11 @@ class TedFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    indiv_zims = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Individual ZIM mode",
-            "description": "Whether to produce one ZIM per topic/playlist",
-        },
-        data_key="indiv-zims",
-    )
-
     topics = String(
         metadata={
             "label": "Topics",
             "description": (
-                "Comma-seperated list of topics to scrape; as given on ted.com/talks. "
+                "Comma-separated list of topics to scrape; as given on ted.com/talks. "
                 "Pass all for all topics"
             ),
         },
@@ -36,7 +26,7 @@ class TedFlagsSchema(SerializableSchema):
         metadata={
             "label": "TED Playlists",
             "description": (
-                "Comma-seperated list of TED playlist IDs to scrape. Pass all for all "
+                "Comma-separated list of TED playlist IDs to scrape. Pass all for all "
                 "playlists"
             ),
         },
@@ -45,7 +35,8 @@ class TedFlagsSchema(SerializableSchema):
     languages = String(
         metadata={
             "label": "Languages",
-            "description": "Comma-seperated list of languages to filter videos",
+            "description": "Comma-separated list of languages to filter videos. Do not "
+            "pass this parameter for all languages",
         },
     )
 
@@ -68,7 +59,7 @@ class TedFlagsSchema(SerializableSchema):
             "description": (
                 "Language setting for subtitles. all: include all available subtitles, "
                 "matching (default): only subtitles matching language(s), none: include"
-                " no subtitle. Also accepts comma-seperated list of language(s)"
+                " no subtitle. Also accepts comma-separated list of language(s)"
             ),
         },
     )
@@ -112,18 +103,7 @@ class TedFlagsSchema(SerializableSchema):
             ),
             "placeholder": "topic_eng",
         },
-    )
-
-    name_format = String(
-        metadata={
-            "label": "Name Format",
-            "description": (
-                "Format for building individual --name argument. Use variable "
-                "{identity} for playlist id or topic name"
-            ),
-            "placeholder": "{identity}_eng",
-        },
-        data_key="name-format",
+        required=True,
     )
 
     title = String(
@@ -131,14 +111,6 @@ class TedFlagsSchema(SerializableSchema):
             "label": "Title",
             "description": "Custom title for your ZIM. Based on selection otherwise",
         }
-    )
-
-    title_format = String(
-        metadata={
-            "label": "Title Format",
-            "description": "Custom title format for individual ZIMs",
-        },
-        data_key="title-format",
     )
 
     description = String(
@@ -149,14 +121,6 @@ class TedFlagsSchema(SerializableSchema):
             ),
         },
         validate=validate_zim_description,
-    )
-
-    description_format = String(
-        metadata={
-            "label": "Description Format",
-            "description": "Custom description format for individual ZIMs",
-        },
-        data_key="description-format",
     )
 
     creator = String(
@@ -228,17 +192,6 @@ class TedFlagsSchema(SerializableSchema):
         data_key="tmp-dir",
     )
 
-    metadata_from = String(
-        metadata={
-            "label": "Metadata JSON",
-            "description": (
-                "File path or URL to a JSON file holding custom metadata for individual"
-                " playlists/topics"
-            ),
-        },
-        data_key="metadata-from",
-    )
-
     zim_file = String(
         metadata={
             "label": "ZIM filename",
@@ -246,17 +199,6 @@ class TedFlagsSchema(SerializableSchema):
         },
         data_key="zim-file",
         validate=validate_zim_filename,
-    )
-
-    zim_file_format = String(
-        metadata={
-            "label": "ZIM filename format",
-            "description": (
-                "Format for building individual --zim-file argument for individual "
-                "ZIMs. Uses --name-format otherwise"
-            ),
-        },
-        data_key="zim-file-format",
     )
 
     debug = fields.Boolean(
@@ -280,12 +222,3 @@ class TedFlagsSchema(SerializableSchema):
         },
         data_key="locale",
     )
-
-    @validates_schema
-    def validate(self, data, **kwargs):
-        if data.get("indiv_zims"):
-            if not data.get("name_format"):
-                raise ValidationError("name-format required in individual ZIMs mode")
-        else:
-            if not data.get("name"):
-                raise ValidationError("name required in normal mode")

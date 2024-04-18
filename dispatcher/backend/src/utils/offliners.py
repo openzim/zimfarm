@@ -20,7 +20,7 @@ OFFLINER_DEFS = {
     Offliner.ifixit: od("ifixit2zim", True, True),
     Offliner.mwoffliner: od("mwoffliner", "outputDirectory", False),
     Offliner.youtube: od("youtube2zim-playlists", True, False),
-    Offliner.ted: od("ted2zim-multi", True, False),
+    Offliner.ted: od("ted2zim", True, False),
     Offliner.openedx: od("openedx2zim", True, False),
     Offliner.nautilus: od("nautiluszim", True, False),
     Offliner.zimit: od("zimit", True, "statsFilename"),
