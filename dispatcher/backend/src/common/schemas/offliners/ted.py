@@ -4,8 +4,8 @@ from common.schemas import SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
-    validate_zim_longdescription,
     validate_zim_filename,
+    validate_zim_longdescription,
 )
 
 
