@@ -64,11 +64,12 @@ class SotokiFlagsSchema(SerializableSchema):
         },
     )
 
-    tags = String(
+    tag = String(
         metadata={
-            "label": "ZIM Tags",
-            "description": "List of comma-separated Tags for the ZIM file. "
-            "category:stack_exchange and stack_exchange added automatically",
+            "label": "ZIM Tag",
+            "description": "Single additional tag for the ZIM file. Scraper generic "
+            "flags (category:stack_exchange, stack_exchange, ... are always added "
+            "automatically)",
         }
     )
 
