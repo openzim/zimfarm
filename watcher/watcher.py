@@ -63,14 +63,12 @@ for logger_name in set(["urllib3", "boto3", "botocore", "s3transfer"]):
     logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 
-def get_version_for(url):
-    """casted datetime of the Last-Modified header for an URL"""
+def get_last_modified_for(url):
+    """the Last-Modified header for an URL"""
     with requests.head(url, allow_redirects=True) as resp:
         if resp.status_code == 404:
             raise FileNotFoundError(url)
-        return datetime.datetime.strptime(
-            resp.headers.get("last-modified"), "%a, %d %b %Y %H:%M:%S GMT"
-        ).strftime("%Y-%m")
+        return resp.headers.get("last-modified")
 
 
 def get_token(api_url, username, password):
@@ -243,17 +241,16 @@ class WatcherRunner:
         return success
 
     def retrieve_all_sites(self):
-        """version, list of domain names for which there's a dump online"""
+        """list of domain names for which there's a dump online"""
         url = f"{DOWNLOAD_URL}/Sites.xml"
         resp = requests.get(url)
         parser = XMLtoDict()
         sites = parser.parse(resp.text).get("sites", {}).get("row", [])
-        version = get_version_for(url)
 
         def _filter(item):
             return item in self.only if self.only else 1
 
-        return version, filter(
+        return filter(
             _filter, [re.sub(r"^https?://", "", site.get("@Url", "")) for site in sites]
         )
 
@@ -343,7 +340,7 @@ class WatcherRunner:
 
         return payload.get("requested")
 
-    def update_file(self, key, schedule_upon_success):
+    def update_file(self, key, schedule_upon_success, last_modified):
         """Do an all-steps update of that file as we know there's a new one avail."""
         domain = re.sub(r".7z$", "", key)
         prefix = f" [{domain}]"
@@ -357,18 +354,13 @@ class WatcherRunner:
 
         if self.s3_storage.has_object(key):
             logger.info(f"{prefix} Removing object in S3")
-            obsolete = self.s3_storage.get_object_stat(key).meta.get("version")
+            obsolete = self.s3_storage.get_object_stat(key).meta.get("lastmodified")
             self.s3_storage.delete_object(key)
-            logger.info(f"{prefix} Removed object (was version {obsolete})")
+            logger.info(f"{prefix} Removed object (was from {obsolete})")
 
         logger.info(f"{prefix} Downloading…")
         url = f"{DOWNLOAD_URL}/{key}"
         fpath = self.work_dir / key
-        try:
-            version = get_version_for(url)
-        except FileNotFoundError:
-            logger.error(f"{url} is missing upstream. Skipping.")
-            return
 
         wget = subprocess.run(
             ["/usr/bin/env", "wget", "-O", fpath, url],
@@ -383,7 +375,9 @@ class WatcherRunner:
         logger.info(f"{prefix} Download completed")
 
         logger.info(f"{prefix} Uploading to S3…")
-        self.s3_storage.upload_file(fpath=fpath, key=key, meta={"version": version})
+        self.s3_storage.upload_file(
+            fpath=fpath, key=key, meta={"lastmodified": last_modified}
+        )
         logger.info(f"{prefix} Uploaded")
 
         fpath.unlink()
@@ -400,9 +394,9 @@ class WatcherRunner:
                 logger.warning(f"{prefix} couldn't schedule recipe(s)")
 
     def check_and_go(self):
-        logger.info("Checking StackExchange version…")
-        version, domains = self.retrieve_all_sites()
-        logger.info(f"Latest online version: {version}. Comparing with S3…")
+        logger.info("Getting list of SE domains")
+        domains = self.retrieve_all_sites()
+        logger.info("Grabbing online versions and comparing with S3…")
 
         self.domains_futures = {}  # future: key
         self.domains_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
@@ -428,10 +422,13 @@ class WatcherRunner:
                 keys = [f"{domain}.7z"]
 
             for key in keys:
+                url = f"{DOWNLOAD_URL}/{key}"
+
+                last_modified = get_last_modified_for(url)
                 if not self.s3_storage.has_object_matching(
-                    key, meta={"version": version}
+                    key, meta={"lastmodified": last_modified}
                 ):
-                    logger.info(f" [+] {key}")
+                    logger.info(f" [+] {key} (from {last_modified})")
 
                     # update shall trigger a new recipe schedule on Zimfarm upon compl.
                     # - unless requested not to
@@ -444,6 +441,7 @@ class WatcherRunner:
                         self.update_file,
                         key=key,
                         schedule_upon_success=schedule_upon_success,
+                        last_modified=last_modified,
                     )
                     self.domains_futures.update({future: key})
 

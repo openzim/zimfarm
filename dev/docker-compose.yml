@@ -95,6 +95,19 @@ services:
     depends_on:
       - backend
 
+  # # uncomment this only if you want to run a StackExchange dumps watcher
+  # watcher:
+  #   build: ../watcher
+  #   container_name: zf_watcher
+  #   command: watcher --only beer.stackexchange.com --debug
+  #   environment:
+  #     - ZIMFARM_API_URL=http://backend:8000/v1
+  #     - ZIMFARM_USERNAME=admin
+  #     - ZIMFARM_PASSWORD=admin
+  #     - S3_URL=https://s3.us-west-1.wasabisys.com/?keyId=<your_key_id>&secretAccessKey=<your_secret_access_key>&bucketName=org-kiwix-dev-stackexchange
+  #   depends_on:
+  #     - backend
+
   # # uncomment this only if you want to run a worker manager
   # worker_mgr:
   #   build:
