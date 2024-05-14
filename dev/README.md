@@ -41,6 +41,10 @@ This container is the main worker container, responsible to start tasks. It is c
 
 This container is a sample task executor. It is commented by default.
 
+### watcher
+
+This container is a StackExchange dumps watcher.
+
 ## Instructions
 
 First start the Docker-Compose stack:
@@ -170,3 +174,13 @@ docker exec -it zf_receiver /contrib/create-warehouse-paths.sh
 You can start a task manager manually simply by requesting a task in the UI and starting it manually (see above).
 
 Once the task is reserved for the `test_worker`, you can modify the `task_worker` container `command` in `docker-compose.yml` with this ID, uncomment the `task_worker` section and start it.
+
+### start a StackExchange dumps watcher
+
+Uncomment the watcher configuration in docker-compose.yml
+
+Setup a proper S3 url to a test bucket (including credentials in the URL)
+
+By default, only beer.stackexchange.com domain dump is considered
+
+Task are scheduled as in prod when a new dump is downloaded
