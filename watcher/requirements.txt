@@ -1,6 +1,6 @@
 pif==0.8.2
-requests==2.31.0
+requests==2.32.1
 humanfriendly==10.0
 PyJWT==2.8.0
-kiwixstorage==0.8.3
+kiwixstorage==0.9.0
 xml-to-dict==0.1.6
