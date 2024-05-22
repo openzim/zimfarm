@@ -1,4 +1,4 @@
-from marshmallow import ValidationError, fields, validate, validates_schema
+from marshmallow import fields, validate
 
 from common.schemas import HexColor, LongString, SerializableSchema, String, StringEnum
 from common.schemas.fields import (
@@ -33,17 +33,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    indiv_playlists = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Playlists mode",
-            "description": "If set, playlists mode is activated and one ZIM will be "
-            "built per playlist of the channel or user",
-        },
-        data_key="indiv-playlists",
-    )
-
     ident = String(
         metadata={
             "label": "Youtube ID(s)",
@@ -75,16 +64,16 @@ class YoutubeFlagsSchema(SerializableSchema):
     name = String(
         metadata={
             "label": "ZIM Name",
-            "description": "Single mode: Used as identifier and filename (date will "
-            "be appended)",
+            "description": "Used as identifier and filename (date will be appended)",
             "placeholder": "mychannel_eng_all",
         },
+        required=True,
     )
 
     zim_file = String(
         metadata={
             "label": "ZIM Filename",
-            "description": "Single mode: ZIM file name (optional, based on ZIM Name "
+            "description": "ZIM file name (optional, based on ZIM Name "
             "if not provided). Include {period} to insert date period dynamically",
         },
         data_key="zim-file",
@@ -94,7 +83,7 @@ class YoutubeFlagsSchema(SerializableSchema):
     title = String(
         metadata={
             "label": "ZIM Title",
-            "description": "Single mode: Custom title for your ZIM. "
+            "description": "Custom title for your ZIM. "
             "Default to Channel name (of first video if playlists)",
         }
     )
@@ -102,7 +91,7 @@ class YoutubeFlagsSchema(SerializableSchema):
     description = String(
         metadata={
             "label": "ZIM Description",
-            "description": "Single mode: Description (up to 80 chars) for ZIM",
+            "description": "Description (up to 80 chars) for ZIM",
         },
         validate=validate_zim_description,
     )
@@ -110,48 +99,10 @@ class YoutubeFlagsSchema(SerializableSchema):
     long_description = LongString(
         metadata={
             "label": "ZIM Long Description",
-            "description": "Single mode: Long description (up to 4000 chars) for ZIM",
+            "description": "Long description (up to 4000 chars) for ZIM",
         },
         data_key="long-description",
         validate=validate_zim_longdescription,
-    )
-
-    playlists_name = String(
-        metadata={
-            "label": "Playlists ZIM Name",
-            "description": "Playlists mode: custom format for building each "
-            "ZIM Name argument for each playlists. Required in playlist mode. "
-            "You might use these placeholders: {title}, {description}, "
-            "{playlist_id}, {slug} (from title), {creator_id}, {creator_name}",
-        },
-        data_key="playlists-name",
-    )
-
-    playlists_zim_file = String(
-        metadata={
-            "label": "Playlists ZIM Filename",
-            "description": "Playlists mode: custom filename format for building "
-            "each ZIM Filename argument. Same placeholders as Playlists ZIM Name.",
-        },
-        data_key="playlists-zim-file",
-    )
-
-    playlists_title = String(
-        metadata={
-            "label": "Playlists ZIM Title",
-            "description": "Playlists mode: custom title format for building each "
-            "ZIM Title. Same placeholders as Playlists ZIM Name.",
-        },
-        data_key="playlists-title",
-    )
-
-    playlists_description = String(
-        metadata={
-            "label": "Playlists ZIM description",
-            "description": "Playlists mode: custom description format for building "
-            "each ZIM Description. Same placeholders as Playlists ZIM Name.",
-        },
-        data_key="playlists-description",
     )
 
     creator = String(
@@ -290,15 +241,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
-    metadata_from = String(
-        metadata={
-            "label": "Metadata JSON",
-            "description": "Expert flag: File path or URL to a JSON file holding "
-            "custom metadata for individual playlists",
-        },
-        data_key="metadata-from",
-    )
-
     concurrency = fields.Integer(
         metadata={
             "label": "Concurrency",
@@ -330,12 +272,3 @@ class YoutubeFlagsSchema(SerializableSchema):
         validate=validate_output,
         data_key="tmp-dir",
     )
-
-    @validates_schema
-    def validate(self, data, **kwargs):
-        if data.get("indiv_playlists"):
-            if not data.get("playlists_name"):
-                raise ValidationError("playlists-name required in playlists mode")
-        else:
-            if not data.get("name"):
-                raise ValidationError("name required in single mode")
