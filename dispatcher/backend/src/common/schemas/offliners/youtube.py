@@ -1,10 +1,11 @@
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from common.schemas import HexColor, SerializableSchema, String, StringEnum
+from common.schemas import HexColor, LongString, SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
+    validate_zim_longdescription,
 )
 
 
@@ -101,9 +102,18 @@ class YoutubeFlagsSchema(SerializableSchema):
     description = String(
         metadata={
             "label": "ZIM Description",
-            "description": "Single mode: Description for ZIM",
+            "description": "Single mode: Description (up to 80 chars) for ZIM",
         },
         validate=validate_zim_description,
+    )
+
+    long_description = LongString(
+        metadata={
+            "label": "ZIM Long Description",
+            "description": "Single mode: Long description (up to 4000 chars) for ZIM",
+        },
+        data_key="long-description",
+        validate=validate_zim_longdescription,
     )
 
     playlists_name = String(

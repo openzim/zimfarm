@@ -1,6 +1,6 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, String, StringEnum
+from common.schemas import LongString, SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
@@ -124,7 +124,7 @@ class TedFlagsSchema(SerializableSchema):
         validate=validate_zim_description,
     )
 
-    long_description = String(
+    long_description = LongString(
         metadata={
             "label": "Long description",
             "description": (
