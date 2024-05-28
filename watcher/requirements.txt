@@ -1,5 +1,5 @@
 pif==0.8.2
-requests==2.31.0
+requests==2.32.0
 humanfriendly==10.0
 PyJWT==2.8.0
 kiwixstorage==0.8.3
