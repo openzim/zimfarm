@@ -156,9 +156,17 @@ class ZimitFlagsSchema(SerializableSchema):
 
     lang = String(
         metadata={
-            "label": "Language",
-            "description": "ISO-639-3 (3 chars) language code of content. "
-            "If unspecified, will attempt to detect from main page, or use 'eng'",
+            "label": "Browser Language",
+            "description": "If set, sets the language used by the browser, should be"
+            "ISO 639 language[-country] code, e.g. `en` or `en-GB`",
+        }
+    )
+
+    zim_lang = String(
+        metadata={
+            "label": "ZIM Language",
+            "description": "Language metadata of ZIM (warc2zim --lang param). "
+            "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
         }
     )
 
