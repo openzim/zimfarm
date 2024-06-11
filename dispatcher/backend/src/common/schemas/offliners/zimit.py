@@ -167,7 +167,8 @@ class ZimitFlagsSchema(SerializableSchema):
             "label": "ZIM Language",
             "description": "Language metadata of ZIM (warc2zim --lang param). "
             "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
-        }
+        },
+        data_key="zim-lang",
     )
 
     title = String(
