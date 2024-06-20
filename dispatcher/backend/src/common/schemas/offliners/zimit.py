@@ -496,6 +496,51 @@ class ZimitFlagsSchema(SerializableSchema):
         required=False,
     )
 
+    charsets_to_try = String(
+        metadata={
+            "label": "Charsets to try",
+            "description": "List of charsets to try decode content when charset is not "
+            "defined at document or HTTP level. Single string, values separated by a "
+            "comma. Default: UTF-8,ISO-8859-1",
+        },
+        data_key="charsets-to-try",
+        required=False,
+    )
+
+    ignore_content_header_charsets = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Ignore Content Header Charsets",
+            "description": "Ignore the charsets specified in content headers - first "
+            "bytes - typically because they are wrong.",
+        },
+        required=False,
+        data_key="ignore-content-header-charsets",
+    )
+
+    content_header_bytes_length = fields.Integer(
+        metadata={
+            "label": "Length of content header",
+            "description": "How many bytes to consider when searching for content "
+            "charsets in header (default is 1024).",
+        },
+        required=False,
+        data_key="content-header-bytes-length",
+    )
+
+    ignore_http_header_charsets = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Ignore HTTP Header Charsets",
+            "description": "Ignore the charsets specified in HTTP `Content-Type` "
+            "headers, typically because they are wrong.",
+        },
+        required=False,
+        data_key="ignore-http-header-charsets",
+    )
+
 
 class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
     """A Zimit flags schema with relaxed constraints on validation
