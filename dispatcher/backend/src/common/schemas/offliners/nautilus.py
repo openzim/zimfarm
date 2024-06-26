@@ -17,7 +17,7 @@ class NautilusFlagsSchema(SerializableSchema):
             "label": "Archive",
             "description": "URL to a ZIP archive containing all the documents",
         },
-        required=True,
+        required=False,
     )
     collection = fields.Url(
         metadata={
