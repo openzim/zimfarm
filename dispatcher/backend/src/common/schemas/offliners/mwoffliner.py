@@ -182,10 +182,16 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Mediawiki wiki base path. Otherwise `/wiki/`.",
         }
     )
-    mwApiPath = String(
+    mwActionApiPath = String(
         metadata={
             "label": "API Path",
             "description": "Mediawiki API path. Otherwise `/w/api.php`.",
+        }
+    )
+    mwRestApiPath = String(
+        metadata={
+            "label": "REST API Path",
+            "description": "Mediawiki REST API path. Otherwise `/w/rest.php`.",
         }
     )
     mwModulePath = String(
@@ -268,5 +274,25 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         metadata={
             "label": "Webp",
             "description": "Convert images to Webp",
+        },
+    )
+
+    forceRender = String(
+        metadata={
+            "label": "Force Render",
+            "description": "Force the usage of a specific API end-point/render, "
+            "automatically chosen otherwise",
+        },
+        validate=validate.OneOf(
+            ["VisualEditor", "WikimediaDesktop", "WikimediaMobile"]
+        ),
+    )
+
+    insecure = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Insecure",
+            "description": "Skip HTTPS server authenticity verification step",
         },
     )
