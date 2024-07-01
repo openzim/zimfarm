@@ -334,6 +334,18 @@ class ZimitFlagsSchema(SerializableSchema):
         validate=validate_devicelist,
     )
 
+    no_mobile_device = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "No device",
+            "description": "Do not emulate a device (use at your own risk, behavior is "
+            "uncertain ; if set, 'As device' setting is ignored)",
+        },
+        data_key="noMobileDevice",
+        required=False,
+    )
+
     user_agent = String(
         metadata={
             "label": "User Agent",
