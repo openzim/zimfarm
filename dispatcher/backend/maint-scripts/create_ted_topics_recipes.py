@@ -49,7 +49,7 @@ def get_ted_topics():
 
 
 def create_recipe(ted_topic_name: str, access_token):
-    clean_ted_topic_name = ted_topic_name.replace(" ", "-")
+    clean_ted_topic_name = ted_topic_name.replace(" ", "-").replace("'", "")
     schedule_name = f"ted_topic_{clean_ted_topic_name}"
     response = requests.get(
         get_url(f"/schedules/{schedule_name}"),
@@ -125,7 +125,8 @@ def main(zf_username, zf_password):
     access_token, refresh_token = get_token(zf_username, zf_password)
 
     ted_topics = get_ted_topics()
-    logger.debug(ted_topics)
+    logger.debug(",".join((ted_topics)))
+    logger.debug(",".join(sorted(ted_topics)))
     for topic in ted_topics:
         if topic != "street art":
             continue
