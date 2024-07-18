@@ -205,7 +205,8 @@ class ZimitFlagsSchema(SerializableSchema):
     tags = String(
         metadata={
             "label": "ZIM Tags",
-            "description": "List of Tags for the ZIM file.",
+            "description": "Single string with individual tags "
+            "separated by a semicolon.",
         }
     )
 
