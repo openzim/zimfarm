@@ -320,6 +320,7 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker) -> List[Dict[str
             "priority": task.priority,
             "worker": task.worker.name if task.worker else None,
             "duration": get_duration_for_with_schedule(task.schedule, worker.name),
+            "updated_at": task.updated_at,
         }
 
     stmt = sa.select(dbm.RequestedTask)
