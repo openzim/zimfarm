@@ -301,7 +301,9 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker) -> List[Dict[str
     """cursor of RequestedTasks() doable by a worker using all its resources
 
     - sorted by priority
-    - sorted by duration (longest first)"""
+    - sorted by duration (longest first)
+    - sorted by updated_at (task requested long ago first, mandatory for zimit farm)
+    """
 
     def get_document(task: dbm.RequestedTask):
         return {
@@ -351,7 +353,7 @@ def get_reqs_doable_by(session: so.Session, worker: dbm.Worker) -> List[Dict[str
     return list(
         sorted(
             map(get_document, session.execute(stmt).scalars()),
-            key=lambda x: (-x["priority"], -x["duration"]["value"]),
+            key=lambda x: (-x["priority"], -x["duration"]["value"], x["updated_at"]),
         )
     )
 
