@@ -184,3 +184,25 @@ class TestTaskCancel:
             }
             response = client.post(url, headers=headers)
             assert response.status_code == 204
+
+
+class TestTaskPatch:
+
+    def test_patch_task(self, client, access_token, tasks):
+        for task in filter(lambda x: x["status"] in [TaskStatus.started], tasks):
+            url = "/tasks/{}".format(task["_id"])
+            headers = {
+                "Authorization": access_token,
+                "Content-Type": "application/json",
+            }
+            response = client.patch(
+                url,
+                headers=headers,
+                json={
+                    "event": "scraper_running",
+                    "payload": {  # control character below must be ignored
+                        "stdout": "some string with ignore bad \u0000character"
+                    },
+                },
+            )
+            assert response.status_code == 204

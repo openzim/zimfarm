@@ -29,3 +29,10 @@ def raise_if(
     """
     if condition:
         raise exception_class(*exception_args)
+
+
+def cleanup_value(value: Any) -> Any:
+    """Remove unwanted characters before inserting / updating in DB"""
+    if isinstance(value, str):
+        return value.replace("\u0000", "")
+    return value

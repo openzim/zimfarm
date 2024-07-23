@@ -16,6 +16,7 @@ from common.enum import TaskStatus
 from common.external import advertise_book_to_cms
 from common.notifications import handle_notification
 from errors.http import TaskNotFound, WorkerNotFound
+from utils.check import cleanup_value
 from utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
@@ -87,13 +88,13 @@ def save_event(
         task: dbm.Task, kwargs_key: str, container_key: str
     ) -> None:
         if kwargs_key in kwargs:
-            task.container[container_key] = kwargs[kwargs_key]
+            task.container[container_key] = cleanup_value(kwargs[kwargs_key])
 
     def add_to_debug_if_present(
         task: dbm.Task, kwargs_key: str, debug_key: str
     ) -> None:
         if kwargs_key in kwargs:
-            task.debug[debug_key] = kwargs[kwargs_key]
+            task.debug[debug_key] = cleanup_value(kwargs[kwargs_key])
 
     if "worker" in kwargs:
         task.worker = dbm.Worker.get(session, kwargs["worker"], WorkerNotFound)
