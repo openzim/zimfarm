@@ -16,8 +16,11 @@ class BaseRoute:
             "PATCH": self.patch,
             "DELETE": self.delete,
         }
-        handler = handlers[request.method]
+        handler = handlers.get(request.method, self.unknown)
         return handler(*args, **kwargs)
+
+    def unknown(self, *args, **kwargs):
+        return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
 
     def get(self, *args, **kwargs):
         return Response(status=HTTPStatus.METHOD_NOT_ALLOWED)
