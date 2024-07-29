@@ -7,25 +7,27 @@ from utils_for_tests import update_dict
 from common import constants
 
 
-class TestZimit:
+class TestNautilus:
     mod = namedtuple("Modification", ["key_path", "new_value"])
 
     @pytest.mark.parametrize(
         "modifications, relaxed_schema, succeeds",
         [
             (
-                [mod(key_path="name", new_value="zimit_test_good_name_not_relaxed")],
+                [mod(key_path="name", new_value="nautilus_test_good_name_not_relaxed")],
                 False,
                 True,
             ),
             (
-                [mod(key_path="name", new_value="zimit_test_good_name_relaxed")],
+                [mod(key_path="name", new_value="nautilus_test_good_name_relaxed")],
                 True,
                 True,
             ),
             (
                 [
-                    mod(key_path="name", new_value="zimit_test_bad_name_not_relaxed"),
+                    mod(
+                        key_path="name", new_value="nautilus_test_bad_name_not_relaxed"
+                    ),
                     mod(key_path="config.flags.zim-file", new_value="bad_name"),
                 ],
                 False,
@@ -33,7 +35,7 @@ class TestZimit:
             ),
             (
                 [
-                    mod(key_path="name", new_value="zimit_test_bad_name_relaxed"),
+                    mod(key_path="name", new_value="nautilus_test_bad_name_relaxed"),
                     mod(key_path="config.flags.zim-file", new_value="bad_name"),
                 ],
                 True,
@@ -41,7 +43,7 @@ class TestZimit:
             ),
         ],
     )
-    def test_create_zimit_schedule_generic(
+    def test_create_nautilus_schedule_generic(
         self,
         client,
         access_token,
@@ -50,22 +52,22 @@ class TestZimit:
         relaxed_schema: bool,
         succeeds: bool,
     ):
-        constants.ZIMIT_USE_RELAXED_SCHEMA = relaxed_schema
+        constants.NAUTILUS_USE_RELAXED_SCHEMA = relaxed_schema
         schedule = {
-            "name": "zimit_test_ok",
+            "name": "nautilus_test_ok",
             "category": "other",
             "enabled": False,
             "tags": [],
             "language": {"code": "fr", "name_en": "French", "name_native": "Français"},
             "config": {
-                "task_name": "zimit",
+                "task_name": "nautilus",
                 "warehouse_path": "/other",
-                "image": {"name": "openzim/zimit", "tag": "1.0.0"},
+                "image": {"name": "openzim/nautilus", "tag": "1.0.0"},
                 "monitor": False,
                 "platform": None,
                 "flags": {
                     "name": "acme",
-                    "url": "https://www.acme.com",
+                    "collection": "https://www.acme.com",
                     "zim-file": "acme_en_all_{period}.zim",
                 },
                 "resources": {"cpu": 3, "memory": 1024, "disk": 0},

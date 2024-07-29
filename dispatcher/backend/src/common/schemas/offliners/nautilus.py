@@ -186,3 +186,19 @@ class NautilusFlagsSchema(SerializableSchema):
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
+
+
+class NautilusFlagsSchemaRelaxed(NautilusFlagsSchema):
+    """A Nautils flags schema with relaxed constraints on validation
+
+    For now, only zim_file name is not checked anymore.
+    Typically used for nautilus.kiwix.org
+    """
+
+    zim_file = String(
+        metadata={
+            "label": "ZIM filename",
+            "description": "ZIM file name (based on --name if not provided).",
+        },
+        data_key="zim-file",
+    )
