@@ -4,7 +4,10 @@ from common.schemas.offliners.gutenberg import GutenbergFlagsSchema
 from common.schemas.offliners.ifixit import IFixitFlagsSchema
 from common.schemas.offliners.kolibri import KolibriFlagsSchema
 from common.schemas.offliners.mwoffliner import MWOfflinerFlagsSchema
-from common.schemas.offliners.nautilus import NautilusFlagsSchema
+from common.schemas.offliners.nautilus import (
+    NautilusFlagsSchema,
+    NautilusFlagsSchemaRelaxed,
+)
 from common.schemas.offliners.openedx import OpenedxFlagsSchema
 from common.schemas.offliners.sotoki import SotokiFlagsSchema
 from common.schemas.offliners.ted import TedFlagsSchema
@@ -19,6 +22,7 @@ __all__ = (
     "KolibriFlagsSchema",
     "MWOfflinerFlagsSchema",
     "NautilusFlagsSchema",
+    "NautilusFlagsSchemaRelaxed",
     "OpenedxFlagsSchema",
     "SotokiFlagsSchema",
     "TedFlagsSchema",

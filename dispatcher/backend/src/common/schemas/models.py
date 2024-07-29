@@ -27,6 +27,7 @@ from common.schemas.offliners import (
     KolibriFlagsSchema,
     MWOfflinerFlagsSchema,
     NautilusFlagsSchema,
+    NautilusFlagsSchemaRelaxed,
     OpenedxFlagsSchema,
     PhetFlagsSchema,
     SotokiFlagsSchema,
@@ -84,7 +85,11 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.gutenberg: GutenbergFlagsSchema,
             Offliner.phet: PhetFlagsSchema,
             Offliner.sotoki: SotokiFlagsSchema,
-            Offliner.nautilus: NautilusFlagsSchema,
+            Offliner.nautilus: (
+                NautilusFlagsSchemaRelaxed
+                if constants.NAUTILUS_USE_RELAXED_SCHEMA
+                else NautilusFlagsSchema
+            ),
             Offliner.ted: TedFlagsSchema,
             Offliner.openedx: OpenedxFlagsSchema,
             Offliner.zimit: (
