@@ -564,8 +564,7 @@ class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
     zim_file = String(
         metadata={
             "label": "ZIM filename",
-            "description": "ZIM file name (based on --name if not provided). "
-            "Make sure to end with _{period}.zim",
+            "description": "ZIM file name (based on --name if not provided).",
         },
         data_key="zim-file",
     )
