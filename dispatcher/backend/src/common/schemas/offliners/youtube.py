@@ -123,17 +123,8 @@ class YoutubeFlagsSchema(SerializableSchema):
     tags = String(
         metadata={
             "label": "ZIM Tags",
-            "description": "List of Tags for the ZIM file. "
+            "description": "List of comma-separated Tags for the ZIM file. "
             "_videos:yes added automatically",
-        }
-    )
-
-    locale = String(
-        metadata={
-            "label": "Locale",
-            "description": "Locale name to use for translations (if avail) "
-            "and time representations. Defaults to Language flag value or English if "
-            "flag is not set.",
         }
     )
 
@@ -189,16 +180,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         metadata={
             "label": "Pagination",
             "description": "Number of videos per page (40 otherwise)",
-        },
-    )
-
-    autoplay = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Auto-play",
-            "description": "Enable autoplay on video articles "
-            "(home never have autoplay).",
         },
     )
 
