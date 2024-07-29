@@ -7,7 +7,7 @@ from utils_for_tests import update_dict
 from common import constants
 
 
-class TestZimit:
+class TestNautilus:
     mod = namedtuple("Modification", ["key_path", "new_value"])
 
     @pytest.mark.parametrize(
