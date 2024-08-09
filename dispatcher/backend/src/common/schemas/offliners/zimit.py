@@ -554,6 +554,36 @@ class ZimitFlagsSchema(SerializableSchema):
         data_key="ignore-http-header-charsets",
     )
 
+    profile = String(
+        metadata={
+            "label": "Browser profile",
+            "description": "Path or HTTP(S) URL to tar.gz file which contains the "
+            "browser profile directory for Browsertrix crawler.",
+        },
+        required=False,
+    )
+
+    custom_behaviors = String(
+        metadata={
+            "label": "Custom behaviors",
+            "description": "JS code for custom behaviors to customize crawler. Single "
+            "string with individual JS files URL/path separated by a comma.",
+        },
+        required=False,
+        data_key="custom-behaviors",
+    )
+
+    warcs = String(
+        metadata={
+            "label": "WARC files",
+            "description": "Directly convert WARC archives to ZIM, by-passing the "
+            "crawling phase. This argument must contain the path or HTTP(S) URL to "
+            "either warc.gz files or to a tar.gz containing the warc.gz files. "
+            "Single value with individual path/URLs separated by comma.",
+        },
+        required=False,
+    )
+
 
 class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
     """A Zimit flags schema with relaxed constraints on validation
