@@ -419,8 +419,9 @@ class ZimitFlagsSchema(SerializableSchema):
     disk_utilization = fields.Integer(
         metadata={
             "label": "Disk Utilization",
-            "description": "If set, save state and exit if disk utilization exceeds "
-            "this percentage value. Defaults to 90",
+            "description": "Save state and exit if disk utilization exceeds this "
+            "percentage value. Default (if not set) is 90%. Set to 0 to disable disk "
+            "utilization check.",
         },
         data_key="diskUtilization",
         required=False,
