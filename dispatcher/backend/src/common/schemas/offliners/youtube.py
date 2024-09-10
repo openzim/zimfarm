@@ -241,6 +241,19 @@ class YoutubeFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
+    stats_filename = String(
+        metadata={
+            "label": "Stats filename",
+            "placeholder": "/output/task_progress.json",
+            "description": "Scraping progress file. "
+            "Leave it as `/output/task_progress.json`",
+        },
+        data_key="stats-filename",
+        load_default="/output/task_progress.json",
+        dump_default="/output/task_progress.json",
+        validate=validate.Equal("/output/task_progress.json"),
+    )
+
     tmp_dir = String(
         metadata={
             "label": "Temp folder",
