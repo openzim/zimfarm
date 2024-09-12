@@ -290,10 +290,15 @@ class RequestedTaskRoute(BaseRoute):
         requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
         resp = RequestedTaskFullSchema().dump(requested_task)
 
+        # exclude notification to not expose private information (privacy)
+        # on anonymous requests and requests for users without schedules_update
+        if not token or not token.get_permission("schedules", "update"):
+            resp["notification"] = None
+
         request_args = request.args.to_dict()
         hide_secrets = "hide_secrets" in request_args
 
-        if hide_secrets or not token or not token.get_permission("tasks", "create"):
+        if hide_secrets or not token or not token.get_permission("schedules", "update"):
             remove_secrets_from_response(resp)
 
         return jsonify(resp)
