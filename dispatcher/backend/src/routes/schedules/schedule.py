@@ -181,7 +181,14 @@ class SchedulesBackupRoute(BaseRoute):
             if not token or not token.get_permission("schedules", "update"):
                 payload["notification"] = None
 
-            if not token or not token.get_permission("schedules", "update"):
+            request_args = request.args.to_dict()
+            hide_secrets = "hide_secrets" in request_args
+
+            if (
+                hide_secrets
+                or not token
+                or not token.get_permission("schedules", "update")
+            ):
                 remove_secrets_from_response(payload)
             return payload
 
@@ -220,7 +227,10 @@ class ScheduleRoute(BaseRoute):
         if not token or not token.get_permission("schedules", "update"):
             schedule["notification"] = None
 
-        if not token or not token.get_permission("schedules", "update"):
+        request_args = request.args.to_dict()
+        hide_secrets = "hide_secrets" in request_args
+
+        if hide_secrets or not token or not token.get_permission("schedules", "update"):
             remove_secrets_from_response(schedule)
 
         return jsonify(schedule)

@@ -130,12 +130,15 @@ class TaskRoute(BaseRoute):
 
         task = TaskFullSchema().dump(task)
 
+        request_args = request.args.to_dict()
+        hide_secrets = "hide_secrets" in request_args
+
         # exclude notification to not expose private information (privacy)
         # on anonymous requests and requests for users without schedules_update
         if not token or not token.get_permission("schedules", "update"):
             task["notification"] = None
 
-        if not token or not token.get_permission("tasks", "create"):
+        if hide_secrets or not token or not token.get_permission("tasks", "create"):
             remove_secrets_from_response(task)
 
         return jsonify(task)

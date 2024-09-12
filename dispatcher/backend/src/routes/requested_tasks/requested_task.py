@@ -25,6 +25,7 @@ from errors.http import HTTPBase, InvalidRequestJSON, TaskNotFound, WorkerNotFou
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
+from routes.utils import remove_secrets_from_response
 from utils.scheduling import find_requested_task_for, request_a_schedule
 from utils.token import AccessToken
 
@@ -277,11 +278,29 @@ class RequestedTaskRoute(BaseRoute):
     name = "requested_task"
     methods = ["GET", "PATCH", "DELETE"]
 
+    @auth_info_if_supplied
     @url_uuid("requested_task_id")
     @dbsession
-    def get(self, session: so.Session, requested_task_id: UUID):
+    def get(
+        self,
+        session: so.Session,
+        requested_task_id: UUID,
+        token: AccessToken.Payload = None,
+    ):
         requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
         resp = RequestedTaskFullSchema().dump(requested_task)
+
+        # exclude notification to not expose private information (privacy)
+        # on anonymous requests and requests for users without schedules_update
+        if not token or not token.get_permission("schedules", "update"):
+            resp["notification"] = None
+
+        request_args = request.args.to_dict()
+        hide_secrets = "hide_secrets" in request_args
+
+        if hide_secrets or not token or not token.get_permission("schedules", "update"):
+            remove_secrets_from_response(resp)
+
         return jsonify(resp)
 
     @authenticate

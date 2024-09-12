@@ -138,9 +138,17 @@ class TestTaskGet:
         response_json = response.get_json()
         assert "error" in response_json
 
-    def test_get(self, client, task):
+    @pytest.mark.parametrize("authenticated", [True, False])
+    def test_get(self, client, task, access_token, authenticated):
         url = "/tasks/{}".format(task["_id"])
-        headers = {"Content-Type": "application/json"}
+        headers = (
+            {
+                "Authorization": access_token,
+                "Content-Type": "application/json",
+            }
+            if authenticated
+            else {"Content-Type": "application/json"}
+        )
         response = client.get(url, headers=headers)
         assert response.status_code == 200
 
@@ -151,6 +159,11 @@ class TestTaskGet:
         assert data["original_schedule_name"] == task["schedule_name"]
         assert "timestamp" in data
         assert "events" in data
+        assert "notification" in data
+        if authenticated:
+            assert data["notification"] is not None
+        else:
+            assert data["notification"] is None
 
 
 class TestTaskCancel:

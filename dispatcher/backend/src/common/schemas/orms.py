@@ -120,6 +120,7 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
     upload = mf.Dict()
     schedule_name = mf.Function(serialize=get_schedule_name)  # override base
     worker = mf.Function(serialize=get_worker_name)
+    notification = mf.Dict()
 
 
 class MostRecentTaskSchema(m.Schema):
