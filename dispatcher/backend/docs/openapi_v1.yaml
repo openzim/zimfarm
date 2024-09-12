@@ -261,7 +261,9 @@ paths:
       - public
       summary: dump schedules
       operationId: dumpSchedules
-      description: Dump all Schedules (without `most_recent_task`) in a single request. (Notfication is removed and Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without schedules.update permission)
+      description: Dump all Schedules (without `most_recent_task`) in a single request (notification details are removed and secrets are replaced by ------ for requests without sufficient permissions)
+      parameters:
+        - $ref: '#/components/parameters/HideSecretsParameter'
       responses:
         200:
           description: Complete list of Schedules
@@ -277,9 +279,10 @@ paths:
       - public
       summary: list schedules
       operationId: getSchedule
-      description: Retrieve a Schedule's details (Notfication is removed and Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without schedules.update permission)
+      description: Retrieve a Schedule's details (notification details are removed and secrets are replaced by ------ for requests without sufficient permissions)
       parameters:
         - $ref: '#/components/parameters/ScheduleNameParameter'
+        - $ref: '#/components/parameters/HideSecretsParameter'
       responses:
         200:
           description: Schedule details
@@ -660,9 +663,10 @@ paths:
       - public
       summary: get requested-tasks details
       operationId: getRequestedTask
-      description: Retrieve a RequestedTask details
+      description: Retrieve a RequestedTask details (notification details are removed and secrets are replaced by ------ for requests without sufficient permissions)
       parameters:
       - $ref: '#/components/parameters/TaskIdParameter'
+      - $ref: '#/components/parameters/HideSecretsParameter'
       responses:
         200:
           description: RequestedTask Created
@@ -782,9 +786,10 @@ paths:
       - public
       summary: get task detail
       operationId: getTask
-      description: Retrieve a Task's details (Secrets in config are replaced by ****** for unauthenticated requests and authenticated requests from users without tasks.create permission)
+      description: Retrieve a Task's details (notification details are removed and secrets are replaced by ------ for requests without sufficient permissions)
       parameters:
       - $ref: '#/components/parameters/TaskIdParameter'
+      - $ref: '#/components/parameters/HideSecretsParameter'
       responses:
         200:
           description: Task record
@@ -1595,6 +1600,13 @@ components:
       required: true
       schema:
         type: string
+    HideSecretsParameter:
+      in: query
+      name: hide_secrets
+      required: false
+      schema:
+        type: boolean
+      allowEmptyValue: true
     StatusParameter:
       in: query
       name: status
