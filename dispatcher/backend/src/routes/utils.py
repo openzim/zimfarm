@@ -103,7 +103,13 @@ def remove_url_secrets(response: dict):
             if not isinstance(response[key], str) or "://" not in response[key]:
                 continue
             for url in [word for word in response[key].split() if "://" in word]:
-                urlparts = urlsplit(url)
+                try:
+                    urlparts = urlsplit(url)
+                except Exception as exc:
+                    logger.warning(
+                        f"Ignoring bad URL in remove_url_secrets: {url}", exc_info=exc
+                    )
+                    continue
                 newquery = urlencode(
                     {
                         key: (
