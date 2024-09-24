@@ -47,7 +47,7 @@ ZIMFARM_CPU="3"
 # Comma-separated list of offliners to run or `""` for all of them. If
 # you want to run `youtube` tasks, you need to be whitelisted, contact
 # us.
-ZIMFARM_OFFLINERS="mwoffliner,sotoki,gutenberg,phet,nautilus,ted,openedx,zimit,kolibri,wikihow,ifixit,freecodecamp"
+ZIMFARM_OFFLINERS="mwoffliner,sotoki,gutenberg,phet,nautilus,ted,openedx,zimit,kolibri,wikihow,ifixit,freecodecamp,devdocs"
 
 # Set to `"y"` to only run task specifically assigned to this worker
 # (`""` otherwise)
@@ -66,4 +66,5 @@ DISABLE_IPV6=""
 # PLATFORM_youtube_MAX_TASKS=2
 # PLATFORM_wikihow_MAX_TASKS=2
 # PLATFORM_ifixit_MAX_TASKS=2
+# PLATFORM_devdocs_MAX_TASKS=2
 # PLATFORM_ted_MAX_TASKS=2

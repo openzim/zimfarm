@@ -113,6 +113,7 @@ class ScheduleCategory:
     wiktionary = "wiktionary"
     ifixit = "ifixit"
     freecodecamp = "freecodecamp"
+    devdocs = "devdocs"
 
     @classmethod
     def all(cls):
@@ -137,6 +138,7 @@ class ScheduleCategory:
             cls.wiktionary,
             cls.ifixit,
             cls.freecodecamp,
+            cls.devdocs,
         ]
 
     @classmethod
@@ -168,6 +170,7 @@ class DockerImageName:
     wikihow = "openzim/wikihow"
     ifixit = "openzim/ifixit"
     freecodecamp = "openzim/freecodecamp"
+    devdocs = "openzim/devdocs"
 
     @classmethod
     def all(cls) -> set:
@@ -185,6 +188,7 @@ class DockerImageName:
             cls.wikihow,
             cls.ifixit,
             cls.freecodecamp,
+            cls.devdocs,
         }
 
 
@@ -202,6 +206,7 @@ class Offliner:
     wikihow = "wikihow"
     ifixit = "ifixit"
     freecodecamp = "freecodecamp"
+    devdocs = "devdocs"
 
     @classmethod
     def all(cls):
@@ -219,6 +224,7 @@ class Offliner:
             cls.wikihow,
             cls.ifixit,
             cls.freecodecamp,
+            cls.devdocs,
         ]
 
     @classmethod
@@ -243,6 +249,7 @@ class Offliner:
             cls.wikihow: DockerImageName.wikihow,
             cls.ifixit: DockerImageName.ifixit,
             cls.freecodecamp: DockerImageName.freecodecamp,
+            cls.devdocs: DockerImageName.devdocs,
         }.get(offliner, "-")
 
 
@@ -264,10 +271,18 @@ class Platform:
     wikihow = "wikihow"
     ifixit = "ifixit"
     ted = "ted"
+    devdocs = "devdocs"
 
     @classmethod
     def all(cls) -> str:
-        return [cls.wikimedia, cls.youtube, cls.wikihow, cls.ifixit, cls.ted]
+        return [
+            cls.wikimedia,
+            cls.youtube,
+            cls.wikihow,
+            cls.ifixit,
+            cls.ted,
+            cls.devdocs,
+        ]
 
     @classmethod
     def get_max_per_worker_tasks_for(cls, platform) -> int:

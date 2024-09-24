@@ -21,6 +21,7 @@ from common.schemas.fields import (
     validate_warehouse_path,
 )
 from common.schemas.offliners import (
+    DevDocsFlagsSchema,
     FreeCodeCampFlagsSchema,
     GutenbergFlagsSchema,
     IFixitFlagsSchema,
@@ -101,6 +102,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.wikihow: WikihowFlagsSchema,
             Offliner.ifixit: IFixitFlagsSchema,
             Offliner.freecodecamp: FreeCodeCampFlagsSchema,
+            Offliner.devdocs: DevDocsFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema

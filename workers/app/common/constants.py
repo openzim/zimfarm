@@ -122,6 +122,7 @@ OFFLINER_KOLIBRI = "kolibri"
 OFFLINER_WIKIHOW = "wikihow"
 OFFLINER_IFIXIT = "ifixit"
 OFFLINER_FREECODECAMP = "freecodecamp"
+OFFLINER_DEVDOCS = "devdocs"
 
 ALL_OFFLINERS = [
     OFFLINER_MWOFFLINER,
@@ -137,6 +138,7 @@ ALL_OFFLINERS = [
     OFFLINER_WIKIHOW,
     OFFLINER_IFIXIT,
     OFFLINER_FREECODECAMP,
+    OFFLINER_DEVDOCS,
 ]
 SUPPORTED_OFFLINERS = [
     offliner
@@ -152,7 +154,7 @@ PROGRESS_CAPABLE_OFFLINERS = [
     OFFLINER_YOUTUBE,
 ]
 
-ALL_PLATFORMS = ["wikimedia", "youtube", "wikihow", "ifixit", "ted"]
+ALL_PLATFORMS = ["wikimedia", "youtube", "wikihow", "ifixit", "ted", "devdocs"]
 PLATFORMS_TASKS = {}
 for platform in ALL_PLATFORMS:
     name = f"PLATFORM_{platform}_MAX_TASKS"

@@ -336,17 +336,17 @@ export default {
   cancelable_statuses: cancelable_statuses,
   running_statuses: running_statuses,
   contact_email: "contact@kiwix.org",
-  categories: ["freecodecamp", "gutenberg", "ifixit", "other", "phet", "psiram", "stack_exchange",
+  categories: ["devdocs", "freecodecamp", "gutenberg", "ifixit", "other", "phet", "psiram", "stack_exchange",
                "ted", "openedx", "vikidia", "wikibooks", "wikihow", "wikinews",
                "wikipedia", "wikiquote", "wikisource", "wikispecies", "wikiversity",
                "wikivoyage", "wiktionary"],  // list of categories for fileering
-  warehouse_paths: ["/freecodecamp", "/gutenberg", "/ifixit", "/other", "/phet", "/psiram", "/stack_exchange",
+  warehouse_paths: ["/devdocs", "/freecodecamp", "/gutenberg", "/ifixit", "/other", "/phet", "/psiram", "/stack_exchange",
                     "/ted", "/mooc", "/videos", "/vikidia", "/wikibooks", "/wikihow",
                     "/wikinews", "/wikipedia", "/wikiquote", "/wikisource",
                     "/wikiversity", "/wikivoyage", "/wiktionary", "/zimit",
                     "/.hidden/dev", "/.hidden/private", "/.hidden/endless",
                     "/.hidden/bard", "/.hidden/bsf", "/.hidden/custom_apps"],
-  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit", "kolibri", "wikihow", "ifixit", "freecodecamp"],
+  offliners: ["mwoffliner", "youtube", "phet", "gutenberg", "sotoki", "nautilus", "ted", "openedx", "zimit", "kolibri", "wikihow", "ifixit", "freecodecamp", "devdocs"],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [536870912, // 512MiB
                   1073741824,  // 1GiB
