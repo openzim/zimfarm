@@ -12,39 +12,34 @@ class DevDocsFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
+    slug = String(
+        metadata={
+            "label": "Slug",
+            "description": "Fetch the provided Devdocs resource. "
+            "Slugs are the first path entry in the Devdocs URL. "
+            "For example, the slug for: `https://devdocs.io/gcc~12/` is `gcc~12`. "
+            "Mutually exclusive with `All` setting, set only one option. Either this"
+            "setting or `All` must be configured.",
+        },
+    )
+
     all_flag = fields.Boolean(
         truthy=[True],
         falsy=[False],
         metadata={
             "label": "All",
             "description": "Fetch all Devdocs resources, and produce one ZIM "
-            "per resource.",
+            "per resource. Mutually exclusive with `Slug` setting, set only "
+            "one option. Either this setting or `Slug` must be configured.",
         },
         data_key="all",
-    )
-
-    slug = String(  # should be ListOfString but not yet supported by Zimfarm
-        metadata={
-            "label": "Slug",
-            "description": "Fetch the provided Devdocs resource. "
-            "Slugs are the first path entry in the Devdocs URL. "
-            "For example, the slug for: `https://devdocs.io/gcc~12/` is `gcc~12`.",
-        },
-    )
-
-    first = fields.Integer(
-        metadata={
-            "label": "Number of first items",
-            "description": "Fetch only the first N items per slug as shown "
-            "in the DevDocs UI. Do not set to fetch all items.",
-        },
     )
 
     skip_slug_regex = String(
         metadata={
             "label": "Skip slugs regex",
             "description": "Skips slugs matching the given regular expression."
-            "Do not set to fetch all slugs",
+            "Do not set to fetch all slugs. Only useful when `All` is set.",
         },
         data_key="skip-slug-regex",
     )
@@ -95,8 +90,8 @@ class DevDocsFlagsSchema(SerializableSchema):
         metadata={
             "label": "ZIM long description",
             "description": "ZIM long description. You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults "
-            "to `{full_name} docs by DevDocs`",
+            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults to no "
+            "long description",
         },
         data_key="long-description-format",
         validate=validate_zim_longdescription,
@@ -141,22 +136,4 @@ class DevDocsFlagsSchema(SerializableSchema):
         truthy=[True],
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
-    )
-
-    devdocs_frontend_url = String(
-        metadata={
-            "label": "DevDocs frontend URL",
-            "description": "Scheme and hostname for the devdocs frontend."
-            "Defaults to https://devdocs.io",
-        },
-        data_key="devdocs-frontend-url",
-    )
-
-    devdocs_documents_url = String(
-        metadata={
-            "label": "DevDocs documents URL",
-            "description": "Scheme and hostname for the devdocs documents server."
-            "Defaults to https://documents.devdocs.io",
-        },
-        data_key="devdocs-documents-url",
     )
