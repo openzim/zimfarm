@@ -25,6 +25,7 @@ OFFLINER_DEFS = {
     Offliner.nautilus: od("nautiluszim", True, False),
     Offliner.zimit: od("zimit", True, "statsFilename"),
     Offliner.kolibri: od("kolibri2zim", True, False),
+    Offliner.devdocs: od("devdocs2zim", True, False),
 }
 
 

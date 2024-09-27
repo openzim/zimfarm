@@ -6,6 +6,7 @@ mkdir -p \
     /jail/zim/freecodecamp \
     /jail/zim/gutenberg \
     /jail/zim/ifixit \
+    /jail/zim/devdocs \
     /jail/zim/mooc \
     /jail/zim/other \
     /jail/zim/phet \
@@ -28,6 +29,7 @@ chmod 777 \
     /jail/zim/freecodecamp \
     /jail/zim/gutenberg \
     /jail/zim/ifixit \
+    /jail/zim/devdocs \
     /jail/zim/mooc \
     /jail/zim/other \
     /jail/zim/phet \

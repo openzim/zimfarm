@@ -1915,6 +1915,7 @@ components:
         - wikihow
         - zimit
         - ifixit
+        - devdocs
       example:
         - mwoffliner
         - sotoki
