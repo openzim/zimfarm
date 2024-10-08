@@ -6,6 +6,7 @@ from common.schemas.fields import (
     validate_zim_description,
     validate_zim_filename,
     validate_zim_longdescription,
+    validate_zim_title,
 )
 
 
@@ -111,7 +112,8 @@ class TedFlagsSchema(SerializableSchema):
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. Based on selection otherwise",
-        }
+        },
+        validate=validate_zim_title,
     )
 
     description = String(

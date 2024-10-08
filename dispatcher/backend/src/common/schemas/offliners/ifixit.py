@@ -5,6 +5,7 @@ from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
+    validate_zim_title,
 )
 
 
@@ -38,6 +39,7 @@ class IFixitFlagsSchema(SerializableSchema):
             "description": "Custom title for your ZIM. "
             "iFixIt homepage title otherwise",
         },
+        validate=validate_zim_title,
     )
 
     description = String(

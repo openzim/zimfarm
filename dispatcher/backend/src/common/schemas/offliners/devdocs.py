@@ -5,6 +5,7 @@ from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_longdescription,
+    validate_zim_title,
 )
 
 
@@ -73,6 +74,7 @@ class DevDocsFlagsSchema(SerializableSchema):
             "to `{full_name} Docs`",
         },
         data_key="title-format",
+        validate=validate_zim_title,
     )
 
     description_format = String(

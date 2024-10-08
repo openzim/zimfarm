@@ -11,6 +11,7 @@ from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_longdescription,
+    validate_zim_title,
 )
 
 
@@ -59,7 +60,8 @@ class MWOfflinerFlagsSchema(SerializableSchema):
         metadata={
             "label": "ZIM Title",
             "description": "Custom ZIM title. Wiki name otherwise.",
-        }
+        },
+        validate=validate_zim_title,
     )
     customZimDescription = String(
         metadata={"label": "ZIM Description", "description": "Max length is 80 chars"},

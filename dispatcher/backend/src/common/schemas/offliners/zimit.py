@@ -5,6 +5,7 @@ from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
+    validate_zim_title,
 )
 
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
@@ -175,7 +176,8 @@ class ZimitFlagsSchema(SerializableSchema):
         metadata={
             "label": "Title",
             "description": "Custom title for ZIM. Defaults to title of main page",
-        }
+        },
+        validate=validate_zim_title,
     )
 
     description = String(

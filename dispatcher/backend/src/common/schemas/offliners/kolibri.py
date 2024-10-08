@@ -6,6 +6,7 @@ from common.schemas.fields import (
     validate_zim_description,
     validate_zim_filename,
     validate_zim_longdescription,
+    validate_zim_title,
 )
 
 
@@ -52,7 +53,8 @@ class KolibriFlagsSchema(SerializableSchema):
         metadata={
             "label": "Title",
             "description": "Custom title for your ZIM. Kolibri channel name otherwise",
-        }
+        },
+        validate=validate_zim_title,
     )
 
     description = String(
