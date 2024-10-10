@@ -18,7 +18,7 @@ REQUESTS_TIMEOUT = 10
 TED_INDEX_NAME = "coyote_models_acme_videos_alias_38ce41d1f97ca56a38068f613af166da"
 
 
-def get_ted_topics():
+def get_ted_topics() -> set:
     data = [
         {
             "indexName": TED_INDEX_NAME,
@@ -45,11 +45,15 @@ def get_ted_topics():
     req.raise_for_status()
     topics = json.loads(req.content)["results"][0]["facets"]["tags"].keys()
     logger.info(f"{len(topics)} topics found")
-    return topics
+    return set(topics)
+
+
+def get_clean_ted_topic_name(ted_topic_name):
+    return ted_topic_name.replace(" ", "-").replace("'", "")
 
 
 def create_recipe(ted_topic_name: str, access_token):
-    clean_ted_topic_name = ted_topic_name.replace(" ", "-").replace("'", "")
+    clean_ted_topic_name = get_clean_ted_topic_name(ted_topic_name)
     schedule_name = f"ted_topic_{clean_ted_topic_name}"
     response = requests.get(
         get_url(f"/schedules/{schedule_name}"),
@@ -119,18 +123,67 @@ def create_recipe(ted_topic_name: str, access_token):
         response.raise_for_status()
 
 
+def get_existing_recipes_topics(access_token: str) -> set:
+
+    skip = 0
+    per_page = 200
+
+    topics = set()
+    while True:
+        response = requests.get(
+            get_url(f"/schedules/?limit={per_page}&skip={skip}&tag=ted-by-topic"),
+            headers=get_token_headers(access_token),
+        )
+        response.raise_for_status()
+
+        schedules = response.json()
+        topics.update({schedule["name"][10:] for schedule in schedules["items"]})
+
+        if (
+            schedules["meta"]["limit"] + schedules["meta"]["skip"]
+            < schedules["meta"]["count"]
+        ):
+            skip += per_page
+        else:
+            break
+
+    return topics
+
+
 def main(zf_username, zf_password):
     """Creates recipes for TED by topics"""
 
     access_token, refresh_token = get_token(zf_username, zf_password)
 
-    ted_topics = get_ted_topics()
-    logger.debug(",".join((ted_topics)))
-    logger.debug(",".join(sorted(ted_topics)))
-    for topic in ted_topics:
-        if topic != "street art":
-            continue
+    existing_recipes_topics = get_existing_recipes_topics(access_token=access_token)
+    logger.debug(",".join(sorted(existing_recipes_topics)))
+    exisiting_online_topics = get_ted_topics()
+    logger.debug(",".join(sorted(exisiting_online_topics)))
+
+    recipes_to_create = [
+        topic
+        for topic in exisiting_online_topics
+        if get_clean_ted_topic_name(topic) not in existing_recipes_topics
+    ]
+    logger.info(f"*** Recipes to create: {','.join(sorted(recipes_to_create))}")
+    recipes_to_delete = [
+        topic
+        for topic in existing_recipes_topics
+        if not any(
+            [
+                1 if get_clean_ted_topic_name(topic2) == topic else 0
+                for topic2 in exisiting_online_topics
+            ]
+        )
+        and topic != "all"
+    ]
+
+    for topic in recipes_to_create:
         create_recipe(ted_topic_name=topic, access_token=access_token)
+
+    logger.info(
+        f"*** Recipes to delete manually: {','.join(sorted(recipes_to_delete))}"
+    )
 
 
 if __name__ == "__main__":
