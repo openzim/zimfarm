@@ -6,6 +6,7 @@ from common.schemas.fields import (
     validate_zim_description,
     validate_zim_filename,
     validate_zim_longdescription,
+    validate_zim_title,
 )
 
 FCC_LANG_MAP = {
@@ -59,6 +60,7 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
             "description": "ZIM title",
         },
         required=True,
+        validate=validate_zim_title,
     )
 
     description = String(

@@ -5,6 +5,7 @@ from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
+    validate_zim_title,
 )
 
 
@@ -98,7 +99,8 @@ class NautilusFlagsSchema(SerializableSchema):
         metadata={
             "label": "Title",
             "description": "Title for your project and ZIM. Otherwise --name.",
-        }
+        },
+        validate=validate_zim_title,
     )
     description = String(
         metadata={

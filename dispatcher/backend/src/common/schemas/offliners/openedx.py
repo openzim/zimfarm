@@ -5,6 +5,7 @@ from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
+    validate_zim_title,
 )
 
 
@@ -174,6 +175,7 @@ class OpenedxFlagsSchema(SerializableSchema):
             "description": "Custom title for your ZIM. Based on MOOC otherwise",
         },
         data_key="title",
+        validate=validate_zim_title,
     )
 
     description = String(

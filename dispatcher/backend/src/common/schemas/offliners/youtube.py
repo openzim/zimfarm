@@ -6,6 +6,7 @@ from common.schemas.fields import (
     validate_zim_description,
     validate_zim_filename,
     validate_zim_longdescription,
+    validate_zim_title,
 )
 
 
@@ -85,7 +86,8 @@ class YoutubeFlagsSchema(SerializableSchema):
             "label": "ZIM Title",
             "description": "Custom title for your ZIM. "
             "Default to Channel name (of first video if playlists)",
-        }
+        },
+        validate=validate_zim_title,
     )
 
     description = String(
