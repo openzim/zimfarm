@@ -89,7 +89,7 @@ def create_recipe(ted_topic_name: str, access_token):
             },
             "image": {
                 "name": "ghcr.io/openzim/ted",
-                "tag": "2.1.0",
+                "tag": "3.0.2",
             },
             "monitor": False,
             "platform": "ted",
@@ -108,7 +108,7 @@ def create_recipe(ted_topic_name: str, access_token):
             "name_native": "Multiple Languages",
         },
         "name": schedule_name,
-        "periodicity": "monthly",
+        "periodicity": "quarterly",
         "tags": [
             "ted-by-topic",
         ],
