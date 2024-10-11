@@ -37,9 +37,9 @@ class YoutubeFlagsSchema(SerializableSchema):
     ident = String(
         metadata={
             "label": "Youtube ID(s)",
-            "description": "Youtube ID(s) of the user, channel or playlist(s) to ZIM "
-            "(depending on the Type chosen below). Only playlist Type support multiple "
-            "Youtube IDs and they must be separated by commas.",
+            "description": "Youtube ID(s) of the handle, channel, user, or playlist(s) "
+            "to ZIM (depending on the Type chosen below). Only playlist Type support "
+            "multiple Youtube IDs and they must be separated by commas.",
         },
         data_key="id",
         required=True,
@@ -48,9 +48,10 @@ class YoutubeFlagsSchema(SerializableSchema):
     kind = StringEnum(
         metadata={
             "label": "Type",
-            "description": "Type of Youtube ID.",
+            "description": "Type of Youtube ID. Use channel for handle, channel or "
+            "user.",
         },
-        validate=validate.OneOf(["channel", "playlist", "user"]),
+        validate=validate.OneOf(["channel", "playlist"]),
         data_key="type",
         required=True,
     )
