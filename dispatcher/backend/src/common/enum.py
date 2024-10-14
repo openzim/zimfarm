@@ -274,6 +274,7 @@ class Platform:
     ifixit = "ifixit"
     ted = "ted"
     devdocs = "devdocs"
+    shamela = "shamela"
 
     @classmethod
     def all(cls) -> str:
@@ -284,6 +285,7 @@ class Platform:
             cls.ifixit,
             cls.ted,
             cls.devdocs,
+            cls.shamela,
         ]
 
     @classmethod
