@@ -557,6 +557,20 @@ class ZimitFlagsSchema(SerializableSchema):
         data_key="ignore-http-header-charsets",
     )
 
+    encoding_aliases = String(
+        metadata={
+            "label": "Encoding aliases",
+            "description": "List of encoding/charset aliases to decode WARC content. "
+            "Aliases are used when the encoding specified in upstream server exists in"
+            " Python under a different name. This parameter has the format "
+            "alias_encoding=python_encoding. This parameter is single string, multiple"
+            " values are separated by a comma, like in "
+            "alias1=encoding1,alias2=encoding2.",
+        },
+        required=False,
+        data_key="encoding-aliases",
+    )
+
     profile = String(
         metadata={
             "label": "Browser profile",
