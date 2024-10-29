@@ -26,6 +26,7 @@ OFFLINER_DEFS = {
     Offliner.zimit: od("zimit", True, "statsFilename"),
     Offliner.kolibri: od("kolibri2zim", True, False),
     Offliner.devdocs: od("devdocs2zim", True, False),
+    Offliner.mindtouch: od("mindtouch2zim", True, True),
 }
 
 

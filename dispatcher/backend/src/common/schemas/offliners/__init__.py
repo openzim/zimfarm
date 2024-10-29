@@ -4,6 +4,7 @@ from common.schemas.offliners.freecodecamp import FreeCodeCampFlagsSchema
 from common.schemas.offliners.gutenberg import GutenbergFlagsSchema
 from common.schemas.offliners.ifixit import IFixitFlagsSchema
 from common.schemas.offliners.kolibri import KolibriFlagsSchema
+from common.schemas.offliners.mindtouch import MindtouchFlagsSchema
 from common.schemas.offliners.mwoffliner import MWOfflinerFlagsSchema
 from common.schemas.offliners.nautilus import (
     NautilusFlagsSchema,
@@ -22,6 +23,7 @@ __all__ = (
     "GutenbergFlagsSchema",
     "IFixitFlagsSchema",
     "KolibriFlagsSchema",
+    "MindtouchFlagsSchema",
     "MWOfflinerFlagsSchema",
     "NautilusFlagsSchema",
     "NautilusFlagsSchemaRelaxed",

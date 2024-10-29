@@ -78,6 +78,7 @@ class WarehousePath:
     hidden_custom_apps = "/.hidden/custom_apps"
     videos = "/videos"
     zimit = "/zimit"
+    libretexts = "/libretexts"
 
     @classmethod
     def all(cls):
@@ -116,6 +117,7 @@ class ScheduleCategory:
     ifixit = "ifixit"
     freecodecamp = "freecodecamp"
     devdocs = "devdocs"
+    mindtouch = "mindtouch"
 
     @classmethod
     def all(cls):
@@ -141,6 +143,7 @@ class ScheduleCategory:
             cls.ifixit,
             cls.freecodecamp,
             cls.devdocs,
+            cls.mindtouch,
         ]
 
     @classmethod
@@ -173,6 +176,7 @@ class DockerImageName:
     ifixit = "openzim/ifixit"
     freecodecamp = "openzim/freecodecamp"
     devdocs = "openzim/devdocs"
+    mindtouch = "openzim/mindtouch"
 
     @classmethod
     def all(cls) -> set:
@@ -209,6 +213,7 @@ class Offliner:
     ifixit = "ifixit"
     freecodecamp = "freecodecamp"
     devdocs = "devdocs"
+    mindtouch = "mindtouch"
 
     @classmethod
     def all(cls):
@@ -227,6 +232,7 @@ class Offliner:
             cls.ifixit,
             cls.freecodecamp,
             cls.devdocs,
+            cls.mindtouch,
         ]
 
     @classmethod
@@ -252,6 +258,7 @@ class Offliner:
             cls.ifixit: DockerImageName.ifixit,
             cls.freecodecamp: DockerImageName.freecodecamp,
             cls.devdocs: DockerImageName.devdocs,
+            cls.mindtouch: DockerImageName.mindtouch,
         }.get(offliner, "-")
 
 
@@ -275,6 +282,7 @@ class Platform:
     ted = "ted"
     devdocs = "devdocs"
     shamela = "shamela"
+    libretexts = "libretexts"
 
     @classmethod
     def all(cls) -> str:
@@ -286,6 +294,7 @@ class Platform:
             cls.ted,
             cls.devdocs,
             cls.shamela,
+            cls.libretexts,
         ]
 
     @classmethod
