@@ -123,6 +123,7 @@ OFFLINER_WIKIHOW = "wikihow"
 OFFLINER_IFIXIT = "ifixit"
 OFFLINER_FREECODECAMP = "freecodecamp"
 OFFLINER_DEVDOCS = "devdocs"
+OFFLINER_MINDTOUCH = "mindtouch"
 
 ALL_OFFLINERS = [
     OFFLINER_MWOFFLINER,
@@ -139,6 +140,7 @@ ALL_OFFLINERS = [
     OFFLINER_IFIXIT,
     OFFLINER_FREECODECAMP,
     OFFLINER_DEVDOCS,
+    OFFLINER_MINDTOUCH,
 ]
 SUPPORTED_OFFLINERS = [
     offliner
@@ -152,9 +154,19 @@ PROGRESS_CAPABLE_OFFLINERS = [
     OFFLINER_SOTOKI,
     OFFLINER_IFIXIT,
     OFFLINER_YOUTUBE,
+    OFFLINER_MINDTOUCH,
 ]
 
-ALL_PLATFORMS = ["wikimedia", "youtube", "wikihow", "ifixit", "ted", "devdocs"]
+ALL_PLATFORMS = [
+    "wikimedia",
+    "youtube",
+    "wikihow",
+    "ifixit",
+    "ted",
+    "devdocs",
+    "shamela",
+    "libretexts",
+]
 PLATFORMS_TASKS = {}
 for platform in ALL_PLATFORMS:
     name = f"PLATFORM_{platform}_MAX_TASKS"
