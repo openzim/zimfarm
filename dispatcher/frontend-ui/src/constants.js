@@ -426,22 +426,6 @@ export default {
     "/.hidden/datacup",
     "/.hidden/custom_apps",
   ],
-  offliners: [
-    "mwoffliner",
-    "youtube",
-    "phet",
-    "gutenberg",
-    "sotoki",
-    "nautilus",
-    "ted",
-    "openedx",
-    "zimit",
-    "kolibri",
-    "wikihow",
-    "ifixit",
-    "freecodecamp",
-    "devdocs",
-  ],
   periodicities: ["manually", "monthly", "quarterly", "biannualy", "annually"],
   memory_values: [
     536870912, // 512MiB
