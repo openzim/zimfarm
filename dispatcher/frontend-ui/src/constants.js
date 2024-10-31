@@ -394,8 +394,11 @@ export default {
     "wikiversity",
     "wikivoyage",
     "wiktionary",
+    "mindtouch",
   ], // list of categories for fileering
   warehouse_paths: [
+    "/mindtouch",
+    "/libretexts",
     "/devdocs",
     "/freecodecamp",
     "/gutenberg",

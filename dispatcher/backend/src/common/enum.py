@@ -195,6 +195,7 @@ class DockerImageName:
             cls.ifixit,
             cls.freecodecamp,
             cls.devdocs,
+            cls.mindtouch,
         }
 
 

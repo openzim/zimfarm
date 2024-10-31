@@ -14,10 +14,10 @@ export default {
       return process.env.BASE_URL;
     }, // for static files linking
     categories() {
-      return Constants.categories;
+      return Constants.categories.sort();
     }, // list of categories for filter/edit
     warehouse_paths() {
-      return Constants.warehouse_paths;
+      return Constants.warehouse_paths.sort();
     }, // list of paths for edit
     periodicities() {
       return Constants.periodicities;
