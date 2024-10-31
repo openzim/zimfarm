@@ -26,6 +26,7 @@ from common.schemas.offliners import (
     GutenbergFlagsSchema,
     IFixitFlagsSchema,
     KolibriFlagsSchema,
+    MindtouchFlagsSchema,
     MWOfflinerFlagsSchema,
     NautilusFlagsSchema,
     NautilusFlagsSchemaRelaxed,
@@ -103,6 +104,7 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.ifixit: IFixitFlagsSchema,
             Offliner.freecodecamp: FreeCodeCampFlagsSchema,
             Offliner.devdocs: DevDocsFlagsSchema,
+            Offliner.mindtouch: MindtouchFlagsSchema,
         }.get(offliner, Schema)
 
     @validates_schema
