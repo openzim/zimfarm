@@ -1,82 +1,137 @@
+import jwt from "jsonwebtoken";
 
-import jwt from 'jsonwebtoken';
-
-import Constants from '../constants.js'
+import Constants from "../constants.js";
 
 export default {
   data() {
     return {
       selectedLimit: this.getLimitPreference(), // user-defined nb of tasks to retrieve/display
       limits: Constants.LIMIT_CHOICES,
-     };
+    };
   },
   computed: {
-    publicPath() { return process.env.BASE_URL; },  // for static files linking
-    categories() { return Constants.categories; }, // list of categories for filter/edit
-    warehouse_paths() { return Constants.warehouse_paths; },  // list of paths for edit
-    periodicities() { return Constants.periodicities; },  // list of paths for edit
-    languages() { return this.$store.getters.languages; },  // list of lang for filter/edit
-    tags() { return this.$store.getters.tags; },  // list of tags for filter/edit
-    offliners() { return this.$store.getters.offliners; }, // list of offliners for edit
-    platforms() { return this.$store.getters.platforms; }, // list of platforms for edit
+    publicPath() {
+      return process.env.BASE_URL;
+    }, // for static files linking
+    categories() {
+      return Constants.categories;
+    }, // list of categories for filter/edit
+    warehouse_paths() {
+      return Constants.warehouse_paths;
+    }, // list of paths for edit
+    periodicities() {
+      return Constants.periodicities;
+    }, // list of paths for edit
+    languages() {
+      return this.$store.getters.languages;
+    }, // list of lang for filter/edit
+    tags() {
+      return this.$store.getters.tags;
+    }, // list of tags for filter/edit
+    offliners() {
+      return this.$store.getters.offliners;
+    }, // list of offliners for edit
+    platforms() {
+      return this.$store.getters.platforms;
+    }, // list of platforms for edit
 
     isLoggedIn() {
       try {
-        return Boolean(this.$store.getters.username !== null && !this.token_expired);
-      } catch { return false; }
+        return Boolean(
+          this.$store.getters.username !== null && !this.token_expired
+        );
+      } catch {
+        return false;
+      }
     },
     token_expired() {
       let expiry = this.$store.getters.token_expiry;
-      return (!expiry) ? true : Constants.now() > expiry;
+      return !expiry ? true : Constants.now() > expiry;
     },
-    canRequestTasks() { return this.$root.has_perm("tasks", "request"); },
-    canUnRequestTasks() { return this.$root.has_perm("tasks", "unrequest"); },
-    canCancelTasks() { return this.$root.has_perm("tasks", "cancel"); },
-    canCreateSchedules() { return this.$root.has_perm("schedules", "create"); },
-    canUpdateSchedules() { return this.$root.has_perm("schedules", "update"); },
-    canDeleteSchedules() { return this.$root.has_perm("schedules", "delete"); },
-    canReadUsers() { return this.$root.has_perm("users", "read"); },
-    canSSHKeyUsers() { return this.$root.has_perm("users", "ssh_keys"); },
-    canCreateUsers() { return this.$root.has_perm("users", "create"); },
-    canUpdateUsers() { return this.$root.has_perm("users", "update"); },
-    canDeleteUsers() { return this.$root.has_perm("users", "delete"); },
-    canChangePasswordUsers() { return this.$root.has_perm("users", "change_password"); },
-
+    canRequestTasks() {
+      return this.$root.has_perm("tasks", "request");
+    },
+    canUnRequestTasks() {
+      return this.$root.has_perm("tasks", "unrequest");
+    },
+    canCancelTasks() {
+      return this.$root.has_perm("tasks", "cancel");
+    },
+    canCreateSchedules() {
+      return this.$root.has_perm("schedules", "create");
+    },
+    canUpdateSchedules() {
+      return this.$root.has_perm("schedules", "update");
+    },
+    canDeleteSchedules() {
+      return this.$root.has_perm("schedules", "delete");
+    },
+    canReadUsers() {
+      return this.$root.has_perm("users", "read");
+    },
+    canSSHKeyUsers() {
+      return this.$root.has_perm("users", "ssh_keys");
+    },
+    canCreateUsers() {
+      return this.$root.has_perm("users", "create");
+    },
+    canUpdateUsers() {
+      return this.$root.has_perm("users", "update");
+    },
+    canDeleteUsers() {
+      return this.$root.has_perm("users", "delete");
+    },
+    canChangePasswordUsers() {
+      return this.$root.has_perm("users", "change_password");
+    },
   },
   methods: {
     cancel_task(task_id, on_success) {
       let parent = this;
-      parent.queryAPI('post', '/tasks/' + task_id + '/cancel')
+      parent
+        .queryAPI("post", "/tasks/" + task_id + "/cancel")
         .then(function () {
-          let msg = "Requested Task <code>" + Constants.short_id(task_id) + "</code> has been marked for cancelation.";
+          let msg =
+            "Requested Task <code>" +
+            Constants.short_id(task_id) +
+            "</code> has been marked for cancelation.";
           parent.alertSuccess("Canceling!", msg);
         })
         .catch(function (error) {
           parent.alertError(Constants.standardHTTPError(error.response));
         })
         .then(function () {
-          if (on_success)
-            on_success();
+          if (on_success) on_success();
         });
     },
-    scrollToTop() { window.scrollTo(0,0); },
-    format_dt(dt) { return Constants.format_dt(dt); },
-    from_now(dt) { return Constants.from_now(dt); },
-    toggleLoader(text) { // shortcut to store's loader status changer
-      let payload = text ? {status: true, text: text} : {status: false};
-      this.$store.dispatch('setLoading', payload);
+    scrollToTop() {
+      window.scrollTo(0, 0);
     },
-    getLimitPreference() {   // retrieve nb of items to display from cookie
-      return this.$cookie.get('pref-limit') || Constants.DEFAULT_LIMIT;
+    format_dt(dt) {
+      return Constants.format_dt(dt);
     },
-    saveLimitPreference(value) {  // save nb of items to display in a cookie
-      this.$cookie.set('pref-limit', value, {expires: Constants.COOKIE_LIFETIME_EXPIRY});
+    from_now(dt) {
+      return Constants.from_now(dt);
+    },
+    toggleLoader(text) {
+      // shortcut to store's loader status changer
+      let payload = text ? { status: true, text: text } : { status: false };
+      this.$store.dispatch("setLoading", payload);
+    },
+    getLimitPreference() {
+      // retrieve nb of items to display from cookie
+      return this.$cookie.get("pref-limit") || Constants.DEFAULT_LIMIT;
+    },
+    saveLimitPreference(value) {
+      // save nb of items to display in a cookie
+      this.$cookie.set("pref-limit", value, {
+        expires: Constants.COOKIE_LIFETIME_EXPIRY,
+      });
     },
 
     redirectTo(name, params) {
-      let route_entry = {name: name};
-      if (params)
-        route_entry.params = params;
+      let route_entry = { name: name };
+      if (params) route_entry.params = params;
       this.$router.push(route_entry);
     },
 
@@ -84,23 +139,24 @@ export default {
       let options = {
         title: "Please Confirm",
         size: "sm",
-        buttonSize: 'sm',
-        okVariant: 'danger',
-        okTitle: 'YES',
-        cancelTitle: 'NO',
-        centered: true
+        buttonSize: "sm",
+        okVariant: "danger",
+        okTitle: "YES",
+        cancelTitle: "NO",
+        centered: true,
       };
-      this.$bvModal.msgBoxConfirm("Do you want to " + action + "?", options)
-        .then(value => {
+      this.$bvModal
+        .msgBoxConfirm("Do you want to " + action + "?", options)
+        .then((value) => {
           if (value === true && onConfirm) {
             onConfirm();
           }
-          if (value === false && onRefuse){
+          if (value === false && onRefuse) {
             onRefuse();
           }
         })
-        .catch(err => {
-          if (onError){
+        .catch((err) => {
+          if (onError) {
             onError(err);
           }
         });
@@ -108,23 +164,36 @@ export default {
 
     alert(level, title, text, duration) {
       let message = "<strong>" + title + "</strong>";
-      if (text)
-        message += "<br />" + text;
-      this.$root.$emit('feedback-message', level, message, duration);
+      if (text) message += "<br />" + text;
+      this.$root.$emit("feedback-message", level, message, duration);
     },
-    alertInfo(title, text, duration) { this.alert('info', title, text, duration); },
-    alertSuccess(title, text, duration) { this.alert('success', title, text, duration); },
-    alertWarning(title, text, duration) { this.alert('warning', title, text, duration); },
-    alertDanger(title, text, duration) { this.alert('danger', title, text, duration); },
-    alertAccessRefused(perm_name) { this.alertWarning("Access Refused", "You don't have <code>" + perm_name + "</code> permission."); },
-    alertError(text) { this.alertDanger("Error", text, Constants.ALERT_PERMANENT_DURATION); },
+    alertInfo(title, text, duration) {
+      this.alert("info", title, text, duration);
+    },
+    alertSuccess(title, text, duration) {
+      this.alert("success", title, text, duration);
+    },
+    alertWarning(title, text, duration) {
+      this.alert("warning", title, text, duration);
+    },
+    alertDanger(title, text, duration) {
+      this.alert("danger", title, text, duration);
+    },
+    alertAccessRefused(perm_name) {
+      this.alertWarning(
+        "Access Refused",
+        "You don't have <code>" + perm_name + "</code> permission."
+      );
+    },
+    alertError(text) {
+      this.alertDanger("Error", text, Constants.ALERT_PERMANENT_DURATION);
+    },
 
     statusClass(status) {
-      if (status == 'succeeded')
-        return 'schedule-suceedeed';
+      if (status == "succeeded") return "schedule-suceedeed";
       if (["failed", "canceled", "cancel_requested"].indexOf(status))
-        return 'schedule-failed';
-      return 'schedule-running';
+        return "schedule-failed";
+      return "schedule-running";
     },
     handleTokenResponse(response) {
       console.debug("handleTokenResponse", response);
@@ -135,16 +204,23 @@ export default {
         access_token: access_token,
         payload: jwt.decode(access_token),
         refresh_token: refresh_token,
-      }
+      };
       // save token to store
-      this.$store.dispatch('saveAuthenticationToken', token_data);
+      this.$store.dispatch("saveAuthenticationToken", token_data);
 
       // save to cookie
-      let cookie_data = {"access_token": access_token, "refresh_token": refresh_token};
-      this.$cookie.set(Constants.TOKEN_COOKIE_NAME,
-                       JSON.stringify(cookie_data),
-                       {expires: Constants.TOKEN_COOKIE_EXPIRY,
-                        secure: Constants.isProduction()});
+      let cookie_data = {
+        access_token: access_token,
+        refresh_token: refresh_token,
+      };
+      this.$cookie.set(
+        Constants.TOKEN_COOKIE_NAME,
+        JSON.stringify(cookie_data),
+        {
+          expires: Constants.TOKEN_COOKIE_EXPIRY,
+          secure: Constants.isProduction(),
+        }
+      );
     },
     async renew_token_from_refresh(refresh_token, on_success, on_error) {
       console.debug("renew_token_from_refresh", refresh_token);
@@ -152,11 +228,15 @@ export default {
         refresh_token = this.$store.getters.refresh_token;
 
       let req_headers = this.$root.axios.defaults.headers;
-      req_headers['refresh-token'] = refresh_token;
+      req_headers["refresh-token"] = refresh_token;
 
       let response;
       try {
-        response = await this.$root.axios.post('/auth/token', {}, {headers: req_headers});
+        response = await this.$root.axios.post(
+          "/auth/token",
+          {},
+          { headers: req_headers }
+        );
         console.debug("/auth/token success");
         console.debug(response);
       } catch (error) {
@@ -180,18 +260,16 @@ export default {
     },
     loadTokenFromCookie(force_refresh) {
       // already authenticated
-      if (this.isLoggedIn && !force_refresh)
-        return true;
+      if (this.isLoggedIn && !force_refresh) return true;
       let cookie_value = this.$cookie.get(Constants.TOKEN_COOKIE_NAME);
 
       // no cookie
-      if (!cookie_value)
-        return false;
+      if (!cookie_value) return false;
 
       let token_data;
       try {
-         token_data = JSON.parse(cookie_value);
-         token_data.payload = jwt.decode(token_data.access_token);
+        token_data = JSON.parse(cookie_value);
+        token_data.payload = jwt.decode(token_data.access_token);
       } catch {
         // incorrect cookie payload
         this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
@@ -204,14 +282,14 @@ export default {
 
       let expiry = Constants.fromSeconds(token_data.payload.exp);
       let parent = this;
-      if ((Constants.now() > expiry) || force_refresh) {
+      if (Constants.now() > expiry || force_refresh) {
         console.debug("cookie token expired or refresh requested");
         let renewed = false;
         this.renew_token_from_refresh(
           token_data.refresh_token,
           function () {
             console.debug("could renew the token, great!");
-            renewed = true
+            renewed = true;
           },
           function () {
             console.debug("couldnt refresh token, removing cookie");
@@ -222,7 +300,7 @@ export default {
         return renewed;
       } else {
         console.log("cookie token not expired, using it.");
-        this.$store.dispatch('saveAuthenticationToken', token_data);
+        this.$store.dispatch("saveAuthenticationToken", token_data);
         return true;
       }
     },
@@ -232,9 +310,9 @@ export default {
       if (error && error.response && error.response.status === 401) {
         // attempt to automatically renew token
         if (!this.loadTokenFromCookie(true)) {
-          this.removeToken()
+          this.removeToken();
         }
-        this.redirectTo('home')
+        this.redirectTo("home");
       }
       // set user-facing error message in UI
       let msg = Constants.standardHTTPError(error.response);
@@ -245,7 +323,7 @@ export default {
       }
     },
     removeToken(manual) {
-      this.$store.dispatch('clearAuthentication');
+      this.$store.dispatch("clearAuthentication");
       this.$cookie.delete(Constants.TOKEN_COOKIE_NAME);
       let msg = "";
       if (!manual) {
@@ -255,13 +333,13 @@ export default {
     },
     queryAPI(method, path, data, config) {
       console.debug("queryAPI", method, path);
-      if (data === undefined)
-        data = {};
-      if (config === undefined)
-        config = {};
+      if (data === undefined) data = {};
+      if (config === undefined) config = {};
 
       if (this.token_expired && this.$store.getters.access_token) {
-        console.debug("we have an expired token, attempting to refresh before request.");
+        console.debug(
+          "we have an expired token, attempting to refresh before request."
+        );
 
         let parent = this;
         return new Promise(function (resolve) {
@@ -281,5 +359,5 @@ export default {
         return this.$root.axios[method](path, data, config);
       }
     },
-  }
-}
+  },
+};
