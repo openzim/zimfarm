@@ -43,7 +43,9 @@ from pif import get_public_ip
 from xml_to_dict import XMLtoDict
 
 VERSION = "1.0"
-DOWNLOAD_URL = os.getenv("DOWNLOAD_URL", "https://archive.org/download/stackexchange")
+# DOWNLOAD_URL = os.getenv("DOWNLOAD_URL", "https://archive.org/download/stackexchange")
+DOWNLOAD_URL_BASE = os.getenv("DOWNLOAD_URL_BASE", "https://archive.org/download")
+QUERY_URL = os.getenv("QUERY_URL", "https://archive.org/services/search/beta/page_production/?user_query=subject:%22Stack%20Exchange%20Data%20Dump%22%20creator:%22Stack%20Exchange,%20Inc.%22&hits_per_page=1&page=1&sort=date:desc&aggregations=false&client_url=https://archive.org/search?query=subject%3A%22Stack+Exchange+Data+Dump%22+creator%3A%22Stack+Exchange%2C+Inc.%22")
 ZIMFARM_API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v1")
 ASCII_LOGO = r"""
   __                                         _       _
@@ -242,8 +244,32 @@ class WatcherRunner:
 
     def retrieve_all_sites(self):
         """list of domain names for which there's a dump online"""
-        url = f"{DOWNLOAD_URL}/Sites.xml"
+        resp = requests.get(QUERY_URL)
+        resp.raise_for_status()
+        doc = resp.json()
+        hits = doc.get("response", {}).get("body", {}).get("hits", None)
+        if not hits:
+            logger.error(f"Impossible to parse query result, missing hits in response body:\n{doc}\nStopping")
+            raise SystemExit(1)
+        returned = hits.get("returned", None)
+        if returned is None:
+            logger.error(f"Impossible to parse query result, missing returned in hits:\n{doc}\nStopping")
+            raise SystemExit(1)
+        if returned != 1:
+            logger.error(f"Impossible to parse query result, returned is {returned}\nStopping")
+            raise SystemExit(1)
+        hits = hits.get("hits", [])
+        if len(hits) != 1:
+            logger.error(f"Impossible to parse query result, unexpected number of hits {len(hits)}\nStopping")
+            raise SystemExit(1)
+        hit = hits[0]
+        identifier = hit.get("fields", {}).get("identifier", None)
+        if identifier is None:
+            logger.error(f"Impossible to parse query result, missing identifier in first hit {hit}\nStopping")
+            raise SystemExit(1)
+        url = f"{DOWNLOAD_URL_BASE}/{identifier}/Sites.xml"
         resp = requests.get(url)
+        resp.raise_for_status()
         parser = XMLtoDict()
         sites = parser.parse(resp.text).get("sites", {}).get("row", [])
 
