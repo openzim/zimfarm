@@ -4,22 +4,29 @@
 
 """ Watch StackExchange dump files repository for updates to download/upload all
 
-    StackExchange dump repository, hosted by Archive.org is refreshed twice a year.
+    StackExchange dump repository, hosted by Archive.org is refreshed every quarter.
     Archive.org's mirrors are all very slow to download from.
 
-    To speed-up sotoki's scrapes, we need to mirror this folder on a faster server.
+    To speed-up sotoki's scrapes, we need to mirror these dumps on a faster server.
 
     This tool runs forever and checks periodically for those dumps on the main server.
+    Since 2025, it automatically detects the latest dump based on a search query on
+    Archive.org server.
 
-    Should there be an update, this tool would (for each file):
-    - compute its version as YYYY-MM based on file modification time
-    - check whether we have this version in our S3 bucket
+    Then, it retrieves the list of 7z files in the dump, and for each of them:
+    - ignore sites which are not of interest (ignore all meta websites basically)
+    - retrieve its `last-modified` value with a HEAD request on Archive.org
+    - check whether we have this version is in our S3 bucket
     - check whether zimfarm is currently using the current dump and skip in that case
     - check whether there's a pending task for this dump and delete it in that case
-    - if we had the same file but for another version, we'd delete it from bucket
-    - upload the file to our S3 bucket with a Metadata for the version
+    - if we had the same file but for another version, we'd delete it from bucket first
+    - upload the file to our S3 bucket with a Metadata for the `last-modified` value
     - delete the local file we downloaded
-    - schedule matching recipe(s) on the Zimfarm as we now have updated dumps """
+    - schedule matching and enabled recipe(s) on the Zimfarm when we have updated dump
+
+    This tool does not:
+    - cleanup S3 dumps from deleted StackExchange sites
+    """
 
 import argparse
 import concurrent.futures as cf
@@ -43,7 +50,15 @@ from pif import get_public_ip
 from xml_to_dict import XMLtoDict
 
 VERSION = "1.0"
-DOWNLOAD_URL = os.getenv("DOWNLOAD_URL", "https://archive.org/download/stackexchange")
+DOWNLOAD_URL_BASE = os.getenv("DOWNLOAD_URL_BASE", "https://archive.org/download")
+QUERY_URL = os.getenv(
+    "QUERY_URL",
+    "https://archive.org/services/search/beta/page_production/?user_query=subject:"
+    "%22Stack%20Exchange%20Data%20Dump%22%20creator:%22Stack%20Exchange,%20Inc.%22"
+    "&hits_per_page=1&page=1&sort=date:desc&aggregations=false"
+    "&client_url=https://archive.org/search?query=subject%3A%22"
+    "Stack+Exchange+Data+Dump%22+creator%3A%22Stack+Exchange%2C+Inc.%22",
+)
 ZIMFARM_API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v1")
 ASCII_LOGO = r"""
   __                                         _       _
@@ -240,19 +255,63 @@ class WatcherRunner:
         success, _, _ = self.query_api("GET", "/auth/test")
         return success
 
-    def retrieve_all_sites(self):
-        """list of domain names for which there's a dump online"""
-        url = f"{DOWNLOAD_URL}/Sites.xml"
-        resp = requests.get(url)
-        parser = XMLtoDict()
-        sites = parser.parse(resp.text).get("sites", {}).get("row", [])
+    def retrieve_most_recent_dump_identifier(self):
+        """retrieve the identifier of most recent Archive.org dump available"""
+        resp = requests.get(QUERY_URL)
+        resp.raise_for_status()
+        doc = resp.json()
+        hits = doc.get("response", {}).get("body", {}).get("hits", None)
+        if not hits:
+            logger.error(
+                "Impossible to parse query result, missing hits in response body:\n"
+                f"{doc}\nStopping"
+            )
+            raise SystemExit(1)
+        returned = hits.get("returned", None)
+        if returned is None:
+            logger.error(
+                "Impossible to parse query result, missing returned in hits:\n"
+                f"{doc}\nStopping"
+            )
+            raise SystemExit(1)
+        if returned != 1:
+            logger.error(
+                f"Impossible to parse query result, returned is {returned}\nStopping"
+            )
+            raise SystemExit(1)
+        hits = hits.get("hits", [])
+        if len(hits) != 1:
+            logger.error(
+                "Impossible to parse query result, unexpected number of hits "
+                f"{len(hits)}\nStopping"
+            )
+            raise SystemExit(1)
+        hit = hits[0]
+        identifier = hit.get("fields", {}).get("identifier", None)
+        if identifier is None:
+            logger.error(
+                "Impossible to parse query result, missing identifier in first hit "
+                f"{hit}\nStopping"
+            )
+            raise SystemExit(1)
+        return identifier
 
-        def _filter(item):
-            return item in self.only if self.only else 1
-
-        return filter(
-            _filter, [re.sub(r"^https?://", "", site.get("@Url", "")) for site in sites]
+    def retrieve_archives(self, identifier):
+        resp = requests.get(
+            f"https://archive.org/download/{identifier}/{identifier}_files.xml"
         )
+        resp.raise_for_status()
+
+        parser = XMLtoDict()
+        files = parser.parse(resp.text).get("files", {}).get("file", [])
+
+        return [
+            file["@name"]
+            for file in files
+            if file.get("format") == "7z"
+            and file.get("@source") == "original"
+            and "meta." not in file["@name"]
+        ]
 
     def get_recipes_for(self, domain):
         """list of Zimfarm recipes names for a StackExchange domain"""
@@ -265,7 +324,9 @@ class WatcherRunner:
             logger.error(f"Can't get `{domain}` schedules from zimfarm")
             return True
 
-        return [recipe["name"] for recipe in payload.get("items", [])]
+        return [
+            recipe["name"] for recipe in payload.get("items", []) if recipe["enabled"]
+        ]
 
     def blocked_by_zimfarm(self, domain):
         """Whether a Zimfarm task is using its file now, preventing removal"""
@@ -340,7 +401,7 @@ class WatcherRunner:
 
         return payload.get("requested")
 
-    def update_file(self, key, schedule_upon_success, last_modified):
+    def update_file(self, url, key, last_modified):
         """Do an all-steps update of that file as we know there's a new one avail."""
         domain = re.sub(r".7z$", "", key)
         prefix = f" [{domain}]"
@@ -359,7 +420,6 @@ class WatcherRunner:
             logger.info(f"{prefix} Removed object (was from {obsolete})")
 
         logger.info(f"{prefix} Downloading…")
-        url = f"{DOWNLOAD_URL}/{key}"
         fpath = self.work_dir / key
 
         wget = subprocess.run(
@@ -383,7 +443,7 @@ class WatcherRunner:
         fpath.unlink()
         logger.info(f"{prefix} Local file removed")
 
-        if schedule_upon_success:
+        if self.schedule_in_zimfarm:
             logger.info(f"{prefix} Scheduling recipe on Zimfarm")
             scheduled = self.schedule_in_zimfarm(domain)
             if scheduled:
@@ -394,67 +454,46 @@ class WatcherRunner:
                 logger.warning(f"{prefix} couldn't schedule recipe(s)")
 
     def check_and_go(self):
-        logger.info("Getting list of SE domains")
-        domains = self.retrieve_all_sites()
+        logger.info("Getting most recent dump")
+        identifier = self.retrieve_most_recent_dump_identifier()
+        logger.info(f"Most recent dump is {identifier}")
+
+        archives = self.retrieve_archives(identifier)
+        logger.info(f"{len(archives)} archives found in {identifier} dump")
         logger.info("Grabbing online versions and comparing with S3…")
 
-        self.domains_futures = {}  # future: key
-        self.domains_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
+        self.archives_futures = {}  # future: key
+        self.archives_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
-        for domain in domains:
-            # stackoverflow is a special case in that it's not a single file
-            # but multiple ones. We need to run the update for each of them
-            if domain == "stackoverflow.com":
-                keys = [
-                    f"{domain}-{part}.7z"
-                    for part in (
-                        "Badges",
-                        "Comments",
-                        "PostHistory",
-                        "PostLinks",
-                        "Posts",
-                        "Tags",
-                        "Users",
-                        "Votes",
-                    )
-                ]
-            else:
-                keys = [f"{domain}.7z"]
+        for archive in archives:
+            url = f"https://archive.org/download/{identifier}/{archive}"
 
-            for key in keys:
-                url = f"{DOWNLOAD_URL}/{key}"
+            key = archive.split("/")[-1]
+            last_modified = get_last_modified_for(url)
 
-                last_modified = get_last_modified_for(url)
-                if not self.s3_storage.has_object_matching(
-                    key, meta={"lastmodified": last_modified}
-                ):
-                    logger.info(f" [+] {key} (from {last_modified})")
+            if not self.s3_storage.has_object_matching(
+                key, meta={"lastmodified": last_modified}
+            ):
+                logger.info(f" [+] {key} (from {last_modified})")
 
-                    # update shall trigger a new recipe schedule on Zimfarm upon compl.
-                    # - unless requested not to
-                    # - unless this is for stackoverflow as this one requires multiple
-                    # files and we'd trigger it only on the ~last one.
-                    schedule_upon_success = self.schedule_on_update and (
-                        domain != "stackoverflow.com" or key.endwsith("-Votes.7z")
-                    )
-                    future = self.domains_executor.submit(
-                        self.update_file,
-                        key=key,
-                        schedule_upon_success=schedule_upon_success,
-                        last_modified=last_modified,
-                    )
-                    self.domains_futures.update({future: key})
+                future = self.archives_executor.submit(
+                    self.update_file,
+                    url=url,
+                    key=key,
+                    last_modified=last_modified,
+                )
+                self.archives_futures.update({future: key})
 
-        if not self.domains_futures:
+        if not self.archives_futures:
             logger.info("All synced up.")
 
-        result = cf.wait(self.domains_futures.keys(), return_when=cf.FIRST_EXCEPTION)
-        self.domains_executor.shutdown()
+        result = cf.wait(self.archives_futures.keys(), return_when=cf.FIRST_EXCEPTION)
+        self.archives_executor.shutdown()
 
         for future in result.done:
             exc = future.exception()
             if exc:
-                key = self.domains_futures.get(future)
+                key = self.archives_futures.get(future)
                 logger.error(f"Error processing {key}: {exc}")
                 traceback.print_exception(exc)
 
@@ -462,7 +501,7 @@ class WatcherRunner:
             logger.error(
                 "Got some not_done files: \n - "
                 + "\n - ".join(
-                    [self.domains_futures.get(future) for future in result.not_done]
+                    [self.archives_futures.get(future) for future in result.not_done]
                 )
             )
 
