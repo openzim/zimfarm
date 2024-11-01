@@ -62,7 +62,21 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
                 ),
                 "schedules": [],
             }
-        schedules_by_api_key[hashed_api_key]["schedules"].append(schedule.name)
+
+        schedule_data = {"name": schedule.name, "media_count": 0}
+
+        if schedule.most_recent_task_id is not None:
+            for task in sorted(
+                schedule.tasks, key=lambda task: task.updated_at, reverse=True
+            ):
+                if task.status != "succeeded":
+                    continue
+                media_count = 0
+                for file in task.files.values():
+                    media_count += file["info"]["media_count"]
+                schedule_data["media_count"] = media_count
+                break
+        schedules_by_api_key[hashed_api_key]["schedules"].append(schedule_data)
 
     report_data = {}
     report_data["nb_schedules"] = len(schedules)
@@ -76,7 +90,12 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
                     if hashed_api_key in known_api_keys.keys()
                     else "unknown"
                 ),
-                "schedules": sorted(data["schedules"]),
+                "total_media": sum(
+                    [schedule["media_count"] for schedule in data["schedules"]]
+                ),
+                "schedules": sorted(
+                    data["schedules"], key=lambda schedule: schedule["name"]
+                ),
             }
         )
         if display_unknown_secrets and hashed_api_key not in known_api_keys.keys():
@@ -88,6 +107,7 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
             report_data["keys"].append(
                 {
                     "name": key_name,
+                    "total_media": 0,
                     "schedules": [],
                 }
             )

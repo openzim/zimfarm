@@ -5,9 +5,9 @@ Please review this report, take appropriate action if needed and close the issue
 **{{ report_data.nb_schedules }}** recipes using an API key have been found.
 
 {% for key in report_data["keys"] %}
-{% if key.name != "unknown" %}## {{ key.name }}{% else %}## Unknown Key{% endif %}
+{% if key.name != "unknown" %}## {{ key.name }} ({{ key.total_media }} total medias){% else %}## Unknown Key{% endif %}
 {% for schedule in key["schedules"] %}
-- {{ schedule }}{% endfor %}
+- {{ schedule.name }} {% if schedule.media_count != 0 %}({{ schedule.media_count }} medias){% else %}(unknown amount of media){% endif %}{% endfor %}
 {% if key["schedules"] | length == 0 %}*Key is not used*{% endif %}
 {% endfor %}
 *This report has been automatically generated at {{report_data.datetime}} UTC*
