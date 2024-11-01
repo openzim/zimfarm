@@ -45,17 +45,6 @@ class YoutubeFlagsSchema(SerializableSchema):
         required=True,
     )
 
-    kind = StringEnum(
-        metadata={
-            "label": "Type",
-            "description": "Type of Youtube ID. Use channel for handle, channel or "
-            "user.",
-        },
-        validate=validate.OneOf(["channel", "playlist"]),
-        data_key="type",
-        required=True,
-    )
-
     language = String(
         metadata={
             "label": "Language",
