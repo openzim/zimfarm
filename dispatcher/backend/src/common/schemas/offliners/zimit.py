@@ -1,10 +1,11 @@
 from marshmallow import fields, validate
 
-from common.schemas import SerializableSchema, String, StringEnum
+from common.schemas import LongString, SerializableSchema, String, StringEnum
 from common.schemas.fields import (
     validate_output,
     validate_zim_description,
     validate_zim_filename,
+    validate_zim_longdescription,
     validate_zim_title,
 )
 
@@ -183,6 +184,15 @@ class ZimitFlagsSchema(SerializableSchema):
     description = String(
         metadata={"label": "Description", "description": "Description for ZIM"},
         validate=validate_zim_description,
+    )
+
+    long_description = LongString(
+        metadata={
+            "label": "Long description",
+            "description": "Optional long description for your ZIM",
+        },
+        validate=validate_zim_longdescription,
+        data_key="long-description",
     )
 
     favicon = fields.Url(
