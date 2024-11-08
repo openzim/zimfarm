@@ -782,4 +782,8 @@ class TaskWorker(BaseWorker):
         self.check_scraper_artifacts_upload()
 
         # done with processing, cleaning-up and exiting
-        self.shutdown("succeeded" if self.scraper_succeeded else "failed")
+        self.shutdown(
+            "succeeded"
+            if (self.scraper_succeeded and len(self.zim_files) > 0)
+            else "failed"
+        )
