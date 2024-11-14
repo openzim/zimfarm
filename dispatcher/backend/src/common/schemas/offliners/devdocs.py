@@ -99,6 +99,16 @@ class DevDocsFlagsSchema(SerializableSchema):
         validate=validate_zim_longdescription,
     )
 
+    logo_format = String(
+        metadata={
+            "label": "ZIM illustration",
+            "description": "URL to a custom ZIM logo in PNG, JPG, or SVG format. You "
+            "can use placeholders, see "
+            "https://github.com/openzim/devdocs/blob/main/README.md.",
+        },
+        data_key="logo-format",
+    )
+
     tags = String(
         metadata={
             "label": "ZIM Tags",
