@@ -248,10 +248,13 @@ class RequestedTasksForWorkers(BaseRoute):
                     if constants.USES_WORKERS_IPS_WHITELIST:
                         try:
                             record_ip_change(session=session, worker_name=worker_name)
-                        except Exception:
+                        except Exception as exc:
+                            logger.exception(
+                                "Pushing IP changes to Wasabi failed", exc_info=exc
+                            )
                             raise HTTPBase(
                                 status_code=HTTPStatus.SERVICE_UNAVAILABLE,
-                                error="Recording IP changes failed",
+                                error="Pushing IP changes to Wasabi failed",
                             )
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
