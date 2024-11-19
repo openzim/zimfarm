@@ -147,6 +147,25 @@ class MindtouchFlagsSchema(SerializableSchema):
         data_key="illustration-url",
     )
 
+    optimization_cache = String(
+        metadata={
+            "label": "Optimization Cache URL",
+            "description": "S3 Storage URL including credentials and bucket",
+            "secret": True,
+        },
+        data_key="optimization-cache",
+    )
+
+    assets_workers = fields.Integer(
+        metadata={
+            "label": "Asset workers",
+            "description": "Number of parallel workers for asset processing. Default: "
+            "10",
+        },
+        required=False,
+        data_key="assets-workers",
+    )
+
     debug = fields.Boolean(
         truthy=[True],
         falsy=[False],
