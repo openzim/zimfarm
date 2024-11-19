@@ -162,7 +162,6 @@ class MindtouchFlagsSchema(SerializableSchema):
             "description": "Number of parallel workers for asset processing. Default: "
             "10",
         },
-        required=False,
         data_key="assets-workers",
     )
 
@@ -170,6 +169,18 @@ class MindtouchFlagsSchema(SerializableSchema):
         truthy=[True],
         falsy=[False],
         metadata={"label": "Debug", "description": "Enable verbose output"},
+    )
+
+    html_issues_warn_only = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "HTML issues warn only",
+            "description": "[dev] Only log a warning when unexpected HTML is "
+            "encountered. Use with caution because activating this option means that "
+            "ZIM HTML will probably lead to online resources without user noticing it.",
+        },
+        data_key="html-issues-warn-only",
     )
 
     stats_filename = String(
