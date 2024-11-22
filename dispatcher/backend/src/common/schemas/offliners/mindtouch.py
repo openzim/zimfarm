@@ -171,16 +171,23 @@ class MindtouchFlagsSchema(SerializableSchema):
         metadata={"label": "Debug", "description": "Enable verbose output"},
     )
 
-    html_issues_warn_only = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
+    bad_assets_regex = String(
         metadata={
-            "label": "HTML issues warn only",
-            "description": "[dev] Only log a warning when unexpected HTML is "
-            "encountered. Use with caution because activating this option means that "
-            "ZIM HTML will probably lead to online resources without user noticing it.",
+            "label": "Bad assets regex",
+            "description": "Regular expression of asset URLs known to not be available."
+            "Case insensitive.",
         },
-        data_key="html-issues-warn-only",
+        data_key="bad-assets-regex",
+    )
+
+    bad_assets_threshold = fields.Integer(
+        metadata={
+            "label": "Bad assets threshold",
+            "description": "[dev] Number of assets allowed to fail to download before "
+            "failing the scraper. Assets already excluded with --bad-assets-regex are "
+            "not counted for this threshold. Defaults to 10 assets.",
+        },
+        data_key="bad-assets-threshold",
     )
 
     stats_filename = String(
