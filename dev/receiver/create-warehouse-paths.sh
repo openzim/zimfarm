@@ -7,6 +7,8 @@ mkdir -p \
     /jail/zim/gutenberg \
     /jail/zim/ifixit \
     /jail/zim/devdocs \
+    /jail/zim/libretexts \
+    /jail/zim/mindtouch \
     /jail/zim/mooc \
     /jail/zim/other \
     /jail/zim/phet \
@@ -30,6 +32,8 @@ chmod 777 \
     /jail/zim/gutenberg \
     /jail/zim/ifixit \
     /jail/zim/devdocs \
+    /jail/zim/libretexts \
+    /jail/zim/mindtouch \
     /jail/zim/mooc \
     /jail/zim/other \
     /jail/zim/phet \
