@@ -1,0 +1,13 @@
+overrides:
+  - name: ted_topic_infectious-generosity
+    overrides:
+      enabled: false
+      config:
+        warehouse_path: /.hidden/dev
+#       flags: ...
+do_not_create:
+  - ted_topic_career
+  - ted_topic_growing-up
+  - ted_topic_spirituality
+do_not_delete:
+  - ted_topic_all
