@@ -41,6 +41,10 @@ ROLES = {
         ),
     },
     "editor": {"schedules": SchedulePermissions.get(create=True, update=True)},
+    "editor-requester": {
+        "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
+        "schedules": SchedulePermissions.get(create=True, update=True),
+    },
     "worker": {
         "tasks": TaskPermissions.get(create=True, update=True, cancel=True),
         "zim": ZimPermissions.get(upload=True),

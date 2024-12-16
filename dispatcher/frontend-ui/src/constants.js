@@ -365,7 +365,14 @@ export default {
   ALERT_DEFAULT_DURATION: 5,
   ALERT_LONG_DURATION: 10,
   ALERT_PERMANENT_DURATION: true,
-  ROLES: ["editor", "manager", "admin", "worker", "processor"],
+  ROLES: [
+    "editor",
+    "editor-requester",
+    "manager",
+    "admin",
+    "worker",
+    "processor",
+  ],
   TOKEN_COOKIE_EXPIRY: "180D", // 6 months
   COOKIE_LIFETIME_EXPIRY: "10Y", // 10 years
   TOKEN_COOKIE_NAME: "auth",
