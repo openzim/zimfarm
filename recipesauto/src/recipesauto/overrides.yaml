@@ -1,0 +1,10 @@
+overrides:
+  - name: ted_topic_conducting
+    overrides:
+      config:
+        flags:
+          tags: Music
+do_not_create:
+  - ted_topic_artificial-intelligence # too few videos after removing the ones we fail to download
+do_not_delete:
+  - ted_topic_all
