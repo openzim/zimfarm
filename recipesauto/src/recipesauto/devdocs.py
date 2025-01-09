@@ -9,7 +9,7 @@ from recipesauto.context import Context
 
 context = Context.get()
 
-DEVDOCS_HOMEPAGE = "https://devdocs.io"
+DEVDOCS_DOCS = "https://devdocs.io/docs.json"
 
 
 def get_recipe_tag() -> str:
@@ -18,70 +18,26 @@ def get_recipe_tag() -> str:
 
 def get_expected_recipes() -> list[dict[str, Any]]:
     resp = requests.get(
-        DEVDOCS_HOMEPAGE,
+        DEVDOCS_DOCS,
         timeout=context.http_timeout,
     )
     resp.raise_for_status()
 
-    # search for docs JS url
-    match = re.findall(r'<script src="(\/assets\/docs-.*?\.js)"', resp.text)
-    if not match:
-        raise Exception("URL of JS docs not found")
-
-    # get docs JS content
-    resp = requests.get(
-        urljoin(DEVDOCS_HOMEPAGE, match[0]),
-        timeout=context.http_timeout,
-    )
-    resp.raise_for_status()
-
-    # Extract the variable value using regex
-    match = re.search(r"app\.DOCS\s*=\s*(\[.*\]);", resp.text, re.DOTALL)
-    if not match:
-        raise ValueError("Could not find the 'app.DOCS' variable in the file")
-
-    # Extracted value as a string
-    docs_string = match.group(1)
-
-    # Convert the JavaScript-like object into valid JSON
-    # Replace unquoted property names with quoted ones
-    def make_valid_json(js_obj_str):
-
-        # Replace unquoted keys with quoted keys
-        js_obj_str = re.sub(
-            r'(?<!["\'])\b([a-zA-Z_]\w*)\b(?=\s*:\s*(?:["\'{\d]|null))',
-            r'"\1"',
-            js_obj_str,
-        )
-
-        # Replace single-quoted and improperly escaped double-quoted values
-        # Match values after a colon that are single or double-quoted
-        js_obj_str = re.sub(
-            r":(\'[^\']*?\')",  # Capture `:` and the quoted string
-            lambda m: ':"' + m.group(1)[1:-1].replace('"', r"\"") + '"',  # Reformat
-            js_obj_str,
-        )
-
-        # Replace \x with \\x
-        js_obj_str = re.sub(r"\\x", r"\\\\x", js_obj_str)
-
-        return js_obj_str
-
-    docs_string = make_valid_json(docs_string)
-
-    # Parse the string into a Python object
-    docs_list = json.loads(docs_string)
-
-    # `docs_list` is now a Python list of dictionaries
+    items = resp.json()
 
     return [
         {
             "category": "devdocs",
             "config": {
                 "flags": {
-                    "logo-format": f'https://drive.farm.openzim.org/devdocs/{_get_icon_name(item["slug"])}.png',
+                    "logo-format": f'https://drive.farm.openzim.org/devdocs/{_get_slug_with_version(item["slug"])}.png',
                     "output": "/output",
                     "slug": item["slug"],
+                    "file-name-format": f'devdocs_en_{_get_slug_with_version(item["slug"])}'
+                    + "_{period}",
+                    "name-format": f'devdocs_en_{_get_slug_with_version(item["slug"])}',
+                    "description-format": f'{item["name"]} docs by DevDocs',
+                    "title-format": f'{item["name"]} Docs',
                     "publisher": "openZIM",
                 },
                 "image": {
@@ -106,7 +62,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "name_en": "English",
                 "name_native": "English",
             },
-            "name": f'devdocs_en_{_get_clean_slug(item["slug"])}',
+            "name": f'devdocs_en_{_get_slug_with_version(item["slug"])}',
             # force manually periodicity, we are not yet in prod
             # "periodicity": "quarterly",
             "periodicity": "manually",
@@ -114,13 +70,41 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "devdocs",
             ],
         }
-        for item in docs_list
+        for item in group_items_by_type(items)
     ]
 
 
-def _get_clean_slug(slug: str) -> str:
-    return re.sub(r"[^.a-zA-Z0-9]", "-", slug)
+def group_items_by_type(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    names = set([item["name"] for item in items])
+    return [definition_for_name(items=items, name=name) for name in names]
 
 
-def _get_icon_name(slug: str) -> str:
+def definition_for_name(items: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    if name == "GCC":
+        # Do not publish GCC CPP for now
+        variants = filter(
+            lambda item: item["name"] == name and "CPP" not in item["version"], items
+        )
+    elif name in ("Haxe", "Ansible"):
+        # Choose "generic" version of the doc
+        variants = filter(
+            lambda item: item["name"] == name and not item["version"], items
+        )
+    elif name == "RethinkDB":
+        # arbitrarily choose javascript version of the doc
+        variants = filter(
+            lambda item: item["name"] == name and "javascript" in item["version"], items
+        )
+    else:
+        variants = filter(lambda item: item["name"] == name, items)
+    variant = list(
+        sorted(
+            variants, key=lambda variant: variant.get("release", "aaa"), reverse=True
+        )
+    )[0]
+    print(f'{name}: {variant["slug"]}')
+    return {"name": name, "slug": variant["slug"]}
+
+
+def _get_slug_with_version(slug: str) -> str:
     return slug.split("~", maxsplit=1)[0]
