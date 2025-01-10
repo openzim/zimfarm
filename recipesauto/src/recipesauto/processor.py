@@ -123,6 +123,7 @@ class Processor:
                 logger.info(
                     f"{len(recipes_to_create)} recipes would have been created:"
                 )
+            ask_for_confirmation = True
             for recipe in recipes_to_create:
                 logger.info(f'- {recipe["name"]}')
                 if not context.push:
@@ -132,11 +133,14 @@ class Processor:
                 # /!\ beware that it means that if you run this tool twice in a /!\
                 # /!\  row, second run will erase these "on-creation" settings  /!\
 
-                if (
-                    input("Do you really want to create this recipe? [y/N]").upper()
-                    != "Y"
-                ):
-                    continue
+                if ask_for_confirmation:
+                    response = input(
+                        "Do you really want to create this recipe? [y/N/a]"
+                    ).upper()
+                    if response not in ("Y", "A"):
+                        continue
+                    if response == "A":
+                        ask_for_confirmation = False
                 self._create_recipe_on_zf(recipe)
                 logger.info("Recipe created successfully")
 
@@ -198,6 +202,7 @@ class Processor:
                 logger.info(
                     f"{len(recipes_to_maintain)} recipes would have been maintained:"
                 )
+            ask_for_confirmation = True
             for expected_recipe in recipes_to_maintain:
                 logger.info(f'- {expected_recipe["name"]}')
                 if override := self._get_recipe_overrides(expected_recipe["name"]):
@@ -251,11 +256,14 @@ class Processor:
                             logger.info(f"Removed keys: {previous_keys}")
                     changes[current_recipe_key] = expected_value
                 if changes and context.push:
-                    if (
-                        input("Do you really want to update this recipe? [y/N]").upper()
-                        != "Y"
-                    ):
-                        continue
+                    if ask_for_confirmation:
+                        response = input(
+                            "Do you really want to update this recipe? [y/N/a]"
+                        ).upper()
+                        if response not in ("Y", "A"):
+                            continue
+                        if response == "A":
+                            ask_for_confirmation = False
                     self._patch_recipe_on_zf(expected_recipe["name"], changes)
                     logger.info("Recipe updated successfully")
 
@@ -291,15 +299,19 @@ class Processor:
                 logger.info(
                     f"{len(recipes_to_delete)} recipes would have been deleted:"
                 )
+            ask_for_confirmation = True
             for recipe in recipes_to_delete:
                 logger.info(f"- {recipe}")
                 if not context.push:
                     continue
-                if (
-                    input("Do you really want to delete this recipe? [y/N]").upper()
-                    != "Y"
-                ):
-                    continue
+                if ask_for_confirmation:
+                    response = input(
+                        "Do you really want to delete this recipe? [y/N/a]"
+                    ).upper()
+                    if response not in ("Y", "A"):
+                        continue
+                    if response == "A":
+                        ask_for_confirmation = False
                 self._delete_recipe_on_zf(recipe)
                 logger.info("Recipe deleted successfully")
 
