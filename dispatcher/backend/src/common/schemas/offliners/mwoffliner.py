@@ -261,13 +261,13 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Don't include a fulltext search index to the ZIM",
         },
     )
-    verbose = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
+    verbose = fields.String(
         metadata={
             "label": "Verbose",
-            "description": "Print debug information to the stdout",
+            "description": "Level of log verbosity, one of info, log, warn, error or "
+            "quiet. Default is error.",
         },
+        validate=validate.OneOf(["info", "log", "warn", "error", "quiet"]),
     )
 
     webp = fields.Boolean(
