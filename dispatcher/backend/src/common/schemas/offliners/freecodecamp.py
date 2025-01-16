@@ -21,7 +21,7 @@ FCC_LANG_MAP = {
     "ita": "italian",
     "jpn": "japanese",
     "por": "portuguese",
-    "ukr": "ukranian",
+    "ukr": "ukrainian",
     "swa": "swahili",
 }
 
