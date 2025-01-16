@@ -9,10 +9,12 @@ from common.schemas.fields import (
     validate_zim_title,
 )
 
+# key is the language asked for at CLI (and used to validate input)
+# value is the display name for help hint
 FCC_LANG_MAP = {
-    "ara": "arabic",
-    "cmn": "chinese",
-    "lzh": "chinese-traditional",
+    # removed until we settle on these two codes
+    # "cmn": "chinese",
+    # "lzh": "chinese-traditional",
     "eng": "english",
     "spa": "espanol",
     "deu": "german",
@@ -20,6 +22,7 @@ FCC_LANG_MAP = {
     "jpn": "japanese",
     "por": "portuguese",
     "ukr": "ukranian",
+    "swa": "swahili",
 }
 
 
