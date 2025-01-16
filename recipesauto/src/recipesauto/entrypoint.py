@@ -59,7 +59,7 @@ def prepare_context(raw_args: list[str]) -> None:
         help=f"Path to the overrides.yaml file. Defaults to {Context.overrides}",
     )
 
-    parser.add_argument("kind", choices=["ted", "devdocs"])
+    parser.add_argument("kind", choices=["ted", "devdocs", "freecodecamp"])
 
     args = parser.parse_args(raw_args)
 

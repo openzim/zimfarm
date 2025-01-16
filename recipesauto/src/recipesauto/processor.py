@@ -49,6 +49,8 @@ class Processor:
             import recipesauto.ted as setmodule
         elif context.kind == "devdocs":
             import recipesauto.devdocs as setmodule
+        elif context.kind == "freecodecamp":
+            import recipesauto.freecodecamp as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
