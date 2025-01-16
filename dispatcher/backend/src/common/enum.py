@@ -85,6 +85,7 @@ class WarehousePath:
         return ScheduleCategory.all_warehouse_paths() + [
             cls.videos,
             cls.zimit,
+            cls.libretexts,
             cls.hidden_dev,
             cls.hidden_private,
             cls.hidden_endless,
