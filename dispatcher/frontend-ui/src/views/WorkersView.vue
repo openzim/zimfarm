@@ -222,7 +222,7 @@
         let parent = this;
 
         parent.toggleLoader("fetching workers…");
-        parent.queryAPI('get', '/workers/')
+        parent.queryAPI('get', '/workers/', {params: {limit: 100}})
           .then(function (response) {
             parent.error = null;
             parent.all_workers = [];

@@ -4,12 +4,12 @@ from typing import Any
 import requests
 
 from recipesauto.context import Context
-from recipesauto.definition import Definition
 
 context = Context.get()
 
 SEARCH_URL = "https://zenith-prod-alt.ted.com/api/search"
 TED_INDEX_NAME = "coyote_models_acme_videos_alias_38ce41d1f97ca56a38068f613af166da"
+MINIMUM_VIDEOS_NUMBER = 5
 
 
 def get_recipe_tag() -> str:
@@ -46,7 +46,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         for topic, count in json.loads(req.content)["results"][0]["facets"][
             "tags"
         ].items()
-        if count >= 5  # do not consider too small topics
+        if count >= MINIMUM_VIDEOS_NUMBER  # do not consider too small topics
     ]
     return [
         {
