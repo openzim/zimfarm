@@ -286,7 +286,7 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "automatically chosen otherwise",
         },
         validate=validate.OneOf(
-            ["VisualEditor", "WikimediaDesktop", "WikimediaMobile"]
+            ["VisualEditor", "WikimediaDesktop", "WikimediaMobile", "RestApi"]
         ),
     )
 
