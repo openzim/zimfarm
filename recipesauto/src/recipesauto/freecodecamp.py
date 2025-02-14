@@ -316,7 +316,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/freecodecamp",
-                    "tag": "1.2.0",
+                    "tag": "1.3.0",
                 },
                 "monitor": False,
                 "platform": None,
@@ -326,18 +326,12 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "memory": 2147483648,
                 },
                 "task_name": "freecodecamp",
-                "warehouse_path": "/.hidden/dev",
-                # "warehouse_path": "/freecodecamp",
+                "warehouse_path": "/freecodecamp",
             },
             "enabled": True,
-            "language": {
-                "code": "en",
-                "name_en": "English",
-                "name_native": "English",
-            },
+            "language": _get_zf_language(language=language),
             "name": _get_name(curriculum=curriculum, language=language),
-            "periodicity": "manually",
-            # "periodicity": "quarterly",
+            "periodicity": "quarterly",
             "tags": [
                 "freecodecamp",
             ],
@@ -351,6 +345,62 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
 class UndefinedMetadataError(Exception):
     pass
+
+def _get_zf_language(language: SpokenLanguage) -> dict[str, str]:
+    if language == SpokenLanguage.CHINESE:
+        raise NotImplementedError()
+    elif language == SpokenLanguage.CHINESE_TRADITIONAL:
+        raise NotImplementedError()
+    elif language == SpokenLanguage.ENGLISH:
+        return {
+            "code": "en",
+            "name_en": "English",
+            "name_native": "English",
+        }
+    elif language == SpokenLanguage.ESPANOL:
+        return {
+            "code": "es",
+            "name_en": "Spanish",
+            "name_native": "español",
+        }
+    elif language == SpokenLanguage.GERMAN:
+        return {
+            "code": "de",
+            "name_en": "German",
+            "name_native": "Deutsch",
+        }
+    elif language == SpokenLanguage.ITALIAN:
+        return {
+            "code": "it",
+            "name_en": "Italian",
+            "name_native": "italiano",
+        }
+    elif language == SpokenLanguage.JAPANESE:
+        return {
+            "code": "ja",
+            "name_en": "Japanese",
+            "name_native": "日本語",
+        }
+    elif language == SpokenLanguage.KOREAN:
+        raise NotImplementedError()
+    elif language == SpokenLanguage.PORTUGUESE:
+        return {
+            "code": "pt",
+            "name_en": "Portuguese",
+            "name_native": "português",
+        }
+    elif language == SpokenLanguage.SWAHILI:
+        return {
+            "code": "sw",
+            "name_en": "Swahili",
+            "name_native": "Kiswahili",
+        }
+    elif language == SpokenLanguage.UKRANIAN:
+        return {
+            "code": "uk",
+            "name_en": "Ukrainian",
+            "name_native": "українська",
+        }
 
 
 def _get_name(curriculum: Curriculum, language: SpokenLanguage) -> str:
