@@ -4,6 +4,7 @@ from typing import Any
 import requests
 
 from recipesauto.context import Context
+from recipesauto.utils import check_zim_name
 
 context = Context.get()
 
@@ -56,7 +57,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "description": f"A collection of TED videos about {topic}",
                     "title": f"TED {topic}",
                     "topics": topic,
-                    "name": f"ted_mul_{_get_clean_topic_name(topic)}",
+                    "name": check_zim_name(f"ted_mul_{_get_clean_topic_name(topic)}"),
                     "format": "webm",
                     "low-quality": True,
                     "optimization-cache": context.values["ted_optim_url"],
@@ -96,4 +97,9 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
 
 def _get_clean_topic_name(ted_topic_name: str) -> str:
-    return ted_topic_name.replace(" ", "-").replace("'", "")
+    clean_topic = ted_topic_name.replace(" ", "-").replace("'", "")
+    if "lgbtqia+" in clean_topic:
+        clean_topic = clean_topic.replace("lgbtqia+", "lgbtqia")
+    if "español" in clean_topic:
+        clean_topic = clean_topic.replace("español", "espanol")
+    return clean_topic

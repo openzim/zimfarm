@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 import requests
 
 from recipesauto.context import Context
+from recipesauto.utils import check_zim_name
 
 context = Context.get()
 
@@ -35,7 +36,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "slug": item["slug"],
                     "file-name-format": f'devdocs_en_{_get_cleaned(_get_slug_with_version(item["slug"]))}'
                     + "_{period}",
-                    "name-format": f'devdocs_en_{_get_cleaned(_get_slug_with_version(item["slug"]))}',
+                    "name-format": check_zim_name(f'devdocs_en_{_get_cleaned(_get_slug_with_version(item["slug"]))}'),
                     "description-format": f'{item["name"]} documentation, by DevDocs',
                     "title-format": f'{item["name"]} Docs',
                     "publisher": "openZIM",
