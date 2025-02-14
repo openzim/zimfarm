@@ -310,7 +310,9 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "long-description": _get_long_description(
                         curriculum=curriculum, language=language
                     ),
-                    "name": check_zim_name(_get_name(curriculum=curriculum, language=language)),
+                    "name": check_zim_name(
+                        _get_name(curriculum=curriculum, language=language)
+                    ),
                     "output": "/output",
                     "publisher": "openZIM",
                     "title": _get_title(curriculum=curriculum, language=language),
@@ -346,6 +348,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
 class UndefinedMetadataError(Exception):
     pass
+
 
 def _get_zf_language(language: SpokenLanguage) -> dict[str, str]:
     if language == SpokenLanguage.CHINESE:
