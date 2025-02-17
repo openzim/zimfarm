@@ -23,7 +23,7 @@ OFFLINER_DEFS = {
     Offliner.ted: od("ted2zim", True, False),
     Offliner.openedx: od("openedx2zim", True, False),
     Offliner.nautilus: od("nautiluszim", True, False),
-    Offliner.zimit: od("zimit", True, "statsFilename"),
+    Offliner.zimit: od("zimit", True, "zimit-progress-file"),
     Offliner.kolibri: od("kolibri2zim", True, False),
     Offliner.devdocs: od("devdocs2zim", True, False),
     Offliner.mindtouch: od("mindtouch2zim", True, True),

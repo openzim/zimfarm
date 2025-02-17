@@ -65,7 +65,7 @@ class TestZimit:
                 "platform": None,
                 "flags": {
                     "name": "acme",
-                    "url": "https://www.acme.com",
+                    "seeds": "https://www.acme.com",
                     "zim-file": "acme_en_all_{period}.zim",
                 },
                 "resources": {"cpu": 3, "memory": 1024, "disk": 0},

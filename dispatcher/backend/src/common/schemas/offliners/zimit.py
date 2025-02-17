@@ -139,12 +139,22 @@ class ZimitFlagsSchema(SerializableSchema):
     class Meta:
         ordered = True
 
-    url = fields.Url(
+    seeds = fields.Url(
         metadata={
-            "label": "URL",
-            "description": "The URL to start crawling from and main page for ZIM",
+            "label": "Seeds",
+            "description": "The seed URL(s) to start crawling from. Multile seed URL "
+            "must be separated by a comma (usually not needed, these are just the crawl"
+            " seeds). First seed URL is used as ZIM homepage",
         },
-        required=True,
+    )
+
+    seed_file = String(
+        metadata={
+            "label": "Seed File",
+            "description": "If set, read a list of seed urls, one per line. HTTPS URL"
+            " to an online file.",
+        },
+        data_key="seedFile",
     )
 
     name = String(
@@ -201,7 +211,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "URL for Illustration. "
             "If unspecified, will attempt to use favicon from main page.",
         },
-        required=False,
     )
 
     zim_file = String(
@@ -248,81 +257,89 @@ class ZimitFlagsSchema(SerializableSchema):
             "label": "Workers",
             "description": "The number of workers to run in parallel. Defaults to 1",
         },
-        required=False,
     )
 
     wait_until = String(
         metadata={
             "label": "WaitUntil",
-            "description": "Puppeteer page.goto() condition to wait for "
-            "before continuing. Defaults to `load`",
+            "description": "Puppeteer page.goto() condition to wait for before "
+            "continuing. One of load, domcontentloaded, networkidle0 or networkidle2, "
+            "or a comma-separated combination of those. Default is load,networkidle2",
         },
         data_key="waitUntil",
-        required=False,
     )
 
     depth = fields.Integer(
         metadata={
             "label": "Depth",
-            "description": "The depth of the crawl for all seeds. Defaults to -1",
+            "description": "The depth of the crawl for all seeds. Default is -1 "
+            "(infinite).",
         },
-        required=False,
     )
 
     extra_hops = fields.Integer(
         metadata={
             "label": "Extra Hops",
             "description": "Number of extra 'hops' to follow, "
-            "beyond the current scope. Defaults to 0",
+            "beyond the current scope. Default is 0",
         },
         data_key="extraHops",
-        required=False,
     )
 
-    limit = fields.Integer(
+    page_limit = fields.Integer(
         metadata={
-            "label": "Limit",
-            "description": "Limit crawl to this number of pages. 0 means no-limit.",
+            "label": "Page limit",
+            "description": "Limit crawl to this number of pages. Default is 0 "
+            "(no-limit).",
         },
+        data_key="pageLimit",
     )
 
     max_page_limit = fields.Integer(
         metadata={
             "label": "Max Page Limit",
             "description": "Maximum pages to crawl, overriding pageLimit "
-            "if both are set. Defaults to 0",
+            "if both are set. Default is 0 (no-limit)",
         },
-        required=False,
+    )
+
+    page_load_timeout = fields.Integer(
+        metadata={
+            "label": "Page Load Timeout",
+            "description": "Timeout for each page to load (in seconds). Default is "
+            "90 secs.",
+        },
+        data_key="pageLoadTimeout",
     )
 
     scope_type = StringEnum(
         metadata={
             "label": "Scope Type",
             "description": "A predfined scope of the crawl. For more customization, "
-            "use 'custom' and set include regexes. Defaults to prefix.",
+            "use 'custom' and set scopeIncludeRx/scopeExcludeRx regexes. Default is "
+            "custom if scopeIncludeRx is set, prefix otherwise.",
         },
         data_key="scopeType",
-        required=False,
         validate=validate.OneOf(
             ["page", "page-spa", "prefix", "host", "domain", "any", "custom"]
         ),
     )
 
-    include = String(
+    scope_include_rx = String(
         metadata={
-            "label": "Include",
+            "label": "Scope Include Regex",
             "description": "Regex of page URLs that should be "
-            "included in the crawl (defaults to the immediate directory of URL)",
+            "included in the crawl (defaults to the immediate directory of seed)",
         },
-        required=False,
+        data_key="scopeIncludeRx",
     )
 
-    exclude = String(
+    scope_exclude_rx = String(
         metadata={
-            "label": "Exclude",
+            "label": "Scope Exclude Regex",
             "description": "Regex of page URLs that should be excluded from the crawl",
         },
-        required=False,
+        data_key="scopeExcludeRx",
     )
 
     allow_hash_urls = fields.Boolean(
@@ -334,7 +351,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "crawling or when different hashtags load dynamic content",
         },
         data_key="allowHashUrls",
-        required=False,
     )
 
     mobile_device = StringEnum(
@@ -343,20 +359,64 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Device to crawl as. See Pupeeter's Device.ts for a list",
         },
         data_key="mobileDevice",
-        required=False,
         validate=validate_devicelist,
     )
 
-    no_mobile_device = fields.Boolean(
+    select_links = String(
+        metadata={
+            "label": "Select Links",
+            "description": "One or more selectors for extracting links, in the format "
+            "[css selector]->[property to use],[css selector]->@[attribute to use]",
+        },
+        data_key="selectLinks",
+    )
+
+    click_selector = String(
+        metadata={
+            "label": "Click Selector",
+            "description": "Selector for elements to click when using the autoclick "
+            "behavior. Default is 'a'",
+        },
+        data_key="clickSelector",
+    )
+
+    block_rules = String(
+        metadata={
+            "label": "Block rules",
+            "description": "Additional rules for blocking certain URLs from being "
+            "loaded, by URL regex and optionally via text match in an iframe",
+        },
+        data_key="blockRules",
+    )
+
+    block_message = String(
+        metadata={
+            "label": "Block Message",
+            "description": "If specified, when a URL is blocked, a record with this "
+            "error message is added instead",
+        },
+        data_key="blockMessage",
+    )
+
+    block_ads = fields.Boolean(
         truthy=[True],
         falsy=[False],
         metadata={
-            "label": "No device",
-            "description": "Do not emulate a device (use at your own risk, behavior is "
-            "uncertain ; if set, 'As device' setting is ignored)",
+            "label": "Block Ads",
+            "description": "If set, block advertisements from being loaded (based on "
+            "Stephen Black's blocklist). Note that some bad domains are also blocked "
+            "by zimit configuration even if this option is not set.",
         },
-        data_key="noMobileDevice",
-        required=False,
+        data_key="blockAds",
+    )
+
+    ad_block_message = String(
+        metadata={
+            "label": "Ads Block Message",
+            "description": "If specified, when an ad is blocked, a record with this "
+            "error message is added instead",
+        },
+        data_key="adBlockMessage",
     )
 
     user_agent = String(
@@ -365,7 +425,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Override user-agent with specified",
         },
         data_key="userAgent",
-        required=False,
     )
 
     user_agent_suffix = String(
@@ -375,17 +434,35 @@ class ZimitFlagsSchema(SerializableSchema):
             "Defaults to +Zimit",
         },
         data_key="userAgentSuffix",
-        required=False,
     )
 
     use_sitemap = fields.Url(
         metadata={
-            "label": "Use sitemap",
+            "label": "Sitemap URL",
             "description": "Use as sitemap to get additional URLs for the crawl "
             "(usually at /sitemap.xml)",
         },
         data_key="useSitemap",
-        required=False,
+    )
+
+    sitemap_from_date = fields.String(
+        metadata={
+            "label": "Sitemap From Date",
+            "description": "If set, filter URLs from sitemaps to those greater than or "
+            "equal to (>=) provided ISO Date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS "
+            "or partial date)",
+        },
+        data_key="sitemapFromDate",
+    )
+
+    sitemap_to_date = fields.String(
+        metadata={
+            "label": "Sitemap To Date",
+            "description": "If set, filter URLs from sitemaps to those less than or "
+            "equal to (<=) provided ISO Date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS "
+            "or partial date)",
+        },
+        data_key="sitemapToDate",
     )
 
     behaviors = String(
@@ -394,7 +471,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Which background behaviors to enable on each page. "
             "Defaults to autoplay,autofetch,siteSpecific.",
         },
-        required=False,
     )
 
     behavior_timeout = fields.Integer(
@@ -402,30 +478,63 @@ class ZimitFlagsSchema(SerializableSchema):
             "label": "Behavior Timeout",
             "description": "If >0, timeout (in seconds) for in-page behavior "
             "will run on each page. If 0, a behavior can run until finish. "
-            "Defaults to 90",
+            "Default is 90.",
         },
         data_key="behaviorTimeout",
-        required=False,
     )
 
-    delay = fields.Integer(
+    post_load_delay = fields.Integer(
+        metadata={
+            "label": "Post Load Delay",
+            "description": "If >0, amount of time to sleep (in seconds) "
+            "after page has loaded, before  taking screenshots / getting text / "
+            "running behaviors. Default is 0.",
+        },
+        data_key="postLoadDelay",
+    )
+
+    page_extra_delay = fields.Integer(
         metadata={
             "label": "Page Extra Delay",
             "description": "If >0, amount of time to sleep (in seconds) "
-            "after behaviors before moving on to next page. Defaults to 0",
+            "after behaviors before moving on to next page. Default is 0.",
         },
-        data_key="delay",
-        required=False,
+        data_key="pageExtraDelay",
     )
 
-    size_limit = fields.Integer(
+    dedup_policy = fields.String(
         metadata={
-            "label": "Size Limit",
-            "description": "If set, save state and exit "
-            "if size limit exceeds this value, in bytes",
+            "label": "Dedup policy",
+            "description": "Deduplication policy. Default is skip",
         },
-        data_key="sizeLimit",
-        required=False,
+        data_key="dedupPolicy",
+        validate=validate.OneOf(["skip", "revisit", "keep"]),
+    )
+
+    screenshot = fields.String(
+        metadata={
+            "label": "Screenshot",
+            "description": "Screenshot options for crawler. One of view, thumbnail, "
+            "fullPage, fullPageFinal or a comma-separated combination of those.",
+        },
+    )
+
+    size_soft_limit = fields.Integer(
+        metadata={
+            "label": "Size Soft Limit",
+            "description": "If set, save crawl state and stop crawl if WARC size "
+            "exceeds this value. ZIM will still be created.",
+        },
+        data_key="sizeSoftLimit",
+    )
+
+    size_hard_limit = fields.Integer(
+        metadata={
+            "label": "Size Hard Limit",
+            "description": "If set, exit crawler and fail the scraper immediately if "
+            "WARC size exceeds this value",
+        },
+        data_key="sizeHardLimit",
     )
 
     disk_utilization = fields.Integer(
@@ -436,16 +545,84 @@ class ZimitFlagsSchema(SerializableSchema):
             "utilization check.",
         },
         data_key="diskUtilization",
-        required=False,
     )
 
-    time_limit = fields.Integer(
+    time_soft_limit = fields.Integer(
         metadata={
-            "label": "Time Limit",
-            "description": "If set, save state and exit after time limit, in seconds",
+            "label": "Time Soft Limit",
+            "description": "If set, save crawl state and stop crawl if WARC(s) "
+            "creation takes longer than this value, in seconds. ZIM will still be "
+            "created.",
         },
-        data_key="timeLimit",
-        required=False,
+        data_key="timeSoftLimit",
+    )
+
+    time_hard_limit = fields.Integer(
+        metadata={
+            "label": "Time Hard Limit",
+            "description": "If set, exit crawler and fail the scraper immediately if "
+            "WARC(s) creation takes longer than this value, in seconds",
+        },
+        data_key="timeHardLimit",
+    )
+
+    net_idle_wait = fields.Integer(
+        metadata={
+            "label": "Net Idle Wait",
+            "description": "If set, wait for network idle after page load and after "
+            "behaviors are done (in seconds). If -1 (default), determine based on "
+            "scope.",
+        },
+        data_key="netIdleWait",
+    )
+
+    origin_override = fields.String(
+        metadata={
+            "label": "Origin Override",
+            "description": "If set, will redirect requests from each origin in key to "
+            "origin in the value, eg. https://host:port=http://alt-host:alt-port.",
+        },
+        data_key="originOverride",
+    )
+
+    max_page_retries = fields.Integer(
+        metadata={
+            "label": "Max Page Retries",
+            "description": "If set, number of times to retry a page that failed to load"
+            " before page is considered to have failed. Default is 2.",
+        },
+        data_key="maxPageRetries",
+    )
+
+    fail_on_failed_seed = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Fail on failed seed",
+            "description": "Whether to display additional logs",
+        },
+        data_key="failOnFailedSeed",
+    )
+
+    fail_on_invalid_status = fields.Boolean(
+        truthy=[True],
+        falsy=[False],
+        metadata={
+            "label": "Fail on invalid status",
+            "description": "If set, will treat pages with 4xx or 5xx response as "
+            "failures. When combined with --failOnFailedLimit or --failOnFailedSeed "
+            "may result in crawl failing due to non-200 responses",
+        },
+        data_key="failOnInvalidStatus",
+    )
+
+    fail_on_failed_limit = fields.Integer(
+        metadata={
+            "label": "Fail on failed - Limit",
+            "description": "If set, save state and exit if number of failed pages "
+            "exceeds this value.",
+        },
+        data_key="failOnFailedLimit",
     )
 
     custom_css = fields.Url(
@@ -454,7 +631,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "URL to a CSS file to inject into pages",
         },
         data_key="custom-css",
-        required=False,
     )
 
     verbose = fields.Boolean(
@@ -464,7 +640,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "label": "Verbose mode",
             "description": "Whether to display additional logs",
         },
-        required=False,
     )
 
     keep = fields.Boolean(
@@ -475,7 +650,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Should be True. Developer option: must be True if we want "
             "to keep the WARC files for artifacts archiving.",
         },
-        required=False,
     )
 
     output = String(
@@ -489,14 +663,14 @@ class ZimitFlagsSchema(SerializableSchema):
         validate=validate_output,
     )
 
-    stats_filename = String(
+    zimit_progress_file = String(
         metadata={
-            "label": "Stats filename",
+            "label": "Zimit progress file",
             "placeholder": "/output/task_progress.json",
             "description": "Scraping progress file. "
             "Leave it as `/output/task_progress.json`",
         },
-        data_key="statsFilename",
+        data_key="zimit-progress-file",
         load_default="/output/task_progress.json",
         dump_default="/output/task_progress.json",
         validate=validate.Equal("/output/task_progress.json"),
@@ -509,7 +683,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "replay viewer from",
         },
         data_key="replay-viewer-source",
-        required=False,
     )
 
     admin_email = String(
@@ -519,7 +692,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "so website admin can contact us",
         },
         data_key="adminEmail",
-        required=False,
     )
 
     charsets_to_try = String(
@@ -530,7 +702,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "comma. Default: UTF-8,ISO-8859-1",
         },
         data_key="charsets-to-try",
-        required=False,
     )
 
     ignore_content_header_charsets = fields.Boolean(
@@ -541,7 +712,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Ignore the charsets specified in content headers - first "
             "bytes - typically because they are wrong.",
         },
-        required=False,
         data_key="ignore-content-header-charsets",
     )
 
@@ -551,7 +721,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "How many bytes to consider when searching for content "
             "charsets in header (default is 1024).",
         },
-        required=False,
         data_key="content-header-bytes-length",
     )
 
@@ -563,7 +732,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Ignore the charsets specified in HTTP `Content-Type` "
             "headers, typically because they are wrong.",
         },
-        required=False,
         data_key="ignore-http-header-charsets",
     )
 
@@ -577,7 +745,6 @@ class ZimitFlagsSchema(SerializableSchema):
             " values are separated by a comma, like in "
             "alias1=encoding1,alias2=encoding2.",
         },
-        required=False,
         data_key="encoding-aliases",
     )
 
@@ -587,7 +754,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "Path or HTTP(S) URL to tar.gz file which contains the "
             "browser profile directory for Browsertrix crawler.",
         },
-        required=False,
     )
 
     custom_behaviors = String(
@@ -596,7 +762,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "description": "JS code for custom behaviors to customize crawler. Single "
             "string with individual JS files URL/path separated by a comma.",
         },
-        required=False,
         data_key="custom-behaviors",
     )
 
@@ -608,7 +773,6 @@ class ZimitFlagsSchema(SerializableSchema):
             "either warc.gz files or to a tar.gz containing the warc.gz files. "
             "Single value with individual path/URLs separated by comma.",
         },
-        required=False,
     )
 
 
