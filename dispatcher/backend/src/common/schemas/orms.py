@@ -106,13 +106,13 @@ class RequestedTaskLightSchema(m.Schema):
 
 
 class RequestedTaskFullSchema(RequestedTaskLightSchema):
-    def get_worker_name(task: dbm.Task) -> str:
+    def get_worker_name(task: dbm.RequestedTask) -> str:
         if task.worker:
             return task.worker.name
         else:
             return None
 
-    def get_schedule_name(task: dbm.Task) -> str:
+    def get_schedule_name(task: dbm.RequestedTask) -> str:
         return getattr(task.schedule, "name", "none")
 
     config = mf.Dict()  # override base
