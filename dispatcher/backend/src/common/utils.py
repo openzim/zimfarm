@@ -40,6 +40,7 @@ def task_event_handler(session: so.Session, task_id: UUID, event: str, payload: 
         TaskStatus.failed_file: task_failed_file_event_handler,
         TaskStatus.checked_file: task_checked_file_event_handler,
         TaskStatus.update: task_update_event_handler,
+        TaskStatus.requested: task_requested_event_handler,
     }
     func = handlers.get(event, None)
     if func is None:
@@ -162,6 +163,10 @@ def save_event(
 
     if code == TaskStatus.scraper_completed and schedule:
         update_schedule_duration(session, schedule)
+
+
+def task_requested_event_handler(session: so.Session, task_id: UUID, payload: dict):
+    logger.info(f"Task Requested: {task_id}")
 
 
 def task_reserved_event_handler(session, task_id, payload):

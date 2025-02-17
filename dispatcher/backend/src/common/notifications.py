@@ -25,8 +25,8 @@ from common.constants import (
 from common.emailing import send_email_via_mailgun
 from common.enum import TaskStatus
 from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
-from common.schemas.orms import ScheduleAwareTaskFullSchema
-from errors.http import TaskNotFound
+from common.schemas.orms import RequestedTaskFullSchema, ScheduleAwareTaskFullSchema
+from errors.http import RequestedTaskNotFound, TaskNotFound
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -161,12 +161,18 @@ def handle_notification(task_id, event, session: so.Session):
     if event not in GlobalNotifications.events:
         return
 
-    task = dbm.Task.get(session, task_id, TaskNotFound)
+    if event == "requested":
+        task = dbm.RequestedTask.get(session, task_id, RequestedTaskNotFound)
+    else:
+        task = dbm.Task.get(session, task_id, TaskNotFound)
     if not task:
         return
 
     # serialize/unserialize task so we use a safe version from now-on
-    task_safe = ScheduleAwareTaskFullSchema().dump(task)
+    if event == "requested":
+        task_safe = RequestedTaskFullSchema().dump(task)
+    else:
+        task_safe = ScheduleAwareTaskFullSchema().dump(task)
     global_notifs = GlobalNotifications.entries.get(event, {})
     task_notifs = (task_safe.get("notification") or {}).get(event, {})
 

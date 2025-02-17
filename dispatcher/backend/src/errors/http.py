@@ -45,6 +45,11 @@ class TaskNotFound(ResourceNotFound):
         super().__init__("Task Not Found")
 
 
+class RequestedTaskNotFound(ResourceNotFound):
+    def __init__(self):
+        super().__init__("Requested Task Not Found")
+
+
 class WorkerNotFound(ResourceNotFound):
     def __init__(self):
         super().__init__("Worker Not Found")
