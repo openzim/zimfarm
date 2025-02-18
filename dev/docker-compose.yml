@@ -1,12 +1,13 @@
 services:
   postgresdb:
-    image: postgres:15.2-bullseye
+    image: postgres:17.3-bookworm
     container_name: zf_postgresdb
     ports:
       - 127.0.0.1:5432:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
       - ./postgres-initdb:/docker-entrypoint-initdb.d
+    # - ./restore/root/.borgmatic/postgresql_databases/api-postgres-db-service/zimfarm:/data/zimfarm
     environment:
       - POSTGRES_DB=zimfarm
       - POSTGRES_USER=zimfarm
