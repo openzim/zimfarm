@@ -116,7 +116,7 @@ class ScheduleConfigSchema(SerializableSchema):
 
 class EventNotificationSchema(SerializableSchema):
     mailgun = fields.List(fields.Email(), required=False)
-    webhook = fields.List(fields.Url(), required=False)
+    webhook = fields.List(fields.Url(require_tld=False), required=False)
     slack = fields.List(String(validate=validate_slack_target), required=False)
 
 
