@@ -186,17 +186,9 @@ class TaskWorker(BaseWorker):
                         "total": total,
                         "overall": int(done / total * 100),
                     }
-
-                    # limit is optionnal {"max": int, "hint": bool}
-                    if data.get("limit") and isinstance(data["limit"], dict):
-                        progress.update(
-                            {
-                                "limit": {
-                                    "max": int(data["limit"].get("max", 0)),
-                                    "hit": bool(data["limit"].get("hit", False)),
-                                }
-                            }
-                        )
+                    # partialZim is optional
+                    if data.get("partialZim") and isinstance(data["partialZim"], bool):
+                        progress["partialZim"] = data["partialZim"]
             except Exception as exc:
                 logger.warning(f"failed to load progress details: {exc}")
             else:
@@ -753,7 +745,10 @@ class TaskWorker(BaseWorker):
             self.submit_scraper_progress()
             self.handle_files()
 
-        # scraper is done. check files so upload can continue
+        # scraper is done.
+        # submit final progress (especially partialZim property)
+        self.submit_scraper_progress()
+        # check files so upload can continue
         self.handle_stopped_scraper()
 
         self.handle_files()  # rescan folder
