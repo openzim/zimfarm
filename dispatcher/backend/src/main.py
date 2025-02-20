@@ -15,6 +15,7 @@ from routes import (
     platforms,
     requested_tasks,
     schedules,
+    status,
     tags,
     tasks,
     users,
@@ -74,6 +75,7 @@ application.register_blueprint(languages.Blueprint())
 application.register_blueprint(tags.Blueprint())
 application.register_blueprint(offliners.Blueprint())
 application.register_blueprint(platforms.Blueprint())
+application.register_blueprint(status.Blueprint())
 
 errors.register_handlers(application)
 

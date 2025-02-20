@@ -453,10 +453,11 @@ def make_task(make_event, make_schedule, make_config, worker, garbage_collector)
                 TaskStatus.requested,
                 TaskStatus.reserved,
                 TaskStatus.started,
+                TaskStatus.scraper_started,
                 TaskStatus.failed,
             ]
 
-        timestamp = {event: now for event in events}
+        timestamp = {event: now - datetime.timedelta(minutes=5) for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
         container = {
             "command": "mwoffliner --mwUrl=https://example.com",
@@ -525,6 +526,7 @@ def tasks(make_task):
             make_task(status=TaskStatus.requested),
             make_task(status=TaskStatus.reserved),
             make_task(status=TaskStatus.started),
+            make_task(status=TaskStatus.scraper_started),
             make_task(status=TaskStatus.succeeded),
             make_task(status=TaskStatus.failed),
         ]
