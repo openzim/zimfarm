@@ -300,6 +300,18 @@ class RequestedTaskRoute(BaseRoute):
         )
         resp = RequestedTaskFullSchema().dump(requested_task)
 
+        # also fetch all requested tasks IDs to compute estimated task rank ; this is
+        # only an indicator for zimit.kiwix.org where duration is unknown because
+        # schedule is created on-demand and all tasks have access to same worker(s) ;
+        # sorting by priority and updated_at won't give a good indicator in other cases
+        stmt = sa.select(
+            dbm.RequestedTask.id,
+        ).order_by(
+            dbm.RequestedTask.priority.desc(), dbm.RequestedTask.updated_at.asc()
+        )
+        requested_task_ids = session.execute(stmt).scalars().all()
+        resp["rank"] = requested_task_ids.index(requested_task_id)
+
         # exclude notification to not expose private information (privacy)
         # on anonymous requests and requests for users without schedules_update
         if not token or not token.get_permission("schedules", "update"):
