@@ -21,7 +21,12 @@ from common.schemas.parameters import (
 )
 from common.utils import task_event_handler
 from db import count_from_stmt, dbsession, dbsession_manual
-from errors.http import HTTPBase, InvalidRequestJSON, TaskNotFound, WorkerNotFound
+from errors.http import (
+    HTTPBase,
+    InvalidRequestJSON,
+    RequestedTaskNotFound,
+    WorkerNotFound,
+)
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
@@ -290,7 +295,9 @@ class RequestedTaskRoute(BaseRoute):
         requested_task_id: UUID,
         token: AccessToken.Payload = None,
     ):
-        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(
+            session, requested_task_id, RequestedTaskNotFound
+        )
         resp = RequestedTaskFullSchema().dump(requested_task)
 
         # exclude notification to not expose private information (privacy)
@@ -313,7 +320,9 @@ class RequestedTaskRoute(BaseRoute):
     def patch(
         self, session: so.Session, requested_task_id: UUID, token: AccessToken.Payload
     ):
-        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(
+            session, requested_task_id, RequestedTaskNotFound
+        )
 
         try:
             request_json = UpdateRequestedTaskSchema().load(request.get_json())
@@ -331,7 +340,9 @@ class RequestedTaskRoute(BaseRoute):
     def delete(
         self, session: so.Session, requested_task_id: UUID, token: AccessToken.Payload
     ):
-        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(
+            session, requested_task_id, RequestedTaskNotFound
+        )
         session.delete(requested_task)
 
         return jsonify({"deleted": 1})
