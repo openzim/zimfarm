@@ -1540,6 +1540,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /status/{monitor_name}:
+    get:
+      tags:
+      - public
+      summary: Get status of a given monitor
+      operationId: getMonitorStatus
+      description: Get status of a given monitor
+      parameters:
+      - $ref: '#/components/parameters/MonitorParameter'
+      - $ref: '#/components/parameters/StatusRequiredParameter'
+      - $ref: '#/components/parameters/ThresholdSecsParameter'
+      responses:
+        204:
+          description: Monitor Status
+        400:
+          description: Bad Request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputError'
 components:
   securitySchemes:
     token:
@@ -1614,6 +1634,25 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/TaskStatus'
+    StatusRequiredParameter:
+      in: query
+      name: status
+      description: only those matching this status
+      required: true
+      schema:
+        $ref: '#/components/schemas/TaskStatus'
+    MonitorParameter:
+      in: path
+      required: true
+      name: monitor_name
+      schema:
+        $ref: '#/components/schemas/Monitor'
+    ThresholdSecsParameter:
+      in: query
+      required: true
+      name: threshold_secs
+      schema:
+        $ref: '#/components/schemas/Seconds'
   schemas:
     Language:
       type: object
@@ -2231,3 +2270,13 @@ components:
         - admin
         - worker
         - processor
+    Monitor:
+      type: string
+      example: oldest_task_older_than
+      enum:
+        - oldest_task_older_than
+    Seconds:
+      type: number
+      format: Int32
+      description: Number of seconds
+      example: 5
