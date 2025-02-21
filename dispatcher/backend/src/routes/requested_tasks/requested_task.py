@@ -21,7 +21,12 @@ from common.schemas.parameters import (
 )
 from common.utils import task_event_handler
 from db import count_from_stmt, dbsession, dbsession_manual
-from errors.http import HTTPBase, InvalidRequestJSON, TaskNotFound, WorkerNotFound
+from errors.http import (
+    HTTPBase,
+    InvalidRequestJSON,
+    RequestedTaskNotFound,
+    WorkerNotFound,
+)
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
@@ -290,8 +295,22 @@ class RequestedTaskRoute(BaseRoute):
         requested_task_id: UUID,
         token: AccessToken.Payload = None,
     ):
-        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(
+            session, requested_task_id, RequestedTaskNotFound
+        )
         resp = RequestedTaskFullSchema().dump(requested_task)
+
+        # also fetch all requested tasks IDs to compute estimated task rank ; this is
+        # only an indicator for zimit.kiwix.org where duration is unknown because
+        # schedule is created on-demand and all tasks have access to same worker(s) ;
+        # sorting by priority and updated_at won't give a good indicator in other cases
+        stmt = sa.select(
+            dbm.RequestedTask.id,
+        ).order_by(
+            dbm.RequestedTask.priority.desc(), dbm.RequestedTask.updated_at.asc()
+        )
+        requested_task_ids = session.execute(stmt).scalars().all()
+        resp["rank"] = requested_task_ids.index(requested_task_id)
 
         # exclude notification to not expose private information (privacy)
         # on anonymous requests and requests for users without schedules_update
@@ -313,7 +332,9 @@ class RequestedTaskRoute(BaseRoute):
     def patch(
         self, session: so.Session, requested_task_id: UUID, token: AccessToken.Payload
     ):
-        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(
+            session, requested_task_id, RequestedTaskNotFound
+        )
 
         try:
             request_json = UpdateRequestedTaskSchema().load(request.get_json())
@@ -331,7 +352,9 @@ class RequestedTaskRoute(BaseRoute):
     def delete(
         self, session: so.Session, requested_task_id: UUID, token: AccessToken.Payload
     ):
-        requested_task = dbm.RequestedTask.get(session, requested_task_id, TaskNotFound)
+        requested_task = dbm.RequestedTask.get(
+            session, requested_task_id, RequestedTaskNotFound
+        )
         session.delete(requested_task)
 
         return jsonify({"deleted": 1})

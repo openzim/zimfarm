@@ -269,10 +269,10 @@ def make_requested_task(make_event, make_schedule, garbage_collector):
         status=TaskStatus.requested,
         requested_by="someone",
         priority=0,
+        request_date=getnow(),
     ):
         events = [TaskStatus.requested]
-        now = getnow()
-        timestamp = {event: now for event in events}
+        timestamp = {event: request_date for event in events}
         events = [make_event(event, timestamp[event]) for event in events]
 
         config = {
@@ -291,7 +291,7 @@ def make_requested_task(make_event, make_schedule, garbage_collector):
             requested_task = dbm.RequestedTask(
                 status=status,
                 timestamp=timestamp,
-                updated_at=now,
+                updated_at=request_date,
                 events=events,
                 requested_by=requested_by,
                 priority=priority,
@@ -334,6 +334,33 @@ def requested_tasks(make_requested_task):
             make_requested_task(status=TaskStatus.failed),
         ]
     return tasks
+
+
+@pytest.fixture(scope="module")
+def requested_tasks_2(make_requested_task):
+    return [
+        make_requested_task(
+            schedule_name="recipe1",
+            request_date=getnow() - datetime.timedelta(minutes=5),
+        ),
+        make_requested_task(
+            schedule_name="recipe2",
+            request_date=getnow() - datetime.timedelta(minutes=4),
+        ),
+        make_requested_task(
+            schedule_name="recipe3",
+            request_date=getnow() - datetime.timedelta(minutes=10),
+        ),
+        make_requested_task(
+            schedule_name="recipe4",
+            request_date=getnow() - datetime.timedelta(minutes=3),
+            priority=5,
+        ),
+        make_requested_task(
+            schedule_name="recipe5",
+            request_date=getnow() - datetime.timedelta(minutes=1),
+        ),
+    ]
 
 
 @pytest.fixture(scope="module")

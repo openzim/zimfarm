@@ -179,6 +179,32 @@ class TestRequestedTaskGet:
         else:
             assert data["notification"] is None
 
+    @pytest.mark.parametrize(
+        "recipename, expected_rank",
+        [
+            pytest.param("recipe1", 2, id="recipe1"),
+            pytest.param("recipe2", 3, id="recipe2"),
+            pytest.param("recipe3", 1, id="recipe3"),
+            pytest.param("recipe4", 0, id="recipe4"),
+            pytest.param("recipe5", 4, id="recipe5"),
+        ],
+    )
+    def test_get_requested_task_rank_ok(
+        self, client, requested_tasks_2, recipename, expected_rank
+    ):
+        requested_task = [
+            requested_task
+            for requested_task in requested_tasks_2
+            if requested_task["schedule_name"] == recipename
+        ][0]
+        url = f'/requested-tasks/{requested_task["_id"]}'
+        headers = {"Content-Type": "application/json"}
+        response = client.get(url, headers=headers)
+        assert response.status_code == 200
+
+        data = json.loads(response.data)
+        assert data["rank"] == expected_rank
+
 
 class TestRequestedTaskCreate:
     @pytest.fixture()
