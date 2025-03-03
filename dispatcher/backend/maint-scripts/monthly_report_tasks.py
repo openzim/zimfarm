@@ -26,7 +26,6 @@ offliners = os.getenv("OFFLINERS", "zimit").split(",")
 
 
 def main():
-    """Creates recipes for TED by topics"""
 
     now = datetime.datetime.now(datetime.UTC)
     start_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -73,7 +72,8 @@ def main():
                 csvwriter.writerow(
                     [
                         task["_id"],
-                        task["config"]["flags"]["url"],
+                        task["config"]["flags"].get("url")
+                        or task["config"]["flags"]["seeds"],
                         task["status"],
                         task["timestamp"]["requested"],
                         task["timestamp"].get("started", "-"),
