@@ -11,6 +11,9 @@ dependencies = [
   "requests==2.32.3",
   "types-requests==2.32.0.20240914",
   "PyYAML==6.0.2",
+  "beautifulsoup4==4.13.3",
+  "types-beautifulsoup4==4.12.0.20250204",
+  "lxml==5.3.1",
 ]
 dynamic = ["authors", "classifiers", "keywords", "license", "version", "urls"]
 
