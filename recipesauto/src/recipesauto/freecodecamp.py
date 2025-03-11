@@ -47,8 +47,48 @@ class SpokenLanguage(Enum):
 
 
 static_data = {
+    "freecodecamp_en_all": {
+        "title": "FreeCodeCamp",
+        "description": "All FreeCodeCamp courses",
+        "long_description": "Train and learn with all FreeCodeCamp courses.",
+    },
+    "freecodecamp_es_all": {
+        "title": "FreeCodeCamp",
+        "description": "Todos los cursos de FreeCodeCamp",
+        "long_description": "Entrena y aprende con todos los cursos de FreeCodeCamp.",
+    },
+    "freecodecamp_de_all": {
+        "title": "FreeCodeCamp",
+        "description": "Alle FreeCodeCamp-Kurse",
+        "long_description": "Trainiere und lerne mit allen FreeCodeCamp-Kursen.",
+    },
+    "freecodecamp_it_all": {
+        "title": "FreeCodeCamp",
+        "description": "Tutti i corsi di FreeCodeCamp",
+        "long_description": "Allenati e impara con tutti i corsi di FreeCodeCamp.",
+    },
+    "freecodecamp_ja_all": {
+        "title": "FreeCodeCamp",
+        "description": "すべてのFreeCodeCampコース",
+        "long_description": "すべてのFreeCodeCampコースでトレーニングし、学びましょう。",
+    },
+    "freecodecamp_pt_all": {
+        "title": "FreecodeCamp",
+        "description": "Todos os cursos do FreeCodeCamp",
+        "long_description": "Treine e aprenda com todos os cursos do FreeCodeCamp.",
+    },
+    "freecodecamp_ua_all": {
+        "title": "FreeCodeCamp",
+        "description": "Усі курси FreeCodeCamp",
+        "long_description": "Тренуйтеся та навчайтеся з усіма курсами FreeCodeCamp.",
+    },
+    "freecodecamp_sw_all": {
+        "title": "FreeCodeCamp",
+        "description": "Kozi zote za FreeCodeCamp",
+        "long_description": "Jifunze na ujifunze na kozi zote za FreeCodeCamp.",
+    },
     "freecodecamp_en_javascript-algorithms-and-data-structures": {
-        "title": "freeCodeCamp JavaScript",
+        "title": "FreeCodeCamp JavaScript",
         "description": "JavaScript courses",
         "long_description": "In the JavaScript Algorithm and Data Structures Certification, you'll learn the fundamentals of JavaScript including variables, arrays, objects, loops, and functions.",
     },
@@ -316,10 +356,11 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "output": "/output",
                     "publisher": "openZIM",
                     "title": _get_title(curriculum=curriculum, language=language),
+                    "illustration": _get_illustration(curriculum=curriculum),
                 },
                 "image": {
                     "name": "ghcr.io/openzim/freecodecamp",
-                    "tag": "1.3.0",
+                    "tag": "2.0.0",
                 },
                 "monitor": False,
                 "platform": None,
@@ -343,6 +384,56 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         for language in SpokenLanguage
         if _is_needed(curriculum=curriculum, language=language)
         and curriculum.dashed_name not in not_audited_curriculum[language]
+    ] + [
+        {
+            "category": "freecodecamp",
+            "config": {
+                "flags": {
+                    "course": ",".join(
+                        course.dashed_name
+                        for curriculum in curriculums.values()
+                        if _is_needed(curriculum=curriculum, language=language)
+                        and curriculum.dashed_name
+                        not in not_audited_curriculum[language]
+                        for course in sorted(
+                            curriculum.courses, key=lambda course: course.order
+                        )
+                        # take-home-projects are not yet supported
+                        if not course.dashed_name in ["take-home-projects"]
+                    ),
+                    "debug": True,
+                    "description": _get_all_description(language=language),
+                    "language": _get_zim_language_metadata(language),
+                    "long-description": _get_all_long_description(language=language),
+                    "name": check_zim_name(_get_all_name(language=language)),
+                    "output": "/output",
+                    "publisher": "openZIM",
+                    "title": _get_all_title(language=language),
+                },
+                "image": {
+                    "name": "ghcr.io/openzim/freecodecamp",
+                    "tag": "2.0.0",
+                },
+                "monitor": False,
+                "platform": None,
+                "resources": {
+                    "cpu": 1,
+                    "disk": 536870912,
+                    "memory": 2147483648,
+                },
+                "task_name": "freecodecamp",
+                "warehouse_path": "/.hidden/dev",
+            },
+            "enabled": True,
+            "language": _get_zf_language(language=language),
+            "name": _get_all_name(language=language),
+            "periodicity": "quarterly",
+            "tags": [
+                "freecodecamp",
+            ],
+        }
+        for language in SpokenLanguage
+        if _is_lang_needed(language=language)
     ]
 
 
@@ -419,6 +510,19 @@ def _get_title(curriculum: Curriculum, language: SpokenLanguage) -> str:
     return title
 
 
+def _get_illustration(curriculum: Curriculum) -> str:
+    if curriculum.dashed_name == "rosetta-code":
+        return "https://raw.githubusercontent.com/openzim/freecodecamp/refs/heads/main/zimui/src/assets/icon_rosetta_code.svg"
+    elif curriculum.dashed_name == "javascript-algorithms-and-data-structures":
+        return "https://raw.githubusercontent.com/openzim/freecodecamp/refs/heads/main/zimui/src/assets/icon_javascript.svg"
+    elif curriculum.dashed_name == "project-euler":
+        return "https://github.com/openzim/freecodecamp/raw/refs/heads/main/zimui/src/assets/icon_project_euler.svg"
+    elif curriculum.dashed_name == "coding-interview-prep":
+        return "https://github.com/openzim/freecodecamp/raw/refs/heads/main/zimui/src/assets/icon_coding_interview.svg"
+    else:
+        raise Exception(f"Unsupported dashed name: {curriculum.dashed_name }")
+
+
 def _get_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
     key = _get_name(curriculum=curriculum, language=language)
     description = static_data[key]["description"]
@@ -429,6 +533,34 @@ def _get_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
 
 def _get_long_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
     key = _get_name(curriculum=curriculum, language=language)
+    long_description = static_data[key]["long_description"]
+    if len(long_description) > 4000:
+        logger.warning(f"LongDescription is too long for {key}")
+    return long_description
+
+
+def _get_all_name(language: SpokenLanguage) -> str:
+    return f"freecodecamp_{_get_zim_name_lang(language)}_all"
+
+
+def _get_all_title(language: SpokenLanguage) -> str:
+    key = _get_all_name(language=language)
+    title = static_data[key]["title"]
+    if len(title) > 30:
+        logger.warning(f"Title is too long for {key}")
+    return title
+
+
+def _get_all_description(language: SpokenLanguage) -> str:
+    key = _get_all_name(language=language)
+    description = static_data[key]["description"]
+    if len(description) > 80:
+        logger.warning(f"Description is too long for {key}")
+    return description
+
+
+def _get_all_long_description(language: SpokenLanguage) -> str:
+    key = _get_all_name(language=language)
     long_description = static_data[key]["long_description"]
     if len(long_description) > 4000:
         logger.warning(f"LongDescription is too long for {key}")
@@ -496,6 +628,14 @@ def _is_needed(curriculum: Curriculum, language: SpokenLanguage) -> bool:
         "rosetta-code",
         "coding-interview-prep",
     ] and language not in [
+        SpokenLanguage.CHINESE,  # not yet defined which code to use
+        SpokenLanguage.CHINESE_TRADITIONAL,  # not yet defined which code to use
+        SpokenLanguage.KOREAN,  # not yet officialy supported on website
+    ]
+
+
+def _is_lang_needed(language: SpokenLanguage) -> bool:
+    return language not in [
         SpokenLanguage.CHINESE,  # not yet defined which code to use
         SpokenLanguage.CHINESE_TRADITIONAL,  # not yet defined which code to use
         SpokenLanguage.KOREAN,  # not yet officialy supported on website
