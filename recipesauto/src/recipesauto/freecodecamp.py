@@ -422,7 +422,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "memory": 2147483648,
                 },
                 "task_name": "freecodecamp",
-                "warehouse_path": "/.hidden/dev",
+                "warehouse_path": "/freecodecamp",
             },
             "enabled": True,
             "language": _get_zf_language(language=language),
