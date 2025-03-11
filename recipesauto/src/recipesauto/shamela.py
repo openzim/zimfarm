@@ -243,7 +243,7 @@ def _get_category_include_regex(category: int):
             book = match.group(1)
             books.append(book)
 
-    return(f"^https:\\/\\/shamela\\.ws\\/(book\\/({"|".join(books)})($|\\/.*)|category\\/{category}|author\\/.+)" )
+    return f"^https:\\/\\/shamela\\.ws\\/(book\\/({'|'.join(books)})($|\\/.*)|category\\/{category}|author\\/.+)"
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
@@ -265,10 +265,12 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "name": check_zim_name(f"shamela.ws_ar_{category_key}"),
                     "output": "/output",
                     "publisher": "openZIM",
-                    "scopeIncludeRx": _get_category_include_regex(category_data["number"]),
+                    "scopeIncludeRx": _get_category_include_regex(
+                        category_data["number"]
+                    ),
                     "scopeType": "custom",
                     "seeds": f"https://shamela.ws/category/{category_data['number']}",
-                    "title": category_data['title'],
+                    "title": category_data["title"],
                     "workers": "4",
                     "zim-lang": "ara",
                     "zimit-progress-file": "/output/task_progress.json",
@@ -281,12 +283,14 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "platform": "shamela",
                 "resources": {
                     "cpu": 3,
-                    "disk": category_data.get("disk", 107374182400), # 100G by default
+                    "disk": category_data.get("disk", 107374182400),  # 100G by default
                     "memory": 4294967296,
-                    'shm': 1073741824,
+                    "shm": 1073741824,
                 },
                 "task_name": "zimit",
-                "warehouse_path": "/zimit" if category_data.get("in_prod", False) else "/.hidden/dev",
+                "warehouse_path": (
+                    "/zimit" if category_data.get("in_prod", False) else "/.hidden/dev"
+                ),
             },
             "enabled": True,
             "language": {
@@ -295,7 +299,9 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "name_native": "العربية",
             },
             "name": f"shamela.ws_ar_{category_key}-{category_data['number']}",
-            "periodicity": "quarterly" if category_data.get("in_prod", False) else "manually",
+            "periodicity": (
+                "quarterly" if category_data.get("in_prod", False) else "manually"
+            ),
             "tags": [
                 "shamela",
             ],
@@ -307,5 +313,5 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
 def _is_needed(category_key: Any, category_data: Any) -> bool:
     return True
-    #return category_data["number"] in [1, 2, 3, 4, 5, 6, 34]
-    #return category_data["number"] == 1
+    # return category_data["number"] in [1, 2, 3, 4, 5, 6, 34]
+    # return category_data["number"] == 1
