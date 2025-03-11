@@ -125,3 +125,12 @@ class FreeCodeCampFlagsSchema(SerializableSchema):
         data_key="zim-file",
         validate=validate_zim_filename,
     )
+
+    illustration = fields.Url(
+        metadata={
+            "label": "Illustration",
+            "description": "URL for ZIM illustration. Freecodecamp default logo if "
+            "missing",
+        },
+        required=False,
+    )
