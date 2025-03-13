@@ -43,7 +43,7 @@ static_data = {
     "al-tajwid-wa-al-qiraat": {
         "number": 5,
         "title": "التجويد؛ المجموعة رقم 5",
-        "description": "Jالتجويد وأصول القراءات والإبانة عن معانيها",
+        "description": "التجويد وأصول القراءات والإبانة عن معانيها",
     },
     "al-sunna": {
         "number": 6,
