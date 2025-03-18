@@ -292,7 +292,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "/zimit" if category_data.get("in_prod", False) else "/.hidden/dev"
                 ),
             },
-            "enabled": True,
+            "enabled": False,
             "language": {
                 "code": "ar",
                 "name_en": "Arabic",
