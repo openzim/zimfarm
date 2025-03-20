@@ -27,6 +27,7 @@ OFFLINER_DEFS = {
     Offliner.kolibri: od("kolibri2zim", True, False),
     Offliner.devdocs: od("devdocs2zim", True, False),
     Offliner.mindtouch: od("mindtouch2zim", True, True),
+    Offliner.phet: od("phet2zim", False, False),
 }
 
 
@@ -41,9 +42,6 @@ def command_for(offliner, flags, mount_point):
     """command:list to be passed to docker run
 
     for an offliner,  flags:dict and a mount_point:Path (task volume)"""
-
-    if offliner == Offliner.phet:
-        return ["/bin/bash", "-c", "'cd /phet && npm i && npm start'"]
 
     offliner_def = OFFLINER_DEFS[offliner]
     cmd = offliner_def.cmd
