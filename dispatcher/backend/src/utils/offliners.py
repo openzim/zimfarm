@@ -82,12 +82,12 @@ def command_for(offliner, flags, mount_point):
             # always keep temporary files, they will be deleted anyway
             flags["keep"] = True
 
-    _command_for_set_default_publisher(flags, offliner_def)
+    _command_for_set_default_publisher(flags, offliner)
 
     return [cmd] + compute_flags(flags)
 
 
-def _command_for_set_default_publisher(flags, offliner_def):
+def _command_for_set_default_publisher(flags, offliner):
     """Set a default publisher in the command
 
     The "publisher" flag is set if a default is provided in the local environment and
@@ -96,7 +96,11 @@ def _command_for_set_default_publisher(flags, offliner_def):
     For a scraper to be integrated into Zimfarm it is now a requirement that a flag
     "publisher" is present and named like this.
     """
-    if constants.DEFAULT_PUBLISHER and "publisher" not in flags:
+    if (
+        offliner != Offliner.phet
+        and constants.DEFAULT_PUBLISHER
+        and "publisher" not in flags
+    ):
         flags["publisher"] = constants.DEFAULT_PUBLISHER
 
 
