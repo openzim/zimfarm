@@ -285,6 +285,7 @@ class Platform:
     devdocs = "devdocs"
     shamela = "shamela"
     libretexts = "libretexts"
+    phet = "phet"
 
     @classmethod
     def all(cls) -> str:
@@ -297,6 +298,7 @@ class Platform:
             cls.devdocs,
             cls.shamela,
             cls.libretexts,
+            cls.phet,
         ]
 
     @classmethod
