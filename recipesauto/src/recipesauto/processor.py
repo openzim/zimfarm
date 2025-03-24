@@ -53,6 +53,8 @@ class Processor:
             import recipesauto.freecodecamp as setmodule
         elif context.kind == "shamela":
             import recipesauto.shamela as setmodule
+        elif context.kind == "phet":
+            import recipesauto.phet as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
