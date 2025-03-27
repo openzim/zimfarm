@@ -421,7 +421,7 @@ class ScheduleCloneRoute(BaseRoute):
             category=schedule.category,
             periodicity=schedule.periodicity,
             tags=schedule.tags,
-            enabled=schedule.enabled,
+            enabled=False,
             config=schedule.config,
             notification=schedule.notification,
             language_code=schedule.language_code,
