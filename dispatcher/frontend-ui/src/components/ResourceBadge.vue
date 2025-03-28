@@ -5,7 +5,7 @@
 </template>
 
 <script type="text/javascript">
-  import filesize from 'filesize';
+  import Constants from '../constants.js'
 
   export default {
     name: 'ResourceBadge',
@@ -15,10 +15,10 @@
       human_value: String,  // human repr of value (instead of raw one)
     },
     computed: {
-      displayed_value() {
+      displayed_value() {    
         if (this.human_value)
           return this.human_value;
-        return (this.kind == 'cpu') ? this.value : filesize(this.value); },
+        return (this.kind == 'cpu') ? this.value : Constants.filesize(this.value); },
       icon() { return {cpu: 'microchip', memory: 'memory', disk: 'hdd', shm: 'compact-disc'}[this.kind]; },
       tooltip_text() {
         if (!this.tooltip)

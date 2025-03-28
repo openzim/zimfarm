@@ -146,8 +146,6 @@
   import ResourceBadge from '../components/ResourceBadge.vue'
   import FlagsList from '../components/FlagsList.vue'
 
-  import filesize from 'filesize';
-
   export default {
     name: 'TaskView',
     mixins: [ZimfarmMixins],
@@ -226,7 +224,7 @@
       image_human() { return Constants.image_human(this.task.config); },
       image_url() { return Constants.image_url(this.task.config); },
       can_cancel() { return this.task && this.is_running && this.task["_id"]; },
-      max_memory() { try { return filesize(this.task_container.stats.memory.max_usage); } catch { return null; } },
+      max_memory() { try { return Constants.filesize(this.task_container.stats.memory.max_usage); } catch { return null; } },
       monitoring_url () {
         return 'http://monitoring.openzim.org/host/{schedule_name}_{short_id}.{worker}/#menu_cgroup_zimscraper_{scraper}_{short_id}_submenu_cpu;after={start_ts};before={end_ts};theme=slate;utc=Africa/Bamako'.format({
           schedule_name: this.schedule_name,

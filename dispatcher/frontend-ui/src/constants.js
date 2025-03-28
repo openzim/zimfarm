@@ -246,7 +246,7 @@ function short_id(id) {
 
 function filesize2(value) {
   if (!value) return "";
-  return filesize(value);
+  return filesize(value, { base: 2, standard: "iec", precision: 3 }); // precision 3, display in KiB, MiB,... instead of KB, MB,...
 }
 
 function duplicate(dict) {
