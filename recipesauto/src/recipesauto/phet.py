@@ -96,6 +96,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "config": {
                 "flags": {
                     "mulOnly": True,
+                    "withoutLanguageVariants": True,
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
