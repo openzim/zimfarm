@@ -59,8 +59,8 @@
             <TaskLink :_id="row.task._id" :updated_at="started_on(row.task)" />
           </td>
           <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.cpu }}</td>
-          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.memory|filesize }}</td>
-          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.disk|filesize }}</td>
+          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.memory| formattedBytesSize }}</td>
+          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.disk| formattedBytesSize }}</td>
         </tr>
       </tbody>
     </table>
@@ -69,8 +69,6 @@
 </template>
 
 <script type="text/javascript">
-  import filesize from 'filesize';
-
   import Constants from '../constants.js'
   import ZimfarmMixins from '../components/Mixins.js'
   import ErrorMessage from '../components/ErrorMessage.vue'
@@ -159,10 +157,10 @@
         return this.current_cpu + "/" + this.max_cpu;
       },
       usage_memory() {
-        return filesize(this.current_memory) + "/" + filesize(this.max_memory);
+        return Constants.formattedBytesSize(this.current_memory) + "/" + Constants.formattedBytesSize(this.max_memory);
       },
       usage_disk() {
-        return filesize(this.current_disk) + "/" + filesize(this.max_disk);
+        return Constants.formattedBytesSize(this.current_disk) + "/" + Constants.formattedBytesSize(this.max_disk);
       },
       overall_progress() {
         return this.max_memory ? (this.current_memory * 100 / this.max_memory).toFixed(0) : 0;

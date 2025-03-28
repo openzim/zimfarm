@@ -84,7 +84,7 @@ import routes from './routes'
 import store from './store'  // Vuex store
 
 // Own filters
-Vue.filter('filesize', Constants.filesize);
+Vue.filter('formattedBytesSize', Constants.formattedBytesSize);
 Vue.filter('format_dt', Constants.format_dt);
 Vue.filter('from_now', Constants.from_now);
 Vue.filter('duration', Constants.format_duration);

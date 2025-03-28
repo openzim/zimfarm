@@ -502,14 +502,14 @@
         if (values.indexOf(this.edit_schedule.config.resources.memory) == -1)
           values.push(this.edit_schedule.config.resources.memory);
         values.sort(function (a, b) { return a - b;});
-        return values.map(function (value) { return {text: Constants.filesize(value), value: value}; });
+        return values.map(function (value) { return {text: Constants.formattedBytesSize(value), value: value}; });
       },
       diskOptions() {
         let values = Constants.disk_values;
         if (values.indexOf(this.edit_schedule.config.resources.disk) == -1)
           values.push(this.edit_schedule.config.resources.disk);
         values.sort(function (a, b) { return a - b;});
-        return values.map(function (value) { return {text: Constants.filesize(value), value: value}; });
+        return values.map(function (value) { return {text: Constants.formattedBytesSize(value), value: value}; });
       },
       categoriesOptions() {
         return this.categories.map(function (category) { return {text: category, value: category}; });

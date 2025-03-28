@@ -71,7 +71,7 @@
                 <thead><tr><th>Filename</th><th>Size</th><th>Created After</th><th>Upload Duration</th><th>Quality</th></tr></thead>
                 <tr v-for="file in sorted_files" :key="file.name">
                   <td><a target="_blank" :href="kiwix_download_url + task.config.warehouse_path + '/' + file.name">{{ file.name}}</a></td>
-                  <td>{{ file.size | filesize }}</td>
+                  <td>{{ file.size | formattedBytesSize }}</td>
                   <td v-tooltip="format_dt(file.created_timestamp)">{{ file | created_after(task) }}</td>
                   <td v-tooltip="format_dt(file.uploaded_timestamp)" v-if="file.status == 'uploaded'">{{ file | upload_duration }}</td>
                   <td v-else>-</td>
@@ -145,8 +145,6 @@
   import ErrorMessage from '../components/ErrorMessage.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
   import FlagsList from '../components/FlagsList.vue'
-
-  import filesize from 'filesize';
 
   export default {
     name: 'TaskView',
@@ -226,7 +224,7 @@
       image_human() { return Constants.image_human(this.task.config); },
       image_url() { return Constants.image_url(this.task.config); },
       can_cancel() { return this.task && this.is_running && this.task["_id"]; },
-      max_memory() { try { return filesize(this.task_container.stats.memory.max_usage); } catch { return null; } },
+      max_memory() { try { return Constants.formattedBytesSize(this.task_container.stats.memory.max_usage); } catch { return null; } },
       monitoring_url () {
         return 'http://monitoring.openzim.org/host/{schedule_name}_{short_id}.{worker}/#menu_cgroup_zimscraper_{scraper}_{short_id}_submenu_cpu;after={start_ts};before={end_ts};theme=slate;utc=Africa/Bamako'.format({
           schedule_name: this.schedule_name,
