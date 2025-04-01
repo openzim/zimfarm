@@ -62,7 +62,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
-                    "tag": "3.0.2",
+                    "tag": "3.1.0",
                 },
                 "monitor": False,
                 "platform": None,
@@ -100,7 +100,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
-                    "tag": "3.0.2",
+                    "tag": "3.1.0",
                 },
                 "monitor": False,
                 "platform": None,
