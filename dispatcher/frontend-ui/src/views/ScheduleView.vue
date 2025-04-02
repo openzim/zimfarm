@@ -209,7 +209,6 @@
       duration_dict() { return Constants.schedule_durations_dict(this.schedule.duration); }
     },
     methods: {
-      filesize(value) { return Constants.filesize(parseInt(value)); },
       copyCommand(command) {
         let parent = this;
         this.$copyText(command).then(function () {

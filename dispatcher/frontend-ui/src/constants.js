@@ -1,4 +1,4 @@
-import filesize from "filesize";
+import { filesize } from "filesize";
 import querystring from "querystring";
 const { DateTime, Duration, Interval } = require("luxon");
 
@@ -244,9 +244,9 @@ function short_id(id) {
   return id.substr(0, 5);
 }
 
-function filesize2(value) {
+function formattedBytesSize(value) {
   if (!value) return "";
-  return filesize(value);
+  return filesize(value, { base: 2, standard: "iec", precision: 3 }); // precision 3, display in KiB, MiB,... instead of KB, MB,...
 }
 
 function duplicate(dict) {
@@ -627,7 +627,7 @@ export default {
   trim_command: trim_command,
   from_now: from_now,
   short_id: short_id,
-  filesize: filesize2,
+  formattedBytesSize: formattedBytesSize,
   duplicate: duplicate,
   schedule_durations_dict: schedule_durations_dict,
   secret_fields_for: secret_fields_for,
