@@ -88,7 +88,7 @@ static_data = {
     "al-fiqh-al-hanafi": {
         "number": 14,
         "title": "الفقه الحنفي؛ المجموعة رقم 14",
-        "description": "فقه المذهب المالكي",
+        "description": "فقه المذهب الحنفي",
     },
     "al-fiqh-al-maliki": {
         "number": 15,
