@@ -52,7 +52,7 @@ Uploader is very fast and convenient (can watch and resumes files) but works onl
 
 ### receiver
 
-The [receiver](https://ghcr.io/openzim/zimfarm-receiver) is a jailed OpenSSH-server that receives scraper logs and ZIM files and pass the latter through a quarantine via the [zimcheck](https://github.com/openzim/zim-tools) tool which eventually either put them aside (invalid ZIM) or move those to the [public download server](download.kiwix.org/zim/).
+The [receiver](https://ghcr.io/openzim/zimfarm-receiver) is a jailed OpenSSH-server that receives scraper logs and ZIM files and pass the latter through a quarantine via the [zimcheck](https://github.com/openzim/zim-tools) tool which eventually either put them aside (invalid ZIM) or move those to the [public download server](https://download.kiwix.org/zim/).
 
 ### scrapers
 
