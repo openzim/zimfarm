@@ -259,7 +259,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "description": category_data["description"],
                     "failOnFailedSeed": True,
                     "failOnInvalidStatus": True,
-                    "favicon": "https://shamela.ws/assets/images/intro.jpg",
+                    # "favicon": "https://shamela.ws/assets/images/intro.jpg",
+                    "favicon": "https://drive.farm.openzim.org/Corrected%20Logos%20for%20recipes/shamela_48.png",
                     "keep": True,
                     "mobileDevice": "Pixel 2",
                     "name": check_zim_name(f"shamela.ws_ar_{category_key}"),
@@ -277,7 +278,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/zimit",
-                    "tag": "3.0.3",
+                    "tag": "3.0.4",
                 },
                 "monitor": False,
                 "platform": "shamela",
