@@ -32,10 +32,11 @@
 </template2>
 
 <template>
-  <b-dropdown v-if="isLoggedIn" variant="light" size="sm" right>
+  <b-dropdown v-if="isLoggedIn" variant="light" size="sm" right class="w-100 w-md-auto">
 
     <template v-slot:button-content>
-      <font-awesome-icon icon="user-circle" size="sm" /> {{ $store.getters.username }}
+        <font-awesome-icon icon="user-circle" size="sm" />
+        <span class="ml-1">{{ $store.getters.username }}</span>
     </template>
 
     <b-dropdown-item @click.prevent="copyToken">
@@ -54,7 +55,7 @@
 
   </b-dropdown>
 
-  <router-link v-else class="btn btn-sm btn-light" :to="{ name: 'sign-in' }">
+  <router-link v-else class="btn btn-sm btn-light w-100 w-md-auto" :to="{ name: 'sign-in' }">
     <font-awesome-icon icon="sign-in-alt" size="sm" /> Sign-in
   </router-link>
 </template>
