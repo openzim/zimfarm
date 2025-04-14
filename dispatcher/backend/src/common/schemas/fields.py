@@ -75,3 +75,10 @@ tag_field = fields.List(String(validate=validate_not_empty), required=False)
 offliner_field = String(required=False, validate=validate_offliner)
 email_field = fields.Email(required=False, validate=validate_not_empty)
 username_field = String(required=True, validate=validate_not_empty)
+
+
+def validate_sort_order(value):
+    """Validate that sort order is either 'asc' or 'desc'"""
+    if value not in ["asc", "desc"]:
+        raise ValidationError("Sort order must be either 'asc' or 'desc'")
+    return True

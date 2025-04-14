@@ -2,8 +2,10 @@ import logging
 from typing import Any, Dict, List
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
+import sqlalchemy as sa
 from common.constants import SECRET_REPLACEMENT
 from common.schemas.models import ScheduleConfigSchema
+
 from utils.offliners import build_str_command
 
 logger = logging.getLogger(__name__)
@@ -135,3 +137,59 @@ def remove_url_secrets(response: dict):
                     )
                 )
                 response[key] = response[key].replace(url, secured_url)
+
+
+def get_sort_field_and_apply_order(
+    model, sort_by, sort_order, stmt, join_models=None, fallback_field=None
+):
+    """
+    Determines the sort field based on the model and sort_by parameter,
+    then applies the sort order to the statement.
+    """
+    join_models = join_models or {}
+
+    def apply_default_sort():
+        if fallback_field:
+            return stmt.order_by(
+                fallback_field.desc() if sort_order == "desc" else fallback_field.asc()
+            )
+        return stmt
+
+    if not sort_by:
+        return apply_default_sort()
+    try:
+        if "." in sort_by:
+            field_parts = sort_by.split(".")
+            parent, child = field_parts[0], field_parts[1]
+            if parent == "timestamp":
+                sort_field = model.timestamp[child]["$date"].astext.cast(sa.BigInteger)
+            else:
+                logger.warning(f"Unsupported field with dot notation: {sort_by}")
+                return apply_default_sort()
+        elif sort_by in ("worker", "worker_name"):
+            if "Worker" in join_models:
+                sort_field = join_models["Worker"].name
+            else:
+                logger.warning(
+                    f"Cannot sort by {sort_by}: Worker relationship not found"
+                )
+                return apply_default_sort()
+        elif sort_by == "schedule_name":
+            if "Schedule" in join_models:
+                sort_field = join_models["Schedule"].name
+            else:
+                logger.warning(
+                    "Cannot sort by schedule_name: Schedule relationship not found"
+                )
+                return apply_default_sort()
+        elif hasattr(model, sort_by):
+            sort_field = getattr(model, sort_by)
+        else:
+            logger.warning(f"Field {sort_by} not recognized")
+            return apply_default_sort()
+        return stmt.order_by(
+            sort_field.desc() if sort_order == "desc" else sort_field.asc()
+        )
+    except Exception as e:
+        logger.error(f"Error applying sorting: {e}")
+        return apply_default_sort()

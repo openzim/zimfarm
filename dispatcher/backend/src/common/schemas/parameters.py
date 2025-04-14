@@ -22,6 +22,7 @@ from common.schemas.fields import (
     validate_priority,
     validate_role,
     validate_schedule_name,
+    validate_sort_order,
     validate_status,
     validate_warehouse_path,
     validate_worker_name,
@@ -55,6 +56,9 @@ class RequestedTaskSchema(Schema):
     worker = worker_field
     priority = priority_field
     schedule_name = fields.List(schedule_name_field, required=False)
+
+    sort_by = fields.String(required=False)
+    sort_order = fields.String(required=False, validate=validate_sort_order)
 
     matching_cpu = fields.Integer(required=False, validate=validate_cpu)
     matching_memory = fields.Integer(required=False, validate=validate_memory)
@@ -123,6 +127,8 @@ class TasksSchema(Schema):
     limit = limit_field_20_200
     status = fields.List(String(validate=validate_status), required=False)
     schedule_name = schedule_name_field
+    sort_by = fields.String(required=False)
+    sort_order = fields.String(required=False, validate=validate_sort_order)
 
 
 # tasks POST

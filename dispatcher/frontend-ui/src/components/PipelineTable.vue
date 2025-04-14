@@ -13,22 +13,84 @@
       </caption>
       <thead v-if="selectedTable == 'todo'">
         <tr>
-          <th>Schedule</th>
-          <th>Requested</th>
-          <th>By</th>
+          <th @click="sortBy('schedule_name')" class="sortable">
+            Schedule
+            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('timestamp.requested')" class="sortable">
+            Requested
+            <span v-if="sortColumn === 'timestamp.requested'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('requested_by')" class="sortable">
+            By
+            <span v-if="sortColumn === 'requested_by'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
           <th>Resources</th>
-          <th>Worker</th>
+          <th @click="sortBy('worker')" class="sortable">
+            Worker
+            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
           <th v-show="canUnRequestTasks">Remove</th>
         </tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
-        <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
+        <tr>
+          <th @click="sortBy('schedule_name')" class="sortable">
+            Schedule
+            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('timestamp.reserved')" class="sortable">
+            Started
+            <span v-if="sortColumn === 'timestamp.reserved'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('worker')" class="sortable">
+            Worker
+            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+        </tr>
       </thead>
       <thead v-if="selectedTable == 'done'">
-        <tr><th>Schedule</th><th>Completed</th><th>Worker</th><th>Duration</th></tr>
+        <tr>
+          <th @click="sortBy('schedule_name')" class="sortable">
+            Schedule
+            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('updated_at')" class="sortable">
+            Completed
+            <span v-if="sortColumn === 'updated_at'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('worker')" class="sortable">
+            Worker
+            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th>
+            Duration
+          </th>
+        </tr>
       </thead>
       <thead v-if="selectedTable == 'failed'">
-        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th><th>Last Run</th></tr>
+        <tr>
+          <th @click="sortBy('schedule_name')" class="sortable">
+            Schedule
+            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('updated_at')" class="sortable">
+            Stopped
+            <span v-if="sortColumn === 'updated_at'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th @click="sortBy('worker')" class="sortable">
+            Worker
+            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th>
+            Duration
+          </th>
+          <th @click="sortBy('status')" class="sortable">
+            Status
+            <span v-if="sortColumn === 'status'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+          </th>
+          <th>Last Run</th>
+        </tr>
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task._id">
@@ -97,6 +159,8 @@
         loading: false,
         schedules_last_runs: {}, // last runs for all schedule_names of tasks
         last_runs_loaded: false,  // used to trigger render() on last_run cell
+        sortColumn: null,
+        sortOrder: 'desc',
       };
     },
     computed: {
@@ -128,6 +192,12 @@
         let parent = this;
         parent.toggleLoader("fetching tasks…");
         parent.loading = true;
+        if (this.sortColumn) {
+          params.sort_by = this.sortColumn;
+          params.sort_order = this.sortOrder;
+          if (params.sort) delete params.sort;
+          if (params.order) delete params.order;
+        }
         this.queryAPI('get', url, {params})
           .then(function (response) {
               parent.resetData();
@@ -207,6 +277,15 @@
         parent.last_runs_loaded = true;
         parent.toggleLoader(false);
       },
+      sortBy(column) {
+        if (this.sortColumn === column) {
+          this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+          this.sortColumn = column;
+          this.sortOrder = 'desc';
+        }
+        this.loadData();
+      },
     },
     mounted() {
       this.loadData();
@@ -222,3 +301,17 @@
     }
   };
 </script>
+<style>
+.sortable {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+.sortable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.sort-icon {
+  margin-left: 5px;
+  font-size: 0.8em;
+}
+</style>
