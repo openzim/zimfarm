@@ -23,7 +23,7 @@ from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.utils import get_sort_field_and_apply_order, remove_secrets_from_response
+from routes.utils import apply_sort, remove_secrets_from_response
 from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
@@ -71,13 +71,12 @@ class TasksRoute(BaseRoute):
         )
         join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
         default_field = dbm.Task.updated_at
-        stmt = get_sort_field_and_apply_order(
-            model=dbm.Task,
+        stmt = apply_sort(
+            stmt=stmt,
             sort_by=sort_by,
             sort_order=sort_order,
-            stmt=stmt,
-            join_models=join_models,
-            fallback_field=default_field,
+            model=dbm.Task,
+            join_models=join_models
         )
 
         # get tasks from database

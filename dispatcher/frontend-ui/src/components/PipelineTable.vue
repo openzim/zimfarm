@@ -160,7 +160,7 @@
         schedules_last_runs: {}, // last runs for all schedule_names of tasks
         last_runs_loaded: false,  // used to trigger render() on last_run cell
         sortColumn: null,
-        sortOrder: 'desc',
+        sortOrder: null,
       };
     },
     computed: {
@@ -279,11 +279,17 @@
       },
       sortBy(column) {
         if (this.sortColumn === column) {
-          this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+          if (this.sortOrder === 'asc') {
+            this.sortOrder = 'desc';
+          } else {
+            this.sortColumn = null;
+            this.sortOrder = null;
+          }
         } else {
           this.sortColumn = column;
-          this.sortOrder = 'desc';
+          this.sortOrder = 'asc';
         }
+        
         this.loadData();
       },
     },
@@ -296,6 +302,8 @@
     },
     watch: {
       selectedTable() {
+        this.sortColumn = null;
+        this.sortOrder = null;
         this.loadData();
       },
     }

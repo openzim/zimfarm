@@ -139,57 +139,43 @@ def remove_url_secrets(response: dict):
                 response[key] = response[key].replace(url, secured_url)
 
 
-def get_sort_field_and_apply_order(
-    model, sort_by, sort_order, stmt, join_models=None, fallback_field=None
-):
+def apply_sort(stmt, sort_by, sort_order, model=None, join_models=None):
     """
-    Determines the sort field based on the model and sort_by parameter,
-    then applies the sort order to the statement.
+    Apply sorting based on a sort field name and order.
     """
     join_models = join_models or {}
-
-    def apply_default_sort():
-        if fallback_field:
-            return stmt.order_by(
-                fallback_field.desc() if sort_order == "desc" else fallback_field.asc()
-            )
-        return stmt
-
+    
+    def apply_sort_direction(field):
+        """Apply sort direction to a field"""
+        return field.desc() if sort_order == "desc" else field.asc()
+    
     if not sort_by:
-        return apply_default_sort()
+        return stmt.order_by(apply_sort_direction(model.updated_at))
+    
     try:
-        if "." in sort_by:
-            field_parts = sort_by.split(".")
-            parent, child = field_parts[0], field_parts[1]
-            if parent == "timestamp":
-                sort_field = model.timestamp[child]["$date"].astext.cast(sa.BigInteger)
-            else:
-                logger.warning(f"Unsupported field with dot notation: {sort_by}")
-                return apply_default_sort()
-        elif sort_by in ("worker", "worker_name"):
-            if "Worker" in join_models:
-                sort_field = join_models["Worker"].name
-            else:
-                logger.warning(
-                    f"Cannot sort by {sort_by}: Worker relationship not found"
-                )
-                return apply_default_sort()
+        if sort_by == "priority":
+            return stmt.order_by(apply_sort_direction(model.priority))
+        
+        elif sort_by == "updated_at":
+            return stmt.order_by(apply_sort_direction(model.updated_at))
+            
         elif sort_by == "schedule_name":
-            if "Schedule" in join_models:
-                sort_field = join_models["Schedule"].name
-            else:
-                logger.warning(
-                    "Cannot sort by schedule_name: Schedule relationship not found"
-                )
-                return apply_default_sort()
-        elif hasattr(model, sort_by):
-            sort_field = getattr(model, sort_by)
-        else:
-            logger.warning(f"Field {sort_by} not recognized")
-            return apply_default_sort()
-        return stmt.order_by(
-            sort_field.desc() if sort_order == "desc" else sort_field.asc()
-        )
+            return stmt.order_by(apply_sort_direction(join_models["Schedule"].name))
+            
+        elif sort_by == "worker" or sort_by == "worker_name":
+            return stmt.order_by(apply_sort_direction(join_models["Worker"].name))
+        
+        elif sort_by == "timestamp.requested":
+            field = model.timestamp["requested"]["$date"].astext.cast(sa.BigInteger)
+            return stmt.order_by(apply_sort_direction(field))
+            
+        elif sort_by == "timestamp.reserved":
+            field = model.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger)
+            return stmt.order_by(apply_sort_direction(field))
+        elif model and hasattr(model, sort_by):
+            return stmt.order_by(apply_sort_direction(getattr(model, sort_by)))
+        logger.warning(f"Unknown sort field: {sort_by}")
+        
     except Exception as e:
         logger.error(f"Error applying sorting: {e}")
-        return apply_default_sort()
+        return stmt.order_by(apply_sort_direction(model.updated_at))

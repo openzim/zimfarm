@@ -30,7 +30,7 @@ from errors.http import (
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from routes.utils import get_sort_field_and_apply_order, remove_secrets_from_response
+from routes.utils import apply_sort, remove_secrets_from_response
 from utils.scheduling import find_requested_task_for, request_a_schedule
 from utils.token import AccessToken
 
@@ -99,17 +99,12 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
     )
     join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
     default_field = dbm.RequestedTask.priority
-    stmt = get_sort_field_and_apply_order(
-        model=dbm.RequestedTask,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        stmt=stmt,
-        join_models=join_models,
-        fallback_field=default_field,
-    )
-    if sort_by == "priority" or not sort_by:
-        stmt = stmt.order_by(
-            dbm.RequestedTask.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger)
+    stmt = apply_sort(
+            stmt=stmt,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            model=dbm.RequestedTask,
+            join_models=join_models
         )
 
     if schedule_names:
