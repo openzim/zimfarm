@@ -74,8 +74,8 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
     schedule_names = request_args["schedule_name"]
     priority = request_args.get("priority")
     # Get sorting parameters
-    sort_by = request_args.get("sort_by", "priority")
-    sort_order = request_args.get("sort_order", "desc")
+    sort_by = request_args.get("sort_by")
+    sort_order = request_args.get("sort_order")
 
     # get requested tasks from database
     stmt = (
@@ -98,14 +98,13 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
         .join(dbm.Schedule, dbm.RequestedTask.schedule, isouter=True)
     )
     join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
-    default_field = dbm.RequestedTask.priority
     stmt = apply_sort(
-            stmt=stmt,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            model=dbm.RequestedTask,
-            join_models=join_models
-        )
+        stmt=stmt,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        model=dbm.RequestedTask,
+        join_models=join_models,
+    )
 
     if schedule_names:
         stmt = stmt.filter(dbm.Schedule.name.in_(schedule_names))

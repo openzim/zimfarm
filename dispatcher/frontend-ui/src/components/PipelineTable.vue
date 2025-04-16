@@ -13,82 +13,78 @@
       </caption>
       <thead v-if="selectedTable == 'todo'">
         <tr>
-          <th @click="sortBy('schedule_name')" class="sortable">
-            Schedule
-            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('timestamp.requested')" class="sortable">
-            Requested
-            <span v-if="sortColumn === 'timestamp.requested'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('requested_by')" class="sortable">
-            By
-            <span v-if="sortColumn === 'requested_by'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="timestamp.requested" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Requested</sortable-header>
+          <sortable-header column="requested_by" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">By</sortable-header>
           <th>Resources</th>
-          <th @click="sortBy('worker')" class="sortable">
-            Worker
-            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
           <th v-show="canUnRequestTasks">Remove</th>
         </tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
         <tr>
-          <th @click="sortBy('schedule_name')" class="sortable">
-            Schedule
-            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('timestamp.reserved')" class="sortable">
-            Started
-            <span v-if="sortColumn === 'timestamp.reserved'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('worker')" class="sortable">
-            Worker
-            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="timestamp.reserved" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Started</sortable-header>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
         </tr>
       </thead>
       <thead v-if="selectedTable == 'done'">
         <tr>
-          <th @click="sortBy('schedule_name')" class="sortable">
-            Schedule
-            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('updated_at')" class="sortable">
-            Completed
-            <span v-if="sortColumn === 'updated_at'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('worker')" class="sortable">
-            Worker
-            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th>
-            Duration
-          </th>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="updated_at" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Completed</sortable-header>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
+          <th>Duration</th>
         </tr>
       </thead>
       <thead v-if="selectedTable == 'failed'">
         <tr>
-          <th @click="sortBy('schedule_name')" class="sortable">
-            Schedule
-            <span v-if="sortColumn === 'schedule_name'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('updated_at')" class="sortable">
-            Stopped
-            <span v-if="sortColumn === 'updated_at'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th @click="sortBy('worker')" class="sortable">
-            Worker
-            <span v-if="sortColumn === 'worker'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
-          <th>
-            Duration
-          </th>
-          <th @click="sortBy('status')" class="sortable">
-            Status
-            <span v-if="sortColumn === 'status'" class="sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-          </th>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="updated_at" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Stopped</sortable-header>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
+          <th>Duration</th>
+          <sortable-header column="status" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Status</sortable-header>
           <th>Last Run</th>
         </tr>
       </thead>
@@ -142,11 +138,12 @@
   import RemoveRequestedTaskButton from '../components/RemoveRequestedTaskButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
   import TaskLink from '../components/TaskLink.vue'
+  import SortableHeader from '../components/SortableHeader.vue'
 
   export default {
     name: 'PipelineTable',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink},
+    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink, SortableHeader},
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
@@ -309,17 +306,3 @@
     }
   };
 </script>
-<style>
-.sortable {
-  cursor: pointer;
-  position: relative;
-  user-select: none;
-}
-.sortable:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-.sort-icon {
-  margin-left: 5px;
-  font-size: 0.8em;
-}
-</style>

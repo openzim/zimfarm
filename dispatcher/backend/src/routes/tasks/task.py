@@ -49,7 +49,7 @@ class TasksRoute(BaseRoute):
         schedule_name = request_args.get("schedule_name")
         # Get sorting parameters
         sort_by = request_args.get("sort_by")
-        sort_order = request_args.get("sort_order", "desc")
+        sort_order = request_args.get("sort_order")
 
         stmt = (
             sa.select(
@@ -68,15 +68,19 @@ class TasksRoute(BaseRoute):
             )
             .join(dbm.Worker, dbm.Task.worker, isouter=True)
             .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
+            .order_by(
+                dbm.RequestedTask.timestamp["requested"]["$date"].astext.cast(
+                    sa.BigInteger
+                )
+            )
         )
         join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
-        default_field = dbm.Task.updated_at
         stmt = apply_sort(
             stmt=stmt,
             sort_by=sort_by,
             sort_order=sort_order,
             model=dbm.Task,
-            join_models=join_models
+            join_models=join_models,
         )
 
         # get tasks from database

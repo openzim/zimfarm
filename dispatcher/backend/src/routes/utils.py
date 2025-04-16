@@ -143,39 +143,38 @@ def apply_sort(stmt, sort_by, sort_order, model=None, join_models=None):
     """
     Apply sorting based on a sort field name and order.
     """
-    join_models = join_models or {}
-    
+
     def apply_sort_direction(field):
         """Apply sort direction to a field"""
         return field.desc() if sort_order == "desc" else field.asc()
-    
+
     if not sort_by:
         return stmt.order_by(apply_sort_direction(model.updated_at))
-    
+
     try:
         if sort_by == "priority":
             return stmt.order_by(apply_sort_direction(model.priority))
-        
+
         elif sort_by == "updated_at":
             return stmt.order_by(apply_sort_direction(model.updated_at))
-            
+
         elif sort_by == "schedule_name":
             return stmt.order_by(apply_sort_direction(join_models["Schedule"].name))
-            
+
         elif sort_by == "worker" or sort_by == "worker_name":
             return stmt.order_by(apply_sort_direction(join_models["Worker"].name))
-        
+
         elif sort_by == "timestamp.requested":
             field = model.timestamp["requested"]["$date"].astext.cast(sa.BigInteger)
             return stmt.order_by(apply_sort_direction(field))
-            
+
         elif sort_by == "timestamp.reserved":
             field = model.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger)
             return stmt.order_by(apply_sort_direction(field))
         elif model and hasattr(model, sort_by):
             return stmt.order_by(apply_sort_direction(getattr(model, sort_by)))
         logger.warning(f"Unknown sort field: {sort_by}")
-        
+
     except Exception as e:
         logger.error(f"Error applying sorting: {e}")
         return stmt.order_by(apply_sort_direction(model.updated_at))
