@@ -139,42 +139,50 @@ def remove_url_secrets(response: dict):
                 response[key] = response[key].replace(url, secured_url)
 
 
+def apply_sort_direction(field, sort_order):
+    """Apply sort direction to a field"""
+    return field.desc() if sort_order == "desc" else field.asc()
+
+
 def apply_sort(stmt, sort_by, sort_order, model=None, join_models=None):
     """
     Apply sorting based on a sort field name and order.
     """
 
-    def apply_sort_direction(field):
-        """Apply sort direction to a field"""
-        return field.desc() if sort_order == "desc" else field.asc()
-
     if not sort_by:
-        return stmt.order_by(apply_sort_direction(model.updated_at))
+        return stmt.order_by(apply_sort_direction(model.updated_at, sort_order))
 
     try:
         if sort_by == "priority":
-            return stmt.order_by(apply_sort_direction(model.priority))
+            return stmt.order_by(apply_sort_direction(model.priority, sort_order))
 
         elif sort_by == "updated_at":
-            return stmt.order_by(apply_sort_direction(model.updated_at))
+            return stmt.order_by(apply_sort_direction(model.updated_at, sort_order))
 
         elif sort_by == "schedule_name":
-            return stmt.order_by(apply_sort_direction(join_models["Schedule"].name))
+            return stmt.order_by(
+                apply_sort_direction(join_models["Schedule"].name, sort_order)
+            )
 
         elif sort_by == "worker" or sort_by == "worker_name":
-            return stmt.order_by(apply_sort_direction(join_models["Worker"].name))
+            return stmt.order_by(
+                apply_sort_direction(join_models["Worker"].name, sort_order)
+            )
 
         elif sort_by == "timestamp.requested":
             field = model.timestamp["requested"]["$date"].astext.cast(sa.BigInteger)
-            return stmt.order_by(apply_sort_direction(field))
+            return stmt.order_by(apply_sort_direction(field, sort_order))
 
         elif sort_by == "timestamp.reserved":
             field = model.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger)
-            return stmt.order_by(apply_sort_direction(field))
+            return stmt.order_by(apply_sort_direction(field, sort_order))
         elif model and hasattr(model, sort_by):
-            return stmt.order_by(apply_sort_direction(getattr(model, sort_by)))
+            return stmt.order_by(
+                apply_sort_direction(getattr(model, sort_by), sort_order)
+            )
         logger.warning(f"Unknown sort field: {sort_by}")
+        return stmt.order_by(apply_sort_direction(model.updated_at, sort_order))
 
     except Exception as e:
         logger.error(f"Error applying sorting: {e}")
-        return stmt.order_by(apply_sort_direction(model.updated_at))
+        return stmt.order_by(apply_sort_direction(model.updated_at, sort_order))
