@@ -98,13 +98,22 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
         .join(dbm.Schedule, dbm.RequestedTask.schedule, isouter=True)
     )
     join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
-    stmt = apply_sort(
-        stmt=stmt,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        model=dbm.RequestedTask,
-        join_models=join_models,
-    )
+    if sort_by:
+        stmt = apply_sort(
+            stmt=stmt,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            model=dbm.RequestedTask,
+            join_models=join_models,
+        )
+    else:
+        stmt = stmt.order_by(dbm.RequestedTask.priority.desc())
+        stmt = stmt.order_by(
+            dbm.RequestedTask.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger)
+        )
+        stmt = stmt.order_by(
+            dbm.RequestedTask.timestamp["requested"]["$date"].astext.cast(sa.BigInteger)
+        )
 
     if schedule_names:
         stmt = stmt.filter(dbm.Schedule.name.in_(schedule_names))

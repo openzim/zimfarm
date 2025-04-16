@@ -68,20 +68,18 @@ class TasksRoute(BaseRoute):
             )
             .join(dbm.Worker, dbm.Task.worker, isouter=True)
             .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
-            .order_by(
-                dbm.RequestedTask.timestamp["requested"]["$date"].astext.cast(
-                    sa.BigInteger
-                )
-            )
         )
         join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
-        stmt = apply_sort(
-            stmt=stmt,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            model=dbm.Task,
-            join_models=join_models,
-        )
+        if sort_by:
+            stmt = apply_sort(
+                stmt=stmt,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                model=dbm.Task,
+                join_models=join_models,
+            )
+        else:
+            stmt = stmt.order_by(dbm.Task.updated_at.desc())
 
         # get tasks from database
         if statuses:
