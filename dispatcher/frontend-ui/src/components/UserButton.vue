@@ -35,7 +35,8 @@
   <b-dropdown v-if="isLoggedIn" variant="light" size="sm" right>
 
     <template v-slot:button-content>
-      <font-awesome-icon icon="user-circle" size="sm" /> {{ $store.getters.username }}
+        <font-awesome-icon icon="user-circle" size="sm" />
+        <span class="ml-1">{{ $store.getters.username }}</span>
     </template>
 
     <b-dropdown-item @click.prevent="copyToken">
