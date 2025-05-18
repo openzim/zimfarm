@@ -50,6 +50,20 @@ validate_zim_filename = validate.Regexp(
 validate_zim_title = validate.Length(max=30)
 validate_zim_description = validate.Length(max=80)
 validate_zim_longdescription = validate.Length(max=4000)
+validate_sort_order = validate.OneOf(["asc", "desc"])
+validate_sort_by = validate.OneOf(
+    [
+        "schedule_name",
+        "updated_at",
+        "worker",
+        "worker_name",
+        "priority",
+        "status",
+        "requested_by",
+        "timestamp.requested",
+        "timestamp.reserved",
+    ]
+)
 
 
 def validate_multiple_of_100(value):

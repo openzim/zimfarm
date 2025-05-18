@@ -13,22 +13,80 @@
       </caption>
       <thead v-if="selectedTable == 'todo'">
         <tr>
-          <th>Schedule</th>
-          <th>Requested</th>
-          <th>By</th>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="timestamp.requested" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Requested</sortable-header>
+          <sortable-header column="requested_by" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">By</sortable-header>
           <th>Resources</th>
-          <th>Worker</th>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
           <th v-show="canUnRequestTasks">Remove</th>
         </tr>
       </thead>
       <thead v-if="selectedTable == 'doing'">
-        <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
+        <tr>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="timestamp.reserved" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Started</sortable-header>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
+        </tr>
       </thead>
       <thead v-if="selectedTable == 'done'">
-        <tr><th>Schedule</th><th>Completed</th><th>Worker</th><th>Duration</th></tr>
+        <tr>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="updated_at" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Completed</sortable-header>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
+          <th>Duration</th>
+        </tr>
       </thead>
       <thead v-if="selectedTable == 'failed'">
-        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th><th>Last Run</th></tr>
+        <tr>
+          <sortable-header column="schedule_name" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Schedule</sortable-header>
+          <sortable-header column="updated_at" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Stopped</sortable-header>
+          <sortable-header column="worker" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Worker</sortable-header>
+          <th>Duration</th>
+          <sortable-header column="status" 
+                         :current-sort-column="sortColumn" 
+                         :current-sort-order="sortOrder" 
+                         @sort="sortBy">Status</sortable-header>
+          <th>Last Run</th>
+        </tr>
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task._id">
@@ -80,11 +138,12 @@
   import RemoveRequestedTaskButton from '../components/RemoveRequestedTaskButton.vue'
   import ResourceBadge from '../components/ResourceBadge.vue'
   import TaskLink from '../components/TaskLink.vue'
+  import SortableHeader from '../components/SortableHeader.vue'
 
   export default {
     name: 'PipelineTable',
     mixins: [ZimfarmMixins],
-    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink},
+    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink, SortableHeader},
     props: {
       selectedTable: String, // applied filter: todo, doing, done, failed
     },
@@ -97,6 +156,8 @@
         loading: false,
         schedules_last_runs: {}, // last runs for all schedule_names of tasks
         last_runs_loaded: false,  // used to trigger render() on last_run cell
+        sortColumn: null,
+        sortOrder: null,
       };
     },
     computed: {
@@ -128,6 +189,12 @@
         let parent = this;
         parent.toggleLoader("fetching tasks…");
         parent.loading = true;
+        if (this.sortColumn) {
+          params.sort_by = this.sortColumn;
+          params.sort_order = this.sortOrder;
+          if (params.sort) delete params.sort;
+          if (params.order) delete params.order;
+        }
         this.queryAPI('get', url, {params})
           .then(function (response) {
               parent.resetData();
@@ -207,6 +274,21 @@
         parent.last_runs_loaded = true;
         parent.toggleLoader(false);
       },
+      sortBy(column) {
+        if (this.sortColumn === column) {
+          if (this.sortOrder === 'asc') {
+            this.sortOrder = 'desc';
+          } else {
+            this.sortColumn = null;
+            this.sortOrder = null;
+          }
+        } else {
+          this.sortColumn = column;
+          this.sortOrder = 'asc';
+        }
+        
+        this.loadData();
+      },
     },
     mounted() {
       this.loadData();
@@ -217,6 +299,8 @@
     },
     watch: {
       selectedTable() {
+        this.sortColumn = null;
+        this.sortOrder = null;
         this.loadData();
       },
     }

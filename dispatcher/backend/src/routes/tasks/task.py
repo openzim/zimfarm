@@ -23,7 +23,7 @@ from errors.http import InvalidRequestJSON, TaskNotFound, WorkerNotFound
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import BadRequest
-from routes.utils import remove_secrets_from_response
+from routes.utils import apply_sort, remove_secrets_from_response
 from utils.check import raise_if, raise_if_none
 from utils.token import AccessToken
 
@@ -47,6 +47,9 @@ class TasksRoute(BaseRoute):
         skip, limit = request_args["skip"], request_args["limit"]
         statuses = request_args.get("status")
         schedule_name = request_args.get("schedule_name")
+        # Get sorting parameters
+        sort_by = request_args.get("sort_by")
+        sort_order = request_args.get("sort_order")
 
         stmt = (
             sa.select(
@@ -65,8 +68,18 @@ class TasksRoute(BaseRoute):
             )
             .join(dbm.Worker, dbm.Task.worker, isouter=True)
             .join(dbm.Schedule, dbm.Task.schedule, isouter=True)
-            .order_by(dbm.Task.updated_at.desc())
         )
+        join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
+        if sort_by:
+            stmt = apply_sort(
+                stmt=stmt,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                model=dbm.Task,
+                join_models=join_models,
+            )
+        else:
+            stmt = stmt.order_by(dbm.Task.updated_at.desc())
 
         # get tasks from database
         if statuses:
