@@ -1,38 +1,38 @@
 import datetime
+from collections import defaultdict
+from typing import ClassVar
 
 import pytz
 
 
 def getnow():
     """naive UTC now"""
-    return datetime.datetime.utcnow()
+    return datetime.datetime.now(datetime.UTC)
 
 
-def to_naive_utc(timestamp_or_iso):
+def to_naive_utc(timestamp_or_iso: datetime.datetime | int | str) -> datetime.datetime:
     """naive UTC datetime from iso string or timestamp"""
     if isinstance(timestamp_or_iso, str):
         new_date = datetime.datetime.fromisoformat(timestamp_or_iso)
     elif isinstance(timestamp_or_iso, int):
         new_date = datetime.datetime.fromtimestamp(timestamp_or_iso)
-    elif isinstance(timestamp_or_iso, datetime.datetime):
+    else:
         new_date = timestamp_or_iso
 
     return new_date.astimezone(pytz.utc).replace(tzinfo=None)
 
 
 class WorkersIpChangesCounts:
-    today = datetime.date.today()
-    counts = dict()
+    today: datetime.date = datetime.datetime.now(datetime.UTC).date()
+    counts: ClassVar[dict[str, int]] = defaultdict(int)
 
     @classmethod
     def reset(cls):
-        cls.today = datetime.date.today()
-        cls.counts = dict()
+        cls.today = datetime.datetime.now(datetime.UTC).date()
+        cls.counts = defaultdict(int)
 
     @classmethod
     def add(cls, worker: str) -> int:
-        if worker not in cls.counts.keys():
-            cls.counts[worker] = 0
         cls.counts[worker] += 1
         return cls.get(worker)
 

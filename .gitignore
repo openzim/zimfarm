@@ -133,3 +133,4 @@ worker/temp/
 environ.json
 .env
 Pipfile
+*.vim
