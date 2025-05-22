@@ -1,8 +1,8 @@
-from typing import Any, Type
+from typing import Any
 
 
 def raise_if_none(
-    object_to_check: Any, exception_class: Type[Exception], *exception_args: object
+    object_to_check: Any, exception_class: type[Exception], *exception_args: object
 ) -> None:
     """Checks if the `object_to_check` argument is None.
     If it is None, then raises a new object of type `exception_class` initialized
@@ -17,7 +17,9 @@ def raise_if_none(
 
 
 def raise_if(
-    condition: bool, exception_class: Type[Exception], *exception_args: object
+    condition: bool,  # noqa: FBT001
+    exception_class: type[Exception],
+    *exception_args: object,
 ) -> None:
     """Checks if the `condition` argument is True.
     If it is True, then it raises the exception.

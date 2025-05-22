@@ -2,10 +2,10 @@ import re
 
 from marshmallow import Schema, fields, pre_load, validate, validates_schema
 
-from common import constants
-from common.enum import DockerImageName, Offliner, Platform
-from common.schemas import SerializableSchema, String
-from common.schemas.fields import (
+from zimfarm_backend.common import constants
+from zimfarm_backend.common.enum import DockerImageName, Offliner, Platform
+from zimfarm_backend.common.schemas import SerializableSchema, String
+from zimfarm_backend.common.schemas.fields import (
     validate_category,
     validate_cpu,
     validate_disk,
@@ -20,7 +20,7 @@ from common.schemas.fields import (
     validate_slack_target,
     validate_warehouse_path,
 )
-from common.schemas.offliners import (
+from zimfarm_backend.common.schemas.offliners import (
     DevDocsFlagsSchema,
     FreeCodeCampFlagsSchema,
     GutenbergFlagsSchema,

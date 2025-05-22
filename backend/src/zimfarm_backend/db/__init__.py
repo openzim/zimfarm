@@ -1,34 +1,34 @@
-import os
+from collections.abc import Callable, Generator
+from typing import Any
 
 from bson.json_util import DEFAULT_JSON_OPTIONS, dumps, loads
 from sqlalchemy import SelectBase, create_engine, func, select
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
-if not os.getenv("POSTGRES_URI"):
-    raise EnvironmentError("Please set the POSTGRES_URI environment variable")
+from zimfarm_backend.settings import Settings
 
 
 # custom overload of bson deserializer to make naive datetime
 # this is needed to have objects from the DB with naive datetime properties
 # (otherwise the deserialization produces aware datetimes based on local TZ)
-def my_loads(s, *args, **kwargs):
+def my_loads(s: str, *args: Any, **kwargs: Any) -> Any:
     return loads(
         s,
         *args,
         json_options=DEFAULT_JSON_OPTIONS.with_options(tz_aware=False, tzinfo=None),
-        **kwargs
+        **kwargs,
     )
 
 
 if (
-    os.getenv("POSTGRES_URI") == "nodb"
+    Settings.POSTGRES_URI == "nodb"
 ):  # this is a hack for cases where we do not need the DB, e.g. unit tests
     Session = None
 else:
     Session = sessionmaker(
         bind=create_engine(
-            os.getenv("POSTGRES_URI"),
+            Settings.POSTGRES_URI,
             echo=False,
             json_serializer=dumps,  # use bson serializer to handle datetime naively
             json_deserializer=my_loads,  # use custom bson deserializer for same reason
@@ -36,7 +36,18 @@ else:
     )
 
 
-def dbsession(func):
+def gen_dbsession() -> Generator[OrmSession]:
+    """FastAPI's Depends() compatible helper to provide a begin DB Session"""
+    if Session is None:
+        raise RuntimeError("DB is disabled")
+
+    with Session.begin() as session:
+        yield session
+
+
+def dbsession(
+    func: Callable[..., Any],
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to create an SQLAlchemy ORM session object and wrap the function
     inside the session. A `session` argument is automatically set. Commit is
     automatically performed when the function finish (and before returning to
@@ -44,7 +55,10 @@ def dbsession(func):
     automatic.
     """
 
-    def inner(*args, **kwargs):
+    def inner(*args: Any, **kwargs: Any) -> Any:
+        if Session is None:
+            raise RuntimeError("DB is disabled")
+
         with Session.begin() as session:
             kwargs["session"] = session
             return func(*args, **kwargs)
@@ -52,13 +66,18 @@ def dbsession(func):
     return inner
 
 
-def dbsession_manual(func):
+def dbsession_manual(
+    func: Callable[..., Any],
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to create an SQLAlchemy ORM session object and wrap the function
     inside the session. A `session` argument is automatically set. Transaction must
     be managed by the developer (e.g. perform a commit / rollback).
     """
 
-    def inner(*args, **kwargs):
+    def inner(*args: Any, **kwargs: Any) -> Any:
+        if Session is None:
+            raise RuntimeError("DB is disabled")
+
         with Session() as session:
             kwargs["session"] = session
             return func(*args, **kwargs)

@@ -3,15 +3,19 @@ import ipaddress
 import json
 import logging
 import typing
+from typing import Any, cast
 from uuid import UUID
 
 import requests
 import sqlalchemy as sa
 import sqlalchemy.orm as so
-from kiwixstorage import AuthenticationError, KiwixStorage
+from kiwixstorage import (  # pyright: ignore[reportMissingTypeStubs]
+    AuthenticationError,
+    KiwixStorage,
+)
 
-import db.models as dbm
-from common.constants import (
+import zimfarm_backend.db.models as dbm
+from zimfarm_backend.common.constants import (
     CMS_ENDPOINT,
     CMS_ZIM_DOWNLOAD_URL,
     REQ_TIMEOUT_CMS,
@@ -20,8 +24,8 @@ from common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
-from db import dbsession
-from errors.http import TaskNotFound
+from zimfarm_backend.db import dbsession
+from zimfarm_backend.errors.http import TaskNotFound
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -32,17 +36,17 @@ def update_workers_whitelist(session: so.Session):
     ExternalIpUpdater.update(build_workers_whitelist(session=session))
 
 
-def build_workers_whitelist(session: so.Session) -> typing.List[str]:
+def build_workers_whitelist(session: so.Session) -> list[str]:
     """list of worker IP adresses and networks (text) to use as whitelist"""
-    wl_networks = []
-    wl_ips = []
+    wl_networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+    wl_ips: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = []
     for item in WHITELISTED_IPS:
         if "/" in item:
             wl_networks.append(ipaddress.ip_network(item))
         else:
             wl_ips.append(ipaddress.ip_address(item))
 
-    def is_covered(ip_addr):
+    def is_covered(ip_addr: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
         for network in wl_networks:
             if ip_addr in network:
                 return True
@@ -52,9 +56,11 @@ def build_workers_whitelist(session: so.Session) -> typing.List[str]:
         sa.select(dbm.Worker.last_ip)
         .join(dbm.User)
         .filter(dbm.Worker.last_ip.is_not(None))
-        .filter(dbm.User.deleted == False)  # noqa: E712
-        .filter(dbm.Worker.deleted == False)  # noqa: E712
+        .filter(dbm.User.deleted.is_(False))
+        .filter(dbm.Worker.deleted.is_(False))
     ).scalars():
+        if row is None:
+            continue
         ip_addr = ipaddress.ip_address(row)
         if not is_covered(ip_addr):
             wl_ips.append(ip_addr)
@@ -62,11 +68,11 @@ def build_workers_whitelist(session: so.Session) -> typing.List[str]:
     return [str(addr) for addr in set(wl_networks + wl_ips)]
 
 
-def update_wasabi_whitelist(ip_addresses: typing.List):
+def update_wasabi_whitelist(ip_addresses: list[str]):
     """update Wasabi policy to change IP adresses whitelist"""
     logger.info("Updating Wasabi whitelist")
 
-    def get_statement():
+    def get_statement() -> dict[str, Any]:
         return {
             "Sid": f"{WASABI_WHITELIST_STATEMENT_ID}",
             "Effect": "Deny",
@@ -81,7 +87,7 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
 
     s3 = KiwixStorage(url=WASABI_URL)
     try:
-        if not s3.check_credentials(list_buckets=True, failsafe=False):
+        if not s3.check_credentials(list_buckets=True, failsafe=False):  # pyright: ignore[reportUnknownMemberType]
             raise AuthenticationError("check_credentials failed")
     except Exception as exc:
         logger.error(
@@ -89,13 +95,16 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
         )
         return
 
-    iam = s3.get_service("iam")
-    versions = iam.list_policy_versions(PolicyArn=WASABI_WHITELIST_POLICY_ARN).get(
-        "Versions", []
+    iam = s3.get_service("iam")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+    versions: list[dict[str, Any]] = cast(
+        list[dict[str, Any]],
+        iam.list_policy_versions(  # pyright: ignore[reportUnknownMemberType]
+            PolicyArn=WASABI_WHITELIST_POLICY_ARN
+        ).get("Versions", []),
     )
     logger.debug(f" > {len(versions)} versions for {WASABI_WHITELIST_POLICY_ARN}")
 
-    version_id = None
+    version_id: str | None = None
     for version in versions:
         if version["IsDefaultVersion"]:
             version_id = version["VersionId"]
@@ -103,13 +112,13 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
     logger.debug(f"> Default version is {version_id}")
 
     # delete all other versions
-    if len(versions) == 5:
+    if len(versions) == 5:  # noqa: PLR2004
         logger.debug("> Deleting all other versions…")
         for version in versions:
             if version["VersionId"] == version_id:
                 continue
             logger.debug(f"> Deleting version {version['VersionId']}")
-            iam.delete_policy_version(
+            iam.delete_policy_version(  # pyright: ignore[reportUnknownMemberType]
                 PolicyArn=WASABI_WHITELIST_POLICY_ARN, VersionId=version["VersionId"]
             )
 
@@ -117,12 +126,13 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
         logger.error("> Existing policy doesn't exist. probably a mistake?")
         return
 
-    pv = (
-        iam.get_policy_version(
+    pv = cast(
+        dict[str, Any],
+        iam.get_policy_version(  # pyright: ignore[reportUnknownMemberType]
             PolicyArn=WASABI_WHITELIST_POLICY_ARN, VersionId=version_id
         )
         .get("PolicyVersion", {})
-        .get("Document")
+        .get("Document", {}),
     )
     if not pv:
         logger.error("> We don't have a policy document.")
@@ -142,7 +152,7 @@ def update_wasabi_whitelist(ip_addresses: typing.List):
     # logger.debug(f"New Policy:\n{new_policy}")
 
     logger.debug("> Overwriting policy…")
-    iam.create_policy_version(
+    iam.create_policy_version(  # pyright: ignore[reportUnknownMemberType]
         PolicyArn=WASABI_WHITELIST_POLICY_ARN,
         PolicyDocument=new_policy,
         SetAsDefault=True,
@@ -156,7 +166,9 @@ class ExternalIpUpdater:
     a change is detected.
     By default, this class update our IPs whitelist in Wasabi"""
 
-    update = update_wasabi_whitelist
+    @staticmethod
+    def update(ip_addresses: list[str]) -> None:
+        update_wasabi_whitelist(ip_addresses)
 
 
 @dbsession
@@ -169,7 +181,7 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
         advertise_book_to_cms(task, file_name)
 
 
-def advertise_book_to_cms(task: dbm.Task, file_name):
+def advertise_book_to_cms(task: dbm.Task, file_name: str):
     """inform openZIM CMS (or compatible) of a created ZIM in the farm
 
     Safe to re-run as successful requests are skipped"""
@@ -187,7 +199,7 @@ def advertise_book_to_cms(task: dbm.Task, file_name):
     file_data["cms"] = {
         "status_code": -1,
         "succeeded": False,
-        "on": datetime.datetime.now(),
+        "on": datetime.datetime.now(datetime.UTC),
         "book_id": None,
         "title_ident": None,
     }
@@ -202,8 +214,8 @@ def advertise_book_to_cms(task: dbm.Task, file_name):
         logger.exception(exc)
     else:
         file_data["cms"]["status_code"] = resp.status_code
-        file_data["cms"]["succeeded"] = resp.status_code == 201
-        if resp.status_code < 400:
+        file_data["cms"]["succeeded"] = resp.status_code == 201  # noqa: PLR2004
+        if resp.status_code < 400:  # noqa: PLR2004
             try:
                 data = resp.json()
                 file_data["cms"]["book_id"] = data.get("uuid")
@@ -222,8 +234,8 @@ def advertise_book_to_cms(task: dbm.Task, file_name):
 
 
 def get_openzimcms_payload(
-    file: typing.Dict[str, typing.Any], download_prefix: str
-) -> typing.Dict[str, typing.Any]:
+    file: dict[str, typing.Any], download_prefix: str
+) -> dict[str, typing.Any]:
     payload = {
         "id": file["info"]["id"],
         "period": file["info"].get("metadata", {}).get("Date"),
