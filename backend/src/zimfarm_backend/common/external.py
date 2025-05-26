@@ -3,6 +3,7 @@ import ipaddress
 import json
 import logging
 import typing
+from http import HTTPStatus
 from typing import Any, cast
 from uuid import UUID
 
@@ -19,6 +20,7 @@ from zimfarm_backend.common.constants import (
     CMS_ENDPOINT,
     CMS_ZIM_DOWNLOAD_URL,
     REQ_TIMEOUT_CMS,
+    WASABI_MAX_WHITELIST_VERSIONS,
     WASABI_URL,
     WASABI_WHITELIST_POLICY_ARN,
     WASABI_WHITELIST_STATEMENT_ID,
@@ -33,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def update_workers_whitelist(session: so.Session):
     """update whitelist of workers on external services"""
-    ExternalIpUpdater.update(build_workers_whitelist(session=session))
+    update_wasabi_whitelist(build_workers_whitelist(session=session))
 
 
 def build_workers_whitelist(session: so.Session) -> list[str]:
@@ -112,7 +114,7 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
     logger.debug(f"> Default version is {version_id}")
 
     # delete all other versions
-    if len(versions) == 5:  # noqa: PLR2004
+    if len(versions) == WASABI_MAX_WHITELIST_VERSIONS:
         logger.debug("> Deleting all other versions…")
         for version in versions:
             if version["VersionId"] == version_id:
@@ -159,18 +161,6 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
     )
 
 
-class ExternalIpUpdater:
-    """Class responsible to push IP updates to external system(s)
-
-    `update` is called with the new list of all workers IPs everytime
-    a change is detected.
-    By default, this class update our IPs whitelist in Wasabi"""
-
-    @staticmethod
-    def update(ip_addresses: list[str]) -> None:
-        update_wasabi_whitelist(ip_addresses)
-
-
 @dbsession
 def advertise_books_to_cms(task_id: UUID, session: so.Session):
     """inform openZIM CMS of all created ZIMs in the farm for this task
@@ -213,9 +203,10 @@ def advertise_book_to_cms(task: dbm.Task, file_name: str):
         logger.error(f"Unable to query CMS at {CMS_ENDPOINT}: {exc}")
         logger.exception(exc)
     else:
-        file_data["cms"]["status_code"] = resp.status_code
-        file_data["cms"]["succeeded"] = resp.status_code == 201  # noqa: PLR2004
-        if resp.status_code < 400:  # noqa: PLR2004
+        status_code = HTTPStatus(resp.status_code)
+        file_data["cms"]["status_code"] = status_code.value
+        file_data["cms"]["succeeded"] = status_code == HTTPStatus.CREATED
+        if status_code.is_success:
             try:
                 data = resp.json()
                 file_data["cms"]["book_id"] = data.get("uuid")

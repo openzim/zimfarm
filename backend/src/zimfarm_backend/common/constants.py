@@ -97,6 +97,7 @@ WASABI_WHITELIST_STATEMENT_ID = os.getenv(
 WHITELISTED_IPS = [
     ip.strip() for ip in os.getenv("WHITELISTED_IPS", "").split(",") if ip.strip()
 ]
+WASABI_MAX_WHITELIST_VERSIONS = int(os.getenv("WASABI_MAX_WHITELIST_VERSIONS", "5"))
 
 
 # openZIM CMS can be called upon receival of each ZIM

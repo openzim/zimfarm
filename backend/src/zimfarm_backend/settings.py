@@ -2,7 +2,6 @@ import os
 from typing import Any
 
 
-
 def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
     value = os.getenv(key, default=default)
 

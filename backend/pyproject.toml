@@ -7,9 +7,9 @@ name = "zimfarm_backend"
 authors = [
   { name = "Kiwix", email = "dev@kiwix.org" },
 ]
-keywords = ["dispatcher", "zimfarm"]
+keywords = ["zimfarm"]
 requires-python = ">=3.13,<3.14"
-description = "zimfarm Dispatcher Backend API"
+description = "zimfarm Backend API"
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
 classifiers = [
@@ -63,7 +63,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/openzim/zimfarm/dispatcher/backend"
+Homepage = "https://github.com/openzim/zimfarm/backend"
 Donate = "https://www.kiwix.org/en/support-us/"
 
 [tool.hatch.version]
