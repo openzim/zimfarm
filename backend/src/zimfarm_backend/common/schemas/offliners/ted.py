@@ -1,238 +1,172 @@
-from marshmallow import fields, validate
+from typing import Literal
 
-from common.schemas import LongString, SerializableSchema, String, StringEnum
-from common.schemas.fields import (
-    validate_output,
-    validate_zim_description,
-    validate_zim_filename,
-    validate_zim_longdescription,
-    validate_zim_title,
+from pydantic import Field
+
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    S3OptimizationCache,
+    ZIMDescription,
+    ZIMFileName,
+    ZIMLongDescription,
+    ZIMOutputFolder,
+    ZIMTitle,
 )
 
 
-class TedFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
-
-    topics = String(
-        metadata={
-            "label": "Topics",
-            "description": (
-                "Comma-separated list of topics to scrape; as given on ted.com/talks. "
-                "Pass all for all topics"
-            ),
-        },
+class TedFlagsSchema(BaseModel):
+    topics: NotEmptyString = Field(
+        title="Topics",
+        description=(
+            "Comma-separated list of topics to scrape; as given on ted.com/talks. "
+            "Pass all for all topics"
+        ),
     )
 
-    playlists = String(
-        metadata={
-            "label": "TED Playlists",
-            "description": (
-                "Comma-separated list of TED playlist IDs to scrape. Pass all for all "
-                "playlists"
-            ),
-        },
+    playlists: NotEmptyString = Field(
+        title="TED Playlists",
+        description=(
+            "Comma-separated list of TED playlist IDs to scrape. Pass all for all "
+            "playlists"
+        ),
     )
 
-    languages = String(
-        metadata={
-            "label": "Languages",
-            "description": "Comma-separated list of languages to filter videos. Do not "
-            "pass this parameter for all languages",
-        },
+    languages: NotEmptyString = Field(
+        title="Languages",
+        description=(
+            "Comma-separated list of languages to filter videos. Do not "
+            "pass this parameter for all languages"
+        ),
     )
 
-    subtitles_enough = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Subtitles enough?",
-            "description": (
-                "Whether to include videos that have a subtitle in "
-                "requested language(s) if audio is in another language"
-            ),
-        },
-        data_key="subtitles-enough",
+    subtitles_enough: bool = Field(
+        title="Subtitles enough?",
+        description=(
+            "Whether to include videos that have a subtitle in "
+            "requested language(s) if audio is in another language"
+        ),
+        alias="subtitles-enough",
     )
 
-    subtitles = String(
-        metadata={
-            "label": "Subtitles Setting",
-            "description": (
-                "Language setting for subtitles. all: include all available subtitles, "
-                "matching (default): only subtitles matching language(s), none: include"
-                " no subtitle. Also accepts comma-separated list of language(s)"
-            ),
-        },
+    subtitles: NotEmptyString = Field(
+        title="Subtitles Setting",
+        description=(
+            "Language setting for subtitles. all: include all available subtitles, "
+            "matching (default): only subtitles matching language(s), none: include"
+            " no subtitle. Also accepts comma-separated list of language(s)"
+        ),
     )
 
-    video_format = StringEnum(
-        metadata={
-            "label": "Video format",
-            "description": "Format to download/transcode video to. webm is smaller",
-        },
-        validate=validate.OneOf(["webm", "mp4"]),
-        data_key="format",
+    video_format: Literal["webm", "mp4"] = Field(
+        title="Video format",
+        description="Format to download/transcode video to. webm is smaller",
+        alias="format",
     )
 
-    low_quality = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Low Quality",
-            "description": "Re-encode video using stronger compression",
-        },
-        data_key="low-quality",
+    low_quality: bool = Field(
+        title="Low Quality",
+        description="Re-encode video using stronger compression",
+        alias="low-quality",
     )
 
-    autoplay = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Auto-play",
-            "description": (
-                "Enable autoplay on video articles. Behavior differs on "
-                "platforms/browsers."
-            ),
-        },
+    autoplay: bool = Field(
+        title="Auto-play",
+        description=(
+            "Enable autoplay on video articles. Behavior differs on platforms/browsers."
+        ),
     )
 
-    name = String(
-        metadata={
-            "label": "Name",
-            "description": (
-                "ZIM name. Used as identifier and filename (date will be appended)"
-            ),
-            "placeholder": "topic_eng",
-        },
-        required=True,
+    name: NotEmptyString = Field(
+        title="Name",
+        description=(
+            "ZIM name. Used as identifier and filename (date will be appended)"
+        ),
+        default="topic_eng",
     )
 
-    title = String(
-        metadata={
-            "label": "Title",
-            "description": "Custom title for your ZIM. Based on selection otherwise",
-        },
-        validate=validate_zim_title,
+    title: ZIMTitle = Field(
+        title="Title",
+        description="Custom title for your ZIM. Based on selection otherwise",
     )
 
-    description = String(
-        metadata={
-            "label": "Description",
-            "description": (
-                "Custom description for your ZIM. Based on selection otherwise"
-            ),
-        },
-        validate=validate_zim_description,
+    description: ZIMDescription = Field(
+        title="Description",
+        description="Custom description for your ZIM. Based on selection otherwise",
     )
 
-    long_description = LongString(
-        metadata={
-            "label": "Long description",
-            "description": (
-                "Custom long description for your ZIM. Based on selection otherwise"
-            ),
-        },
-        data_key="long-description",
-        validate=validate_zim_longdescription,
+    long_description: ZIMLongDescription = Field(
+        title="Long description",
+        description=(
+            "Custom long description for your ZIM. Based on selection otherwise"
+        ),
+        alias="long-description",
     )
 
-    creator = String(
-        metadata={
-            "label": "Content Creator",
-            "description": "Name of content creator. Defaults to TED",
-        }
+    creator: NotEmptyString = Field(
+        title="Content Creator",
+        description="Name of content creator. Defaults to TED",
+        default="TED",
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        }
+    publisher: NotEmptyString = Field(
+        title="Publisher",
+        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        default="openZIM",
     )
 
-    tags = String(
-        metadata={
-            "label": "ZIM Tags",
-            "description": (
-                "List of comma-separated Tags for the ZIM file. category:ted, ted, and"
-                " _videos:yes added automatically"
-            ),
-        }
+    tags: NotEmptyString = Field(
+        title="ZIM Tags",
+        description=(
+            "List of comma-separated Tags for the ZIM file. category:ted, ted, and"
+            " _videos:yes added automatically"
+        ),
     )
 
-    optimization_cache = fields.Url(
-        metadata={
-            "label": "Optimization Cache URL",
-            "description": (
-                "URL with credentials and bucket name to S3 Optimization Cache"
-            ),
-            "secret": True,
-        },
-        data_key="optimization-cache",
+    optimization_cache: S3OptimizationCache = Field(
+        title="Optimization Cache URL",
+        description=("URL with credentials and bucket name to S3 Optimization Cache"),
+        alias="optimization-cache",
     )
 
-    use_any_optimized_version = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Use any optimized version",
-            "description": "Use the cached files if present, whatever the version",
-        },
-        data_key="use-any-optimized-version",
+    use_any_optimized_version: bool = Field(
+        title="Use any optimized version",
+        description="Use the cached files if present, whatever the version",
+        alias="use-any-optimized-version",
     )
 
-    output = String(
-        metadata={
-            "label": "Output folder",
-            "placeholder": "/output",
-            "description": "Output folder for ZIM file(s). Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
+    output: ZIMOutputFolder = Field(
+        title="Output folder",
+        description="Output folder for ZIM file(s). Leave it as `/output`",
+        default="/output",
+        validate_default=True,
     )
 
-    tmp_dir = String(
-        metadata={
-            "label": "Temp folder",
-            "description": (
-                "Where to create temporay build folder. Leave it as `/output`"
-            ),
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
-        data_key="tmp-dir",
+    tmp_dir: ZIMOutputFolder = Field(
+        title="Temp folder",
+        description=("Where to create temporay build folder. Leave it as `/output`"),
+        default="/output",
+        validate_default=True,
+        alias="tmp-dir",
     )
 
-    zim_file = String(
-        metadata={
-            "label": "ZIM filename",
-            "description": "ZIM file name (based on ZIM name if not provided)",
-        },
-        data_key="zim-file",
-        validate=validate_zim_filename,
+    zim_file: ZIMFileName = Field(
+        title="ZIM filename",
+        description="ZIM file name (based on ZIM name if not provided)",
+        alias="zim-file",
     )
 
-    debug = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "Debug", "description": "Enable verbose output"},
+    debug: bool = Field(
+        title="Debug",
+        description="Enable verbose output",
     )
 
-    threads = fields.Integer(
-        metadata={
-            "label": "Threads",
-            "description": "Number of parallel threads to use while downloading",
-        },
-        validate=validate.Range(min=1),
+    threads: int = Field(
+        title="Threads",
+        description="Number of parallel threads to use while downloading",
+        ge=1,
     )
 
-    locale = String(
-        metadata={
-            "label": "Locale",
-            "description": "The locale to use for the translations in ZIM",
-        },
-        data_key="locale",
+    locale: NotEmptyString = Field(
+        title="Locale",
+        description="The locale to use for the translations in ZIM",
     )

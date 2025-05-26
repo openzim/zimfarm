@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any, ClassVar
 
 
@@ -44,7 +44,7 @@ class ZimPermissions(Permissions):
     names: ClassVar[list[str]] = ["upload"]
 
 
-class RoleEnum(Enum):
+class RoleEnum(StrEnum):
     ADMIN = "admin"
     MANAGER = "manager"
     EDITOR = "editor"
@@ -54,35 +54,33 @@ class RoleEnum(Enum):
 
 
 ROLES: dict[str, dict[str, Any]] = {
-    RoleEnum.ADMIN.value: {
+    RoleEnum.ADMIN: {
         "tasks": TaskPermissions.get_all(),
         "schedules": SchedulePermissions.get_all(),
         "users": UserPermissions.get_all(),
         "zim": ZimPermissions.get_all(),
     },
-    RoleEnum.MANAGER.value: {
+    RoleEnum.MANAGER: {
         "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
         "schedules": SchedulePermissions.get(create=True, update=True, delete=True),
         "users": UserPermissions.get(
             read=True, create=True, update=True, delete=True, change_password=True
         ),
     },
-    RoleEnum.EDITOR.value: {
-        "schedules": SchedulePermissions.get(create=True, update=True)
-    },
-    "editor-requester": {
+    RoleEnum.EDITOR: {"schedules": SchedulePermissions.get(create=True, update=True)},
+    RoleEnum.EDITOR_REQUESTER.value: {
         "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
         "schedules": SchedulePermissions.get(create=True, update=True),
     },
-    RoleEnum.WORKER.value: {
+    RoleEnum.WORKER: {
         "tasks": TaskPermissions.get(create=True, update=True, cancel=True),
         "zim": ZimPermissions.get(upload=True),
     },
-    RoleEnum.PROCESSOR.value: {"tasks": TaskPermissions.get(update=True)},
+    RoleEnum.PROCESSOR: {"tasks": TaskPermissions.get(update=True)},
 }
 
 
-def get_role_for(permissions: dict[str, bool]) -> str:
+def get_role_for(permissions: dict[str, Any]) -> str:
     for role_name, role_perms in ROLES.items():
         if role_perms == permissions:
             return role_name

@@ -1,24 +1,34 @@
 import re
+from typing import Any
 
-from marshmallow import Schema, fields, pre_load, validate, validates_schema
+from pydantic import (
+    EmailStr,
+    Field,
+    HttpUrl,
+    create_model,
+    field_validator,
+    model_validator,
+)
 
 from zimfarm_backend.common import constants
-from zimfarm_backend.common.enum import DockerImageName, Offliner, Platform
-from zimfarm_backend.common.schemas import SerializableSchema, String
+from zimfarm_backend.common.enums import (
+    DockerImageName,
+    Offliner,
+    Platform,
+    ScheduleCategory,
+    SchedulePeriodicity,
+    WarehousePath,
+)
+from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
-    validate_category,
-    validate_cpu,
-    validate_disk,
-    validate_lang_code,
-    validate_memory,
-    validate_not_empty,
-    validate_offliner,
-    validate_periodicity,
-    validate_platform,
-    validate_platform_value,
-    validate_schedule_name,
-    validate_slack_target,
-    validate_warehouse_path,
+    ZIMCPU,
+    NotEmptyString,
+    ScheduleNameField,
+    SlackTarget,
+    ZIMDisk,
+    ZIMLangCode,
+    ZIMMemory,
+    ZIMPlatformValue,
 )
 from zimfarm_backend.common.schemas.offliners import (
     DevDocsFlagsSchema,
@@ -41,46 +51,45 @@ from zimfarm_backend.common.schemas.offliners import (
 )
 
 
-class LanguageSchema(Schema):
-    code = String(required=True, validate=validate_lang_code)
-    name_en = String(required=True, validate=validate_not_empty)
-    name_native = String(required=True, validate=validate_not_empty)
+class LanguageSchema(BaseModel):
+    code: ZIMLangCode
+    name_en: NotEmptyString
+    name_native: NotEmptyString
 
 
-class ResourcesSchema(Schema):
-    cpu = fields.Integer(required=True, validate=validate_cpu)
-    memory = fields.Integer(required=True, validate=validate_memory)
-    disk = fields.Integer(required=True, validate=validate_disk)
-    shm = fields.Integer(required=False, validate=validate_memory)
-    cap_add = fields.List(String(), required=False)
-    cap_drop = fields.List(String(), required=False)
+class ResourcesSchema(BaseModel):
+    cpu: ZIMCPU
+    memory: ZIMMemory
+    disk: ZIMDisk
+    shm: ZIMMemory | None = None
+    cap_add: list[NotEmptyString] = Field(default_factory=list)
+    cap_drop: list[NotEmptyString] = Field(default_factory=list)
 
 
-class DockerImageSchema(Schema):
-    name = String(required=True, validate=validate.OneOf(DockerImageName.all()))
-    tag = String(required=True)
+class DockerImageSchema(BaseModel):
+    name: DockerImageName
+    tag: NotEmptyString
 
-    @pre_load
-    def strip_prefix(self, in_data, **kwargs):
+    @field_validator("name", mode="before")
+    def validate_name(cls, v: str) -> str:  # noqa: N805
         # strip the image prefix out so we don't have to care about it later-on
         # should ideally be dynamic but this is based on the offliner/task_name
         # which we don't have access to here. awaiting additional registry usage to fix
-        in_data["name"] = re.sub(r"^ghcr.io/", "", in_data["name"])
-        return in_data
+        return re.sub(r"^ghcr.io/", "", v)
 
 
-class ScheduleConfigSchema(SerializableSchema):
-    task_name = String(required=True, validate=validate_offliner)
-    warehouse_path = String(required=True, validate=validate_warehouse_path)
-    image = fields.Nested(DockerImageSchema(), required=True)
-    resources = fields.Nested(ResourcesSchema(), required=True)
-    flags = fields.Dict(required=True)
-    platform = String(required=True, allow_none=True, validate=validate_platform)
-    artifacts_globs = fields.List(String(validate=validate_not_empty), required=False)
-    monitor = fields.Boolean(required=True, truthy=[True], falsy=[False])
+class ScheduleConfigSchema(BaseModel):
+    task_name: Offliner
+    warehouse_path: WarehousePath
+    image: DockerImageSchema
+    resources: ResourcesSchema
+    flags: dict[str, Any]
+    platform: Platform | None = None
+    artifacts_globs: list[NotEmptyString] = Field(default_factory=list)
+    monitor: bool
 
     @staticmethod
-    def get_offliner_schema(offliner):
+    def get_offliner_schema(offliner: Offliner) -> type[BaseModel]:
         return {
             Offliner.mwoffliner: MWOfflinerFlagsSchema,
             Offliner.youtube: YoutubeFlagsSchema,
@@ -105,45 +114,44 @@ class ScheduleConfigSchema(SerializableSchema):
             Offliner.freecodecamp: FreeCodeCampFlagsSchema,
             Offliner.devdocs: DevDocsFlagsSchema,
             Offliner.mindtouch: MindtouchFlagsSchema,
-        }.get(offliner, Schema)
+        }.get(offliner, BaseModel)
 
-    @validates_schema
-    def validate(self, data, **kwargs):
+    @model_validator(mode="before")
+    def validate_flags(cls, data: dict[str, Any]) -> dict[str, Any]:  # noqa: N805
         if "task_name" in data and "flag" in data:
-            schema = self.get_offliner_schema(data["task_name"])
-            data["flags"] = schema.load(data["flags"])
+            schema = cls.get_offliner_schema(data["task_name"])
+            data["flags"] = schema.model_validate(data["flags"]).model_dump(mode="json")
+        return data
 
 
-class EventNotificationSchema(SerializableSchema):
-    mailgun = fields.List(fields.Email(), required=False)
-    webhook = fields.List(fields.Url(require_tld=False), required=False)
-    slack = fields.List(String(validate=validate_slack_target), required=False)
+class EventNotificationSchema(BaseModel):
+    mailgun: list[EmailStr] | None = None
+    webhook: list[HttpUrl] | None = None
+    slack: list[SlackTarget] | None = None
 
 
-class ScheduleNotificationSchema(SerializableSchema):
-    requested = fields.Nested(EventNotificationSchema(), required=False)
-    started = fields.Nested(EventNotificationSchema(), required=False)
-    ended = fields.Nested(EventNotificationSchema(), required=False)
+class ScheduleNotificationSchema(BaseModel):
+    requested: EventNotificationSchema | None = None
+    started: EventNotificationSchema | None = None
+    ended: EventNotificationSchema | None = None
 
 
-class ScheduleSchema(Schema):
-    name = String(required=True, validate=validate_schedule_name)
-    language = fields.Nested(LanguageSchema(), required=True)
-    category = String(required=True, validate=validate_category)
-    periodicity = String(required=True, validate=validate_periodicity)
-    tags = fields.List(
-        String(validate=validate_not_empty), required=True, dump_default=[]
+class ScheduleSchema(BaseModel):
+    name: ScheduleNameField
+    language: LanguageSchema
+    category: ScheduleCategory
+    periodicity: SchedulePeriodicity
+    tags: list[NotEmptyString] = Field(default_factory=list)
+    enabled: bool
+    config: ScheduleConfigSchema
+    notification: ScheduleNotificationSchema | None = None
+
+
+PlatformsLimitSchema = (  # pyright: ignore[reportUnknownVariableType, reportCallIssue]
+    create_model(
+        "PlatformsLimitSchema",
+        **{  # pyright: ignore[reportArgumentType]
+            platform.name: (ZIMPlatformValue, ...) for platform in Platform.all()
+        },
     )
-    enabled = fields.Boolean(required=True, truthy=[True], falsy=[False])
-    config = fields.Nested(ScheduleConfigSchema(), required=True)
-    notification = fields.Nested(
-        ScheduleNotificationSchema(), required=False, dump_default={}, load_default={}
-    )
-
-
-PlatformsLimitSchema = Schema.from_dict(
-    {
-        platform: fields.Integer(required=False, validate=validate_platform_value)
-        for platform in Platform.all()
-    }
 )

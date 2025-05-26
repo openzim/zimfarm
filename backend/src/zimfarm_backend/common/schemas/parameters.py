@@ -1,167 +1,163 @@
-from marshmallow import Schema, fields
+from typing import Any
 
-from common.schemas import String
-from common.schemas.fields import (
-    category_field,
-    email_field,
-    limit_field_20_200,
-    limit_field_20_500,
-    offliner_field,
-    periodicity_field,
-    priority_field,
-    schedule_name_field,
-    skip_field,
-    tag_field,
-    username_field,
-    validate_cpu,
-    validate_disk,
-    validate_event,
-    validate_memory,
-    validate_not_empty,
-    validate_platform,
-    validate_priority,
-    validate_role,
-    validate_schedule_name,
-    validate_status,
-    validate_warehouse_path,
-    validate_worker_name,
-    worker_field,
+from pydantic import EmailStr
+
+from zimfarm_backend.common.enums import (
+    Offliner,
+    Platform,
+    ScheduleCategory,
+    SchedulePeriodicity,
+    TaskStatus,
 )
-from common.schemas.models import (
+from zimfarm_backend.common.roles import RoleEnum
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import (
+    ZIMCPU,
+    LimitFieldMax200,
+    LimitFieldMax500,
+    NotEmptyString,
+    PriorityField,
+    ScheduleNameField,
+    SkipField,
+    WorkerField,
+    ZIMDisk,
+    ZIMMemory,
+)
+from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
+    EventNotificationSchema,
     LanguageSchema,
-    PlatformsLimitSchema,
+    PlatformsLimitSchema,  # pyright: ignore[reportUnknownVariableType]
     ResourcesSchema,
+    WarehousePath,
 )
 
 
 # languages GET
-class SkipLimit500Schema(Schema):
-    skip = skip_field
-    limit = limit_field_20_500
+class SkipLimit500Schema(BaseModel):
+    skip: SkipField
+    limit: LimitFieldMax500
 
 
 # tags GET, # users GET, # workers GET
-class SkipLimitSchema(Schema):
-    skip = skip_field
-    limit = limit_field_20_200
+class SkipLimitSchema(BaseModel):
+    skip: SkipField
+    limit: LimitFieldMax200
 
 
 # requested-tasks
-class RequestedTaskSchema(Schema):
-    skip = skip_field
-    limit = limit_field_20_200
+class RequestedTaskSchema(BaseModel):
+    skip: SkipField
+    limit: LimitFieldMax200
 
-    worker = worker_field
-    priority = priority_field
-    schedule_name = fields.List(schedule_name_field, required=False)
+    worker: WorkerField
+    priority: PriorityField
+    schedule_name: list[ScheduleNameField] | None = None
 
-    matching_cpu = fields.Integer(required=False, validate=validate_cpu)
-    matching_memory = fields.Integer(required=False, validate=validate_memory)
-    matching_disk = fields.Integer(required=False, validate=validate_disk)
-    matching_offliners = fields.List(offliner_field, required=False)
+    matching_cpu: ZIMCPU | None = None
+    matching_memory: ZIMMemory | None = None
+    matching_disk: ZIMDisk | None = None
+    matching_offliners: list[Offliner] | None = None
 
 
 # requested-tasks for worker
-class WorkerRequestedTaskSchema(Schema):
-    worker = String(required=True, validate=validate_worker_name)
-    avail_cpu = fields.Integer(required=True, validate=validate_cpu)
-    avail_memory = fields.Integer(required=True, validate=validate_memory)
-    avail_disk = fields.Integer(required=True, validate=validate_disk)
+class WorkerRequestedTaskSchema(BaseModel):
+    worker: WorkerField
+    avail_cpu: ZIMCPU
+    avail_memory: ZIMMemory
+    avail_disk: ZIMDisk
 
 
 # requested-tasks POST
-class NewRequestedTaskSchema(Schema):
-    schedule_names = fields.List(schedule_name_field, required=True)
-    priority = priority_field
-    worker = worker_field
+class NewRequestedTaskSchema(BaseModel):
+    schedule_names: list[ScheduleNameField]
+    priority: PriorityField
+    worker: WorkerField
 
 
 # requested-tasks PATCH
-class UpdateRequestedTaskSchema(Schema):
-    priority = fields.Integer(required=True, validate=validate_priority)
+class UpdateRequestedTaskSchema(BaseModel):
+    priority: PriorityField
 
 
 # schedule GET
-class SchedulesSchema(Schema):
-    skip = skip_field
-    limit = limit_field_20_200
-    category = fields.List(category_field, required=False)
-    tag = tag_field
-    lang = fields.List(String(validate=validate_not_empty), required=False)
-    name = schedule_name_field
+class SchedulesSchema(BaseModel):
+    skip: SkipField
+    limit: LimitFieldMax200
+    category: list[ScheduleCategory] | None = None
+    tag: list[NotEmptyString]
+    lang: list[NotEmptyString] | None = None
+    name: ScheduleNameField
 
 
 # schedule PATCH
-class UpdateSchema(Schema):
-    name = schedule_name_field
-    language = fields.Nested(LanguageSchema(), required=False)
-    category = category_field
-    periodicity = periodicity_field
-    tags = tag_field
-    enabled = fields.Boolean(required=False, truthy={True}, falsy={False})
-    task_name = offliner_field
-    warehouse_path = String(required=False, validate=validate_warehouse_path)
-    image = fields.Nested(DockerImageSchema, required=False)
-    platform = String(required=False, validate=validate_platform, allow_none=True)
-    resources = fields.Nested(ResourcesSchema, required=False)
-    monitor = fields.Boolean(required=False, truthy={True}, falsy={False})
-    flags = fields.Dict(required=False)
-    artifacts_globs = fields.List(
-        String(validate=validate_not_empty), required=False, allow_none=True
-    )
+class UpdateSchema(BaseModel):
+    name: ScheduleNameField
+    language: LanguageSchema
+    category: ScheduleCategory
+    periodicity: SchedulePeriodicity
+    tags: list[NotEmptyString]
+    enabled: bool = False
+    task_name: Offliner
+    warehouse_path: WarehousePath | None = None
+    image: DockerImageSchema | None = None
+    platform: Platform | None = None
+    resources: ResourcesSchema | None = None
+    monitor: bool = False
+    flags: dict[str, Any] | None = None
+    artifacts_globs: list[NotEmptyString] | None = None
 
 
 # schedule clone
-class CloneSchema(Schema):
-    name = String(required=True, validate=validate_schedule_name)
+class CloneSchema(BaseModel):
+    name: ScheduleNameField
 
 
 # tasks GET
-class TasksSchema(Schema):
-    skip = skip_field
-    limit = limit_field_20_200
-    status = fields.List(String(validate=validate_status), required=False)
-    schedule_name = schedule_name_field
+class TasksSchema(BaseModel):
+    skip: SkipField
+    limit: LimitFieldMax200
+    status: list[TaskStatus] | None = None
+    schedule_name: ScheduleNameField
 
 
 # tasks POST
-class TaskCreateSchema(Schema):
-    worker_name = String(required=True, validate=validate_worker_name)
+class TaskCreateSchema(BaseModel):
+    worker_name: WorkerField
 
 
 # tasks PATCH
-class TasKUpdateSchema(Schema):
-    event = String(required=True, validate=validate_event)
-    payload = fields.Dict(required=True)
+class TasKUpdateSchema(BaseModel):
+    event: EventNotificationSchema
+    payload: dict[str, Any]
 
 
 # users keys POST
-class KeySchema(Schema):
-    name = String(required=True, validate=validate_not_empty)
-    key = String(required=True, validate=validate_not_empty)
+class KeySchema(BaseModel):
+    name: NotEmptyString
+    key: NotEmptyString
 
 
 # users POST
-class UserCreateSchema(Schema):
-    username = username_field
-    password = String(required=True, validate=validate_not_empty)
-    email = email_field
-    role = String(required=True, validate=validate_role)
+class UserCreateSchema(BaseModel):
+    username: NotEmptyString
+    password: NotEmptyString
+    email: EmailStr
+    role: RoleEnum
 
 
 # users PATCH
-class UserUpdateSchema(Schema):
-    email = email_field
-    role = String(required=False, validate=validate_role)
+class UserUpdateSchema(BaseModel):
+    email: EmailStr
+    role: RoleEnum
 
 
 # workers checkin
-class WorkerCheckInSchema(Schema):
-    username = username_field
-    selfish = fields.Boolean(required=False, load_default=False)
-    cpu = fields.Integer(required=True, validate=validate_cpu)
-    memory = fields.Integer(required=True, validate=validate_memory)
-    disk = fields.Integer(required=True, validate=validate_disk)
-    offliners = fields.List(offliner_field, required=True)
-    platforms = fields.Nested(PlatformsLimitSchema(), required=False)
+class WorkerCheckInSchema(BaseModel):
+    username: NotEmptyString
+    selfish: bool = False
+    cpu: ZIMCPU
+    memory: ZIMMemory
+    disk: ZIMDisk
+    offliners: list[Offliner]
+    platforms: PlatformsLimitSchema  # pyright: ignore[reportInvalidTypeForm]

@@ -1,73 +1,64 @@
-from marshmallow import fields
+from common.schemas import BaseModel
+from pydantic import Field
 
-from common.schemas import SerializableSchema, String
-from common.schemas.fields import validate_zim_description, validate_zim_title
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    S3OptimizationCache,
+    ZIMDescription,
+    ZIMOutputFolder,
+    ZIMTitle,
+)
 
 
-class GutenbergFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
-
-    languages = String(
-        metadata={
-            "label": "Languages",
-            "description": (
-                "Comma-separated list of lang codes to filter "
-                "export to (preferably ISO 639-1, else ISO 639-3) Defaults to all"
-            ),
-        },
+class GutenbergFlagsSchema(BaseModel):
+    languages: NotEmptyString = Field(
+        title="Languages",
+        description=(
+            "Comma-separated list of lang codes to filter "
+            "export to (preferably ISO 639-1, else ISO 639-3) Defaults to all"
+        ),
+        default="all",
     )
 
-    formats = String(
-        metadata={
-            "label": "Formats",
-            "description": (
-                "Comma-separated list of formats to filter export to (epub,"
-                " html, pdf, all) Defaults to all"
-            ),
-        },
+    formats: NotEmptyString = Field(
+        title="Formats",
+        description=(
+            "Comma-separated list of formats to filter export to (epub,"
+            " html, pdf, all) Defaults to all"
+        ),
+        default="all",
     )
 
-    zim_title = String(
-        metadata={
-            "label": "Title",
-            "description": "Custom title for your project and ZIM.",
-        },
-        data_key="zim-title",
-        validate=validate_zim_title,
+    zim_title: ZIMTitle = Field(
+        title="Title",
+        description="Custom title for your project and ZIM.",
+        alias="zim-title",
     )
 
-    zim_desc = String(
-        metadata={"label": "Description", "description": "Description for ZIM"},
-        data_key="zim-desc",
-        validate=validate_zim_description,
+    zim_desc: ZIMDescription = Field(
+        title="Description",
+        description="Description for ZIM",
+        alias="zim-desc",
     )
 
-    books = String(
-        metadata={
-            "label": "Books",
-            "description": (
-                "Filter to only specific books ; separated by commas, or dashes "
-                "for intervals. Defaults to all"
-            ),
-        },
+    books: NotEmptyString = Field(
+        title="Books",
+        description=(
+            "Filter to only specific books ; separated by commas, or dashes "
+            "for intervals. Defaults to all"
+        ),
+        default="all",
     )
 
-    concurrency = fields.Integer(
-        metadata={
-            "label": "Concurrency",
-            "description": "Number of concurrent threads to use",
-        },
+    concurrency: int = Field(
+        title="Concurrency",
+        description="Number of concurrent threads to use",
     )
 
-    dlc = fields.Integer(
-        metadata={
-            "label": "Download Concurrency",
-            "description": (
-                "Number of parallel downloads to run (overrides concurrency)"
-            ),
-        },
-        data_key="dlc",
+    dlc: int = Field(
+        title="Download Concurrency",
+        description=("Number of parallel downloads to run (overrides concurrency)"),
+        alias="dlc",
     )
 
     # /!\ we are using a boolean flag for this while the actual option
@@ -75,61 +66,43 @@ class GutenbergFlagsSchema(SerializableSchema):
     # Given we can't set the output dir for regular mode, we're using this
     # flag to switch between the two and the path is set to the mount point
     # in command_for() (offliners.py)
-    one_language_one_zim = fields.Boolean(
-        truthy=[True, "/output"],
-        falsy=[False],
-        metadata={
-            "label": "Multiple ZIMs",
-            "description": "Create one ZIM per language",
-        },
-        data_key="one-language-one-zim",
+    one_language_one_zim: bool | ZIMOutputFolder = Field(
+        title="Multiple ZIMs",
+        description="Create one ZIM per language",
+        alias="one-language-one-zim",
     )
 
-    no_index = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "No Index",
-            "description": "Do not create full-text index within ZIM file",
-        },
-        data_key="no-index",
+    no_index: bool = Field(
+        title="No Index",
+        description="Do not create full-text index within ZIM file",
+        alias="no-index",
     )
 
-    title_search = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Title search",
-            "description": "Search by title feature (⚠️ does not scale)",
-        },
-        data_key="title-search",
+    title_search: bool = Field(
+        title="Title search",
+        description="Search by title feature (⚠️ does not scale)",
+        alias="title-search",
     )
 
-    bookshelves = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Bookshelves",
-            "description": "Browse by bookshelves feature",
-        },
+    bookshelves: bool = Field(
+        title="Bookshelves",
+        description="Browse by bookshelves feature",
     )
 
-    optimization_cache = fields.Url(
-        metadata={
-            "label": "Optimization Cache URL",
-            "description": "S3 Storage URL including credentials and bucket",
-            "secret": True,
-        },
-        data_key="optimization-cache",
+    optimization_cache: S3OptimizationCache = Field(
+        title="Optimization Cache URL",
+        description="S3 Storage URL including credentials and bucket",
+        alias="optimization-cache",
     )
 
-    use_any_optimized_version = fields.Boolean(
-        truthy=[True], falsy=[False], data_key="--use-any-optimized-version"
+    use_any_optimized_version: bool = Field(
+        title="Use any optimized version",
+        description="Use any optimized version",
+        alias="use-any-optimized-version",
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        }
+    publisher: NotEmptyString = Field(
+        title="Publisher",
+        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        default="openZIM",
     )

@@ -1,136 +1,102 @@
-from marshmallow import fields, validate
+from enum import StrEnum
 
-from common.schemas import LongString, SerializableSchema, String, StringEnum
-from common.schemas.fields import (
-    validate_output,
-    validate_zim_description,
-    validate_zim_filename,
-    validate_zim_longdescription,
-    validate_zim_title,
+from pydantic import Field
+from pydantic.types import AnyUrl
+
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    ZIMDescription,
+    ZIMFileName,
+    ZIMLongDescription,
+    ZIMOutputFolder,
+    ZIMTitle,
 )
 
-# key is the language asked for at CLI (and used to validate input)
-# value is the display name for help hint
-FCC_LANG_MAP = {
-    # removed until we settle on these two codes
-    # "cmn": "chinese",
-    # "lzh": "chinese-traditional",
-    "eng": "english",
-    "spa": "espanol",
-    "deu": "german",
-    "ita": "italian",
-    "jpn": "japanese",
-    "por": "portuguese",
-    "ukr": "ukrainian",
-    "swa": "swahili",
-}
+
+class FCCLanguage(StrEnum):
+    """Language of zim file and curriculum. One of"""
+
+    eng = "english"
+    spa = "espanol"
+    deu = "german"
+    ita = "italian"
+    jpn = "japanese"
+    por = "portuguese"
+    ukr = "ukrainian"
+    swa = "swahili"
+    # cmn = "chinese"
+    # lzh = "chinese-traditional"
 
 
-class FreeCodeCampFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
-
-    course = String(
-        metadata={
-            "label": "Course(s)",
-            "description": "Course or course list (separated by commas)",
-        },
-        required=True,
+class FreeCodeCampFlagsSchema(BaseModel):
+    course: NotEmptyString = Field(
+        title="Course(s)",
+        description="Course or course list (separated by commas)",
     )
 
-    language = StringEnum(
-        metadata={
-            "label": "Language",
-            "description": "Language of zim file and curriculum. One of "
-            + ", ".join([f"'{key}' ({desc})" for key, desc in FCC_LANG_MAP.items()])
-            + ".",
-        },
-        required=True,
-        validate=validate.OneOf(list(FCC_LANG_MAP.keys())),
+    language: FCCLanguage = Field(
+        title="Language",
+        description="Language of zim file and curriculum. One of "
+        + ", ".join(
+            [f"'{language.name}' ({language.value})" for language in FCCLanguage]
+        )
+        + ".",
     )
 
-    name = String(
-        metadata={
-            "label": "Name",
-            "description": "ZIM name",
-        },
-        required=True,
+    name: NotEmptyString = Field(
+        title="Name",
+        description="ZIM name",
     )
 
-    title = String(
-        metadata={
-            "label": "Title",
-            "description": "ZIM title",
-        },
-        required=True,
-        validate=validate_zim_title,
+    title: ZIMTitle = Field(
+        title="Title",
+        description="ZIM title",
     )
 
-    description = String(
-        metadata={
-            "label": "Description",
-            "description": "Description for your ZIM",
-        },
-        required=True,
-        validate=validate_zim_description,
+    description: ZIMDescription = Field(
+        title="Description",
+        description="Description for your ZIM",
     )
 
-    long_description = LongString(
-        metadata={
-            "label": "Long description",
-            "description": "Optional long description for your ZIM",
-        },
-        validate=validate_zim_longdescription,
-        data_key="long-description",
+    long_description: ZIMLongDescription = Field(
+        title="Long description",
+        description="Optional long description for your ZIM",
+        alias="long-description",
     )
 
-    creator = String(
-        metadata={
-            "label": "Content Creator",
-            "description": "Name of content creator. “freeCodeCamp” otherwise",
-        }
+    creator: NotEmptyString = Field(
+        title="Content Creator",
+        description="Name of content creator. “freeCodeCamp” otherwise",
+        default="freeCodeCamp",
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        }
+    publisher: NotEmptyString = Field(
+        title="Publisher",
+        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        default="openZIM",
     )
 
-    debug = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "Debug", "description": "Enable verbose output"},
+    debug: bool = Field(
+        title="Debug",
+        description="Enable verbose output",
     )
 
-    output = String(
-        metadata={
-            "label": "Output folder",
-            "placeholder": "/output",
-            "description": "Output folder for ZIM file(s). Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        data_key="output",
-        validate=validate_output,
+    output: ZIMOutputFolder = Field(
+        title="Output folder",
+        description="Output folder for ZIM file(s). Leave it as `/output`",
+        default="/output",
+        validate_default=True,
     )
 
-    zim_file = String(
-        metadata={
-            "label": "ZIM filename",
-            "description": "ZIM file name (based on --name if not provided). "
-            "Include {period} to insert date period dynamically",
-        },
-        data_key="zim-file",
-        validate=validate_zim_filename,
+    zim_file: ZIMFileName = Field(
+        title="ZIM filename",
+        description="ZIM file name (based on --name if not provided). "
+        "Include {period} to insert date period dynamically",
     )
 
-    illustration = fields.Url(
-        metadata={
-            "label": "Illustration",
-            "description": "URL for ZIM illustration. Freecodecamp default logo if "
-            "missing",
-        },
-        required=False,
+    illustration: AnyUrl | None = Field(
+        title="Illustration",
+        description="URL for ZIM illustration. Freecodecamp default logo if missing",
+        default=None,
     )

@@ -1,240 +1,179 @@
-from marshmallow import fields, validate
+from pydantic import Field
+from pydantic.types import AnyUrl
 
-from common.schemas import SerializableSchema, String
-from common.schemas.fields import (
-    validate_output,
-    validate_zim_description,
-    validate_zim_filename,
-    validate_zim_title,
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    Percentage,
+    S3OptimizationCache,
+    ZIMDescription,
+    ZIMFileName,
+    ZIMOutputFolder,
+    ZIMTitle,
 )
 
 
-def validate_percent(value):
-    return value >= 1 and value <= 100
-
-
-class IFixitFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
-
-    language = String(
-        metadata={
-            "label": "Language",
-            "description": "iFixIt website to build from",
-        },
-        required=True,
+class IFixitFlagsSchema(BaseModel):
+    language: NotEmptyString = Field(
+        title="Language",
+        description="iFixIt website to build from",
     )
 
-    name = String(
-        metadata={
-            "label": "Name",
-            "description": "ZIM name. Used as identifier and filename "
-            "(date will be appended). Constructed from language if not supplied",
-        },
+    name: NotEmptyString = Field(
+        title="Name",
+        description="ZIM name. Used as identifier and filename "
+        "(date will be appended). Constructed from language if not supplied",
     )
 
-    title = String(
-        metadata={
-            "label": "Title",
-            "description": "Custom title for your ZIM. "
-            "iFixIt homepage title otherwise",
-        },
-        validate=validate_zim_title,
+    title: ZIMTitle = Field(
+        title="Title",
+        description="Custom title for your ZIM. iFixIt homepage title otherwise",
     )
 
-    description = String(
-        metadata={
-            "label": "Description",
-            "description": "Custom description for your ZIM. "
-            "iFixIt homepage description (meta) otherwise",
-        },
-        validate=validate_zim_description,
+    description: ZIMDescription = Field(
+        title="Description",
+        description="Custom description for your ZIM. "
+        "iFixIt homepage description (meta) otherwise",
     )
 
-    icon = fields.Url(
-        metadata={
-            "label": "Icon",
-            "description": "Custom Icon for your ZIM (URL). "
-            "iFixit square logo otherwise",
-        }
+    icon: AnyUrl | None = Field(
+        title="Icon",
+        description="Custom Icon for your ZIM (URL). iFixit square logo otherwise",
+        default=None,
     )
 
-    creator = String(
-        metadata={
-            "label": "Creator",
-            "description": "Name of content creator. “iFixit” otherwise",
-        },
+    creator: NotEmptyString = Field(
+        title="Creator",
+        description="Name of content creator. “iFixit” otherwise",
+        default="iFixit",
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        },
+    publisher: NotEmptyString = Field(
+        title="Publisher",
+        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
+        default="openZIM",
     )
 
-    tag = String(
-        metadata={
-            "label": "ZIM Tags",
-            "description": "List of semi-colon-separated Tags for the ZIM file. "
-            "_category:ifixit and ifixit added automatically",
-        }
+    tags: NotEmptyString = Field(
+        title="ZIM Tags",
+        description="List of semi-colon-separated Tags for the ZIM file. "
+        "_category:ifixit and ifixit added automatically",
     )
 
-    output = String(
-        metadata={
-            "label": "Output folder",
-            "placeholder": "/output",
-            "description": "Output folder for ZIM file(s). Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
+    output: ZIMOutputFolder = Field(
+        title="Output folder",
+        description="Output folder for ZIM file(s). Leave it as `/output`",
+        default="/output",
+        validate_default=True,
     )
 
-    tmp_dir = String(
-        metadata={
-            "label": "Temp folder",
-            "placeholder": "/output",
-            "description": "Where to create temporay build folder. "
-            "Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
-        data_key="tmp-dir",
+    tmp_dir: ZIMOutputFolder = Field(
+        title="Temp folder",
+        description="Where to create temporay build folder. Leave it as `/output`",
+        default="/output",
+        alias="tmp-dir",
+        validate_default=True,
     )
 
-    zim_file = String(
-        metadata={
-            "label": "ZIM filename",
-            "description": "ZIM file name (based on --name if not provided). "
-            "Include {period} to insert date period dynamically",
-        },
-        data_key="zim-file",
-        validate=validate_zim_filename,
+    zim_file: ZIMFileName = Field(
+        title="ZIM filename",
+        description="ZIM file name (based on --name if not provided). "
+        "Include {period} to insert date period dynamically",
+        alias="zim-file",
     )
 
-    optimization_cache = fields.Url(
-        metadata={
-            "label": "Optimization Cache URL",
-            "description": "S3 Storage URL including credentials and bucket",
-            "secret": True,
-        },
-        data_key="optimization-cache",
+    optimization_cache: S3OptimizationCache = Field(
+        title="Optimization Cache URL",
+        description="S3 Storage URL including credentials and bucket",
+        alias="optimization-cache",
     )
 
-    stats_filename = String(
-        metadata={
-            "label": "Stats filename",
-            "placeholder": "/output/task_progress.json",
-            "description": "Scraping progress file. "
-            "Leave it as `/output/task_progress.json`",
-        },
-        data_key="stats-filename",
-        load_default="/output/task_progress.json",
-        dump_default="/output/task_progress.json",
-        validate=validate.Equal("/output/task_progress.json"),
+    stats_filename: NotEmptyString = Field(
+        title="Stats filename",
+        description="Scraping progress file. Leave it as `/output/task_progress.json`",
+        default="/output/task_progress.json",
+        alias="stats-filename",
+        pattern=r"^/output/task_progress\.json$",
     )
 
-    debug = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "Debug", "description": "Enable verbose output"},
+    debug: bool = Field(
+        title="Debug",
+        description="Enable verbose output",
     )
 
-    delay = fields.Float(
-        metadata={
-            "label": "Delay",
-            "description": "Add this delay (seconds) "
-            "before each request to please iFixit servers. Can be fractions. "
-            "Defaults to 0: no delay",
-        },
+    delay: float = Field(
+        title="Delay",
+        description="Add this delay (seconds) "
+        "before each request to please iFixit servers. Can be fractions. "
+        "Defaults to 0: no delay",
+        default=0,
     )
 
-    api_delay = fields.Float(
-        metadata={
-            "label": "API Delay",
-            "description": "Add this delay (seconds) "
-            "before each API query (!= calls) to please iFixit servers. "
-            "Can be fractions. Defaults to 0: no delay",
-        },
-        data_key="api-delay",
+    api_delay: float = Field(
+        title="API Delay",
+        description="Add this delay (seconds) "
+        "before each API query (!= calls) to please iFixit servers. "
+        "Can be fractions. Defaults to 0: no delay",
+        alias="api-delay",
+        default=0,
     )
 
-    cdn_delay = fields.Float(
-        metadata={
-            "label": "CDN Delay",
-            "description": "Add this delay (seconds) "
-            "before each CDN file download to please iFixit servers. "
-            "Can be fractions. Defaults to 0: no delay",
-        },
-        data_key="cdn-delay",
+    cdn_delay: float = Field(
+        title="CDN Delay",
+        description="Add this delay (seconds) "
+        "before each CDN file download to please iFixit servers. "
+        "Can be fractions. Defaults to 0: no delay",
+        alias="cdn-delay",
+        default=0,
     )
 
-    max_missing_items = fields.Integer(
-        metadata={
-            "label": "Max Missing Items",
-            "description": "Amount of missing items which will force the scraper to "
-            "stop, expressed as a percentage of the total number of items to retrieve. "
-            "Integer from 1 to 100",
-        },
-        data_key="max-missing-items-percent",
-        validate=validate_percent,
+    max_missing_items: Percentage = Field(
+        title="Max Missing Items",
+        description="Amount of missing items which will force the scraper to "
+        "stop, expressed as a percentage of the total number of items to retrieve. "
+        "Integer from 1 to 100",
+        alias="max-missing-items-percent",
     )
 
-    max_error_items = fields.Integer(
-        metadata={
-            "label": "Max Error Items",
-            "description": "Amount of items with failed processing which will force "
-            "the scraper to stop, expressed as a percentage of the total number of "
-            "items to retrieve. Integer from 1 to 100",
-        },
-        data_key="max-error-items-percent",
-        validate=validate_percent,
+    max_error_items: Percentage = Field(
+        title="Max Error Items",
+        description="Amount of items with failed processing which will force "
+        "the scraper to stop, expressed as a percentage of the total number of "
+        "items to retrieve. Integer from 1 to 100",
+        alias="max-error-items-percent",
     )
 
-    category = String(
-        metadata={
-            "label": "Categories",
-            "description": "Only scrape those categories (comma-separated). "
-            "Specify the category names",
-        }
+    categories: NotEmptyString = Field(
+        title="Categories",
+        description="Only scrape those categories (comma-separated). "
+        "Specify the category names",
     )
 
-    no_category = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "No category", "description": "Do not scrape any category"},
-        data_key="no-category",
+    no_category: bool = Field(
+        title="No category",
+        description="Do not scrape any category",
+        alias="no-category",
     )
 
-    guide = String(
-        metadata={
-            "label": "Guides",
-            "description": "Only scrape this guide (comma-separated)). "
-            "Specify the guide names",
-        },
+    guide: NotEmptyString = Field(
+        title="Guides",
+        description="Only scrape this guide (comma-separated)). "
+        "Specify the guide names",
     )
 
-    no_guide = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "No guide", "description": "Do not scrape any guide"},
-        data_key="no-guide",
+    no_guide: bool = Field(
+        title="No guide",
+        description="Do not scrape any guide",
+        alias="no-guide",
     )
 
-    info = String(
-        metadata={
-            "label": "Info",
-            "description": "Only scrape this info (comma-separated)). "
-            "Specify the info names",
-        },
+    info: NotEmptyString = Field(
+        title="Info",
+        description="Only scrape this info (comma-separated)). Specify the info names",
     )
 
-    no_info = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "No info", "description": "Do not scrape any info"},
-        data_key="no-info",
+    no_info: bool = Field(
+        title="No info",
+        description="Do not scrape any info",
+        alias="no-info",
     )

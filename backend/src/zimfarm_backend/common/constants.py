@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from zimfarm_backend.common.enum import SchedulePeriodicity
+from zimfarm_backend.common.enums import SchedulePeriodicity
 
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
 MESSAGE_VALIDITY = 60  # number of seconds before a message expire

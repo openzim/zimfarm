@@ -1,151 +1,116 @@
-from marshmallow import fields
+from pydantic import Field
 
-from common.schemas import SerializableSchema, String
-from common.schemas.fields import (
-    validate_output,
-    validate_zim_description,
-    validate_zim_longdescription,
-    validate_zim_title,
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    ZIMDescription,
+    ZIMLongDescription,
+    ZIMOutputFolder,
+    ZIMTitle,
 )
 
 
-class DevDocsFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
-
-    slug = String(
-        metadata={
-            "label": "Slug",
-            "description": "Fetch the provided Devdocs resource. "
-            "Slugs are the first path entry in the Devdocs URL. "
-            "For example, the slug for: `https://devdocs.io/gcc~12/` is `gcc~12`. "
-            "Mutually exclusive with `All` setting, set only one option. Either this"
-            "setting or `All` must be configured.",
-        },
+class DevDocsFlagsSchema(BaseModel):
+    slug: NotEmptyString = Field(
+        title="Slug",
+        description="""Fetch the provided Devdocs resource.
+            Slugs are the first path entry in the Devdocs URL.
+            For example, the slug for: `https://devdocs.io/gcc~12/` is `gcc~12`.
+            Mutually exclusive with `All` setting, set only one option. Either this
+            setting or `All` must be configured.""",
     )
 
-    all_flag = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "All",
-            "description": "Fetch all Devdocs resources, and produce one ZIM "
-            "per resource. Mutually exclusive with `Slug` setting, set only "
-            "one option. Either this setting or `Slug` must be configured.",
-        },
-        data_key="all",
+    all_flag: bool = Field(
+        title="All",
+        description="""Fetch all Devdocs resources, and produce one ZIM
+        per resource. Mutually exclusive with `Slug` setting, set only
+        one option. Either this setting or `Slug` must be configured.""",
+        alias="all",
     )
 
-    skip_slug_regex = String(
-        metadata={
-            "label": "Skip slugs regex",
-            "description": "Skips slugs matching the given regular expression."
-            "Do not set to fetch all slugs. Only useful when `All` is set.",
-        },
-        data_key="skip-slug-regex",
+    skip_slug_regex: NotEmptyString = Field(
+        title="Skip slugs regex",
+        description="""Skips slugs matching the given regular expression.
+        Do not set to fetch all slugs. Only useful when `All` is set.""",
+        alias="skip-slug-regex",
     )
 
-    file_name_format = String(
-        metadata={
-            "label": "ZIM filename",
-            "description": "ZIM filename. Do not input trailing `.zim`, it "
-            "will be automatically added. You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults "
-            "to devdocs.io_en_{clean_slug}_{period}",
-        },
-        data_key="file-name-format",
+    file_name_format: NotEmptyString = Field(
+        title="ZIM filename",
+        description="""ZIM filename. Do not input trailing `.zim`, it
+        will be automatically added. You can use placeholders, see
+        https://github.com/openzim/devdocs/blob/main/README.md. Defaults
+        to devdocs.io_en_{clean_slug}_{period}""",
+        alias="file-name-format",
     )
 
-    name_format = String(
-        metadata={
-            "label": "ZIM name",
-            "description": "ZIM name. You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults "
-            "to devdocs.io_en_{clean_slug}",
-        },
-        data_key="name-format",
+    name_format: NotEmptyString = Field(
+        title="ZIM name",
+        description="""ZIM name. You can use placeholders, see
+        https://github.com/openzim/devdocs/blob/main/README.md. Defaults
+        to devdocs.io_en_{clean_slug}""",
+        alias="name-format",
     )
 
-    title_format = String(
-        metadata={
-            "label": "ZIM title",
-            "description": "ZIM title. You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults "
-            "to `{full_name} Docs`",
-        },
-        data_key="title-format",
-        validate=validate_zim_title,
+    title_format: ZIMTitle = Field(
+        title="ZIM title",
+        description="""ZIM title. You can use placeholders, see
+        https://github.com/openzim/devdocs/blob/main/README.md. Defaults
+        to `{full_name} Docs`""",
+        alias="title-format",
     )
 
-    description_format = String(
-        metadata={
-            "label": "ZIM description",
-            "description": "ZIM description. You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults "
-            "to `{full_name} docs by DevDocs`",
-        },
-        data_key="description-format",
-        validate=validate_zim_description,
+    description_format: ZIMDescription = Field(
+        title="ZIM description",
+        description="""ZIM description. You can use placeholders, see
+        https://github.com/openzim/devdocs/blob/main/README.md. Defaults
+        to `{full_name} docs by DevDocs`""",
+        alias="description-format",
     )
 
-    long_description_format = String(
-        metadata={
-            "label": "ZIM long description",
-            "description": "ZIM long description. You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults to no "
-            "long description",
-        },
-        data_key="long-description-format",
-        validate=validate_zim_longdescription,
+    long_description_format: ZIMLongDescription = Field(
+        title="ZIM long description",
+        description="""ZIM long description. You can use placeholders, see
+        https://github.com/openzim/devdocs/blob/main/README.md. Defaults to no
+        long description""",
+        alias="long-description-format",
     )
 
-    logo_format = String(
-        metadata={
-            "label": "ZIM illustration",
-            "description": "URL to a custom ZIM logo in PNG, JPG, or SVG format. You "
-            "can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md.",
-        },
-        data_key="logo-format",
+    logo_format: NotEmptyString = Field(
+        title="ZIM illustration",
+        description="""URL to a custom ZIM logo in PNG, JPG, or SVG format. You
+        can use placeholders, see https://github.com/openzim/devdocs/blob/main/README.md.""",
+        alias="logo-format",
     )
 
-    tags = String(
-        metadata={
-            "label": "ZIM Tags",
-            "description": "List of semi-colon-separated Tags for the ZIM file. "
-            " You can use placeholders, see "
-            "https://github.com/openzim/devdocs/blob/main/README.md. Defaults to"
-            "`devdocs;{slug_without_version}`",
-        }
+    tags: NotEmptyString = Field(
+        title="ZIM Tags",
+        description="""List of semi-colon-separated Tags for the ZIM file.
+        You can use placeholders, see https://github.com/openzim/devdocs/blob/main/README.md.
+        Defaults to `devdocs;{slug_without_version}`""",
+        default="devdocs;{slug_without_version}",
     )
 
-    creator = String(
-        metadata={
-            "label": "Creator",
-            "description": "Name of content creator. “DevDocs” otherwise",
-        },
+    creator: NotEmptyString = Field(
+        title="Creator",
+        description="""Name of content creator. “DevDocs” otherwise""",
+        default="DevDocs",
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        },
+    publisher: NotEmptyString = Field(
+        title="Publisher",
+        description="""Custom publisher name (ZIM metadata). “openZIM” otherwise""",
+        default="openZIM",
     )
 
-    output = String(
-        metadata={
-            "label": "Output folder",
-            "placeholder": "/output",
-            "description": "Output folder for ZIM file(s). Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
+    output: ZIMOutputFolder = Field(
+        title="Output folder",
+        description="""Output folder for ZIM file(s). Leave it as `/output`""",
+        default="/output",
+        validate_default=True,
     )
 
-    debug = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "Debug", "description": "Enable verbose output"},
+    debug: bool = Field(
+        title="Debug",
+        description="""Enable verbose output""",
     )
