@@ -1,231 +1,157 @@
-from marshmallow import fields
+from typing import Literal
 
-from common.schemas import LongString, SerializableSchema, String
-from common.schemas.fields import (
-    validate_output,
-    validate_zim_description,
-    validate_zim_filename,
-    validate_zim_longdescription,
-    validate_zim_title,
+from pydantic import AnyUrl, Field
+
+from zimfarm_backend.common.schemas import DashModel
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalS3OptimizationCache,
+    OptionalZIMDescription,
+    OptionalZIMFileName,
+    OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 
-class KolibriFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
+class KolibriFlagsSchema(DashModel):
+    offliner_id: Literal["kolibri"]
 
-    channel_id = String(
-        metadata={
-            "label": "Channel ID",
-            "description": "The Kolibri channel ID that you want to scrape",
-        },
-        data_key="channel-id",
-        required=True,
+    channel_id: NotEmptyString = Field(
+        title="Channel ID",
+        description="The Kolibri channel ID that you want to scrape",
     )
 
-    root_id = String(
-        metadata={
-            "label": "Root ID",
-            "description": "The node ID (usually Topic) from where to start "
-            "the scraper. Defaults to the root of the channel.",
-        },
-        data_key="root-id",
+    root_id: OptionalNotEmptyString = OptionalField(
+        title="Root ID",
+        description="The node ID (usually Topic) from where to start "
+        "the scraper. Defaults to the root of the channel.",
     )
 
-    lang = String(
-        metadata={
-            "label": "Language",
-            "description": "ISO-639-3 (3 chars) language code of content. "
-            "If unspecified, will attempt to detect from main page, or use 'eng'",
-        }
+    lang: OptionalNotEmptyString = OptionalField(
+        title="Language",
+        description="ISO-639-3 (3 chars) language code of content. "
+        "If unspecified, will attempt to detect from main page, or use 'eng'",
     )
 
-    name = String(
-        metadata={
-            "label": "Name",
-            "description": "ZIM name. Used as identifier "
-            "and filename (date will be appended)",
-        },
-        required=True,
+    name: NotEmptyString = Field(
+        title="Name",
+        description="ZIM name. Used as identifier and filename (date will be appended)",
     )
 
-    title = String(
-        metadata={
-            "label": "Title",
-            "description": "Custom title for your ZIM. Kolibri channel name otherwise",
-        },
-        validate=validate_zim_title,
+    title: OptionalZIMTitle = OptionalField(
+        title="Title",
+        description="Custom title for your ZIM. Kolibri channel name otherwise",
     )
 
-    description = String(
-        metadata={
-            "label": "Description",
-            "description": "Custom description for your ZIM. "
-            "Kolibri channel description otherwise",
-        },
-        validate=validate_zim_description,
+    description: OptionalZIMDescription = OptionalField(
+        title="Description",
+        description="Custom description for your ZIM. "
+        "Kolibri channel description otherwise",
     )
 
-    long_description = LongString(
-        metadata={
-            "label": "Long description",
-            "description": "Custom long description for your ZIM. "
-            "If not provided, either not set or Kolibri channel description if it was "
-            "too long to fit entirely in ZIM description",
-        },
-        data_key="long-description",
-        validate=validate_zim_longdescription,
+    long_description: OptionalZIMLongDescription = OptionalField(
+        title="Long description",
+        description="Custom long description for your ZIM. "
+        "If not provided, either not set or Kolibri channel description if it was "
+        "too long to fit entirely in ZIM description",
     )
 
-    favicon = fields.Url(
-        metadata={
-            "label": "Favicon",
-            "description": "URL for Favicon. Kolibri channel thumbnail otherwise "
-            "or default Kolobri logo if missing",
-        },
-        required=False,
+    favicon: AnyUrl | None = OptionalField(
+        title="Favicon",
+        description="URL for Favicon. Kolibri channel thumbnail otherwise "
+        "or default Kolobri logo if missing",
     )
 
-    css = fields.Url(
-        metadata={
-            "label": "Custom CSS",
-            "description": "URL to a single CSS file to be included in all pages "
-            "(but not on kolibri-html-content ones). "
-            "Inlude external resources using data URL.",
-        },
-        required=False,
+    css: AnyUrl | None = OptionalField(
+        title="Custom CSS",
+        description="URL to a single CSS file to be included in all pages "
+        "(but not on kolibri-html-content ones). "
+        "Inlude external resources using data URL.",
     )
 
-    about = fields.Url(
-        metadata={
-            "label": "Custom About",
-            "description": "URL to a single HTML file to use as an about page. "
-            "Place everythong inside `body .container` "
-            "(including stylesheets and scripts) "
-            "as only this and your <title> will be merged into the actual about page. "
-            "Remember to include images inline using data URL.",
-        },
-        required=False,
+    about: AnyUrl | None = OptionalField(
+        title="Custom About",
+        description="URL to a single HTML file to use as an about page. "
+        "Place everythong inside `body .container` "
+        "(including stylesheets and scripts) "
+        "as only this and your <title> will be merged into the actual about page. "
+        "Remember to include images inline using data URL.",
     )
 
-    creator = String(
-        metadata={
-            "label": "Content Creator",
-            "description": "Name of content creator. Kolibri "
-            "channel author or “Kolibri” otherwise",
-        }
+    creator: OptionalNotEmptyString = OptionalField(
+        title="Content Creator",
+        description="Name of content creator. Kolibri "
+        'channel author or "Kolibri" otherwise',
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        }
+    publisher: OptionalNotEmptyString = OptionalField(
+        title="Publisher",
+        description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
     )
 
-    tags = String(
-        metadata={
-            "label": "ZIM Tags",
-            "description": "List of comma-separated Tags for the ZIM file. "
-            "category:other, kolibri, and _videos:yes added automatically",
-        }
+    tags: OptionalNotEmptyString = OptionalField(
+        title="ZIM Tags",
+        description="List of comma-separated Tags for the ZIM file. "
+        "category:other, kolibri, and _videos:yes added automatically",
     )
 
-    use_webm = fields.Boolean(
-        metadata={
-            "label": "Use WebM",
-            "description": "Kolibri videos are in mp4. Choosing webm will require "
-            "videos to be re-encoded. Result will be slightly smaller and of lower "
-            "quality. WebM support is bundled in the ZIM so videos "
-            "will be playable on every platform.",
-        },
-        data_key="use-webm",
-        truthy=[True],
-        falsy=[False],
+    use_webm: bool | None = OptionalField(
+        title="Use WebM",
+        description="Kolibri videos are in mp4. Choosing webm will require "
+        "videos to be re-encoded. Result will be slightly smaller and of lower "
+        "quality. WebM support is bundled in the ZIM so videos "
+        "will be playable on every platform.",
     )
 
-    low_quality = fields.Boolean(
-        metadata={
-            "label": "Low quality",
-            "description": "Uses only the `low_res` version of videos if available. "
-            "If not, recompresses using agressive compression.",
-        },
-        data_key="low-quality",
-        truthy=[True],
-        falsy=[False],
+    low_quality: bool | None = OptionalField(
+        title="Low quality",
+        description="Uses only the `low_res` version of videos if available. "
+        "If not, recompresses using agressive compression.",
     )
 
-    autoplay = fields.Boolean(
-        metadata={
-            "label": "Autoplay",
-            "description": "Enable autoplay on video and audio articles. "
-            "Behavior differs on platforms/browsers.",
-        },
-        truthy=[True],
-        falsy=[False],
+    autoplay: bool | None = OptionalField(
+        title="Autoplay",
+        description="Enable autoplay on video and audio articles. "
+        "Behavior differs on platforms/browsers.",
     )
 
-    output = String(
-        metadata={
-            "label": "Output folder",
-            "placeholder": "/output",
-            "description": "Output folder for ZIM file(s). Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
+    output: OptionalZIMOutputFolder = Field(
+        title="Output folder",
+        description="Output folder for ZIM file(s). Leave it as `/output`",
     )
 
-    tmp_dir = String(
-        metadata={
-            "label": "Temp folder",
-            "placeholder": "/output",
-            "description": "Where to create temporay build folder. "
-            "Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
-        data_key="tmp-dir",
+    tmp_dir: OptionalZIMOutputFolder = Field(
+        title="Temp folder",
+        description="Where to create temporay build folder. Leave it as `/output`",
     )
 
-    zim_file = String(
-        metadata={
-            "label": "ZIM filename",
-            "description": "ZIM file name (based on --name if not provided). "
-            "Include {period} to insert date period dynamically",
-        },
-        data_key="zim-file",
-        validate=validate_zim_filename,
+    zim_file: OptionalZIMFileName = OptionalField(
+        title="ZIM filename",
+        description="ZIM file name (based on --name if not provided). "
+        "Include {period} to insert date period dynamically",
     )
 
-    threads = fields.Integer(
-        metadata={
-            "label": "Threads",
-            "description": "Number of threads to use to handle nodes concurrently. "
-            "Increase to speed-up I/O operations (disk, network). Default: 1",
-        }
+    threads: int | None = OptionalField(
+        title="Threads",
+        description="Number of threads to use to handle nodes concurrently. "
+        "Increase to speed-up I/O operations (disk, network). Default: 1",
     )
 
-    processes = fields.Integer(
-        metadata={
-            "label": "Processes",
-            "description": "Number of processes to dedicate to media optimizations. "
-            "Default: 1",
-        }
+    processes: int | None = OptionalField(
+        title="Processes",
+        description="Number of processes to dedicate to media optimizations. "
+        "Default: 1",
     )
 
-    optimization_cache = fields.Url(
-        metadata={
-            "label": "Optimization Cache URL",
-            "description": "S3 Storage URL including credentials and bucket",
-            "secret": True,
-        },
-        data_key="optimization-cache",
+    optimization_cache: OptionalS3OptimizationCache = OptionalField(
+        title="Optimization Cache URL",
+        description="S3 Storage URL including credentials and bucket",
     )
 
-    debug = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "Debug", "description": "Enable verbose output"},
+    debug: bool | None = OptionalField(
+        title="Debug",
+        description="Enable verbose output",
     )

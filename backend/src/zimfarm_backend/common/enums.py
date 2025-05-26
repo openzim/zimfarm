@@ -1,7 +1,8 @@
 import os
+from enum import StrEnum
 
 
-class TaskStatus:
+class TaskStatus(StrEnum):
     requested = "requested"
     reserved = "reserved"
     started = "started"
@@ -68,7 +69,7 @@ class TaskStatus:
         )
 
 
-class WarehousePath:
+class WarehousePath(StrEnum):
     hidden_dev = "/.hidden/dev"
     hidden_endless = "/.hidden/endless"
     hidden_bard = "/.hidden/bard"
@@ -97,7 +98,7 @@ class WarehousePath:
         ]
 
 
-class ScheduleCategory:
+class ScheduleCategory(StrEnum):
     gutenberg = "gutenberg"
     other = "other"
     phet = "phet"
@@ -163,7 +164,7 @@ class ScheduleCategory:
         ]
 
 
-class DockerImageName:
+class DockerImageName(StrEnum):
     mwoffliner = "openzim/mwoffliner"
     youtube = "openzim/youtube"
     gutenberg = "openzim/gutenberg"
@@ -201,7 +202,7 @@ class DockerImageName:
         }
 
 
-class Offliner:
+class Offliner(StrEnum):
     mwoffliner = "mwoffliner"
     youtube = "youtube"
     gutenberg = "gutenberg"
@@ -245,7 +246,7 @@ class Offliner:
         return prefix
 
     @classmethod
-    def get_image_name(cls, offliner: str) -> str:
+    def get_image_name(cls, offliner: "Offliner") -> str:
         return cls.get_image_prefix(offliner) + {
             cls.mwoffliner: DockerImageName.mwoffliner,
             cls.youtube: DockerImageName.youtube,
@@ -265,7 +266,7 @@ class Offliner:
         }.get(offliner, "-")
 
 
-class SchedulePeriodicity:
+class SchedulePeriodicity(StrEnum):
     manually = "manually"
     monthly = "monthly"
     quarterly = "quarterly"
@@ -277,7 +278,7 @@ class SchedulePeriodicity:
         return [cls.manually, cls.monthly, cls.quarterly, cls.biannualy, cls.annually]
 
 
-class Platform:
+class Platform(StrEnum):
     wikimedia = "wikimedia"
     youtube = "youtube"
     wikihow = "wikihow"
@@ -289,7 +290,7 @@ class Platform:
     phet = "phet"
 
     @classmethod
-    def all(cls) -> list[str]:
+    def all(cls) -> list["Platform"]:
         return [
             cls.wikimedia,
             cls.youtube,

@@ -1,203 +1,268 @@
-from typing import Optional, Union
+import datetime
+from typing import Annotated, Any
 
-import marshmallow as m
-import marshmallow.fields as mf
 import pytz
-from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
+from pydantic import AfterValidator, BaseModel, Field, computed_field
 
-import db.models as dbm
-from common.roles import get_role_for
-
-
-class MadeAwareDateTime(mf.DateTime):
-    def _serialize(self, unaware, attr, obj, **kwargs) -> Optional[Union[str, float]]:
-        """Make the datetime localized so that it is serialized with a trailing 'Z'"""
-        if not unaware:
-            return None
-        aware = pytz.utc.localize(unaware)
-        return super()._serialize(aware, attr, obj, **kwargs)
+from zimfarm_backend.common.roles import get_role_for
 
 
-class BaseSchema(SQLAlchemySchema):
-    pass
+def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
+    """Make the datetime localized so that it is serialized with a trailing 'Z'"""
+    if dt.tzinfo is None:
+        return pytz.utc.localize(dt)
+    return dt
 
 
-class UserSchemaReadMany(BaseSchema):
-    class Meta:
-        model = dbm.User
-
-    def get_role_from_user(user: dbm.User) -> str:
-        return get_role_for(user.scope)
-
-    username = auto_field()
-    email = auto_field()
-    role = mf.Function(serialize=get_role_from_user)
+MadeAwareDateTime = Annotated[datetime.datetime, AfterValidator(make_datetime_aware)]
 
 
-class SshKeyRead(BaseSchema):
-    class Meta:
-        model = dbm.Sshkey
+class UserSchemaReadMany(BaseModel):
+    """
+    Schema for reading a user model
+    """
 
-    added = auto_field()
-    fingerprint = auto_field()
-    key = auto_field()
-    name = auto_field()
-    pkcs8_key = auto_field()
-    type = auto_field()
+    username: str
+    email: str | None
+    scope: dict[str, Any] | None = None
+
+    @computed_field
+    @property
+    def role(self) -> str:
+        if self.scope is None:
+            return "custom"
+        return get_role_for(self.scope)
+
+
+class SshKeyRead(BaseModel):
+    """
+    Schema for reading a ssh key model
+    """
+
+    added: datetime.datetime
+    fingerprint: str
+    key: str
+    name: str
+    pkcs8_key: str
+    type: str
 
 
 class UserSchemaReadOne(UserSchemaReadMany):
-    scope = auto_field()
-    ssh_keys = mf.List(mf.Nested(SshKeyRead))
+    """
+    Schema for reading a user model with its ssh keys
+    """
+
+    ssh_keys: list[SshKeyRead]
 
 
-class ConfigResourcesSchema(m.Schema):
-    cpu = mf.Integer()
-    disk = mf.Integer()
-    memory = mf.Integer()
+class ConfigResourcesSchema(BaseModel):
+    """
+    Schema for reading a config's resources
+    """
+
+    cpu: int
+    disk: int
+    memory: int
 
 
-class ConfigWithOnlyTaskNameAndResourcesSchema(m.Schema):
-    resources = mf.Nested(ConfigResourcesSchema)
-    task_name = mf.String()
+class ConfigWithOnlyResourcesSchema(BaseModel):
+    """
+    Schema for reading a config model with only its resources
+    """
+
+    resources: ConfigResourcesSchema
 
 
-class TaskLightSchema(m.Schema):
-    id = mf.String(data_key="_id")
-    status = mf.String()
-    timestamp = mf.Dict()
-    schedule_name = mf.String()
-    worker_name = mf.String(data_key="worker")
-    updated_at = MadeAwareDateTime()
-    config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema, only=["resources"])
-    original_schedule_name = mf.String()
+class ConfigWithOnlyTaskNameAndResourcesSchema(ConfigWithOnlyResourcesSchema):
+    """
+    Schema for reading a config model with only its task name and resources
+    """
+
+    task_name: str
+
+
+class TaskLightSchema(BaseModel):
+    """
+    Schema for reading a task model with some fields
+    """
+
+    id: str = Field(alias="_id")
+    status: str
+    timestamp: dict[str, Any]
+    schedule_name: str
+    worker_name: str = Field(alias="worker")
+    updated_at: datetime.datetime
+    config: ConfigWithOnlyResourcesSchema
+    original_schedule_name: str
 
 
 class TaskFullSchema(TaskLightSchema):
-    config = mf.Dict()
-    events = mf.List(mf.Dict)
-    debug = mf.Dict()
-    requested_by = mf.String()
-    canceled_by = mf.String()
-    container = mf.Dict()
-    priority = mf.Integer()
-    notification = mf.Dict()
-    files = mf.Dict()
-    upload = mf.Dict()
+    """
+    Schema for reading a task model with all fields
+    """
+
+    events: list[dict[str, Any]]
+    debug: dict[str, Any]
+    requested_by: str
+    canceled_by: str | None
+    container: dict[str, Any]
+    priority: int
+    notification: dict[str, Any]
+    files: dict[str, Any]
+    upload: dict[str, Any]
+
+
+class NameOnlySchema(BaseModel):
+    """
+    Schema for reading only a name field from a model
+    """
+
+    name: str
 
 
 class ScheduleAwareTaskFullSchema(TaskFullSchema):
-    def get_schedule_name(task: dbm.Task) -> str:
-        return getattr(task.schedule, "name", "none")
+    """
+    Schema for reading a task model with all fields and its schedule name
+    """
 
-    schedule_name = mf.Function(serialize=get_schedule_name)  # override base
+    schedule: NameOnlySchema
 
 
-class RequestedTaskLightSchema(m.Schema):
-    id = mf.String(data_key="_id")
-    status = mf.String()
-    config = mf.Nested(ConfigWithOnlyTaskNameAndResourcesSchema)
-    timestamp = mf.Dict()
-    requested_by = mf.String()
-    priority = mf.Integer()
-    schedule_name = mf.String()
-    original_schedule_name = mf.String()
-    worker = mf.String()
+class RequestedTaskLightSchema(BaseModel):
+    """
+    Schema for reading a requested task model with some fields
+    """
+
+    id: str = Field(alias="_id")
+    status: str
+    config: ConfigWithOnlyTaskNameAndResourcesSchema
+    timestamp: dict[str, Any]
+    requested_by: str
+    priority: int
+    schedule_name: str
+    original_schedule_name: str
+    worker: NameOnlySchema
 
 
 class RequestedTaskFullSchema(RequestedTaskLightSchema):
-    def get_worker_name(task: dbm.RequestedTask) -> str:
-        if task.worker:
-            return task.worker.name
-        else:
-            return None
+    """
+    Schema for reading a requested task model with all fields
+    """
 
-    def get_schedule_name(task: dbm.RequestedTask) -> str:
-        return getattr(task.schedule, "name", "none")
-
-    config = mf.Dict()  # override base
-    events = mf.List(mf.Dict)
-    upload = mf.Dict()
-    schedule_name = mf.Function(serialize=get_schedule_name)  # override base
-    worker = mf.Function(serialize=get_worker_name)
-    notification = mf.Dict()
-    rank = mf.Integer()
+    events: list[dict[str, Any]]
+    upload: dict[str, Any]
+    notification: dict[str, Any]
+    rank: int
+    schedule: NameOnlySchema
 
 
-class MostRecentTaskSchema(m.Schema):
-    id = mf.String(data_key="_id")
-    status = mf.String()
-    updated_at = MadeAwareDateTime()
+class MostRecentTaskSchema(BaseModel):
+    """
+    Schema for reading a most recent task model with some fields
+    """
+
+    id: str = Field(alias="_id")
+    status: str
+    updated_at = MadeAwareDateTime
 
 
-class ConfigTaskOnlySchema(m.Schema):
-    task_name = mf.String()
+class ConfigTaskOnlySchema(BaseModel):
+    """
+    Schema for reading a config model with only its task name
+    """
+
+    task_name: str
 
 
-class LanguageSchema(m.Schema):
-    code = mf.String()
-    name_en = mf.String()
-    name_native = mf.String()
+class LanguageSchema(BaseModel):
+    """
+    Schema for reading a language model
+    """
+
+    code: str
+    name_en: str
+    name_native: str
 
 
-class ScheduleLightSchema(m.Schema):
-    def get_is_requested(schedule: dbm.Schedule):
-        return schedule.count_requested_task > 0
+class ScheduleLightSchema(BaseModel):
+    """
+    Schema for reading a schedule model with some fields
+    """
 
-    name = mf.String()
-    category = mf.String()
-    most_recent_task = mf.Nested(MostRecentTaskSchema)
-    config = mf.Nested(ConfigTaskOnlySchema)
-    language = mf.Nested(LanguageSchema)
-    is_requested = mf.Function(get_is_requested)
-    enabled = mf.Boolean()
+    name: str
+    category: str
+    most_recent_task: MostRecentTaskSchema
+    config: ConfigTaskOnlySchema
+    language: LanguageSchema
+    enabled: bool
+    count_requested_task: int
+
+    @computed_field
+    @property
+    def is_requested(self) -> bool:
+        return self.count_requested_task > 0
 
 
-class ScheduleFullSchema(BaseSchema):
-    class Meta:
-        model = dbm.Schedule
+class ScheduleDurationSchema(BaseModel):
+    """
+    Schema for reading a schedule duration model
+    """
 
-    def get_language(schedule: dbm.Schedule):
-        return {
-            "code": schedule.language_code,
-            "name_en": schedule.language_name_en,
-            "name_native": schedule.language_name_native,
-        }
+    value: int
+    on: str
+    worker: NameOnlySchema | None
+    default: bool
 
-    def get_one_duration(duration: dbm.ScheduleDuration):
-        one_duration_res = {}
-        one_duration_res["value"] = duration.value
-        one_duration_res["on"] = duration.on
-        if duration.worker:
-            one_duration_res["worker"] = duration.worker.name
-        return one_duration_res
 
-    def get_duration(schedule: dbm.Schedule):
-        duration_res = {}
+class ScheduleFullSchema(BaseModel):
+    """
+    Schema for reading a schedule model with all fields
+    """
+
+    language_code: str
+    language_name_en: str
+    language_name_native: str
+    durations: list[ScheduleDurationSchema]
+    name: str
+    category: str
+    config: dict[str, Any]
+    enabled: bool
+    tags: list[str]
+    periodicity: str
+    notification: dict[str, Any]
+    most_recent_task: MostRecentTaskSchema
+    count_requested_task: int
+
+    @computed_field
+    @property
+    def is_requested(self) -> bool:
+        return self.count_requested_task > 0
+
+    @computed_field
+    @property
+    def language(self) -> LanguageSchema:
+        return LanguageSchema(
+            code=self.language_code,
+            name_en=self.language_name_en,
+            name_native=self.language_name_native,
+        )
+
+    @computed_field
+    def get_duration(self) -> dict[str, Any]:
+        duration_res: dict[str, Any] = {}
         duration_res["available"] = False
         duration_res["default"] = {}
         duration_res["workers"] = {}
-        for duration in schedule.durations:
+        for duration in self.durations:
             if duration.default:
-                duration_res["default"] = ScheduleFullSchema.get_one_duration(duration)
+                duration_res["default"] = ScheduleDurationSchema.model_validate(
+                    duration
+                ).model_dump(mode="json")
             if duration.worker:
                 duration_res["available"] = True
                 duration_res["workers"][duration.worker.name] = (
-                    ScheduleFullSchema.get_one_duration(duration)
+                    ScheduleDurationSchema.model_validate(duration).model_dump(
+                        mode="json"
+                    )
                 )
         return duration_res
-
-    def get_is_requested(schedule: dbm.Schedule):
-        return len(schedule.requested_tasks) > 0
-
-    name = auto_field()
-    category = auto_field()
-    config = auto_field()
-    enabled = auto_field()
-    tags = auto_field()
-    periodicity = auto_field()
-    notification = auto_field()
-    language = mf.Function(get_language)
-    most_recent_task = mf.Nested(MostRecentTaskSchema)
-    duration = mf.Function(get_duration)
-    is_requested = mf.Function(get_is_requested)

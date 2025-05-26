@@ -1,290 +1,179 @@
-from marshmallow import fields, validate
+from enum import StrEnum
+from typing import Literal
 
-from common.schemas import SerializableSchema, String, StringEnum
-from common.schemas.fields import (
-    validate_output,
-    validate_zim_description,
-    validate_zim_filename,
-    validate_zim_title,
+from pydantic import AnyUrl, EmailStr, Field, SecretStr
+
+from zimfarm_backend.common.schemas import DashModel
+from zimfarm_backend.common.schemas.fields import (
+    NotEmptyString,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalS3OptimizationCache,
+    OptionalZIMDescription,
+    OptionalZIMFileName,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 
-class OpenedxFlagsSchema(SerializableSchema):
-    class Meta:
-        ordered = True
+class VideoFormat(StrEnum):
+    WEBM = "webm"
+    MP4 = "mp4"
 
-    course_url = fields.Url(
-        metadata={
-            "label": "Course URL",
-            "description": "URL of the course you wnat to scrape",
-        },
-        data_key="course-url",
-        required=True,
+
+class OpenedxFlagsSchema(DashModel):
+    offliner_id: Literal["openedx"]
+
+    course_url: AnyUrl = Field(
+        title="Course URL",
+        description="URL of the course you wnat to scrape",
     )
 
-    email = String(
-        metadata={
-            "label": "Registered e-mail",
-            "description": "The registered e-mail ID on the openedx instance",
-        },
-        data_key="email",
-        required=True,
+    email: EmailStr = Field(
+        title="Registered e-mail",
+        description="The registered e-mail ID on the openedx instance",
     )
 
-    password = String(
-        metadata={
-            "label": "Password",
-            "description": "Password to the account registered on the openedx instance",
-            "secret": True,
-        },
-        data_key="password",
-        required=True,
+    password: SecretStr = Field(
+        title="Password",
+        description="Password to the account registered on the openedx instance",
     )
 
-    instance_login_page = String(
-        metadata={
-            "label": "Login page path",
-            "description": "The login path in the instance. Must start with /",
-            "placeholder": "/login_ajax",
-        },
-        data_key="instance-login-page",
+    instance_login_page: OptionalNotEmptyString = OptionalField(
+        title="Login page path",
+        description="The login path in the instance. Must start with /",
     )
 
-    instance_course_page = String(
-        metadata={
-            "label": "Course page path",
-            "description": (
-                "The path to the course page after the course ID. Must start with /"
-            ),
-            "placeholder": "/course",
-        },
-        data_key="instance-course-page",
+    instance_course_page: OptionalNotEmptyString = OptionalField(
+        title="Course page path",
+        description=(
+            "The path to the course page after the course ID. Must start with /"
+        ),
     )
 
-    instance_course_prefix = String(
-        metadata={
-            "label": "Course prefix path",
-            "description": (
-                "The prefix in the path before the course ID. Must start and end with /"
-            ),
-            "placeholder": "/courses/",
-        },
-        data_key="instance-course-prefix",
+    instance_course_prefix: OptionalNotEmptyString = OptionalField(
+        title="Course prefix path",
+        description=(
+            "The prefix in the path before the course ID. Must start and end with /"
+        ),
     )
 
-    favicon_url = fields.Url(
-        metadata={
-            "label": "Favicon URL",
-            "description": (
-                "URL pointing to a favicon image. Recommended size >= (48px x 48px)"
-            ),
-            "placeholder": (
-                "https://github.com/edx/edx-platform/raw/master/lms/static/images/"
-                "favicon.ico"
-            ),
-        },
-        data_key="favicon-url",
+    favicon_url: AnyUrl | None = OptionalField(
+        title="Favicon URL",
+        description=(
+            "URL pointing to a favicon image. Recommended size >= (48px x 48px)"
+        ),
     )
 
-    ignore_missing_xblocks = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Ignore unsupported xblocks",
-            "description": "Ignore unsupported content (xblock(s))",
-        },
-        data_key="ignore-missing-xblocks",
+    ignore_missing_xblocks: bool | None = OptionalField(
+        title="Ignore unsupported xblocks",
+        description="Ignore unsupported content (xblock(s))",
     )
 
-    add_wiki = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Include wiki",
-            "description": "Add wiki (if available) to the ZIM",
-        },
-        data_key="add-wiki",
+    add_wiki: bool | None = OptionalField(
+        title="Include wiki",
+        description="Add wiki (if available) to the ZIM",
     )
 
-    add_forum = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Include forum",
-            "description": "Add forum/discussion (if available) to the ZIM",
-        },
-        data_key="add-forum",
+    add_forum: bool | None = OptionalField(
+        title="Include forum",
+        description="Add forum/discussion (if available) to the ZIM",
     )
 
-    remove_seq_nav = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "No top sequential navigation",
-            "description": "Remove the top sequential navigation bar in the ZIM",
-        },
-        data_key="remove-seq-nav",
+    remove_seq_nav: bool | None = OptionalField(
+        title="No top sequential navigation",
+        description="Remove the top sequential navigation bar in the ZIM",
     )
 
-    video_format = StringEnum(
-        metadata={
-            "label": "Video format",
-            "description": "Format to download/transcode video to. webm is smaller",
-        },
-        validate=validate.OneOf(["webm", "mp4"]),
-        data_key="format",
+    video_format: VideoFormat | None = OptionalField(
+        title="Video format",
+        description="Format to download/transcode video to. webm is smaller",
     )
 
-    low_quality = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Low Quality",
-            "description": "Re-encode video using stronger compression",
-        },
-        data_key="low-quality",
+    low_quality: bool | None = OptionalField(
+        title="Low Quality",
+        description="Re-encode video using stronger compression",
     )
 
-    autoplay = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Autoplay videos",
-            "description": (
-                "Enable autoplay on videos. Behavior differs on platforms/browsers"
-            ),
-        },
-        data_key="autoplay",
+    autoplay: bool | None = OptionalField(
+        title="Autoplay videos",
+        description=(
+            "Enable autoplay on videos. Behavior differs on platforms/browsers"
+        ),
     )
 
-    name = String(
-        metadata={
-            "label": "Name",
-            "description": (
-                "ZIM name. Used as identifier and filename (date will be appended)"
-            ),
-            "placeholder": "topic_eng",
-        },
-        data_key="name",
-        required=True,
+    name: NotEmptyString = Field(
+        title="Name",
+        description=(
+            "ZIM name. Used as identifier and filename (date will be appended)"
+        ),
     )
 
-    title = String(
-        metadata={
-            "label": "Title",
-            "description": "Custom title for your ZIM. Based on MOOC otherwise",
-        },
-        data_key="title",
-        validate=validate_zim_title,
+    title: OptionalZIMTitle = OptionalField(
+        title="Title",
+        description="Custom title for your ZIM. Based on MOOC otherwise",
     )
 
-    description = String(
-        metadata={
-            "label": "Description",
-            "description": "Custom description for your ZIM. Based on MOOC otherwise",
-        },
-        data_key="description",
-        validate=validate_zim_description,
+    description: OptionalZIMDescription = OptionalField(
+        title="Description",
+        description="Custom description for your ZIM. Based on MOOC otherwise",
     )
 
-    creator = String(
-        metadata={
-            "label": "Content Creator",
-            "description": "Name of content creator. Defaults to edX",
-        },
-        data_key="creator",
+    creator: OptionalNotEmptyString = OptionalField(
+        title="Content Creator",
+        description="Name of content creator. Defaults to edX",
     )
 
-    publisher = String(
-        metadata={
-            "label": "Publisher",
-            "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        }
+    publisher: OptionalNotEmptyString = OptionalField(
+        title="Publisher",
+        description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
     )
 
-    tags = String(
-        metadata={
-            "label": "ZIM Tags",
-            "description": (
-                "List of comma-separated Tags for the ZIM file. category:other, and "
-                "openedx added automatically"
-            ),
-        },
-        data_key="tags",
+    tags: OptionalNotEmptyString = OptionalField(
+        title="ZIM Tags",
+        description=(
+            "List of comma-separated Tags for the ZIM file. category:other, and "
+            "openedx added automatically"
+        ),
     )
 
-    optimization_cache = fields.Url(
-        metadata={
-            "label": "Optimization Cache URL",
-            "description": (
-                "URL with credentials and bucket name to S3 Optimization Cache"
-            ),
-            "secret": True,
-        },
-        data_key="optimization-cache",
+    optimization_cache: OptionalS3OptimizationCache = OptionalField(
+        title="Optimization Cache URL",
+        description="URL with credentials and bucket name to S3 Optimization Cache",
     )
 
-    use_any_optimized_version = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={
-            "label": "Use any optimized version",
-            "description": "Use the cached files if present, whatever the version",
-        },
-        data_key="use-any-optimized-version",
+    use_any_optimized_version: bool | None = OptionalField(
+        title="Use any optimized version",
+        description="Use the cached files if present, whatever the version",
     )
 
-    output = String(
-        metadata={
-            "label": "Output folder",
-            "placeholder": "/output",
-            "description": "Output folder for ZIM file(s). Leave it as `/output`",
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
-        data_key="output",
+    output: OptionalZIMOutputFolder = OptionalField(
+        title="Output folder",
+        description="Output folder for ZIM file(s). Leave it as `/output`",
     )
 
-    tmp_dir = String(
-        metadata={
-            "label": "Temp folder",
-            "description": (
-                "Where to create temporay build folder. Leave it as `/output`"
-            ),
-        },
-        load_default="/output",
-        dump_default="/output",
-        validate=validate_output,
-        data_key="tmp-dir",
+    tmp_dir: OptionalNotEmptyString = OptionalField(
+        title="Temp folder",
+        description="Where to create temporay build folder. Leave it as `/output`",
     )
 
-    zim_file = String(
-        metadata={
-            "label": "ZIM filename",
-            "description": "ZIM file name (based on ZIM name if not provided)",
-        },
-        data_key="zim-file",
-        validate=validate_zim_filename,
+    zim_file: OptionalZIMFileName = OptionalField(
+        title="ZIM filename",
+        description="ZIM file name (based on ZIM name if not provided)",
     )
 
-    debug = fields.Boolean(
-        truthy=[True],
-        falsy=[False],
-        metadata={"label": "Debug", "description": "Enable verbose output"},
+    debug: bool | None = OptionalField(
+        title="Debug",
+        description="Enable verbose output",
     )
 
-    threads = fields.Integer(
-        metadata={
-            "label": "Threads",
-            "description": "Number of parallel threads to use while downloading",
-        },
-        validate=validate.Range(min=1),
+    threads: int | None = OptionalField(
+        title="Threads",
+        description="Number of parallel threads to use while downloading",
+        ge=1,
     )
 
-    locale = String(
-        metadata={
-            "label": "Locale",
-            "description": "The locale to use for the translations in ZIM",
-        }
+    locale: OptionalNotEmptyString = OptionalField(
+        title="Locale",
+        description="The locale to use for the translations in ZIM",
     )

@@ -89,7 +89,9 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
 
     s3 = KiwixStorage(url=WASABI_URL)
     try:
-        if not s3.check_credentials(list_buckets=True, failsafe=False):  # pyright: ignore[reportUnknownMemberType]
+        if not s3.check_credentials(  # pyright: ignore[reportUnknownMemberType]
+            list_buckets=True, failsafe=False
+        ):
             raise AuthenticationError("check_credentials failed")
     except Exception as exc:
         logger.error(
@@ -97,7 +99,9 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
         )
         return
 
-    iam = s3.get_service("iam")  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+    iam = s3.get_service(  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        "iam"
+    )
     versions: list[dict[str, Any]] = cast(
         list[dict[str, Any]],
         iam.list_policy_versions(  # pyright: ignore[reportUnknownMemberType]
