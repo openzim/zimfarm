@@ -51,19 +51,19 @@ class TaskStatus:
         ]
 
     @classmethod
-    def file_events(cls):
+    def file_events(cls) -> list[str]:
         return [cls.created_file, cls.uploaded_file, cls.failed_file, cls.checked_file]
 
     @classmethod
-    def silent_events(cls):
-        return cls.file_events() + [cls.scraper_running, cls.update]
+    def silent_events(cls) -> list[str]:
+        return [*cls.file_events(), cls.scraper_running, cls.update]
 
     @classmethod
-    def all_events(cls):
+    def all_events(cls) -> list[str]:
         return list(
             filter(
                 lambda x: x not in (cls.requested, cls.reserved),
-                cls.all() + cls.silent_events(),
+                [*cls.all(), *cls.silent_events()],
             )
         )
 
@@ -81,8 +81,9 @@ class WarehousePath:
     libretexts = "/libretexts"
 
     @classmethod
-    def all(cls):
-        return ScheduleCategory.all_warehouse_paths() + [
+    def all(cls) -> list[str]:
+        return [
+            *ScheduleCategory.all_warehouse_paths(),
             cls.videos,
             cls.zimit,
             cls.libretexts,
@@ -148,11 +149,11 @@ class ScheduleCategory:
         ]
 
     @classmethod
-    def get_warehouse_path(cls, category):
-        return "/{}".format(category)
+    def get_warehouse_path(cls, category: str) -> str:
+        return f"/{category}"
 
     @classmethod
-    def all_warehouse_paths(cls):
+    def all_warehouse_paths(cls) -> list[str]:
         custom_paths = {cls.openedx: "mooc"}
         excluded_categories = [cls.wikispecies]
         return [
@@ -180,7 +181,7 @@ class DockerImageName:
     mindtouch = "openzim/mindtouch"
 
     @classmethod
-    def all(cls) -> set:
+    def all(cls) -> set[str]:
         return {
             cls.mwoffliner,
             cls.youtube,
@@ -238,13 +239,13 @@ class Offliner:
         ]
 
     @classmethod
-    def get_image_prefix(cls, offliner):
+    def get_image_prefix(cls, offliner: str) -> str:
         prefix = os.getenv(f"DOCKER_REGISTRY_{offliner}", "ghcr.io")
         prefix += "/" if prefix else ""
         return prefix
 
     @classmethod
-    def get_image_name(cls, offliner):
+    def get_image_name(cls, offliner: str) -> str:
         return cls.get_image_prefix(offliner) + {
             cls.mwoffliner: DockerImageName.mwoffliner,
             cls.youtube: DockerImageName.youtube,
@@ -288,7 +289,7 @@ class Platform:
     phet = "phet"
 
     @classmethod
-    def all(cls) -> str:
+    def all(cls) -> list[str]:
         return [
             cls.wikimedia,
             cls.youtube,
@@ -302,15 +303,15 @@ class Platform:
         ]
 
     @classmethod
-    def get_max_per_worker_tasks_for(cls, platform) -> int:
+    def get_max_per_worker_tasks_for(cls, platform: str) -> int | None:
         try:
-            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS_PER_WORKER"))
+            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS_PER_WORKER", ""))
         except (TypeError, ValueError):
             return None
 
     @classmethod
-    def get_max_overall_tasks_for(cls, platform) -> int:
+    def get_max_overall_tasks_for(cls, platform: str) -> int | None:
         try:
-            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS_TOTAL"))
+            return int(os.getenv(f"PLATFORM_{platform}_MAX_TASKS_TOTAL", ""))
         except (TypeError, ValueError):
             return None

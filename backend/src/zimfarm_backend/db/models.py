@@ -1,6 +1,6 @@
 from datetime import datetime
 from ipaddress import IPv4Address
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 from uuid import UUID
 
 from sqlalchemy import (
@@ -21,14 +21,13 @@ from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
     Session,
-    declared_attr,
     mapped_column,
     relationship,
     selectinload,
 )
 from sqlalchemy.sql.schema import MetaData
 
-from utils.check import raise_if, raise_if_none
+from zimfarm_backend.utils.check import raise_if, raise_if_none
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -36,15 +35,15 @@ class Base(MappedAsDataclass, DeclarativeBase):
     # PostgreSQL. This is only needed for the case where a specific PostgreSQL
     # type has to be used or when we want to ensure a specific setting (like the
     # timezone below)
-    type_annotation_map = {
-        Dict[str, Any]: MutableDict.as_mutable(
+    type_annotation_map = {  # noqa: RUF012
+        dict[str, Any]: MutableDict.as_mutable(
             JSONB
         ),  # transform Python Dict[str, Any] into PostgreSQL JSONB
-        List[Dict[str, Any]]: MutableList.as_mutable(JSONB),
+        list[dict[str, Any]]: MutableList.as_mutable(JSONB),
         datetime: DateTime(
             timezone=False
         ),  # transform Python datetime into PostgreSQL Datetime without timezone
-        List[str]: ARRAY(
+        list[str]: ARRAY(
             item_type=String
         ),  # transform Python List[str] into PostgreSQL Array of strings
         IPv4Address: INET,  # transform Python IPV4Address into PostgreSQL INET
@@ -70,40 +69,40 @@ class User(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     username: Mapped[str] = mapped_column(unique=True, index=True)
-    password_hash: Mapped[Optional[str]]
-    email: Mapped[Optional[str]]
-    scope: Mapped[Optional[Dict[str, Any]]]
+    password_hash: Mapped[str | None]
+    email: Mapped[str | None]
+    scope: Mapped[dict[str, Any] | None]
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
-    ssh_keys: Mapped[List["Sshkey"]] = relationship(
+    ssh_keys: Mapped[list["Sshkey"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
-    refresh_tokens: Mapped[List["Refreshtoken"]] = relationship(
+    refresh_tokens: Mapped[list["Refreshtoken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
-    workers: Mapped[List["Worker"]] = relationship(
+    workers: Mapped[list["Worker"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
     @classmethod
     def check(
         cls,
-        user: "User",
-        exception_class: Type[Exception] = Exception,
+        user: "User | None",
+        exception_class: type[Exception] = Exception,
         *exception_args: object,
     ) -> None:
         """Raise the exception passed in parameters if user is None or deleted."""
         raise_if_none(user, exception_class, *exception_args)
-        raise_if(user.deleted, exception_class, *exception_args)
+        raise_if(user.deleted, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
 
     @classmethod
     def get(
         cls,
         session: Session,
         username: str,
-        exception_class: Type[Exception] = Exception,
+        exception_class: type[Exception] = Exception,
         *exception_args: object,
         fetch_ssh_keys: bool = False,
         run_checks: bool = True,
@@ -150,9 +149,7 @@ class Refreshtoken(Base):
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
 
-    @declared_attr
-    def __table_args__(cls):
-        return (Index(None, cls.user_id, cls.token, unique=True),)
+    __table__args = (Index(None, "user_id", "token", unique=True),)
 
 
 class Worker(Base):
@@ -165,21 +162,21 @@ class Worker(Base):
     cpu: Mapped[int]
     memory: Mapped[int] = mapped_column(type_=BigInteger)
     disk: Mapped[int] = mapped_column(type_=BigInteger)
-    offliners: Mapped[List[str]]
-    platforms: Mapped[Dict[str, Any]]
-    last_seen: Mapped[Optional[datetime]]
-    last_ip: Mapped[Optional[IPv4Address]]
+    offliners: Mapped[list[str]]
+    platforms: Mapped[dict[str, Any]]
+    last_seen: Mapped[datetime | None]
+    last_ip: Mapped[IPv4Address | None]
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
     user: Mapped["User"] = relationship(back_populates="workers", init=False)
 
-    tasks: Mapped[List["Task"]] = relationship(
+    tasks: Mapped[list["Task"]] = relationship(
         back_populates="worker", cascade="all", init=False
     )
 
-    requested_tasks: Mapped[List["RequestedTask"]] = relationship(
+    requested_tasks: Mapped[list["RequestedTask"]] = relationship(
         back_populates="worker", cascade="all", init=False
     )
 
@@ -188,10 +185,10 @@ class Worker(Base):
         cls,
         session: Session,
         name: str,
-        exception_class: Type[Exception] = Exception,
+        exception_class: type[Exception] = Exception,
         *exception_args: object,
         run_checks: bool = True,
-    ) -> Optional["RequestedTask"]:
+    ) -> Optional["Worker"]:
         """Search DB for a worker by name
 
         If the check of the worker are ok, raise thes exception passed
@@ -201,7 +198,7 @@ class Worker(Base):
         task = session.execute(stmt).scalar_one_or_none()
         if run_checks:
             raise_if_none(task, exception_class, *exception_args)
-            raise_if(task.deleted, exception_class, *exception_args)
+            raise_if(task.deleted, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
         return task
 
 
@@ -211,22 +208,22 @@ class Task(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     updated_at: Mapped[datetime] = mapped_column(index=True)
-    events: Mapped[List[Dict[str, Any]]]
-    debug: Mapped[Dict[str, Any]]
+    events: Mapped[list[dict[str, Any]]]
+    debug: Mapped[dict[str, Any]]
     status: Mapped[str] = mapped_column(index=True)
-    timestamp: Mapped[Dict[str, Any]]
+    timestamp: Mapped[dict[str, Any]]
     requested_by: Mapped[str]
-    canceled_by: Mapped[Optional[str]]
-    container: Mapped[Dict[str, Any]]
+    canceled_by: Mapped[str | None]
+    container: Mapped[dict[str, Any]]
     priority: Mapped[int]
     # config must be JSON instead of JSONB so that we can query on dict item value
-    config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
-    notification: Mapped[Dict[str, Any]]
-    files: Mapped[Dict[str, Any]]
-    upload: Mapped[Dict[str, Any]]
+    config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
+    notification: Mapped[dict[str, Any]]
+    files: Mapped[dict[str, Any]]
+    upload: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
 
-    schedule_id: Mapped[Optional[UUID]] = mapped_column(
+    schedule_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("schedule.id"), init=False
     )
 
@@ -242,8 +239,8 @@ class Task(Base):
     def get(
         cls,
         session: Session,
-        id: UUID,
-        exception_class: Type[Exception] = Exception,
+        id: UUID,  # noqa: A002
+        exception_class: type[Exception] = Exception,
         *exception_args: object,
     ) -> "Task":
         """Search DB for a task by UUID
@@ -251,8 +248,8 @@ class Task(Base):
         If the check of the task is not ok, raise thes exception passed in parameters"""
         stmt = select(Task).where(Task.id == id)
         task = session.execute(stmt).scalar_one_or_none()
-        raise_if_none(task, exception_class, *exception_args)
-        return task
+        raise_if_none(task, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
+        return task  # pyright: ignore[reportReturnType]
 
 
 class Schedule(Base):
@@ -263,39 +260,39 @@ class Schedule(Base):
     name: Mapped[str] = mapped_column(unique=True, index=True)
     category: Mapped[str] = mapped_column(index=True)
     # config must be JSON instead of JSONB so that we can query on dict item value
-    config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
+    config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str] = mapped_column(index=True)
     language_name_native: Mapped[str]
     language_name_en: Mapped[str]
-    tags: Mapped[List[str]] = mapped_column(index=True)
+    tags: Mapped[list[str]] = mapped_column(index=True)
     periodicity: Mapped[str]
-    notification: Mapped[Optional[Dict[str, Any]]]
+    notification: Mapped[dict[str, Any] | None]
 
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration
     # has been partially modified to create the FK afterwards
-    most_recent_task_id: Mapped[Optional[UUID]] = mapped_column(
+    most_recent_task_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("task.id", use_alter=True), init=False
     )
     most_recent_task: Mapped[Optional["Task"]] = relationship(
         init=False, foreign_keys=[most_recent_task_id]
     )
 
-    tasks: Mapped[List["Task"]] = relationship(
+    tasks: Mapped[list["Task"]] = relationship(
         back_populates="schedule",
         cascade="save-update, merge, refresh-expire",
         init=False,
         foreign_keys=[Task.schedule_id],
     )
 
-    requested_tasks: Mapped[List["RequestedTask"]] = relationship(
+    requested_tasks: Mapped[list["RequestedTask"]] = relationship(
         back_populates="schedule",
         cascade="save-update, merge, refresh-expire",
         init=False,
     )
 
-    durations: Mapped[List["ScheduleDuration"]] = relationship(
+    durations: Mapped[list["ScheduleDuration"]] = relationship(
         back_populates="schedule", cascade="all", init=False
     )
 
@@ -304,7 +301,7 @@ class Schedule(Base):
         cls,
         session: Session,
         name: str,
-        exception_class: Type[Exception] = Exception,
+        exception_class: type[Exception] = Exception,
         *exception_args: object,
         run_checks: bool = True,
     ) -> Optional["Schedule"]:
@@ -332,15 +329,11 @@ class ScheduleDuration(Base):
 
     schedule: Mapped["Schedule"] = relationship(init=False)
 
-    worker_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("worker.id"), init=False
-    )
+    worker_id: Mapped[UUID | None] = mapped_column(ForeignKey("worker.id"), init=False)
 
     worker: Mapped[Optional["Worker"]] = relationship(init=False)
 
-    @declared_attr
-    def __table_args__(cls):
-        return (UniqueConstraint(cls.schedule_id, cls.worker_id),)
+    __table__args = (UniqueConstraint("schedule_id", "worker_id"),)
 
 
 class RequestedTask(Base):
@@ -349,18 +342,18 @@ class RequestedTask(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     status: Mapped[str]
-    timestamp: Mapped[Dict[str, Any]]
+    timestamp: Mapped[dict[str, Any]]
     updated_at: Mapped[datetime] = mapped_column(index=True)
-    events: Mapped[List[Dict[str, Any]]]
+    events: Mapped[list[dict[str, Any]]]
     requested_by: Mapped[str]
     priority: Mapped[int]
     # config must be JSON instead of JSONB so that we can query on dict item value
-    config: Mapped[Dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
-    upload: Mapped[Dict[str, Any]]
-    notification: Mapped[Dict[str, Any]]
+    config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
+    upload: Mapped[dict[str, Any]]
+    notification: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
 
-    schedule_id: Mapped[Optional[UUID]] = mapped_column(
+    schedule_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("schedule.id"), init=False
     )
 
@@ -368,9 +361,7 @@ class RequestedTask(Base):
         back_populates="requested_tasks", init=False
     )
 
-    worker_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("worker.id"), init=False
-    )
+    worker_id: Mapped[UUID | None] = mapped_column(ForeignKey("worker.id"), init=False)
 
     worker: Mapped[Optional["Worker"]] = relationship(
         back_populates="requested_tasks", init=False
@@ -380,8 +371,8 @@ class RequestedTask(Base):
     def get(
         cls,
         session: Session,
-        id: UUID,
-        exception_class: Type[Exception] = Exception,
+        id: UUID,  # noqa: A002
+        exception_class: type[Exception] = Exception,
         *exception_args: object,
     ) -> "RequestedTask":
         """Search DB for a requested task by UUID
@@ -391,5 +382,5 @@ class RequestedTask(Base):
         """
         stmt = select(RequestedTask).where(RequestedTask.id == id)
         task = session.execute(stmt).scalar_one_or_none()
-        raise_if_none(task, exception_class, *exception_args)
-        return task
+        raise_if_none(task, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
+        return task  # pyright: ignore[reportReturnType]

@@ -1,18 +1,13 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
 import os
 
+import db.models as dbm
 import humanfriendly
 import requests
 import sqlalchemy.orm as so
-from flask.json import dumps
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from marshmallow import ValidationError
-
-import db.models as dbm
 from common.constants import (
     PUBLIC_URL,
     REQ_TIMEOUT_NOTIFICATIONS,
@@ -27,6 +22,7 @@ from common.enum import TaskStatus
 from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
 from common.schemas.orms import RequestedTaskFullSchema, ScheduleAwareTaskFullSchema
 from errors.http import RequestedTaskNotFound, TaskNotFound
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -152,7 +148,7 @@ def handle_slack_notification(task, channels):
             logger.exception(exc)
 
 
-def handle_notification(task_id, event, session: so.Session):
+def handle_notification(task_id: UUID, event: str, session: so.Session):
     # alias for all complete status
     if event in TaskStatus.complete():
         event = "ended"

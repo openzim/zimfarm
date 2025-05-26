@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from pathlib import Path
 
 import requests
 from werkzeug.datastructures import MultiDict
 
-from common.constants import (
+from zimfarm_backend.common.constants import (
     MAILGUN_API_KEY,
     MAILGUN_API_URL,
     MAILGUN_FROM,
@@ -22,10 +22,9 @@ def send_email_via_mailgun(
     to: Sequence[str],
     subject: str,
     contents: str,
-    cc: Optional[Sequence] = None,
-    bcc: Optional[Sequence] = None,
-    headers: Optional[dict] = None,
-    attachments: Optional[Sequence] = None,
+    cc: Sequence[str] | None = None,
+    bcc: Sequence[str] | None = None,
+    attachments: Sequence[Path] | None = None,
 ):
     if not MAILGUN_API_URL or not MAILGUN_API_KEY:
         return
@@ -36,13 +35,13 @@ def send_email_via_mailgun(
         ("html", contents),
     ]
     values += [
-        ("to", value) for value in (to if isinstance(to, (list, tuple)) else [to])
+        ("to", value) for value in (to if isinstance(to, list | tuple) else [to])
     ]
     values += [
-        ("cc", value) for value in (cc if isinstance(cc, (list, tuple)) else [cc])
+        ("cc", value) for value in (cc if isinstance(cc, list | tuple) else [cc])
     ]
     values += [
-        ("bcc", value) for value in (bcc if isinstance(bcc, (list, tuple)) else [bcc])
+        ("bcc", value) for value in (bcc if isinstance(bcc, list | tuple) else [bcc])
     ]
     data = MultiDict(values)
 
@@ -53,7 +52,7 @@ def send_email_via_mailgun(
             data=data,
             files=(
                 [
-                    ("attachment", (fpath.name, open(fpath, "rb").read()))
+                    ("attachment", (fpath.name, fpath.read_bytes()))
                     for fpath in attachments
                 ]
                 if attachments
@@ -65,4 +64,5 @@ def send_email_via_mailgun(
     except Exception as exc:
         logger.error(f"Failed to send mailgun notif: {exc}")
         logger.exception(exc)
-    return resp.json().get("id")
+    else:
+        return resp.json().get("id")

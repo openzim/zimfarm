@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from common.enum import SchedulePeriodicity
+from zimfarm_backend.common.enum import SchedulePeriodicity
 
 OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
 MESSAGE_VALIDITY = 60  # number of seconds before a message expire
@@ -28,7 +28,7 @@ try:
     # on the bucket and the bucket retention is smaller than value below
     ZIM_EXPIRATION = int(os.getenv("ZIM_EXPIRATION", "0"))
 except Exception:
-    ZIM_EXPIRATION = 0
+    ZIM_EXPIRATION = 0  # pyright: ignore[reportConstantRedefinition]
 LOGS_UPLOAD_URI = os.getenv(
     "LOGS_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/logs"
 )
@@ -38,7 +38,7 @@ try:
     # on the bucket and the bucket retention is smaller than value below
     LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
 except Exception:
-    LOGS_EXPIRATION = 30
+    LOGS_EXPIRATION = 30  # pyright: ignore[reportConstantRedefinition]
 ARTIFACTS_UPLOAD_URI = os.getenv("ARTIFACTS_UPLOAD_URI", None)
 try:
     # artifact files expiration, 0 to disable expiration
@@ -46,7 +46,7 @@ try:
     # on the bucket and the bucket retention is smaller than value below
     ARTIFACTS_EXPIRATION = int(os.getenv("ARTIFACTS_EXPIRATION", "30"))
 except Exception:
-    ARTIFACTS_EXPIRATION = 30
+    ARTIFACTS_EXPIRATION = 30  # pyright: ignore[reportConstantRedefinition]
 
 # empty ZIMCHECK_OPTION means no zimcheck
 ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
@@ -97,6 +97,7 @@ WASABI_WHITELIST_STATEMENT_ID = os.getenv(
 WHITELISTED_IPS = [
     ip.strip() for ip in os.getenv("WHITELISTED_IPS", "").split(",") if ip.strip()
 ]
+WASABI_MAX_WHITELIST_VERSIONS = int(os.getenv("WASABI_MAX_WHITELIST_VERSIONS", "5"))
 
 
 # openZIM CMS can be called upon receival of each ZIM
@@ -111,9 +112,9 @@ CMS_ZIM_DOWNLOAD_URL = os.getenv(
 DISALLOW_CAPABILITIES = bool(os.getenv("ZIMFARM_DISALLOW_CAPABILITIES"))
 
 # Timeout for requests to other services
-REQ_TIMEOUT_NOTIFICATIONS = int(os.getenv("REQ_TIMEOUT_NOTIFICATIONS", 5))
-REQ_TIMEOUT_CMS = int(os.getenv("REQ_TIMEOUT_CMS", 10))
-REQ_TIMEOUT_GHCR = int(os.getenv("REQ_TIMEOUT_GHCR", 10))
+REQ_TIMEOUT_NOTIFICATIONS = int(os.getenv("REQ_TIMEOUT_NOTIFICATIONS", "5"))
+REQ_TIMEOUT_CMS = int(os.getenv("REQ_TIMEOUT_CMS", "10"))
+REQ_TIMEOUT_GHCR = int(os.getenv("REQ_TIMEOUT_GHCR", "10"))
 
 # OFFLINERS
 ZIMIT_USE_RELAXED_SCHEMA = bool(os.getenv("ZIMIT_USE_RELAXED_SCHEMA"))

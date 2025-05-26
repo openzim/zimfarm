@@ -1,0 +1,39 @@
+name: Backend QA
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "backend/**"
+    branches:
+      - main
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        working-directory: backend
+        run: |
+          pip install -U pip
+          pip install -e .[lint,scripts,test,check]
+
+      - name: Check black formatting
+        working-directory: backend
+        run: inv lint-black
+
+      - name: Check ruff
+        working-directory: backend
+        run: inv lint-ruff
+
+      - name: Check pyright
+        working-directory: backend
+        run: inv check-pyright
