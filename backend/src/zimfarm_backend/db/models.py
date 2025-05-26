@@ -95,7 +95,11 @@ class User(Base):
     ) -> None:
         """Raise the exception passed in parameters if user is None or deleted."""
         raise_if_none(user, exception_class, *exception_args)
-        raise_if(user.deleted, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
+        raise_if(
+            user.deleted,  # pyright: ignore[reportOptionalMemberAccess]
+            exception_class,
+            *exception_args,
+        )
 
     @classmethod
     def get(
@@ -149,7 +153,7 @@ class Refreshtoken(Base):
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
 
-    __table__args = (Index(None, "user_id", "token", unique=True),)
+    __table__args = (Index("user_id", "token", unique=True),)
 
 
 class Worker(Base):
@@ -198,7 +202,11 @@ class Worker(Base):
         task = session.execute(stmt).scalar_one_or_none()
         if run_checks:
             raise_if_none(task, exception_class, *exception_args)
-            raise_if(task.deleted, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
+            raise_if(
+                task.deleted,  # pyright: ignore[reportOptionalMemberAccess]
+                exception_class,
+                *exception_args,
+            )
         return task
 
 
@@ -248,7 +256,11 @@ class Task(Base):
         If the check of the task is not ok, raise thes exception passed in parameters"""
         stmt = select(Task).where(Task.id == id)
         task = session.execute(stmt).scalar_one_or_none()
-        raise_if_none(task, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
+        raise_if_none(
+            task,
+            exception_class,
+            *exception_args,
+        )
         return task  # pyright: ignore[reportReturnType]
 
 
@@ -382,5 +394,9 @@ class RequestedTask(Base):
         """
         stmt = select(RequestedTask).where(RequestedTask.id == id)
         task = session.execute(stmt).scalar_one_or_none()
-        raise_if_none(task, exception_class, *exception_args)  # pyright: ignore[reportOptionalMemberAccess]
+        raise_if_none(
+            task,
+            exception_class,
+            *exception_args,
+        )
         return task  # pyright: ignore[reportReturnType]

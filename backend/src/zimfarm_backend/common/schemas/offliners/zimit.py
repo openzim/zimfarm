@@ -162,6 +162,7 @@ class ZimitFlagsCamelSchema(CamelModel):
         "continuing. One of load, domcontentloaded, networkidle0 or networkidle2, "
         "or a comma-separated combination of those. Default is load,networkidle2",
     )
+
     extra_hops: int | None = OptionalField(
         title="Extra Hops",
         description="Number of extra 'hops' to follow, "
@@ -279,6 +280,7 @@ class ZimitFlagsCamelSchema(CamelModel):
         "equal to (<=) provided ISO Date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS "
         "or partial date)",
     )
+
     behavior_timeout: int | None = OptionalField(
         title="Behavior Timeout",
         description="If >0, timeout (in seconds) for in-page behavior "

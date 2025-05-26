@@ -17,7 +17,7 @@ def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
 MadeAwareDateTime = Annotated[datetime.datetime, AfterValidator(make_datetime_aware)]
 
 
-class UserSchemaReadMany(BaseModel):
+class UserSchema(BaseModel):
     """
     Schema for reading a user model
     """
@@ -47,7 +47,7 @@ class SshKeyRead(BaseModel):
     type: str
 
 
-class UserSchemaReadOne(UserSchemaReadMany):
+class UserSchemaWithSshKeys(UserSchema):
     """
     Schema for reading a user model with its ssh keys
     """
