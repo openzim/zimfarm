@@ -1,17 +1,18 @@
 from typing import Literal
 
-from pydantic import Field, field_validator
-from pydantic.types import AnyUrl
+from pydantic import AnyUrl, Field, field_validator
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
-    Percentage,
-    ZIMDescription,
-    ZIMFileName,
-    ZIMLongDescription,
-    ZIMOutputFolder,
-    ZIMTitle,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalPercentage,
+    OptionalZIMDescription,
+    OptionalZIMFileName,
+    OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
@@ -139,14 +140,14 @@ DEVICES = sorted(
 
 
 class ZimitFlagsSchema(BaseModel):
-    seeds: AnyUrl = Field(
+    seeds: OptionalNotEmptyString = OptionalField(
         title="Seeds",
         description="The seed URL(s) to start crawling from. Multile seed URL "
         "must be separated by a comma (usually not needed, these are just the crawl"
         " seeds). First seed URL is used as ZIM homepage",
     )
 
-    seed_file: AnyUrl = Field(
+    seed_file: OptionalNotEmptyString = OptionalField(
         title="Seed File",
         description="If set, read a list of seed urls, one per line. HTTPS URL"
         " to an online file.",
@@ -159,194 +160,183 @@ class ZimitFlagsSchema(BaseModel):
         "Used to compose filename if not otherwise defined",
     )
 
-    lang: NotEmptyString = Field(
+    lang: OptionalNotEmptyString = OptionalField(
         title="Browser Language",
         description="If set, sets the language used by the browser, should be"
         "ISO 639 language[-country] code, e.g. `en` or `en-GB`",
     )
 
-    zim_lang: NotEmptyString = Field(
+    zim_lang: OptionalNotEmptyString = OptionalField(
         title="ZIM Language",
         description="Language metadata of ZIM (warc2zim --lang param). "
         "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
         alias="zim-lang",
     )
 
-    title: ZIMTitle = Field(
+    title: OptionalZIMTitle = OptionalField(
         title="Title",
         description="Custom title for ZIM. Defaults to title of main page",
     )
 
-    description: ZIMDescription = Field(
+    description: OptionalZIMDescription = OptionalField(
         title="Description",
         description="Description for ZIM",
     )
 
-    long_description: ZIMLongDescription = Field(
+    long_description: OptionalZIMLongDescription = OptionalField(
         title="Long description",
         description="Optional long description for your ZIM",
         alias="long-description",
     )
 
-    favicon: AnyUrl | None = Field(
+    favicon: OptionalNotEmptyString = OptionalField(
         title="Illustration",
-        default=None,
         description="URL for Illustration. "
         "If unspecified, will attempt to use favicon from main page.",
     )
 
-    zim_file: ZIMFileName = Field(
+    zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Make sure to end with _{period}.zim",
         alias="zim-file",
     )
 
-    tags: NotEmptyString = Field(
+    tags: OptionalNotEmptyString = OptionalField(
         title="ZIM Tags",
         description="Single string with individual tags separated by a semicolon.",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Content Creator",
         description="Name of content creator.",
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
-        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        default="openZIM",
+        description="Custom publisher name (ZIM metadata). 'openZIM' otherwise",
     )
 
-    source: NotEmptyString = Field(
+    source: OptionalNotEmptyString = OptionalField(
         title="Content Source",
         description="Source name/URL of content",
     )
 
-    workers: int = Field(
+    workers: int | None = OptionalField(
         title="Workers",
         description="The number of workers to run in parallel. Defaults to 1",
-        default=1,
     )
 
-    wait_until: NotEmptyString = Field(
+    wait_until: OptionalNotEmptyString = OptionalField(
         title="WaitUntil",
         description="Puppeteer page.goto() condition to wait for before "
         "continuing. One of load, domcontentloaded, networkidle0 or networkidle2, "
         "or a comma-separated combination of those. Default is load,networkidle2",
-        default="load,networkidle2",
         alias="waitUntil",
     )
 
-    depth: int = Field(
+    depth: int | None = OptionalField(
         title="Depth",
         description="The depth of the crawl for all seeds. Default is -1 (infinite).",
-        default=-1,
     )
 
-    extra_hops: int = Field(
+    extra_hops: int | None = OptionalField(
         title="Extra Hops",
         description="Number of extra 'hops' to follow, "
         "beyond the current scope. Default is 0",
-        default=0,
         alias="extraHops",
     )
 
-    page_limit: int = Field(
+    page_limit: int | None = OptionalField(
         title="Page limit",
         description="Limit crawl to this number of pages. Default is 0 (no-limit).",
-        default=0,
         alias="pageLimit",
     )
 
-    max_page_limit: int = Field(
+    max_page_limit: int | None = OptionalField(
         title="Max Page Limit",
         description="Maximum pages to crawl, overriding pageLimit "
         "if both are set. Default is 0 (no-limit)",
-        default=0,
         alias="maxPageLimit",
     )
 
-    page_load_timeout: int = Field(
+    page_load_timeout: int | None = OptionalField(
         title="Page Load Timeout",
         description="Timeout for each page to load (in seconds). Default is 90",
-        default=90,
         alias="pageLoadTimeout",
     )
 
-    scope_type: Literal[
-        "page", "page-spa", "prefix", "host", "domain", "any", "custom"
-    ] = Field(
+    scope_type: (
+        Literal["page", "page-spa", "prefix", "host", "domain", "any", "custom"] | None
+    ) = OptionalField(
         title="Scope Type",
         description="A predfined scope of the crawl. For more customization, "
         "use 'custom' and set scopeIncludeRx/scopeExcludeRx regexes. Default is "
         "custom if scopeIncludeRx is set, prefix otherwise.",
-        default="custom",
         alias="scopeType",
     )
 
-    scope_include_rx: NotEmptyString | None = Field(
+    scope_include_rx: OptionalNotEmptyString = OptionalField(
         title="Scope Include Regex",
         description="Regex of page URLs that should be "
         "included in the crawl (defaults to the immediate directory of seed)",
         alias="scopeIncludeRx",
     )
 
-    scope_exclude_rx: NotEmptyString = Field(
+    scope_exclude_rx: OptionalNotEmptyString = OptionalField(
         title="Scope Exclude Regex",
         description="Regex of page URLs that should be excluded from the crawl",
         alias="scopeExcludeRx",
     )
 
-    allow_hash_urls: bool = Field(
+    allow_hash_urls: bool | None = OptionalField(
         title="Allow Hashtag URLs",
         description="Allow Hashtag URLs, useful for single-page-application "
         "crawling or when different hashtags load dynamic content",
         alias="allowHashUrls",
     )
 
-    mobile_device: NotEmptyString = Field(
+    mobile_device: OptionalNotEmptyString = OptionalField(
         title="As device",
         description="Device to crawl as. See Pupeeter's Device.ts for a list",
         alias="mobileDevice",
     )
 
     @field_validator("mobile_device")
-    def validate_mobile_device(cls, v: NotEmptyString):  # noqa: N805
-        if v not in DEVICES:
+    def validate_mobile_device(cls, v: OptionalNotEmptyString):  # noqa: N805
+        if v and v not in DEVICES:
             raise ValueError(f"Invalid device: {v}")
         return v
 
-    select_links: NotEmptyString = Field(
+    select_links: OptionalNotEmptyString = OptionalField(
         title="Select Links",
         description="One or more selectors for extracting links, in the format "
         "[css selector]->[property to use],[css selector]->@[attribute to use]",
         alias="selectLinks",
     )
 
-    click_selector: NotEmptyString = Field(
+    click_selector: OptionalNotEmptyString = OptionalField(
         title="Click Selector",
         description="Selector for elements to click when using the autoclick "
         "behavior. Default is 'a'",
         alias="clickSelector",
-        default="a",
     )
 
-    block_rules: NotEmptyString = Field(
+    block_rules: OptionalNotEmptyString = OptionalField(
         title="Block rules",
         description="Additional rules for blocking certain URLs from being "
         "loaded, by URL regex and optionally via text match in an iframe",
         alias="blockRules",
     )
 
-    block_message: NotEmptyString | None = Field(
+    block_message: OptionalNotEmptyString = OptionalField(
         title="Block Message",
         description="If specified, when a URL is blocked, a record with this "
         "error message is added instead",
         alias="blockMessage",
     )
 
-    block_ads: bool = Field(
+    block_ads: bool | None = OptionalField(
         title="Block Ads",
         description="If set, block advertisements from being loaded (based on "
         "Stephen Black's blocklist). Note that some bad domains are also blocked "
@@ -354,171 +344,156 @@ class ZimitFlagsSchema(BaseModel):
         alias="blockAds",
     )
 
-    ad_block_message: NotEmptyString | None = Field(
+    ad_block_message: OptionalNotEmptyString = OptionalField(
         title="Ads Block Message",
         description="If specified, when an ad is blocked, a record with this "
         "error message is added instead",
         alias="adBlockMessage",
     )
 
-    user_agent: NotEmptyString | None = Field(
+    user_agent: OptionalNotEmptyString = OptionalField(
         title="User Agent",
         description="Override user-agent with specified",
         alias="userAgent",
     )
 
-    user_agent_suffix: NotEmptyString = Field(
+    user_agent_suffix: OptionalNotEmptyString = OptionalField(
         title="User Agent Suffix",
         description="Append suffix to existing browser user-agent. Defaults to +Zimit",
         alias="userAgentSuffix",
-        default="+Zimit",
     )
 
-    use_sitemap: AnyUrl = Field(
+    use_sitemap: OptionalNotEmptyString = OptionalField(
         title="Sitemap URL",
         description="Use as sitemap to get additional URLs for the crawl "
         "(usually at /sitemap.xml)",
         alias="useSitemap",
     )
 
-    sitemap_from_date: NotEmptyString | None = Field(
+    sitemap_from_date: OptionalNotEmptyString = OptionalField(
         title="Sitemap From Date",
         description="If set, filter URLs from sitemaps to those greater than or "
         "equal to (>=) provided ISO Date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS "
         "or partial date)",
         alias="sitemapFromDate",
-        default=None,
     )
 
-    sitemap_to_date: NotEmptyString | None = Field(
+    sitemap_to_date: OptionalNotEmptyString = OptionalField(
         title="Sitemap To Date",
         description="If set, filter URLs from sitemaps to those less than or "
         "equal to (<=) provided ISO Date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS "
         "or partial date)",
         alias="sitemapToDate",
-        default=None,
     )
 
-    behaviors: NotEmptyString = Field(
+    behaviors: OptionalNotEmptyString = OptionalField(
         title="Behaviors",
         description="Which background behaviors to enable on each page. "
         "Defaults to autoplay,autofetch,siteSpecific.",
-        default="autoplay,autofetch,siteSpecific",
     )
 
-    behavior_timeout: int = Field(
+    behavior_timeout: int | None = OptionalField(
         title="Behavior Timeout",
         description="If >0, timeout (in seconds) for in-page behavior "
         "will run on each page. If 0, a behavior can run until finish. "
         "Default is 90.",
-        default=90,
         alias="behaviorTimeout",
     )
 
-    post_load_delay: int = Field(
+    post_load_delay: int | None = OptionalField(
         title="Post Load Delay",
         description="If >0, amount of time to sleep (in seconds) "
         "after page has loaded, before  taking screenshots / getting text / "
         "running behaviors. Default is 0.",
-        default=0,
         alias="postLoadDelay",
     )
 
-    page_extra_delay: int = Field(
+    page_extra_delay: int | None = OptionalField(
         title="Page Extra Delay",
         description="If >0, amount of time to sleep (in seconds) "
         "after behaviors before moving on to next page. Default is 0.",
-        default=0,
         alias="pageExtraDelay",
     )
 
-    dedup_policy: Literal["skip", "revisit", "keep"] = Field(
+    dedup_policy: Literal["skip", "revisit", "keep"] | None = OptionalField(
         title="Dedup policy",
         description="Deduplication policy. Default is skip",
-        default="skip",
         alias="dedupPolicy",
     )
 
-    screenshot: NotEmptyString = Field(
+    screenshot: OptionalNotEmptyString = OptionalField(
         title="Screenshot",
         description="Screenshot options for crawler. One of view, thumbnail, "
         "fullPage, fullPageFinal or a comma-separated combination of those.",
         alias="screenshot",
     )
 
-    size_soft_limit: int = Field(
+    size_soft_limit: int | None = OptionalField(
         title="Size Soft Limit",
         description="If set, save crawl state and stop crawl if WARC size "
         "exceeds this value. ZIM will still be created.",
-        default=0,
         alias="sizeSoftLimit",
     )
 
-    size_hard_limit: int = Field(
+    size_hard_limit: int | None = OptionalField(
         title="Size Hard Limit",
         description="If set, exit crawler and fail the scraper immediately if "
         "WARC size exceeds this value",
-        default=0,
         alias="sizeHardLimit",
     )
 
-    disk_utilization: Percentage = Field(
+    disk_utilization: OptionalPercentage = OptionalField(
         title="Disk Utilization",
         description="Save state and exit if disk utilization exceeds this "
         "percentage value. Default (if not set) is 90%. Set to 0 to disable disk "
         "utilization check.",
-        default=90,
         alias="diskUtilization",
     )
 
-    time_soft_limit: int = Field(
+    time_soft_limit: int | None = OptionalField(
         title="Time Soft Limit",
         description="If set, save crawl state and stop crawl if WARC(s) "
         "creation takes longer than this value, in seconds. ZIM will still be "
         "created.",
-        default=0,
         alias="timeSoftLimit",
     )
 
-    time_hard_limit: int = Field(
+    time_hard_limit: int | None = OptionalField(
         title="Time Hard Limit",
         description="If set, exit crawler and fail the scraper immediately if "
         "WARC(s) creation takes longer than this value, in seconds",
-        default=0,
         alias="timeHardLimit",
     )
 
-    net_idle_wait: int = Field(
+    net_idle_wait: int | None = OptionalField(
         title="Net Idle Wait",
         description="If set, wait for network idle after page load and after "
         "behaviors are done (in seconds). If -1 (default), determine based on "
         "scope.",
-        default=-1,
         alias="netIdleWait",
     )
 
-    origin_override: NotEmptyString | None = Field(
+    origin_override: OptionalNotEmptyString = OptionalField(
         title="Origin Override",
         description="If set, will redirect requests from each origin in key to "
         "origin in the value, eg. https://host:port=http://alt-host:alt-port.",
         alias="originOverride",
     )
 
-    max_page_retries: int = Field(
+    max_page_retries: int | None = OptionalField(
         title="Max Page Retries",
         description="If set, number of times to retry a page that failed to load"
         " before page is considered to have failed. Default is 2.",
-        default=2,
         alias="maxPageRetries",
     )
 
-    fail_on_failed_seed: bool = Field(
+    fail_on_failed_seed: bool | None = OptionalField(
         title="Fail on failed seed",
         description="Whether to display additional logs",
         alias="failOnFailedSeed",
     )
 
-    fail_on_invalid_status: bool = Field(
+    fail_on_invalid_status: bool | None = OptionalField(
         title="Fail on invalid status",
         description="If set, will treat pages with 4xx or 5xx response as "
         "failures. When combined with --failOnFailedLimit or --failOnFailedSeed "
@@ -526,58 +501,55 @@ class ZimitFlagsSchema(BaseModel):
         alias="failOnInvalidStatus",
     )
 
-    fail_on_failed_limit: int = Field(
+    fail_on_failed_limit: int | None = OptionalField(
         title="Fail on failed - Limit",
         description="If set, save state and exit if number of failed pages "
         "exceeds this value.",
-        default=0,
         alias="failOnFailedLimit",
     )
 
-    custom_css: AnyUrl = Field(
+    custom_css: AnyUrl | None = OptionalField(
         title="Custom CSS",
         description="URL to a CSS file to inject into pages",
         alias="custom-css",
     )
 
-    verbose: bool = Field(
+    verbose: bool | None = OptionalField(
         title="Verbose mode",
         description="Whether to display additional logs",
     )
 
-    keep: bool = Field(
+    keep: bool | None = OptionalField(
         title="Keep",
         description="Should be True. Developer option: must be True if we want "
         "to keep the WARC files for artifacts archiving.",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
-        default="/output",
     )
 
-    zimit_progress_file: NotEmptyString = Field(
+    zimit_progress_file: OptionalNotEmptyString = OptionalField(
         title="Zimit progress file",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        default="/output/task_progress.json",
         pattern=r"^/output/task_progress\.json$",
     )
 
-    replay_viewer_source: AnyUrl = Field(
+    replay_viewer_source: AnyUrl | None = OptionalField(
         title="Replay Viewer Source",
         description="URL from which to load the ReplayWeb.page replay viewer from",
         alias="replay-viewer-source",
     )
 
-    admin_email: NotEmptyString = Field(
+    admin_email: OptionalNotEmptyString = OptionalField(
         title="Admin Email",
         description="Admin Email for crawler: used in UserAgent "
         "so website admin can contact us",
         alias="adminEmail",
     )
 
-    charsets_to_try: NotEmptyString = Field(
+    charsets_to_try: OptionalNotEmptyString = OptionalField(
         title="Charsets to try",
         description="List of charsets to try decode content when charset is not "
         "defined at document or HTTP level. Single string, values separated by a "
@@ -585,29 +557,28 @@ class ZimitFlagsSchema(BaseModel):
         alias="charsets-to-try",
     )
 
-    ignore_content_header_charsets: bool = Field(
+    ignore_content_header_charsets: bool | None = OptionalField(
         title="Ignore Content Header Charsets",
         description="Ignore the charsets specified in content headers - first "
         "bytes - typically because they are wrong.",
         alias="ignore-content-header-charsets",
     )
 
-    content_header_bytes_length: int = Field(
+    content_header_bytes_length: int | None = OptionalField(
         title="Length of content header",
         description="How many bytes to consider when searching for content "
         "charsets in header (default is 1024).",
         alias="content-header-bytes-length",
-        default=1024,
     )
 
-    ignore_http_header_charsets: bool = Field(
+    ignore_http_header_charsets: bool | None = OptionalField(
         title="Ignore HTTP Header Charsets",
         description="Ignore the charsets specified in HTTP `Content-Type` "
         "headers, typically because they are wrong.",
         alias="ignore-http-header-charsets",
     )
 
-    encoding_aliases: NotEmptyString = Field(
+    encoding_aliases: OptionalNotEmptyString = OptionalField(
         title="Encoding aliases",
         description="List of encoding/charset aliases to decode WARC content. "
         "Aliases are used when the encoding specified in upstream server exists in"
@@ -618,26 +589,23 @@ class ZimitFlagsSchema(BaseModel):
         alias="encoding-aliases",
     )
 
-    profile: NotEmptyString = Field(
+    profile: OptionalNotEmptyString = OptionalField(
         title="Browser profile",
         description="Path or HTTP(S) URL to tar.gz file which contains the "
         "browser profile directory for Browsertrix crawler.",
         alias="profile",
     )
 
-    custom_behaviors: NotEmptyString = Field(
+    custom_behaviors: OptionalNotEmptyString = OptionalField(
         title="Custom behaviors",
         description="JS code for custom behaviors to customize crawler. Single "
         "string with individual JS files URL/path separated by a comma.",
         alias="custom-behaviors",
     )
 
-    warcs: NotEmptyString = Field(
+    warcs: OptionalNotEmptyString = OptionalField(
         title="WARC files",
-        description="Directly convert WARC archives to ZIM, by-passing the "
-        "crawling phase. This argument must contain the path or HTTP(S) URL to "
-        "either warc.gz files or to a tar.gz containing the warc.gz files. "
-        "Single value with individual path/URLs separated by comma.",
+        description="Comma-separated list of WARC files to use as input.",
         alias="warcs",
     )
 
@@ -648,7 +616,7 @@ class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
     For now, only zim_file name is not checked anymore. Typically used for youzim.it
     """
 
-    zim_file: ZIMFileName = Field(
+    zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
         alias="zim-file",

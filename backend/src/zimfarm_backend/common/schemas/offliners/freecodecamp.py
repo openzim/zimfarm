@@ -1,14 +1,15 @@
 from enum import StrEnum
 
-from pydantic import Field
-from pydantic.types import AnyUrl
+from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalZIMFileName,
+    OptionalZIMLongDescription,
     ZIMDescription,
-    ZIMFileName,
-    ZIMLongDescription,
     ZIMOutputFolder,
     ZIMTitle,
 )
@@ -30,7 +31,7 @@ class FCCLanguage(StrEnum):
 
 
 class FreeCodeCampFlagsSchema(BaseModel):
-    course: NotEmptyString = Field(
+    course: OptionalNotEmptyString = OptionalField(
         title="Course(s)",
         description="Course or course list (separated by commas)",
     )
@@ -49,7 +50,7 @@ class FreeCodeCampFlagsSchema(BaseModel):
         description="ZIM name",
     )
 
-    title: ZIMTitle = Field(
+    title: ZIMTitle = OptionalField(
         title="Title",
         description="ZIM title",
     )
@@ -59,25 +60,23 @@ class FreeCodeCampFlagsSchema(BaseModel):
         description="Description for your ZIM",
     )
 
-    long_description: ZIMLongDescription = Field(
+    long_description: OptionalZIMLongDescription = OptionalField(
         title="Long description",
         description="Optional long description for your ZIM",
         alias="long-description",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Content Creator",
         description="Name of content creator. “freeCodeCamp” otherwise",
-        default="freeCodeCamp",
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
         description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        default="openZIM",
     )
 
-    debug: bool = Field(
+    debug: bool | None = OptionalField(
         title="Debug",
         description="Enable verbose output",
     )
@@ -85,18 +84,15 @@ class FreeCodeCampFlagsSchema(BaseModel):
     output: ZIMOutputFolder = Field(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
-        default="/output",
-        validate_default=True,
     )
 
-    zim_file: ZIMFileName = Field(
+    zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Include {period} to insert date period dynamically",
     )
 
-    illustration: AnyUrl | None = Field(
+    illustration: AnyUrl | None = OptionalField(
         title="Illustration",
         description="URL for ZIM illustration. Freecodecamp default logo if missing",
-        default=None,
     )

@@ -5,17 +5,19 @@ from pydantic import Field
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
-    S3OptimizationCache,
-    ZIMDescription,
-    ZIMFileName,
-    ZIMLongDescription,
-    ZIMOutputFolder,
-    ZIMTitle,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalS3OptimizationCache,
+    OptionalZIMDescription,
+    OptionalZIMFileName,
+    OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 
 class TedFlagsSchema(BaseModel):
-    topics: NotEmptyString = Field(
+    topics: OptionalNotEmptyString = OptionalField(
         title="Topics",
         description=(
             "Comma-separated list of topics to scrape; as given on ted.com/talks. "
@@ -23,7 +25,7 @@ class TedFlagsSchema(BaseModel):
         ),
     )
 
-    playlists: NotEmptyString = Field(
+    playlists: OptionalNotEmptyString = OptionalField(
         title="TED Playlists",
         description=(
             "Comma-separated list of TED playlist IDs to scrape. Pass all for all "
@@ -31,7 +33,7 @@ class TedFlagsSchema(BaseModel):
         ),
     )
 
-    languages: NotEmptyString = Field(
+    languages: OptionalNotEmptyString = OptionalField(
         title="Languages",
         description=(
             "Comma-separated list of languages to filter videos. Do not "
@@ -39,7 +41,7 @@ class TedFlagsSchema(BaseModel):
         ),
     )
 
-    subtitles_enough: bool = Field(
+    subtitles_enough: bool | None = OptionalField(
         title="Subtitles enough?",
         description=(
             "Whether to include videos that have a subtitle in "
@@ -48,7 +50,7 @@ class TedFlagsSchema(BaseModel):
         alias="subtitles-enough",
     )
 
-    subtitles: NotEmptyString = Field(
+    subtitles: OptionalNotEmptyString = OptionalField(
         title="Subtitles Setting",
         description=(
             "Language setting for subtitles. all: include all available subtitles, "
@@ -57,19 +59,19 @@ class TedFlagsSchema(BaseModel):
         ),
     )
 
-    video_format: Literal["webm", "mp4"] = Field(
+    video_format: Literal["webm", "mp4"] | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
         alias="format",
     )
 
-    low_quality: bool = Field(
+    low_quality: bool | None = OptionalField(
         title="Low Quality",
         description="Re-encode video using stronger compression",
         alias="low-quality",
     )
 
-    autoplay: bool = Field(
+    autoplay: bool | None = OptionalField(
         title="Auto-play",
         description=(
             "Enable autoplay on video articles. Behavior differs on platforms/browsers."
@@ -81,20 +83,19 @@ class TedFlagsSchema(BaseModel):
         description=(
             "ZIM name. Used as identifier and filename (date will be appended)"
         ),
-        default="topic_eng",
     )
 
-    title: ZIMTitle = Field(
+    title: OptionalZIMTitle = OptionalField(
         title="Title",
         description="Custom title for your ZIM. Based on selection otherwise",
     )
 
-    description: ZIMDescription = Field(
+    description: OptionalZIMDescription = OptionalField(
         title="Description",
         description="Custom description for your ZIM. Based on selection otherwise",
     )
 
-    long_description: ZIMLongDescription = Field(
+    long_description: OptionalZIMLongDescription = OptionalField(
         title="Long description",
         description=(
             "Custom long description for your ZIM. Based on selection otherwise"
@@ -102,19 +103,17 @@ class TedFlagsSchema(BaseModel):
         alias="long-description",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Content Creator",
         description="Name of content creator. Defaults to TED",
-        default="TED",
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
-        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        default="openZIM",
+        description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
     )
 
-    tags: NotEmptyString = Field(
+    tags: OptionalNotEmptyString = OptionalField(
         title="ZIM Tags",
         description=(
             "List of comma-separated Tags for the ZIM file. category:ted, ted, and"
@@ -122,51 +121,47 @@ class TedFlagsSchema(BaseModel):
         ),
     )
 
-    optimization_cache: S3OptimizationCache = Field(
+    optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description=("URL with credentials and bucket name to S3 Optimization Cache"),
         alias="optimization-cache",
     )
 
-    use_any_optimized_version: bool = Field(
+    use_any_optimized_version: bool | None = OptionalField(
         title="Use any optimized version",
         description="Use the cached files if present, whatever the version",
         alias="use-any-optimized-version",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
-        default="/output",
-        validate_default=True,
     )
 
-    tmp_dir: ZIMOutputFolder = Field(
+    tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description=("Where to create temporay build folder. Leave it as `/output`"),
-        default="/output",
-        validate_default=True,
         alias="tmp-dir",
     )
 
-    zim_file: ZIMFileName = Field(
+    zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on ZIM name if not provided)",
         alias="zim-file",
     )
 
-    debug: bool = Field(
+    debug: bool | None = OptionalField(
         title="Debug",
         description="Enable verbose output",
     )
 
-    threads: int = Field(
+    threads: int | None = OptionalField(
         title="Threads",
         description="Number of parallel threads to use while downloading",
         ge=1,
     )
 
-    locale: NotEmptyString = Field(
+    locale: OptionalNotEmptyString = OptionalField(
         title="Locale",
         description="The locale to use for the translations in ZIM",
     )

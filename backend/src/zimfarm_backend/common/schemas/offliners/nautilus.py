@@ -1,123 +1,114 @@
-from pydantic import Field
-from pydantic.types import AnyUrl
+from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
-    ZIMDescription,
-    ZIMFileName,
-    ZIMOutputFolder,
-    ZIMTitle,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalZIMDescription,
+    OptionalZIMFileName,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 
 class NautilusFlagsSchema(BaseModel):
-    archive: AnyUrl | None = Field(
+    archive: AnyUrl | None = OptionalField(
         title="Archive",
         description="URL to a ZIP archive containing all the documents",
-        default=None,
     )
-    collection: AnyUrl | None = Field(
+    collection: AnyUrl | None = OptionalField(
         title="Custom Collection",
         description=(
             "Different collection JSON URL. Otherwise using `collection.json` "
             "from archive"
         ),
-        default=None,
     )
 
     name: NotEmptyString = Field(
         title="ZIM Name",
         description="Used as identifier and filename (date will be appended)",
-        default="mycontent_eng_all",
     )
 
-    pagination: int = Field(
+    pagination: int | None = OptionalField(
         title="Pagination",
         description="Number of items per page (10 otherwise)",
-        default=10,
     )
 
-    no_random: bool = Field(
+    no_random: bool | None = OptionalField(
         title="No-random",
         description="Don't randomize items in list",
         alias="no-random",
     )
 
-    show_description: bool = Field(
+    show_description: bool | None = OptionalField(
         title="Show descriptions",
         description="Show items's descriptions in main list",
         alias="show-description",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description=(
             "Output folder for ZIM file or build folder. Leave it as `/output`"
         ),
-        default="/output",
-        validate_default=True,
     )
-    zim_file: ZIMFileName = Field(
+    zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided)",
         alias="zim-file",
     )
-    language: NotEmptyString = Field(
+    language: OptionalNotEmptyString = OptionalField(
         title="Language",
         description="ISO-639-3 (3 chars) language code of content",
     )
-    locale: NotEmptyString = Field(
+    locale: OptionalNotEmptyString = OptionalField(
         title="Locale",
         description=(
             "Locale name to use for translations (if avail) and time "
             "representations. Defaults to --language or English."
         ),
     )
-    title: ZIMTitle = Field(
+    title: OptionalZIMTitle = OptionalField(
         title="Title",
         description="Title for your project and ZIM. Otherwise --name.",
     )
-    description: ZIMDescription = Field(
+    description: OptionalZIMDescription = OptionalField(
         title="Description",
         description="Description for your project and ZIM.",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Content Creator",
         description="Name of content creator.",
-        default="Nautilus",
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
-        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        default="openZIM",
+        description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
     )
 
-    tags: NotEmptyString = Field(
+    tags: OptionalNotEmptyString = OptionalField(
         title="ZIM Tags",
         description="List of comma-separated Tags for the ZIM file.",
     )
 
-    main_logo: AnyUrl = Field(
+    main_logo: AnyUrl | None = OptionalField(
         title="Header Logo",
         description=("Custom logo. Will be resized to 300x65px. Nautilus otherwise."),
         alias="main-logo",
-        default="Nautilus",
     )
-    secondary_logo: AnyUrl | None = Field(
+    secondary_logo: AnyUrl | None = OptionalField(
         title="Footer logo",
         description=("Custom footer logo. Will be resized to 300x65px. None otherwise"),
         alias="secondary-logo",
-        default=None,
     )
 
-    favicon: AnyUrl = Field(
+    favicon: AnyUrl | None = OptionalField(
         title="Favicon",
         description=("Custom favicon. Will be resized to 48x48px. Nautilus otherwise."),
     )
-    main_color: NotEmptyString = Field(
+    main_color: OptionalNotEmptyString = OptionalField(
         title="Main Color",
         description=(
             "Custom header color. Hex/HTML syntax (#DEDEDE). Default to main-logo's"
@@ -125,7 +116,7 @@ class NautilusFlagsSchema(BaseModel):
         ),
         alias="main-color",
     )
-    secondary_color: NotEmptyString = Field(
+    secondary_color: OptionalNotEmptyString = OptionalField(
         title="Secondary Color",
         description=(
             "Custom footer color. Hex/HTML syntax (#DEDEDE). Default to main-logo's"
@@ -133,12 +124,12 @@ class NautilusFlagsSchema(BaseModel):
         ),
         alias="secondary-color",
     )
-    about: AnyUrl = Field(
+    about: AnyUrl | None = OptionalField(
         title="About page",
         description="Custom about HTML page.",
     )
 
-    debug: bool = Field(
+    debug: bool | None = OptionalField(
         title="Debug",
         description="Enable verbose output",
     )
@@ -151,7 +142,7 @@ class NautilusFlagsSchemaRelaxed(NautilusFlagsSchema):
     Typically used for nautilus.kiwix.org
     """
 
-    zim_file: NotEmptyString = Field(
+    zim_file: OptionalNotEmptyString = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
         alias="zim-file",

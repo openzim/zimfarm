@@ -1,17 +1,16 @@
-from pydantic import Field
-
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
-    NotEmptyString,
-    ZIMDescription,
-    ZIMLongDescription,
-    ZIMOutputFolder,
-    ZIMTitle,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalZIMDescription,
+    OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 
 class DevDocsFlagsSchema(BaseModel):
-    slug: NotEmptyString = Field(
+    slug: OptionalNotEmptyString = OptionalField(
         title="Slug",
         description="""Fetch the provided Devdocs resource.
             Slugs are the first path entry in the Devdocs URL.
@@ -20,7 +19,7 @@ class DevDocsFlagsSchema(BaseModel):
             setting or `All` must be configured.""",
     )
 
-    all_flag: bool = Field(
+    all_flag: bool | None = OptionalField(
         title="All",
         description="""Fetch all Devdocs resources, and produce one ZIM
         per resource. Mutually exclusive with `Slug` setting, set only
@@ -28,14 +27,14 @@ class DevDocsFlagsSchema(BaseModel):
         alias="all",
     )
 
-    skip_slug_regex: NotEmptyString = Field(
+    skip_slug_regex: OptionalNotEmptyString = OptionalField(
         title="Skip slugs regex",
         description="""Skips slugs matching the given regular expression.
         Do not set to fetch all slugs. Only useful when `All` is set.""",
         alias="skip-slug-regex",
     )
 
-    file_name_format: NotEmptyString = Field(
+    file_name_format: OptionalNotEmptyString = OptionalField(
         title="ZIM filename",
         description="""ZIM filename. Do not input trailing `.zim`, it
         will be automatically added. You can use placeholders, see
@@ -44,7 +43,7 @@ class DevDocsFlagsSchema(BaseModel):
         alias="file-name-format",
     )
 
-    name_format: NotEmptyString = Field(
+    name_format: OptionalNotEmptyString = OptionalField(
         title="ZIM name",
         description="""ZIM name. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
@@ -52,7 +51,7 @@ class DevDocsFlagsSchema(BaseModel):
         alias="name-format",
     )
 
-    title_format: ZIMTitle = Field(
+    title_format: OptionalZIMTitle = OptionalField(
         title="ZIM title",
         description="""ZIM title. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
@@ -60,7 +59,7 @@ class DevDocsFlagsSchema(BaseModel):
         alias="title-format",
     )
 
-    description_format: ZIMDescription = Field(
+    description_format: OptionalZIMDescription = OptionalField(
         title="ZIM description",
         description="""ZIM description. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
@@ -68,7 +67,7 @@ class DevDocsFlagsSchema(BaseModel):
         alias="description-format",
     )
 
-    long_description_format: ZIMLongDescription = Field(
+    long_description_format: OptionalZIMLongDescription = OptionalField(
         title="ZIM long description",
         description="""ZIM long description. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults to no
@@ -76,41 +75,36 @@ class DevDocsFlagsSchema(BaseModel):
         alias="long-description-format",
     )
 
-    logo_format: NotEmptyString = Field(
+    logo_format: OptionalNotEmptyString = OptionalField(
         title="ZIM illustration",
         description="""URL to a custom ZIM logo in PNG, JPG, or SVG format. You
         can use placeholders, see https://github.com/openzim/devdocs/blob/main/README.md.""",
         alias="logo-format",
     )
 
-    tags: NotEmptyString = Field(
+    tags: OptionalNotEmptyString = OptionalField(
         title="ZIM Tags",
         description="""List of semi-colon-separated Tags for the ZIM file.
         You can use placeholders, see https://github.com/openzim/devdocs/blob/main/README.md.
         Defaults to `devdocs;{slug_without_version}`""",
-        default="devdocs;{slug_without_version}",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Creator",
         description="""Name of content creator. “DevDocs” otherwise""",
-        default="DevDocs",
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
         description="""Custom publisher name (ZIM metadata). “openZIM” otherwise""",
-        default="openZIM",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="""Output folder for ZIM file(s). Leave it as `/output`""",
-        default="/output",
-        validate_default=True,
     )
 
-    debug: bool = Field(
+    debug: bool | None = OptionalField(
         title="Debug",
         description="""Enable verbose output""",
     )

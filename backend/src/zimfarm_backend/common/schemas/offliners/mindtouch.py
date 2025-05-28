@@ -1,13 +1,14 @@
-from pydantic import Field
-from pydantic.types import AnyUrl
+from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
-    S3OptimizationCache,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalS3OptimizationCache,
+    OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
     ZIMDescription,
-    ZIMLongDescription,
-    ZIMOutputFolder,
     ZIMTitle,
 )
 
@@ -21,24 +22,21 @@ class MindtouchFlagsSchema(BaseModel):
         alias="library-url",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Creator",
         description="Name of content creator",
-        default="MindTouch",
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
-        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        default="openZIM",
+        description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
     )
 
-    file_name: NotEmptyString = Field(
+    file_name: OptionalNotEmptyString = OptionalField(
         title="ZIM filename",
         description="ZIM filename. Do not input trailing `.zim`, it "
         "will be automatically added. Defaults to {name}_{period}",
         alias="file-name",
-        default="{name_period}",
     )
 
     name: NotEmptyString = Field(
@@ -49,33 +47,31 @@ class MindtouchFlagsSchema(BaseModel):
     title: ZIMTitle = Field(
         title="ZIM title",
         description="Title of the ZIM.",
-        alias="zim-title",
     )
 
     description: ZIMDescription = Field(
         title="ZIM description",
         description="Description of the ZIM.",
-        alias="zim-description",
     )
 
-    long_description: ZIMLongDescription = Field(
+    long_description: OptionalZIMLongDescription = OptionalField(
         title="ZIM long description",
         description="Long description of the ZIM.",
         alias="zim-long-description",
     )
 
-    tags: NotEmptyString = Field(
+    tags: OptionalNotEmptyString = OptionalField(
         title="ZIM Tags",
         description="A semicolon (;) delimited list of tags to add to the ZIM.",
     )
 
-    secondary_color: NotEmptyString = Field(
+    secondary_color: OptionalNotEmptyString = OptionalField(
         title="Secondary color",
         description="Secondary (background) color of ZIM UI. Default: '#FFFFFF'",
         alias="secondary-color",
     )
 
-    page_id_include: NotEmptyString = Field(
+    page_id_include: OptionalNotEmptyString = OptionalField(
         title="Page ID include",
         description="CSV of page ids to include. Parent pages will be included "
         "as well for proper navigation, up to root (or subroot if --root-page-id is"
@@ -84,7 +80,7 @@ class MindtouchFlagsSchema(BaseModel):
         alias="page-id-include",
     )
 
-    page_title_include: NotEmptyString = Field(
+    page_title_include: OptionalNotEmptyString = OptionalField(
         title="Page title include regex",
         description="Includes only pages with title matching the given regular "
         "expression, and their parent pages for proper navigation, up to root (or "
@@ -93,72 +89,66 @@ class MindtouchFlagsSchema(BaseModel):
         alias="page-title-include",
     )
 
-    page_title_exclude: NotEmptyString = Field(
+    page_title_exclude: OptionalNotEmptyString = OptionalField(
         title="Page title exclude regex",
         description="Excludes pages with title matching the given regular expression",
         alias="page-title-exclude",
     )
 
-    root_page_id: NotEmptyString = Field(
+    root_page_id: OptionalNotEmptyString = OptionalField(
         title="Root page ID",
         description="ID of the root page to include in ZIM. Only this page and "
         "its subpages will be included in the ZIM",
         alias="root-page-id",
     )
 
-    illustration_url: AnyUrl = Field(
+    illustration_url: AnyUrl | None = OptionalField(
         title="Illustration URL",
         description="URL to illustration to use for ZIM illustration and favicon",
         alias="illustration-url",
     )
 
-    optimization_cache: S3OptimizationCache = Field(
+    optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
         alias="optimization-cache",
     )
 
-    assets_workers: int = Field(
+    assets_workers: int | None = OptionalField(
         title="Asset workers",
         description="Number of parallel workers for asset processing. Default: 10",
         alias="assets-workers",
-        default=10,
     )
 
-    debug: bool = Field(
+    debug: bool | None = OptionalField(
         title="Debug",
         description="Enable verbose output",
     )
 
-    bad_assets_regex: NotEmptyString = Field(
+    bad_assets_regex: OptionalNotEmptyString = OptionalField(
         title="Bad assets regex",
         description="Regular expression of asset URLs known to not be available."
         "Case insensitive.",
         alias="bad-assets-regex",
     )
 
-    bad_assets_threshold: int = Field(
+    bad_assets_threshold: int | None = OptionalField(
         title="Bad assets threshold",
         description="[dev] Number of assets allowed to fail to download before "
         "failing the scraper. Assets already excluded with --bad-assets-regex are "
         "not counted for this threshold. Defaults to 10 assets.",
         alias="bad-assets-threshold",
-        default=10,
     )
 
-    stats_filename: NotEmptyString = Field(
+    stats_filename: OptionalNotEmptyString = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
         alias="stats-filename",
-        default="/output/task_progress.json",
-        validate_default=True,
         pattern=r"^/output/task_progress\.json$",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
-        default="/output",
-        validate_default=True,
         pattern=r"^/output$",
     )

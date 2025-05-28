@@ -1,22 +1,23 @@
 from typing import Literal
 
-from pydantic import Field
-from pydantic.types import AnyUrl, SecretStr
+from pydantic import AnyUrl, Field, SecretStr
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
-    S3OptimizationCache,
-    ZIMDescription,
-    ZIMFileName,
-    ZIMLongDescription,
-    ZIMOutputFolder,
-    ZIMTitle,
+    OptionalField,
+    OptionalNotEmptyString,
+    OptionalS3OptimizationCache,
+    OptionalZIMDescription,
+    OptionalZIMFileName,
+    OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
+    OptionalZIMTitle,
 )
 
 
 class YoutubeFlagsSchema(BaseModel):
-    optimization_cache: S3OptimizationCache = Field(
+    optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="Technical Flag: S3 Storage URL including credentials and bucket",
         alias="optimization-cache",
@@ -28,7 +29,7 @@ class YoutubeFlagsSchema(BaseModel):
         alias="api-key",
     )
 
-    id: NotEmptyString = Field(
+    ident: NotEmptyString = Field(
         title="Youtube ID(s)",
         description="Youtube ID(s) of the handle, channel, user, or playlist(s) "
         "to ZIM (depending on the Type chosen below). Only playlist Type support "
@@ -36,7 +37,7 @@ class YoutubeFlagsSchema(BaseModel):
         alias="id",
     )
 
-    language: NotEmptyString = Field(
+    language: OptionalNotEmptyString = OptionalField(
         title="Language",
         description="ISO-639-3 (3 chars) language code of content",
     )
@@ -45,145 +46,137 @@ class YoutubeFlagsSchema(BaseModel):
         title="ZIM Name",
         description="Used as identifier and filename (date will be appended)",
         alias="name",
-        default="mychannel_eng_all",
     )
 
-    zim_file: ZIMFileName = Field(
+    zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM Filename",
         description="ZIM file name (optional, based on ZIM Name "
         "if not provided). Include {period} to insert date period dynamically",
         alias="zim-file",
     )
 
-    title: ZIMTitle = Field(
+    title: OptionalZIMTitle = OptionalField(
         title="ZIM Title",
         description="Custom title for your ZIM. "
         "Default to Channel name (of first video if playlists)",
     )
 
-    description: ZIMDescription = Field(
+    description: OptionalZIMDescription = OptionalField(
         title="ZIM Description",
         description="Description (up to 80 chars) for ZIM",
         alias="description",
     )
 
-    long_description: ZIMLongDescription = Field(
+    long_description: OptionalZIMLongDescription = OptionalField(
         title="ZIM Long Description",
         description="Long description (up to 4000 chars) for ZIM",
         alias="long-description",
     )
 
-    creator: NotEmptyString = Field(
+    creator: OptionalNotEmptyString = OptionalField(
         title="Content Creator",
         description="Name of content creator. Defaults to Channel name "
-        "or “Youtube Channels”",
+        'or "Youtube Channels"',
     )
 
-    publisher: NotEmptyString = Field(
+    publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
-        description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
-        default="openZIM",
+        description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
     )
 
-    tags: NotEmptyString = Field(
+    tags: OptionalNotEmptyString = OptionalField(
         title="ZIM Tags",
         description="List of comma-separated Tags for the ZIM file. "
         "_videos:yes added automatically",
     )
 
-    dateafter: NotEmptyString = Field(
+    dateafter: OptionalNotEmptyString = OptionalField(
         title="Only after date",
         description="Custom filter to download videos uploaded on "
         "or after specified date. Format: YYYYMMDD or "
         "(now|today)[+-][0-9](day|week|month|year)(s)?",
     )
 
-    video_format: Literal["webm", "mp4"] = Field(
+    video_format: Literal["webm", "mp4"] | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
         alias="format",
     )
 
-    low_quality: bool = Field(
+    low_quality: bool | None = OptionalField(
         title="Low Quality",
         description="Re-encode video using stronger compression",
         alias="low-quality",
     )
 
-    use_any_optimized_version: bool = Field(
+    use_any_optimized_version: bool | None = OptionalField(
         title="Use any optimized version",
         description="Use the cached files if present, whatever the version",
         alias="use-any-optimized-version",
     )
 
-    all_subtitles: bool = Field(
+    all_subtitles: bool | None = OptionalField(
         title="All Subtitles",
         description="Include auto-generated subtitles",
         alias="all-subtitles",
     )
 
-    pagination: int = Field(
+    pagination: int | None = OptionalField(
         title="Pagination",
         description="Number of videos per page (40 otherwise)",
     )
 
-    profile: AnyUrl = Field(
+    profile: AnyUrl | None = OptionalField(
         title="Profile Image",
         description="Custom profile image. Squared. Will be resized to 100x100px",
     )
 
-    banner: AnyUrl = Field(
+    banner: AnyUrl | None = OptionalField(
         title="Banner Image",
         description="Custom banner image. Will be resized to 1060x175px",
     )
 
-    main_color: NotEmptyString = Field(
+    main_color: OptionalNotEmptyString = OptionalField(
         title="Main Color",
         description="Custom color. Hex/HTML syntax (#DEDEDE). "
         "Default to main color of profile image.",
         alias="main-color",
     )
 
-    secondary_color: NotEmptyString = Field(
+    secondary_color: OptionalNotEmptyString = OptionalField(
         title="Secondary Color",
         description="Custom secondary color. Hex/HTML syntax (#DEDEDE). "
         "Default to secondary color of profile image.",
         alias="secondary-color",
     )
 
-    debug: bool = Field(
+    debug: bool | None = OptionalField(
         title="Debug",
         description="Enable verbose output",
     )
 
-    concurrency: int = Field(
+    concurrency: int | None = OptionalField(
         title="Concurrency",
         description="Expert flag: Number of concurrent threads to use",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Technical flag: Output folder for ZIM file(s). Leave it "
         "as `/output`",
-        default="/output",
-        validate_default=True,
     )
 
-    stats_filename: NotEmptyString = Field(
+    stats_filename: OptionalNotEmptyString = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        default="/output/task_progress.json",
-        validate_default=True,
         pattern=r"^/output/task_progress\.json$",
         alias="stats-filename",
     )
 
-    tmp_dir: ZIMOutputFolder = Field(
+    tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description="Technical flag: Where to create temporay build folder. "
         "Leave it as `/output`",
-        default="/output",
-        validate_default=True,
         alias="tmp-dir",
         pattern=r"^/output$",
     )
