@@ -2,7 +2,7 @@ from enum import StrEnum
 
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -30,7 +30,7 @@ class FCCLanguage(StrEnum):
     # lzh = "chinese-traditional"
 
 
-class FreeCodeCampFlagsSchema(BaseModel):
+class FreeCodeCampFlagsSchema(DashModel):
     course: OptionalNotEmptyString = OptionalField(
         title="Course(s)",
         description="Course or course list (separated by commas)",
@@ -63,7 +63,6 @@ class FreeCodeCampFlagsSchema(BaseModel):
     long_description: OptionalZIMLongDescription = OptionalField(
         title="Long description",
         description="Optional long description for your ZIM",
-        alias="long-description",
     )
 
     creator: OptionalNotEmptyString = OptionalField(

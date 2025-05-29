@@ -1,6 +1,6 @@
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -14,7 +14,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class IFixitFlagsSchema(BaseModel):
+class IFixitFlagsSchema(DashModel):
     language: NotEmptyString = Field(
         title="Language",
         description="iFixIt website to build from",
@@ -66,26 +66,22 @@ class IFixitFlagsSchema(BaseModel):
     tmp_dir: ZIMOutputFolder = Field(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
-        alias="tmp-dir",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Include {period} to insert date period dynamically",
-        alias="zim-file",
     )
 
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
-        alias="optimization-cache",
     )
 
     stats_filename: OptionalNotEmptyString = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        alias="stats-filename",
         pattern=r"^/output/task_progress\.json$",
     )
 
@@ -106,7 +102,6 @@ class IFixitFlagsSchema(BaseModel):
         description="Add this delay (seconds) "
         "before each API query (!= calls) to please iFixit servers. "
         "Can be fractions. Defaults to 0: no delay",
-        alias="api-delay",
     )
 
     cdn_delay: float | None = OptionalField(
@@ -114,7 +109,6 @@ class IFixitFlagsSchema(BaseModel):
         description="Add this delay (seconds) "
         "before each CDN file download to please iFixit servers. "
         "Can be fractions. Defaults to 0: no delay",
-        alias="cdn-delay",
     )
 
     max_missing_items: OptionalPercentage = OptionalField(
@@ -122,7 +116,6 @@ class IFixitFlagsSchema(BaseModel):
         description="Amount of missing items which will force the scraper to "
         "stop, expressed as a percentage of the total number of items to retrieve. "
         "Integer from 1 to 100",
-        alias="max-missing-items-percent",
     )
 
     max_error_items: OptionalPercentage = OptionalField(
@@ -130,7 +123,6 @@ class IFixitFlagsSchema(BaseModel):
         description="Amount of items with failed processing which will force "
         "the scraper to stop, expressed as a percentage of the total number of "
         "items to retrieve. Integer from 1 to 100",
-        alias="max-error-items-percent",
     )
 
     categories: OptionalNotEmptyString = OptionalField(
@@ -142,7 +134,6 @@ class IFixitFlagsSchema(BaseModel):
     no_category: bool | None = OptionalField(
         title="No category",
         description="Do not scrape any category",
-        alias="no-category",
     )
 
     guide: OptionalNotEmptyString = OptionalField(
@@ -154,7 +145,6 @@ class IFixitFlagsSchema(BaseModel):
     no_guide: bool | None = OptionalField(
         title="No guide",
         description="Do not scrape any guide",
-        alias="no-guide",
     )
 
     info: OptionalNotEmptyString = OptionalField(
@@ -165,5 +155,4 @@ class IFixitFlagsSchema(BaseModel):
     no_info: bool | None = OptionalField(
         title="No info",
         description="Do not scrape any info",
-        alias="no-info",
     )

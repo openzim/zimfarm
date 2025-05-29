@@ -1,4 +1,4 @@
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
@@ -9,7 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class DevDocsFlagsSchema(BaseModel):
+class DevDocsFlagsSchema(DashModel):
     slug: OptionalNotEmptyString = OptionalField(
         title="Slug",
         description="""Fetch the provided Devdocs resource.
@@ -31,7 +31,6 @@ class DevDocsFlagsSchema(BaseModel):
         title="Skip slugs regex",
         description="""Skips slugs matching the given regular expression.
         Do not set to fetch all slugs. Only useful when `All` is set.""",
-        alias="skip-slug-regex",
     )
 
     file_name_format: OptionalNotEmptyString = OptionalField(
@@ -40,7 +39,6 @@ class DevDocsFlagsSchema(BaseModel):
         will be automatically added. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
         to devdocs.io_en_{clean_slug}_{period}""",
-        alias="file-name-format",
     )
 
     name_format: OptionalNotEmptyString = OptionalField(
@@ -48,7 +46,6 @@ class DevDocsFlagsSchema(BaseModel):
         description="""ZIM name. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
         to devdocs.io_en_{clean_slug}""",
-        alias="name-format",
     )
 
     title_format: OptionalZIMTitle = OptionalField(
@@ -56,7 +53,6 @@ class DevDocsFlagsSchema(BaseModel):
         description="""ZIM title. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
         to `{full_name} Docs`""",
-        alias="title-format",
     )
 
     description_format: OptionalZIMDescription = OptionalField(
@@ -64,7 +60,6 @@ class DevDocsFlagsSchema(BaseModel):
         description="""ZIM description. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults
         to `{full_name} docs by DevDocs`""",
-        alias="description-format",
     )
 
     long_description_format: OptionalZIMLongDescription = OptionalField(
@@ -72,14 +67,12 @@ class DevDocsFlagsSchema(BaseModel):
         description="""ZIM long description. You can use placeholders, see
         https://github.com/openzim/devdocs/blob/main/README.md. Defaults to no
         long description""",
-        alias="long-description-format",
     )
 
     logo_format: OptionalNotEmptyString = OptionalField(
         title="ZIM illustration",
         description="""URL to a custom ZIM logo in PNG, JPG, or SVG format. You
         can use placeholders, see https://github.com/openzim/devdocs/blob/main/README.md.""",
-        alias="logo-format",
     )
 
     tags: OptionalNotEmptyString = OptionalField(

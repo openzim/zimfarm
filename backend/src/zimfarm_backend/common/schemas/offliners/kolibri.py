@@ -1,6 +1,6 @@
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -14,18 +14,16 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class KolibriFlagsSchema(BaseModel):
+class KolibriFlagsSchema(DashModel):
     channel_id: NotEmptyString = Field(
         title="Channel ID",
         description="The Kolibri channel ID that you want to scrape",
-        alias="channel-id",
     )
 
     root_id: OptionalNotEmptyString = OptionalField(
         title="Root ID",
         description="The node ID (usually Topic) from where to start "
         "the scraper. Defaults to the root of the channel.",
-        alias="root-id",
     )
 
     lang: OptionalNotEmptyString = OptionalField(
@@ -55,7 +53,6 @@ class KolibriFlagsSchema(BaseModel):
         description="Custom long description for your ZIM. "
         "If not provided, either not set or Kolibri channel description if it was "
         "too long to fit entirely in ZIM description",
-        alias="long-description",
     )
 
     favicon: AnyUrl | None = OptionalField(
@@ -103,14 +100,12 @@ class KolibriFlagsSchema(BaseModel):
         "videos to be re-encoded. Result will be slightly smaller and of lower "
         "quality. WebM support is bundled in the ZIM so videos "
         "will be playable on every platform.",
-        alias="use-webm",
     )
 
     low_quality: bool | None = OptionalField(
         title="Low quality",
         description="Uses only the `low_res` version of videos if available. "
         "If not, recompresses using agressive compression.",
-        alias="low-quality",
     )
 
     autoplay: bool | None = OptionalField(
@@ -127,14 +122,12 @@ class KolibriFlagsSchema(BaseModel):
     tmp_dir: ZIMOutputFolder = Field(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
-        alias="tmp-dir",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Include {period} to insert date period dynamically",
-        alias="zim-file",
     )
 
     threads: int | None = OptionalField(
@@ -152,7 +145,6 @@ class KolibriFlagsSchema(BaseModel):
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
-        alias="optimization-cache",
     )
 
     debug: bool | None = OptionalField(

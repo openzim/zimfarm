@@ -1,10 +1,10 @@
 # ruff: noqa: N815
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import OptionalField, OptionalNotEmptyString
 
 
-class PhetFlagsSchema(BaseModel):
+class PhetFlagsSchema(DashModel):
     includeLanguages: OptionalNotEmptyString = OptionalField(
         title="Include Languages",
         description="Spoken languages to ZIM, one ZIM per language and/or all in"

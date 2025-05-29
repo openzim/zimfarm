@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import AnyUrl, EmailStr, Field, SecretStr
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -15,29 +15,25 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class OpenedxFlagsSchema(BaseModel):
+class OpenedxFlagsSchema(DashModel):
     course_url: AnyUrl = Field(
         title="Course URL",
         description="URL of the course you wnat to scrape",
-        alias="course-url",
     )
 
     email: EmailStr = Field(
         title="Registered e-mail",
         description="The registered e-mail ID on the openedx instance",
-        alias="email",
     )
 
     password: SecretStr = Field(
         title="Password",
         description="Password to the account registered on the openedx instance",
-        alias="password",
     )
 
     instance_login_page: OptionalNotEmptyString = OptionalField(
         title="Login page path",
         description="The login path in the instance. Must start with /",
-        alias="instance-login-page",
     )
 
     instance_course_page: OptionalNotEmptyString = OptionalField(
@@ -45,7 +41,6 @@ class OpenedxFlagsSchema(BaseModel):
         description=(
             "The path to the course page after the course ID. Must start with /"
         ),
-        alias="instance-course-page",
     )
 
     instance_course_prefix: OptionalNotEmptyString = OptionalField(
@@ -53,7 +48,6 @@ class OpenedxFlagsSchema(BaseModel):
         description=(
             "The prefix in the path before the course ID. Must start and end with /"
         ),
-        alias="instance-course-prefix",
     )
 
     favicon_url: AnyUrl | None = OptionalField(
@@ -61,43 +55,36 @@ class OpenedxFlagsSchema(BaseModel):
         description=(
             "URL pointing to a favicon image. Recommended size >= (48px x 48px)"
         ),
-        alias="favicon-url",
     )
 
     ignore_missing_xblocks: bool | None = OptionalField(
         title="Ignore unsupported xblocks",
         description="Ignore unsupported content (xblock(s))",
-        alias="ignore-missing-xblocks",
     )
 
     add_wiki: bool | None = OptionalField(
         title="Include wiki",
         description="Add wiki (if available) to the ZIM",
-        alias="add-wiki",
     )
 
     add_forum: bool | None = OptionalField(
         title="Include forum",
         description="Add forum/discussion (if available) to the ZIM",
-        alias="add-forum",
     )
 
     remove_seq_nav: bool | None = OptionalField(
         title="No top sequential navigation",
         description="Remove the top sequential navigation bar in the ZIM",
-        alias="remove-seq-nav",
     )
 
     video_format: Literal["webm", "mp4"] | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
-        alias="format",
     )
 
     low_quality: bool | None = OptionalField(
         title="Low Quality",
         description="Re-encode video using stronger compression",
-        alias="low-quality",
     )
 
     autoplay: bool | None = OptionalField(
@@ -105,7 +92,6 @@ class OpenedxFlagsSchema(BaseModel):
         description=(
             "Enable autoplay on videos. Behavior differs on platforms/browsers"
         ),
-        alias="autoplay",
     )
 
     name: NotEmptyString = Field(
@@ -113,31 +99,26 @@ class OpenedxFlagsSchema(BaseModel):
         description=(
             "ZIM name. Used as identifier and filename (date will be appended)"
         ),
-        alias="name",
     )
 
     title: OptionalZIMTitle = OptionalField(
         title="Title",
         description="Custom title for your ZIM. Based on MOOC otherwise",
-        alias="title",
     )
 
     description: OptionalZIMDescription = OptionalField(
         title="Description",
         description="Custom description for your ZIM. Based on MOOC otherwise",
-        alias="description",
     )
 
     creator: OptionalNotEmptyString = OptionalField(
         title="Content Creator",
         description="Name of content creator. Defaults to edX",
-        alias="creator",
     )
 
     publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
         description='Custom publisher name (ZIM metadata). "openZIM" otherwise',
-        alias="publisher",
     )
 
     tags: OptionalNotEmptyString = OptionalField(
@@ -146,37 +127,31 @@ class OpenedxFlagsSchema(BaseModel):
             "List of comma-separated Tags for the ZIM file. category:other, and "
             "openedx added automatically"
         ),
-        alias="tags",
     )
 
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="URL with credentials and bucket name to S3 Optimization Cache",
-        alias="optimization-cache",
     )
 
     use_any_optimized_version: bool | None = OptionalField(
         title="Use any optimized version",
         description="Use the cached files if present, whatever the version",
-        alias="use-any-optimized-version",
     )
 
     output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
-        alias="output",
     )
 
     tmp_dir: OptionalNotEmptyString = OptionalField(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
-        alias="tmp-dir",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on ZIM name if not provided)",
-        alias="zim-file",
     )
 
     debug: bool | None = OptionalField(

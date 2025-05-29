@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import AnyUrl, Field, field_validator
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -139,7 +139,7 @@ DEVICES = sorted(
 )
 
 
-class ZimitFlagsSchema(BaseModel):
+class ZimitFlagsSchema(DashModel):
     seeds: OptionalNotEmptyString = OptionalField(
         title="Seeds",
         description="The seed URL(s) to start crawling from. Multile seed URL "
@@ -151,7 +151,6 @@ class ZimitFlagsSchema(BaseModel):
         title="Seed File",
         description="If set, read a list of seed urls, one per line. HTTPS URL"
         " to an online file.",
-        alias="seed-file",
     )
 
     name: NotEmptyString = Field(
@@ -170,7 +169,6 @@ class ZimitFlagsSchema(BaseModel):
         title="ZIM Language",
         description="Language metadata of ZIM (warc2zim --lang param). "
         "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
-        alias="zim-lang",
     )
 
     title: OptionalZIMTitle = OptionalField(
@@ -186,7 +184,6 @@ class ZimitFlagsSchema(BaseModel):
     long_description: OptionalZIMLongDescription = OptionalField(
         title="Long description",
         description="Optional long description for your ZIM",
-        alias="long-description",
     )
 
     favicon: OptionalNotEmptyString = OptionalField(
@@ -199,7 +196,6 @@ class ZimitFlagsSchema(BaseModel):
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Make sure to end with _{period}.zim",
-        alias="zim-file",
     )
 
     tags: OptionalNotEmptyString = OptionalField(
@@ -554,28 +550,24 @@ class ZimitFlagsSchema(BaseModel):
         description="List of charsets to try decode content when charset is not "
         "defined at document or HTTP level. Single string, values separated by a "
         "comma. Default: UTF-8,ISO-8859-1",
-        alias="charsets-to-try",
     )
 
     ignore_content_header_charsets: bool | None = OptionalField(
         title="Ignore Content Header Charsets",
         description="Ignore the charsets specified in content headers - first "
         "bytes - typically because they are wrong.",
-        alias="ignore-content-header-charsets",
     )
 
     content_header_bytes_length: int | None = OptionalField(
         title="Length of content header",
         description="How many bytes to consider when searching for content "
         "charsets in header (default is 1024).",
-        alias="content-header-bytes-length",
     )
 
     ignore_http_header_charsets: bool | None = OptionalField(
         title="Ignore HTTP Header Charsets",
         description="Ignore the charsets specified in HTTP `Content-Type` "
         "headers, typically because they are wrong.",
-        alias="ignore-http-header-charsets",
     )
 
     encoding_aliases: OptionalNotEmptyString = OptionalField(
@@ -586,27 +578,23 @@ class ZimitFlagsSchema(BaseModel):
         "alias_encoding=python_encoding. This parameter is single string, multiple"
         " values are separated by a comma, like in "
         "alias1=encoding1,alias2=encoding2.",
-        alias="encoding-aliases",
     )
 
     profile: OptionalNotEmptyString = OptionalField(
         title="Browser profile",
         description="Path or HTTP(S) URL to tar.gz file which contains the "
         "browser profile directory for Browsertrix crawler.",
-        alias="profile",
     )
 
     custom_behaviors: OptionalNotEmptyString = OptionalField(
         title="Custom behaviors",
         description="JS code for custom behaviors to customize crawler. Single "
         "string with individual JS files URL/path separated by a comma.",
-        alias="custom-behaviors",
     )
 
     warcs: OptionalNotEmptyString = OptionalField(
         title="WARC files",
         description="Comma-separated list of WARC files to use as input.",
-        alias="warcs",
     )
 
 
@@ -619,5 +607,4 @@ class ZimitFlagsSchemaRelaxed(ZimitFlagsSchema):
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
-        alias="zim-file",
     )

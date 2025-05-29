@@ -1,6 +1,6 @@
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -13,7 +13,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class SotokiFlagsSchema(BaseModel):
+class SotokiFlagsSchema(DashModel):
     domain: NotEmptyString = Field(
         title="Domain",
         description="Domain name from StackExchange to scrape.",
@@ -60,46 +60,39 @@ class SotokiFlagsSchema(BaseModel):
     without_images: bool | None = OptionalField(
         title="Without Images",
         description="Don't include images (in-post images, user icons). Faster.",
-        alias="without-images",
     )
 
     without_user_profiles: bool | None = OptionalField(
         title="Without User Profiles",
         description="Don't include user profile pages. Faster",
-        alias="without-user-profiles",
     )
 
     without_user_identicons: bool | None = OptionalField(
         title="Without Identicons",
         description="Don't include user's profile pictures. "
         "Replaced by generated ones. Faster",
-        alias="without-user-identicons",
     )
 
     without_external_links: bool | None = OptionalField(
         title="Without External links",
         description="Remove all external links from posts and user profiles. "
         "Link text is kept but not the address. Slower",
-        alias="without-external-links",
     )
 
     without_unanswered: bool | None = OptionalField(
         title="Without Unanswered",
         description="Don't include posts that have zero answer. Faster",
-        alias="without-unanswered",
     )
 
     without_users_links: bool | None = OptionalField(
         title="Without Users Links",
         description='Remove "user links" completely. Remove both url and text '
         'for a selected list of "social" websites. Slower',
-        alias="without-users-links",
     )
 
     without_names: bool | None = OptionalField(
         title="Without Names",
         description="Replace usernames in posts with generated ones",
-        alias="without-names",
     )
 
     censor_words_list: AnyUrl | None = OptionalField(
@@ -124,20 +117,17 @@ class SotokiFlagsSchema(BaseModel):
     tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
-        alias="tmp-dir",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Include {period} to insert date period dynamically",
-        alias="zim-file",
     )
 
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
-        alias="optimization-cache",
     )
 
     mirror: AnyUrl | None = OptionalField(
@@ -148,20 +138,17 @@ class SotokiFlagsSchema(BaseModel):
     stats_filename: OptionalNotEmptyString = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        alias="stats-filename",
     )
 
     redis_url: OptionalNotEmptyString = OptionalField(
         title="Redis URL",
         description="Redis URL to use as database. "
         "Keep it as unix:///var/run/redis.sock",
-        alias="redis-url",
     )
 
     defrag_redis: OptionalNotEmptyString = OptionalField(
         title="Defrag redis",
         description="Keep it as ENV:REDIS_PID",
-        alias="defrag-redis",
     )
 
     debug: bool | None = OptionalField(
@@ -172,5 +159,4 @@ class SotokiFlagsSchema(BaseModel):
     keep_redis: bool | None = OptionalField(
         title="Keep redis",
         description="Don't flush redis DB on exit. Keep it enabled.",
-        alias="keep-redis",
     )

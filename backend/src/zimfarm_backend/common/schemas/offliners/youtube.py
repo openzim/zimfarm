@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import AnyUrl, Field, SecretStr
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -16,17 +16,15 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class YoutubeFlagsSchema(BaseModel):
+class YoutubeFlagsSchema(DashModel):
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="Technical Flag: S3 Storage URL including credentials and bucket",
-        alias="optimization-cache",
     )
 
     api_key: SecretStr = Field(
         title="API Key",
         description="Technical flag: Youtube API Token",
-        alias="api-key",
     )
 
     ident: NotEmptyString = Field(
@@ -45,14 +43,12 @@ class YoutubeFlagsSchema(BaseModel):
     name: NotEmptyString = Field(
         title="ZIM Name",
         description="Used as identifier and filename (date will be appended)",
-        alias="name",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM Filename",
         description="ZIM file name (optional, based on ZIM Name "
         "if not provided). Include {period} to insert date period dynamically",
-        alias="zim-file",
     )
 
     title: OptionalZIMTitle = OptionalField(
@@ -64,13 +60,11 @@ class YoutubeFlagsSchema(BaseModel):
     description: OptionalZIMDescription = OptionalField(
         title="ZIM Description",
         description="Description (up to 80 chars) for ZIM",
-        alias="description",
     )
 
     long_description: OptionalZIMLongDescription = OptionalField(
         title="ZIM Long Description",
         description="Long description (up to 4000 chars) for ZIM",
-        alias="long-description",
     )
 
     creator: OptionalNotEmptyString = OptionalField(
@@ -100,25 +94,21 @@ class YoutubeFlagsSchema(BaseModel):
     video_format: Literal["webm", "mp4"] | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
-        alias="format",
     )
 
     low_quality: bool | None = OptionalField(
         title="Low Quality",
         description="Re-encode video using stronger compression",
-        alias="low-quality",
     )
 
     use_any_optimized_version: bool | None = OptionalField(
         title="Use any optimized version",
         description="Use the cached files if present, whatever the version",
-        alias="use-any-optimized-version",
     )
 
     all_subtitles: bool | None = OptionalField(
         title="All Subtitles",
         description="Include auto-generated subtitles",
-        alias="all-subtitles",
     )
 
     pagination: int | None = OptionalField(
@@ -140,14 +130,12 @@ class YoutubeFlagsSchema(BaseModel):
         title="Main Color",
         description="Custom color. Hex/HTML syntax (#DEDEDE). "
         "Default to main color of profile image.",
-        alias="main-color",
     )
 
     secondary_color: OptionalNotEmptyString = OptionalField(
         title="Secondary Color",
         description="Custom secondary color. Hex/HTML syntax (#DEDEDE). "
         "Default to secondary color of profile image.",
-        alias="secondary-color",
     )
 
     debug: bool | None = OptionalField(
@@ -170,13 +158,11 @@ class YoutubeFlagsSchema(BaseModel):
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
         pattern=r"^/output/task_progress\.json$",
-        alias="stats-filename",
     )
 
     tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description="Technical flag: Where to create temporay build folder. "
         "Leave it as `/output`",
-        alias="tmp-dir",
         pattern=r"^/output$",
     )

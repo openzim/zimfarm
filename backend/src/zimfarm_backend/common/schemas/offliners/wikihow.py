@@ -1,6 +1,6 @@
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -13,7 +13,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class WikihowFlagsSchema(BaseModel):
+class WikihowFlagsSchema(DashModel):
     language: NotEmptyString = Field(
         title="Language",
         description="wikiHow website to build from. 2-letters language code.",
@@ -61,14 +61,12 @@ class WikihowFlagsSchema(BaseModel):
         title="Without External links",
         description="Remove all external links from pages. "
         "Link text is kept but not the address",
-        alias="without-external-links",
     )
 
     without_videos: bool | None = OptionalField(
         title="Without Videos",
         description="Don't include the video blocks (Youtube hosted). "
         "Most are copyrighted",
-        alias="without-videos",
     )
 
     exclude: AnyUrl | None = OptionalField(
@@ -88,7 +86,6 @@ class WikihowFlagsSchema(BaseModel):
     low_quality: bool | None = OptionalField(
         title="Low quality",
         description="Use lower-quality, smaller file-size video encode",
-        alias="low-quality",
     )
 
     output: OptionalZIMOutputFolder = OptionalField(
@@ -99,20 +96,17 @@ class WikihowFlagsSchema(BaseModel):
     tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
-        alias="tmp-dir",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided). "
         "Include {period} to insert date period dynamically",
-        alias="zim-file",
     )
 
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
-        alias="optimization-cache",
     )
 
     categories: OptionalNotEmptyString = OptionalField(
@@ -126,7 +120,6 @@ class WikihowFlagsSchema(BaseModel):
     stats_filename: OptionalNotEmptyString = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        alias="stats-filename",
         pattern=r"^/output/task_progress\.json$",
     )
 
@@ -139,7 +132,6 @@ class WikihowFlagsSchema(BaseModel):
         title="Missing tolerance",
         description="Allow this percentage (0-100) of articles to "
         "be missing (HTTP 404). Defaults to 0: no tolerance",
-        alias="missing-article-tolerance",
         ge=0,
         le=100,
     )
@@ -156,5 +148,4 @@ class WikihowFlagsSchema(BaseModel):
         description="Add this delay (seconds) "
         "before each API query (!= calls) to please wikiHow servers. "
         "Can be fractions. Defaults to 0: no delay",
-        alias="api-delay",
     )

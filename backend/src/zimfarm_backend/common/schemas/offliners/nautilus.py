@@ -1,6 +1,6 @@
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -12,7 +12,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class NautilusFlagsSchema(BaseModel):
+class NautilusFlagsSchema(DashModel):
     archive: AnyUrl | None = OptionalField(
         title="Archive",
         description="URL to a ZIP archive containing all the documents",
@@ -38,13 +38,11 @@ class NautilusFlagsSchema(BaseModel):
     no_random: bool | None = OptionalField(
         title="No-random",
         description="Don't randomize items in list",
-        alias="no-random",
     )
 
     show_description: bool | None = OptionalField(
         title="Show descriptions",
         description="Show items's descriptions in main list",
-        alias="show-description",
     )
 
     output: OptionalZIMOutputFolder = OptionalField(
@@ -56,7 +54,6 @@ class NautilusFlagsSchema(BaseModel):
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided)",
-        alias="zim-file",
     )
     language: OptionalNotEmptyString = OptionalField(
         title="Language",
@@ -96,12 +93,10 @@ class NautilusFlagsSchema(BaseModel):
     main_logo: AnyUrl | None = OptionalField(
         title="Header Logo",
         description=("Custom logo. Will be resized to 300x65px. Nautilus otherwise."),
-        alias="main-logo",
     )
     secondary_logo: AnyUrl | None = OptionalField(
         title="Footer logo",
         description=("Custom footer logo. Will be resized to 300x65px. None otherwise"),
-        alias="secondary-logo",
     )
 
     favicon: AnyUrl | None = OptionalField(
@@ -114,7 +109,6 @@ class NautilusFlagsSchema(BaseModel):
             "Custom header color. Hex/HTML syntax (#DEDEDE). Default to main-logo's"
             " primary color solarized (or #95A5A6 if no logo)."
         ),
-        alias="main-color",
     )
     secondary_color: OptionalNotEmptyString = OptionalField(
         title="Secondary Color",
@@ -122,7 +116,6 @@ class NautilusFlagsSchema(BaseModel):
             "Custom footer color. Hex/HTML syntax (#DEDEDE). Default to main-logo's"
             " primary color solarized (or #95A5A6 if no logo)."
         ),
-        alias="secondary-color",
     )
     about: AnyUrl | None = OptionalField(
         title="About page",
@@ -145,5 +138,4 @@ class NautilusFlagsSchemaRelaxed(NautilusFlagsSchema):
     zim_file: OptionalNotEmptyString = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
-        alias="zim-file",
     )

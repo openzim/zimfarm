@@ -1,4 +1,4 @@
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
@@ -9,7 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class GutenbergFlagsSchema(BaseModel):
+class GutenbergFlagsSchema(DashModel):
     languages: OptionalNotEmptyString = OptionalField(
         title="Languages",
         description=(
@@ -29,13 +29,11 @@ class GutenbergFlagsSchema(BaseModel):
     zim_title: OptionalZIMTitle = OptionalField(
         title="Title",
         description="Custom title for your project and ZIM.",
-        alias="zim-title",
     )
 
     zim_desc: OptionalZIMDescription = OptionalField(
         title="Description",
         description="Description for ZIM",
-        alias="zim-desc",
     )
 
     books: OptionalNotEmptyString = OptionalField(
@@ -54,7 +52,6 @@ class GutenbergFlagsSchema(BaseModel):
     dlc: int | None = OptionalField(
         title="Download Concurrency",
         description=("Number of parallel downloads to run (overrides concurrency)"),
-        alias="dlc",
     )
 
     # /!\ we are using a boolean flag for this while the actual option
@@ -65,19 +62,16 @@ class GutenbergFlagsSchema(BaseModel):
     one_language_one_zim: bool | OptionalZIMOutputFolder = OptionalField(
         title="Multiple ZIMs",
         description="Create one ZIM per language",
-        alias="one-language-one-zim",
     )
 
     no_index: bool | None = OptionalField(
         title="No Index",
         description="Do not create full-text index within ZIM file",
-        alias="no-index",
     )
 
     title_search: bool | None = OptionalField(
         title="Title search",
         description="Search by title feature (⚠️ does not scale)",
-        alias="title-search",
     )
 
     bookshelves: bool | None = OptionalField(
@@ -88,13 +82,11 @@ class GutenbergFlagsSchema(BaseModel):
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
-        alias="optimization-cache",
     )
 
     use_any_optimized_version: bool | None = OptionalField(
         title="Use any optimized version",
         description="Use any optimized version",
-        alias="use-any-optimized-version",
     )
 
     publisher: OptionalNotEmptyString = OptionalField(

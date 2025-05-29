@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -16,7 +16,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class TedFlagsSchema(BaseModel):
+class TedFlagsSchema(DashModel):
     topics: OptionalNotEmptyString = OptionalField(
         title="Topics",
         description=(
@@ -47,7 +47,6 @@ class TedFlagsSchema(BaseModel):
             "Whether to include videos that have a subtitle in "
             "requested language(s) if audio is in another language"
         ),
-        alias="subtitles-enough",
     )
 
     subtitles: OptionalNotEmptyString = OptionalField(
@@ -62,13 +61,11 @@ class TedFlagsSchema(BaseModel):
     video_format: Literal["webm", "mp4"] | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
-        alias="format",
     )
 
     low_quality: bool | None = OptionalField(
         title="Low Quality",
         description="Re-encode video using stronger compression",
-        alias="low-quality",
     )
 
     autoplay: bool | None = OptionalField(
@@ -100,7 +97,6 @@ class TedFlagsSchema(BaseModel):
         description=(
             "Custom long description for your ZIM. Based on selection otherwise"
         ),
-        alias="long-description",
     )
 
     creator: OptionalNotEmptyString = OptionalField(
@@ -124,13 +120,11 @@ class TedFlagsSchema(BaseModel):
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
         description=("URL with credentials and bucket name to S3 Optimization Cache"),
-        alias="optimization-cache",
     )
 
     use_any_optimized_version: bool | None = OptionalField(
         title="Use any optimized version",
         description="Use the cached files if present, whatever the version",
-        alias="use-any-optimized-version",
     )
 
     output: OptionalZIMOutputFolder = OptionalField(
@@ -141,13 +135,11 @@ class TedFlagsSchema(BaseModel):
     tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description=("Where to create temporay build folder. Leave it as `/output`"),
-        alias="tmp-dir",
     )
 
     zim_file: OptionalZIMFileName = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on ZIM name if not provided)",
-        alias="zim-file",
     )
 
     debug: bool | None = OptionalField(

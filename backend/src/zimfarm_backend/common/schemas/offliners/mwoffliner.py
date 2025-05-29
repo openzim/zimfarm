@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import AnyUrl, EmailStr, Field, SecretStr
 
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
@@ -15,7 +15,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
-class MWOfflinerFlagsSchema(BaseModel):
+class MWOfflinerFlagsSchema(DashModel):
     mwUrl: AnyUrl = Field(
         title="Wiki URL",
         description="The URL of the mediawiki to scrape",
@@ -90,7 +90,6 @@ class MWOfflinerFlagsSchema(BaseModel):
     ) = OptionalField(
         description="Which flavours to build, as `<flavour>:<custom-suffix>`. "
         "Empty option is full without suffix.",
-        alias="format",
     )
 
     customFlavour: Literal["/tmp/mwoffliner/extensions/wiktionary_fr.js"] | None = (
