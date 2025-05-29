@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import json
 import logging
 import os
+from typing import Any, ClassVar
+from uuid import UUID
 
-import db.models as dbm
-import humanfriendly
+import humanfriendly  # pyright: ignore[reportMissingTypeStubs]
 import requests
 import sqlalchemy.orm as so
-from common.constants import (
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pydantic import ValidationError
+
+import zimfarm_backend.db.models as dbm
+from zimfarm_backend.common.constants import (
     PUBLIC_URL,
     REQ_TIMEOUT_NOTIFICATIONS,
     SLACK_EMOJI,
@@ -17,12 +23,17 @@ from common.constants import (
     SLACK_USERNAME,
     ZIM_DOWNLOAD_URL,
 )
-from common.emailing import send_email_via_mailgun
-from common.enum import TaskStatus
-from common.schemas.models import EventNotificationSchema, ScheduleNotificationSchema
-from common.schemas.orms import RequestedTaskFullSchema, ScheduleAwareTaskFullSchema
-from errors.http import RequestedTaskNotFound, TaskNotFound
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from zimfarm_backend.common.emailing import send_email_via_mailgun
+from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.common.schemas.models import (
+    EventNotificationSchema,
+    ScheduleNotificationSchema,
+)
+from zimfarm_backend.common.schemas.orms import (
+    RequestedTaskFullSchema,
+    ScheduleAwareTaskFullSchema,
+)
+from zimfarm_backend.errors.http import RequestedTaskNotFound, TaskNotFound
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -30,15 +41,17 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml", "txt"]),
 )
 jinja_env.filters["short_id"] = lambda value: str(value)[:5]
-jinja_env.filters["format_size"] = lambda value: humanfriendly.format_size(
-    value, binary=True
+jinja_env.filters["format_size"] = (
+    lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
+        value, binary=True
+    )
 )
 
 
 class GlobalNotifications:
-    methods = EventNotificationSchema().declared_fields.keys()
-    events = ScheduleNotificationSchema().declared_fields.keys()
-    entries = {}
+    methods = EventNotificationSchema.model_fields.keys()
+    events = ScheduleNotificationSchema.model_fields.keys()
+    entries: ClassVar[dict[str, Any]] = {}
 
 
 def load_global_notifications_config():
@@ -47,10 +60,10 @@ def load_global_notifications_config():
         event_entry = os.getenv(f"GLOBAL_NOTIFICATION_{event}")
         if not event_entry:
             continue
-        entry = {}
+        entry: dict[str, Any] = {}
         for method_entry in [e.strip() for e in event_entry.split("|")]:
             parts = method_entry.split(",")
-            if len(parts) < 2:
+            if len(parts) < 2:  # noqa: PLR2004
                 logger.warning(
                     f"Ignoring GLOBAL_NOTIFICATION_{event} registration: malformed"
                 )
@@ -63,7 +76,7 @@ def load_global_notifications_config():
                 )
                 continue
             try:
-                EventNotificationSchema().load({method: targets})
+                EventNotificationSchema.model_validate({method: targets})
             except ValidationError as exc:
                 logger.warning(
                     f"Ignoring GLOBAL_NOTIFICATION_{event} registration: {exc}"
@@ -73,11 +86,11 @@ def load_global_notifications_config():
         GlobalNotifications.entries.update({event: entry})
 
 
-def get_context(task):
+def get_context(task: dict[str, Any]) -> dict[str, Any]:
     return {"base_url": PUBLIC_URL, "download_url": ZIM_DOWNLOAD_URL, "task": task}
 
 
-def handle_mailgun_notification(task, recipients):
+def handle_mailgun_notification(task: dict[str, Any], recipients: list[str]):
     context = get_context(task)
     subject = jinja_env.get_template("email_subject.txt").render(**context)
     body = jinja_env.get_template("email_body.html").render(**context)
@@ -85,12 +98,12 @@ def handle_mailgun_notification(task, recipients):
         send_email_via_mailgun(recipient, subject, body)
 
 
-def handle_webhook_notification(task, urls):
+def handle_webhook_notification(task: dict[str, Any], urls: list[str]):
     for url in urls:
         try:
             resp = requests.post(
                 url,
-                data=dumps(task).encode("UTF-8"),
+                data=json.dumps(task).encode("UTF-8"),
                 headers={"Content-Type": "application/json"},
                 timeout=REQ_TIMEOUT_NOTIFICATIONS,
             )
@@ -100,7 +113,7 @@ def handle_webhook_notification(task, urls):
             logger.exception(exc)
 
 
-def handle_slack_notification(task, channels):
+def handle_slack_notification(task: dict[str, Any], channels: list[str]):
     # return early if slack is not configured
     if not SLACK_URL:
         return
@@ -166,11 +179,14 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
 
     # serialize/unserialize task so we use a safe version from now-on
     if event == "requested":
-        task_safe = RequestedTaskFullSchema().dump(task)
+        task_safe = RequestedTaskFullSchema.model_validate(task).model_dump(mode="json")
     else:
-        task_safe = ScheduleAwareTaskFullSchema().dump(task)
+        task_safe = ScheduleAwareTaskFullSchema.model_validate(task).model_dump(
+            mode="json"
+        )
+
     global_notifs = GlobalNotifications.entries.get(event, {})
-    task_notifs = (task_safe.get("notification") or {}).get(event, {})
+    task_notifs = (task_safe.get("notification", {})).get(event, {})
 
     # exit early if we don't have notification requests for the event
     if not global_notifs and not task_notifs:

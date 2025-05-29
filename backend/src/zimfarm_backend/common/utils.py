@@ -13,7 +13,7 @@ from sqlalchemy.orm.attributes import flag_modified
 import zimfarm_backend.db.models as dbm
 from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import INFORM_CMS
-from zimfarm_backend.common.enum import TaskStatus
+from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.external import advertise_book_to_cms
 from zimfarm_backend.common.notifications import handle_notification
 from zimfarm_backend.errors.http import TaskNotFound, WorkerNotFound
@@ -101,7 +101,9 @@ def save_event(
             task.debug[debug_key] = cleanup_value(kwargs[kwargs_key])
 
     if "worker" in kwargs:
-        task.worker = dbm.Worker.get(session, kwargs["worker"], WorkerNotFound)  # pyright: ignore[reportAttributeAccessIssue]
+        task.worker = dbm.Worker.get(
+            session, kwargs["worker"], WorkerNotFound
+        )  # pyright: ignore[reportAttributeAccessIssue]
     if "canceled_by" in kwargs:
         task.canceled_by = kwargs["canceled_by"]
 
