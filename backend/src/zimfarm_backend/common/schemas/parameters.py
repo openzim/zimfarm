@@ -149,13 +149,13 @@ class UserCreateSchema(BaseModel):
 # users PATCH
 class UserUpdateSchema(BaseModel):
     email: EmailStr
-    role: RoleEnum
+    role: RoleEnum | None = None
 
 
 # workers checkin
 class WorkerCheckInSchema(BaseModel):
     username: NotEmptyString
-    selfish: bool = False
+    selfish: bool | None = None
     cpu: ZIMCPU
     memory: ZIMMemory
     disk: ZIMDisk
