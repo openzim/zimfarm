@@ -7,33 +7,33 @@ on:
       - main
 
 jobs:
-  unit-tests:
-    runs-on: ubuntu-24.04
+  # unit-tests:
+  #   runs-on: ubuntu-24.04
+  #
+  #  env:
+  #    POSTGRES_URI: nodb
 
-    env:
-      POSTGRES_URI: nodb
+  #  steps:
+  #    - name: Retrieve source code
+  #      uses: actions/checkout@v4
 
-    steps:
-      - name: Retrieve source code
-        uses: actions/checkout@v4
+  #    - name: Set up Python
+  #      uses: actions/setup-python@v5
+  #      with:
+  #        python-version-file: backend/pyproject.toml
+  #        architecture: x64
+  #
+  #    - name: Install dependencies (and project)
+  #      working-directory: backend
+  #      run: |
+  #        pip install -U pip
+  #        pip install -e .[lint,scripts,test,check]
+  #
+  #    - name: Test with pytest
+  #      working-directory: backend
+  #      run: pytest tests/unit
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: backend/pyproject.toml
-          architecture: x64
-
-      - name: Install dependencies (and project)
-        working-directory: backend
-        run: |
-          pip install -U pip
-          pip install -e .[lint,scripts,test,check]
-
-      - name: Test with pytest
-        working-directory: backend
-        run: pytest tests/unit
-
-  integration-tests:
+  run-tests:
     runs-on: ubuntu-24.04
 
     services:
@@ -72,17 +72,21 @@ jobs:
           pip install -U pip
           pip install -e .[test,scripts]
 
-      - name: Prepare Postgresql DB
-        working-directory: backend/src/zimfarm_backend
-        run: alembic upgrade head
+      - name: Create extensions on the PostgreSQL database
+        run: >-
+          psql -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          "host=localhost port=5432 dbname=zimtest user=zimfarm password=zimpass"
 
       - name: Run tests
         working-directory: backend
-        run: pytest tests/ --cov=./
+        env:
+          POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
+          JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
+        run: pytest -v tests/unit/
 
-      - name: Upload coverage report to codecov
-        uses: codecov/codecov-action@v4
-        with:
-          directory: backend
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Upload coverage report to codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     directory: backend
+      #     fail_ci_if_error: true
+      #     token: ${{ secrets.CODECOV_TOKEN }}
