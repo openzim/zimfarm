@@ -72,6 +72,11 @@ jobs:
           pip install -U pip
           pip install -e .[test,scripts]
 
+      - name: Create extensions on the PostgreSQL database
+        run: >-
+          psql -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          "host=localhost port=5432 dbname=zimtest user=zimfarm password=zimpass"
+
       - name: Run tests
         working-directory: backend
         env:
