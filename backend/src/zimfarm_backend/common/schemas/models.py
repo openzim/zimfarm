@@ -19,11 +19,14 @@ from zimfarm_backend.common.enums import (
     SchedulePeriodicity,
     WarehousePath,
 )
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import BaseModel, DashModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
+    LimitFieldMax200,
+    LimitFieldMax500,
     NotEmptyString,
     ScheduleNameField,
+    SkipField,
     SlackTarget,
     ZIMDisk,
     ZIMLangCode,
@@ -89,7 +92,7 @@ class ScheduleConfigSchema(BaseModel):
     monitor: bool
 
     @staticmethod
-    def get_offliner_schema(offliner: Offliner) -> type[BaseModel]:
+    def get_offliner_schema(offliner: Offliner) -> type[DashModel]:
         return {
             Offliner.mwoffliner: MWOfflinerFlagsSchema,
             Offliner.youtube: YoutubeFlagsSchema,
@@ -114,7 +117,7 @@ class ScheduleConfigSchema(BaseModel):
             Offliner.freecodecamp: FreeCodeCampFlagsSchema,
             Offliner.devdocs: DevDocsFlagsSchema,
             Offliner.mindtouch: MindtouchFlagsSchema,
-        }.get(offliner, BaseModel)
+        }.get(offliner, DashModel)
 
     @model_validator(mode="before")
     def validate_flags(cls, data: dict[str, Any]) -> dict[str, Any]:  # noqa: N805
@@ -155,3 +158,32 @@ PlatformsLimitSchema = (  # pyright: ignore[reportUnknownVariableType, reportCal
         },
     )
 )
+
+
+class Paginator(BaseModel):
+    nb_records: int = Field(serialization_alias="count")
+    skip: SkipField
+    limit: LimitFieldMax500 | LimitFieldMax200
+    page_size: int
+
+
+def calculate_pagination_metadata(
+    *,
+    nb_records: int,
+    skip: int,
+    limit: int,
+    page_size: int,
+) -> Paginator:
+    if nb_records == 0:
+        return Paginator(
+            nb_records=0,
+            skip=skip,
+            limit=limit,
+            page_size=0,
+        )
+    return Paginator(
+        nb_records=nb_records,
+        skip=skip,
+        limit=limit,
+        page_size=min(page_size, nb_records),
+    )

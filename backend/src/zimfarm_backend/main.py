@@ -93,7 +93,7 @@
 
 from fastapi import FastAPI
 
-from zimfarm_backend.routes import auth
+from zimfarm_backend.routes import auth, languages
 
 
 def create_app(*, debug: bool = True):
@@ -103,7 +103,7 @@ def create_app(*, debug: bool = True):
     )
 
     app.include_router(router=auth.router)
-
+    app.include_router(router=languages.router)
     return app
 
 
