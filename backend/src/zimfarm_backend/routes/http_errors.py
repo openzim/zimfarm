@@ -37,6 +37,16 @@ class NotFoundError(HTTPException):
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
+class UnsupportedContentTypeError(HTTPException):
+    def __init__(self, message: Any = None) -> None:
+        if message is None:
+            message = "Unsupported content type."
+        super().__init__(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=message,
+        )
+
+
 class ServerError(HTTPException):
     def __init__(self, message: Any = None) -> None:
         if message is None:

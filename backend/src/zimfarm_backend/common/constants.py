@@ -1,16 +1,41 @@
-import datetime
 import os
+from typing import Any
+
+from humanfriendly import parse_timespan
 
 from zimfarm_backend.common.enums import SchedulePeriodicity
 
-OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
-MESSAGE_VALIDITY = 60  # number of seconds before a message expire
 
-REFRESH_TOKEN_EXPIRY = 180  # days
-TOKEN_EXPIRY = 24  # hours
+def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
+    value = os.getenv(key, default=default)
 
-ENABLED_SCHEDULER = not os.getenv("DISABLE_SCHEDULER", "")
-DEFAULT_SCHEDULE_DURATION = datetime.timedelta(days=31).total_seconds()
+    if mandatory and not value:
+        raise OSError(f"Please set the {key} environment variable")
+
+    return value
+
+
+DEBUG = getenv("DEBUG", default=False)
+
+REFRESH_TOKEN_EXPIRY_DURATION = parse_timespan(
+    getenv("REFRESH_TOKEN_EXPIRY_DURATION", default="30d")
+)
+
+MESSAGE_VALIDITY_DURATION = parse_timespan(
+    getenv("MESSAGE_VALIDITY_DURATION", default="1m")
+)
+
+# JWT settings
+JWT_TOKEN_ISSUER = getenv("JWT_TOKEN_ISSUER", default="zimfarm_backend")
+JWT_SECRET = getenv("JWT_SECRET", mandatory=True)
+JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
+    getenv("JWT_TOKEN_EXPIRY_DURATION", default="1d")
+)
+
+ENABLED_SCHEDULER = not getenv("DISABLE_SCHEDULER", default="")
+DEFAULT_SCHEDULE_DURATION = parse_timespan(
+    getenv("DEFAULT_SCHEDULE_DURATION", default="31d")
+)
 
 PERIODICITIES = {
     SchedulePeriodicity.monthly: {"days": 31},
@@ -19,60 +44,52 @@ PERIODICITIES = {
     SchedulePeriodicity.annually: {"days": 365},
 }
 
-ZIM_UPLOAD_URI = os.getenv(
-    "ZIM_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/zim"
+ZIM_UPLOAD_URI = getenv(
+    "ZIM_UPLOAD_URI", default="sftp://uploader@warehouse.farm.openzim.org:1522/zim"
 )
-try:
-    # ZIM files expiration, 0 to disable expiration
-    # only working in Wasabi S3 for now, works only if retention compliance is activated
-    # on the bucket and the bucket retention is smaller than value below
-    ZIM_EXPIRATION = int(os.getenv("ZIM_EXPIRATION", "0"))
-except Exception:
-    ZIM_EXPIRATION = 0  # pyright: ignore[reportConstantRedefinition]
-LOGS_UPLOAD_URI = os.getenv(
-    "LOGS_UPLOAD_URI", "sftp://uploader@warehouse.farm.openzim.org:1522/logs"
+# ZIM files expiration, 0 to disable expiration
+# only working in Wasabi S3 for now, works only if retention compliance is activated
+# on the bucket and the bucket retention is smaller than value below
+ZIM_EXPIRATION = int(getenv("ZIM_EXPIRATION", default="0"))
+
+LOGS_UPLOAD_URI = getenv(
+    "LOGS_UPLOAD_URI", default="sftp://uploader@warehouse.farm.openzim.org:1522/logs"
 )
-try:
-    # log files expiration, 0 to disable expiration
-    # only working in Wasabi S3 for now, works only if retention compliance is activated
-    # on the bucket and the bucket retention is smaller than value below
-    LOGS_EXPIRATION = int(os.getenv("LOGS_EXPIRATION", "30"))
-except Exception:
-    LOGS_EXPIRATION = 30  # pyright: ignore[reportConstantRedefinition]
-ARTIFACTS_UPLOAD_URI = os.getenv("ARTIFACTS_UPLOAD_URI", None)
-try:
-    # artifact files expiration, 0 to disable expiration
-    # only working in Wasabi S3 for now, works only if retention compliance is activated
-    # on the bucket and the bucket retention is smaller than value below
-    ARTIFACTS_EXPIRATION = int(os.getenv("ARTIFACTS_EXPIRATION", "30"))
-except Exception:
-    ARTIFACTS_EXPIRATION = 30  # pyright: ignore[reportConstantRedefinition]
+# log files expiration, 0 to disable expiration
+# only working in Wasabi S3 for now, works only if retention compliance is activated
+# on the bucket and the bucket retention is smaller than value below
+LOGS_EXPIRATION = int(getenv("LOGS_EXPIRATION", default="30"))
+ARTIFACTS_UPLOAD_URI = getenv("ARTIFACTS_UPLOAD_URI", default=None)
+# artifact files expiration, 0 to disable expiration
+# only working in Wasabi S3 for now, works only if retention compliance is activated
+# on the bucket and the bucket retention is smaller than value below
+ARTIFACTS_EXPIRATION = int(getenv("ARTIFACTS_EXPIRATION", default="30"))
 
 # empty ZIMCHECK_OPTION means no zimcheck
-ZIMCHECK_OPTION = os.getenv("ZIMCHECK_OPTION", "")
+ZIMCHECK_OPTION = getenv("ZIMCHECK_OPTION", default="")
 
 # Publisher value to "force" in all scrapers if not set in the recipe
-DEFAULT_PUBLISHER = os.getenv("DEFAULT_PUBLISHER")
+DEFAULT_PUBLISHER = getenv("DEFAULT_PUBLISHER")
 
 # NOTIFICATIONS
 
 # in-notification URLs
-PUBLIC_URL = os.getenv("PUBLIC_URL", "https://farm.openzim.org")
-ZIM_DOWNLOAD_URL = os.getenv(
-    "ZIM_DOWNLOAD_URL", "https://mirror.download.kiwix.org/zim"
+PUBLIC_URL = getenv("PUBLIC_URL", default="https://farm.openzim.org")
+ZIM_DOWNLOAD_URL = getenv(
+    "ZIM_DOWNLOAD_URL", default="https://mirror.download.kiwix.org/zim"
 )
 
 # mailgun
-MAILGUN_FROM = os.getenv("MAILGUN_FROM", "zimfarm@localhost")
-MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY", "")
-MAILGUN_API_URL = os.getenv("MAILGUN_API_URL", "")
+MAILGUN_FROM = getenv("MAILGUN_FROM", default="zimfarm@localhost")
+MAILGUN_API_KEY = getenv("MAILGUN_API_KEY", default="")
+MAILGUN_API_URL = getenv("MAILGUN_API_URL", default="")
 
 # slack
-SLACK_URL = os.getenv("SLACK_URL", "")
+SLACK_URL = getenv("SLACK_URL", default="")
 # no defauts for branding so it falls back to what's configured in slack
-SLACK_USERNAME = os.getenv("SLACK_USERNAME")
-SLACK_EMOJI = os.getenv("SLACK_EMOJI")
-SLACK_ICON = os.getenv("SLACK_ICON")
+SLACK_USERNAME = getenv("SLACK_USERNAME")
+SLACK_EMOJI = getenv("SLACK_EMOJI")
+SLACK_ICON = getenv("SLACK_ICON")
 
 # string to replace hidden secrets with
 SECRET_REPLACEMENT = "--------"  # nosec
@@ -83,39 +100,48 @@ SECRET_REPLACEMENT = "--------"  # nosec
 # using the following, it is possible to automate
 # the update of a whitelist of workers IPs on Wasabi (S3 provider)
 # enable this feature (default is off)
-USES_WORKERS_IPS_WHITELIST = bool(os.getenv("USES_WORKERS_IPS_WHITELIST"))
+USES_WORKERS_IPS_WHITELIST = bool(getenv("USES_WORKERS_IPS_WHITELIST", default=False))
 MAX_WORKER_IP_CHANGES_PER_DAY = 4
 # wasabi URL with credentials to update policy
-WASABI_URL = os.getenv("WASABI_URL", "")
+WASABI_URL = getenv("WASABI_URL", default="")
 # policy ARN such as arn:aws:iam::xxxxxxxxxxxx:policy/yyyyyyyy
-WASABI_WHITELIST_POLICY_ARN = os.getenv("WASABI_WHITELIST_POLICY_ARN", "")
+WASABI_WHITELIST_POLICY_ARN = getenv("WASABI_WHITELIST_POLICY_ARN", default="")
 # ID of the statement to set on the policy for the whitelist
-WASABI_WHITELIST_STATEMENT_ID = os.getenv(
-    "WASABI_WHITELIST_STATEMENT_ID", "ZimfarmWorkersIPsWhiteList"
+WASABI_WHITELIST_STATEMENT_ID = getenv(
+    "WASABI_WHITELIST_STATEMENT_ID", default="ZimfarmWorkersIPsWhiteList"
 )
 # list of IPs and networks to always allow (regardless of used by workers or not)
 WHITELISTED_IPS = [
-    ip.strip() for ip in os.getenv("WHITELISTED_IPS", "").split(",") if ip.strip()
+    ip.strip() for ip in getenv("WHITELISTED_IPS", default="").split(",") if ip.strip()
 ]
-WASABI_MAX_WHITELIST_VERSIONS = int(os.getenv("WASABI_MAX_WHITELIST_VERSIONS", "5"))
+WASABI_MAX_WHITELIST_VERSIONS = int(
+    getenv(
+        "WASABI_MAX_WHITELIST_VERSIONS",
+        default="5",
+    )
+)
 
 
 # openZIM CMS can be called upon receival of each ZIM
-INFORM_CMS = bool(os.getenv("INFORM_CMS"))
-CMS_ENDPOINT = os.getenv("CMS_ENDPOINT", "https://api.cms.openzim.org/v1/books/add")
+INFORM_CMS = bool(getenv("INFORM_CMS", default=False))
+CMS_ENDPOINT = getenv(
+    "CMS_ENDPOINT", default="https://api.cms.openzim.org/v1/books/add"
+)
 # URL to tell the CMS where to download ZIM from
-CMS_ZIM_DOWNLOAD_URL = os.getenv(
-    "CMS_ZIM_DOWNLOAD_URL", "https://download.kiwix.org/zim"
+CMS_ZIM_DOWNLOAD_URL = getenv(
+    "CMS_ZIM_DOWNLOAD_URL", default="https://download.kiwix.org/zim"
 )
 
 # [DEBUG] prevent scraper containers from running wit extended capabilities
-DISALLOW_CAPABILITIES = bool(os.getenv("ZIMFARM_DISALLOW_CAPABILITIES"))
+DISALLOW_CAPABILITIES = bool(getenv("ZIMFARM_DISALLOW_CAPABILITIES", default=False))
 
 # Timeout for requests to other services
-REQ_TIMEOUT_NOTIFICATIONS = int(os.getenv("REQ_TIMEOUT_NOTIFICATIONS", "5"))
-REQ_TIMEOUT_CMS = int(os.getenv("REQ_TIMEOUT_CMS", "10"))
-REQ_TIMEOUT_GHCR = int(os.getenv("REQ_TIMEOUT_GHCR", "10"))
+REQ_TIMEOUT_NOTIFICATIONS = int(getenv("REQ_TIMEOUT_NOTIFICATIONS", default="5"))
+REQ_TIMEOUT_CMS = int(getenv("REQ_TIMEOUT_CMS", default="10"))
+REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
 
 # OFFLINERS
-ZIMIT_USE_RELAXED_SCHEMA = bool(os.getenv("ZIMIT_USE_RELAXED_SCHEMA"))
-NAUTILUS_USE_RELAXED_SCHEMA = bool(os.getenv("NAUTILUS_USE_RELAXED_SCHEMA"))
+ZIMIT_USE_RELAXED_SCHEMA = bool(getenv("ZIMIT_USE_RELAXED_SCHEMA", default=False))
+NAUTILUS_USE_RELAXED_SCHEMA = bool(getenv("NAUTILUS_USE_RELAXED_SCHEMA", default=False))
+
+POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)

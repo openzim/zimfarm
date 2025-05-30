@@ -9,13 +9,13 @@ from jwt import exceptions as jwt_exceptions
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common.constants import JWT_SECRET
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import gen_dbsession
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import get_user_by_id
 from zimfarm_backend.routes.http_errors import UnauthorizedError
-from zimfarm_backend.settings import Settings
 
 security = HTTPBearer(description="Access Token")
 AuthorizationCredentials = Annotated[HTTPAuthorizationCredentials, Depends(security)]
@@ -34,7 +34,7 @@ def get_current_user(
 ) -> User:
     token = authorization.credentials
     try:
-        jwt_claims = jwt.decode(token, Settings.JWT_SECRET, algorithms=["HS256"])
+        jwt_claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except jwt_exceptions.ExpiredSignatureError as exc:
         raise UnauthorizedError("Token has expired.") from exc
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:

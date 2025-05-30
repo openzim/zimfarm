@@ -6,7 +6,7 @@ from sqlalchemy import SelectBase, create_engine, func, select
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
-from zimfarm_backend.settings import Settings
+from zimfarm_backend.common.constants import POSTGRES_URI
 
 
 # custom overload of bson deserializer to make naive datetime
@@ -22,13 +22,13 @@ def my_loads(s: str, *args: Any, **kwargs: Any) -> Any:
 
 
 if (
-    Settings.POSTGRES_URI == "nodb"
+    POSTGRES_URI == "nodb"
 ):  # this is a hack for cases where we do not need the DB, e.g. unit tests
     Session = None
 else:
     Session = sessionmaker(
         bind=create_engine(
-            Settings.POSTGRES_URI,
+            POSTGRES_URI,
             echo=False,
             json_serializer=dumps,  # use bson serializer to handle datetime naively
             json_deserializer=my_loads,  # use custom bson deserializer for same reason
