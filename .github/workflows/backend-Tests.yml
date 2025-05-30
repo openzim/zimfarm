@@ -74,6 +74,9 @@ jobs:
 
       - name: Run tests
         working-directory: backend
+        env:
+          POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
+          JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
         run: pytest -v tests/unit/
 
       - name: Upload coverage report to codecov
