@@ -202,6 +202,12 @@ class MWOfflinerFlagsSchema(SerializableSchema):
             "description": "Mediawiki module load path. Otherwise `/w/load.php`.",
         }
     )
+    mwIndexPhpPath = String(
+        metadata={
+            "label": "index.php path",
+            "description": "Path to Mediawiki index.php. Otherwise `/w/index.php`.",
+        }
+    )
     mwDomain = String(
         metadata={
             "label": "User Domain",
