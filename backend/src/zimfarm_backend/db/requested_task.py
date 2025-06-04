@@ -2,7 +2,7 @@ import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, delete, func, or_, select, update
+from sqlalchemy import TIMESTAMP, BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
@@ -140,8 +140,8 @@ def get_requested_tasks(
         .join(Worker, RequestedTask.worker, isouter=True)
         .join(Schedule, RequestedTask.schedule, isouter=True)
         .order_by(RequestedTask.priority.desc())
-        .order_by(RequestedTask.timestamp["reserved"]["$date"].astext.cast(BigInteger))
-        .order_by(RequestedTask.timestamp["requested"]["$date"].astext.cast(BigInteger))
+        .order_by(RequestedTask.timestamp["reserved"]["$date"].astext.cast(TIMESTAMP))
+        .order_by(RequestedTask.timestamp["requested"]["$date"].astext.cast(TIMESTAMP))
     )
     if schedule_name is not None:
         query = query.where(Schedule.name.in_(schedule_name))
