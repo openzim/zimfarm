@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalS3OptimizationCache,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
+    OptionalZIMProgressFile,
     ZIMDescription,
     ZIMTitle,
 )
@@ -21,7 +22,7 @@ class MindtouchFlagsSchema(DashModel):
         "https://geo.libretexts.org",
     )
 
-    creator: OptionalNotEmptyString = OptionalField(
+    creator: NotEmptyString = OptionalField(
         title="Creator",
         description="Name of content creator",
     )
@@ -127,14 +128,12 @@ class MindtouchFlagsSchema(DashModel):
         "not counted for this threshold. Defaults to 10 assets.",
     )
 
-    stats_filename: OptionalNotEmptyString = OptionalField(
+    stats_filename: OptionalZIMProgressFile = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        pattern=r"^/output/task_progress\.json$",
     )
 
     output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
-        pattern=r"^/output$",
     )

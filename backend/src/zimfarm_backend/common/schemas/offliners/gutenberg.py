@@ -4,7 +4,6 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
     OptionalS3OptimizationCache,
     OptionalZIMDescription,
-    OptionalZIMOutputFolder,
     OptionalZIMTitle,
 )
 
@@ -59,7 +58,7 @@ class GutenbergFlagsSchema(DashModel):
     # Given we can't set the output dir for regular mode, we're using this
     # flag to switch between the two and the path is set to the mount point
     # in command_for() (offliners.py)
-    one_language_one_zim: bool | OptionalZIMOutputFolder = OptionalField(
+    one_language_one_zim: bool | None = OptionalField(
         title="Multiple ZIMs",
         description="Create one ZIM per language",
     )

@@ -9,6 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
+    OptionalZIMProgressFile,
     OptionalZIMTitle,
 )
 
@@ -117,10 +118,9 @@ class WikihowFlagsSchema(DashModel):
         "Add a slash after Category to request it without recursion",
     )
 
-    stats_filename: OptionalNotEmptyString = OptionalField(
+    stats_filename: OptionalZIMProgressFile = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        pattern=r"^/output/task_progress\.json$",
     )
 
     debug: bool | None = OptionalField(

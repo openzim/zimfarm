@@ -9,8 +9,8 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
     OptionalZIMTitle,
-    ZIMOutputFolder,
 )
 
 
@@ -114,12 +114,12 @@ class KolibriFlagsSchema(DashModel):
         "Behavior differs on platforms/browsers.",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = Field(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
     )
 
-    tmp_dir: ZIMOutputFolder = Field(
+    tmp_dir: OptionalZIMOutputFolder = Field(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
     )

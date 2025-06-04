@@ -33,8 +33,9 @@ NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 
 type OptionalNotEmptyString = NotEmptyString | None
 
+type OptionalSecretStr = SecretStr | None
 
-Percentage = Annotated[int, Field(ge=1, le=100)]
+Percentage = Annotated[int, Field(gt=0, le=100)]
 
 type OptionalPercentage = Percentage | None
 
@@ -71,7 +72,7 @@ SlackTarget = Annotated[str, Field(pattern=r"^[#|@].+$")]
 
 type OptionalSlackTarget = SlackTarget | None
 
-ZIMPlatformValue = Annotated[int, Field(ge=0)]
+ZIMPlatformValue = Annotated[int, Field(gt=0)]
 
 type OptionalZIMPlatformValue = ZIMPlatformValue | None
 
@@ -83,31 +84,37 @@ ZIMOutputFolder = Annotated[str, Field(pattern=r"^/output$")]
 
 type OptionalZIMOutputFolder = ZIMOutputFolder | None
 
-ZIMCPU = Annotated[int, Field(ge=0)]
+ZIMProgressFile = Annotated[
+    NotEmptyString, Field(pattern=r"^/output/task_progress\.json$")
+]
+
+type OptionalZIMProgressFile = ZIMProgressFile | None
+
+ZIMCPU = Annotated[int, Field(gt=0)]
 
 type OptionalZIMCPU = ZIMCPU | None
 
-ZIMMemory = Annotated[int, Field(ge=0)]
+ZIMMemory = Annotated[int, Field(gt=0)]
 
 type OptionalZIMMemory = ZIMMemory | None
 
-ZIMDisk = Annotated[int, Field(ge=0)]
+ZIMDisk = Annotated[int, Field(gt=0)]
 
 type OptionalZIMDisk = ZIMDisk | None
 
-SkipField = Annotated[int, Field(default=0, ge=0)]
+SkipField = Annotated[int, Field(default=1, gt=0)]
 
 type OptionalSkipField = SkipField | None
 
-LimitFieldMax500 = Annotated[int, Field(default=20, ge=0, le=500)]
+LimitFieldMax500 = Annotated[int, Field(default=20, gt=0, le=500)]
 
 type OptionalLimitFieldMax500 = LimitFieldMax500 | None
 
-LimitFieldMax200 = Annotated[int, Field(default=20, ge=0, le=200)]
+LimitFieldMax200 = Annotated[int, Field(default=20, gt=0, le=200)]
 
 type OptionalLimitFieldMax200 = LimitFieldMax200 | None
 
-PriorityField = Annotated[int, Field(default=0, ge=0, le=10)]
+PriorityField = Annotated[int, Field(default=1, gt=0, le=10)]
 
 type OptionalPriorityField = PriorityField | None
 

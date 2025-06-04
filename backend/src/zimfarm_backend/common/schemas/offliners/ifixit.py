@@ -9,8 +9,9 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalS3OptimizationCache,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMOutputFolder,
+    OptionalZIMProgressFile,
     OptionalZIMTitle,
-    ZIMOutputFolder,
 )
 
 
@@ -58,12 +59,12 @@ class IFixitFlagsSchema(DashModel):
         "_category:ifixit and ifixit added automatically",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = Field(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
     )
 
-    tmp_dir: ZIMOutputFolder = Field(
+    tmp_dir: OptionalZIMOutputFolder = Field(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
     )
@@ -79,10 +80,9 @@ class IFixitFlagsSchema(DashModel):
         description="S3 Storage URL including credentials and bucket",
     )
 
-    stats_filename: OptionalNotEmptyString = OptionalField(
+    stats_filename: OptionalZIMProgressFile = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        pattern=r"^/output/task_progress\.json$",
     )
 
     debug: bool | None = OptionalField(

@@ -31,7 +31,7 @@ class FCCLanguage(StrEnum):
 
 
 class FreeCodeCampFlagsSchema(DashModel):
-    course: OptionalNotEmptyString = OptionalField(
+    course: NotEmptyString = OptionalField(
         title="Course(s)",
         description="Course or course list (separated by commas)",
     )
@@ -50,7 +50,7 @@ class FreeCodeCampFlagsSchema(DashModel):
         description="ZIM name",
     )
 
-    title: ZIMTitle = OptionalField(
+    title: ZIMTitle = Field(
         title="Title",
         description="ZIM title",
     )

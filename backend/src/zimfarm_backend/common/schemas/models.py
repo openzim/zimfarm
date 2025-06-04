@@ -5,7 +5,6 @@ from pydantic import (
     EmailStr,
     Field,
     HttpUrl,
-    create_model,
     field_validator,
     model_validator,
 )
@@ -147,11 +146,10 @@ class ScheduleSchema(BaseModel):
     notification: ScheduleNotificationSchema | None = None
 
 
-PlatformsLimitSchema = (  # pyright: ignore[reportUnknownVariableType, reportCallIssue]
-    create_model(
-        "PlatformsLimitSchema",
-        **{  # pyright: ignore[reportArgumentType]
-            platform.name: (ZIMPlatformValue, ...) for platform in Platform.all()
-        },
-    )
-)
+class PlaftormLimitSchema:
+    platform: Platform
+    limit: ZIMPlatformValue
+
+
+class PlatformsLimitSchema(BaseModel):
+    limits: list[PlaftormLimitSchema]

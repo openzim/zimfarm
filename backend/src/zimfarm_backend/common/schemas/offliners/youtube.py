@@ -12,6 +12,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMFileName,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
+    OptionalZIMProgressFile,
     OptionalZIMTitle,
 )
 
@@ -154,15 +155,13 @@ class YoutubeFlagsSchema(DashModel):
         "as `/output`",
     )
 
-    stats_filename: OptionalNotEmptyString = OptionalField(
+    stats_filename: OptionalZIMProgressFile = OptionalField(
         title="Stats filename",
         description="Scraping progress file. Leave it as `/output/task_progress.json`",
-        pattern=r"^/output/task_progress\.json$",
     )
 
     tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description="Technical flag: Where to create temporay build folder. "
         "Leave it as `/output`",
-        pattern=r"^/output$",
     )

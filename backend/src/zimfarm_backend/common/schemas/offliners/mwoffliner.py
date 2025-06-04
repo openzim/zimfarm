@@ -1,18 +1,51 @@
 # ruff: noqa: N815,S108
-from typing import Literal
+from enum import StrEnum
 
-from pydantic import AnyUrl, EmailStr, Field, SecretStr
+from pydantic import AnyUrl, EmailStr, Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalS3OptimizationCache,
+    OptionalSecretStr,
     OptionalZIMDescription,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
 )
+
+
+class MWOfflinerFormatFlavour(StrEnum):
+    NODET_NOPIC_MINI = "nodet,nopic:mini"
+    NODET_MINI = "nodet:mini"
+    NOPIC_NOPIC = "nopic:nopic"
+    NOVID_MAXI = "novid:maxi"
+    EMPTY = ""
+    NODET = "nodet"
+    NOPIC = "nopic"
+    NOVID = "novid"
+    NODET_NOPIC = "nodet,nopic"
+
+
+class MWOfflinerCustomProcessorPath(StrEnum):
+    WIKTIONARY_FR = "/tmp/mwoffliner/extensions/wiktionary_fr.js"
+
+
+class MWOfflinerVerbosity(StrEnum):
+    INFO = "info"
+    LOG = "log"
+    WARN = "warn"
+    ERROR = "error"
+    QUIET = "quiet"
+
+
+class MWOfflinerForceRender(StrEnum):
+    VISUALEDITOR = "VisualEditor"
+    WIKIMEDIADESKTOP = "WikimediaDesktop"
+    WIKIMEDIAMOBILE = "WikimediaMobile"
+    RESTAPI = "RestApi"
+    ACTIONPARSE = "ActionParse"
 
 
 class MWOfflinerFlagsSchema(DashModel):
@@ -72,32 +105,15 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Filename prefix",
         description="Custome filename up to the formats and date parts.",
     )
-    formats: (
-        list[
-            Literal[
-                "nodet,nopic:mini",
-                "nodet:mini",
-                "nopic:nopic",
-                "novid:maxi",
-                "",
-                "nodet",
-                "nopic",
-                "novid",
-                "nodet,nopic",
-            ]
-        ]
-        | None
-    ) = OptionalField(
+    formats: list[MWOfflinerFormatFlavour] | None = OptionalField(
         description="Which flavours to build, as `<flavour>:<custom-suffix>`. "
         "Empty option is full without suffix.",
     )
 
-    customFlavour: Literal["/tmp/mwoffliner/extensions/wiktionary_fr.js"] | None = (
-        OptionalField(
-            title="Custom Flavour",
-            description="Custom processor to filter and process articles "
-            "(see extensions/*.js)",
-        )
+    customFlavour: MWOfflinerCustomProcessorPath | None = OptionalField(
+        title="Custom Flavour",
+        description="Custom processor to filter and process articles "
+        "(see extensions/*.js)",
     )
 
     optimisationCacheUrl: OptionalS3OptimizationCache = OptionalField(
@@ -146,7 +162,7 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Username",
         description="Mediawiki username (for private wikis)",
     )
-    mwPassword: SecretStr | None = OptionalField(
+    mwPassword: OptionalSecretStr = OptionalField(
         title="Password",
         description="Mediawiki user password (for private wikis)",
     )
@@ -173,7 +189,7 @@ class MWOfflinerFlagsSchema(DashModel):
     withoutZimFullTextIndex: bool | None = OptionalField(
         description="Don't include a fulltext search index to the ZIM",
     )
-    verbose: Literal["info", "log", "warn", "error", "quiet"] | None = OptionalField(
+    verbose: MWOfflinerVerbosity | None = OptionalField(
         title="Verbose",
         description="Level of log verbosity, one of info, log, warn, error or "
         "quiet. Default is error.",
@@ -184,16 +200,7 @@ class MWOfflinerFlagsSchema(DashModel):
         description="Convert images to Webp",
     )
 
-    forceRender: (
-        Literal[
-            "VisualEditor",
-            "WikimediaDesktop",
-            "WikimediaMobile",
-            "RestApi",
-            "ActionParse",
-        ]
-        | None
-    ) = OptionalField(
+    forceRender: MWOfflinerForceRender | None = OptionalField(
         title="Force Render",
         description="Force the usage of a specific API end-point/render, "
         "automatically chosen otherwise",
