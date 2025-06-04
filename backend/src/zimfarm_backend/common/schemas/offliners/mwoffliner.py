@@ -1,13 +1,14 @@
 # ruff: noqa: N815,S108
 from typing import Literal
 
-from pydantic import AnyUrl, EmailStr, Field, SecretStr
+from pydantic import AnyUrl, EmailStr, Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalS3OptimizationCache,
+    OptionalSecretStr,
     OptionalZIMDescription,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
@@ -146,7 +147,7 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Username",
         description="Mediawiki username (for private wikis)",
     )
-    mwPassword: SecretStr | None = OptionalField(
+    mwPassword: OptionalSecretStr = OptionalField(
         title="Password",
         description="Mediawiki user password (for private wikis)",
     )

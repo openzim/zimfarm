@@ -1,10 +1,14 @@
 import datetime
+from ipaddress import IPv4Address
 from typing import Annotated, Any
+from uuid import UUID
 
 import pytz
-from pydantic import AfterValidator, BaseModel, Field, computed_field
+from pydantic import AfterValidator, Field, computed_field
 
+from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.roles import get_role_for
+from zimfarm_backend.common.schemas import BaseModel
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -133,7 +137,7 @@ class RequestedTaskLightSchema(BaseModel):
     Schema for reading a requested task model with some fields
     """
 
-    id: str = Field(alias="_id")
+    id: UUID
     status: str
     config: ConfigWithOnlyTaskNameAndResourcesSchema
     timestamp: dict[str, Any]
@@ -152,7 +156,7 @@ class RequestedTaskFullSchema(RequestedTaskLightSchema):
     events: list[dict[str, Any]]
     upload: dict[str, Any]
     notification: dict[str, Any]
-    rank: int
+    rank: int | None = None
     schedule: NameOnlySchema
 
 
@@ -163,7 +167,7 @@ class MostRecentTaskSchema(BaseModel):
 
     id: str = Field(alias="_id")
     status: str
-    updated_at = MadeAwareDateTime
+    updated_at: MadeAwareDateTime
 
 
 class ConfigTaskOnlySchema(BaseModel):
@@ -266,3 +270,20 @@ class ScheduleFullSchema(BaseModel):
                     )
                 )
         return duration_res
+
+
+class Worker(BaseModel):
+    """
+    Schema for reading a worker model
+    """
+
+    id: UUID
+    name: str
+    offliners: list[Offliner]
+    cpu: int
+    memory: int
+    disk: int
+    last_seen: datetime.datetime | None = None
+    last_ip: IPv4Address | None = None
+    deleted: bool
+    user_id: UUID

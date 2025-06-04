@@ -10,8 +10,18 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import generate_password_hash
 
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import Base, Sshkey, User
+from zimfarm_backend.db.models import (
+    Base,
+    RequestedTask,
+    Schedule,
+    ScheduleDuration,
+    Sshkey,
+    User,
+    Worker,
+)
 from zimfarm_backend.utils.token import sign_message
 
 
@@ -85,6 +95,109 @@ def x_sshauth_signature(private_key: RSAPrivateKey, auth_message: str) -> str:
     """Sign a message using RSA private key and encode it in base64"""
     signature = sign_message(private_key, bytes(auth_message, encoding="ascii"))
     return base64.b64encode(signature).decode()
+
+
+@pytest.fixture
+def worker(dbsession: OrmSession, user: User) -> Worker:
+    """Create a worker for testing"""
+    worker = Worker(
+        name="testworker",
+        selfish=False,
+        cpu=2,
+        memory=1024,
+        disk=1024,
+        offliners=["mwoffliner", "youtube"],
+        platforms={},
+        last_seen=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        last_ip=None,
+    )
+    worker.user_id = user.id
+    dbsession.add(worker)
+    dbsession.flush()
+    return worker
+
+
+@pytest.fixture
+def schedule(dbsession: OrmSession) -> Schedule:
+    """Create a schedule for testing"""
+    schedule = Schedule(
+        name="testschedule",
+        category="wikipedia",
+        config={"task_name": "test_task", "flags": {}},
+        enabled=True,
+        language_code="en",
+        language_name_native="English",
+        language_name_en="English",
+        tags=["test"],
+        periodicity="monthly",
+        notification=None,
+    )
+    dbsession.add(schedule)
+    dbsession.flush()
+    return schedule
+
+
+@pytest.fixture
+def schedule_duration(
+    dbsession: OrmSession, schedule: Schedule, worker: Worker
+) -> ScheduleDuration:
+    """Create a schedule duration for testing"""
+    duration = ScheduleDuration(
+        default=True,
+        value=3600,  # 1 hour
+        on=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+    )
+    duration.schedule = schedule
+    duration.worker = worker
+    dbsession.add(duration)
+    dbsession.flush()
+    return duration
+
+
+@pytest.fixture
+def requested_task(
+    dbsession: OrmSession, schedule: Schedule, worker: Worker
+) -> RequestedTask:
+    """Create a requested task for testing"""
+    now = getnow()
+    requested_task = RequestedTask(
+        status=TaskStatus.requested,
+        timestamp={TaskStatus.requested: now},
+        events=[{"code": TaskStatus.requested, "timestamp": now}],
+        requested_by="testuser",
+        priority=0,
+        config={
+            "task_name": "mwoffliner",
+            "resources": {
+                "cpu": 1,
+                "memory": 512,
+                "disk": 512,
+            },
+        },
+        upload={
+            "zim": {
+                "upload_uri": "test://upload/zim",
+                "expiration": 3600,
+                "zimcheck": True,
+            },
+            "logs": {
+                "upload_uri": "test://upload/logs",
+                "expiration": 3600,
+            },
+            "artifacts": {
+                "upload_uri": "test://upload/artifacts",
+                "expiration": 3600,
+            },
+        },
+        notification={},
+        updated_at=now,
+        original_schedule_name=schedule.name,
+    )
+    requested_task.schedule = schedule
+    requested_task.worker = worker
+    dbsession.add(requested_task)
+    dbsession.flush()
+    return requested_task
 
 
 # @pytest.fixture

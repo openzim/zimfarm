@@ -20,6 +20,8 @@ NoNullCharString = Annotated[str, AfterValidator(no_null_char)]
 
 type OptionalNoNullCharString = NoNullCharString | None
 
+type OptionalSecretStr = SecretStr | None
+
 
 def not_empty(value: str) -> str:
     """Validate that string value is not empty"""

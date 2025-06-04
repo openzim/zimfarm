@@ -12,9 +12,8 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common.constants import JWT_SECRET
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import gen_dbsession
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
-from zimfarm_backend.db.user import get_user_by_id
+from zimfarm_backend.db.user import get_user_by_id_or_none
 from zimfarm_backend.routes.http_errors import UnauthorizedError
 
 security = HTTPBearer(description="Access Token")
@@ -28,10 +27,14 @@ class JWTClaims(BaseModel):
     subject: uuid.UUID
 
 
-def get_current_user(
-    session: Annotated[OrmSession, Depends(gen_dbsession)],
-    authorization: AuthorizationCredentials,
-) -> User:
+def get_jwt_claims_or_none(
+    authorization: AuthorizationCredentials | None,
+) -> JWTClaims | None:
+    """
+    Get the JWT claims or None if the user is not authenticated
+    """
+    if authorization is None:
+        return None
     token = authorization.credentials
     try:
         jwt_claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
@@ -44,11 +47,27 @@ def get_current_user(
         claims = JWTClaims(**jwt_claims)
     except PydanticValidationError as exc:
         raise UnauthorizedError from exc
+    return claims
 
-    # At this point, we know that the JWT is all OK and we can
-    # trust the data in it. We extract the user_id from the claims
-    try:
-        db_user = get_user_by_id(session, user_id=claims.subject)
-    except RecordDoesNotExistError as exc:
-        raise UnauthorizedError() from exc
-    return db_user
+
+def get_current_user_or_none(
+    claims: Annotated[JWTClaims | None, Depends(get_jwt_claims_or_none)],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> User | None:
+    """
+    Get the current user or None if the user is not authenticated
+    """
+    if claims is None:
+        return None
+    return get_user_by_id_or_none(session, user_id=claims.subject)
+
+
+def get_current_user(
+    user: Annotated[User | None, Depends(get_current_user_or_none)],
+) -> User:
+    """
+    Get the current user
+    """
+    if user is None:
+        raise UnauthorizedError()
+    return user
