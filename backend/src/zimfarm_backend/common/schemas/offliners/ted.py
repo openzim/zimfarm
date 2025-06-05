@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import Field
@@ -16,7 +17,14 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
+class VideoFormat(StrEnum):
+    WEBM = "webm"
+    MP4 = "mp4"
+
+
 class TedFlagsSchema(DashModel):
+    offliner_id: Literal["ted"] = Field(exclude=True)
+
     topics: OptionalNotEmptyString = OptionalField(
         title="Topics",
         description=(
@@ -58,7 +66,7 @@ class TedFlagsSchema(DashModel):
         ),
     )
 
-    video_format: Literal["webm", "mp4"] | None = OptionalField(
+    video_format: VideoFormat | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
     )

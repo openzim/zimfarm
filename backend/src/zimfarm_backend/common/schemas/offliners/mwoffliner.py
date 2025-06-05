@@ -1,5 +1,6 @@
 # ruff: noqa: N815,S108
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import AnyUrl, EmailStr, Field
 
@@ -49,6 +50,8 @@ class MWOfflinerForceRender(StrEnum):
 
 
 class MWOfflinerFlagsSchema(DashModel):
+    offliner_id: Literal["mwoffliner"] = Field(exclude=True)
+
     mwUrl: AnyUrl = Field(
         title="Wiki URL",
         description="The URL of the mediawiki to scrape",

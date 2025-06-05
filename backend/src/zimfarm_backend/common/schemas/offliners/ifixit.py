@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import DashModel
@@ -16,6 +18,8 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class IFixitFlagsSchema(DashModel):
+    offliner_id: Literal["ifixit"] = Field(exclude=True)
+
     language: NotEmptyString = Field(
         title="Language",
         description="iFixIt website to build from",

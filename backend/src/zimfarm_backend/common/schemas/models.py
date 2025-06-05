@@ -1,18 +1,15 @@
 import re
-from typing import Any
 
 from pydantic import (
     EmailStr,
     Field,
     HttpUrl,
     field_validator,
-    model_validator,
 )
 
 from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import (
     DockerImageName,
-    Offliner,
     Platform,
     ScheduleCategory,
     SchedulePeriodicity,
@@ -71,56 +68,47 @@ class DockerImageSchema(BaseModel):
 
     @field_validator("name", mode="before")
     def validate_name(cls, v: str) -> str:  # noqa: N805
-        # strip the image prefix out so we don't have to care about it later-on
-        # should ideally be dynamic but this is based on the offliner/task_name
-        # which we don't have access to here. awaiting additional registry usage to fix
+        # docker images can have a prefix, e.g. ghcr.io/
+        # set mode="before" and strip the image prefix so that the remaining name is
+        # validated against the DockerImageName enum.
         return re.sub(r"^ghcr.io/", "", v)
 
 
+OfflinerSchema = (
+    MWOfflinerFlagsSchema
+    | YoutubeFlagsSchema
+    | GutenbergFlagsSchema
+    | PhetFlagsSchema
+    | SotokiFlagsSchema
+    | NautilusFlagsSchemaRelaxed
+    if constants.NAUTILUS_USE_RELAXED_SCHEMA
+    else (
+        NautilusFlagsSchema
+        | TedFlagsSchema
+        | OpenedxFlagsSchema
+        | ZimitFlagsSchemaRelaxed
+        if constants.ZIMIT_USE_RELAXED_SCHEMA
+        else ZimitFlagsSchema
+        | KolibriFlagsSchema
+        | WikihowFlagsSchema
+        | IFixitFlagsSchema
+        | FreeCodeCampFlagsSchema
+        | DevDocsFlagsSchema
+        | MindtouchFlagsSchema
+    )
+)
+
+
 class ScheduleConfigSchema(BaseModel):
-    task_name: Offliner
     warehouse_path: WarehousePath
     image: DockerImageSchema
     resources: ResourcesSchema
-    flags: dict[str, Any]
+    flags: OfflinerSchema = Field(  # pyright: ignore[reportInvalidTypeForm]
+        discriminator="offliner_id"
+    )
     platform: Platform | None = None
     artifacts_globs: list[NotEmptyString] = Field(default_factory=list)
     monitor: bool
-
-    @staticmethod
-    def get_offliner_schema(offliner: Offliner) -> type[BaseModel]:
-        return {
-            Offliner.mwoffliner: MWOfflinerFlagsSchema,
-            Offliner.youtube: YoutubeFlagsSchema,
-            Offliner.gutenberg: GutenbergFlagsSchema,
-            Offliner.phet: PhetFlagsSchema,
-            Offliner.sotoki: SotokiFlagsSchema,
-            Offliner.nautilus: (
-                NautilusFlagsSchemaRelaxed
-                if constants.NAUTILUS_USE_RELAXED_SCHEMA
-                else NautilusFlagsSchema
-            ),
-            Offliner.ted: TedFlagsSchema,
-            Offliner.openedx: OpenedxFlagsSchema,
-            Offliner.zimit: (
-                ZimitFlagsSchemaRelaxed
-                if constants.ZIMIT_USE_RELAXED_SCHEMA
-                else ZimitFlagsSchema
-            ),
-            Offliner.kolibri: KolibriFlagsSchema,
-            Offliner.wikihow: WikihowFlagsSchema,
-            Offliner.ifixit: IFixitFlagsSchema,
-            Offliner.freecodecamp: FreeCodeCampFlagsSchema,
-            Offliner.devdocs: DevDocsFlagsSchema,
-            Offliner.mindtouch: MindtouchFlagsSchema,
-        }.get(offliner, BaseModel)
-
-    @model_validator(mode="before")
-    def validate_flags(cls, data: dict[str, Any]) -> dict[str, Any]:  # noqa: N805
-        if "task_name" in data and "flag" in data:
-            schema = cls.get_offliner_schema(data["task_name"])
-            data["flags"] = schema.model_validate(data["flags"]).model_dump(mode="json")
-        return data
 
 
 class EventNotificationSchema(BaseModel):
@@ -146,7 +134,7 @@ class ScheduleSchema(BaseModel):
     notification: ScheduleNotificationSchema | None = None
 
 
-class PlaftormLimitSchema:
+class PlaftormLimitSchema(BaseModel):
     platform: Platform
     limit: ZIMPlatformValue
 

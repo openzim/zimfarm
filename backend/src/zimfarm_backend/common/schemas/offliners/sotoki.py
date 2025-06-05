@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import DashModel
@@ -14,6 +16,8 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class SotokiFlagsSchema(DashModel):
+    offliner_id: Literal["sotoki"] = Field(exclude=True)
+
     domain: NotEmptyString = Field(
         title="Domain",
         description="Domain name from StackExchange to scrape.",

@@ -1,3 +1,7 @@
+from typing import Literal
+
+from pydantic import Field
+
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
@@ -10,6 +14,8 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class DevDocsFlagsSchema(DashModel):
+    offliner_id: Literal["devdocs"] = Field(exclude=True)
+
     slug: OptionalNotEmptyString = OptionalField(
         title="Slug",
         description="""Fetch the provided Devdocs resource.

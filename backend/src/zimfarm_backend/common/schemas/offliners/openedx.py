@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import AnyUrl, EmailStr, Field, SecretStr
@@ -15,7 +16,14 @@ from zimfarm_backend.common.schemas.fields import (
 )
 
 
+class VideoFormat(StrEnum):
+    WEBM = "webm"
+    MP4 = "mp4"
+
+
 class OpenedxFlagsSchema(DashModel):
+    offliner_id: Literal["openedx"] = Field(exclude=True)
+
     course_url: AnyUrl = Field(
         title="Course URL",
         description="URL of the course you wnat to scrape",
@@ -77,7 +85,7 @@ class OpenedxFlagsSchema(DashModel):
         description="Remove the top sequential navigation bar in the ZIM",
     )
 
-    video_format: Literal["webm", "mp4"] | None = OptionalField(
+    video_format: VideoFormat | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
     )

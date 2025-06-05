@@ -1,3 +1,7 @@
+from typing import Literal
+
+from pydantic import Field
+
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
@@ -9,6 +13,8 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class GutenbergFlagsSchema(DashModel):
+    offliner_id: Literal["gutenberg"] = Field(exclude=True)
+
     languages: OptionalNotEmptyString = OptionalField(
         title="Languages",
         description=(

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import DashModel
@@ -15,6 +17,8 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class WikihowFlagsSchema(DashModel):
+    offliner_id: Literal["wikihow"] = Field(exclude=True)
+
     language: NotEmptyString = Field(
         title="Language",
         description="wikiHow website to build from. 2-letters language code.",

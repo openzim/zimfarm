@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import AnyUrl, Field
 
@@ -561,7 +562,7 @@ class ZimitFlagsDashSchema(DashModel):
 
 
 class ZimitFlagsSchema(ZimitFlagsCamelSchema, ZimitFlagsDashSchema):
-    pass
+    offliner_id: Literal["zimit"] = Field(exclude=True)
 
 
 class ZimitFlagsSchemaWithRelaxedZimFileName(ZimitFlagsDashSchema):
@@ -579,4 +580,4 @@ class ZimitFlagsSchemaWithRelaxedZimFileName(ZimitFlagsDashSchema):
 class ZimitFlagsSchemaRelaxed(
     ZimitFlagsCamelSchema, ZimitFlagsSchemaWithRelaxedZimFileName
 ):
-    pass
+    offliner_id: Literal["zimit"] = Field(exclude=True)

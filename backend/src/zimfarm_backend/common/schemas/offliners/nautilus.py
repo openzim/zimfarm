@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import DashModel
@@ -13,6 +15,8 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class NautilusFlagsSchema(DashModel):
+    offliner_id: Literal["nautilus"] = Field(exclude=True)
+
     archive: AnyUrl | None = OptionalField(
         title="Archive",
         description="URL to a ZIP archive containing all the documents",

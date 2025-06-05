@@ -63,7 +63,8 @@ ZIMDescription = Annotated[str, Field(max_length=80)]
 type OptionalZIMDescription = ZIMDescription | None
 
 ZIMFileName = Annotated[
-    str, Field(pattern=r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|{period}).zim$")
+    str,
+    Field(pattern=r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"),
 ]
 
 type OptionalZIMFileName = ZIMFileName | None

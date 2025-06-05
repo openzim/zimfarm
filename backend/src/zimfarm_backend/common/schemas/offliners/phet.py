@@ -1,10 +1,15 @@
 # ruff: noqa: N815
+from typing import Literal
+
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import OptionalField, OptionalNotEmptyString
 
 
 class PhetFlagsSchema(DashModel):
+    offliner_id: Literal["phet"] = Field(exclude=True)
+
     includeLanguages: OptionalNotEmptyString = OptionalField(
         title="Include Languages",
         description="Spoken languages to ZIM, one ZIM per language and/or all in"

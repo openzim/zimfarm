@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import AnyUrl, Field
 
@@ -31,6 +32,8 @@ class FCCLanguage(StrEnum):
 
 
 class FreeCodeCampFlagsSchema(DashModel):
+    offliner_id: Literal["freecodecamp"] = Field(exclude=True)
+
     course: NotEmptyString = OptionalField(
         title="Course(s)",
         description="Course or course list (separated by commas)",
