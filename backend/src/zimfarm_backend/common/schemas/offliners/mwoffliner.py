@@ -50,7 +50,7 @@ class MWOfflinerForceRender(StrEnum):
 
 
 class MWOfflinerFlagsSchema(DashModel):
-    offliner_id: Literal["mwoffliner"] = Field(exclude=True)
+    offliner_id: Literal["mwoffliner"]
 
     mwUrl: AnyUrl = Field(
         title="Wiki URL",

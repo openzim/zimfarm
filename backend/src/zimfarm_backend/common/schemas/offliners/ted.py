@@ -23,7 +23,7 @@ class VideoFormat(StrEnum):
 
 
 class TedFlagsSchema(DashModel):
-    offliner_id: Literal["ted"] = Field(exclude=True)
+    offliner_id: Literal["ted"]
 
     topics: OptionalNotEmptyString = OptionalField(
         title="Topics",

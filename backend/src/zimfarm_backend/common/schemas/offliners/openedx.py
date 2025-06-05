@@ -22,7 +22,7 @@ class VideoFormat(StrEnum):
 
 
 class OpenedxFlagsSchema(DashModel):
-    offliner_id: Literal["openedx"] = Field(exclude=True)
+    offliner_id: Literal["openedx"]
 
     course_url: AnyUrl = Field(
         title="Course URL",

@@ -17,7 +17,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class WikihowFlagsSchema(DashModel):
-    offliner_id: Literal["wikihow"] = Field(exclude=True)
+    offliner_id: Literal["wikihow"]
 
     language: NotEmptyString = Field(
         title="Language",

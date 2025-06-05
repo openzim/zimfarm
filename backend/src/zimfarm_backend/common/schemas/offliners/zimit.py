@@ -562,7 +562,7 @@ class ZimitFlagsDashSchema(DashModel):
 
 
 class ZimitFlagsSchema(ZimitFlagsCamelSchema, ZimitFlagsDashSchema):
-    offliner_id: Literal["zimit"] = Field(exclude=True)
+    offliner_id: Literal["zimit"]
 
 
 class ZimitFlagsSchemaWithRelaxedZimFileName(ZimitFlagsDashSchema):
@@ -580,4 +580,4 @@ class ZimitFlagsSchemaWithRelaxedZimFileName(ZimitFlagsDashSchema):
 class ZimitFlagsSchemaRelaxed(
     ZimitFlagsCamelSchema, ZimitFlagsSchemaWithRelaxedZimFileName
 ):
-    offliner_id: Literal["zimit"] = Field(exclude=True)
+    offliner_id: Literal["zimit"]

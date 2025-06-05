@@ -32,7 +32,7 @@ class FCCLanguage(StrEnum):
 
 
 class FreeCodeCampFlagsSchema(DashModel):
-    offliner_id: Literal["freecodecamp"] = Field(exclude=True)
+    offliner_id: Literal["freecodecamp"]
 
     course: NotEmptyString = OptionalField(
         title="Course(s)",

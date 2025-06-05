@@ -18,7 +18,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class YoutubeFlagsSchema(DashModel):
-    offliner_id: Literal["youtube"] = Field(exclude=True)
+    offliner_id: Literal["youtube"]
 
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",

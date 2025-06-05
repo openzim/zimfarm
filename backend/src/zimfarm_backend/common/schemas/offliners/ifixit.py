@@ -18,7 +18,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class IFixitFlagsSchema(DashModel):
-    offliner_id: Literal["ifixit"] = Field(exclude=True)
+    offliner_id: Literal["ifixit"]
 
     language: NotEmptyString = Field(
         title="Language",
