@@ -120,7 +120,7 @@ def create_request_task(
 
 @router.get("/")
 def get_requested_tasks(
-    requested_task_schema: RequestedTaskSchema,
+    requested_task_schema: Annotated[RequestedTaskSchema, Query()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
 ) -> ListResponse[RequestedTaskLightSchema]:

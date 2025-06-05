@@ -150,13 +150,11 @@ class ScheduleSchema(BaseModel):
     notification: ScheduleNotificationSchema | None = None
 
 
-PlatformsLimitSchema = (  # pyright: ignore[reportUnknownVariableType, reportCallIssue]
-    create_model(
-        "PlatformsLimitSchema",
-        **{  # pyright: ignore[reportArgumentType]
-            platform.name: (ZIMPlatformValue, ...) for platform in Platform.all()
-        },
-    )
+PlatformsLimitSchema = create_model(  # pyright: ignore
+    "PlatformsLimitSchema",
+    **{  # pyright: ignore[reportArgumentType]
+        platform.name: (ZIMPlatformValue, ...) for platform in Platform.all()
+    },
 )
 
 
