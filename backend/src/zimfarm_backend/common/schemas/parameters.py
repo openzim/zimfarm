@@ -27,7 +27,7 @@ from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     EventNotificationSchema,
     LanguageSchema,
-    PlatformsLimitSchema,  # pyright: ignore[reportUnknownVariableType]
+    PlatformsLimitSchema,
     ResourcesSchema,
     WarehousePath,
 )
@@ -160,4 +160,4 @@ class WorkerCheckInSchema(BaseModel):
     memory: ZIMMemory
     disk: ZIMDisk
     offliners: list[Offliner]
-    platforms: PlatformsLimitSchema  # pyright: ignore[reportInvalidTypeForm]
+    platforms: PlatformsLimitSchema

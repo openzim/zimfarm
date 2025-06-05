@@ -103,7 +103,7 @@ class ScheduleConfigSchema(BaseModel):
     warehouse_path: WarehousePath
     image: DockerImageSchema
     resources: ResourcesSchema
-    flags: OfflinerSchema = Field(  # pyright: ignore[reportInvalidTypeForm]
+    offliner: OfflinerSchema = Field(  # pyright: ignore[reportInvalidTypeForm]
         discriminator="offliner_id"
     )
     platform: Platform | None = None
