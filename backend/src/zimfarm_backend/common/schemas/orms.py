@@ -6,6 +6,7 @@ from uuid import UUID
 import pytz
 from pydantic import AfterValidator, Field, computed_field
 
+from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.roles import get_role_for
 from zimfarm_backend.common.schemas import BaseModel
@@ -98,6 +99,27 @@ class TaskLightSchema(BaseModel):
     updated_at: datetime.datetime
     config: ConfigWithOnlyResourcesSchema
     original_schedule_name: str
+
+
+class WorkerLightSchema(BaseModel):
+    """
+    Schema for reading a worker model with some fields
+    """
+
+    last_seen: datetime.datetime
+    name: str
+    last_ip: IPv4Address | None
+    resources: ConfigResourcesSchema
+    username: str
+
+    @computed_field
+    @property
+    def status(self) -> str:
+        if (
+            datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - self.last_seen
+        ).total_seconds() < WORKER_OFFLINE_DELAY_DURATION:
+            return "online"
+        return "offline"
 
 
 class TaskFullSchema(TaskLightSchema):
