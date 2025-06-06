@@ -60,7 +60,7 @@ def prepare_context(raw_args: list[str]) -> None:
     )
 
     parser.add_argument(
-        "kind", choices=["ted", "devdocs", "freecodecamp", "shamela", "phet"]
+        "kind", choices=["ted", "devdocs", "freecodecamp", "shamela", "phet", "gutenberg"]
     )
 
     args = parser.parse_args(raw_args)
