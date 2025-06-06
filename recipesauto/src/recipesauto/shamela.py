@@ -1,17 +1,10 @@
-from dataclasses import dataclass
-from enum import Enum
-import json
-from pathlib import Path
 import re
-import shutil
 from typing import Any
-import zipfile
-from bs4 import BeautifulSoup
 
 import requests
+from bs4 import BeautifulSoup
 
 from recipesauto.context import Context
-from recipesauto.constants import logger
 from recipesauto.utils import check_zim_name
 
 context = Context.get()
@@ -78,7 +71,8 @@ static_data = {
     "ulum-al-fiqh": {
         "number": 12,
         "title": "علوم الفقه؛ المجموعة رقم 12",
-        "description": "علوم الفقه والقواعد الفقهية، ومعرفة الأشباه والنظائر في القواعد",
+        "description": "علوم الفقه والقواعد الفقهية، ومعرفة الأشباه والنظائر في "
+        "القواعد",
     },
     "al-mantiq": {
         "number": 13,
@@ -188,7 +182,8 @@ static_data = {
     "al-shir-wa-dawawinu": {
         "number": 34,
         "title": "دواوين الشعر؛ المجموعة رقم 34",
-        "description": "دواوين الشعر العربي في الجاهلية وصدر الإسلام، وبعض الشروحات عليها",
+        "description": "دواوين الشعر العربي في الجاهلية وصدر الإسلام، وبعض الشروحات "
+        "عليها",
         "disk": 536870912,
         "in_prod": True,
     },
@@ -231,7 +226,10 @@ def get_recipe_tag() -> str:
 
 def _get_category_include_regex(category: int):
 
-    resp = requests.get(f"https://shamela.ws/category/{category}")
+    resp = requests.get(
+        f"https://shamela.ws/category/{category}",
+        timeout=context.http_timeout,
+    )
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "lxml")
@@ -243,7 +241,10 @@ def _get_category_include_regex(category: int):
             book = match.group(1)
             books.append(book)
 
-    return f"^https:\\/\\/shamela\\.ws\\/(book\\/({'|'.join(books)})($|\\/.*)|category\\/{category}|author\\/.+)"
+    return (
+        f"^https:\\/\\/shamela\\.ws\\/(book\\/({'|'.join(books)})($|\\/.*)"
+        f"|category\\/{category}|author\\/.+)"
+    )
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
@@ -312,7 +313,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     ]
 
 
-def _is_needed(category_key: Any, category_data: Any) -> bool:
+def _is_needed(category_key: Any, category_data: Any) -> bool:  # noqa: ARG001
     return True
     # return category_data["number"] in [1, 2, 3, 4, 5, 6, 34]
     # return category_data["number"] == 1

@@ -1,5 +1,4 @@
 import sys
-import tempfile
 
 from recipesauto.constants import logger
 from recipesauto.entrypoint import prepare_context

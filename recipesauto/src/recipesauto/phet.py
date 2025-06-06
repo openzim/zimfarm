@@ -1,17 +1,9 @@
-from dataclasses import dataclass
-from enum import Enum
-import json
-from pathlib import Path
-import re
-import shutil
 from typing import Any
-import zipfile
 
 import requests
 
 from recipesauto.context import Context
-from recipesauto.constants import logger
-from recipesauto.utils import check_zim_name
+from recipesauto.utils import check_zim_name, get_language_data
 
 context = Context.get()
 
@@ -31,6 +23,11 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
     resp = requests.get(
         "https://phet.colorado.edu/services/metadata/1.3/simulations?format=json&summary",
+        headers={
+            "Cookie": "phet-common-info=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+            "eyJsb2dnZWRJbiI6ZmFsc2UsImlhdCI6MTc0OTE5NDk2NiwiZXhwIjoxNzUxODMwMTY2fQ."
+            "FhVrkk4qJsdRmYayQWUoiYEMQZa7qUNAWkA5Nm03iYo"
+        },
         allow_redirects=True,
         timeout=context.http_timeout,
     )
@@ -65,7 +62,6 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "tag": "3.1.0",
                 },
                 "monitor": False,
-                "platform": None,
                 "resources": {
                     "cpu": 3,
                     "disk": 10737418240,
@@ -76,12 +72,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "warehouse_path": "/phet",
             },
             "enabled": True,
-            # TODO: use proper language, but this is a pain to do because of name_en + name_native + already existing values in ZF DB
-            "language": {
-                "code": "mul",
-                "name_en": "Multiple Languages",
-                "name_native": "Multiple Languages",
-            },
+            "language": get_language_data(locale if locale != "zh_CN" else "zh"),
             "name": check_zim_name(_get_name(locale)),
             "periodicity": "quarterly",
             "tags": [
@@ -103,7 +94,6 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "tag": "3.1.0",
                 },
                 "monitor": False,
-                "platform": None,
                 "resources": {
                     "cpu": 3,
                     "disk": 10737418240,
