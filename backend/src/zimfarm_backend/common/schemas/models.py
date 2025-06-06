@@ -80,23 +80,24 @@ OfflinerSchema = (
     | GutenbergFlagsSchema
     | PhetFlagsSchema
     | SotokiFlagsSchema
-    | NautilusFlagsSchemaRelaxed
-    if constants.NAUTILUS_USE_RELAXED_SCHEMA
-    else (
-        NautilusFlagsSchema
-        | TedFlagsSchema
-        | OpenedxFlagsSchema
-        | ZimitFlagsSchemaRelaxed
-        if constants.ZIMIT_USE_RELAXED_SCHEMA
-        else ZimitFlagsSchema
-        | KolibriFlagsSchema
-        | WikihowFlagsSchema
-        | IFixitFlagsSchema
-        | FreeCodeCampFlagsSchema
-        | DevDocsFlagsSchema
-        | MindtouchFlagsSchema
-    )
+    | KolibriFlagsSchema
+    | WikihowFlagsSchema
+    | IFixitFlagsSchema
+    | FreeCodeCampFlagsSchema
+    | DevDocsFlagsSchema
+    | MindtouchFlagsSchema
+    | OpenedxFlagsSchema
+    | TedFlagsSchema
 )
+if constants.NAUTILUS_USE_RELAXED_SCHEMA:
+    OfflinerSchema = OfflinerSchema | NautilusFlagsSchemaRelaxed
+else:
+    OfflinerSchema = OfflinerSchema | NautilusFlagsSchema
+
+if constants.ZIMIT_USE_RELAXED_SCHEMA:
+    OfflinerSchema = OfflinerSchema | ZimitFlagsSchemaRelaxed
+else:
+    OfflinerSchema = OfflinerSchema | ZimitFlagsSchema
 
 
 class ScheduleConfigSchema(BaseModel):
