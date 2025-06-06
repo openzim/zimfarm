@@ -18,8 +18,11 @@ from zimfarm_backend.common.enums import (
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
+    LimitFieldMax200,
+    LimitFieldMax500,
     NotEmptyString,
     ScheduleNameField,
+    SkipField,
     SlackTarget,
     ZIMDisk,
     ZIMLangCode,
@@ -142,3 +145,32 @@ class PlaftormLimitSchema(BaseModel):
 
 class PlatformsLimitSchema(BaseModel):
     limits: list[PlaftormLimitSchema]
+
+
+class Paginator(BaseModel):
+    nb_records: int = Field(serialization_alias="count")
+    skip: SkipField
+    limit: LimitFieldMax500 | LimitFieldMax200
+    page_size: int
+
+
+def calculate_pagination_metadata(
+    *,
+    nb_records: int,
+    skip: int,
+    limit: int,
+    page_size: int,
+) -> Paginator:
+    if nb_records == 0:
+        return Paginator(
+            nb_records=0,
+            skip=skip,
+            limit=limit,
+            page_size=0,
+        )
+    return Paginator(
+        nb_records=nb_records,
+        skip=skip,
+        limit=limit,
+        page_size=min(page_size, nb_records),
+    )
