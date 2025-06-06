@@ -286,6 +286,7 @@ class Platform:
     shamela = "shamela"
     libretexts = "libretexts"
     phet = "phet"
+    gutenberg = "gutenberg"
 
     @classmethod
     def all(cls) -> str:
@@ -299,6 +300,7 @@ class Platform:
             cls.shamela,
             cls.libretexts,
             cls.phet,
+            cls.gutenberg,
         ]
 
     @classmethod

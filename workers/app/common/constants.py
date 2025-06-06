@@ -166,6 +166,7 @@ ALL_PLATFORMS = [
     "devdocs",
     "shamela",
     "libretexts",
+    "gutenberg",
     "phet",
 ]
 PLATFORMS_TASKS = {}
