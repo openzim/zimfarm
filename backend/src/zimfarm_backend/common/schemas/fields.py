@@ -37,12 +37,14 @@ type OptionalSecretStr = SecretStr | None
 
 Percentage = Annotated[int, Field(gt=0, le=100)]
 
+
 type OptionalPercentage = Percentage | None
 
 
 def validate_optimization_cache(v: SecretStr | str) -> SecretStr:
     url = v.get_secret_value() if isinstance(v, SecretStr) else v
     AnyUrl(url)
+
     return SecretStr(url)
 
 
@@ -74,6 +76,7 @@ SlackTarget = Annotated[str, Field(pattern=r"^[#|@].+$")]
 type OptionalSlackTarget = SlackTarget | None
 
 ZIMPlatformValue = Annotated[int, Field(gt=0)]
+
 
 type OptionalZIMPlatformValue = ZIMPlatformValue | None
 
@@ -116,6 +119,7 @@ LimitFieldMax200 = Annotated[int, Field(default=20, gt=0, le=200)]
 type OptionalLimitFieldMax200 = LimitFieldMax200 | None
 
 PriorityField = Annotated[int, Field(default=1, gt=0, le=10)]
+
 
 type OptionalPriorityField = PriorityField | None
 
