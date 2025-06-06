@@ -45,10 +45,10 @@ class SotokiFlagsSchema(SerializableSchema):
         validate=validate_zim_description,
     )
 
-    favicon = fields.Url(
+    illustration = fields.Url(
         metadata={
-            "label": "Favicon",
-            "description": "URL for Favicon. Site square logo otherwise",
+            "label": "Illustration",
+            "description": "URL for ZIM Illustration. Site square logo otherwise",
         }
     )
 
