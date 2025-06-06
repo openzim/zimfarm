@@ -1,10 +1,9 @@
-import json
 import re
 from typing import Any
-from urllib.parse import urljoin
 
 import requests
 
+from recipesauto.constants import logger
 from recipesauto.context import Context
 from recipesauto.utils import check_zim_name
 
@@ -34,8 +33,9 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "logo-format": (_get_icon_url_for_slug(item["slug"])),
                     "output": "/output",
                     "slug": item["slug"],
-                    "file-name-format": f'devdocs_en_{_get_cleaned(_get_slug_with_version(item["slug"]))}'
-                    + "_{period}",
+                    "file-name-format": f"devdocs_en_"
+                    f'{_get_cleaned(_get_slug_with_version(item["slug"]))}'
+                    "_{period}",
                     "name-format": check_zim_name(
                         f'devdocs_en_{_get_cleaned(_get_slug_with_version(item["slug"]))}'
                     ),
@@ -102,7 +102,7 @@ def _get_icon_url_for_slug(slug: str) -> str:
 
 
 def group_items_by_type(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    names = set([item["name"] for item in items])
+    names = {item["name"] for item in items}
     return [definition_for_name(items=items, name=name) for name in names]
 
 
@@ -124,12 +124,10 @@ def definition_for_name(items: list[dict[str, Any]], name: str) -> dict[str, Any
         )
     else:
         variants = filter(lambda item: item["name"] == name, items)
-    variant = list(
-        sorted(
-            variants, key=lambda variant: variant.get("release", "aaa"), reverse=True
-        )
+    variant = sorted(
+        variants, key=lambda variant: variant.get("release", "aaa"), reverse=True
     )[0]
-    print(f'{name}: {variant["slug"]}')
+    logger.debug(f'{name}: {variant["slug"]}')
     return {"name": name, "slug": variant["slug"]}
 
 

@@ -14,6 +14,7 @@ dependencies = [
   "beautifulsoup4==4.13.3",
   "types-beautifulsoup4==4.12.0.20250204",
   "lxml==5.3.1",
+  "langcodes==3.5.0",
 ]
 dynamic = ["authors", "classifiers", "keywords", "license", "version", "urls"]
 
