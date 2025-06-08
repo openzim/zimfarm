@@ -16,14 +16,15 @@ from zimfarm_backend.db.refresh_token import (
 
 
 @pytest.fixture
-def refresh_token(dbsession: OrmSession, user: User) -> Refreshtoken:
+@pytest.mark.num_users(1)
+def refresh_token(dbsession: OrmSession, users: list[User]) -> Refreshtoken:
     """Create a refresh token for a user"""
     token = Refreshtoken(
         token=uuid4(),
         expire_time=datetime.datetime.now(datetime.UTC)
         + datetime.timedelta(seconds=1_000),
     )
-    token.user = user
+    token.user = users[0]
     dbsession.add(token)
     dbsession.flush()
     return token
@@ -35,12 +36,13 @@ def test_get_refresh_token_or_none(dbsession: OrmSession):
     assert refresh_token is None
 
 
-def test_create_refresh_token(dbsession: OrmSession, user: User):
+@pytest.mark.num_users(1)
+def test_create_refresh_token(dbsession: OrmSession, users: list[User]):
     """Test that create_refresh_token creates a refresh token"""
-    refresh_token = create_refresh_token(dbsession, user.id)
+    refresh_token = create_refresh_token(dbsession, users[0].id)
     assert refresh_token is not None
     assert refresh_token.token is not None
-    assert refresh_token.user_id == user.id
+    assert refresh_token.user_id == users[0].id
     assert refresh_token.expire_time is not None
 
 

@@ -1,7 +1,5 @@
 from typing import Any
 
-from pydantic import EmailStr
-
 from zimfarm_backend.common.enums import (
     Offliner,
     Platform,
@@ -9,7 +7,6 @@ from zimfarm_backend.common.enums import (
     SchedulePeriodicity,
     TaskStatus,
 )
-from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
@@ -130,26 +127,6 @@ class TaskCreateSchema(BaseModel):
 class TasKUpdateSchema(BaseModel):
     event: EventNotificationSchema
     payload: dict[str, Any]
-
-
-# users keys POST
-class KeySchema(BaseModel):
-    name: NotEmptyString
-    key: NotEmptyString
-
-
-# users POST
-class UserCreateSchema(BaseModel):
-    username: NotEmptyString
-    password: NotEmptyString
-    email: EmailStr
-    role: RoleEnum
-
-
-# users PATCH
-class UserUpdateSchema(BaseModel):
-    email: EmailStr
-    role: RoleEnum | None = None
 
 
 # workers checkin

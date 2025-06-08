@@ -3,10 +3,11 @@ import datetime
 
 import jwt
 import paramiko
-from cryptography.exceptions import InvalidSignature
+from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
 from zimfarm_backend.common.constants import (
     JWT_SECRET,
@@ -83,3 +84,22 @@ def get_public_key_fingerprint(public_key: RSAPublicKey) -> str:
     return paramiko.RSAKey(
         key=public_key  # pyright: ignore[reportUnknownMemberType, UnknownVariableType]
     ).fingerprint
+
+
+def load_rsa_public_key(key: str) -> RSAPublicKey:
+    """Load an RSA public key from a string."""
+
+    try:
+        return load_pem_public_key(
+            bytes(key, encoding="ascii")
+        )  # pyright: ignore[reportReturnType]
+    except (ValueError, UnsupportedAlgorithm) as exc:
+        raise PEMPublicKeyLoadError("Unable to load public key") from exc
+
+
+def serialize_rsa_public_key(public_key: RSAPublicKey) -> bytes:
+    """Serialize an RSA public key to PEM format."""
+    return public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )

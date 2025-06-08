@@ -14,10 +14,11 @@ from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refres
 from zimfarm_backend.utils.token import sign_message
 
 
-def test_auth_with_credentials(client: TestClient, user: User):
+@pytest.mark.num_users(1)
+def test_auth_with_credentials(client: TestClient, users: list[User]):
     response = client.post(
         "/api/v2/auth/authorize",
-        json={"username": user.username, "password": "testpassword"},
+        json={"username": users[0].username, "password": "testpassword"},
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -34,8 +35,11 @@ def test_auth_with_credentials_invalid_credentials(client: TestClient):
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
-def test_refresh_access_token(client: TestClient, user: User, dbsession: OrmSession):
-    token = create_refresh_token(session=dbsession, user_id=user.id)
+@pytest.mark.num_users(1)
+def test_refresh_access_token(
+    client: TestClient, users: list[User], dbsession: OrmSession
+):
+    token = create_refresh_token(session=dbsession, user_id=users[0].id)
     response = client.post(
         "/api/v2/auth/refresh",
         headers={"refresh-token": str(token.token)},
@@ -55,10 +59,11 @@ def test_refresh_access_token_invalid_token(client: TestClient):
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
+@pytest.mark.num_users(1)
 def test_refresh_access_token_expired_token(
-    client: TestClient, user: User, dbsession: OrmSession
+    client: TestClient, users: list[User], dbsession: OrmSession
 ):
-    token = create_refresh_token(session=dbsession, user_id=user.id)
+    token = create_refresh_token(session=dbsession, user_id=users[0].id)
     expire_refresh_tokens(
         session=dbsession,
         expire_time=datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=1),
@@ -94,15 +99,16 @@ def test_refresh_access_token_expired_token(
         ),
     ],
 )
+@pytest.mark.num_users(1)
 def test_authenticate_user(
     client: TestClient,
-    user: User,
+    users: list[User],
     private_key: RSAPrivateKey,
     datetime_str: str,
     expected_status: int,
     expected_response_contents: list[str],
 ):
-    message = f"{user.username}:{datetime_str}"
+    message = f"{users[0].username}:{datetime_str}"
     signature = sign_message(private_key, bytes(message, encoding="ascii"))
     x_sshauth_signature = base64.b64encode(signature).decode()
     response = client.post(

@@ -4,8 +4,6 @@ from typing import Annotated, Any
 import pytz
 from pydantic import AfterValidator, BaseModel, Field, computed_field
 
-from zimfarm_backend.common.roles import get_role_for
-
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
     """Make the datetime localized so that it is serialized with a trailing 'Z'"""
@@ -15,44 +13,6 @@ def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
 
 
 MadeAwareDateTime = Annotated[datetime.datetime, AfterValidator(make_datetime_aware)]
-
-
-class UserSchema(BaseModel):
-    """
-    Schema for reading a user model
-    """
-
-    username: str
-    email: str | None
-    scope: dict[str, Any] | None = None
-
-    @computed_field
-    @property
-    def role(self) -> str:
-        if self.scope is None:
-            return "custom"
-        return get_role_for(self.scope)
-
-
-class SshKeyRead(BaseModel):
-    """
-    Schema for reading a ssh key model
-    """
-
-    added: datetime.datetime
-    fingerprint: str
-    key: str
-    name: str
-    pkcs8_key: str
-    type: str
-
-
-class UserSchemaWithSshKeys(UserSchema):
-    """
-    Schema for reading a user model with its ssh keys
-    """
-
-    ssh_keys: list[SshKeyRead]
 
 
 class ConfigResourcesSchema(BaseModel):
