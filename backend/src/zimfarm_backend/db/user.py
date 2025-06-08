@@ -52,3 +52,15 @@ def get_user_by_id(
     ) is None:
         raise RecordDoesNotExistError(f"User with id {user_id} does not exist")
     return user
+
+
+def check_user_permission(
+    user: User,
+    *,
+    namespace: str,
+    name: str,
+) -> bool:
+    """Check if a user has a permission for a given namespace and name"""
+    if user.scope is None:
+        return False
+    return user.scope.get(namespace, {}).get(name, False)
