@@ -13,7 +13,6 @@ from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     LimitFieldMax500,
     NotEmptyString,
-    PriorityField,
     ScheduleNameField,
     SkipField,
     WorkerField,
@@ -42,39 +41,12 @@ class SkipLimitSchema(BaseModel):
     limit: LimitFieldMax200
 
 
-# requested-tasks
-class RequestedTaskSchema(BaseModel):
-    skip: SkipField
-    limit: LimitFieldMax200
-
-    worker: WorkerField
-    priority: PriorityField
-    schedule_name: list[ScheduleNameField] | None = None
-
-    matching_cpu: ZIMCPU | None = None
-    matching_memory: ZIMMemory | None = None
-    matching_disk: ZIMDisk | None = None
-    matching_offliners: list[Offliner] | None = None
-
-
 # requested-tasks for worker
 class WorkerRequestedTaskSchema(BaseModel):
     worker: WorkerField
     avail_cpu: ZIMCPU
     avail_memory: ZIMMemory
     avail_disk: ZIMDisk
-
-
-# requested-tasks POST
-class NewRequestedTaskSchema(BaseModel):
-    schedule_names: list[ScheduleNameField]
-    priority: PriorityField
-    worker: WorkerField
-
-
-# requested-tasks PATCH
-class UpdateRequestedTaskSchema(BaseModel):
-    priority: PriorityField
 
 
 # schedule GET

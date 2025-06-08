@@ -16,9 +16,9 @@ from zimfarm_backend.common.constants import INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.external import advertise_book_to_cms
 from zimfarm_backend.common.notifications import handle_notification
-from zimfarm_backend.errors.http import TaskNotFound, WorkerNotFound
 from zimfarm_backend.utils.check import cleanup_value
-from zimfarm_backend.utils.scheduling import update_schedule_duration
+
+# from zimfarm_backend.utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
 
