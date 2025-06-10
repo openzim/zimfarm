@@ -1,10 +1,3 @@
-from routes import API_PATH
-from routes.base import BaseBlueprint
-from routes.platforms.platform import platformsRoute
+from zimfarm_backend.routes.platforms.logic import router
 
-
-class Blueprint(BaseBlueprint):
-    def __init__(self):
-        super().__init__("platforms", __name__, url_prefix=f"{API_PATH}/platforms")
-
-        self.register_route(platformsRoute())
+__all__ = ["router"]
