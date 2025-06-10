@@ -41,6 +41,7 @@ import subprocess
 import sys
 import time
 import traceback
+from http import HTTPStatus
 
 import humanfriendly
 import jwt
@@ -76,6 +77,9 @@ logger = logging.getLogger("watcher")
 # disable boto3's verbose logging
 for logger_name in set(["urllib3", "boto3", "botocore", "s3transfer"]):
     logging.getLogger(logger_name).setLevel(logging.WARNING)
+
+HTTP_REQUEST_TIMEOUT = 30
+SUMMARY_FILENAME = "summary.json"
 
 
 def get_last_modified_for(url):
@@ -257,7 +261,7 @@ class WatcherRunner:
 
     def retrieve_most_recent_dump_identifier(self):
         """retrieve the identifier of most recent Archive.org dump available"""
-        resp = requests.get(QUERY_URL)
+        resp = requests.get(QUERY_URL, timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         doc = resp.json()
         hits = doc.get("response", {}).get("body", {}).get("hits", None)
@@ -298,7 +302,8 @@ class WatcherRunner:
 
     def retrieve_archives(self, identifier):
         resp = requests.get(
-            f"https://archive.org/download/{identifier}/{identifier}_files.xml"
+            f"https://archive.org/download/{identifier}/{identifier}_files.xml",
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
 
@@ -453,6 +458,14 @@ class WatcherRunner:
             else:
                 logger.warning(f"{prefix} couldn't schedule recipe(s)")
 
+    def retrieve_cached_summary(self):
+        resp = requests.get(self.s3_summary_file_url, timeout=HTTP_REQUEST_TIMEOUT)
+        if resp.status_code == HTTPStatus.NOT_FOUND:
+            return None
+        resp.raise_for_status()
+        summary = json.loads(resp.text)
+        return summary
+
     def check_and_go(self):
         logger.info("Getting most recent dump")
         identifier = self.retrieve_most_recent_dump_identifier()
@@ -461,6 +474,8 @@ class WatcherRunner:
         archives = self.retrieve_archives(identifier)
         logger.info(f"{len(archives)} archives found in {identifier} dump")
         logger.info("Grabbing online versions and comparing with S3…")
+
+        cached_summary = self.retrieve_cached_summary()
 
         self.archives_futures = {}  # future: key
         self.archives_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
@@ -505,6 +520,20 @@ class WatcherRunner:
                 )
             )
 
+        new_summary = {
+            "archives": [archive.split("/")[-1][:-3] for archive in archives]
+        }
+        if new_summary != cached_summary:
+            logger.info("Updating summary in S3")
+            cached_archives_fpath = pathlib.Path(SUMMARY_FILENAME)
+            cached_archives_fpath.write_text(json.dumps(new_summary, indent=True))
+            self.s3_storage.upload_file(
+                fpath=cached_archives_fpath,
+                key=SUMMARY_FILENAME,
+                meta={"lastmodified": datetime.datetime.now().isoformat()},
+            )
+            cached_archives_fpath.unlink()
+
         logger.info("Done.")
         return not result.not_done
 
@@ -513,6 +542,11 @@ class WatcherRunner:
 
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
             raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
+
+        self.s3_summary_file_url = (
+            f"https://{self.s3_storage.bucket_name}.{self.s3_storage.url.netloc}/"
+            f"{SUMMARY_FILENAME}"
+        )
 
         if not self.zimfarm_credentials_ok():
             raise ValueError("Unable to connect to Zimfarm. Check credentials.")
