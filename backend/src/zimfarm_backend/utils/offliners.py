@@ -1,44 +1,45 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-import collections
 import pathlib
+from typing import Any, NamedTuple
 
-# from common.constants import DISALLOW_CAPABILITIES
-from typing import List
+from zimfarm_backend.common import constants
+from zimfarm_backend.common.enums import Offliner
 
-from common import constants
-from common.enum import Offliner
 
-od = collections.namedtuple("OfflinerDef", ["cmd", "std_output", "std_stats"])
-OFFLINER_DEFS = {
-    Offliner.freecodecamp: od("fcc2zim", True, False),
-    Offliner.gutenberg: od("gutenberg2zim", False, False),
-    Offliner.sotoki: od("sotoki", True, True),
-    Offliner.wikihow: od("wikihow2zim", True, True),
-    Offliner.ifixit: od("ifixit2zim", True, True),
-    Offliner.mwoffliner: od("mwoffliner", "outputDirectory", False),
-    Offliner.youtube: od("youtube2zim", True, False),
-    Offliner.ted: od("ted2zim", True, False),
-    Offliner.openedx: od("openedx2zim", True, False),
-    Offliner.nautilus: od("nautiluszim", True, False),
-    Offliner.zimit: od("zimit", True, "zimit-progress-file"),
-    Offliner.kolibri: od("kolibri2zim", True, False),
-    Offliner.devdocs: od("devdocs2zim", True, False),
-    Offliner.mindtouch: od("mindtouch2zim", True, True),
-    Offliner.phet: od("phet2zim", False, False),
+class OfflinerDefinition(NamedTuple):
+    cmd: str
+    std_output: bool | str
+    std_stats: bool | str
+
+
+OFFLINER_DEFS: dict[Offliner, OfflinerDefinition] = {
+    Offliner.freecodecamp: OfflinerDefinition("fcc2zim", True, False),
+    Offliner.gutenberg: OfflinerDefinition("gutenberg2zim", False, False),
+    Offliner.sotoki: OfflinerDefinition("sotoki", True, True),
+    Offliner.wikihow: OfflinerDefinition("wikihow2zim", True, True),
+    Offliner.ifixit: OfflinerDefinition("ifixit2zim", True, True),
+    Offliner.mwoffliner: OfflinerDefinition("mwoffliner", "outputDirectory", False),
+    Offliner.youtube: OfflinerDefinition("youtube2zim", True, False),
+    Offliner.ted: OfflinerDefinition("ted2zim", True, False),
+    Offliner.openedx: OfflinerDefinition("openedx2zim", True, False),
+    Offliner.nautilus: OfflinerDefinition("nautiluszim", True, False),
+    Offliner.zimit: OfflinerDefinition("zimit", True, "zimit-progress-file"),
+    Offliner.kolibri: OfflinerDefinition("kolibri2zim", True, False),
+    Offliner.devdocs: OfflinerDefinition("devdocs2zim", True, False),
+    Offliner.mindtouch: OfflinerDefinition("mindtouch2zim", True, True),
+    Offliner.phet: OfflinerDefinition("phet2zim", False, False),
 }
 
 
-def mount_point_for(offliner):
+def mount_point_for(offliner: Offliner):
     """Path to mount task volume in scraper"""
     if offliner == Offliner.phet:
         return pathlib.Path("/phet/dist")
     return pathlib.Path("/output")
 
 
-def command_for(offliner, flags, mount_point):
+def command_for(
+    offliner: Offliner, flags: dict[str, Any], mount_point: pathlib.Path | str
+) -> list[str]:
     """command:list to be passed to docker run
 
     for an offliner,  flags:dict and a mount_point:Path (task volume)"""
@@ -84,10 +85,10 @@ def command_for(offliner, flags, mount_point):
 
     _command_for_set_default_publisher(flags, offliner)
 
-    return [cmd] + compute_flags(flags)
+    return [cmd, *compute_flags(flags)]
 
 
-def _command_for_set_default_publisher(flags, offliner):
+def _command_for_set_default_publisher(flags: dict[str, Any], offliner: Offliner):
     """Set a default publisher in the command
 
     The "publisher" flag is set if a default is provided in the local environment and
@@ -104,24 +105,26 @@ def _command_for_set_default_publisher(flags, offliner):
         flags["publisher"] = constants.DEFAULT_PUBLISHER
 
 
-def docker_config_for(offliner):
+def docker_config_for(offliner: Offliner):
     # Note: in docker, --shm-size sets the size of /dev/shm
     # it is taken out of --memory (if set)
-    extra_config = {}
+    extra_config: dict[str, Any] = {}
     if offliner == Offliner.zimit:
         extra_config.update({"shm": 2**30})
     return extra_config
 
 
-def simplified(value):
+def simplified(value: Any) -> str:
     if (isinstance(value, float) and value.is_integer()) or str(value).isdigit():
         return str(int(value))
-    return value
+    return str(value)
 
 
-def compute_flags(flags, use_equals=True):
+def compute_flags(
+    flags: dict[str, str | bool | list[str]], *, use_equals: bool = True
+) -> list[str]:
     """flat list of params from dict of flags"""
-    params: List[str] = []
+    params: list[str] = []
     for key, value in flags.items():
         if value is True:
             params.append(f"--{key}")
@@ -135,16 +138,15 @@ def compute_flags(flags, use_equals=True):
                 else:
                     params.append(f"--{key}")
                     params.append(f"{simplified(item)}")
+        elif use_equals:
+            params.append(f'--{key}="{simplified(value)}"')
         else:
-            if use_equals:
-                params.append(f'--{key}="{simplified(value)}"')
-            else:
-                params.append(f"--{key}")
-                params.append(f"{simplified(value)}")
+            params.append(f"--{key}")
+            params.append(f"{simplified(value)}")
     return params
 
 
-def expanded_config(config):
+def expanded_config(config: dict[str, Any]) -> dict[str, Any]:
     # update image name with registry if required
     config["image"]["name"] = Offliner.get_image_name(config["task_name"])
 
@@ -159,7 +161,9 @@ def expanded_config(config):
     # offliners can specify additional docker options (capabilities)
     docker_options = docker_config_for(config["task_name"])
 
-    def get_shm(offliner_shm=None, config_shm=None):
+    def get_shm(
+        offliner_shm: int | None = None, config_shm: int | None = None
+    ) -> int | None:
         # use largest of /dev/shm specified (in config vs in offliner rule)
         if offliner_shm and config_shm:
             dev_shm = max([offliner_shm, config_shm])
@@ -184,6 +188,6 @@ def expanded_config(config):
     return config
 
 
-def build_str_command(args: List[str]):
+def build_str_command(args: list[str]) -> str:
     """string version of the command to be run by the worker"""
     return " ".join(args)

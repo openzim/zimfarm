@@ -11,7 +11,6 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     false,
-    select,
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INET, JSON, JSONB
@@ -20,10 +19,8 @@ from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
     MappedAsDataclass,
-    Session,
     mapped_column,
     relationship,
-    selectinload,
 )
 from sqlalchemy.sql.schema import MetaData
 
@@ -101,30 +98,6 @@ class User(Base):
             *exception_args,
         )
 
-    @classmethod
-    def get(
-        cls,
-        session: Session,
-        username: str,
-        exception_class: type[Exception] = Exception,
-        *exception_args: object,
-        fetch_ssh_keys: bool = False,
-        run_checks: bool = True,
-    ) -> Optional["User"]:
-        """Search DB for a user by username
-
-        If the check of the user is not ok, raises the exception passed in
-        parameters.
-        SSH keys may be fetched from DB in the same call with `fetch_ssh_keys`
-        """
-        stmt = select(User).where(User.username == username)
-        if fetch_ssh_keys:
-            stmt = stmt.options(selectinload(User.ssh_keys))
-        user = session.execute(stmt).scalar_one_or_none()
-        if run_checks:
-            cls.check(user, exception_class, *exception_args)
-        return user
-
 
 class Sshkey(Base):
     __tablename__ = "sshkey"
@@ -184,31 +157,6 @@ class Worker(Base):
         back_populates="worker", cascade="all", init=False
     )
 
-    @classmethod
-    def get(
-        cls,
-        session: Session,
-        name: str,
-        exception_class: type[Exception] = Exception,
-        *exception_args: object,
-        run_checks: bool = True,
-    ) -> Optional["Worker"]:
-        """Search DB for a worker by name
-
-        If the check of the worker are ok, raise thes exception passed
-        in parameters
-        """
-        stmt = select(Worker).where(Worker.name == name)
-        task = session.execute(stmt).scalar_one_or_none()
-        if run_checks:
-            raise_if_none(task, exception_class, *exception_args)
-            raise_if(
-                task.deleted,  # pyright: ignore[reportOptionalMemberAccess]
-                exception_class,
-                *exception_args,
-            )
-        return task
-
 
 class Task(Base):
     __tablename__ = "task"
@@ -235,33 +183,13 @@ class Task(Base):
         ForeignKey("schedule.id"), init=False
     )
 
-    schedule: Mapped["Schedule"] = relationship(
+    schedule: Mapped["Schedule | None"] = relationship(
         back_populates="tasks", init=False, foreign_keys=[schedule_id]
     )
 
     worker_id: Mapped[UUID] = mapped_column(ForeignKey("worker.id"), init=False)
 
     worker: Mapped["Worker"] = relationship(back_populates="tasks", init=False)
-
-    @classmethod
-    def get(
-        cls,
-        session: Session,
-        id: UUID,  # noqa: A002
-        exception_class: type[Exception] = Exception,
-        *exception_args: object,
-    ) -> "Task":
-        """Search DB for a task by UUID
-
-        If the check of the task is not ok, raise thes exception passed in parameters"""
-        stmt = select(Task).where(Task.id == id)
-        task = session.execute(stmt).scalar_one_or_none()
-        raise_if_none(
-            task,
-            exception_class,
-            *exception_args,
-        )
-        return task  # pyright: ignore[reportReturnType]
 
 
 class Schedule(Base):
@@ -308,25 +236,6 @@ class Schedule(Base):
         back_populates="schedule", cascade="all", init=False
     )
 
-    @classmethod
-    def get(
-        cls,
-        session: Session,
-        name: str,
-        exception_class: type[Exception] = Exception,
-        *exception_args: object,
-        run_checks: bool = True,
-    ) -> Optional["Schedule"]:
-        """Search DB for a schedule by name
-
-        If the check of the schedule is not ok, raise thes exception passed in
-        parameters"""
-        stmt = select(Schedule).where(Schedule.name == name)
-        schedule = session.execute(stmt).scalar_one_or_none()
-        if run_checks:
-            raise_if_none(schedule, exception_class, *exception_args)
-        return schedule
-
 
 class ScheduleDuration(Base):
     __tablename__ = "schedule_duration"
@@ -369,34 +278,12 @@ class RequestedTask(Base):
         ForeignKey("schedule.id"), init=False
     )
 
-    schedule: Mapped["Schedule"] = relationship(
+    schedule: Mapped["Schedule | None"] = relationship(
         back_populates="requested_tasks", init=False
     )
 
     worker_id: Mapped[UUID | None] = mapped_column(ForeignKey("worker.id"), init=False)
 
-    worker: Mapped[Optional["Worker"]] = relationship(
+    worker: Mapped["Worker | None"] = relationship(
         back_populates="requested_tasks", init=False
     )
-
-    @classmethod
-    def get(
-        cls,
-        session: Session,
-        id: UUID,  # noqa: A002
-        exception_class: type[Exception] = Exception,
-        *exception_args: object,
-    ) -> "RequestedTask":
-        """Search DB for a requested task by UUID
-
-        If the check of the requested task is not ok, raise thes exception passed
-        in parameters
-        """
-        stmt = select(RequestedTask).where(RequestedTask.id == id)
-        task = session.execute(stmt).scalar_one_or_none()
-        raise_if_none(
-            task,
-            exception_class,
-            *exception_args,
-        )
-        return task  # pyright: ignore[reportReturnType]

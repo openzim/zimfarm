@@ -1,15 +1,21 @@
 import logging
-from typing import Any, Dict, List
-from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
+from typing import Any, cast
+from urllib.parse import SplitResult, parse_qs, urlencode, urlsplit, urlunsplit
 
-from common.constants import SECRET_REPLACEMENT
-from common.schemas.models import ScheduleConfigSchema
-from utils.offliners import build_str_command
+from zimfarm_backend.common.constants import SECRET_REPLACEMENT
+from zimfarm_backend.common.schemas.fields import (
+    AnyUrl,
+    OptionalSecretStr,
+    S3OptimizationCache,
+    SecretStr,
+)
+from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.utils.offliners import build_str_command
 
 logger = logging.getLogger(__name__)
 
 
-def has_dict_sub_key(data: Dict[str, Any], keys: List[str]):
+def has_dict_sub_key(data: dict[str, Any], keys: list[str]):
     """check if dictionnary has the list of sub-keys present
 
     Very permisive in terms of dict structure, i.e. any key in the path might be either
@@ -23,24 +29,33 @@ def has_dict_sub_key(data: Dict[str, Any], keys: List[str]):
     return True
 
 
-def remove_secrets_from_response(response: dict):
+def remove_secrets_from_payload(payload: dict[str, Any]):
     """replaces or removes (in-place) all occurences of secrets"""
-    remove_secret_flags(response)
-    remove_url_secrets(response)
+    remove_secret_flags(payload)
+    remove_url_secrets(payload)
 
 
-def remove_secret_flags(response: dict):
+def remove_secret_flags(response: dict[str, Any]):
     """replaces (in-place) all occurences of secret flags with stars"""
 
     # we need flags to retrieve the secret value and replace it where we find it
     # in commands
-    if "config" not in response or "flags" not in response["config"]:
+    if "config" not in response or "offliner" not in response["config"]:
         return
 
-    schema = ScheduleConfigSchema.get_offliner_schema(
-        response["config"]["task_name"]
-    )().to_desc()
-    fields = [field["data_key"] for field in schema if field.get("secret", False)]
+    schema = ScheduleConfigSchema.get_offliner_schema(response["config"]["task_name"])
+    fields = [
+        field.alias
+        for field in schema.model_fields.values()
+        if field.alias
+        and field.annotation
+        in (
+            AnyUrl,
+            OptionalSecretStr,
+            SecretStr,
+            S3OptimizationCache,
+        )
+    ]
 
     flags = response["config"]["flags"]
 
@@ -74,7 +89,7 @@ def remove_secret_flags(response: dict):
 
 
 def remove_secret_flag_from_command(
-    response: dict, root_key_value: str, field_name: str, secret_value: str
+    response: dict[str, Any], root_key_value: str, field_name: str, secret_value: str
 ):
     """remove one secret flag from command (either for container or config)"""
     if not has_dict_sub_key(response, [root_key_value, "command"]):
@@ -82,19 +97,19 @@ def remove_secret_flag_from_command(
     if secret_value not in response[root_key_value]["command"]:
         return
     index = response[root_key_value]["command"].index(secret_value)
-    response[root_key_value]["command"][
-        index
-    ] = f'--{field_name}="{SECRET_REPLACEMENT}"'
+    response[root_key_value]["command"][index] = (
+        f'--{field_name}="{SECRET_REPLACEMENT}"'
+    )
 
 
-def remove_url_secrets(response: dict):
+def remove_url_secrets(response: dict[str, Any]):
     """remove secrets from any URL we might find
 
     For now we remove:
     - password if passed in the network location
     - keyId and secretAccessKey query params (probably used for S3)
     """
-    for key in response.keys():
+    for key, _ in response.items():
         if not response[key]:
             continue
         if isinstance(response[key], dict):
@@ -104,13 +119,13 @@ def remove_url_secrets(response: dict):
                 continue
             for url in [word for word in response[key].split() if "://" in word]:
                 try:
-                    urlparts = urlsplit(url)
+                    urlparts = cast(SplitResult, urlsplit(url))
                 except Exception as exc:
                     logger.warning(
                         f"Ignoring bad URL in remove_url_secrets: {url}", exc_info=exc
                     )
                     continue
-                newquery = urlencode(
+                new_query = urlencode(
                     {
                         key: (
                             value
@@ -122,15 +137,17 @@ def remove_url_secrets(response: dict):
                     },
                     doseq=True,
                 )
-                newnetloc: str | None = urlparts.netloc
-                if newnetloc and urlparts.password:
-                    newnetloc = newnetloc.replace(urlparts.password, SECRET_REPLACEMENT)
+                new_netloc: str | None = urlparts.netloc
+                if new_netloc and urlparts.password:
+                    new_netloc = new_netloc.replace(
+                        urlparts.password, SECRET_REPLACEMENT
+                    )
                 secured_url = urlunsplit(
                     (
                         urlparts.scheme,
-                        newnetloc,
+                        new_netloc,
                         urlparts.path,
-                        newquery,
+                        new_query,
                         urlparts.fragment,
                     )
                 )
