@@ -1,10 +1,16 @@
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.db.exceptions import (
+    RecordAlreadyExistsError,
+    RecordDoesNotExistError,
+)
 from zimfarm_backend.db.models import User
 
 
@@ -52,3 +58,107 @@ def get_user_by_id(
     ) is None:
         raise RecordDoesNotExistError(f"User with id {user_id} does not exist")
     return user
+
+
+def check_user_permission(
+    user: User,
+    *,
+    namespace: str,
+    name: str,
+) -> bool:
+    """Check if a user has a permission for a given namespace and name"""
+    if user.scope is None:
+        return False
+    return user.scope.get(namespace, {}).get(name, False)
+
+
+def update_user_password(
+    session: OrmSession,
+    *,
+    user_id: UUID,
+    password_hash: str,
+) -> None:
+    """Update a user's password"""
+    session.execute(
+        update(User).where(User.id == user_id).values(password_hash=password_hash)
+    )
+
+
+class UserList(BaseModel):
+    nb_records: int
+    users: list[User]
+
+
+def get_users(
+    session: OrmSession,
+    *,
+    skip: int,
+    limit: int,
+) -> UserList:
+    """Get a list of users"""
+    query = (
+        select(
+            func.count().over().label("nb_records"),
+            User,
+        )
+        .where(User.deleted.is_(False))
+        .offset(skip)
+        .limit(limit)
+    )
+
+    results = UserList(nb_records=0, users=[])
+    for nb_records, user in session.execute(query).all():
+        results.nb_records = nb_records
+        results.users.append(user)
+    return results
+
+
+def create_user(
+    session: OrmSession,
+    *,
+    username: str,
+    email: str,
+    password_hash: str,
+    scope: dict[str, Any],
+) -> User:
+    """Create a new user"""
+    user = User(
+        username=username,
+        email=email,
+        password_hash=password_hash,
+        scope=scope,
+        deleted=False,
+    )
+    session.add(user)
+    try:
+        session.flush()
+    except IntegrityError as exc:
+        raise RecordAlreadyExistsError("User already exists") from exc
+    return user
+
+
+def update_user(
+    session: OrmSession,
+    *,
+    user_id: UUID,
+    email: str | None,
+    scope: dict[str, Any] | None,
+) -> None:
+    """Update a user"""
+    values = {}
+    if email is not None:
+        values["email"] = email
+    if scope is not None:
+        values["scope"] = scope
+    if not values:
+        return
+    session.execute(update(User).where(User.id == user_id).values(**values))
+
+
+def delete_user(
+    session: OrmSession,
+    *,
+    user_id: UUID,
+) -> None:
+    """Delete a user"""
+    session.execute(update(User).where(User.id == user_id).values(deleted=True))

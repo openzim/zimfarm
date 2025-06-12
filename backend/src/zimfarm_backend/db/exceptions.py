@@ -3,3 +3,10 @@ class RecordDoesNotExistError(Exception):
 
     def __init__(self, message: str, *args: object) -> None:
         super().__init__(message, *args)
+
+
+class RecordAlreadyExistsError(Exception):
+    """Raised when a record already exists in the database"""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args)

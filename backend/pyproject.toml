@@ -54,6 +54,7 @@ test = [
     "pytest == 8.3.5",
     "pytest-asyncio == 0.26.0",
     "pytest-env == 1.1.5",
+    "Faker==37.3.0",
 ]
 dev = [
     "pre-commit == 4.2.0",
@@ -220,6 +221,11 @@ ban-relative-imports = "all"
 minversion = "8.3.5"
 testpaths = ["tests"]
 pythonpath = [".", "src"]
+addopts = "--strict-markers"
+markers = [
+    "num_users(num=10, *, permission=...): create num users in the database with permission (default: ADMIN)",
+]
+
 
 [tool.coverage.paths]
 zimfarm_backend = ["src/zimfarm_backend"]

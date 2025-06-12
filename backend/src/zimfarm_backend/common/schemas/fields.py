@@ -106,7 +106,7 @@ ZIMDisk = Annotated[int, Field(gt=0)]
 
 type OptionalZIMDisk = ZIMDisk | None
 
-SkipField = Annotated[int, Field(default=1, gt=0)]
+SkipField = Annotated[int, Field(default=0, ge=0)]
 
 type OptionalSkipField = SkipField | None
 

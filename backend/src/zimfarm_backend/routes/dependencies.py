@@ -51,4 +51,8 @@ def get_current_user(
         db_user = get_user_by_id(session, user_id=claims.subject)
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
+
+    if db_user.deleted:
+        raise UnauthorizedError()
+
     return db_user
