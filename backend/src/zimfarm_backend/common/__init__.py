@@ -7,7 +7,7 @@ import pytz
 
 def getnow():
     """naive UTC now"""
-    return datetime.datetime.now(datetime.UTC)
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
 
 def to_naive_utc(timestamp_or_iso: datetime.datetime | int | str) -> datetime.datetime:

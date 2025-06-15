@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, AnyUrl, Field, SecretStr
+from pydantic import AfterValidator, AnyUrl, Field, SecretStr, WrapSerializer
+from pydantic_core.core_schema import SerializationInfo
 
 
 def no_null_char(value: str) -> str:
@@ -33,7 +34,19 @@ NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 
 type OptionalNotEmptyString = NotEmptyString | None
 
-type OptionalSecretStr = SecretStr | None
+
+def show_secrets(value: Any, handler: Any, info: SerializationInfo) -> Any:
+    """Show secret values in serialization"""
+    context = info.context
+    if context and context.get("show_secrets"):
+        if isinstance(value, SecretStr):
+            return value.get_secret_value()
+    return handler(value, info)
+
+
+ZIMSecretStr = Annotated[SecretStr, WrapSerializer(show_secrets)]
+
+type OptionalZIMSecretStr = ZIMSecretStr | None
 
 Percentage = Annotated[int, Field(gt=0, le=100)]
 
@@ -41,14 +54,16 @@ Percentage = Annotated[int, Field(gt=0, le=100)]
 type OptionalPercentage = Percentage | None
 
 
-def validate_optimization_cache(v: SecretStr | str) -> SecretStr:
+def validate_optimization_cache(v: ZIMSecretStr | str) -> ZIMSecretStr:
     url = v.get_secret_value() if isinstance(v, SecretStr) else v
     AnyUrl(url)
 
     return SecretStr(url)
 
 
-S3OptimizationCache = Annotated[SecretStr, AfterValidator(validate_optimization_cache)]
+S3OptimizationCache = Annotated[
+    ZIMSecretStr, AfterValidator(validate_optimization_cache)
+]
 
 type OptionalS3OptimizationCache = S3OptimizationCache | None
 

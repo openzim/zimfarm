@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import AnyUrl, EmailStr, Field, SecretStr
+from pydantic import AnyUrl, EmailStr, Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -13,6 +13,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    ZIMSecretStr,
 )
 
 
@@ -34,7 +35,7 @@ class OpenedxFlagsSchema(DashModel):
         description="The registered e-mail ID on the openedx instance",
     )
 
-    password: SecretStr = Field(
+    password: ZIMSecretStr = Field(
         title="Password",
         description="Password to the account registered on the openedx instance",
     )

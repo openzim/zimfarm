@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field, SecretStr
+from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -14,6 +14,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
+    ZIMSecretStr,
 )
 
 
@@ -25,7 +26,7 @@ class YoutubeFlagsSchema(DashModel):
         description="Technical Flag: S3 Storage URL including credentials and bucket",
     )
 
-    api_key: SecretStr = Field(
+    api_key: ZIMSecretStr = Field(
         title="API Key",
         description="Technical flag: Youtube API Token",
     )

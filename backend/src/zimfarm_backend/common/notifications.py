@@ -13,7 +13,6 @@ import sqlalchemy.orm as so
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import ValidationError
 
-import zimfarm_backend.db.models as dbm
 from zimfarm_backend.common.constants import (
     PUBLIC_URL,
     REQ_TIMEOUT_NOTIFICATIONS,
@@ -33,7 +32,10 @@ from zimfarm_backend.common.schemas.orms import (
     RequestedTaskFullSchema,
     ScheduleAwareTaskFullSchema,
 )
-from zimfarm_backend.errors.http import RequestedTaskNotFound, TaskNotFound
+from zimfarm_backend.db.models import Task
+from zimfarm_backend.db.requested_task import (
+    get_requested_task_by_id_or_none,
+)
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -43,7 +45,8 @@ jinja_env = Environment(
 jinja_env.filters["short_id"] = lambda value: str(value)[:5]
 jinja_env.filters["format_size"] = (
     lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
-        value, binary=True
+        value,  # pyright: ignore[reportArgumentType]
+        binary=True,
     )
 )
 
@@ -171,9 +174,9 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
         return
 
     if event == "requested":
-        task = dbm.RequestedTask.get(session, task_id, RequestedTaskNotFound)
+        task = get_requested_task_by_id_or_none(session, task_id)
     else:
-        task = dbm.Task.get(session, task_id, TaskNotFound)
+        task = session.get(Task, task_id)
     if not task:
         return
 

@@ -1,8 +1,14 @@
 import datetime
+from ipaddress import IPv4Address
 from typing import Annotated, Any
+from uuid import UUID
 
 import pytz
-from pydantic import AfterValidator, BaseModel, Field, computed_field
+from pydantic import AfterValidator, Field, computed_field
+
+from zimfarm_backend.common.enums import Offliner
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.models import ExpandedScheduleConfigSchema
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -33,30 +39,37 @@ class ConfigWithOnlyResourcesSchema(BaseModel):
     resources: ConfigResourcesSchema
 
 
-class ConfigWithOnlyTaskNameAndResourcesSchema(ConfigWithOnlyResourcesSchema):
+class ConfigWithOnlyOfflinerAndResourcesSchema(ConfigWithOnlyResourcesSchema):
     """
-    Schema for reading a config model with only its task name and resources
+    Schema for reading a config model with only its offliner and resources
     """
 
-    task_name: str
+    offliner: str
 
 
-class TaskLightSchema(BaseModel):
+class BaseTaskSchema(BaseModel):
     """
     Schema for reading a task model with some fields
     """
 
-    id: str = Field(alias="_id")
+    id: UUID
     status: str
     timestamp: dict[str, Any]
     schedule_name: str
     worker_name: str = Field(alias="worker")
     updated_at: datetime.datetime
-    config: ConfigWithOnlyResourcesSchema
     original_schedule_name: str
 
 
-class TaskFullSchema(TaskLightSchema):
+class TaskLightSchema(BaseTaskSchema):
+    """
+    Schema for reading a task model with some fields
+    """
+
+    config: ConfigWithOnlyResourcesSchema
+
+
+class TaskFullSchema(BaseTaskSchema):
     """
     Schema for reading a task model with all fields
     """
@@ -88,14 +101,9 @@ class ScheduleAwareTaskFullSchema(TaskFullSchema):
     schedule: NameOnlySchema
 
 
-class RequestedTaskLightSchema(BaseModel):
-    """
-    Schema for reading a requested task model with some fields
-    """
-
-    id: str = Field(alias="_id")
+class BaseRequestedTaskSchema(BaseModel):
+    id: UUID
     status: str
-    config: ConfigWithOnlyTaskNameAndResourcesSchema
     timestamp: dict[str, Any]
     requested_by: str
     priority: int
@@ -104,15 +112,24 @@ class RequestedTaskLightSchema(BaseModel):
     worker: NameOnlySchema
 
 
-class RequestedTaskFullSchema(RequestedTaskLightSchema):
+class RequestedTaskLightSchema(BaseRequestedTaskSchema):
+    """
+    Schema for reading a requested task model with some fields
+    """
+
+    config: ConfigWithOnlyOfflinerAndResourcesSchema
+
+
+class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     """
     Schema for reading a requested task model with all fields
     """
 
+    config: ExpandedScheduleConfigSchema
     events: list[dict[str, Any]]
     upload: dict[str, Any]
     notification: dict[str, Any]
-    rank: int
+    rank: int | None = None
     schedule: NameOnlySchema
 
 
@@ -121,17 +138,17 @@ class MostRecentTaskSchema(BaseModel):
     Schema for reading a most recent task model with some fields
     """
 
-    id: str = Field(alias="_id")
+    id: UUID
     status: str
-    updated_at = MadeAwareDateTime
+    updated_at: MadeAwareDateTime
 
 
-class ConfigTaskOnlySchema(BaseModel):
+class ConfigOfflinerOnlySchema(BaseModel):
     """
-    Schema for reading a config model with only its task name
+    Schema for reading a config model with only its offliner
     """
 
-    task_name: str
+    offliner: str
 
 
 class LanguageSchema(BaseModel):
@@ -152,7 +169,7 @@ class ScheduleLightSchema(BaseModel):
     name: str
     category: str
     most_recent_task: MostRecentTaskSchema
-    config: ConfigTaskOnlySchema
+    config: ConfigOfflinerOnlySchema
     language: LanguageSchema
     enabled: bool
     count_requested_task: int
@@ -226,3 +243,20 @@ class ScheduleFullSchema(BaseModel):
                     )
                 )
         return duration_res
+
+
+class Worker(BaseModel):
+    """
+    Schema for reading a worker model
+    """
+
+    id: UUID
+    name: str
+    offliners: list[Offliner]
+    cpu: int
+    memory: int
+    disk: int
+    last_seen: datetime.datetime | None = None
+    last_ip: IPv4Address | None = None
+    deleted: bool
+    user_id: UUID
