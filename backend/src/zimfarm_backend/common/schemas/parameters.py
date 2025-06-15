@@ -23,7 +23,6 @@ from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     EventNotificationSchema,
     LanguageSchema,
-    PlatformsLimitSchema,
     ResourcesSchema,
     WarehousePath,
 )
@@ -99,14 +98,3 @@ class TaskCreateSchema(BaseModel):
 class TasKUpdateSchema(BaseModel):
     event: EventNotificationSchema
     payload: dict[str, Any]
-
-
-# workers checkin
-class WorkerCheckInSchema(BaseModel):
-    username: NotEmptyString
-    selfish: bool | None = None
-    cpu: ZIMCPU
-    memory: ZIMMemory
-    disk: ZIMDisk
-    offliners: list[Offliner]
-    platforms: PlatformsLimitSchema

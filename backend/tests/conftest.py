@@ -1,6 +1,7 @@
 import base64
 import datetime
 from collections.abc import Callable, Generator
+from ipaddress import IPv4Address
 from typing import Any, cast
 
 import paramiko
@@ -22,7 +23,9 @@ from zimfarm_backend.common.schemas.models import (
     DockerImageName,
     DockerImageSchema,
     LanguageSchema,
+    PlaftormLimitSchema,
     Platform,
+    PlatformsLimitSchema,
     ResourcesSchema,
     ScheduleConfigSchema,
 )
@@ -38,8 +41,8 @@ from zimfarm_backend.db.models import (
     Worker,
 )
 from zimfarm_backend.db.schedule import get_schedule_or_none
-from zimfarm_backend.utils.token import generate_access_token, sign_message
 from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.token import generate_access_token, sign_message
 
 
 @pytest.fixture
@@ -185,23 +188,58 @@ def user(create_user: Callable[..., User]):
 
 
 @pytest.fixture
-def worker(dbsession: OrmSession, user: User) -> Worker:
+def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
+    def _create_worker(
+        *,
+        name: str = "testworker",
+        cpu: int = 2,
+        memory: int = 1024,
+        disk: int = 1024,
+        offliners: list[str] | None = None,
+        platforms: PlatformsLimitSchema | None = None,
+        last_seen: datetime.datetime | None = None,
+        last_ip: IPv4Address | None = None,
+        deleted: bool = False,
+    ) -> Worker:
+        _platforms = platforms or PlatformsLimitSchema(
+            limits=[
+                PlaftormLimitSchema(
+                    platform=Platform.wikimedia,
+                    limit=100,
+                ),
+                PlaftormLimitSchema(
+                    platform=Platform.youtube,
+                    limit=100,
+                ),
+            ]
+        )
+
+        _ip = last_ip or IPv4Address("127.0.0.1")
+
+        worker = Worker(
+            name=name,
+            selfish=False,
+            cpu=cpu,
+            memory=memory,
+            disk=disk,
+            offliners=offliners or ["mwoffliner", "youtube"],
+            platforms=_platforms.model_dump(mode="json"),
+            last_seen=last_seen or getnow(),
+            last_ip=_ip,
+            deleted=deleted,
+        )
+        worker.user_id = user.id
+        dbsession.add(worker)
+        dbsession.flush()
+        return worker
+
+    return _create_worker
+
+
+@pytest.fixture
+def worker(create_worker: Callable[..., Worker]) -> Worker:
     """Create a worker for testing"""
-    worker = Worker(
-        name="testworker",
-        selfish=False,
-        cpu=2,
-        memory=1024,
-        disk=1024,
-        offliners=["mwoffliner", "youtube"],
-        platforms={},
-        last_seen=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
-        last_ip=None,
-    )
-    worker.user_id = user.id
-    dbsession.add(worker)
-    dbsession.flush()
-    return worker
+    return create_worker()
 
 
 @pytest.fixture
