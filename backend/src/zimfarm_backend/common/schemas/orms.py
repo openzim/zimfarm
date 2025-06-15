@@ -6,6 +6,7 @@ from uuid import UUID
 import pytz
 from pydantic import AfterValidator, Field, computed_field
 
+from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import ExpandedScheduleConfigSchema
@@ -260,3 +261,25 @@ class Worker(BaseModel):
     last_ip: IPv4Address | None = None
     deleted: bool
     user_id: UUID
+
+
+class WorkerLightSchema(BaseModel):
+    """
+    Schema for reading a worker model with some fields
+    """
+
+    last_seen: datetime.datetime
+    name: str
+    last_ip: IPv4Address | None
+    resources: ConfigResourcesSchema
+    username: str
+    offliners: list[str]
+
+    @computed_field
+    @property
+    def status(self) -> str:
+        if (
+            datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - self.last_seen
+        ).total_seconds() < WORKER_OFFLINE_DELAY_DURATION:
+            return "online"
+        return "offline"
