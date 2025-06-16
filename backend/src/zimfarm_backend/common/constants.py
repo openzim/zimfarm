@@ -145,3 +145,7 @@ ZIMIT_USE_RELAXED_SCHEMA = bool(getenv("ZIMIT_USE_RELAXED_SCHEMA", default=False
 NAUTILUS_USE_RELAXED_SCHEMA = bool(getenv("NAUTILUS_USE_RELAXED_SCHEMA", default=False))
 
 POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)
+
+WORKER_OFFLINE_DELAY_DURATION = parse_timespan(
+    getenv("WORKER_OFFLINE_DELAY_DURATION", default="20m")
+)
