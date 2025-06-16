@@ -54,3 +54,17 @@ class ServerError(HTTPException):
         super().__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message
         )
+
+
+class ServiceUnavailableError(HTTPException):
+    def __init__(self, message: Any = None) -> None:
+        if message is None:
+            message = (
+                "The server is temporarily unable to service your request "
+                "due to maintenance downtime or capacity problems. "
+                "Please try again later."
+            )
+        super().__init__(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=message,
+        )

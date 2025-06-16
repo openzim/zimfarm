@@ -9,10 +9,10 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalS3OptimizationCache,
-    OptionalSecretStr,
     OptionalZIMDescription,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
+    OptionalZIMSecretStr,
     OptionalZIMTitle,
 )
 
@@ -165,7 +165,7 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Username",
         description="Mediawiki username (for private wikis)",
     )
-    mwPassword: OptionalSecretStr = OptionalField(
+    mwPassword: OptionalZIMSecretStr = OptionalField(
         title="Password",
         description="Mediawiki user password (for private wikis)",
     )
