@@ -56,6 +56,16 @@ class ServerError(HTTPException):
         )
 
 
+class ConflictError(HTTPException):
+    def __init__(self, message: Any = None) -> None:
+        if message is None:
+            message = (
+                "The request could not be completed due to a conflict with "
+                "the current state of the resource."
+            )
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=message)
+
+
 class ServiceUnavailableError(HTTPException):
     def __init__(self, message: Any = None) -> None:
         if message is None:

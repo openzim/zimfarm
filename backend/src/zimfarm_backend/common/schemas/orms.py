@@ -57,7 +57,7 @@ class BaseTaskSchema(BaseModel):
     status: str
     timestamp: dict[str, Any]
     schedule_name: str
-    worker_name: str = Field(alias="worker")
+    worker_name: str = Field(serialization_alias="worker")
     updated_at: datetime.datetime
     original_schedule_name: str
 
@@ -75,6 +75,7 @@ class TaskFullSchema(BaseTaskSchema):
     Schema for reading a task model with all fields
     """
 
+    config: ExpandedScheduleConfigSchema
     events: list[dict[str, Any]]
     debug: dict[str, Any]
     requested_by: str
@@ -111,6 +112,7 @@ class BaseRequestedTaskSchema(BaseModel):
     schedule_name: str
     original_schedule_name: str
     worker: NameOnlySchema
+    updated_at: datetime.datetime
 
 
 class RequestedTaskLightSchema(BaseRequestedTaskSchema):
@@ -132,6 +134,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     notification: dict[str, Any]
     rank: int | None = None
     schedule: NameOnlySchema
+    schedule_id: UUID | None = Field(exclude=True)
 
 
 class MostRecentTaskSchema(BaseModel):

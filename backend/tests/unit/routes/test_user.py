@@ -12,7 +12,7 @@ from zimfarm_backend.utils.token import generate_access_token
 
 def test_list_users_no_auth(client: TestClient):
     response = client.get("/api/v2/users")
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 @pytest.mark.num_users(5)
