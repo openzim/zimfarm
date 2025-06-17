@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -5,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Bundle
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import (
@@ -198,3 +200,21 @@ def create_task(
             f"Task with id {requested_task.id} already exists"
         ) from exc
     return get_task_by_id(session, requested_task.id)
+
+
+def get_oldest_task_timestamp(
+    session: OrmSession, status: TaskStatus
+) -> datetime.datetime:
+    """
+    Get the oldest task timestamp for a given status or now if no tasks with this status
+    """
+    return min(
+        [
+            getnow(),
+            *session.scalars(
+                select(
+                    Task.timestamp[status],
+                ).where(Task.status == status)
+            ).all(),
+        ]
+    )

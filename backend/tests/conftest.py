@@ -386,7 +386,7 @@ def create_requested_task(
         schedule_config: ScheduleConfigSchema | None = None,
     ):
         now = getnow()
-        events = [TaskStatus.requested, TaskStatus.reserved]
+        events = list(TaskStatus)
 
         timestamp = {event.value: request_date or now for event in events}
         events = [create_event(event.value, timestamp[event.value]) for event in events]
