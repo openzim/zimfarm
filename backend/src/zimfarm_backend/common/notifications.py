@@ -28,14 +28,10 @@ from zimfarm_backend.common.schemas.models import (
     EventNotificationSchema,
     ScheduleNotificationSchema,
 )
-from zimfarm_backend.common.schemas.orms import (
-    RequestedTaskFullSchema,
-    ScheduleAwareTaskFullSchema,
-)
-from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.requested_task import (
     get_requested_task_by_id_or_none,
 )
+from zimfarm_backend.db.tasks import get_task_by_id_or_none
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
@@ -43,11 +39,9 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml", "txt"]),
 )
 jinja_env.filters["short_id"] = lambda value: str(value)[:5]
-jinja_env.filters["format_size"] = (
-    lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
-        value,  # pyright: ignore[reportArgumentType]
-        binary=True,
-    )
+jinja_env.filters["format_size"] = lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
+    value,  # pyright: ignore[reportArgumentType]
+    binary=True,
 )
 
 
@@ -174,22 +168,14 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
         return
 
     if event == "requested":
-        task = get_requested_task_by_id_or_none(session, task_id)
+        task_safe = get_requested_task_by_id_or_none(session, task_id)
     else:
-        task = session.get(Task, task_id)
-    if not task:
+        task_safe = get_task_by_id_or_none(session, task_id)
+    if not task_safe:
         return
 
-    # serialize/unserialize task so we use a safe version from now-on
-    if event == "requested":
-        task_safe = RequestedTaskFullSchema.model_validate(task).model_dump(mode="json")
-    else:
-        task_safe = ScheduleAwareTaskFullSchema.model_validate(task).model_dump(
-            mode="json"
-        )
-
     global_notifs = GlobalNotifications.entries.get(event, {})
-    task_notifs = (task_safe.get("notification", {})).get(event, {})
+    task_notifs = task_safe.notification.get(event, {})
 
     # exit early if we don't have notification requests for the event
     if not global_notifs and not task_notifs:
@@ -202,7 +188,7 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
             "slack": handle_slack_notification,
         }.get(method)
         if func and recipients:
-            func(task_safe, recipients)
+            func(task_safe.model_dump(mode="json"), recipients)
 
 
 # fill-up GlobalNotifications from environ on module load

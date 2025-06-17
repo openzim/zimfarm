@@ -5,7 +5,6 @@ from zimfarm_backend.common.enums import (
     Platform,
     ScheduleCategory,
     SchedulePeriodicity,
-    TaskStatus,
 )
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
@@ -21,7 +20,6 @@ from zimfarm_backend.common.schemas.fields import (
 )
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
-    EventNotificationSchema,
     LanguageSchema,
     ResourcesSchema,
     WarehousePath,
@@ -79,22 +77,3 @@ class UpdateSchema(BaseModel):
 # schedule clone
 class CloneSchema(BaseModel):
     name: ScheduleNameField
-
-
-# tasks GET
-class TasksSchema(BaseModel):
-    skip: SkipField
-    limit: LimitFieldMax200
-    status: list[TaskStatus] | None = None
-    schedule_name: ScheduleNameField
-
-
-# tasks POST
-class TaskCreateSchema(BaseModel):
-    worker_name: WorkerField
-
-
-# tasks PATCH
-class TasKUpdateSchema(BaseModel):
-    event: EventNotificationSchema
-    payload: dict[str, Any]

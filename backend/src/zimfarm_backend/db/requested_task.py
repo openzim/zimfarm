@@ -191,6 +191,7 @@ def get_requested_tasks(
             RequestedTask.requested_by,
             RequestedTask.priority,
             RequestedTask.original_schedule_name,
+            RequestedTask.updated_at,
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker"),
         )
@@ -211,9 +212,7 @@ def get_requested_tasks(
             (RequestedTask.config["resources"]["disk"].astext.cast(BigInteger) <= disk),
             (RequestedTask.config["offliner"]["offliner_id"].astext.in_(offliners)),
             (Worker.name == worker_name)
-            | (
-                RequestedTask.worker is None
-            )  # pyright: ignore[reportUnnecessaryComparison]
+            | (RequestedTask.worker is None)  # pyright: ignore[reportUnnecessaryComparison]
             | (worker_name is None),
         )
         .order_by(
@@ -236,6 +235,7 @@ def get_requested_tasks(
         requested_by,
         _priority,
         original_schedule_name,
+        updated_at,
         _schedule_name,
         worker,
     ) in session.execute(query).all():
@@ -258,6 +258,7 @@ def get_requested_tasks(
                 requested_by=requested_by,
                 priority=_priority,
                 original_schedule_name=original_schedule_name,
+                updated_at=updated_at,
                 worker=NameOnlySchema(name=worker),
                 schedule_name=_schedule_name,
             )
@@ -594,6 +595,8 @@ def _create_requested_task_full_schema(
         schedule=NameOnlySchema(
             name=requested_task.schedule.name if requested_task.schedule else "none"
         ),
+        updated_at=requested_task.updated_at,
+        schedule_id=requested_task.schedule_id,
     )
 
 

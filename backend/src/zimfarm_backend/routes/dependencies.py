@@ -16,8 +16,10 @@ from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import get_user_by_id_or_none
 from zimfarm_backend.routes.http_errors import UnauthorizedError
 
-security = HTTPBearer(description="Access Token")
-AuthorizationCredentials = Annotated[HTTPAuthorizationCredentials, Depends(security)]
+security = HTTPBearer(description="Access Token", auto_error=False)
+AuthorizationCredentials = Annotated[
+    HTTPAuthorizationCredentials | None, Depends(security)
+]
 
 
 class JWTClaims(BaseModel):
@@ -33,6 +35,8 @@ def get_jwt_claims_or_none(
     """
     Get the JWT claims or None if the user is not authenticated
     """
+    if authorization is None:
+        return None
     token = authorization.credentials
     try:
         jwt_claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
@@ -49,12 +53,14 @@ def get_jwt_claims_or_none(
 
 
 def get_current_user_or_none(
-    claims: Annotated[JWTClaims, Depends(get_jwt_claims_or_none)],
+    claims: Annotated[JWTClaims | None, Depends(get_jwt_claims_or_none)],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> User | None:
     """
     Get the current user or None if the user is not authenticated
     """
+    if claims is None:
+        return None
     return get_user_by_id_or_none(session, user_id=claims.subject)
 
 

@@ -255,6 +255,7 @@ def get_requested_tasks_for_worker(
                     worker=NameOnlySchema(
                         name=task.worker_name,
                     ),
+                    updated_at=task.updated_at,
                 ),
             ]
             if task
@@ -268,7 +269,7 @@ def get_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
-    hide_secrets: Annotated[bool | None, Query()] = False,  # noqa: FBT002
+    hide_secrets: Annotated[bool | None, Query()] = True,  # noqa: FBT002
 ) -> JSONResponse:
     """Get a requested task by ID."""
     try:

@@ -37,6 +37,7 @@ from zimfarm_backend.db.models import (
     Schedule,
     ScheduleDuration,
     Sshkey,
+    Task,
     User,
     Worker,
 )
@@ -453,6 +454,51 @@ def requested_tasks(
     for _ in range(num_requested_tasks):
         tasks.append(create_requested_task(status=data_gen.task_status()))
     return tasks
+
+
+@pytest.fixture
+def create_task(
+    create_requested_task: Callable[..., RequestedTask],
+    worker: Worker,
+    dbsession: OrmSession,
+) -> Callable[..., Task]:
+    def _create_task(
+        *,
+        schedule_name: str = "testschedule",
+        status: TaskStatus = TaskStatus.requested,
+    ) -> Task:
+        requested_task = create_requested_task(
+            schedule_name=schedule_name, status=status
+        )
+        task = Task(
+            updated_at=requested_task.updated_at,
+            events=requested_task.events,
+            debug={},
+            status=requested_task.status,
+            timestamp=requested_task.timestamp,
+            requested_by=requested_task.requested_by,
+            canceled_by=None,
+            container={},
+            priority=requested_task.priority,
+            config=requested_task.config,
+            notification=requested_task.notification,
+            files={},
+            upload=requested_task.upload,
+            original_schedule_name=requested_task.original_schedule_name,
+        )
+        task.id = requested_task.id
+        task.schedule_id = requested_task.schedule_id
+        task.worker_id = worker.id
+        dbsession.add(task)
+        dbsession.flush()
+        return task
+
+    return _create_task
+
+
+@pytest.fixture
+def task(create_task: Callable[..., Task]) -> Task:
+    return create_task()
 
 
 # @pytest.fixture

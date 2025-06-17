@@ -6,7 +6,7 @@ from zimfarm_backend.routes.models import ListResponse
 router = APIRouter(prefix="/platforms", tags=["platforms"])
 
 
-@router.get("/")
+@router.get("")
 async def get_platforms():
     """Get a list of supported platforms."""
     platforms = Platform.all()

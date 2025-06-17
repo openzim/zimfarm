@@ -10,15 +10,16 @@ from uuid import UUID
 import sqlalchemy.orm as so
 from sqlalchemy.orm.attributes import flag_modified
 
-import zimfarm_backend.db.models as dbm
 from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.external import advertise_book_to_cms
 from zimfarm_backend.common.notifications import handle_notification
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
+from zimfarm_backend.db.models import Task
+from zimfarm_backend.db.schedule import update_schedule_duration
+from zimfarm_backend.db.worker import get_worker
 from zimfarm_backend.utils.check import cleanup_value
-
-# from zimfarm_backend.utils.scheduling import update_schedule_duration
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +76,11 @@ def save_event(
     timestamp: datetime.datetime,
     **kwargs: Any,
 ):
-    """save event and its accompagning data to database"""
+    """save event and its accompanying data to database"""
 
-    task = dbm.Task.get(session, task_id, TaskNotFound)
+    task = session.get(Task, task_id)
+    if task is None:
+        raise RecordDoesNotExistError(f"Task {task_id} does not exist")
     schedule = task.schedule
 
     # neither file events nor scraper_running should update timestamp list (not unique)
@@ -89,21 +92,19 @@ def save_event(
         task.updated_at = timestamp
 
     def add_to_container_if_present(
-        task: dbm.Task, kwargs_key: str, container_key: str
+        task: Task, kwargs_key: str, container_key: str
     ) -> None:
         if kwargs_key in kwargs:
             task.container[container_key] = cleanup_value(kwargs[kwargs_key])
 
-    def add_to_debug_if_present(
-        task: dbm.Task, kwargs_key: str, debug_key: str
-    ) -> None:
+    def add_to_debug_if_present(task: Task, kwargs_key: str, debug_key: str) -> None:
         if kwargs_key in kwargs:
             task.debug[debug_key] = cleanup_value(kwargs[kwargs_key])
 
     if "worker" in kwargs:
-        task.worker = dbm.Worker.get(
-            session, kwargs["worker"], WorkerNotFound
-        )  # pyright: ignore[reportAttributeAccessIssue]
+        worker = get_worker(session, worker_name=kwargs["worker"])
+        task.worker = worker
+
     if "canceled_by" in kwargs:
         task.canceled_by = kwargs["canceled_by"]
 
@@ -167,7 +168,7 @@ def save_event(
         schedule.most_recent_task = task
 
     if code == TaskStatus.scraper_completed and schedule:
-        update_schedule_duration(session, schedule)
+        update_schedule_duration(session, schedule_name=schedule.name)
 
 
 def task_requested_event_handler(
@@ -197,7 +198,6 @@ def task_started_event_handler(
     session: so.Session, task_id: UUID, payload: dict[str, Any]
 ):
     logger.info(f"Task Started: {task_id}")
-
     save_event(session, task_id, TaskStatus.started, get_timestamp_from_event(payload))
 
 
@@ -251,7 +251,9 @@ def task_canceled_event_handler(
 
     # if canceled event carries a `canceled_by` and we have none on the task
     # then store it, otherwise keep what's in the task (manual request)
-    task = dbm.Task.get(session, task_id, TaskNotFound)
+    task = session.get(Task, task_id)
+    if task is None:
+        raise RecordDoesNotExistError(f"Task {task_id} does not exist")
     kwargs = {}
     if not task.canceled_by and payload.get("canceled_by"):
         kwargs["canceled_by"] = payload.get("canceled_by")
@@ -378,7 +380,9 @@ def task_checked_file_event_handler(
     save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
 
     if INFORM_CMS:
-        task = dbm.Task.get(session, task_id, TaskNotFound)
+        task = session.get(Task, task_id)
+        if task is None:
+            raise RecordDoesNotExistError(f"Task {task_id} does not exist")
         if filename := file.get("name"):
             advertise_book_to_cms(task, filename)
 
