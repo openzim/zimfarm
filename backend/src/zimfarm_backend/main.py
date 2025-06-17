@@ -5,6 +5,7 @@ from zimfarm_backend.routes import (
     languages,
     platforms,
     requested_tasks,
+    tags,
     tasks,
     users,
     workers,
@@ -24,6 +25,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=requested_tasks.router)
     main_router.include_router(router=workers.router)
     main_router.include_router(router=tasks.router)
+    main_router.include_router(router=tags.router)
 
     app.include_router(router=main_router)
 
