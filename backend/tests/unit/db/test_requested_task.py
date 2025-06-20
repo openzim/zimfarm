@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.orms import NameOnlySchema, ScheduleDurationSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
 from zimfarm_backend.db.requested_task import (
@@ -462,32 +463,12 @@ def test_compute_requested_task_rank_with_multiple_tasks(
     assert compute_requested_task_rank(dbsession, new_task.id) == 0
 
 
-def test_get_currently_running_tasks(dbsession: OrmSession, worker: Worker):
+def test_get_currently_running_tasks(
+    dbsession: OrmSession, worker: Worker, create_task: Callable[..., Task]
+):
     """Test that get_currently_running_tasks returns correct list of tasks"""
     # Create a running task
-    task = Task(
-        status=TaskStatus.started,
-        debug={},
-        canceled_by=None,
-        container={},
-        files={},
-        timestamp={"started": getnow(), "reserved": getnow()},
-        events=[{"code": TaskStatus.started, "timestamp": getnow()}],
-        requested_by="testuser",
-        priority=0,
-        config={
-            "offliner": {"offliner_id": worker.offliners[0]},
-            "resources": {"cpu": 1, "memory": 1, "disk": 1},
-        },
-        upload={},
-        notification={},
-        updated_at=getnow(),
-        original_schedule_name="test_schedule",
-    )
-    task.worker = worker
-    dbsession.add(task)
-    dbsession.flush()
-
+    create_task(worker=worker)
     running_tasks = get_currently_running_tasks(dbsession, worker)
     assert len(running_tasks) == 1
     assert running_tasks[0].worker_name == worker.name
@@ -526,20 +507,31 @@ def test_get_tasks_doable_by_worker(
     assert doable_tasks[0].worker_name == worker.name
 
 
-def test_does_platform_allow_worker_to_run(worker: Worker):
+def test_does_platform_allow_worker_to_run(
+    worker: Worker,
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+):
     """Test to check that platform correctly validates platform constraints"""
     # Create a task with platform constraints
+    schedule_config = create_schedule_config(
+        cpu=worker.cpu, memory=worker.memory, disk=worker.disk
+    )
     task = RequestedTaskWithDuration(
         id=uuid4(),
         status=TaskStatus.requested,
-        config={"offliner": {"offliner_id": worker.offliners[0]}},
+        config=expanded_config(schedule_config),
         timestamp={"requested": getnow(), "reserved": getnow()},
         requested_by=worker.user.username,
         priority=0,
         schedule_name="test_schedule",
         original_schedule_name="test_schedule",
         worker_name=worker.name,
-        duration={"value": 3600},
+        duration=ScheduleDurationSchema(
+            value=3600,
+            on=getnow(),
+            default=True,
+            worker=NameOnlySchema(name=worker.name),
+        ),
         updated_at=getnow(),
     )
 
@@ -553,11 +545,16 @@ def test_does_platform_allow_worker_to_run(worker: Worker):
 
     # Test with platform limit reached
     running_task = RunningTask(
-        config={"offliner": {"offliner_id": worker.offliners[0]}},
+        config=expanded_config(schedule_config),
         schedule_name="test_schedule",
         timestamp={"started": getnow(), "reserved": getnow()},
         worker_name=worker.name,
-        duration={"value": 3600},
+        duration=ScheduleDurationSchema(
+            value=3600,
+            on=getnow(),
+            default=True,
+            worker=NameOnlySchema(name=worker.name),
+        ),
         remaining=1800,
         eta=getnow(),
     )

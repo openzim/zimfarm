@@ -1,0 +1,71 @@
+from typing import Any
+from uuid import UUID
+
+from pydantic import Field
+
+from zimfarm_backend.common.enums import (
+    Offliner,
+    Platform,
+    ScheduleCategory,
+    SchedulePeriodicity,
+)
+from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import (
+    LimitFieldMax200,
+    NotEmptyString,
+    ScheduleNameField,
+    SkipField,
+)
+from zimfarm_backend.common.schemas.models import (
+    DockerImageSchema,
+    LanguageSchema,
+    ResourcesSchema,
+    ScheduleConfigSchema,
+    ScheduleNotificationSchema,
+    WarehousePath,
+)
+
+
+class SchedulesGetSchema(BaseModel):
+    skip: SkipField | None = None
+    limit: LimitFieldMax200 | None = None
+    category: list[ScheduleCategory] | None = None
+    tag: list[NotEmptyString] | None = None
+    lang: list[NotEmptyString] | None = None
+    name: ScheduleNameField | None = None
+
+
+class ScheduleCreateSchema(BaseModel):
+    name: ScheduleNameField
+    language: LanguageSchema
+    category: ScheduleCategory
+    periodicity: SchedulePeriodicity
+    tags: list[NotEmptyString] = Field(default_factory=list)
+    enabled: bool
+    config: ScheduleConfigSchema
+    notification: ScheduleNotificationSchema | None = None
+
+
+class ScheduleCreateResponseSchema(BaseModel):
+    id: UUID
+
+
+class ScheduleUpdateSchema(BaseModel):
+    name: ScheduleNameField | None = None
+    language: LanguageSchema | None = None
+    category: ScheduleCategory | None = None
+    periodicity: SchedulePeriodicity | None = None
+    tags: list[NotEmptyString] | None = None
+    enabled: bool | None = None
+    offliner: Offliner | None = None
+    warehouse_path: WarehousePath | None = None
+    image: DockerImageSchema | None = None
+    platform: Platform | None = None
+    resources: ResourcesSchema | None = None
+    monitor: bool | None = None
+    flags: dict[str, Any] | None = None
+    artifacts_globs: list[NotEmptyString] | None = None
+
+
+class CloneSchema(BaseModel):
+    name: ScheduleNameField

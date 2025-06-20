@@ -78,7 +78,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             canceled_by=row.canceled_by,
             container=row.container,
             priority=row.priority,
-            notification=row.notification,
+            notification=row.notification or None,
             files=row.files,
             upload=row.upload,
             updated_at=row.updated_at,
@@ -184,7 +184,11 @@ def create_task(
         config=requested_task.config.model_dump(
             mode="json", context={"show_secrets": True}
         ),
-        notification=requested_task.notification,
+        notification=(
+            requested_task.notification.model_dump(mode="json")
+            if requested_task.notification
+            else {}
+        ),
         files={},
         upload=requested_task.upload,
         original_schedule_name=requested_task.original_schedule_name,

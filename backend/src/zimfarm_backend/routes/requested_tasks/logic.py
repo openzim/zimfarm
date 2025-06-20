@@ -241,11 +241,11 @@ def get_requested_tasks_for_worker(
                     status=task.status,
                     schedule_name=task.schedule_name,
                     config=ConfigWithOnlyOfflinerAndResourcesSchema(
-                        offliner=task.config["offliner"]["offliner_id"],
+                        offliner=task.config.offliner.offliner_id,
                         resources=ConfigResourcesSchema(
-                            cpu=task.config["resources"]["cpu"],
-                            memory=task.config["resources"]["memory"],
-                            disk=task.config["resources"]["disk"],
+                            cpu=task.config.resources.cpu,
+                            memory=task.config.resources.memory,
+                            disk=task.config.resources.disk,
                         ),
                     ),
                     timestamp=task.timestamp,
@@ -269,7 +269,8 @@ def get_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
-    hide_secrets: Annotated[bool | None, Query()] = True,  # noqa: FBT002
+    *,
+    hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
     """Get a requested task by ID."""
     try:
@@ -288,7 +289,7 @@ def get_requested_task(
     if not current_user or not check_user_permission(
         current_user, namespace="schedules", name="update"
     ):
-        requested_task.notification = {}
+        requested_task.notification = None
 
     if hide_secrets:
         return JSONResponse(content=requested_task.model_dump(mode="json"))

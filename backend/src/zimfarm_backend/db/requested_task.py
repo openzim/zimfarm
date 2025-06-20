@@ -21,6 +21,7 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
     ScheduleConfigSchema,
+    ScheduleNotificationSchema,
 )
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
@@ -28,6 +29,7 @@ from zimfarm_backend.common.schemas.orms import (
     NameOnlySchema,
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
+    ScheduleDurationSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
@@ -212,7 +214,9 @@ def get_requested_tasks(
             (RequestedTask.config["resources"]["disk"].astext.cast(BigInteger) <= disk),
             (RequestedTask.config["offliner"]["offliner_id"].astext.in_(offliners)),
             (Worker.name == worker_name)
-            | (RequestedTask.worker is None)  # pyright: ignore[reportUnnecessaryComparison]
+            | (
+                RequestedTask.worker is None
+            )  # pyright: ignore[reportUnnecessaryComparison]
             | (worker_name is None),
         )
         .order_by(
@@ -276,7 +280,7 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
         worker=task.worker,
     )
     elapsed = now - task.timestamp.get("started", task.timestamp["reserved"])
-    remaining = max([duration["value"] - elapsed.total_seconds(), 60])  # seconds
+    remaining = max([duration.value - elapsed.total_seconds(), 60])  # seconds
     remaining *= 1.005  # .5% margin
     eta = now + datetime.timedelta(seconds=remaining)
     return {
@@ -287,11 +291,11 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
 
 
 class RunningTask(BaseModel):
-    config: dict[str, Any]
+    config: ExpandedScheduleConfigSchema
     schedule_name: str
     timestamp: dict[str, Any]
     worker_name: str
-    duration: dict[str, Any]
+    duration: ScheduleDurationSchema
     remaining: float
     eta: datetime.datetime
 
@@ -309,10 +313,7 @@ def get_currently_running_tasks(
     )
     return [
         RunningTask(
-            config={
-                "resources": task.config.get("resources", {}),
-                "offliner": task.config.get("offliner", {}),
-            },
+            config=ExpandedScheduleConfigSchema.model_validate(task.config),
             schedule_name=task.schedule.name if task.schedule else "none",
             timestamp=task.timestamp,
             worker_name=task.worker.name,
@@ -325,14 +326,14 @@ def get_currently_running_tasks(
 class RequestedTaskWithDuration(BaseModel):
     id: UUID
     status: str
-    config: dict[str, Any]
+    config: ExpandedScheduleConfigSchema
     timestamp: dict[str, Any]
     requested_by: str
     priority: int
     schedule_name: str
     original_schedule_name: str
     worker_name: str
-    duration: dict[str, Any]
+    duration: ScheduleDurationSchema
     updated_at: datetime.datetime
 
 
@@ -370,7 +371,7 @@ def get_tasks_doable_by_worker(
                 status=task.status,
                 schedule_name=task.schedule.name if task.schedule else "none",
                 original_schedule_name=task.original_schedule_name,
-                config=task.config,
+                config=ExpandedScheduleConfigSchema.model_validate(task.config),
                 timestamp=task.timestamp,
                 requested_by=task.requested_by,
                 priority=task.priority,
@@ -384,7 +385,7 @@ def get_tasks_doable_by_worker(
             )
             for task in session.scalars(query).all()
         ],
-        key=lambda x: (-x.priority, -x.duration["value"], x.updated_at),
+        key=lambda x: (-x.priority, -x.duration.value, x.updated_at),
     )
 
 
@@ -396,7 +397,7 @@ def does_platform_allow_worker_to_run(
     task: RequestedTaskWithDuration,
 ) -> bool:
     """check if a worker can run a task based on its platform limitations"""
-    platform = task.config.get("offliner", {}).get("offliner_id", {})
+    platform = task.config.offliner.offliner_id
     if not platform:
         return True
 
@@ -407,8 +408,7 @@ def does_platform_allow_worker_to_run(
             [
                 1
                 for running_task in all_running_tasks
-                if running_task.config.get("offliner", {}).get("offliner_id", {})
-                == platform
+                if running_task.config.offliner.offliner_id == platform
             ]
         )
         if nb_platform_running >= platform_overall_limit:
@@ -425,8 +425,7 @@ def does_platform_allow_worker_to_run(
         [
             1
             for running_task in running_tasks
-            if running_task.config.get("offliner", {}).get("offliner_id", {})
-            == platform
+            if running_task.config.offliner.offliner_id == platform
         ]
     )
     return nb_worker_running < worker_limit
@@ -441,7 +440,7 @@ def get_possible_task_with_resources(
     """first of possible tasks runnable with availresources within avail_time"""
     for temp_candidate in tasks_worker_could_do:
         if _can_run(temp_candidate, available_resources):
-            if temp_candidate.duration["value"] <= available_time:
+            if temp_candidate.duration.value <= available_time:
                 logger.debug(
                     f"{temp_candidate.id}@{temp_candidate.schedule_name} it is!"
                 )
@@ -456,7 +455,7 @@ def get_possible_task_with_resources(
 def _can_run(task: RequestedTaskWithDuration, resources: dict[str, int]) -> bool:
     """whether resources are suffiscient to run this task"""
     for key in ["cpu", "memory", "disk"]:
-        if task.config["resources"][key] > resources[key]:
+        if getattr(task.config.resources, key) > resources[key]:
             return False
     return True
 
@@ -523,9 +522,9 @@ def find_requested_task_for_worker(
         logger.debug("first candidate can be run!")
         return candidate
 
-    missing_cpu = max([candidate.config["resources"]["cpu"] - avail_cpu, 0])
-    missing_memory = max([candidate.config["resources"]["memory"] - avail_memory, 0])
-    missing_disk = max([candidate.config["resources"]["disk"] - avail_disk, 0])
+    missing_cpu = max([candidate.config.resources.cpu - avail_cpu, 0])
+    missing_memory = max([candidate.config.resources.memory - avail_memory, 0])
+    missing_disk = max([candidate.config.resources.disk - avail_disk, 0])
     logger.debug(f"missing cpu:{missing_cpu}, mem:{missing_memory}, dsk:{missing_disk}")
 
     # pile-up all of those which we need to complete to have enough resources
@@ -533,11 +532,10 @@ def find_requested_task_for_worker(
     for task in sorted(running_tasks, key=lambda x: x.eta):
         preventing_tasks.append(task)
         if (
-            sum([t.config["resources"]["cpu"] for t in preventing_tasks]) >= missing_cpu
-            and sum([t.config["resources"]["memory"] for t in preventing_tasks])
+            sum([t.config.resources.cpu for t in preventing_tasks]) >= missing_cpu
+            and sum([t.config.resources.memory for t in preventing_tasks])
             >= missing_memory
-            and sum([t.config["resources"]["disk"] for t in preventing_tasks])
-            >= missing_disk
+            and sum([t.config.resources.disk for t in preventing_tasks]) >= missing_disk
         ):
             # stop when we'd have reclaimed our missing resources
             break
@@ -590,7 +588,11 @@ def _create_requested_task_full_schema(
         ),
         events=requested_task.events,
         upload=requested_task.upload,
-        notification=requested_task.notification,
+        notification=(
+            ScheduleNotificationSchema.model_validate(requested_task.notification)
+            if requested_task.notification
+            else None
+        ),
         rank=compute_requested_task_rank(session, requested_task.id),
         schedule=NameOnlySchema(
             name=requested_task.schedule.name if requested_task.schedule else "none"

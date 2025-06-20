@@ -9,7 +9,12 @@ from pydantic import AfterValidator, Field, computed_field
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.models import ExpandedScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import (
+    ExpandedScheduleConfigSchema,
+    LanguageSchema,
+    ScheduleConfigSchema,
+    ScheduleNotificationSchema,
+)
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -82,7 +87,7 @@ class TaskFullSchema(BaseTaskSchema):
     canceled_by: str | None
     container: dict[str, Any]
     priority: int
-    notification: dict[str, Any]
+    notification: ScheduleNotificationSchema | None
     files: dict[str, Any]
     upload: dict[str, Any]
 
@@ -131,7 +136,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     config: ExpandedScheduleConfigSchema
     events: list[dict[str, Any]]
     upload: dict[str, Any]
-    notification: dict[str, Any]
+    notification: ScheduleNotificationSchema | None
     rank: int | None = None
     schedule: NameOnlySchema
     schedule_id: UUID | None = Field(exclude=True)
@@ -155,16 +160,6 @@ class ConfigOfflinerOnlySchema(BaseModel):
     offliner: str
 
 
-class LanguageSchema(BaseModel):
-    """
-    Schema for reading a language model
-    """
-
-    code: str
-    name_en: str
-    name_native: str
-
-
 class ScheduleLightSchema(BaseModel):
     """
     Schema for reading a schedule model with some fields
@@ -172,16 +167,16 @@ class ScheduleLightSchema(BaseModel):
 
     name: str
     category: str
-    most_recent_task: MostRecentTaskSchema
+    most_recent_task: MostRecentTaskSchema | None
     config: ConfigOfflinerOnlySchema
     language: LanguageSchema
     enabled: bool
-    count_requested_task: int
+    nb_requested_tasks: int = Field(exclude=True)
 
     @computed_field
     @property
     def is_requested(self) -> bool:
-        return self.count_requested_task > 0
+        return self.nb_requested_tasks > 0
 
 
 class ScheduleDurationSchema(BaseModel):
@@ -190,7 +185,7 @@ class ScheduleDurationSchema(BaseModel):
     """
 
     value: int
-    on: str
+    on: datetime.datetime
     worker: NameOnlySchema | None
     default: bool
 
@@ -200,24 +195,24 @@ class ScheduleFullSchema(BaseModel):
     Schema for reading a schedule model with all fields
     """
 
-    language_code: str
-    language_name_en: str
-    language_name_native: str
+    language_code: str = Field(exclude=True)
+    language_name_en: str = Field(exclude=True)
+    language_name_native: str = Field(exclude=True)
     durations: list[ScheduleDurationSchema]
     name: str
     category: str
-    config: dict[str, Any]
+    config: ScheduleConfigSchema | ExpandedScheduleConfigSchema
     enabled: bool
     tags: list[str]
     periodicity: str
-    notification: dict[str, Any]
-    most_recent_task: MostRecentTaskSchema
-    count_requested_task: int
+    notification: ScheduleNotificationSchema | None
+    most_recent_task: MostRecentTaskSchema | None
+    nb_requested_tasks: int = Field(exclude=True)
 
     @computed_field
     @property
     def is_requested(self) -> bool:
-        return self.count_requested_task > 0
+        return self.nb_requested_tasks > 0
 
     @computed_field
     @property
