@@ -13,15 +13,12 @@ from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import (
     DockerImageName,
     Platform,
-    ScheduleCategory,
-    SchedulePeriodicity,
     WarehousePath,
 )
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     NotEmptyString,
-    ScheduleNameField,
     SlackTarget,
     ZIMDisk,
     ZIMLangCode,
@@ -134,17 +131,6 @@ class ScheduleNotificationSchema(BaseModel):
     requested: EventNotificationSchema | None = None
     started: EventNotificationSchema | None = None
     ended: EventNotificationSchema | None = None
-
-
-class ScheduleSchema(BaseModel):
-    name: ScheduleNameField
-    language: LanguageSchema
-    category: ScheduleCategory
-    periodicity: SchedulePeriodicity
-    tags: list[NotEmptyString] = Field(default_factory=list)
-    enabled: bool
-    config: ScheduleConfigSchema
-    notification: ScheduleNotificationSchema | None = None
 
 
 class PlaftormLimitSchema(BaseModel):

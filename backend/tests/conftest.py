@@ -41,7 +41,7 @@ from zimfarm_backend.db.models import (
     User,
     Worker,
 )
-from zimfarm_backend.db.schedule import get_schedule_or_none
+from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.token import generate_access_token, sign_message
 
@@ -272,7 +272,7 @@ def language() -> LanguageSchema:
 @pytest.fixture
 def create_schedule_config() -> Callable[..., ScheduleConfigSchema]:
     def _create_schedule_config(
-        cpu: int, memory: int, disk: int
+        cpu: int = 2, memory: int = 2**30, disk: int = 2**30
     ) -> ScheduleConfigSchema:
         return ScheduleConfigSchema(
             warehouse_path=WarehousePath.videos,
@@ -323,6 +323,7 @@ def create_schedule(
         language: LanguageSchema | None = None,
         tags: list[str] | None = None,
         schedule_config: ScheduleConfigSchema | None = None,
+        worker: Worker | None = None,
     ) -> Schedule:
         language = _language if language is None else language
         schedule_config = (
@@ -342,6 +343,13 @@ def create_schedule(
             periodicity=periodicity,
             notification=notification,
         )
+        schedule_duration = ScheduleDuration(
+            value=DEFAULT_SCHEDULE_DURATION.value,
+            on=DEFAULT_SCHEDULE_DURATION.on,
+            default=True,
+        )
+        schedule_duration.worker = worker
+        schedule.durations.append(schedule_duration)
         dbsession.add(schedule)
         dbsession.flush()
         return schedule
@@ -462,14 +470,19 @@ def create_task(
     worker: Worker,
     dbsession: OrmSession,
 ) -> Callable[..., Task]:
+    _worker = worker
+
     def _create_task(
         *,
         schedule_name: str = "testschedule",
         status: TaskStatus = TaskStatus.requested,
+        worker: Worker | None = None,
+        requested_task: RequestedTask | None = None,
     ) -> Task:
-        requested_task = create_requested_task(
-            schedule_name=schedule_name, status=status
-        )
+        if requested_task is None:
+            requested_task = create_requested_task(
+                schedule_name=schedule_name, status=status
+            )
         task = Task(
             updated_at=requested_task.updated_at,
             events=requested_task.events,
@@ -488,7 +501,7 @@ def create_task(
         )
         task.id = requested_task.id
         task.schedule_id = requested_task.schedule_id
-        task.worker_id = worker.id
+        task.worker_id = _worker.id if worker is None else worker.id
         dbsession.add(task)
         dbsession.flush()
         return task

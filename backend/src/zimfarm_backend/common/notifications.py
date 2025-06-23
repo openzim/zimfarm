@@ -39,9 +39,11 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml", "txt"]),
 )
 jinja_env.filters["short_id"] = lambda value: str(value)[:5]
-jinja_env.filters["format_size"] = lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
-    value,  # pyright: ignore[reportArgumentType]
-    binary=True,
+jinja_env.filters["format_size"] = (
+    lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
+        value,  # pyright: ignore[reportArgumentType]
+        binary=True,
+    )
 )
 
 
@@ -171,11 +173,12 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
         task_safe = get_requested_task_by_id_or_none(session, task_id)
     else:
         task_safe = get_task_by_id_or_none(session, task_id)
+
     if not task_safe:
         return
 
     global_notifs = GlobalNotifications.entries.get(event, {})
-    task_notifs = task_safe.notification.get(event, {})
+    task_notifs = getattr(task_safe.notification, event, {})
 
     # exit early if we don't have notification requests for the event
     if not global_notifs and not task_notifs:

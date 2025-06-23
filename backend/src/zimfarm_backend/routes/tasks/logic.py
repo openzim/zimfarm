@@ -73,7 +73,8 @@ async def get_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
-    hide_secrets: Annotated[bool, Query()] = True,  # noqa: FBT002
+    *,
+    hide_secrets: Annotated[bool, Query()] = True,
 ) -> JSONResponse:
     """Get a task by ID"""
     task = db_get_task(db_session, task_id)
@@ -81,7 +82,7 @@ async def get_task(
         current_user
         and check_user_permission(current_user, namespace="schedules", name="update")
     ):
-        task.notification = {}
+        task.notification = None
 
     if hide_secrets or not (
         current_user
