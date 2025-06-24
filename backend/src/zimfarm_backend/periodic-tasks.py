@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import datetime
 import logging
 
 import sqlalchemy as sa
-import sqlalchemy.orm as so
+from sqlalchemy.orm import Session as OrmSession
 
-import db.models as dbm
-from common import getnow
-from common.enum import TaskStatus
-from db import dbsession
+import zimfarm_backend.db.models as dbm
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.db import Session
 
 # constants
 ONE_MN = 60
@@ -41,7 +40,7 @@ handler.setFormatter(
 logger.addHandler(handler)
 
 
-def history_cleanup(session: so.Session):
+def history_cleanup(session: OrmSession):
     """removes tasks for which the schedule has been run multiple times after
 
     Uses HISTORY_TASK_PER_SCHEDULE"""
@@ -70,7 +69,9 @@ def history_cleanup(session: so.Session):
     logger.info(f"::: deleted {nb_deleted_tasks} tasks")
 
 
-def status_to_cancel(now, status, timeout, session: so.Session):
+def status_to_cancel(
+    now: datetime.datetime, status: TaskStatus, timeout: int, session: OrmSession
+):
     logger.info(f":: canceling tasks `{status}` for more than {timeout}s")
     ago = now - datetime.timedelta(seconds=timeout)
     tasks = session.execute(
@@ -101,7 +102,7 @@ def status_to_cancel(now, status, timeout, session: so.Session):
     logger.info(f"::: canceled {nb_canceled_tasks} tasks")
 
 
-def staled_statuses(session: so.Session):
+def staled_statuses(session: OrmSession):
     """set the status for tasks in an unfinished state"""
 
     now = getnow()
@@ -148,8 +149,7 @@ def staled_statuses(session: so.Session):
     logger.info(f"::: failed {nb_failed_tasks} tasks")
 
 
-@dbsession
-def main(session: so.Session):
+def main(session: OrmSession):
     logger.info("running periodic tasks-cleaner")
 
     history_cleanup(session)
@@ -158,4 +158,5 @@ def main(session: so.Session):
 
 
 if __name__ == "__main__":
-    main()
+    with Session.begin() as session:
+        main(session)

@@ -11,4 +11,4 @@ if [ ! -z "$ALEMBIC_UPGRADE_HEAD_ON_START" ]; then
     alembic history
     alembic upgrade head
 fi
-python -c "from utils.database import Initializer; Initializer.create_initial_user()" || die
+create-initial-user
