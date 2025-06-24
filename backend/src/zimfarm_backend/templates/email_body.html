@@ -1,6 +1,6 @@
 <html>
 <body>
-<p>Zimfarm task <a href="{{ base_url }}/pipeline/{{ task._id }}"><code>{{ task._id|short_id }}</code></a> is now <strong><code>{{ task.status }}</code></strong></p>
+<p>Zimfarm task <a href="{{ base_url }}/pipeline/{{ task.id }}"><code>{{ task.id|short_id }}</code></a> is now <strong><code>{{ task.status }}</code></strong></p>
 {% if task.files %}
 <ul>
 {% for file in task.files.values() %}

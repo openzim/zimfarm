@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any
 
 from humanfriendly import parse_timespan
@@ -14,6 +15,8 @@ def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
 
     return value
 
+
+BASE_DIR = Path(__file__).parent.parent
 
 DEBUG = getenv("DEBUG", default=False)
 

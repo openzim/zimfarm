@@ -1,1 +1,1 @@
-[{{ task._id }}] zimfarm task {{ task.status }}
+[{{ task.id }}] zimfarm task {{ task.status }}

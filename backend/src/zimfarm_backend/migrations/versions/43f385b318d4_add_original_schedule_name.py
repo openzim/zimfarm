@@ -8,8 +8,9 @@ Create Date: 2023-09-26 07:56:45.008277
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.orm import Session
 
-from db.models import RequestedTask, Schedule, Task
+from zimfarm_backend.db.models import RequestedTask, Schedule, Task
 
 # revision identifiers, used by Alembic.
 revision = "43f385b318d4"
@@ -20,7 +21,7 @@ depends_on = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    session = sa.orm.Session(bind=bind)
+    session = Session(bind=bind)
 
     # add original_schedule_name as nullable
     op.add_column(
