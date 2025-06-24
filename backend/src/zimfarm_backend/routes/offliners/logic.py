@@ -1,46 +1,49 @@
-from flask import jsonify
+from typing import Annotated, get_args
 
-from common.enum import Offliner
-from common.schemas.models import ScheduleConfigSchema
-from routes.base import BaseRoute
-from routes.errors import NotFound
+from fastapi import APIRouter, Path
+from fastapi.responses import JSONResponse
 
+from zimfarm_backend.common.enums import Offliner
+from zimfarm_backend.common.schemas.models import (
+    OfflinerSchema,
+    calculate_pagination_metadata,
+)
+from zimfarm_backend.routes.http_errors import NotFoundError
+from zimfarm_backend.routes.models import ListResponse
 
-class offlinersRoute(BaseRoute):
-    rule = "/"
-    name = "offliners"
-    methods = ["GET"]
-
-    def get(self, *args, **kwargs):
-        """return a list of tags"""
-
-        offliners = Offliner.all()
-
-        return jsonify(
-            {
-                "meta": {"skip": 0, "limit": 100, "count": len(offliners)},
-                "items": offliners,
-            }
-        )
+router = APIRouter(prefix="/offliners", tags=["offliners"])
 
 
-class offlinerRoute(BaseRoute):
-    rule = "/<string:offliner>"
-    name = "offliner"
-    methods = ["GET", "POST", "PATCH"]
+@router.get("")
+async def get_offliners():
+    """Get a list of offliners"""
+    offliners = Offliner.all()
+    return ListResponse(
+        meta=calculate_pagination_metadata(
+            nb_records=len(offliners),
+            skip=0,
+            limit=100,
+            page_size=len(offliners),
+        ),
+        items=offliners,
+    )
 
-    def get(self, offliner: str, *args, **kwargs):
-        if offliner not in Offliner.all():
-            raise NotFound()
 
-        schema = ScheduleConfigSchema.get_offliner_schema(offliner)()
+@router.get("/{offliner}")
+async def get_offliner(offliner: Annotated[Offliner, Path()]) -> JSONResponse:
+    """Get a specific offliner"""
 
-        return jsonify(
-            {
-                "flags": schema.to_desc(),
-                "help": (  # dynamic + sourced from backend because it might be custom
-                    f"https://github.com/openzim/{offliner}/wiki"
-                    "/Frequently-Asked-Questions"
-                ),
-            }
-        )
+    # find the schema class that matches the offliner
+    schema_cls = next(
+        (
+            schema_cls
+            for schema_cls in get_args(OfflinerSchema)
+            if get_args(schema_cls.model_fields["offliner_id"].annotation)[0]
+            == offliner
+        ),
+        None,
+    )
+    if schema_cls is None:
+        raise NotFoundError(f"Offliner {offliner} not found")
+
+    return JSONResponse(content=schema_cls.model_json_schema())

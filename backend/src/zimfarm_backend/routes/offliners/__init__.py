@@ -1,11 +1,3 @@
-from routes import API_PATH
-from routes.base import BaseBlueprint
-from routes.offliners.offliner import offlinerRoute, offlinersRoute
+from zimfarm_backend.routes.offliners.logic import router
 
-
-class Blueprint(BaseBlueprint):
-    def __init__(self):
-        super().__init__("offliner", __name__, url_prefix=f"{API_PATH}/offliners")
-
-        self.register_route(offlinersRoute())
-        self.register_route(offlinerRoute())
+__all__ = ["router"]
