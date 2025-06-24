@@ -24,8 +24,6 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql.schema import MetaData
 
-from zimfarm_backend.utils.check import raise_if, raise_if_none
-
 
 class Base(MappedAsDataclass, DeclarativeBase):
     # This map details the specific transformation of types between Python and
@@ -82,21 +80,6 @@ class User(Base):
     workers: Mapped[list["Worker"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
-
-    @classmethod
-    def check(
-        cls,
-        user: "User | None",
-        exception_class: type[Exception] = Exception,
-        *exception_args: object,
-    ) -> None:
-        """Raise the exception passed in parameters if user is None or deleted."""
-        raise_if_none(user, exception_class, *exception_args)
-        raise_if(
-            user.deleted,  # pyright: ignore[reportOptionalMemberAccess]
-            exception_class,
-            *exception_args,
-        )
 
 
 class Sshkey(Base):

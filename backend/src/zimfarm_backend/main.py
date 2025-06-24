@@ -3,6 +3,7 @@ from fastapi import APIRouter, FastAPI
 from zimfarm_backend.routes import (
     auth,
     languages,
+    offliners,
     platforms,
     requested_tasks,
     schedules,
@@ -23,6 +24,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=auth.router)
     main_router.include_router(router=languages.router)
     main_router.include_router(router=platforms.router)
+    main_router.include_router(router=offliners.router)
     main_router.include_router(router=users.router)
     main_router.include_router(router=requested_tasks.router)
     main_router.include_router(router=workers.router)

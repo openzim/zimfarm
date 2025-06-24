@@ -26,6 +26,7 @@ from zimfarm_backend.common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
+from zimfarm_backend.common.schemas.orms import TaskFullSchema
 from zimfarm_backend.db import dbsession
 from zimfarm_backend.db.tasks import get_task_by_id
 
@@ -175,7 +176,7 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
         advertise_book_to_cms(task, file_name)
 
 
-def advertise_book_to_cms(task: dbm.Task, file_name: str):
+def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
     """inform openZIM CMS (or compatible) of a created ZIM in the farm
 
     Safe to re-run as successful requests are skipped"""
@@ -189,7 +190,7 @@ def advertise_book_to_cms(task: dbm.Task, file_name: str):
             return
 
     # prepare payload and submit request to CMS
-    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config['warehouse_path']}"
+    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
     file_data["cms"] = {
         "status_code": -1,
         "succeeded": False,

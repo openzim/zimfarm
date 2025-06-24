@@ -18,10 +18,17 @@ from zimfarm_backend.common.notifications import handle_notification
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.schedule import update_schedule_duration
+from zimfarm_backend.db.tasks import get_task_by_id_or_none
 from zimfarm_backend.db.worker import get_worker
-from zimfarm_backend.utils.check import cleanup_value
 
 logger = logging.getLogger(__name__)
+
+
+def cleanup_value(value: Any) -> Any:
+    """Remove unwanted characters before inserting / updating in DB"""
+    if isinstance(value, str):
+        return value.replace("\u0000", "")
+    return value
 
 
 def task_event_handler(
@@ -380,7 +387,7 @@ def task_checked_file_event_handler(
     save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
 
     if INFORM_CMS:
-        task = session.get(Task, task_id)
+        task = get_task_by_id_or_none(session, task_id)
         if task is None:
             raise RecordDoesNotExistError(f"Task {task_id} does not exist")
         if filename := file.get("name"):
