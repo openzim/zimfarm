@@ -143,6 +143,8 @@ REQ_TIMEOUT_NOTIFICATIONS = int(getenv("REQ_TIMEOUT_NOTIFICATIONS", default="5")
 REQ_TIMEOUT_CMS = int(getenv("REQ_TIMEOUT_CMS", default="10"))
 REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
 
+REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT", default="30s"))
+
 # OFFLINERS
 ZIMIT_USE_RELAXED_SCHEMA = bool(getenv("ZIMIT_USE_RELAXED_SCHEMA", default=False))
 NAUTILUS_USE_RELAXED_SCHEMA = bool(getenv("NAUTILUS_USE_RELAXED_SCHEMA", default=False))

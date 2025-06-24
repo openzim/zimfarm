@@ -1,8 +1,10 @@
 import sys
+from typing import Any
 
 import requests
-
 from get_token import get_token, get_token_headers, get_url
+
+from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 
 running_statuses = [
     "reserved",
@@ -19,34 +21,36 @@ def get_status_query():
     return "&".join(filters)
 
 
-def get_timestamp(task, status):
+def get_timestamp(task: dict[str, Any], status: str) -> str:
     if status in task["timestamp"]:
         return task["timestamp"][status]
     else:
         return "-"
 
 
-def main(username, password):
+def main(username: str, password: str):
     """Print in STDOUT a markdown table of running tasks with various information"""
-    access_token, refresh_token = get_token(username, password)
+    access_token, _ = get_token(username, password)
     response = requests.get(
         f"{get_url('/tasks')}?{get_status_query()}",
         headers=get_token_headers(access_token),
+        timeout=REQUESTS_TIMEOUT,
     )
     tasks = response.json()["items"]
-    print(
+    print(  # noqa: T201
         "| Task ID | worker | kind | DB Status | last update at | requested"
         " | reserved | started | scraper_started | scraper_completed |"
     )
-    print("|--|--|--|--|--|--|--|--|--|--|")
+    print("|--|--|--|--|--|--|--|--|--|--|")  # noqa: T201
     for task in sorted(tasks, key=lambda task: task["updated_at"]):
         response = requests.get(
             f"{get_url('/tasks')}/{task['_id']}",
             headers=get_token_headers(access_token),
+            timeout=REQUESTS_TIMEOUT,
         )
         task_details = response.json()
 
-        print(
+        print(  # noqa: T201
             f"| [{task['_id']}](https://farm.openzim.org/pipeline/{task['_id']}) "
             f"| {task['worker']} "
             f"| {task_details['config']['task_name']} "
