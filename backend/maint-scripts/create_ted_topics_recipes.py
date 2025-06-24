@@ -1,24 +1,19 @@
 import json
-import logging
 import os
 import sys
 from http import HTTPStatus
 
 import requests
-
 from get_token import get_token, get_token_headers, get_url
 
-logging.basicConfig(
-    level=logging.DEBUG, format="[%(asctime)s: %(levelname)s] %(message)s"
-)
-logger = logging.getLogger(__name__)
+from zimfarm_backend import logger
+from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 
 SEARCH_URL = "https://zenith-prod-alt.ted.com/api/search"
-REQUESTS_TIMEOUT = 10
 TED_INDEX_NAME = "coyote_models_acme_videos_alias_38ce41d1f97ca56a38068f613af166da"
 
 
-def get_ted_topics() -> set:
+def get_ted_topics() -> set[str]:
     data = [
         {
             "indexName": TED_INDEX_NAME,
@@ -48,16 +43,17 @@ def get_ted_topics() -> set:
     return set(topics)
 
 
-def get_clean_ted_topic_name(ted_topic_name):
+def get_clean_ted_topic_name(ted_topic_name: str) -> str:
     return ted_topic_name.replace(" ", "-").replace("'", "")
 
 
-def create_recipe(ted_topic_name: str, access_token):
+def create_recipe(ted_topic_name: str, access_token: str):
     clean_ted_topic_name = get_clean_ted_topic_name(ted_topic_name)
     schedule_name = f"ted_topic_{clean_ted_topic_name}"
     response = requests.get(
         get_url(f"/schedules/{schedule_name}"),
         headers=get_token_headers(access_token),
+        timeout=REQUESTS_TIMEOUT,
     )
     if response.status_code == HTTPStatus.OK:
         logger.warning(f"Recipe {schedule_name} already exists, ignoring.")
@@ -117,22 +113,23 @@ def create_recipe(ted_topic_name: str, access_token):
         get_url("/schedules/"),
         headers=get_token_headers(access_token),
         json=data,
+        timeout=REQUESTS_TIMEOUT,
     )
     if response.status_code != HTTPStatus.CREATED:
         logger.error(json.loads(response.content))
         response.raise_for_status()
 
 
-def get_existing_recipes_topics(access_token: str) -> set:
-
+def get_existing_recipes_topics(access_token: str) -> set[str]:
     skip = 0
     per_page = 200
 
-    topics = set()
+    topics: set[str] = set()
     while True:
         response = requests.get(
             get_url(f"/schedules/?limit={per_page}&skip={skip}&tag=ted-by-topic"),
             headers=get_token_headers(access_token),
+            timeout=REQUESTS_TIMEOUT,
         )
         response.raise_for_status()
 
@@ -150,10 +147,10 @@ def get_existing_recipes_topics(access_token: str) -> set:
     return topics
 
 
-def main(zf_username, zf_password):
+def main(zf_username: str, zf_password: str):
     """Creates recipes for TED by topics"""
 
-    access_token, refresh_token = get_token(zf_username, zf_password)
+    access_token, _ = get_token(zf_username, zf_password)
 
     existing_recipes_topics = get_existing_recipes_topics(access_token=access_token)
     logger.debug(",".join(sorted(existing_recipes_topics)))
@@ -170,10 +167,8 @@ def main(zf_username, zf_password):
         topic
         for topic in existing_recipes_topics
         if not any(
-            [
-                1 if get_clean_ted_topic_name(topic2) == topic else 0
-                for topic2 in exisiting_online_topics
-            ]
+            get_clean_ted_topic_name(topic2) == topic
+            for topic2 in exisiting_online_topics
         )
         and topic != "all"
     ]
@@ -187,7 +182,7 @@ def main(zf_username, zf_password):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 3:  # noqa: PLR2004
         logger.error(
             "Incorrect number of arguments\n"
             f"Usage: {sys.argv[0]} <zf_username> <zf_password>\n"

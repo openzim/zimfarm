@@ -2,55 +2,55 @@
 
 """Create a report of API keys usage in youtube recipes
 
-    ./report_youtube_api_keys.py
+./report_youtube_api_keys.py
 
-    Configuration file named "report_youtube_api_keys.conf.json" must be placed in
-    same folder as script and contain a dictionnary of sha256(api_key) =>
-    api_key_display_name
+Configuration file named "report_youtube_api_keys.conf.json" must be placed in
+same folder as script and contain a dictionnary of sha256(api_key) =>
+api_key_display_name
 """
 
-import datetime
 import hashlib
 import json
 import os
 import pathlib
+from typing import Any
 
 import requests
 import sqlalchemy as sa
-import sqlalchemy.orm as so
 from jinja2 import Environment, FileSystemLoader
+from sqlalchemy.orm import Session as OrmSession
 
-import db.models as dbm
-from db import dbsession
+from zimfarm_backend import logger
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
+from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.db import Session
+from zimfarm_backend.db.models import Schedule
 
 
-@dbsession
-def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=False):
+def report_youtube_api_keys(
+    session: OrmSession, *, display_unknown_secrets: bool = False
+):
     jinja_env = Environment(loader=FileSystemLoader("./"), autoescape=True)
     jinja_template = jinja_env.get_template("report_youtube_api_keys.txt")
     create_issue = os.environ.get("CREATE_ISSUE", "false").lower() == "true"
-    if create_issue:
-        github_repo = os.environ["GITHUB_REPO"]
-        github_token = os.environ["GITHUB_TOKEN"]
-        github_issue_assignees = os.environ.get("GITHUB_ISSUE_ASSIGNEES", "").split(",")
-        github_issue_labels = os.environ.get("GITHUB_ISSUE_LABELS", "").split(",")
 
     known_api_keys = json.loads(
         pathlib.Path("report_youtube_api_keys.conf.json").read_text()
     )
-    print("Listing schedules")
+    logger.info("Listing schedules")
     stmt = (
-        sa.select(dbm.Schedule)
-        .where(dbm.Schedule.config["task_name"].astext == "youtube")
-        .where(dbm.Schedule.config["flags"]["api-key"].astext.is_not(None))
-        .order_by(dbm.Schedule.config["flags"]["api-key"].astext)
+        sa.select(Schedule)
+        .where(Schedule.config["offliner"]["offliner_id"].astext == "youtube")
+        .where(Schedule.config["offliner"]["api-key"].astext.is_not(None))
+        .order_by(Schedule.config["offliner"]["api-key"].astext)
     )
 
     schedules = list(session.execute(stmt).scalars())
 
-    schedules_by_api_key = {}
+    schedules_by_api_key: dict[str, dict[str, Any]] = {}
     for schedule in schedules:
-        api_key = schedule.config["flags"]["api-key"]
+        api_key = schedule.config["offliner"]["api-key"]
         hashed_api_key = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
         if hashed_api_key not in schedules_by_api_key.keys():
             schedules_by_api_key[hashed_api_key] = {
@@ -69,7 +69,7 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
             for task in sorted(
                 schedule.tasks, key=lambda task: task.updated_at, reverse=True
             ):
-                if task.status != "succeeded":
+                if task.status != TaskStatus.succeeded:
                     continue
                 media_count = 0
                 for file in task.files.values():
@@ -78,7 +78,7 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
                 break
         schedules_by_api_key[hashed_api_key]["schedules"].append(schedule_data)
 
-    report_data = {}
+    report_data: dict[str, list[dict[str, Any]] | int | str] = {}
     report_data["nb_schedules"] = len(schedules)
     report_data["keys"] = []
 
@@ -99,8 +99,8 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
             }
         )
         if display_unknown_secrets and hashed_api_key not in known_api_keys.keys():
-            print("Unknown key:")
-            print(f"API key: {data['api_key']}")
+            logger.info("Unknown key:")
+            logger.info(f"API key: {data['api_key']}")
 
     for hashed_key, key_name in known_api_keys.items():
         if hashed_key not in schedules_by_api_key.keys():
@@ -114,12 +114,17 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
 
     report_data["keys"] = sorted(report_data["keys"], key=lambda apikey: apikey["name"])
 
-    report_data["datetime"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    report_data["datetime"] = getnow().strftime("%Y-%m-%d %H:%M:%S")
 
     report = jinja_template.render(report_data=report_data)
 
     if create_issue:
-        print("Creating Github Issue")
+        github_repo = os.environ["GITHUB_REPO"]
+        github_token = os.environ["GITHUB_TOKEN"]
+        github_issue_assignees = os.environ.get("GITHUB_ISSUE_ASSIGNEES", "").split(",")
+        github_issue_labels = os.environ.get("GITHUB_ISSUE_LABELS", "").split(",")
+
+        logger.info("Creating Github Issue")
         resp = requests.post(
             url=f"https://api.github.com/repos/{github_repo}/issues",
             headers={
@@ -128,25 +133,22 @@ def report_youtube_api_keys(session: so.Session, *, display_unknown_secrets=Fals
                 "X-GitHub-Api-Version": "2022-11-28",
             },
             json={
-                "title": (
-                    "Youtube API Key usage report"
-                    f" {datetime.datetime.now().strftime('%b %Y')}"
-                ),
+                "title": (f"Youtube API Key usage report {getnow().strftime('%b %Y')}"),
                 "body": jinja_template.render(report_data=report_data),
                 "assignees": github_issue_assignees,
                 "labels": github_issue_labels,
             },
+            timeout=REQUESTS_TIMEOUT,
         )
-        print(resp.json())
+        logger.info(resp.json())
         resp.raise_for_status()
-        print(f"Github issue created successfully in {github_repo}")
+        logger.info(f"Github issue created successfully in {github_repo}")
 
     else:
-        print(report)
-
-    return
+        logger.info(report)
 
 
 if __name__ == "__main__":
-    report_youtube_api_keys(display_unknown_secrets=False)
-    print("DONE.")
+    with Session.begin() as session:
+        report_youtube_api_keys(session=session, display_unknown_secrets=False)
+    logger.info("DONE.")
