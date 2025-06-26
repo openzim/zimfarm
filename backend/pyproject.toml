@@ -221,8 +221,6 @@ ban-relative-imports = "all"
 # Ignore invalid module names for scripts
 "src/zimfarm_backend/periodic-tasks.py" = ["N999"]
 "src/zimfarm_backend/periodic-scheduler.py" = ["N999"]
-# Synthetic data generator is using pseudo-random generator on purpose
-"dev_tools/synthetic_data.py" = ["S311"]
 
 [tool.pytest.ini_options]
 minversion = "8.3.5"
@@ -254,7 +252,7 @@ exclude_lines = [
 ]
 
 [tool.pyright]
-include = ["src", "tests", "dev_tools", "tasks.py"]
+include = ["src", "tests", "tasks.py"]
 exclude = [".env/**", ".venv/**"]
 extraPaths = ["src"]
 pythonVersion = "3.13"

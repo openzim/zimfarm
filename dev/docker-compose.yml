@@ -12,20 +12,24 @@ services:
       - POSTGRES_DB=zimfarm
       - POSTGRES_USER=zimfarm
       - POSTGRES_PASSWORD=zimpass
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "dbname=zimfarm user=zimfarm"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   backend:
-    build: ../dispatcher/backend
+    build:
+      context: ../backend
     container_name: zf_backend
-    command: python main.py
     volumes:
-      - ../dispatcher/backend/src:/app
-      - ../dispatcher/backend/prestart.sh:/app/prestart.sh
-      - ../dispatcher/backend/docs:/app/docs
-      - ../dispatcher/backend/maint-scripts:/app/maint-scripts
+      - ../backend/prestart.sh:/app/prestart.sh
+      - ../backend/periodic-scheduler.py:/app/periodic-scheduler.py
+      - ../backend/periodic-tasks.py:/app/periodic-tasks.py
+      - ../backend/maint-scripts:/app/maint-scripts
     ports:
-      - 127.0.0.1:8000:8000
+      - 8000:80
     environment:
-      BINDING_HOST: 0.0.0.0
-      DEBUG: 1
+      DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "1"
@@ -35,12 +39,13 @@ services:
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       ZIMCHECK_OPTION: --all
     depends_on:
-      - postgresdb
+      postgresdb:
+        condition: service_healthy
   frontend-ui:
-    build: ../dispatcher/frontend-ui
+    build: ../frontend-ui
     container_name: zf_frontend-ui
     volumes:
-      - ../dispatcher/frontend-ui/src:/app
+      - ../frontend-ui/src:/app
     ports:
       - 127.0.0.1:8001:80
     environment:
@@ -50,10 +55,10 @@ services:
   frontend-ui-dev:
     build:
       dockerfile: ../../dev/frontend-ui-dev/Dockerfile
-      context: ../dispatcher/frontend-ui
+      context: ../frontend-ui
     container_name: zf_frontend-ui-dev
     volumes:
-      - ../dispatcher/frontend-ui/src:/app/src
+      - ../frontend-ui/src:/app/src
     ports:
       - 127.0.0.1:8002:80
     environment:
@@ -63,11 +68,11 @@ services:
   backend-tools:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
-      context: ../dispatcher/backend
+      context: ../backend
     container_name: zf_backend-tools
     command: tail -f /dev/null
     volumes:
-      - ../dispatcher/backend/src:/app
+      - ../backend/src:/app
     environment:
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
     depends_on:
@@ -75,11 +80,11 @@ services:
   backend-tests:
     build:
       dockerfile: ../../dev/backend-tools-tests/Dockerfile
-      context: ../dispatcher/backend
+      context: ../backend
     container_name: zf_backend-tests
     command: tail -f /dev/null
     volumes:
-      - ../dispatcher/backend/src:/app
+      - ../backend/src:/app
     environment:
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
     depends_on:

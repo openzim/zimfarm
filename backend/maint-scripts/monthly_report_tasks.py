@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 
 # url of the zimfarm API to request
-url = os.getenv("ZF_URI", "https://api.farm.zimit.kiwix.org/v1")
+url = os.getenv("ZF_URI", "https://api.farm.zimit.kiwix.org/v2")
 
 # prefix of csv file to create: {prefix}{year}-{month}.csv
 file_prefix = os.getenv("FILE_PREFIX", "zimfarm_tasks_")
