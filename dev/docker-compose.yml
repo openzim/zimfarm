@@ -3,7 +3,7 @@ services:
     image: postgres:17.3-bookworm
     container_name: zf_postgresdb
     ports:
-      - 127.0.0.1:5432:5432
+      - 2345:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
       - ./postgres-initdb:/docker-entrypoint-initdb.d
@@ -13,19 +13,18 @@ services:
       - POSTGRES_USER=zimfarm
       - POSTGRES_PASSWORD=zimpass
   backend:
-    build: ../dispatcher/backend
+    build:
+      context: ../backend
     container_name: zf_backend
-    command: python main.py
     volumes:
-      - ../dispatcher/backend/src:/app
-      - ../dispatcher/backend/prestart.sh:/app/prestart.sh
-      - ../dispatcher/backend/docs:/app/docs
-      - ../dispatcher/backend/maint-scripts:/app/maint-scripts
+      - ../backend/prestart.sh:/app/prestart.sh
+      - ../backend/periodic-scheduler.py:/app/periodic-scheduler.py
+      - ../backend/periodic-tasks.py:/app/periodic-tasks.py
+      - ../backend/maint-scripts:/app/maint-scripts
     ports:
-      - 127.0.0.1:8000:8000
+      - 8000:80
     environment:
-      BINDING_HOST: 0.0.0.0
-      DEBUG: 1
+      DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "1"
@@ -35,7 +34,8 @@ services:
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       ZIMCHECK_OPTION: --all
     depends_on:
-      - postgresdb
+      postgresdb:
+        condition: service_healthy
   frontend-ui:
     build: ../dispatcher/frontend-ui
     container_name: zf_frontend-ui

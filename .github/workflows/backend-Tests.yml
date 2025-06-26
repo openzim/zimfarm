@@ -82,11 +82,11 @@ jobs:
         env:
           POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
           JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-        run: pytest -v tests/unit/
+        run: inv coverage --args "-vvv"
 
-      # - name: Upload coverage report to codecov
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     directory: backend
-      #     fail_ci_if_error: true
-      #     token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage report to codecov
+        uses: codecov/codecov-action@v4
+        with:
+          directory: backend
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}

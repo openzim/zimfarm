@@ -1,31 +1,8 @@
-FROM rgaudin/uwsgi-nginx:python3.8
-LABEL zimfarm=true
+FROM python:3.13-slim-bookworm
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
+LABEL zimfarm=true
 
-RUN pip install --no-cache-dir -U pip
-RUN pip install --no-cache-dir uwsgi==2.0.18
-
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r /app/requirements.txt
-
-COPY src /app/
-COPY docs /app/docs
-COPY maint-scripts /app/maint-scripts
-WORKDIR /app/
-
-ENV DOCS_DIR /app/docs
 ENV INIT_PASSWORD admin
-
-# from uwsgi-nginx
-ENV UWSGI_INI /app/uwsgi.ini
-ENV UWSGI_CHEAPER 4
-ENV UWSGI_CHEAPER_STEP 2
-ENV UWSGI_PROCESSES 32
-ENV NGINX_MAX_UPLOAD 0
-ENV NGINX_WORKER_PROCESSES 1
-ENV LISTEN_PORT 80
-ENV NGINV_ENABLE_GZIP 1
-
 # mailgun for notifications
 ENV MAILGUN_API_URL https://api.mailgun.net/v3/mg.farm.openzim.org
 ENV MAILGUN_FROM Zimfarm <info@farm.openzim.org>
@@ -43,12 +20,30 @@ ENV MAILGUN_FROM Zimfarm <info@farm.openzim.org>
 # ENV suffixed with event: `GLOBAL_NOTIFICATION_started` or `GLOBAL_NOTIFICATION_ended`
 # ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|mailgun,reg@kiwix.org
 
+COPY src /app/src
 
+COPY pyproject.toml README.md /app/
+
+RUN pip install --no-cache-dir /app  && rm -rf /app
+
+COPY maint-scripts /app/maint-scripts
 # prestart script (former entrypoint - database init)
 COPY prestart.sh /app/prestart.sh
 RUN chmod +x /app/prestart.sh
 
+# Copy periodic-scheduler and periodic-tasks for supervisor listener
+COPY periodic-scheduler.py /app/periodic-scheduler.py
+RUN chmod +x /app/periodic-scheduler.py
+
+COPY periodic-tasks.py /app/periodic-tasks.py
+RUN chmod +x /app/periodic-tasks.py
+
 # periodic tasks as a supervisor listenner (every minute)
 COPY supervisor-listener.py /usr/local/bin/supervisor-listener
 RUN chmod +x /usr/local/bin/supervisor-listener
+
 COPY periodic.conf /etc/supervisor/conf.d/periodic.conf
+
+EXPOSE 80
+
+CMD ["uvicorn", "zimfarm_backend.main:app", "--host", "0.0.0.0", "--port", "80"]
