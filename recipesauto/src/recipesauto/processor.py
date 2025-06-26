@@ -57,6 +57,8 @@ class Processor:
             import recipesauto.phet as setmodule
         elif context.kind == "gutenberg":
             import recipesauto.gutenberg as setmodule
+        elif context.kind == "stackexchange":
+            import recipesauto.stackexchange as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
@@ -66,6 +68,53 @@ class Processor:
 
         logger.info(f"{len(existing_recipe_names)} recipes already exist in ZF")
         logger.debug(",".join(existing_recipe_names))
+
+        # from pathlib import Path
+        # import json
+        # from bs4 import BeautifulSoup, Tag
+        # import time
+
+        # data = {}
+        # # existing_recipe_names = existing_recipe_names[1:3]
+        # for existing_recipe_name in existing_recipe_names:
+        #     time.sleep(1)
+        #     print(existing_recipe_name)
+        #     resp = requests.get(f"https://api.farm.openzim.org/v1/schedules/{existing_recipe_name}")
+        #     resp.raise_for_status()
+        #     config = json.loads(resp.text).get("config")
+        #     recipe_data = {
+        #         "resources": config.get("resources"),
+        #         "title": config.get("flags").get("title", None),
+        #         "description": config.get("flags").get("description", None),
+        #     }
+
+        #     if title := recipe_data.get("title"):
+        #         recipe_data["title_ok"] =  len(title) > 0 and len(title) <= 30
+        #     if description := recipe_data.get("description"):
+        #         recipe_data["description_ok"] =  len(description) > 0 and len(description) <= 80
+
+        #     domain = existing_recipe_name.split("_")[0]
+        #     resp = requests.get(f"https://{domain}/", allow_redirects=True, timeout=context.http_timeout)
+        #     resp.raise_for_status()
+
+        #     soup = BeautifulSoup(resp.text, 'lxml')
+        #     online_title = soup.title.string or "" if soup.title else ""
+        #     recipe_data["online_title"] = online_title
+        #     recipe_data["online_title_length"] = len(online_title)
+        #     recipe_data["online_title_ok"] =  online_title is not None and len(online_title) > 0 and len(online_title) <= 30
+
+        #     meta_tag = soup.find('meta', attrs={'name': 'description'})
+        #     if not meta_tag:
+        #         meta_tag = soup.find('meta', attrs={'name': 'twitter:description'})
+        #     online_description = meta_tag.get('content', "") if meta_tag and isinstance(meta_tag, Tag) else ""
+        #     recipe_data["online_description"] = online_description
+        #     recipe_data["online_description_length"] = len(online_description)
+        #     recipe_data["online_description_ok"] =  online_description is not None and len(online_description) > 0 and len(online_description) <= 80
+
+        #     data[existing_recipe_name] = recipe_data
+
+        # Path("data.json").write_text(json.dumps(data, indent=True))
+        # raise Exception("HSHSH")
 
         expected_recipes = setmodule.get_expected_recipes()
 
