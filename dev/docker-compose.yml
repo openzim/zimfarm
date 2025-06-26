@@ -12,6 +12,11 @@ services:
       - POSTGRES_DB=zimfarm
       - POSTGRES_USER=zimfarm
       - POSTGRES_PASSWORD=zimpass
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "dbname=zimfarm user=zimfarm"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   backend:
     build:
       context: ../backend
