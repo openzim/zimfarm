@@ -18,7 +18,7 @@ def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
 
 BASE_DIR = Path(__file__).parent.parent
 
-DEBUG = getenv("DEBUG", default=False)
+DEBUG = getenv("DEBUG", default="false").lower() == "true"
 
 REFRESH_TOKEN_EXPIRY_DURATION = parse_timespan(
     getenv("REFRESH_TOKEN_EXPIRY_DURATION", default="30d")
@@ -143,7 +143,7 @@ REQ_TIMEOUT_NOTIFICATIONS = int(getenv("REQ_TIMEOUT_NOTIFICATIONS", default="5")
 REQ_TIMEOUT_CMS = int(getenv("REQ_TIMEOUT_CMS", default="10"))
 REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
 
-REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT", default="30s"))
+REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT_DURATION", default="30s"))
 
 # OFFLINERS
 ZIMIT_USE_RELAXED_SCHEMA = bool(getenv("ZIMIT_USE_RELAXED_SCHEMA", default=False))
