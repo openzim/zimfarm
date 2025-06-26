@@ -4,96 +4,98 @@
   - send to change-password (TBI)
   - log-out -->
 
-<template2>
-  <span v-if="$store.getters.username" class="nav-item dropdown">
-    <a class="dropdown-toggle btn btn-sm btn-light"
-       href="#" id="userdropdown"
-       data-toggle="dropdown"
-       aria-haspopup="true"
-       aria-expanded="false">
-       <font-awesome-icon icon="user-circle" size="sm" /> {{ $store.getters.username }}
-     </a>
-    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userdropdown">
-      <button class="dropdown-item" @click.prevent="copyToken">
-        <font-awesome-icon icon="key" /> Copy token
-      </button>
-      <router-link class="dropdown-item" :to="{name: 'change-password'}">
-        <font-awesome-icon icon="wrench" /> Change password
-      </router-link>
-      <div class="dropdown-divider"></div>
-      <button class="dropdown-item" @click.prevent="signOut">
-        <font-awesome-icon icon="sign-out-alt" /> Sign-out
-      </button>
-    </div>
-  </span>
-  <router-link v-else class="btn btn-sm btn-light" :to="{ name: 'sign-in' }">
-    <font-awesome-icon icon="sign-in-alt" size="sm" /> Sign-in
-  </router-link>
-</template2>
-
 <template>
-  <b-dropdown v-if="isLoggedIn" variant="light" size="sm" right>
+  <div>
+    <!-- User Menu (when logged in) -->
+    <v-menu
+      v-if="user?.isLoggedIn"
+      location="bottom end"
+      offset-y
+    >
+      <template v-slot:activator="{ props }">
+        <v-btn
+          v-bind="props"
+          variant="outlined"
+          color="white"
+          size="small"
+          prepend-icon="mdi-account-circle"
+        >
+          {{ user?.username }}
+        </v-btn>
+      </template>
 
-    <template v-slot:button-content>
-        <font-awesome-icon icon="user-circle" size="sm" />
-        <span class="ml-1">{{ $store.getters.username }}</span>
-    </template>
+      <v-list>
+        <v-list-item
+          @click="copyToken"
+          prepend-icon="mdi-key"
+        >
+          <v-list-item-title>Copy token</v-list-item-title>
+        </v-list-item>
 
-    <b-dropdown-item @click.prevent="copyToken">
-        <font-awesome-icon icon="key" /> Copy token
-    </b-dropdown-item>
+        <v-list-item
+          prepend-icon="mdi-wrench"
+        >
+          <v-list-item-title>Change password</v-list-item-title>
+        </v-list-item>
 
-    <b-dropdown-item :to="{name: 'change-password'}">
-        <font-awesome-icon icon="wrench" /> Change password
-    </b-dropdown-item>
+        <v-divider></v-divider>
 
-    <b-dropdown-divider></b-dropdown-divider>
+        <v-list-item
+          @click="$emit('sign-out')"
+          prepend-icon="mdi-logout"
+        >
+          <v-list-item-title>Sign-out</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
 
-    <b-dropdown-item @click.prevent="signOut">
-      <font-awesome-icon icon="sign-out-alt" /> Sign-out
-    </b-dropdown-item>
-
-  </b-dropdown>
-
-  <router-link v-else class="btn btn-sm btn-light" :to="{ name: 'sign-in' }">
-    <font-awesome-icon icon="sign-in-alt" size="sm" /> Sign-in
-  </router-link>
+    <!-- Sign-in Button (when not logged in) -->
+    <v-btn
+      v-else
+      variant="outlined"
+      color="white"
+      size="small"
+      prepend-icon="mdi-login"
+    >
+      Sign-in
+    </v-btn>
+  </div>
 </template>
 
+<script setup lang="ts">
+defineOptions({
+  name: 'UserButton'
+})
 
-<script type="text/javascript">
-  import ZimfarmMixins from '../components/Mixins.js'
+interface User {
+  username: string | null
+  isLoggedIn: boolean
+  accessToken: string | null
+}
 
-  export default {
-    name: 'UserButton',
-    mixins: [ZimfarmMixins],
-    methods: {
-      copyToken() {
-        let parent = this;
-        this.$copyText(this.$store.getters.access_token).then(function () {
-            parent.alertInfo("Token copied to Clipboard!");
-          }, function () {
-            parent.alertWarning(
-              "Unable to copy token to clipboard 😞",
-              "Copy it manually:<br /><input type=\"text\" value=\"" + parent.$store.getters.access_token + "\" />");
-          });
-      },
-      signOut() {
-        this.removeToken(true);
-        this.redirectTo('home')
-      }
-    },
+const props = defineProps<{
+  user: User | null
+}>()
+
+defineEmits<{
+  'sign-out': []
+}>()
+
+const copyToken = async () => {
+  try {
+    const token = props.user?.accessToken
+    if (token) {
+      await navigator.clipboard.writeText(token)
+      // You might want to add a toast notification here
+      console.log('Token copied to clipboard!')
+    }
+  } catch (error) {
+    console.error('Failed to copy token:', error)
+    // Fallback: show token in alert or modal
+    const token = props.user?.accessToken
+    if (token) {
+      alert(`Token: ${token}`)
+    }
   }
+}
 </script>
-
-<style type="text/css" scoped>
-  .dropdown-menu {
-      font-size: .9rem;
-      padding: .2rem 0;
-      outline: none;
-  }
-
-  .dropdown-item {
-      padding: .25rem .5rem;
-  }
-</style>
