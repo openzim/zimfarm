@@ -95,7 +95,7 @@ ZIMPlatformValue = Annotated[int, Field(gt=0)]
 
 type OptionalZIMPlatformValue = ZIMPlatformValue | None
 
-ZIMLangCode = Annotated[str, Field(min_length=2, max_length=3)]
+ZIMLangCode = Annotated[str, Field(min_length=2, max_length=8)]
 
 type OptionalZIMLangCode = ZIMLangCode | None
 

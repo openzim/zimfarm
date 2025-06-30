@@ -64,7 +64,7 @@ def test_get_schedule_duration_default(dbsession: OrmSession, worker: Worker):
         dbsession, schedule_name="nonexistent", worker=worker
     )
     assert duration.value > 0
-    assert duration.worker is None
+    assert duration.worker_name is None
     assert isinstance(duration.on, datetime.datetime)
 
 
@@ -79,8 +79,8 @@ def test_get_schedule_duration_with_worker(
         dbsession, schedule_name=schedule.name, worker=worker
     )
     assert duration.value == schedule.durations[0].value
-    assert duration.worker is not None
-    assert duration.worker.name == worker.name
+    assert duration.worker_name is not None
+    assert duration.worker_name == worker.name
     assert duration.on == schedule.durations[0].on
 
 

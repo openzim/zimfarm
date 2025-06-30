@@ -22,7 +22,7 @@ class UserSchema(BaseUserSchema):
     """
 
     email: str | None
-    scope: dict[str, Any] | None = Field(default=None, exclude=True)
+    scope: dict[str, Any] | None = Field(default=None)
 
     @computed_field
     @property
