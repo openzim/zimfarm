@@ -1,169 +1,91 @@
-<template>
-  <div id="app">
-    <NavBar />
-    <AlertFeedback />
-    <router-view />
-  </div>
-</template>
+<script setup lang="ts">
+import { computed } from 'vue'
+import { RouterView, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import NavBar from '@/components/NavBar.vue'
+import type { NavigationItem } from '@/components/NavBar.vue'
 
-<script type="text/javascript">
-  import axios from 'axios'
+// Store and router
+const userStore = useUserStore()
 
-  import Constants from './constants.js'
-  import ZimfarmMixins from './components/Mixins.js'
-  import NavBar from './components/NavBar.vue'
-  import AlertFeedback from './components/AlertFeedback.vue'
+const router = useRouter()
 
-  export default {
-    name: 'app',
-    mixins: [ZimfarmMixins],
-    components: {NavBar, AlertFeedback},
-    methods: {
-      loadLanguages() {
-        let parent = this;
-        // download languages
-        if (!parent.$store.getters.languages.length) {
-          this.toggleLoader("fetching languages…");
-          parent.queryAPI('get', '/languages/', {params: {limit: 400}})
-            .then(function (response) {
-              let languages = [];
-              for (var i=0; i<response.data.items.length; i++){
-                languages.push(response.data.items[i]);
-              }
-              parent.$store.dispatch('setLanguages', languages);
-            })
-            .catch(function (error) {
-              parent.alertDanger("Unable to fetch languages",  Constants.standardHTTPError(error.response));
-              return;
-            }).then(function () {
-              parent.toggleLoader(false);
-            });
-        }
-      },
-      loadTags() {
-        let parent = this;
-        // download tags
-        if (!parent.$store.getters.tags.length) {
-          this.toggleLoader("fetching tags…");
-          parent.queryAPI('get', '/tags/', {params: {limit: 100}})
-            .then(function (response) {
-              let tags = [];
-              for (var i=0; i<response.data.items.length; i++){
-                tags.push(response.data.items[i]);
-              }
-              parent.$store.dispatch('setTags', tags);
-            })
-            .catch(function (error) {
-              parent.alertDanger("Unable to fetch tags", Constants.standardHTTPError(error.response));
-              return;
-            }).then(function () {
-              parent.toggleLoader(false);
-            });
-        }
-      },
-      loadOffliners() {
-        let parent = this;
-        // download offliners
-        if (!parent.$store.getters.offliners.length) {
-          this.toggleLoader("fetching offliners…");
-          parent.queryAPI('get', '/offliners/', {params: {limit: 100}})
-            .then(function (response) {
-              let offliners = [];
-              for (var i=0; i<response.data.items.length; i++){
-                offliners.push(response.data.items[i]);
-              }
-              parent.$store.dispatch('setOffliners', offliners);
-              parent.loadOfflinersDefs();
-            })
-            .catch(function (error) {
-              parent.alertDanger("Unable to fetch offliners", Constants.standardHTTPError(error.response));
-              return;
-            }).then(function () {
-              parent.toggleLoader(false);
-            });
-        }
-      },
-      loadPlatforms() {
-        let parent = this;
-        // download offliners
-        if (!parent.$store.getters.platforms.length) {
-          this.toggleLoader("fetching platforms…");
-          parent.queryAPI('get', '/platforms/', {params: {limit: 100}})
-            .then(function (response) {
-              let platforms = [];
-              for (var i=0; i<response.data.items.length; i++){
-                platforms.push(response.data.items[i]);
-              }
-              parent.$store.dispatch('setPlatforms', platforms);
-            })
-            .catch(function (error) {
-              parent.alertDanger("Unable to fetch platforms", Constants.standardHTTPError(error.response));
-              return;
-            }).then(function () {
-              parent.toggleLoader(false);
-            });
-        }
-      },
-      async loadOfflinersDefs() {
-        let parent = this;
-        // download offliners defs
-        if (!parent.$store.getters.offliners_defs.length) {
-          this.toggleLoader("fetching offliners defs…");
-
-          let requests = parent.$store.getters.offliners.map(function (offliner) {
-            return parent.queryAPI('get', '/offliners/' + offliner);
-          });
-          let results = await axios.all(requests);
-          let definitions = {};
-          parent.$store.getters.offliners.forEach(function (offliner, index) {
-            definitions[offliner] = results[index].data;
-          });
-          parent.$store.dispatch('setOfflinersDefs', definitions);
-        }
-      },
-      loadMetaData() {  // load languages and tags metadata from API then launch loadSchedules
-        this.loadLanguages();
-        this.loadTags();
-        this.loadOffliners();
-        this.loadPlatforms();
-      },
-      loadSchedule(schedule_name, force_reload, on_success, on_error) {
-        if (!force_reload && this.$store.getters.schedule && this.$store.getters.schedule.name == schedule_name){
-          if (on_success) { on_success(); }
-          return;
-        }
-
-        let parent = this;
-
-        parent.$store.dispatch('clearSchedule');  // reset until we receive the right schedule
-        parent.toggleLoader("fetching schedule…");
-        parent.queryAPI('get', '/schedules/' + schedule_name)
-          .then(function (response) {
-              // parent.error = null;
-              let schedule = response.data;
-
-              if (schedule.config.artifacts_globs) {
-                schedule.config.artifacts_globs_str = schedule.config.artifacts_globs.join("\n")
-              }
-
-              parent.$store.dispatch('setSchedule', schedule);
-
-              if (on_success) { on_success(); }
-          })
-          .catch(function (error) {
-            if (on_error) { on_error(Constants.standardHTTPError(error.response)); }
-          })
-          .then(function () {
-              parent.toggleLoader(false);
-          });
-      }
-    },
-    beforeMount() {
-      this.loadTokenFromCookie();
-      this.$root.$on('load-schedule', this.loadSchedule);
-    },
-    mounted() {
-      this.loadMetaData();
-    },
+// User object for passing to components
+const user = computed(() => {
+  if (!userStore.isLoggedIn) return null
+  return {
+    username: userStore.username,
+    isLoggedIn: userStore.isLoggedIn,
+    accessToken: userStore.accessToken
   }
+})
+
+// Navigation items logic
+const canReadUsers = computed(() => {
+  return userStore.hasPermission('users', 'read')
+})
+
+const navigationItems: NavigationItem[] = [
+  {
+    name: 'pipeline',
+    label: 'Pipeline',
+    route: 'pipeline',
+    icon: 'mdi-pipe',
+    disabled: false,
+    show: true
+  },
+  {
+    name: 'schedules-list',
+    label: 'Recipes',
+    route: 'schedules',
+    icon: 'mdi-book-open-variant',
+    disabled: false,
+    show: true
+  },
+  {
+    name: 'workers',
+    label: 'Workers',
+    route: 'workers',
+    icon: 'mdi-server',
+    disabled: false,
+    show: true
+  },
+  {
+    name: 'users-list',
+    label: 'Users',
+    route: 'users',
+    icon: 'mdi-account-group',
+    disabled: false,
+    show: canReadUsers.value
+  },
+  {
+    name: 'stats',
+    label: 'Stats',
+    route: 'stats',
+    icon: 'mdi-chart-line',
+    disabled: false,
+    show: true
+  }
+]
+
+const handleSignOut = () => {
+  userStore.clearToken()
+  router.push({ name: 'home' })
+}
 </script>
+
+<template>
+  <v-app>
+    <header>
+      <NavBar
+        :navigation-items="navigationItems"
+        :user="user"
+        @sign-out="handleSignOut"
+      />
+    </header>
+
+    <main>
+      <RouterView />
+    </main>
+  </v-app>
+</template>
