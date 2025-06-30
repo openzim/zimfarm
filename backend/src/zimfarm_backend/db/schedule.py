@@ -2,7 +2,7 @@ import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import TIMESTAMP, Integer, func, select
+from sqlalchemy import BigInteger, Integer, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
@@ -132,7 +132,9 @@ def update_schedule_duration(
         .where(Task.container["exit_code"].astext.cast(Integer) == 0)
         .where(Task.schedule_id == schedule.id)
         .order_by(
-            Task.timestamp[TaskStatus.scraper_completed]["$date"].astext.cast(TIMESTAMP)
+            Task.timestamp[TaskStatus.scraper_completed]["$date"].astext.cast(
+                BigInteger
+            )
         )
     ).scalars()
 
