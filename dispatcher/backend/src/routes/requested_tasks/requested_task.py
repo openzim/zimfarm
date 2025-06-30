@@ -30,7 +30,7 @@ from errors.http import (
 from routes import auth_info_if_supplied, authenticate, require_perm, url_uuid
 from routes.base import BaseRoute
 from routes.errors import NotFound
-from routes.utils import remove_secrets_from_response
+from routes.utils import apply_sort, remove_secrets_from_response
 from utils.scheduling import find_requested_task_for, request_a_schedule
 from utils.token import AccessToken
 
@@ -73,6 +73,9 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
     skip, limit = request_args["skip"], request_args["limit"]
     schedule_names = request_args["schedule_name"]
     priority = request_args.get("priority")
+    # Get sorting parameters
+    sort_by = request_args.get("sort_by")
+    sort_order = request_args.get("sort_order")
 
     # get requested tasks from database
     stmt = (
@@ -93,14 +96,24 @@ def list_of_requested_tasks(session: so.Session, token: AccessToken.Payload = No
         )
         .join(dbm.Worker, dbm.RequestedTask.worker, isouter=True)
         .join(dbm.Schedule, dbm.RequestedTask.schedule, isouter=True)
-        .order_by(dbm.RequestedTask.priority.desc())
-        .order_by(
+    )
+    join_models = {"Schedule": dbm.Schedule, "Worker": dbm.Worker}
+    if sort_by:
+        stmt = apply_sort(
+            stmt=stmt,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            model=dbm.RequestedTask,
+            join_models=join_models,
+        )
+    else:
+        stmt = stmt.order_by(dbm.RequestedTask.priority.desc())
+        stmt = stmt.order_by(
             dbm.RequestedTask.timestamp["reserved"]["$date"].astext.cast(sa.BigInteger)
         )
-        .order_by(
+        stmt = stmt.order_by(
             dbm.RequestedTask.timestamp["requested"]["$date"].astext.cast(sa.BigInteger)
         )
-    )
 
     if schedule_names:
         stmt = stmt.filter(dbm.Schedule.name.in_(schedule_names))
