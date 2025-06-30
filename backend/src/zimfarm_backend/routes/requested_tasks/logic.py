@@ -24,7 +24,6 @@ from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyOfflinerAndResourcesSchema,
-    NameOnlySchema,
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
 )
@@ -252,9 +251,7 @@ def get_requested_tasks_for_worker(
                     requested_by=task.requested_by,
                     priority=task.priority,
                     original_schedule_name=task.original_schedule_name,
-                    worker=NameOnlySchema(
-                        name=task.worker_name,
-                    ),
+                    worker_name=task.worker_name,
                     updated_at=task.updated_at,
                 ),
             ]
