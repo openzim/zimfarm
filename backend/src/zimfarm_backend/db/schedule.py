@@ -22,7 +22,6 @@ from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
     LanguageSchema,
     MostRecentTaskSchema,
-    NameOnlySchema,
     ScheduleDurationSchema,
     ScheduleFullSchema,
     ScheduleLightSchema,
@@ -43,7 +42,7 @@ from zimfarm_backend.db.models import (
 DEFAULT_SCHEDULE_DURATION = ScheduleDurationSchema(
     value=int(constants.DEFAULT_SCHEDULE_DURATION),
     on=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
-    worker=None,
+    worker_name=None,
     default=True,
 )
 
@@ -85,7 +84,7 @@ def map_duration(duration: ScheduleDuration) -> ScheduleDurationSchema:
     return ScheduleDurationSchema(
         value=duration.value,
         on=duration.on,
-        worker=NameOnlySchema(name=duration.worker.name) if duration.worker else None,
+        worker_name=duration.worker.name if duration.worker else None,
         default=duration.default,
     )
 
@@ -332,11 +331,7 @@ def create_schedule_full_schema(schedule: Schedule) -> ScheduleFullSchema:
             ScheduleDurationSchema(
                 value=duration.value,
                 on=duration.on,
-                worker=(
-                    NameOnlySchema(name=duration.worker.name)
-                    if duration.worker
-                    else None
-                ),
+                worker_name=duration.worker.name if duration.worker else None,
                 default=duration.default,
             )
             for duration in schedule.durations

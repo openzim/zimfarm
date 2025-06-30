@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import NameOnlySchema, ScheduleDurationSchema
+from zimfarm_backend.common.schemas.orms import ScheduleDurationSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
 from zimfarm_backend.db.requested_task import (
@@ -379,7 +379,7 @@ def test_get_requested_tasks(
         assert task.status == requested_task.status
         assert task.requested_by == requested_task.requested_by
         assert (
-            task.worker.name
+            task.worker_name
             == requested_task.worker.name  # pyright: ignore[reportOptionalMemberAccess]
         )
 
@@ -530,7 +530,7 @@ def test_does_platform_allow_worker_to_run(
             value=3600,
             on=getnow(),
             default=True,
-            worker=NameOnlySchema(name=worker.name),
+            worker_name=worker.name,
         ),
         updated_at=getnow(),
     )
@@ -553,7 +553,7 @@ def test_does_platform_allow_worker_to_run(
             value=3600,
             on=getnow(),
             default=True,
-            worker=NameOnlySchema(name=worker.name),
+            worker_name=worker.name,
         ),
         remaining=1800,
         eta=getnow(),

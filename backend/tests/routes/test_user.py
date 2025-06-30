@@ -29,7 +29,7 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
     assert response_json["meta"]["count"] == 5
     assert len(response_json["items"]) == len(users)
     for item in response_json["items"]:
-        assert set(item.keys()) == {"username", "email", "role"}
+        assert set(item.keys()) == {"username", "email", "role", "scope"}
 
 
 @pytest.mark.parametrize("skip, limit, expected", [(0, 1, 1), (1, 10, 4), (0, 100, 5)])

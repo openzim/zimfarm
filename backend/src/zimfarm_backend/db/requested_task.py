@@ -26,7 +26,6 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyOfflinerAndResourcesSchema,
-    NameOnlySchema,
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
     ScheduleDurationSchema,
@@ -195,7 +194,7 @@ def get_requested_tasks(
             RequestedTask.original_schedule_name,
             RequestedTask.updated_at,
             Schedule.name.label("schedule_name"),
-            Worker.name.label("worker"),
+            Worker.name.label("worker_name"),
         )
         .join(Worker, RequestedTask.worker, isouter=True)
         .join(Schedule, RequestedTask.schedule, isouter=True)
@@ -241,7 +240,7 @@ def get_requested_tasks(
         original_schedule_name,
         updated_at,
         _schedule_name,
-        worker,
+        _worker_name,
     ) in session.execute(query).all():
         # Because the SQL window function returns the total_records
         # for every row, assign that value to the nb_records
@@ -263,7 +262,7 @@ def get_requested_tasks(
                 priority=_priority,
                 original_schedule_name=original_schedule_name,
                 updated_at=updated_at,
-                worker=NameOnlySchema(name=worker),
+                worker_name=_worker_name,
                 schedule_name=_schedule_name,
             )
         )
@@ -583,9 +582,7 @@ def _create_requested_task_full_schema(
             requested_task.schedule.name if requested_task.schedule else "none"
         ),
         original_schedule_name=requested_task.original_schedule_name,
-        worker=NameOnlySchema(
-            name=requested_task.worker.name  # pyright: ignore[reportOptionalMemberAccess]
-        ),
+        worker_name=requested_task.worker.name,  # pyright: ignore[reportOptionalMemberAccess]
         events=requested_task.events,
         upload=requested_task.upload,
         notification=(
@@ -594,9 +591,6 @@ def _create_requested_task_full_schema(
             else None
         ),
         rank=compute_requested_task_rank(session, requested_task.id),
-        schedule=NameOnlySchema(
-            name=requested_task.schedule.name if requested_task.schedule else "none"
-        ),
         updated_at=requested_task.updated_at,
         schedule_id=requested_task.schedule_id,
     )

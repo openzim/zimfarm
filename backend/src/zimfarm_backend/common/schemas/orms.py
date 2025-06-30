@@ -92,20 +92,12 @@ class TaskFullSchema(BaseTaskSchema):
     upload: dict[str, Any]
 
 
-class NameOnlySchema(BaseModel):
-    """
-    Schema for reading only a name field from a model
-    """
-
-    name: str
-
-
 class ScheduleAwareTaskFullSchema(TaskFullSchema):
     """
     Schema for reading a task model with all fields and its schedule name
     """
 
-    schedule: NameOnlySchema
+    schedule_name: str
 
 
 class BaseRequestedTaskSchema(BaseModel):
@@ -116,7 +108,7 @@ class BaseRequestedTaskSchema(BaseModel):
     priority: int
     schedule_name: str
     original_schedule_name: str
-    worker: NameOnlySchema
+    worker_name: str
     updated_at: datetime.datetime
 
 
@@ -138,7 +130,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     upload: dict[str, Any]
     notification: ScheduleNotificationSchema | None
     rank: int | None = None
-    schedule: NameOnlySchema
+    schedule_name: str
     schedule_id: UUID | None = Field(exclude=True)
 
 
@@ -186,7 +178,7 @@ class ScheduleDurationSchema(BaseModel):
 
     value: int
     on: datetime.datetime
-    worker: NameOnlySchema | None
+    worker_name: str | None
     default: bool
 
 
@@ -224,7 +216,8 @@ class ScheduleFullSchema(BaseModel):
         )
 
     @computed_field
-    def get_duration(self) -> dict[str, Any]:
+    @property
+    def duration(self) -> dict[str, Any]:
         duration_res: dict[str, Any] = {}
         duration_res["available"] = False
         duration_res["default"] = {}
@@ -234,9 +227,9 @@ class ScheduleFullSchema(BaseModel):
                 duration_res["default"] = ScheduleDurationSchema.model_validate(
                     duration
                 ).model_dump(mode="json")
-            if duration.worker:
+            if duration.worker_name:
                 duration_res["available"] = True
-                duration_res["workers"][duration.worker.name] = (
+                duration_res["workers"][duration.worker_name] = (
                     ScheduleDurationSchema.model_validate(duration).model_dump(
                         mode="json"
                     )
