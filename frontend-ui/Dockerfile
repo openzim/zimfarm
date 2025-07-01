@@ -4,7 +4,9 @@ RUN apk --no-cache add yarn
 WORKDIR /app
 COPY package.json yarn.lock /app/
 RUN yarn install
-COPY *.js /app/
+COPY *.ts /app/
+COPY *.json /app/
+COPY *.html /app/
 COPY public /app/public
 COPY src /app/src
 RUN NODE_ENV=production yarn build

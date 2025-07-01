@@ -64,7 +64,13 @@ Start a shell in the backend-tools container.
 docker exec -it zf_backend-tools /bin/sh
 ```
 
-Once inside the container, ask Alembic to update the schema
+Once inside the container, go to app folder:
+
+```sh
+cd /app/src/zimfarm_backend
+```
+
+You can then ask Alembic to update the schema
 
 ```sh
 alembic upgrade head
@@ -118,13 +124,13 @@ docker exec -it zf_backend-tests python -m pytest
 You can select one specific set of tests by path
 
 ```sh
-python -m pytest tests/integration/routes/users
+python -m pytest tests/routes/test_user.py
 ```
 
 Or just one specific test function
 
 ```sh
-python -m pytest tests/integration/routes/users -k test_list_no_auth
+python -m pytest tests/routes/test_user.py -k test_list_users_no_auth
 ```
 
 ### backend database schema

@@ -10,7 +10,6 @@ authors = [
 keywords = ["zimfarm"]
 requires-python = ">=3.13,<3.14"
 description = "zimfarm Backend API"
-readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
 classifiers = [
     "Programming Language :: Python :: 3",

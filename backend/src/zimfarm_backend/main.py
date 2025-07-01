@@ -1,4 +1,7 @@
+import os
+
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from zimfarm_backend.routes import (
     auth,
@@ -20,6 +23,16 @@ def create_app(*, debug: bool = True):
         debug=debug,
         docs_url="/",
     )
+
+    if origins := os.getenv("ALLOWED_ORIGINS", None):
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins.split(","),
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
     main_router = APIRouter(prefix="/api/v2")
     main_router.include_router(router=auth.router)
     main_router.include_router(router=languages.router)
