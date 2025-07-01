@@ -1,7 +1,7 @@
 from collections.abc import Callable, Generator
 from typing import Any
 
-from bson.json_util import DEFAULT_JSON_OPTIONS, dumps, loads
+from bson.json_util import LEGACY_JSON_OPTIONS, dumps, loads
 from sqlalchemy import SelectBase, create_engine, func, select
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
@@ -12,13 +12,21 @@ from zimfarm_backend.common.constants import POSTGRES_URI
 # custom overload of bson deserializer to make naive datetime
 # this is needed to have objects from the DB with naive datetime properties
 # (otherwise the deserialization produces aware datetimes based on local TZ)
-def my_loads(s: str, *args: Any, **kwargs: Any) -> Any:
+def zimfarm_loads(s: str, *args: Any, **kwargs: Any) -> Any:
     return loads(
         s,
         *args,
-        json_options=DEFAULT_JSON_OPTIONS.with_options(tz_aware=False, tzinfo=None),
+        json_options=LEGACY_JSON_OPTIONS.with_options(tz_aware=False, tzinfo=None),
         **kwargs,
     )
+
+
+# custom overload of bson serializer to convert datetime objects to milliseconds
+# This is needed as the Pymongo version has changed since the codebase was upgraded
+# and the DEFAULT_JSON_OPTIONS converts datetime ojbects to isoformat which breaks
+# the format stored in the database.
+def zimfarm_dumps(obj: Any, *args: Any, **kwargs: Any):
+    return dumps(obj, *args, json_options=LEGACY_JSON_OPTIONS, **kwargs)
 
 
 if (
@@ -30,8 +38,8 @@ else:
         bind=create_engine(
             POSTGRES_URI,
             echo=False,
-            json_serializer=dumps,  # use bson serializer to handle datetime naively
-            json_deserializer=my_loads,  # use custom bson deserializer for same reason
+            json_serializer=zimfarm_dumps,
+            json_deserializer=zimfarm_loads,
         )
     )
 

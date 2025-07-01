@@ -61,8 +61,8 @@ class BaseTaskSchema(BaseModel):
     id: UUID
     status: str
     timestamp: dict[str, Any]
-    schedule_name: str
-    worker_name: str = Field(serialization_alias="worker")
+    schedule_name: str | None
+    worker_name: str
     updated_at: datetime.datetime
     original_schedule_name: str
 
@@ -97,8 +97,6 @@ class ScheduleAwareTaskFullSchema(TaskFullSchema):
     Schema for reading a task model with all fields and its schedule name
     """
 
-    schedule_name: str
-
 
 class BaseRequestedTaskSchema(BaseModel):
     id: UUID
@@ -108,7 +106,7 @@ class BaseRequestedTaskSchema(BaseModel):
     priority: int
     schedule_name: str
     original_schedule_name: str
-    worker_name: str
+    worker_name: str | None
     updated_at: datetime.datetime
 
 

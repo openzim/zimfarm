@@ -2,7 +2,7 @@ import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import TIMESTAMP, BigInteger, delete, func, or_, select, update
+from sqlalchemy import BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
@@ -220,8 +220,8 @@ def get_requested_tasks(
         )
         .order_by(
             RequestedTask.priority.desc(),
-            RequestedTask.timestamp["reserved"]["$date"].astext.cast(TIMESTAMP),
-            RequestedTask.timestamp["requested"]["$date"].astext.cast(TIMESTAMP),
+            RequestedTask.timestamp["reserved"]["$date"].astext.cast(BigInteger),
+            RequestedTask.timestamp["requested"]["$date"].astext.cast(BigInteger),
         )
     )
 
