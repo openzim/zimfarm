@@ -1,10 +1,12 @@
-FROM node:14-alpine as builder
+FROM node:24-alpine AS builder
 
 RUN apk --no-cache add yarn
 WORKDIR /app
 COPY package.json yarn.lock /app/
 RUN yarn install
-COPY *.js /app/
+COPY *.ts /app/
+COPY *.json /app/
+COPY *.html /app/
 COPY public /app/public
 COPY src /app/src
 RUN NODE_ENV=production yarn build
@@ -19,8 +21,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v1
-ENV ENVIRON_PATH /usr/share/nginx/html/environ.json
+ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v2
+ENV ENVIRON_PATH /usr/share/nginx/html/config.json
 EXPOSE 80
 
 ENTRYPOINT ["entrypoint.sh"]

@@ -1,4 +1,4 @@
-FROM node:14-alpine as builder
+FROM node:24-alpine AS builder
 
 RUN apk --no-cache add yarn python3
 WORKDIR /app

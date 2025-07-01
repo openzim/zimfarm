@@ -1,30 +1,48 @@
 <template>
-  <span class="badge badge-light mr-2">
-    <font-awesome-icon :icon="icon" /> {{ displayed_value }}
-  </span>
+  <v-chip
+    variant="outlined"
+    size="small"
+    class="mr-2"
+  >
+    <v-icon
+      :icon="icon"
+      size="small"
+      class="mr-1"
+    />
+    {{ displayedValue }}
+  </v-chip>
 </template>
 
-<script type="text/javascript">
-  import Constants from '../constants.js'
+<script setup lang="ts">
+import { formattedBytesSize } from '@/utils/format'
+import { computed } from 'vue'
 
-  export default {
-    name: 'ResourceBadge',
-    props: {
-      kind: String,  // cpu, memory, disk, shm
-      value: Number, // actual data
-      human_value: String,  // human repr of value (instead of raw one)
-    },
-    computed: {
-      displayed_value() {
-        if (this.human_value)
-          return this.human_value;
-        return (this.kind == 'cpu') ? this.value : Constants.formattedBytesSize(this.value); },
-      icon() { return {cpu: 'microchip', memory: 'memory', disk: 'hdd', shm: 'compact-disc'}[this.kind]; },
-      tooltip_text() {
-        if (!this.tooltip)
-          return "-";
-        return {cpu: "CPU", memory: "Memory", disk: "Disk", shm:"SHM"}[this.kind];
-      },
-    }
+// Props
+interface Props {
+  kind: 'cpu' | 'memory' | 'disk' | 'shm'
+  value: number
+  humanValue?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  humanValue: undefined
+})
+
+// Computed properties
+const displayedValue = computed(() => {
+  if (props.humanValue) {
+    return props.humanValue
   }
+  return props.kind === 'cpu' ? props.value : formattedBytesSize(props.value)
+})
+
+const icon = computed(() => {
+  const iconMap = {
+    cpu: 'mdi-cpu-64-bit',
+    memory: 'mdi-memory',
+    disk: 'mdi-harddisk',
+    shm: 'mdi-disc'
+  }
+  return iconMap[props.kind]
+})
 </script>

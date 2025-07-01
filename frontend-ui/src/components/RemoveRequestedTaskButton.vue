@@ -1,4 +1,4 @@
-<!-- Full-featured button to remove a requested task by its _id
+<!-- Full-featured button to remove a requested task by its id
 
   - disabled if not signed-in
   - displays a spinner on click
@@ -6,51 +6,62 @@
   - displays result as an AlertFeedback -->
 
 <template>
-  <button class="btn btn-sm btn-dark action-button"
-          @click.prevent="removeTask"
-          v-if="canUnRequestTasks">
-    <span v-show="!should_display_loader">
-      <font-awesome-icon icon="times" size="sm" /> remove
-    </span>
-    <span v-show="should_display_loader">
-      <font-awesome-icon icon="spinner" size="sm" spin v-show="should_display_loader" /> Removing requested task…
-    </span>
-  </button>
+  <v-btn
+    v-if="canUnRequestTasks"
+    color="error"
+    variant="outlined"
+    size="small"
+    :loading="isRemoving"
+    :disabled="isRemoving"
+    @click="removeTask"
+  >
+    <v-icon size="small" class="mr-1">mdi-delete</v-icon>
+    {{ isRemoving ? 'Removing...' : 'Remove' }}
+  </v-btn>
 </template>
 
-<script type="text/javascript">
-  import Constants from '../constants.js'
-  import ZimfarmMixins from '../components/Mixins.js'
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/auth';
+import { useRequestedTasksStore } from '@/stores/requestedTasks';
+import { computed, ref } from 'vue';
 
-  export default {
-    name: 'RemoveRequestedTaskButton',
-    mixins: [ZimfarmMixins],
-    props: {
-      _id: String
-    },
-    computed: {
-      short_id() { return Constants.short_id(this._id); },
-      should_display_loader() { return this.working; },
-    },
-    methods: {
-      removeTask() {
-        let parent = this;
+// Props
+interface Props {
+  id: string
+}
 
-        parent.working = true;
-        parent.queryAPI('delete', '/requested-tasks/' + parent._id)
-          .then(function () {
-            let msg = "Requested Task <code>" + Constants.short_id(parent._id) + "</code> has been removed.";
+const props = defineProps<Props>()
 
-            parent.alertSuccess("Un-scheduled!", msg);
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-            parent.working = false;
-            parent.$emit('requestedtasksremoved', parent._id);
-          });
-      }
+// Emits
+const emit = defineEmits<{
+  'requested-task-removed': [id: string]
+}>()
+
+const requestedTasksStore = useRequestedTasksStore()
+const authStore = useAuthStore()
+
+const isRemoving = ref(false)
+
+const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
+
+const removeTask = async () => {
+  if (isRemoving.value) return
+
+  isRemoving.value = true
+
+  try {
+    const success = await requestedTasksStore.removeRequestedTask(props.id)
+
+    if (success) {
+      // Emit event to parent component
+      // TODO: Set parent.working to false, not sure what this means
+      // TODO: parent.alertSuccess
+      emit('requested-task-removed', props.id)
     }
+  } catch (error) {
+    console.error('Failed to remove requested task:', error)
+  } finally {
+    isRemoving.value = false
   }
+}
 </script>

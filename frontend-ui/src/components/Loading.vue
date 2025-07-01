@@ -5,11 +5,7 @@
   - hover displays an optional descriptive text -->
 
 <template>
-  <v-tooltip
-    v-if="shouldDisplay"
-    :text="loadingText"
-    location="bottom"
-  >
+  <v-tooltip v-if="shouldDisplay" :text="loadingText" location="bottom">
     <template v-slot:activator="{ props }">
       <v-icon
         v-bind="props"
@@ -23,22 +19,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useUserStore } from '@/stores/user'
-
 defineOptions({
-  name: 'LoadingSpinner'
+  name: 'LoadingSpinner',
 })
 
-const userStore = useUserStore()
-
-const shouldDisplay = computed(() => {
-  return userStore.loadingStatus.shouldDisplay
-})
-
-const loadingText = computed(() => {
-  return userStore.loadingStatus.text
-})
+defineProps<{
+  shouldDisplay: boolean
+  loadingText: string
+}>()
 </script>
 
 <style scoped>
@@ -48,9 +36,6 @@ const loadingText = computed(() => {
   top: 0;
   left: 0;
   padding: 0.4rem;
-}
-
-.loading-spinner {
   animation: spin 1s linear infinite;
 }
 

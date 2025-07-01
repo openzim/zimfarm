@@ -27,7 +27,7 @@ services:
       - ../backend/periodic-tasks.py:/app/periodic-tasks.py
       - ../backend/maint-scripts:/app/maint-scripts
     ports:
-      - 8000:80
+      - 127.0.0.1:8000:80
     environment:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
@@ -38,6 +38,7 @@ services:
       LOGS_UPLOAD_URI: sftp://uploader@receiver:22/logs/
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       ZIMCHECK_OPTION: --all
+      ALLOWED_ORIGINS: http://localhost:8001,http://localhost:8002
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -45,47 +46,47 @@ services:
     build: ../frontend-ui
     container_name: zf_frontend-ui
     volumes:
-      - ../frontend-ui/src:/app
+      - ./frontend-ui-dev/config.json:/usr/share/nginx/html/config.json:ro
     ports:
       - 127.0.0.1:8001:80
-    environment:
-      ZIMFARM_WEBAPI: http://localhost:8000/v1
     depends_on:
       - backend
   frontend-ui-dev:
     build:
-      dockerfile: ../../dev/frontend-ui-dev/Dockerfile
+      dockerfile: ../dev/frontend-ui-dev/Dockerfile
       context: ../frontend-ui
     container_name: zf_frontend-ui-dev
     volumes:
       - ../frontend-ui/src:/app/src
+      - ./frontend-ui-dev/config.json:/usr/share/nginx/html/config.json:ro
     ports:
       - 127.0.0.1:8002:80
-    environment:
-      ZIMFARM_WEBAPI: http://localhost:8000/v1
     depends_on:
       - backend
   backend-tools:
     build:
-      dockerfile: ../../dev/backend-tools-tests/Dockerfile
+      dockerfile: ../dev/backend-tools-tests/Dockerfile
       context: ../backend
     container_name: zf_backend-tools
     command: tail -f /dev/null
     volumes:
-      - ../backend/src:/app
+      - ../backend/src:/app/src
     environment:
+      JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
     depends_on:
       - postgresdb
   backend-tests:
     build:
-      dockerfile: ../../dev/backend-tools-tests/Dockerfile
+      dockerfile: ../dev/backend-tools-tests/Dockerfile
       context: ../backend
     container_name: zf_backend-tests
     command: tail -f /dev/null
     volumes:
-      - ../backend/src:/app
+      - ../backend/src:/app/src
+      - ../backend/tests:/app/tests
     environment:
+      JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
     depends_on:
       - postgresdb

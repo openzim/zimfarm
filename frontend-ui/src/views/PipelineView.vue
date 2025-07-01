@@ -1,22 +1,192 @@
 <!-- Pipeline View showing a list of tasks -->
 
 <template>
-  <div class="container">
-    <TasksList :filter="filter" />
-  </div>
+  <TasksListTab
+    :filter="filter"
+    :filterOptions="filterOptions"
+    @filter-changed="handleFilterChange"
+  />
+  <PipelineTable
+    :headers="headers"
+    :tasks="tasks"
+    :paginator="paginator"
+    :loading="loadingStore.isLoading"
+    :error="error"
+    :canUnRequestTasks="canUnRequestTasks"
+    :lastRunsLoaded="lastRunsLoaded"
+    :schedulesLastRuns="schedulesLastRuns"
+    @limit-changed="handleLimitChange"
+    @load-data="loadData"
+  />
 </template>
 
-<script>
-  import TasksList from '../components/TasksList.vue'
+<script setup lang="ts">
+import PipelineTable from '@/components/PipelineTable.vue';
+import TasksListTab from '@/components/TasksListTab.vue';
+import constants from '@/constants';
+import { useAuthStore } from '@/stores/auth';
+import { useLoadingStore } from '@/stores/loading';
+import { useRequestedTasksStore } from '@/stores/requestedTasks';
+import { useTasksStore } from '@/stores/tasks';
+import type { Paginator } from '@/types/base';
+import type { RequestedTaskLight } from '@/types/requestedTasks';
+import type { TaskLight } from '@/types/tasks';
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import type { VueCookies } from 'vue-cookies';
+import { useRouter } from 'vue-router';
 
-  export default {
-    name: 'PipelineView',
-    props: {
-      filter: {
-        type: String,
-        default: "todo"
-      },
-    },
-    components: {TasksList},
+const $cookies = inject<VueCookies>('$cookies')
+// Filter options
+const filterOptions = [
+  { value: 'todo', label: 'TODO' },
+  { value: 'doing', label: 'DOING' },
+  { value: 'done', label: 'DONE' },
+  { value: 'failed', label: 'FAILED' }
+]
+// determine the headers based on the selected table
+const headers = computed(() => {
+  switch (currentFilter.value) {
+    case 'todo':
+      return [
+        { title: 'Schedule', value: 'schedule_name' },
+        { title: 'Requested', value: 'requested' },
+        { title: 'By', value: 'requested_by' },
+        { title: 'Resources', value: 'resources' },
+        { title: 'Worker', value: 'worker' },
+        canUnRequestTasks.value ? { title: 'Remove', value: 'remove' } : null,
+      ].filter(Boolean) as { title: string; value: string }[];
+    case 'doing':
+      return [
+        { title: 'Schedule', value: 'schedule_name' },
+        { title: 'Started', value: 'started' },
+        { title: 'Worker', value: 'worker' },
+      ];
+    case 'done':
+      return [
+        { title: 'Schedule', value: 'schedule_name' },
+        { title: 'Completed', value: 'completed' },
+        { title: 'Worker', value: 'worker' },
+        { title: 'Duration', value: 'duration' },
+      ];
+    case 'failed':
+      return [
+        { title: 'Schedule', value: 'schedule_name' },
+        { title: 'Stopped', value: 'stopped' },
+        { title: 'Worker', value: 'worker' },
+        { title: 'Duration', value: 'duration' },
+        { title: 'Status', value: 'status' },
+        { title: 'Last Run', value: 'last_run' },
+      ];
+    default:
+      return [];
   }
+});
+
+const props = withDefaults(defineProps<{
+  filter?: string
+}>(), {
+  filter: (new URLSearchParams(window.location.search).get('filter') || 'todo')
+})
+
+const lastRunsLoaded = ref(false)
+const schedulesLastRuns = ref<Record<string, Record<string, unknown>>>({})
+
+const currentFilter = ref(props.filter)
+const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
+const paginator = ref<Paginator>({
+  page: 1,
+  limit: $cookies?.get('pipeline-table-limit') || 20,
+  count: 0,
+  skip: 0,
+  page_size: 20,
+})
+const error = ref<string | null>(null)
+const intervalId = ref<number | null>(null)
+
+const router = useRouter()
+
+const requestedTasksStore = useRequestedTasksStore()
+const tasksStore = useTasksStore()
+const authStore = useAuthStore()
+const loadingStore = useLoadingStore()
+
+const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
+
+const handleFilterChange = (newFilter: string) => {
+  currentFilter.value = newFilter
+
+  // Navigate to the new filter route
+  router.push({
+    query: {
+      ...router.currentRoute.value.query,
+      filter: newFilter
+    }
+  })
+}
+
+// Watch for filter changes and load data
+watch(currentFilter, async (newFilter) => {
+  await loadData(paginator.value.limit, paginator.value.skip, newFilter)
+})
+
+async function loadData(limit: number, skip: number, filter?: string) {
+  if (!filter) {
+    filter = currentFilter.value
+  }
+  switch (filter) {
+    case 'todo':
+      await requestedTasksStore.fetchRequestedTasks(limit, skip)
+      tasks.value = requestedTasksStore.requestedTasks
+      paginator.value = requestedTasksStore.paginator
+      error.value = requestedTasksStore.error as string | null
+      break
+    case 'doing':
+      await tasksStore.fetchTasks(limit, skip, ['reserved', 'started', 'scraper_started', 'scraper_completed', 'cancel_requested'])
+      tasks.value = tasksStore.tasks
+      paginator.value = tasksStore.paginator
+      error.value = tasksStore.error as string | null
+      break
+    case 'done':
+      await tasksStore.fetchTasks(limit, skip, ['succeeded'])
+      tasks.value = tasksStore.tasks
+      paginator.value = tasksStore.paginator
+      error.value = tasksStore.error as string | null
+      break
+    case 'failed':
+      await tasksStore.fetchTasks(limit, skip, ['scraper_killed', 'failed', 'canceled'])
+      tasks.value = tasksStore.tasks
+      paginator.value = tasksStore.paginator
+      error.value = tasksStore.error as string | null
+      if (error.value === null) {
+        await loadLastRuns()
+      }
+      break
+    default:
+      throw new Error(`Invalid filter: ${filter}`)
+  }
+}
+
+async function loadLastRuns() {
+  // TODO: Load last runs
+  lastRunsLoaded.value = true
+}
+
+async function handleLimitChange(newLimit: number) {
+  $cookies?.set('pipeline-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY);
+  await loadData(newLimit, paginator.value.skip, currentFilter.value)
+}
+
+onMounted(async () => {
+  await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value)
+
+  intervalId.value = window.setInterval(async () => {
+    await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value)
+  }, 60000)
+})
+
+onBeforeUnmount(() => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
+})
 </script>

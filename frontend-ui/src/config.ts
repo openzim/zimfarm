@@ -1,10 +1,10 @@
-import type { PiniaPluginContext } from "pinia";
-import httpRequest from "@/utils/httpRequest";
-import { inject } from "vue";
-import constants from "./constants";
+import type { PiniaPluginContext } from 'pinia'
+import httpRequest from '@/utils/httpRequest'
+import { inject } from 'vue'
+import constants from '@/constants'
 
 export interface Config {
-  ZIMFARM_WEBAPI: string;
+  ZIMFARM_WEBAPI: string
 }
 
 export const ConfigService = {
@@ -15,9 +15,9 @@ export const ConfigService = {
     }),
 
   getConfig: function () {
-    return this.api().get<null, Config>("");
+    return this.api().get<null, Config>('')
   },
-};
+}
 
 declare module 'pinia' {
   export interface PiniaCustomProperties {
