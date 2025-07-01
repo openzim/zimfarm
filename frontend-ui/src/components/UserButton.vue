@@ -7,11 +7,7 @@
 <template>
   <div>
     <!-- User Menu (when logged in) -->
-    <v-menu
-      v-if="user?.isLoggedIn"
-      location="bottom end"
-      offset-y
-    >
+    <v-menu v-if="isLoggedIn" location="bottom end" offset-y>
       <template v-slot:activator="{ props }">
         <v-btn
           v-bind="props"
@@ -20,43 +16,29 @@
           size="small"
           prepend-icon="mdi-account-circle"
         >
-          {{ user?.username }}
+          {{ username }}
         </v-btn>
       </template>
 
       <v-list>
-        <v-list-item
-          @click="copyToken"
-          prepend-icon="mdi-key"
-        >
+        <v-list-item @click="copyToken" prepend-icon="mdi-key">
           <v-list-item-title>Copy token</v-list-item-title>
         </v-list-item>
 
-        <v-list-item
-          prepend-icon="mdi-wrench"
-        >
+        <v-list-item prepend-icon="mdi-wrench">
           <v-list-item-title>Change password</v-list-item-title>
         </v-list-item>
 
         <v-divider></v-divider>
 
-        <v-list-item
-          @click="$emit('sign-out')"
-          prepend-icon="mdi-logout"
-        >
+        <v-list-item @click="$emit('sign-out')" prepend-icon="mdi-logout">
           <v-list-item-title>Sign-out</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-menu>
 
     <!-- Sign-in Button (when not logged in) -->
-    <v-btn
-      v-else
-      variant="outlined"
-      color="white"
-      size="small"
-      prepend-icon="mdi-login"
-    >
+    <v-btn v-else variant="outlined" color="white" size="small" prepend-icon="mdi-login">
       Sign-in
     </v-btn>
   </div>
@@ -64,17 +46,13 @@
 
 <script setup lang="ts">
 defineOptions({
-  name: 'UserButton'
+  name: 'UserButton',
 })
 
-interface User {
+const props = defineProps<{
   username: string | null
   isLoggedIn: boolean
   accessToken: string | null
-}
-
-const props = defineProps<{
-  user: User | null
 }>()
 
 defineEmits<{
@@ -83,18 +61,16 @@ defineEmits<{
 
 const copyToken = async () => {
   try {
-    const token = props.user?.accessToken
-    if (token) {
-      await navigator.clipboard.writeText(token)
+    if (props.accessToken) {
+      await navigator.clipboard.writeText(props.accessToken)
       // You might want to add a toast notification here
       console.log('Token copied to clipboard!')
     }
   } catch (error) {
     console.error('Failed to copy token:', error)
     // Fallback: show token in alert or modal
-    const token = props.user?.accessToken
-    if (token) {
-      alert(`Token: ${token}`)
+    if (props.accessToken) {
+      alert(`Token: ${props.accessToken}`)
     }
   }
 }

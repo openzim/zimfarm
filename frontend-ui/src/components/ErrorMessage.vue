@@ -1,17 +1,22 @@
-<!-- Alert string to diplay an API-generated error message instead of expected content -->
+<!-- Alert string to display an API-generated error message instead of expected content -->
 
 <template>
-  <p class="alert alert-danger" v-if="message">{{ message }}</p>
+  <v-alert
+    v-if="message"
+    type="error"
+    variant="tonal"
+    closable
+    class="mb-4"
+  >
+    {{ message }}
+  </v-alert>
 </template>
 
-<script type="text/javascript">
-  export default {
-    name: 'ErrorMessage',
-    props: {
-      message: {
-        type: String,
-        default: null
-      }
-    }
-  }
+<script setup lang="ts">
+// Props
+interface Props {
+  message?: string | null
+}
+
+defineProps<Props>()
 </script>

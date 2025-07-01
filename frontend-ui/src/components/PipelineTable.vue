@@ -1,224 +1,187 @@
-<!-- Generic table listing tasks in a pipeline
-
-  - supports todo, doing, done, failed -->
-
 <template>
   <div>
-    <table class="table table-responsive-md table-striped"
-           v-if="!error"
-           :class="{'loading': loading}">
-      <caption>Showing max. <select v-model="selectedLimit" @change.prevent="limitChanged">
-          <option v-for="limit in limits" :key="limit" :value="limit">{{ limit }}</option>
-        </select> out of <strong>{{ total_results }} results</strong>
-      </caption>
-      <thead v-if="selectedTable == 'todo'">
-        <tr>
-          <th>Schedule</th>
-          <th>Requested</th>
-          <th>By</th>
-          <th>Resources</th>
-          <th>Worker</th>
-          <th v-show="canUnRequestTasks">Remove</th>
-        </tr>
-      </thead>
-      <thead v-if="selectedTable == 'doing'">
-        <tr><th>Schedule</th><th>Started</th><th>Worker</th></tr>
-      </thead>
-      <thead v-if="selectedTable == 'done'">
-        <tr><th>Schedule</th><th>Completed</th><th>Worker</th><th>Duration</th></tr>
-      </thead>
-      <thead v-if="selectedTable == 'failed'">
-        <tr><th>Schedule</th><th>Stopped</th><th>Worker</th><th>Duration</th><th>Status</th><th>Last Run</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="task in tasks" :key="task._id">
-          <td v-if="task.schedule_name === null || task.schedule_name == 'none'">{{ task.original_schedule_name }}</td>
-          <td v-else><router-link :to="{name: 'schedule-detail', params: {schedule_name: task.schedule_name}}">{{ task.schedule_name }}</router-link></td>
-          <td v-if="selectedTable == 'todo'"
-              v-tooltip="{content: format_dt(task.timestamp.requested), delay: 10}">{{ task.timestamp.requested | from_now }}</td>
-          <td v-if="selectedTable == 'todo'">{{ task.requested_by }}</td>
-          <td v-if="selectedTable == 'todo'"><ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
-              <ResourceBadge kind="memory" :value="task.config.resources.memory" />
-              <ResourceBadge kind="disk" :value="task.config.resources.disk" /></td>
-          <td v-if="selectedTable == 'doing'"
-              v-tooltip="{content: format_dt(task.timestamp.reserved), delay: 10}">
-              <router-link :to="{name: 'task-detail', params: {_id: task._id}}">{{ task.timestamp.reserved | from_now }}</router-link>
-          </td>
-          <td v-if="selectedTable == 'done'"
-              v-tooltip="{content: format_dt(task.updated_at), delay: 10}">
-              <router-link :to="{name: 'task-detail', params: {_id: task._id}}">{{ task.updated_at | from_now }}</router-link>
-          </td>
-          <td v-if="selectedTable == 'failed'"
-              v-tooltip="{content: format_dt(task.updated_at), delay: 10}">
-              <router-link :to="{name: 'task-detail', params: {_id: task._id}}">{{ task.updated_at | from_now }}</router-link>
-          </td>
-          <td><code v-if="task.worker">{{ task.worker }}</code><span v-else>n/a</span></td>
-          <td v-if="selectedTable == 'done' || selectedTable == 'failed'">{{ task.duration }}</td>
-          <td v-if="selectedTable == 'failed'"><code>{{ task.status }}</code></td>
-          <td v-if="selectedTable == 'failed'">
-            <span v-if="last_runs_loaded && schedules_last_runs[task.schedule_name]">
-              <code :class="statusClass(getPropFor(task.schedule_name, 'status'))">
-                {{ getPropFor(task.schedule_name, 'status') }}
-              </code>,
-              <TaskLink
-                :_id="getPropFor(task.schedule_name, '_id', '-')"
-                :updated_at="getPropFor(task.schedule_name, 'updated_at')" />
-            </span>
-          </td>
-          <td v-if="selectedTable == 'todo'" v-show="canUnRequestTasks"><RemoveRequestedTaskButton :_id="task._id" @requestedtasksremoved="loadData" /></td>
-        </tr>
-      </tbody>
-    </table>
-    <ErrorMessage :message="error" v-else />
+    <v-card v-if="!error" :class="{ 'loading': loading }" flat>
+      <v-card-title class="d-flex align-center justify-space-between">
+        <span class="text-subtitle-1 d-flex align-center">
+          Showing max.
+          <v-select
+            v-model="selectedLimit"
+            :items="limits"
+            @change="emit('limitChanged', selectedLimit)"
+            hide-details
+            density="compact"
+          />
+          out of <strong class="ml-1 mr-1">{{ props.paginator.count }}</strong> results
+        </span>
+      </v-card-title>
+      <v-data-table-server
+        :headers="headers"
+        :items="tasks"
+        :loading="loading"
+        :items-per-page="selectedLimit"
+        :items-length="props.paginator.count"
+        :items-per-page-options="limits"
+        class="elevation-1"
+        item-key="id"
+        @update:itemsPerPage="emit('limitChanged', $event)"
+        @update:options="onUpdateOptions"
+      >
+        <template #[`item.schedule_name`]="{ item }">
+          <span v-if="item.schedule_name === null || item.schedule_name === 'none'">
+            {{ item.original_schedule_name }}
+          </span>
+          <router-link v-else :to="{ name: 'schedule-detail', params: { schedule_name: item.schedule_name } }">
+            {{ item.schedule_name }}
+          </router-link>
+        </template>
+
+        <template #[`item.requested`]="{ item }">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <span v-bind="props">
+                {{ fromNow((item.timestamp as Record<string, unknown>).requested as string) }}
+              </span>
+            </template>
+            <span>{{ formatDt((item.timestamp as Record<string, unknown>).requested as string) }}</span>
+          </v-tooltip>
+        </template>
+
+        <template #[`item.started`]="{ item }">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <span v-bind="props">
+                <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
+                  {{ fromNow((item.timestamp as Record<string, unknown>).reserved as string) }}
+                </router-link>
+              </span>
+            </template>
+            <span>{{ formatDt((item.timestamp as Record<string, unknown>).reserved as string) }}</span>
+          </v-tooltip>
+        </template>
+
+        <template #[`item.completed`]="{ item }">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <span v-bind="props">
+                <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
+                  {{ fromNow(item.updated_at) }}
+                </router-link>
+              </span>
+            </template>
+            <span>{{ formatDt(item.updated_at as string) }}</span>
+          </v-tooltip>
+        </template>
+
+        <template #[`item.stopped`]="{ item }">
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <span v-bind="props">
+                <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
+                  {{ fromNow(item.updated_at) }}
+                </router-link>
+              </span>
+            </template>
+            <span>{{ formatDt(item.updated_at) }}</span>
+          </v-tooltip>
+        </template>
+
+        <template #[`item.resources`]="{ item }">
+          <ResourceBadge kind="cpu" :value="item.config.resources.cpu" />
+          <ResourceBadge kind="memory" :value="item.config.resources.memory" />
+          <ResourceBadge kind="disk" :value="item.config.resources.disk" />
+        </template>
+
+        <template #[`item.worker`]="{ item }">
+          <code class="text-pink-accent-2" v-if="item.worker_name">{{ item.worker_name }}</code>
+          <span v-else>n/a</span>
+        </template>
+
+        <template #[`item.remove`]="{ item }">
+          <RemoveRequestedTaskButton v-if="canUnRequestTasks" :id="item.id" @requested-task-removed="emit('loadData', selectedLimit, 0)" />
+        </template>
+
+        <template #[`item.duration`]="{ item }">
+          {{ formatDurationBetween((item.timestamp as Record<string, unknown>).started as string, item.updated_at) }}
+        </template>
+
+        <template #[`item.status`]="{ item }">
+          <code class="text-pink-accent-2">{{ item.status }}</code>
+        </template>
+
+        <template #[`item.last_run`]="{ item }">
+          <span v-if="lastRunsLoaded && schedulesLastRuns[item.schedule_name]">
+            <code :class="statusClass(getPropertyFor(item.schedule_name, 'status') as string)">
+              {{ getPropertyFor(item.schedule_name, 'status') }}
+            </code>,
+            <TaskLink
+              :id="getPropertyFor(item.schedule_name, 'id', '-')"
+              :updatedAt="getPropertyFor(item.schedule_name, 'updated_at')"
+            />
+          </span>
+        </template>
+
+        <template #[`item.requested_by`]="{ item }">
+          {{ (item as any).requested_by }}
+        </template>
+
+      </v-data-table-server>
+    </v-card>
+    <ErrorMessage v-else :message="error" />
   </div>
 </template>
 
-<script type="text/javascript">
-  import Constants from '../constants.js'
-  import ZimfarmMixins from '../components/Mixins.js'
-  import ErrorMessage from '../components/ErrorMessage.vue'
-  import RemoveRequestedTaskButton from '../components/RemoveRequestedTaskButton.vue'
-  import ResourceBadge from '../components/ResourceBadge.vue'
-  import TaskLink from '../components/TaskLink.vue'
+<script setup lang="ts">
+import ErrorMessage from '@/components/ErrorMessage.vue';
+import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue';
+import ResourceBadge from '@/components/ResourceBadge.vue';
+import TaskLink from '@/components/TaskLink.vue';
+import type { Paginator } from '@/types/base';
+import type { RequestedTaskLight } from '@/types/requestedTasks';
+import type { TaskLight } from '@/types/tasks';
+import { formatDt, formatDurationBetween, fromNow } from '@/utils/format';
+import { ref, watch } from 'vue';
 
-  export default {
-    name: 'PipelineTable',
-    mixins: [ZimfarmMixins],
-    components: {ErrorMessage, RemoveRequestedTaskButton, ResourceBadge, TaskLink},
-    props: {
-      selectedTable: String, // applied filter: todo, doing, done, failed
-    },
-    data() {
-      return {
-        tasks: [], // list of tasks returned by API
-        meta: {}, // API query metadata (count, skip, limit)
-        error: false, // error string to display on API error
-        timer: null,  // auto-refresh timer
-        loading: false,
-        schedules_last_runs: {}, // last runs for all schedule_names of tasks
-        last_runs_loaded: false,  // used to trigger render() on last_run cell
-      };
-    },
-    computed: {
-      total_results() { // total (non-paginated) tasks for query from API
-        return (this.meta && this.meta.count) ? this.meta.count : 0;
-      }
-    },
-    methods: {
-      getPropFor(schedule_name, prop, otherwise) {
-        let last_run = this.schedules_last_runs[schedule_name];
-        if (last_run)
-          if (last_run[prop])
-            return last_run[prop];
-        if (otherwise)
-          return otherwise;
-        return null;
-      },
-      limitChanged() {
-        this.saveLimitPreference(this.selectedLimit);
-        this.loadData();
-      },
-      resetData() { // reset data holders
-        this.error = null;
-        this.tasks = [];
-        this.meta = {};
-        this.loading = false;
-      },
-      loadGenericData(url, params, item_transform, success_callback) {
-        let parent = this;
-        parent.toggleLoader("fetching tasks…");
-        parent.loading = true;
-        this.queryAPI('get', url, {params})
-          .then(function (response) {
-              parent.resetData();
-              parent.meta = response.data.meta;
-              parent.tasks = response.data.items.map(item_transform);
-              if (success_callback)
-                success_callback();
-          })
-          .catch(function (error) {
-            parent.resetData();
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-              parent.toggleLoader(false);
-          });
-      },
-      loadData() {
-        let parent = this;
-        if (this.selectedTable == 'todo') {
-          this.loadGenericData('/requested-tasks/',
-                               {limit: this.selectedLimit},
-                               function (item) { return item; });
-        }
-        if (this.selectedTable == 'doing') {
-          this.loadGenericData('/tasks/',
-                               {limit: this.selectedLimit,
-                                status: ["reserved", "started", "scraper_started", "scraper_completed", "cancel_requested"]},
-                               function (item) { return item; });
-        }
-        if (this.selectedTable == 'done') {
-          this.loadGenericData('/tasks/',
-                               {limit: this.selectedLimit,
-                                status: ["succeeded"]},
-                               function (item) {
-                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item.updated_at);
-                                return item;
-                               });
-        }
-        if (this.selectedTable == 'failed') {
-          this.loadGenericData('/tasks/',
-                               {limit: this.selectedLimit,
-                                status: ["scraper_killed", "failed", "canceled"]},
-                               function (item) {
-                                item["duration"] = Constants.format_duration_between(item.timestamp.started, item.updated_at);
-                                return item;
-                               }, function(){ // success_callback
-                                parent.loadLastRuns();
-                               });
-        }
-      },
-      async loadLastRuns() {
-        let parent = this;
-        parent.last_runs_loaded = false;
-        let schedule_names = parent.tasks.map(function (item) { return item.schedule_name; }).unique();
+const props = defineProps<{
+  headers: { title: string; value: string }[] // the headers to display
+  canUnRequestTasks: boolean // whether the user can unrequest tasks
+  loading: boolean // whether the table is loading
+  tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
+  paginator: Paginator // the paginator
+  lastRunsLoaded: boolean // whether the last runs have been loaded
+  schedulesLastRuns: Record<string, Record<string, unknown>> // the last runs for each schedule
+  error: string | null // the error message
+}>();
 
-        parent.toggleLoader("fetching last runs…");
-        const chunkSize = Constants.TASKS_LOAD_SCHEDULES_CHUNK_SIZE;
-        let requests = []
-        for (let i = 0; i < schedule_names.length; i += chunkSize) {
-            const chunk = schedule_names.slice(i, i + chunkSize);
-            for (let iChunk in chunk) {
-              requests.push(parent.queryAPI('get', "/schedules/" + chunk[iChunk]))
-            }
-            await Constants.getDelay(Constants.TASKS_LOAD_SCHEDULES_DELAY)
-        }
+const emit = defineEmits<{
+  'limitChanged': [limit: number]
+  'loadData': [limit: number, skip: number]
+}>();
 
-        const results = await Promise.all(requests.map(p => p.catch(e => e)));
+const limits = [10, 20, 50, 100];
+const selectedLimit = ref(props.paginator.limit);
 
-        results.forEach(function (response, index) {
-          if (!(response instanceof Error)) {
-            let schedule_name = schedule_names[index];
-            if (response.data.most_recent_task) {
-             parent.schedules_last_runs[schedule_name] = response.data.most_recent_task;
-            }
-          }
-        });
-        parent.last_runs_loaded = true;
-        parent.toggleLoader(false);
-      },
-    },
-    mounted() {
-      this.loadData();
-      this.timer = setInterval(this.loadData, 60000);
-    },
-    beforeDestroy () {
-      clearInterval(this.timer)
-    },
-    watch: {
-      selectedTable() {
-        this.loadData();
-      },
-    }
-  };
+function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
+  //  number is the next number, we need to calculate the skip for the request
+  const page = options.page > 1 ? options.page - 1 : 0
+  emit('loadData', options.itemsPerPage, page * options.itemsPerPage);
+}
+
+watch(() => props.paginator, (newPaginator) => {
+  selectedLimit.value = newPaginator.limit;
+});
+
+
+
+function getPropertyFor(schedule_name: string, property: string, otherwise?: unknown): string {
+  const last_run = props.schedulesLastRuns[schedule_name];
+  if (last_run && last_run[property]) return String(last_run[property]);
+  if (otherwise) return String(otherwise);
+  return '';
+}
+
+function statusClass(status: string) {
+  if (status === 'succeeded') return 'schedule-succeeded'
+  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'schedule-failed'
+  else return 'schedule-running'
+}
 </script>

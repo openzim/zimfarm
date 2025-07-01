@@ -1,28 +1,45 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { RouterView, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import NavBar from '@/components/NavBar.vue'
 import type { NavigationItem } from '@/components/NavBar.vue'
+import NavBar from '@/components/NavBar.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useLanguageStore } from '@/stores/language'
+import { useLoadingStore } from '@/stores/loading'
+import { usePlatformStore } from '@/stores/platform'
+import { useTagStore } from '@/stores/tag'
+import { computed, onBeforeMount, onMounted } from 'vue'
+import { RouterView, useRouter } from 'vue-router'
 
 // Store and router
-const userStore = useUserStore()
+const authStore = useAuthStore()
+const languageStore = useLanguageStore()
+const tagStore = useTagStore()
+const platformStore = usePlatformStore()
+const loadingStore = useLoadingStore()
 
 const router = useRouter()
 
-// User object for passing to components
-const user = computed(() => {
-  if (!userStore.isLoggedIn) return null
-  return {
-    username: userStore.username,
-    isLoggedIn: userStore.isLoggedIn,
-    accessToken: userStore.accessToken
-  }
+onBeforeMount(async () => {
+  await authStore.loadTokenFromCookie()
+  // TODO: setup listener for 'on-schedule' event to load schedules
+})
+
+onMounted(async () => {
+  // TODO: Call parent.alert[Danger|Success|Info|Warning] on error|response
+  // TODO: Implement a way to standardize the error messages
+  // TODO: Set up the AlertFeedback component to use the alert system
+  await languageStore.fetchLanguages()
+  await tagStore.fetchTags()
+  await platformStore.fetchPlatforms()
+  // TODO: Set up offliner store to load offliner definitions. Schema is a bit
+  // different from v1 because of switch to Pydantic
+  // TODO: Set up store to fetch schedules. Schema is a bit different from v1
+  // because of switch to Pydantic and will need to do a db update to re-shape
+  // the models as the config has changed shape.
 })
 
 // Navigation items logic
 const canReadUsers = computed(() => {
-  return userStore.hasPermission('users', 'read')
+  return authStore.hasPermission('users', 'read')
 })
 
 const navigationItems: NavigationItem[] = [
@@ -32,7 +49,7 @@ const navigationItems: NavigationItem[] = [
     route: 'pipeline',
     icon: 'mdi-pipe',
     disabled: false,
-    show: true
+    show: true,
   },
   {
     name: 'schedules-list',
@@ -40,7 +57,7 @@ const navigationItems: NavigationItem[] = [
     route: 'schedules',
     icon: 'mdi-book-open-variant',
     disabled: false,
-    show: true
+    show: true,
   },
   {
     name: 'workers',
@@ -48,7 +65,7 @@ const navigationItems: NavigationItem[] = [
     route: 'workers',
     icon: 'mdi-server',
     disabled: false,
-    show: true
+    show: true,
   },
   {
     name: 'users-list',
@@ -56,7 +73,7 @@ const navigationItems: NavigationItem[] = [
     route: 'users',
     icon: 'mdi-account-group',
     disabled: false,
-    show: canReadUsers.value
+    show: canReadUsers.value,
   },
   {
     name: 'stats',
@@ -64,12 +81,12 @@ const navigationItems: NavigationItem[] = [
     route: 'stats',
     icon: 'mdi-chart-line',
     disabled: false,
-    show: true
-  }
+    show: true,
+  },
 ]
 
 const handleSignOut = () => {
-  userStore.clearToken()
+  authStore.removeTokenFromCookie()
   router.push({ name: 'home' })
 }
 </script>
@@ -79,13 +96,19 @@ const handleSignOut = () => {
     <header>
       <NavBar
         :navigation-items="navigationItems"
-        :user="user"
+        :username="authStore.user?.username ?? null"
+        :is-logged-in="authStore.isLoggedIn"
+        :access-token="authStore.accessToken"
+        :is-loading="loadingStore.isLoading"
+        :loading-text="loadingStore.loadingText"
         @sign-out="handleSignOut"
       />
     </header>
 
-    <main>
-      <RouterView />
-    </main>
+    <v-main>
+      <v-container>
+        <RouterView />
+      </v-container>
+    </v-main>
   </v-app>
 </template>

@@ -1,37 +1,19 @@
 <template>
-  <v-app-bar
-    color="primary"
-    dark
-    elevation="2"
-  >
+  <v-app-bar color="primary" dark elevation="2">
     <!-- Logo and Brand -->
-    <v-app-bar-nav-icon
-      @click="drawer = !drawer"
-      class="d-md-none"
-    ></v-app-bar-nav-icon>
+    <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="d-flex align-center">
       <div class="branding d-flex align-center">
         <div class="icon position-relative">
-          <img
-            src="/assets/logo.svg"
-            width="32"
-            height="32"
-            alt="Zimfarm Logo"
-            class="logo-img"
-          />
+          <img src="/assets/logo.svg" width="32" height="32" alt="Zimfarm Logo" class="logo-img" />
+          <Loading :should-display="isLoading" :loading-text="loadingText" />
         </div>
         <span class="ml-2">Zimfarm</span>
       </div>
     </v-app-bar-title>
-
     <!-- Navigation Links -->
-    <v-tabs
-      v-model="activeTab"
-      class="d-none d-md-flex"
-      color="white"
-      slider-color="white"
-    >
+    <v-tabs v-model="activeTab" class="d-none d-md-flex" color="white" slider-color="white">
       <v-tab
         v-for="item in navigationItems"
         :key="item.name"
@@ -45,12 +27,7 @@
     <v-spacer class="d-none d-sm-flex"></v-spacer>
 
     <!-- Support Us Button -->
-    <v-btn
-      variant="outlined"
-      color="white"
-      size="small"
-      class="mr-2 d-none d-sm-flex"
-    >
+    <v-btn variant="outlined" color="white" size="small" class="mr-2 d-none d-sm-flex">
       <v-icon size="small" class="mr-1">mdi-heart</v-icon>
       Support us
     </v-btn>
@@ -58,19 +35,16 @@
     <!-- User Button -->
     <div class="user-button-container">
       <UserButton
-        :user="user"
+        :username="username"
+        :is-logged-in="isLoggedIn"
+        :access-token="accessToken"
         @sign-out="$emit('sign-out')"
       />
     </div>
   </v-app-bar>
 
   <!-- Mobile Navigation Drawer -->
-  <v-navigation-drawer
-    v-model="drawer"
-    temporary
-    location="left"
-    class="d-md-none"
-  >
+  <v-navigation-drawer v-model="drawer" temporary location="left" class="d-md-none">
     <v-list>
       <v-list-item
         v-for="item in navigationItems"
@@ -85,9 +59,7 @@
     <template v-slot:append>
       <v-divider></v-divider>
       <v-list>
-        <v-list-item
-          prepend-icon="mdi-heart"
-        >
+        <v-list-item prepend-icon="mdi-heart">
           <v-list-item-title>Support us</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -96,11 +68,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import UserButton from '@/components/UserButton.vue'
+import { ref } from 'vue'
 
 // Props
-interface NavigationItem {
+export interface NavigationItem {
   name: string
   label: string
   route: string
@@ -109,15 +81,13 @@ interface NavigationItem {
   show: boolean
 }
 
-interface User {
+defineProps<{
+  navigationItems: NavigationItem[]
   username: string | null
   isLoggedIn: boolean
   accessToken: string | null
-}
-
-defineProps<{
-  navigationItems: NavigationItem[]
-  user: User | null
+  isLoading: boolean
+  loadingText: string
 }>()
 
 defineEmits<{
@@ -147,7 +117,6 @@ const activeTab = ref(0)
   object-fit: contain;
   display: block;
 }
-
 
 .user-button-container {
   margin-right: 8px;

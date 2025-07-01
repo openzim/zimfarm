@@ -1,35 +1,40 @@
 <template>
-  <router-link v-if="tooltip" v-tooltip="format_dt(updated_at)" :to="to">{{ display_text }}</router-link>
-  <router-link v-else :to="to">{{ display_text }}
+  <v-tooltip v-if="tooltip" :text="formatDt(updatedAt)">
+    <template v-slot:activator="{ props }">
+      <router-link v-bind="props" :to="to" class="text-decoration-none">
+        {{ displayText }}
+      </router-link>
+    </template>
+  </v-tooltip>
+  <router-link v-else :to="to" class="text-decoration-none">
+    {{ displayText }}
   </router-link>
 </template>
 
-<script type="text/javascript">
-  import ZimfarmMixins from '../components/Mixins.js'
+<script setup lang="ts">
+import { formatDt, fromNow } from '@/utils/format'
+import { computed } from 'vue'
 
-  export default {
-    name: 'TaskLink',
-    mixins: [ZimfarmMixins],
-    props: {
-      _id: String,
-      updated_at: String,
-      tooltip: {
-        type: Boolean,
-        default: true,
-      },
-      text: {
-        type: String,
-        default: null,
-      }
-    },
-    computed: {
-      to() {
-        return {name: 'task-detail', params: {_id: this._id}};
-      },
-      display_text() {
-        return this.text === null ? this.from_now(this.updated_at) : this.text;
-      }
-    }
-  }
+// Props
+interface Props {
+  id: string
+  updatedAt: string
+  tooltip?: boolean
+  text?: string | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  tooltip: true,
+  text: null
+})
+
+// Computed properties
+const to = computed(() => {
+  return { name: 'task-detail', params: { id: props.id } }
+})
+
+const displayText = computed(() => {
+  return props.text === null ? fromNow(props.updatedAt) : props.text
+})
+
 </script>
-
