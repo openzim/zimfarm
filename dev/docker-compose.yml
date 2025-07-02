@@ -58,7 +58,7 @@ services:
     container_name: zf_frontend-ui-dev
     volumes:
       - ../frontend-ui/src:/app/src
-      - ./frontend-ui-dev/config.json:/usr/share/nginx/html/config.json:ro
+      - ./frontend-ui-dev/config.json:/app/public/config.json:ro
     ports:
       - 127.0.0.1:8002:80
     depends_on:

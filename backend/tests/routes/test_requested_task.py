@@ -16,7 +16,12 @@ def test_create_request_task_no_permission(
 ):
     """Test that create_request_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.post(
         "/api/v2/requested-tasks",
@@ -156,7 +161,12 @@ def test_update_requested_task_no_permission(
 ):
     """Test that update_requested_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.patch(
         f"/api/v2/requested-tasks/{requested_task.id}",
@@ -174,7 +184,12 @@ def test_update_requested_task_success(
 ):
     """Test successful update of requested task priority"""
     user = create_user(permission=RoleEnum.ADMIN)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.patch(
         f"/api/v2/requested-tasks/{requested_task.id}",
@@ -193,7 +208,12 @@ def test_delete_requested_task_no_permission(
 ):
     """Test that delete_requested_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.delete(
         f"/api/v2/requested-tasks/{requested_task.id}",
@@ -209,7 +229,12 @@ def test_delete_requested_task_success(
 ):
     """Test successful deletion of requested task"""
     user = create_user(permission=RoleEnum.ADMIN)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.delete(
         f"/api/v2/requested-tasks/{requested_task.id}",
