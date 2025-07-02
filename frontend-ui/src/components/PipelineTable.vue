@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card v-if="!error" :class="{ 'loading': loading }" flat>
+    <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
       <v-card-title class="d-flex align-center justify-space-between">
         <span class="text-subtitle-1 d-flex align-center">
           Showing max.
@@ -125,8 +125,8 @@
         </template>
 
       </v-data-table-server>
+      <ErrorMessage v-for="error in errors" :key="error" :message="error" />
     </v-card>
-    <ErrorMessage v-else :message="error" />
   </div>
 </template>
 
@@ -149,7 +149,7 @@ const props = defineProps<{
   paginator: Paginator // the paginator
   lastRunsLoaded: boolean // whether the last runs have been loaded
   schedulesLastRuns: Record<string, Record<string, unknown>> // the last runs for each schedule
-  error: string | null // the error message
+  errors: string[] // the errors to display
 }>();
 
 const emit = defineEmits<{

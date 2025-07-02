@@ -13,11 +13,18 @@
       </div>
     </v-app-bar-title>
     <!-- Navigation Links -->
-    <v-tabs v-model="activeTab" class="d-none d-md-flex" color="white" slider-color="white">
+    <v-tabs
+      :model-value="activeTab"
+      @update:model-value="handleTabChange"
+      class="d-none d-md-flex"
+      color="white"
+      slider-color="white"
+    >
       <v-tab
         v-for="item in navigationItems"
         :key="item.name"
         :disabled="item.disabled"
+        :value="item.name"
         class="text-none"
       >
         {{ item.label }}
@@ -27,7 +34,13 @@
     <v-spacer class="d-none d-sm-flex"></v-spacer>
 
     <!-- Support Us Button -->
-    <v-btn variant="outlined" color="white" size="small" class="mr-2 d-none d-sm-flex">
+    <v-btn
+      variant="outlined"
+      color="white"
+      size="small"
+      class="mr-2 d-none d-sm-flex"
+      :to="{ name: 'support' }"
+    >
       <v-icon size="small" class="mr-1">mdi-heart</v-icon>
       Support us
     </v-btn>
@@ -51,6 +64,7 @@
         :key="item.name"
         :disabled="item.disabled"
         :prepend-icon="item.icon"
+        :to="{ name: item.name }"
       >
         <v-list-item-title>{{ item.label }}</v-list-item-title>
       </v-list-item>
@@ -59,7 +73,7 @@
     <template v-slot:append>
       <v-divider></v-divider>
       <v-list>
-        <v-list-item prepend-icon="mdi-heart">
+        <v-list-item :to="{ name: 'support' }" prepend-icon="mdi-heart">
           <v-list-item-title>Support us</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -69,7 +83,8 @@
 
 <script setup lang="ts">
 import UserButton from '@/components/UserButton.vue'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 // Props
 export interface NavigationItem {
@@ -94,9 +109,28 @@ defineEmits<{
   'sign-out': []
 }>()
 
+const route = useRoute()
+const router = useRouter()
+
 // Reactive data
 const drawer = ref(false)
-const activeTab = ref(0)
+const activeTab = ref(route.name)
+
+// Watch for route changes and update activeTab
+watch(
+  () => route.name,
+  (newRouteName) => {
+    activeTab.value = newRouteName
+  },
+)
+
+// Handle tab changes
+const handleTabChange = (value: unknown) => {
+  const routeName = value as string
+  if (routeName && routeName !== route.name) {
+    router.push({ name: routeName })
+  }
+}
 </script>
 
 <style scoped>

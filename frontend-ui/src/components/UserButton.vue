@@ -38,7 +38,14 @@
     </v-menu>
 
     <!-- Sign-in Button (when not logged in) -->
-    <v-btn v-else variant="outlined" color="white" size="small" prepend-icon="mdi-login">
+    <v-btn
+      v-else
+      variant="outlined"
+      color="white"
+      size="small"
+      prepend-icon="mdi-login"
+      :to="{ name: 'sign-in' }"
+    >
       Sign-in
     </v-btn>
   </div>

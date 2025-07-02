@@ -11,7 +11,7 @@
     :tasks="tasks"
     :paginator="paginator"
     :loading="loadingStore.isLoading"
-    :error="error"
+    :errors="errors"
     :canUnRequestTasks="canUnRequestTasks"
     :lastRunsLoaded="lastRunsLoaded"
     :schedulesLastRuns="schedulesLastRuns"
@@ -100,7 +100,7 @@ const paginator = ref<Paginator>({
   skip: 0,
   page_size: 20,
 })
-const error = ref<string | null>(null)
+const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
 
 const router = useRouter()
@@ -138,26 +138,26 @@ async function loadData(limit: number, skip: number, filter?: string) {
       await requestedTasksStore.fetchRequestedTasks(limit, skip)
       tasks.value = requestedTasksStore.requestedTasks
       paginator.value = requestedTasksStore.paginator
-      error.value = requestedTasksStore.error as string | null
+      errors.value = requestedTasksStore.errors
       break
     case 'doing':
       await tasksStore.fetchTasks(limit, skip, ['reserved', 'started', 'scraper_started', 'scraper_completed', 'cancel_requested'])
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
-      error.value = tasksStore.error as string | null
+      errors.value = tasksStore.errors
       break
     case 'done':
       await tasksStore.fetchTasks(limit, skip, ['succeeded'])
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
-      error.value = tasksStore.error as string | null
+      errors.value = tasksStore.errors
       break
     case 'failed':
       await tasksStore.fetchTasks(limit, skip, ['scraper_killed', 'failed', 'canceled'])
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
-      error.value = tasksStore.error as string | null
-      if (error.value === null) {
+      errors.value = tasksStore.errors
+      if (errors.value.length === 0) {
         await loadLastRuns()
       }
       break

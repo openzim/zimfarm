@@ -2,7 +2,9 @@ import type { Config } from '@/config'
 import constants from '@/constants'
 import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse, Paginator } from '@/types/base'
+import type { ErrorResponse } from '@/types/errors'
 import { type TaskLight } from '@/types/tasks'
+import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
@@ -19,7 +21,7 @@ export const useTasksStore = defineStore('tasks', () => {
     count: 0,
   })
 
-  const error = ref<Error | null>(null)
+  const errors = ref<string[]>([])
   const loadingStore = useLoadingStore()
 
   const config = inject<Config>(constants.config)
@@ -54,7 +56,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
     } catch (_error) {
       console.error('Failed to fetch tasks', _error)
-      error.value = _error as Error
+      errors.value = translateErrors(_error as ErrorResponse)
     } finally {
       loadingStore.stopLoading()
     }
@@ -63,7 +65,7 @@ export const useTasksStore = defineStore('tasks', () => {
   return {
     tasks,
     paginator,
-    error,
+    errors,
     fetchTasks,
   }
 })

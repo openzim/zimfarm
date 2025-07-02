@@ -1,13 +1,15 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
+import type { ErrorResponse } from '@/types/errors'
 import type { Schedule } from '@/types/schedule'
+import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
 
 export const useScheduleStore = defineStore('schedule', () => {
   const schedule = ref<Schedule | null>(null)
-  const error = ref<Error | null>(null)
+  const error = ref<string[]>([])
 
   const config = inject<Config>(constants.config)
 
@@ -22,42 +24,28 @@ export const useScheduleStore = defineStore('schedule', () => {
   const fetchSchedule = async (
     scheduleName: string,
     forceReload: boolean = false,
-    onSuccess?: () => void,
-    onError?: (error: string) => void,
   ) => {
     // Check if we already have the schedule and don't need to force reload
     if (!forceReload && schedule.value && schedule.value.name === scheduleName) {
-      if (onSuccess) {
-        onSuccess()
-      }
       return
     }
 
     try {
-      error.value = null
+      error.value = []
       // Clear current schedule until we receive the right one
       schedule.value = null
 
       const response = await service.get<Schedule, Schedule>(`/${scheduleName}`)
       schedule.value = response
-
-      if (onSuccess) {
-        onSuccess()
-      }
     } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : 'Unknown error occurred'
       console.error('Failed to load schedule', _error)
-      error.value = _error as Error
-
-      if (onError) {
-        onError(errorMessage)
-      }
+      error.value = translateErrors(_error as ErrorResponse)
     }
   }
 
   const clearSchedule = () => {
     schedule.value = null
-    error.value = null
+    error.value = []
   }
 
   return {

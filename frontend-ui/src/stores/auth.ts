@@ -1,6 +1,8 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
+import type { ErrorResponse } from '@/types/errors'
 import type { JWTPayload, Token, User } from '@/types/user'
+import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { jwtDecode } from 'jwt-decode'
 import { defineStore } from 'pinia'
@@ -8,11 +10,9 @@ import { computed, inject, ref } from 'vue'
 import type { VueCookies } from 'vue-cookies'
 
 export const useAuthStore = defineStore('auth', () => {
-  // TODO: Store is not really working now as we need to include the user
-  // in the jwt payload. This is just a rough implementation.
   const token = ref<Token | null>(null)
   const user = ref<User | null>(null)
-  const error = ref<Error | null>(null)
+  const errors = ref<string[]>([])
 
   const $cookies = inject<VueCookies>('$cookies')
   if (!$cookies) {
@@ -31,8 +31,9 @@ export const useAuthStore = defineStore('auth', () => {
   // Computed properties
   const isLoggedIn = computed(() => {
     if (!token.value) return false
+    const jwtPayload = jwtDecode<JWTPayload>(token.value.access_token)
     const now = Math.floor(Date.now() / 1000)
-    return token.value.expires_in > now
+    return jwtPayload.exp > now
   })
 
   const username = computed(() => {
@@ -58,11 +59,13 @@ export const useAuthStore = defineStore('auth', () => {
       })
       token.value = response
       user.value = jwtDecode<JWTPayload>(token.value.access_token).user
-      error.value = null
+      errors.value = []
       saveTokenToCookie(token.value)
       return true
     } catch (_error) {
-      error.value = _error as Error
+      token.value = null
+      user.value = null
+      errors.value = translateErrors(_error as ErrorResponse)
       return false
     }
   }
@@ -77,9 +80,10 @@ export const useAuthStore = defineStore('auth', () => {
     let jwtPayload: JWTPayload
     let tokenData: Token
     try {
-      tokenData = JSON.parse(cookieValue)
-      jwtPayload = jwtDecode<JWTPayload>(tokenData.access_token)
-    } catch {
+      jwtPayload = jwtDecode<JWTPayload>(cookieValue.access_token)
+      tokenData = cookieValue
+    } catch (error) {
+      console.error('Error parsing cookie value', error)
       // incorrect cookie payload
       $cookies.remove(constants.TOKEN_COOKIE_NAME)
       return false
@@ -97,13 +101,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const saveTokenToCookie = (tokenData: Token) => {
+    // Decode JWT to get actual expiry time
+    const jwtPayload = jwtDecode<JWTPayload>(tokenData.access_token)
+    const expiryDate = new Date(jwtPayload.exp * 1000)
+
+    // Set cookie with proper configuration for persistence
     $cookies.set(
       constants.TOKEN_COOKIE_NAME,
       JSON.stringify(tokenData),
-      tokenData.expires_in,
-      undefined,
-      undefined,
-      config.ZIMFARM_WEBAPI.startsWith('https://'),
+      expiryDate, // Use actual JWT expiry
+      '/', // path
+      undefined, // domain
+      config.ZIMFARM_WEBAPI.startsWith('https://'), // secure flag
     )
   }
 
@@ -118,10 +127,33 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.scope[resource]?.[action] || false
   }
 
+  const authenticate = async (username: string, password: string) => {
+    try {
+      const response = await service.post<{ username: string; password: string }, Token>(
+        '/authorize',
+        {
+          username,
+          password,
+        },
+      )
+      token.value = response
+      user.value = jwtDecode<JWTPayload>(token.value.access_token).user
+      errors.value = []
+      saveTokenToCookie(token.value)
+      return true
+    } catch (err: unknown) {
+      token.value = null
+      user.value = null
+      errors.value = translateErrors(err as ErrorResponse)
+      return false
+    }
+  }
+
   return {
     // State
     token,
     user,
+    errors,
 
     // Computed
     isLoggedIn,
@@ -136,5 +168,6 @@ export const useAuthStore = defineStore('auth', () => {
     hasPermission,
     loadTokenFromCookie,
     renewTokenFromRefresh,
+    authenticate,
   }
 })

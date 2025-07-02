@@ -1,12 +1,14 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse, Paginator } from '@/types/base'
+import type { ErrorResponse } from '@/types/errors'
 import { type RequestedTaskLight } from '@/types/requestedTasks'
+import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
-import type { VueCookies } from 'vue-cookies'
 
 export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   const requestedTasks = ref<RequestedTaskLight[]>([])
@@ -18,7 +20,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     count: 0,
   })
 
-  const error = ref<Error | null>(null)
+  const errors = ref<string[]>([])
   const loadingStore = useLoadingStore()
 
   const config = inject<Config>(constants.config)
@@ -26,15 +28,14 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   if (!config) {
     throw new Error('Config is not defined')
   }
+  const authStore = useAuthStore()
 
-  const $cookies = inject<VueCookies>('$cookies')
 
-  const token = $cookies?.get(constants.TOKEN_COOKIE_NAME)
 
   let headers: Record<string, string> = {}
-  if (token) {
+  if (authStore.token) {
     headers = {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${authStore.token.access_token}`,
     }
   }
 
@@ -53,7 +54,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
 
     } catch (_error) {
       console.error('Failed to fetch requested tasks', _error)
-      error.value = _error as Error
+      errors.value = translateErrors(_error as ErrorResponse)
     } finally {
       loadingStore.stopLoading()
     }
@@ -74,7 +75,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
       return true
     } catch (_error) {
       console.error('Failed to remove requested task', _error)
-      error.value = _error as Error
+      errors.value = translateErrors(_error as ErrorResponse)
       return false
     } finally {
       loadingStore.stopLoading()
@@ -83,7 +84,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
 
   return {
     requestedTasks,
-    error,
+    errors,
     fetchRequestedTasks,
     removeRequestedTask,
     paginator,
