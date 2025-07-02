@@ -292,7 +292,6 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
 class RunningTask(BaseModel):
     config: ExpandedScheduleConfigSchema
     schedule_name: str
-    timestamp: dict[str, Any]
     worker_name: str
     duration: ScheduleDurationSchema
     remaining: float
@@ -314,7 +313,6 @@ def get_currently_running_tasks(
         RunningTask(
             config=ExpandedScheduleConfigSchema.model_validate(task.config),
             schedule_name=task.schedule.name if task.schedule else "none",
-            timestamp=task.timestamp,
             worker_name=task.worker.name,
             **compute_task_eta(session, task),
         )
