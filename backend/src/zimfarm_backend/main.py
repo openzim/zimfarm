@@ -1,7 +1,10 @@
 import os
+from http import HTTPStatus
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from zimfarm_backend.routes import (
     auth,
@@ -52,3 +55,26 @@ def create_app(*, debug: bool = True):
 
 
 app = create_app()
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error_handler(_, exc: RequestValidationError):
+    # transform the pydantic validation errors to a dictionary mapping
+    # the field to the list of errors
+    errors = {err["loc"][-1]: err["msg"] for err in exc.errors()}
+
+    return JSONResponse(
+        status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+        content={
+            "success": False,
+            "message": "Input values failed constraints validation",
+            "errors": errors,
+        },
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code, content={"success": False, "message": exc.detail}
+    )
