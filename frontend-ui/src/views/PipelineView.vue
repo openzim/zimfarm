@@ -2,7 +2,7 @@
 
 <template>
   <TasksListTab
-    :filter="filter"
+    :filter="currentFilter"
     :filterOptions="filterOptions"
     @filter-changed="handleFilterChange"
   />
@@ -31,9 +31,7 @@ import { useScheduleStore } from '@/stores/schedule';
 import { useTasksStore } from '@/stores/tasks';
 import type { MostRecentTask, Paginator } from '@/types/base';
 import type { RequestedTaskLight } from '@/types/requestedTasks';
-import type { Schedule } from '@/types/schedule';
 import type { TaskLight } from '@/types/tasks';
-import { getDelay } from '@/utils/httpRequest';
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { VueCookies } from 'vue-cookies';
 import { useRouter } from 'vue-router';
@@ -137,6 +135,7 @@ async function loadData(limit: number, skip: number, filter?: string) {
   if (!filter) {
     filter = currentFilter.value
   }
+  lastRunsLoaded.value = false
   switch (filter) {
     case 'todo':
       await requestedTasksStore.fetchRequestedTasks(limit, skip)
@@ -171,33 +170,29 @@ async function loadData(limit: number, skip: number, filter?: string) {
 }
 
 async function loadLastRuns() {
-  lastRunsLoaded.value = false
   const schedule_names = Array.from(new Set(tasks.value.map((task) => task.schedule_name)))
   loadingStore.startLoading('Loading last runs...')
 
-  const chunkSize = constants.TASKS_LOAD_SCHEDULES_CHUNK_SIZE
-  const requests: (Promise<Schedule | null> | null)[] = []
-  for (let i = 0; i < schedule_names.length; i += chunkSize) {
-    const chunk = Array.from(schedule_names).slice(i, i + chunkSize)
-    for (const schedule_name of chunk) {
-      if (schedule_name) {
-        requests.push(scheduleStore.fetchSchedule(schedule_name))
+  // Set lastRunsLoaded to true immediately so UI can start displaying data as it arrives
+  lastRunsLoaded.value = true
+
+  // Process each schedule individually with a pause between requests
+  for (const schedule_name of schedule_names) {
+    if (schedule_name) {
+      try {
+        const result = await scheduleStore.fetchSchedule(schedule_name)
+        if (result && result.most_recent_task) {
+          schedulesLastRuns.value[schedule_name] = result.most_recent_task
+        }
+        // Add a 100ms pause between requests to avoid overwhelming the backend
+        await new Promise(resolve => setTimeout(resolve, 100))
+      } catch (error) {
+        console.error(`Failed to fetch schedule ${schedule_name}:`, error)
       }
     }
-    await getDelay(constants.TASKS_LOAD_SCHEDULES_DELAY)
   }
 
-  const results = await Promise.all(requests)
-  results.forEach((result, index) => {
-    if (!result) return
-    const schedule_name = schedule_names[index]
-    if (result.most_recent_task) {
-      schedulesLastRuns.value[schedule_name] = result.most_recent_task
-    }
-  })
-
   loadingStore.stopLoading()
-  lastRunsLoaded.value = true
 }
 
 async function handleLimitChange(newLimit: number) {
