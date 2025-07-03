@@ -1,28 +1,20 @@
-import type { Config } from '@/config'
-import constants from '@/constants'
 import type { ListResponse } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import { translateErrors } from '@/utils/errors'
-import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
-import { inject, ref } from 'vue'
+import { ref } from 'vue'
+import { useAuthStore } from './auth'
 
 export const useOfflinerStore = defineStore('offliner', () => {
   const offliners = ref<string[]>([])
   const error = ref<string[]>([])
 
-  const config = inject<Config>(constants.config)
+  const authStore = useAuthStore()
 
-  if (!config) {
-    throw new Error('Config is not defined')
-  }
-
-  const service = httpRequest({
-    baseURL: `${config.ZIMFARM_WEBAPI}/offliners`,
-  })
 
   const fetchOffliners = async (limit: number = 100) => {
     try {
+      const service = await authStore.getApiService('offliners')
       const response = await service.get<null, ListResponse<string>>('', { params: { limit } })
       offliners.value = response.items
     } catch (_error) {

@@ -1,14 +1,11 @@
-import type { Config } from '@/config'
-import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import { type RequestedTaskLight } from '@/types/requestedTasks'
 import { translateErrors } from '@/utils/errors'
-import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
-import { inject, ref } from 'vue'
+import { ref } from 'vue'
 
 export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   const requestedTasks = ref<RequestedTaskLight[]>([])
@@ -22,29 +19,12 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
 
   const errors = ref<string[]>([])
   const loadingStore = useLoadingStore()
-
-  const config = inject<Config>(constants.config)
-
-  if (!config) {
-    throw new Error('Config is not defined')
-  }
   const authStore = useAuthStore()
 
 
 
-  let headers: Record<string, string> = {}
-  if (authStore.token) {
-    headers = {
-      'Authorization': `Bearer ${authStore.token.access_token}`,
-    }
-  }
-
-  const service = httpRequest({
-    baseURL: `${config.ZIMFARM_WEBAPI}/requested-tasks`,
-    headers,
-  })
-
   const fetchRequestedTasks = async (limit: number = 100, skip: number = 0) => {
+    const service = await authStore.getApiService('requested-tasks')
     try {
       loadingStore.startLoading('Fetching requested tasks...')
       const response = await service.get<null, ListResponse<RequestedTaskLight>>('', { params: { limit, skip } })
@@ -63,6 +43,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   const removeRequestedTask = async (id: string) => {
     try {
       loadingStore.startLoading('Removing requested task...')
+      const service = await authStore.getApiService('requested-tasks')
       await service.delete(`/${id}`)
 
       // Remove the task from the local state

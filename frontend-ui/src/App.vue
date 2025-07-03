@@ -86,7 +86,7 @@ const navigationItems: NavigationItem[] = [
 ]
 
 const handleSignOut = () => {
-  authStore.removeTokenFromCookie()
+  authStore.logout()
   router.push({ name: 'home' })
 }
 </script>

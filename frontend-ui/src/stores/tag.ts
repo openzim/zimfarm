@@ -1,29 +1,20 @@
-import type { Config } from '@/config'
-import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse } from '@/types/base'
-import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
-import { inject, ref } from 'vue'
+import { ref } from 'vue'
 
 export const useTagStore = defineStore('tag', () => {
   const tags = ref<string[]>([])
   const error = ref<Error | null>(null)
 
-  const config = inject<Config>(constants.config)
-  if (!config) {
-    throw new Error('Config is not defined')
-  }
-
-  const service = httpRequest({
-    baseURL: `${config.ZIMFARM_WEBAPI}/tags`,
-  })
-
+  const authStore = useAuthStore()
   const loadingStore = useLoadingStore()
 
   const fetchTags = async (limit: number = 100) => {
     try {
       loadingStore.startLoading('Fetching tags...')
+      const service = await authStore.getApiService('tags')
       const response = await service.get<null, ListResponse<string>>('', { params: { limit } })
       tags.value = response.items
     } catch (_error) {
