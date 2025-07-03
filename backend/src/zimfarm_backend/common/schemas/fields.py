@@ -3,6 +3,8 @@ from typing import Annotated, Any
 from pydantic import AfterValidator, AnyUrl, Field, SecretStr, WrapSerializer
 from pydantic_core.core_schema import SerializationInfo
 
+from zimfarm_backend.common.enums import WarehousePath
+
 
 def no_null_char(value: str) -> str:
     """Validate that string value does not contains Unicode null character"""
@@ -157,3 +159,13 @@ def validate_schedule_name(name: str) -> str:
 ScheduleNameField = Annotated[NotEmptyString, AfterValidator(validate_schedule_name)]
 
 type OptionalScheduleNameField = ScheduleNameField | None
+
+
+def validate_warehouse_path(warehouse_path: str) -> str:
+    """Validate that the string is a valid warehouse path."""
+    if warehouse_path not in WarehousePath.all():
+        raise ValueError(f"{warehouse_path} is not a valid Warehouse path")
+    return warehouse_path
+
+
+WarehousePathField = Annotated[str, AfterValidator(validate_warehouse_path)]

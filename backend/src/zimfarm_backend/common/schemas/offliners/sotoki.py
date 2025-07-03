@@ -16,7 +16,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class SotokiFlagsSchema(DashModel):
-    offliner_id: Literal["sotoki"]
+    offliner_id: Literal["sotoki"] = Field(alias="offliner_id")
 
     domain: NotEmptyString = Field(
         title="Domain",
