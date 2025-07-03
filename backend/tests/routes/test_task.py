@@ -93,7 +93,12 @@ def test_create_task_no_permission(
 ):
     """Test that create_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.post(
         f"/api/v2/tasks/{requested_task.id}",
@@ -157,7 +162,12 @@ def test_update_task_no_permission(
 ):
     """Test that update_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.patch(
         f"/api/v2/tasks/{task.id}",
@@ -189,7 +199,12 @@ def test_update_task_success(
 ):
     """Test successful update of task"""
     user = create_user(permission=RoleEnum.ADMIN)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.patch(
         f"/api/v2/tasks/{task.id}",
@@ -207,7 +222,12 @@ def test_cancel_task_no_permission(
 ):
     """Test that cancel_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.post(
         f"/api/v2/tasks/{task.id}/cancel",
@@ -253,7 +273,12 @@ def test_cancel_task_success(
 ):
     """Test successful cancellation of task"""
     user = create_user(permission=RoleEnum.ADMIN)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.post(
         f"/api/v2/tasks/{task.id}/cancel",

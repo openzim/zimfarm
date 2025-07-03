@@ -113,7 +113,12 @@ def x_sshauth_signature(private_key: RSAPrivateKey, auth_message: str) -> str:
 
 @pytest.fixture
 def access_token(user: User) -> str:
-    return generate_access_token(str(user.id))
+    return generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        scope=user.scope,
+        email=user.email,
+    )
 
 
 @pytest.fixture

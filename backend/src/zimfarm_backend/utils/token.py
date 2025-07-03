@@ -1,5 +1,6 @@
 # pyright: strict, reportGeneralTypeIssues=false
 import datetime
+from typing import Any
 
 import jwt
 import paramiko
@@ -17,7 +18,13 @@ from zimfarm_backend.common.constants import (
 from zimfarm_backend.exceptions import PEMPublicKeyLoadError
 
 
-def generate_access_token(user_id: str) -> str:
+def generate_access_token(
+    *,
+    user_id: str,
+    username: str,
+    email: str | None = None,
+    scope: dict[str, Any] | None = None,
+) -> str:
     """Generate a JWT access token for the given user ID with configured expiry."""
 
     issue_time = datetime.datetime.now(datetime.UTC)
@@ -27,6 +34,11 @@ def generate_access_token(user_id: str) -> str:
         "exp": expire_time.timestamp(),  # expiration time
         "iat": issue_time.timestamp(),  # issued at
         "subject": user_id,
+        "user": {
+            "username": username,
+            "email": email,
+            "scope": scope or {},
+        },
     }
     return jwt.encode(payload, key=JWT_SECRET, algorithm="HS256")
 

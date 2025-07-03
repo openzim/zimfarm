@@ -47,7 +47,12 @@ def test_get_schedules(
 ):
     """Test that get_schedules raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     for i in range(10):
         schedule = create_schedule(
@@ -95,7 +100,12 @@ def test_create_schedule(
 ):
     """Test that create_schedule raises ForbiddenError without permission"""
     user = create_user(permission=permission)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     schedule_config = create_schedule_config()
 
@@ -139,7 +149,12 @@ def test_get_schedule(
 ):
     """Test that get_schedule raises ForbiddenError without permission"""
     user = create_user(permission=permission)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     schedule = create_schedule(name="test_schedule")
     dbsession.add(schedule)
@@ -169,7 +184,12 @@ def test_update_schedule_unauthorized(
 ):
     """Test that update_schedule raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     response = client.patch(
         "/api/v2/schedules/nonexistent",
@@ -261,7 +281,12 @@ def test_update_schedule(
     expected_status_code: HTTPStatus,
 ):
     user = create_user(permission=RoleEnum.ADMIN)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     schedule = create_schedule(name="test_schedule")
     dbsession.add(schedule)
@@ -291,7 +316,12 @@ def test_delete_schedule(
     expected_status_code: HTTPStatus,
 ):
     user = create_user(permission=permission)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     schedule = create_schedule(name="test_schedule")
     dbsession.add(schedule)
@@ -330,7 +360,12 @@ def test_clone_schedule(
     create_schedule: Callable[..., Schedule],
 ):
     user = create_user(permission=RoleEnum.ADMIN)
-    access_token = generate_access_token(str(user.id))
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
 
     schedule = create_schedule(name="test_schedule")
     dbsession.add(schedule)
