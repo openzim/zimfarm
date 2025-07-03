@@ -42,7 +42,7 @@ def test_refresh_access_token(
     token = create_refresh_token(session=dbsession, user_id=users[0].id)
     response = client.post(
         "/api/v2/auth/refresh",
-        headers={"refresh-token": str(token.token)},
+        json={"refresh_token": str(token.token)},
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -54,7 +54,7 @@ def test_refresh_access_token(
 def test_refresh_access_token_invalid_token(client: TestClient):
     response = client.post(
         "/api/v2/auth/refresh",
-        headers={"refresh-token": str(uuid.uuid4())},
+        json={"refresh_token": str(uuid.uuid4())},
     )
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
@@ -70,7 +70,7 @@ def test_refresh_access_token_expired_token(
     )
     response = client.post(
         "/api/v2/auth/refresh",
-        headers={"refresh-token": str(token.token)},
+        json={"refresh_token": str(token.token)},
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()

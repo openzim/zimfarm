@@ -25,6 +25,7 @@ from zimfarm_backend.routes.auth.models import (
     CredentialsIn,
     OAuth2CredentialsWithPassword,
     OAuth2CredentialsWithRefreshToken,
+    RefreshTokenIn,
     Token,
 )
 from zimfarm_backend.routes.http_errors import (
@@ -103,11 +104,11 @@ def auth_with_credentials(
 
 @router.post("/refresh")
 def refresh_access_token(
-    refresh_token: Annotated[UUID, Header(description="Old refresh token")],
+    request: RefreshTokenIn,
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
     response: Response,
 ) -> Token:
-    return _refresh_access_token(db_session, refresh_token, response)
+    return _refresh_access_token(db_session, request.refresh_token, response)
 
 
 @router.post("/ssh-authorize")
