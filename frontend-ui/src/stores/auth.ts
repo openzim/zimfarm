@@ -54,28 +54,28 @@ export const useAuthStore = defineStore('auth', () => {
 
   const renewTokenFromRefresh = async (refreshToken: string) => {
     try {
-      const response = await service.post<{ refreshToken: string }, Token>('/refresh', {
-        refreshToken: refreshToken,
+      const response = await service.post<{ refresh_token: string }, Token>('/refresh', {
+        refresh_token: refreshToken,
       })
       token.value = response
       user.value = jwtDecode<JWTPayload>(token.value.access_token).user
       errors.value = []
       saveTokenToCookie(token.value)
-      return true
-    } catch (_error) {
+      return token.value?.access_token
+    } catch (error) {
       token.value = null
       user.value = null
-      errors.value = translateErrors(_error as ErrorResponse)
-      return false
+      errors.value = translateErrors(error as ErrorResponse)
+      return null
     }
   }
 
   const loadTokenFromCookie = async (forceRefresh: boolean = false) => {
     // already authenticated
-    if (isLoggedIn.value && !forceRefresh) return true
+    if (isLoggedIn.value && !forceRefresh) return token.value?.access_token
 
     const cookieValue = $cookies.get(constants.TOKEN_COOKIE_NAME)
-    if (!cookieValue) return false
+    if (!cookieValue) return null
 
     let jwtPayload: JWTPayload
     let tokenData: Token
@@ -86,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Error parsing cookie value', error)
       // incorrect cookie payload
       $cookies.remove(constants.TOKEN_COOKIE_NAME)
-      return false
+      return null
     }
 
     const expiry = new Date(jwtPayload.exp * 1000)
@@ -97,26 +97,25 @@ export const useAuthStore = defineStore('auth', () => {
 
     token.value = tokenData
     user.value = jwtPayload.user
-    return true
+    return token.value?.access_token
   }
 
   const saveTokenToCookie = (tokenData: Token) => {
     // Decode JWT to get actual expiry time
-    const jwtPayload = jwtDecode<JWTPayload>(tokenData.access_token)
-    const expiryDate = new Date(jwtPayload.exp * 1000)
-
     // Set cookie with proper configuration for persistence
     $cookies.set(
       constants.TOKEN_COOKIE_NAME,
       JSON.stringify(tokenData),
-      expiryDate, // Use actual JWT expiry
+      // persist with config cookie expiry so that even thought the cookie expires,
+      // we can still use the refresh token to get a new access token without logging in again
+      constants.TOKEN_COOKIE_EXPIRY,
       '/', // path
       undefined, // domain
       config.ZIMFARM_WEBAPI.startsWith('https://'), // secure flag
     )
   }
 
-  const removeTokenFromCookie = () => {
+  const logout = () => {
     token.value = null
     user.value = null
     $cookies.remove(constants.TOKEN_COOKIE_NAME)
@@ -149,6 +148,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+
+  const getApiService = async (baseURL: string) => {
+    const token = await loadTokenFromCookie()
+    if (!token) return httpRequest({
+      baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
+    })
+
+    return httpRequest({
+      baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  }
+
   return {
     // State
     token,
@@ -164,10 +178,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Methods
     saveTokenToCookie,
-    removeTokenFromCookie,
     hasPermission,
     loadTokenFromCookie,
     renewTokenFromRefresh,
     authenticate,
+    logout,
+    getApiService,
   }
 })

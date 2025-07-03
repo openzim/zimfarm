@@ -1,30 +1,19 @@
-import type { Config } from '@/config'
-import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 import type { ErrorResponse } from '@/types/errors'
 import type { Schedule } from '@/types/schedule'
 import { translateErrors } from '@/utils/errors'
-import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
-import { inject, ref } from 'vue'
-
+import { ref } from 'vue'
 export const useScheduleStore = defineStore('schedule', () => {
   const schedule = ref<Schedule | null>(null)
   const error = ref<string[]>([])
-
-  const config = inject<Config>(constants.config)
-
-  if (!config) {
-    throw new Error('Config is not defined')
-  }
-
-  const service = httpRequest({
-    baseURL: `${config.ZIMFARM_WEBAPI}/schedules`,
-  })
+  const authStore = useAuthStore()
 
   const fetchSchedule = async (
     scheduleName: string,
     forceReload: boolean = false,
   ) => {
+    const service = await authStore.getApiService('schedules')
     // Check if we already have the schedule and don't need to force reload
     if (!forceReload && schedule.value && schedule.value.name === scheduleName) {
       return
