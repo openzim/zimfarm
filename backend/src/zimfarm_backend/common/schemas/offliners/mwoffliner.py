@@ -50,7 +50,7 @@ class MWOfflinerForceRender(StrEnum):
 
 
 class MWOfflinerFlagsSchema(DashModel):
-    offliner_id: Literal["mwoffliner"]
+    offliner_id: Literal["mwoffliner"] = Field(alias="offliner_id")
 
     mwUrl: AnyUrl = Field(
         title="Wiki URL",
@@ -111,6 +111,7 @@ class MWOfflinerFlagsSchema(DashModel):
     formats: list[MWOfflinerFormatFlavour] | None = OptionalField(
         description="Which flavours to build, as `<flavour>:<custom-suffix>`. "
         "Empty option is full without suffix.",
+        alias="format",
     )
 
     customFlavour: MWOfflinerCustomProcessorPath | None = OptionalField(

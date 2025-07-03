@@ -19,7 +19,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class YoutubeFlagsSchema(DashModel):
-    offliner_id: Literal["youtube"]
+    offliner_id: Literal["youtube"] = Field(alias="offliner_id")
 
     optimization_cache: OptionalS3OptimizationCache = OptionalField(
         title="Optimization Cache URL",
@@ -98,6 +98,7 @@ class YoutubeFlagsSchema(DashModel):
     video_format: Literal["webm", "mp4"] | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
+        alias="format",
     )
 
     low_quality: bool | None = OptionalField(

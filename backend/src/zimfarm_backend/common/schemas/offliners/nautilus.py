@@ -15,7 +15,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class NautilusFlagsSchema(DashModel):
-    offliner_id: Literal["nautilus"]
+    offliner_id: Literal["nautilus"] = Field(alias="offliner_id")
 
     archive: AnyUrl | None = OptionalField(
         title="Archive",

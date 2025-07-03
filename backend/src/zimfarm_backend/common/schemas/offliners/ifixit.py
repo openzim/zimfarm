@@ -18,7 +18,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class IFixitFlagsSchema(DashModel):
-    offliner_id: Literal["ifixit"]
+    offliner_id: Literal["ifixit"] = Field(alias="offliner_id")
 
     language: NotEmptyString = Field(
         title="Language",
@@ -115,14 +115,14 @@ class IFixitFlagsSchema(DashModel):
         "Can be fractions. Defaults to 0: no delay",
     )
 
-    max_missing_items: OptionalPercentage = OptionalField(
+    max_missing_items_percent: OptionalPercentage = OptionalField(
         title="Max Missing Items",
         description="Amount of missing items which will force the scraper to "
         "stop, expressed as a percentage of the total number of items to retrieve. "
         "Integer from 1 to 100",
     )
 
-    max_error_items: OptionalPercentage = OptionalField(
+    max_error_items_percent: OptionalPercentage = OptionalField(
         title="Max Error Items",
         description="Amount of items with failed processing which will force "
         "the scraper to stop, expressed as a percentage of the total number of "

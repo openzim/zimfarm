@@ -15,6 +15,7 @@ from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     ScheduleNameField,
     SkipField,
+    WarehousePathField,
 )
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
@@ -22,7 +23,6 @@ from zimfarm_backend.common.schemas.models import (
     ResourcesSchema,
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
-    WarehousePath,
 )
 
 
@@ -58,7 +58,7 @@ class ScheduleUpdateSchema(BaseModel):
     tags: list[NotEmptyString] | None = None
     enabled: bool | None = None
     offliner: Offliner | None = None
-    warehouse_path: WarehousePath | None = None
+    warehouse_path: WarehousePathField | None = None
     image: DockerImageSchema | None = None
     platform: Platform | None = None
     resources: ResourcesSchema | None = None

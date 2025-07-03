@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import AnyUrl, Field
 
-from zimfarm_backend.common.schemas import CamelModel, DashModel
+from zimfarm_backend.common.schemas import CamelModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -155,7 +155,66 @@ class ZimitDevice(StrEnum):
     MOTO_G4_LANDSCAPE = "Moto G4 landscape"
 
 
-class ZimitFlagsCamelSchema(CamelModel):
+class ZimitFlagsFullSchema(CamelModel):
+    seeds: OptionalNotEmptyString = OptionalField(
+        title="Seeds",
+        description="The seed URL(s) to start crawling from. Multile seed URL "
+        "must be separated by a comma (usually not needed, these are just the crawl"
+        " seeds). First seed URL is used as ZIM homepage",
+    )
+    seed_file: OptionalNotEmptyString = OptionalField(
+        title="Seed File",
+        description="If set, read a list of seed urls, one per line. HTTPS URL"
+        " to an online file.",
+    )
+    name: NotEmptyString = Field(
+        title="Name",
+        description="Name of the ZIM. "
+        "Used to compose filename if not otherwise defined",
+    )
+    lang: OptionalNotEmptyString = OptionalField(
+        title="Browser Language",
+        description="If set, sets the language used by the browser, should be"
+        "ISO 639 language[-country] code, e.g. `en` or `en-GB`",
+    )
+    title: OptionalZIMTitle = OptionalField(
+        title="Title",
+        description="Custom title for ZIM. Defaults to title of main page",
+    )
+
+    description: OptionalZIMDescription = OptionalField(
+        title="Description",
+        description="Description for ZIM",
+    )
+    favicon: OptionalNotEmptyString = OptionalField(
+        title="Illustration",
+        description="URL for Illustration. "
+        "If unspecified, will attempt to use favicon from main page.",
+    )
+    tags: OptionalNotEmptyString = OptionalField(
+        title="ZIM Tags",
+        description="Single string with individual tags separated by a semicolon.",
+    )
+
+    creator: OptionalNotEmptyString = OptionalField(
+        title="Content Creator",
+        description="Name of content creator.",
+    )
+
+    publisher: OptionalNotEmptyString = OptionalField(
+        title="Publisher",
+        description="Custom publisher name (ZIM metadata). 'openZIM' otherwise",
+    )
+
+    source: OptionalNotEmptyString = OptionalField(
+        title="Content Source",
+        description="Source name/URL of content",
+    )
+
+    workers: int | None = OptionalField(
+        title="Workers",
+        description="The number of workers to run in parallel. Defaults to 1",
+    )
     wait_until: OptionalNotEmptyString = OptionalField(
         title="WaitUntil",
         description="Puppeteer page.goto() condition to wait for before "
@@ -381,150 +440,9 @@ class ZimitFlagsCamelSchema(CamelModel):
         "exceeds this value.",
     )
 
-    admin_email: OptionalNotEmptyString = OptionalField(
-        title="Admin Email",
-        description="Admin Email for crawler: used in UserAgent "
-        "so website admin can contact us",
-        alias="adminEmail",
-    )
-
-
-class ZimitFlagsDashSchema(DashModel):
-    seeds: OptionalNotEmptyString = OptionalField(
-        title="Seeds",
-        description="The seed URL(s) to start crawling from. Multile seed URL "
-        "must be separated by a comma (usually not needed, these are just the crawl"
-        " seeds). First seed URL is used as ZIM homepage",
-    )
-    seed_file: OptionalNotEmptyString = OptionalField(
-        title="Seed File",
-        description="If set, read a list of seed urls, one per line. HTTPS URL"
-        " to an online file.",
-    )
-    name: NotEmptyString = Field(
-        title="Name",
-        description="Name of the ZIM. "
-        "Used to compose filename if not otherwise defined",
-    )
-    lang: OptionalNotEmptyString = OptionalField(
-        title="Browser Language",
-        description="If set, sets the language used by the browser, should be"
-        "ISO 639 language[-country] code, e.g. `en` or `en-GB`",
-    )
-
-    zim_lang: OptionalNotEmptyString = OptionalField(
-        title="ZIM Language",
-        description="Language metadata of ZIM (warc2zim --lang param). "
-        "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
-    )
-
-    title: OptionalZIMTitle = OptionalField(
-        title="Title",
-        description="Custom title for ZIM. Defaults to title of main page",
-    )
-
-    description: OptionalZIMDescription = OptionalField(
-        title="Description",
-        description="Description for ZIM",
-    )
-
-    long_description: OptionalZIMLongDescription = OptionalField(
-        title="Long description",
-        description="Optional long description for your ZIM",
-    )
-
-    favicon: OptionalNotEmptyString = OptionalField(
-        title="Illustration",
-        description="URL for Illustration. "
-        "If unspecified, will attempt to use favicon from main page.",
-    )
-
-    zim_file: OptionalZIMFileName = OptionalField(
-        title="ZIM filename",
-        description="ZIM file name (based on --name if not provided). "
-        "Make sure to end with _{period}.zim",
-    )
-
-    tags: OptionalNotEmptyString = OptionalField(
-        title="ZIM Tags",
-        description="Single string with individual tags separated by a semicolon.",
-    )
-
-    creator: OptionalNotEmptyString = OptionalField(
-        title="Content Creator",
-        description="Name of content creator.",
-    )
-
-    publisher: OptionalNotEmptyString = OptionalField(
-        title="Publisher",
-        description="Custom publisher name (ZIM metadata). 'openZIM' otherwise",
-    )
-
-    source: OptionalNotEmptyString = OptionalField(
-        title="Content Source",
-        description="Source name/URL of content",
-    )
-
-    workers: int | None = OptionalField(
-        title="Workers",
-        description="The number of workers to run in parallel. Defaults to 1",
-    )
-
-    charsets_to_try: OptionalNotEmptyString = OptionalField(
-        title="Charsets to try",
-        description="List of charsets to try decode content when charset is not "
-        "defined at document or HTTP level. Single string, values separated by a "
-        "comma. Default: UTF-8,ISO-8859-1",
-    )
-
-    ignore_content_header_charsets: bool | None = OptionalField(
-        title="Ignore Content Header Charsets",
-        description="Ignore the charsets specified in content headers - first "
-        "bytes - typically because they are wrong.",
-    )
-
-    content_header_bytes_length: int | None = OptionalField(
-        title="Length of content header",
-        description="How many bytes to consider when searching for content "
-        "charsets in header (default is 1024).",
-    )
-
-    ignore_http_header_charsets: bool | None = OptionalField(
-        title="Ignore HTTP Header Charsets",
-        description="Ignore the charsets specified in HTTP `Content-Type` "
-        "headers, typically because they are wrong.",
-    )
-
-    encoding_aliases: OptionalNotEmptyString = OptionalField(
-        title="Encoding aliases",
-        description="List of encoding/charset aliases to decode WARC content. "
-        "Aliases are used when the encoding specified in upstream server exists in"
-        " Python under a different name. This parameter has the format "
-        "alias_encoding=python_encoding. This parameter is single string, multiple"
-        " values are separated by a comma, like in "
-        "alias1=encoding1,alias2=encoding2.",
-    )
-
-    profile: OptionalNotEmptyString = OptionalField(
-        title="Browser profile",
-        description="Path or HTTP(S) URL to tar.gz file which contains the "
-        "browser profile directory for Browsertrix crawler.",
-    )
-
-    custom_behaviors: OptionalNotEmptyString = OptionalField(
-        title="Custom behaviors",
-        description="JS code for custom behaviors to customize crawler. Single "
-        "string with individual JS files URL/path separated by a comma.",
-    )
-
     warcs: OptionalNotEmptyString = OptionalField(
         title="WARC files",
         description="Comma-separated list of WARC files to use as input.",
-    )
-
-    custom_css: AnyUrl | None = OptionalField(
-        title="Custom CSS",
-        description="URL to a CSS file to inject into pages",
     )
 
     verbose: bool | None = OptionalField(
@@ -543,13 +461,16 @@ class ZimitFlagsDashSchema(DashModel):
         description="Output folder for ZIM file(s). Leave it as `/output`",
     )
 
-    zimit_progress_file: OptionalZIMProgressFile = OptionalField(
-        title="Zimit progress file",
-        description="Scraping progress file. Leave it as `/output/task_progress.json`",
+    admin_email: OptionalNotEmptyString = OptionalField(
+        title="Admin Email",
+        description="Admin Email for crawler: used in UserAgent "
+        "so website admin can contact us",
+        alias="adminEmail",
     )
-    depth: int | None = OptionalField(
-        title="Depth",
-        description="The depth of the crawl for all seeds. Default is -1 (infinite).",
+    profile: OptionalNotEmptyString = OptionalField(
+        title="Browser profile",
+        description="Path or HTTP(S) URL to tar.gz file which contains the "
+        "browser profile directory for Browsertrix crawler.",
     )
 
     behaviors: OptionalNotEmptyString = OptionalField(
@@ -557,29 +478,109 @@ class ZimitFlagsDashSchema(DashModel):
         description="Which background behaviors to enable on each page. "
         "Defaults to autoplay,autofetch,siteSpecific.",
     )
+    depth: int | None = OptionalField(
+        title="Depth",
+        description="The depth of the crawl for all seeds. Default is -1 (infinite).",
+    )
+    # Dash aliases
+    zim_lang: OptionalNotEmptyString = OptionalField(
+        title="ZIM Language",
+        description="Language metadata of ZIM (warc2zim --lang param). "
+        "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
+        alias="zim-lang",
+    )
+
+    long_description: OptionalZIMLongDescription = OptionalField(
+        title="Long description",
+        description="Optional long description for your ZIM",
+        alias="long-description",
+    )
+
+    custom_css: AnyUrl | None = OptionalField(
+        title="Custom CSS",
+        description="URL to a CSS file to inject into pages",
+        alias="custom-css",
+    )
+
+    charsets_to_try: OptionalNotEmptyString = OptionalField(
+        title="Charsets to try",
+        description="List of charsets to try decode content when charset is not "
+        "defined at document or HTTP level. Single string, values separated by a "
+        "comma. Default: UTF-8,ISO-8859-1",
+        alias="charsets-to-try",
+    )
+
+    ignore_content_header_charsets: bool | None = OptionalField(
+        title="Ignore Content Header Charsets",
+        description="Ignore the charsets specified in content headers - first "
+        "bytes - typically because they are wrong.",
+        alias="ignore-content-header-charsets",
+    )
+
+    content_header_bytes_length: int | None = OptionalField(
+        title="Length of content header",
+        description="How many bytes to consider when searching for content "
+        "charsets in header (default is 1024).",
+        alias="content-header-bytes-length",
+    )
+
+    ignore_http_header_charsets: bool | None = OptionalField(
+        title="Ignore HTTP Header Charsets",
+        description="Ignore the charsets specified in HTTP `Content-Type` "
+        "headers, typically because they are wrong.",
+        alias="ignore-http-header-charsets",
+    )
+
+    encoding_aliases: OptionalNotEmptyString = OptionalField(
+        title="Encoding aliases",
+        description="List of encoding/charset aliases to decode WARC content. "
+        "Aliases are used when the encoding specified in upstream server exists in"
+        " Python under a different name. This parameter has the format "
+        "alias_encoding=python_encoding. This parameter is single string, multiple"
+        " values are separated by a comma, like in "
+        "alias1=encoding1,alias2=encoding2.",
+        alias="encoding-aliases",
+    )
+
+    custom_behaviors: OptionalNotEmptyString = OptionalField(
+        title="Custom behaviors",
+        description="JS code for custom behaviors to customize crawler. Single "
+        "string with individual JS files URL/path separated by a comma.",
+        alias="custom-behaviours",
+    )
+
+    zimit_progress_file: OptionalZIMProgressFile = OptionalField(
+        title="Zimit progress file",
+        description="Scraping progress file. Leave it as `/output/task_progress.json`",
+        alias="zimit-progress-file",
+    )
+
     replay_viewer_source: AnyUrl | None = OptionalField(
         title="Replay Viewer Source",
         description="URL from which to load the ReplayWeb.page replay viewer from",
+        alias="replay-viewer-source",
     )
 
 
-class ZimitFlagsSchema(ZimitFlagsCamelSchema, ZimitFlagsDashSchema):
-    offliner_id: Literal["zimit"]
+class ZimitFlagsSchema(ZimitFlagsFullSchema):
+    offliner_id: Literal["zimit"] = Field(alias="offliner_id")
+    zim_file: OptionalZIMFileName = OptionalField(
+        title="ZIM filename",
+        description="ZIM file name (based on --name if not provided). "
+        "Make sure to end with _{period}.zim",
+        alias="zim-file",
+    )
 
 
-class ZimitFlagsSchemaWithRelaxedZimFileName(ZimitFlagsDashSchema):
+class ZimitFlagsSchemaRelaxed(ZimitFlagsFullSchema):
     """A Zimit flags schema with relaxed constraints on validation
 
     For now, only zim_file name is not checked anymore. Typically used for youzim.it
     """
 
-    zim_file: OptionalZIMFileName = OptionalField(
+    offliner_id: Literal["zimit"] = Field(alias="offliner_id")
+    zim_file: OptionalNotEmptyString = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
+        alias="zim-file",
     )
-
-
-class ZimitFlagsSchemaRelaxed(
-    ZimitFlagsCamelSchema, ZimitFlagsSchemaWithRelaxedZimFileName
-):
-    offliner_id: Literal["zimit"]

@@ -23,7 +23,7 @@ class VideoFormat(StrEnum):
 
 
 class TedFlagsSchema(DashModel):
-    offliner_id: Literal["ted"]
+    offliner_id: Literal["ted"] = Field(alias="offliner_id")
 
     topics: OptionalNotEmptyString = OptionalField(
         title="Topics",
@@ -69,6 +69,7 @@ class TedFlagsSchema(DashModel):
     video_format: VideoFormat | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
+        alias="format",
     )
 
     low_quality: bool | None = OptionalField(

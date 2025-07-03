@@ -13,13 +13,13 @@ from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import (
     DockerImageName,
     Platform,
-    WarehousePath,
 )
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     NotEmptyString,
     SlackTarget,
+    WarehousePathField,
     ZIMDisk,
     ZIMLangCode,
     ZIMMemory,
@@ -97,7 +97,7 @@ OfflinerSchema = Union[  # noqa: UP007
 
 
 class BaseScheduleConfigSchema(BaseModel):
-    warehouse_path: WarehousePath
+    warehouse_path: WarehousePathField
     resources: ResourcesSchema
     offliner: OfflinerSchema = Field(discriminator="offliner_id")
     platform: Platform | None = None
