@@ -1,13 +1,15 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
 import type { ListResponse } from '@/types/base'
+import type { ErrorResponse } from '@/types/errors'
+import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
 
 export const useOfflinerStore = defineStore('offliner', () => {
   const offliners = ref<string[]>([])
-  const error = ref<Error | null>(null)
+  const error = ref<string[]>([])
 
   const config = inject<Config>(constants.config)
 
@@ -25,7 +27,7 @@ export const useOfflinerStore = defineStore('offliner', () => {
       offliners.value = response.items
     } catch (_error) {
       console.error('Failed to fetch offliners', _error)
-      error.value = _error as Error
+      error.value = translateErrors(_error as ErrorResponse)
     }
   }
 

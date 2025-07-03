@@ -2,14 +2,16 @@ import type { Config } from '@/config'
 import constants from '@/constants'
 import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse } from '@/types/base'
+import type { ErrorResponse } from '@/types/errors'
 import { type Language } from '@/types/language'
+import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
 
 export const useLanguageStore = defineStore('language', () => {
   const languages = ref<Language[]>([])
-  const error = ref<Error | null>(null)
+  const error = ref<string[]>([])
   const loadingStore = useLoadingStore()
   const config = inject<Config>(constants.config)
 
@@ -28,7 +30,7 @@ export const useLanguageStore = defineStore('language', () => {
       languages.value = response.items
     } catch (_error) {
       console.error('Failed to fetch languages', _error)
-      error.value = _error as Error
+      error.value = translateErrors(_error as ErrorResponse)
     } finally {
       loadingStore.stopLoading()
     }
