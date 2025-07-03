@@ -4,9 +4,10 @@ import type { Schedule } from '@/types/schedule'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+
 export const useScheduleStore = defineStore('schedule', () => {
   const schedule = ref<Schedule | null>(null)
-  const error = ref<string[]>([])
+  const errors = ref<string[]>([])
   const authStore = useAuthStore()
 
   const fetchSchedule = async (
@@ -16,11 +17,11 @@ export const useScheduleStore = defineStore('schedule', () => {
     const service = await authStore.getApiService('schedules')
     // Check if we already have the schedule and don't need to force reload
     if (!forceReload && schedule.value && schedule.value.name === scheduleName) {
-      return
+      return schedule.value
     }
 
     try {
-      error.value = []
+      errors.value = []
       // Clear current schedule until we receive the right one
       schedule.value = null
 
@@ -28,18 +29,21 @@ export const useScheduleStore = defineStore('schedule', () => {
       schedule.value = response
     } catch (_error) {
       console.error('Failed to load schedule', _error)
-      error.value = translateErrors(_error as ErrorResponse)
+      errors.value = translateErrors(_error as ErrorResponse)
     }
+    return schedule.value
   }
 
   const clearSchedule = () => {
     schedule.value = null
-    error.value = []
+    errors.value = []
   }
 
   return {
+    // State
     schedule,
-    error,
+    errors,
+    // Actions
     fetchSchedule,
     clearSchedule,
   }

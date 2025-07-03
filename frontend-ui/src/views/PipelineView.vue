@@ -27,10 +27,13 @@ import constants from '@/constants';
 import { useAuthStore } from '@/stores/auth';
 import { useLoadingStore } from '@/stores/loading';
 import { useRequestedTasksStore } from '@/stores/requestedTasks';
+import { useScheduleStore } from '@/stores/schedule';
 import { useTasksStore } from '@/stores/tasks';
-import type { Paginator } from '@/types/base';
+import type { MostRecentTask, Paginator } from '@/types/base';
 import type { RequestedTaskLight } from '@/types/requestedTasks';
+import type { Schedule } from '@/types/schedule';
 import type { TaskLight } from '@/types/tasks';
+import { getDelay } from '@/utils/httpRequest';
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { VueCookies } from 'vue-cookies';
 import { useRouter } from 'vue-router';
@@ -89,7 +92,7 @@ const props = withDefaults(defineProps<{
 })
 
 const lastRunsLoaded = ref(false)
-const schedulesLastRuns = ref<Record<string, Record<string, unknown>>>({})
+const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
 
 const currentFilter = ref(props.filter)
 const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
@@ -109,6 +112,7 @@ const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const authStore = useAuthStore()
 const loadingStore = useLoadingStore()
+const scheduleStore = useScheduleStore()
 
 const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
 
@@ -167,7 +171,32 @@ async function loadData(limit: number, skip: number, filter?: string) {
 }
 
 async function loadLastRuns() {
-  // TODO: Load last runs
+  lastRunsLoaded.value = false
+  const schedule_names = Array.from(new Set(tasks.value.map((task) => task.schedule_name)))
+  loadingStore.startLoading('Loading last runs...')
+
+  const chunkSize = constants.TASKS_LOAD_SCHEDULES_CHUNK_SIZE
+  const requests: (Promise<Schedule | null> | null)[] = []
+  for (let i = 0; i < schedule_names.length; i += chunkSize) {
+    const chunk = Array.from(schedule_names).slice(i, i + chunkSize)
+    for (const schedule_name of chunk) {
+      if (schedule_name) {
+        requests.push(scheduleStore.fetchSchedule(schedule_name))
+      }
+    }
+    await getDelay(constants.TASKS_LOAD_SCHEDULES_DELAY)
+  }
+
+  const results = await Promise.all(requests)
+  results.forEach((result, index) => {
+    if (!result) return
+    const schedule_name = schedule_names[index]
+    if (result.most_recent_task) {
+      schedulesLastRuns.value[schedule_name] = result.most_recent_task
+    }
+  })
+
+  loadingStore.stopLoading()
   lastRunsLoaded.value = true
 }
 

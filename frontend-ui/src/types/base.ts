@@ -54,7 +54,7 @@ export interface ScheduleNotification {
 export interface MostRecentTask {
   id: string
   status: string
-  updated_at: Date
+  updated_at: string
 }
 
 export interface BaseTask {

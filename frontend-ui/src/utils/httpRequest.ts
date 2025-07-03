@@ -38,3 +38,8 @@ export default function httpRequest(
 
   return http
 }
+
+export function getDelay(milliseconds: number) {
+  // retrieve a promise making a pause in milliseconds
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
