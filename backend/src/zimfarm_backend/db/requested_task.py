@@ -60,11 +60,23 @@ def request_task(
     Schedule can't be requested if it's disabled.
     """
 
-    if worker_name is None:
-        return None
+    query = (
+        select(
+            RequestedTask,
+            Schedule,
+        )
+        .join(Schedule, RequestedTask.schedule)
+        .where(
+            Schedule.name == schedule_name,
+        )
+    )
+    if worker_name is not None:
+        query = query.join(Worker, RequestedTask.worker).where(
+            Worker.name == worker_name
+        )
 
-    worker = get_worker_or_none(session, worker_name=worker_name)
-    if worker is None:
+    # If the worker has a requested task for this schedule, return None
+    if count_from_stmt(session, query) > 0:
         return None
 
     schedule = get_schedule_or_none(session, schedule_name=schedule_name)
@@ -72,22 +84,11 @@ def request_task(
     if schedule is None or not schedule.enabled:
         return None
 
-    query = (
-        select(
-            RequestedTask,
-            Schedule,
-        )
-        .join(Schedule, RequestedTask.schedule)
-        .join(Worker, RequestedTask.worker)
-        .where(
-            Schedule.name == schedule_name,
-            Worker.name == worker_name,
-        )
-    )
-
-    # If the worker has a requested task for this schedule, return None
-    if count_from_stmt(session, query) > 0:
-        return None
+    worker = None
+    if worker_name is not None:
+        worker = get_worker_or_none(session, worker_name=worker_name)
+        if worker is None:
+            return None
 
     # Otherwise, create a new requested task
     now = getnow()
@@ -120,7 +121,8 @@ def request_task(
         original_schedule_name=schedule.name,
     )
     requested_task.schedule = schedule
-    requested_task.worker = worker
+    if worker:
+        requested_task.worker = worker
 
     session.add(requested_task)
     session.flush()
@@ -582,7 +584,7 @@ def _create_requested_task_full_schema(
             requested_task.schedule.name if requested_task.schedule else "none"
         ),
         original_schedule_name=requested_task.original_schedule_name,
-        worker_name=requested_task.worker.name,  # pyright: ignore[reportOptionalMemberAccess]
+        worker_name=requested_task.worker.name if requested_task.worker else None,
         events=requested_task.events,
         upload=requested_task.upload,
         notification=(

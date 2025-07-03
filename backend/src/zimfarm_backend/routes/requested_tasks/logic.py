@@ -104,7 +104,7 @@ def create_request_task(
             schedule_name=schedule_name,
             requested_by=current_user.username,
             worker_name=new_requested_task.worker,
-            priority=new_requested_task.priority,
+            priority=new_requested_task.priority or 0,
         ):
             requested_tasks.append(requested_task)
 

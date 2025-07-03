@@ -4,10 +4,11 @@ export function translateErrors(error: ErrorResponse) {
   // build up a list of the errors
   const errors = []
   if (error.errors) {
-    for (const _error of Object.values(error.errors)) {
-      for (const error of _error) {
-        errors.push(error)
-      }
+    if (error.message) {
+      errors.push(error.message)
+    }
+    for (const [key, value] of Object.entries(error.errors)) {
+      errors.push(`${key}: ${value}`)
     }
     return errors
   }

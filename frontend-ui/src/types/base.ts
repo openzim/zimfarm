@@ -22,8 +22,11 @@ export interface ConfigWithOnlyResources {
   resources: Resources
 }
 
-export interface ConfigWithOnlyOfflinerAndResources extends ConfigWithOnlyResources {
+export interface ConfigWithOnlyOffliner {
   offliner: string
+}
+
+export interface ConfigWithOnlyOfflinerAndResources extends ConfigWithOnlyResources, ConfigWithOnlyOffliner {
 }
 
 export interface DockerImage {

@@ -206,6 +206,8 @@ async function loadLastRuns() {
       await new Promise((resolve) => setTimeout(resolve, constants.TASKS_LOAD_SCHEDULES_DELAY))
     }
   }
+
+  loadingStore.stopLoading()
 }
 
 async function handleLimitChange(newLimit: number) {

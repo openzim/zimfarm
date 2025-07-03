@@ -1,5 +1,6 @@
 import PipelineView from '@/views/PipelineView.vue'
 import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
+import SchedulesView from '@/views/SchedulesView.vue'
 import SignInView from '@/views/SignInView.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
 import { createRouter, createWebHistory } from "vue-router"
@@ -35,25 +36,22 @@ const routes = [
       path: '/tasks/:id',
       name: 'task-detail',
       component: TaskDetailView,
-      props: true,
     },
 
     {
       path: '/recipes/:schedule_name',
       name: 'schedule-detail',
       component: ScheduleDetailView,
-      props: true,
     },
     {
       path: '/recipes',
       name: 'schedules-list',
-      component: PipelineView,
+      component: SchedulesView,
     },
     {
       path: '/users/:username',
       name: 'user-detail',
       component: PipelineView,
-      props: true,
     },
     {
       path: '/users/:username/:selectedTab',
@@ -86,7 +84,7 @@ const routes = [
 ]
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+    history: createWebHistory(),
     routes,
 })
 

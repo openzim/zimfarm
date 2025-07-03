@@ -1,8 +1,7 @@
 import { useAuthStore } from '@/stores/auth'
-import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
-import { type RequestedTaskLight } from '@/types/requestedTasks'
+import { type NewRequestedTaskSchemaResponse, type RequestedTaskLight } from '@/types/requestedTasks'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -18,7 +17,6 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   })
 
   const errors = ref<string[]>([])
-  const loadingStore = useLoadingStore()
   const authStore = useAuthStore()
 
 
@@ -26,23 +24,19 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   const fetchRequestedTasks = async (limit: number = 100, skip: number = 0) => {
     const service = await authStore.getApiService('requested-tasks')
     try {
-      loadingStore.startLoading('Fetching requested tasks...')
       const response = await service.get<null, ListResponse<RequestedTaskLight>>('', { params: { limit, skip } })
 
       requestedTasks.value = response.items
       paginator.value = response.meta
+      errors.value = []
 
     } catch (_error) {
-      console.error('Failed to fetch requested tasks', _error)
       errors.value = translateErrors(_error as ErrorResponse)
-    } finally {
-      loadingStore.stopLoading()
     }
   }
 
   const removeRequestedTask = async (id: string) => {
     try {
-      loadingStore.startLoading('Removing requested task...')
       const service = await authStore.getApiService('requested-tasks')
       await service.delete(`/${id}`)
 
@@ -55,19 +49,30 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
 
       return true
     } catch (_error) {
-      console.error('Failed to remove requested task', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return false
-    } finally {
-      loadingStore.stopLoading()
+    }
+  }
+
+  const requestTasks = async (schedulesNames: string[]) => {
+    try {
+      const service = await authStore.getApiService('requested-tasks')
+      const response = await service.post<{ schedule_names: string[] }, NewRequestedTaskSchemaResponse>('', { schedule_names: schedulesNames })
+      return response
+    } catch (_error) {
+      errors.value = translateErrors(_error as ErrorResponse)
+      return null
     }
   }
 
   return {
+    // State
     requestedTasks,
     errors,
+    paginator,
+    // Actions
     fetchRequestedTasks,
     removeRequestedTask,
-    paginator,
+    requestTasks,
   }
 })
