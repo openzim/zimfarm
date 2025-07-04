@@ -17,7 +17,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class WikihowFlagsSchema(DashModel):
-    offliner_id: Literal["wikihow"]
+    offliner_id: Literal["wikihow"] = Field(alias="offliner_id")
 
     language: NotEmptyString = Field(
         title="Language",
@@ -114,7 +114,7 @@ class WikihowFlagsSchema(DashModel):
         description="S3 Storage URL including credentials and bucket",
     )
 
-    categories: OptionalNotEmptyString = OptionalField(
+    category: OptionalNotEmptyString = OptionalField(
         title="Categories",
         description="Only scrape those categories (comma-separated). "
         "Use URL-ID of the Category "

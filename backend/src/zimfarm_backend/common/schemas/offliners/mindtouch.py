@@ -17,7 +17,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class MindtouchFlagsSchema(DashModel):
-    offliner_id: Literal["mindtouch"]
+    offliner_id: Literal["mindtouch"] = Field(alias="offliner_id")
 
     library_url: NotEmptyString = Field(
         title="Library URL",

@@ -17,7 +17,7 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class KolibriFlagsSchema(DashModel):
-    offliner_id: Literal["kolibri"]
+    offliner_id: Literal["kolibri"] = Field(alias="offliner_id")
 
     channel_id: NotEmptyString = Field(
         title="Channel ID",

@@ -1,6 +1,6 @@
 import pydantic
 from pydantic import ConfigDict
-from pydantic.v1.utils import to_lower_camel
+from pydantic.alias_generators import to_camel
 
 
 class BaseModel(pydantic.BaseModel):
@@ -10,8 +10,9 @@ class BaseModel(pydantic.BaseModel):
 class CamelModel(pydantic.BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
+        populate_by_name=True,
         from_attributes=True,
-        alias_generator=to_lower_camel,
+        alias_generator=to_camel,
         extra="forbid",
     )
 
