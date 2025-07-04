@@ -21,7 +21,7 @@ def OptionalField(**kwargs: Any) -> Any:  # noqa N802
 
 NoNullCharString = Annotated[str, AfterValidator(no_null_char)]
 
-type OptionalNoNullCharString = NoNullCharString | None
+OptionalNoNullCharString = NoNullCharString | None
 
 
 def not_empty(value: str) -> str:
@@ -34,7 +34,7 @@ def not_empty(value: str) -> str:
 
 NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 
-type OptionalNotEmptyString = NotEmptyString | None
+OptionalNotEmptyString = NotEmptyString | None
 
 
 def show_secrets(value: Any, handler: Any, info: SerializationInfo) -> Any:
@@ -48,12 +48,12 @@ def show_secrets(value: Any, handler: Any, info: SerializationInfo) -> Any:
 
 ZIMSecretStr = Annotated[SecretStr, WrapSerializer(show_secrets)]
 
-type OptionalZIMSecretStr = ZIMSecretStr | None
+OptionalZIMSecretStr = ZIMSecretStr | None
 
 Percentage = Annotated[int, Field(gt=0, le=100)]
 
 
-type OptionalPercentage = Percentage | None
+OptionalPercentage = Percentage | None
 
 
 def validate_optimization_cache(v: ZIMSecretStr | str) -> ZIMSecretStr:
@@ -67,82 +67,82 @@ S3OptimizationCache = Annotated[
     ZIMSecretStr, AfterValidator(validate_optimization_cache)
 ]
 
-type OptionalS3OptimizationCache = S3OptimizationCache | None
+OptionalS3OptimizationCache = S3OptimizationCache | None
 
 ZIMLongDescription = Annotated[str, Field(max_length=4000)]
 
-type OptionalZIMLongDescription = ZIMLongDescription | None
+OptionalZIMLongDescription = ZIMLongDescription | None
 
 ZIMTitle = Annotated[str, Field(max_length=30)]
 
-type OptionalZIMTitle = ZIMTitle | None
+OptionalZIMTitle = ZIMTitle | None
 
 ZIMDescription = Annotated[str, Field(max_length=80)]
 
-type OptionalZIMDescription = ZIMDescription | None
+OptionalZIMDescription = ZIMDescription | None
 
 ZIMFileName = Annotated[
     str,
     Field(pattern=r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"),
 ]
 
-type OptionalZIMFileName = ZIMFileName | None
+OptionalZIMFileName = ZIMFileName | None
 
 SlackTarget = Annotated[str, Field(pattern=r"^[#|@].+$")]
 
-type OptionalSlackTarget = SlackTarget | None
+OptionalSlackTarget = SlackTarget | None
 
 ZIMPlatformValue = Annotated[int, Field(gt=0)]
 
 
-type OptionalZIMPlatformValue = ZIMPlatformValue | None
+OptionalZIMPlatformValue = ZIMPlatformValue | None
 
 ZIMLangCode = Annotated[str, Field(min_length=2, max_length=8)]
 
-type OptionalZIMLangCode = ZIMLangCode | None
+OptionalZIMLangCode = ZIMLangCode | None
 
 ZIMOutputFolder = Annotated[str, Field(pattern=r"^/output$")]
 
-type OptionalZIMOutputFolder = ZIMOutputFolder | None
+OptionalZIMOutputFolder = ZIMOutputFolder | None
 
 ZIMProgressFile = Annotated[
     NotEmptyString, Field(pattern=r"^/output/task_progress\.json$")
 ]
 
-type OptionalZIMProgressFile = ZIMProgressFile | None
+OptionalZIMProgressFile = ZIMProgressFile | None
 
 ZIMCPU = Annotated[int, Field(gt=0)]
 
-type OptionalZIMCPU = ZIMCPU | None
+OptionalZIMCPU = ZIMCPU | None
 
 ZIMMemory = Annotated[int, Field(gt=0)]
 
-type OptionalZIMMemory = ZIMMemory | None
+OptionalZIMMemory = ZIMMemory | None
 
 ZIMDisk = Annotated[int, Field(gt=0)]
 
-type OptionalZIMDisk = ZIMDisk | None
+OptionalZIMDisk = ZIMDisk | None
 
 SkipField = Annotated[int, Field(default=0, ge=0)]
 
-type OptionalSkipField = SkipField | None
+OptionalSkipField = SkipField | None
 
 LimitFieldMax500 = Annotated[int, Field(default=20, gt=0, le=500)]
 
-type OptionalLimitFieldMax500 = LimitFieldMax500 | None
+OptionalLimitFieldMax500 = LimitFieldMax500 | None
 
 LimitFieldMax200 = Annotated[int, Field(default=20, gt=0, le=200)]
 
-type OptionalLimitFieldMax200 = LimitFieldMax200 | None
+OptionalLimitFieldMax200 = LimitFieldMax200 | None
 
 PriorityField = Annotated[int, Field(default=1, gt=0, le=10)]
 
 
-type OptionalPriorityField = PriorityField | None
+OptionalPriorityField = PriorityField | None
 
 WorkerField = Annotated[NotEmptyString, Field(min_length=3)]
 
-type OptionalWorkerField = WorkerField | None
+OptionalWorkerField = WorkerField | None
 
 
 def validate_schedule_name(name: str) -> str:
@@ -158,7 +158,7 @@ def validate_schedule_name(name: str) -> str:
 
 ScheduleNameField = Annotated[NotEmptyString, AfterValidator(validate_schedule_name)]
 
-type OptionalScheduleNameField = ScheduleNameField | None
+OptionalScheduleNameField = ScheduleNameField | None
 
 
 def validate_warehouse_path(warehouse_path: str) -> str:

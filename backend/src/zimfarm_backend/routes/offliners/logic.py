@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.models import (
     OfflinerSchema,
     calculate_pagination_metadata,
 )
+from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
 from zimfarm_backend.routes.http_errors import NotFoundError
 from zimfarm_backend.routes.models import ListResponse
 
@@ -46,4 +47,13 @@ async def get_offliner(offliner: Annotated[Offliner, Path()]) -> JSONResponse:
     if schema_cls is None:
         raise NotFoundError(f"Offliner {offliner} not found")
 
-    return JSONResponse(content=schema_cls.model_json_schema())
+    definition = schema_to_flags(schema_cls)
+
+    return JSONResponse(
+        content={
+            "flags": definition["flags"],
+            "help": (  # dynamic + sourced from backend because it might be custom
+                f"https://github.com/openzim/{offliner}/wiki/Frequently-Asked-Questions"
+            ),
+        }
+    )
