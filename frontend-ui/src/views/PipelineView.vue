@@ -2,7 +2,7 @@
 
 <template>
   <TasksListTab
-    :filter="filter"
+    :filter="currentFilter"
     :filterOptions="filterOptions"
     @filter-changed="handleFilterChange"
   />
@@ -27,8 +27,9 @@ import constants from '@/constants';
 import { useAuthStore } from '@/stores/auth';
 import { useLoadingStore } from '@/stores/loading';
 import { useRequestedTasksStore } from '@/stores/requestedTasks';
+import { useScheduleStore } from '@/stores/schedule';
 import { useTasksStore } from '@/stores/tasks';
-import type { Paginator } from '@/types/base';
+import type { MostRecentTask, Paginator } from '@/types/base';
 import type { RequestedTaskLight } from '@/types/requestedTasks';
 import type { TaskLight } from '@/types/tasks';
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -89,7 +90,7 @@ const props = withDefaults(defineProps<{
 })
 
 const lastRunsLoaded = ref(false)
-const schedulesLastRuns = ref<Record<string, Record<string, unknown>>>({})
+const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
 
 const currentFilter = ref(props.filter)
 const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
@@ -109,6 +110,7 @@ const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const authStore = useAuthStore()
 const loadingStore = useLoadingStore()
+const scheduleStore = useScheduleStore()
 
 const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
 
@@ -133,6 +135,7 @@ async function loadData(limit: number, skip: number, filter?: string) {
   if (!filter) {
     filter = currentFilter.value
   }
+  lastRunsLoaded.value = false
   switch (filter) {
     case 'todo':
       await requestedTasksStore.fetchRequestedTasks(limit, skip)
@@ -167,8 +170,29 @@ async function loadData(limit: number, skip: number, filter?: string) {
 }
 
 async function loadLastRuns() {
-  // TODO: Load last runs
+  const schedule_names = Array.from(new Set(tasks.value.map((task) => task.schedule_name)))
+  loadingStore.startLoading('Loading last runs...')
+
+  // Set lastRunsLoaded to true immediately so UI can start displaying data as it arrives
   lastRunsLoaded.value = true
+
+  // Process each schedule individually with a pause between requests
+  for (const schedule_name of schedule_names) {
+    if (schedule_name) {
+      try {
+        const result = await scheduleStore.fetchSchedule(schedule_name)
+        if (result && result.most_recent_task) {
+          schedulesLastRuns.value[schedule_name] = result.most_recent_task
+        }
+        // Add a 100ms pause between requests to avoid overwhelming the backend
+        await new Promise(resolve => setTimeout(resolve, 100))
+      } catch (error) {
+        console.error(`Failed to fetch schedule ${schedule_name}:`, error)
+      }
+    }
+  }
+
+  loadingStore.stopLoading()
 }
 
 async function handleLimitChange(newLimit: number) {

@@ -110,12 +110,12 @@
 
         <template #[`item.last_run`]="{ item }">
           <span v-if="lastRunsLoaded && schedulesLastRuns[item.schedule_name]">
-            <code :class="statusClass(getPropertyFor(item.schedule_name, 'status') as string)">
-              {{ getPropertyFor(item.schedule_name, 'status') }}
+            <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
+              {{ schedulesLastRuns[item.schedule_name].status }}
             </code>,
             <TaskLink
-              :id="getPropertyFor(item.schedule_name, 'id', '-')"
-              :updatedAt="getPropertyFor(item.schedule_name, 'updated_at')"
+              :id="schedulesLastRuns[item.schedule_name].id"
+              :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
             />
           </span>
         </template>
@@ -135,7 +135,7 @@ import ErrorMessage from '@/components/ErrorMessage.vue';
 import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue';
 import ResourceBadge from '@/components/ResourceBadge.vue';
 import TaskLink from '@/components/TaskLink.vue';
-import type { Paginator } from '@/types/base';
+import type { MostRecentTask, Paginator } from '@/types/base';
 import type { RequestedTaskLight } from '@/types/requestedTasks';
 import type { TaskLight } from '@/types/tasks';
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format';
@@ -148,7 +148,7 @@ const props = defineProps<{
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
   paginator: Paginator // the paginator
   lastRunsLoaded: boolean // whether the last runs have been loaded
-  schedulesLastRuns: Record<string, Record<string, unknown>> // the last runs for each schedule
+  schedulesLastRuns: Record<string, MostRecentTask> // the last runs for each schedule
   errors: string[] // the errors to display
 }>();
 
@@ -170,14 +170,6 @@ watch(() => props.paginator, (newPaginator) => {
   selectedLimit.value = newPaginator.limit;
 });
 
-
-
-function getPropertyFor(schedule_name: string, property: string, otherwise?: unknown): string {
-  const last_run = props.schedulesLastRuns[schedule_name];
-  if (last_run && last_run[property]) return String(last_run[property]);
-  if (otherwise) return String(otherwise);
-  return '';
-}
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'
