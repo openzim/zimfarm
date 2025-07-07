@@ -31,8 +31,8 @@ class RequestedTaskSchema(BaseModel):
 
 class NewRequestedTaskSchema(BaseModel):
     schedule_names: list[ScheduleNameField]
-    priority: PriorityField
-    worker: WorkerField
+    priority: PriorityField | None = None
+    worker: WorkerField | None = None
 
 
 class NewRequestedTaskSchemaResponse(BaseModel):

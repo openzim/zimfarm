@@ -1,4 +1,4 @@
-import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
+import '@mdi/font/css/materialdesignicons.css'; // Ensure you are using css-loader
 
 import { createApp } from 'vue'
 // Vuetify
@@ -16,7 +16,7 @@ import getConfig, { configPlugin } from './config'
 import router from '@/router'
 
 import App from '@/App.vue'
-import constants from './constants'
+import constants from '@/constants'
 
 const app = createApp(App)
 

@@ -1,4 +1,4 @@
-import type { DockerImage, MostRecentTask, Resources, ScheduleDuration, ScheduleNotification } from '@/types/base'
+import type { ConfigWithOnlyOffliner, DockerImage, MostRecentTask, Resources, ScheduleDuration, ScheduleNotification } from '@/types/base'
 import type { Language } from '@/types/language'
 
 export interface ScheduleConfig {
@@ -24,3 +24,14 @@ export interface Schedule {
   most_recent_task: MostRecentTask | null
   is_requested: boolean
 }
+
+export interface ScheduleLight {
+    name: string
+    category: string
+    most_recent_task: MostRecentTask | null
+    config: ConfigWithOnlyOffliner
+    language: Language
+    enabled: boolean
+    is_requested: boolean
+}
+
