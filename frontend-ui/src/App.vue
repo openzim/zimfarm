@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NavigationItem } from '@/components/NavBar.vue'
 import NavBar from '@/components/NavBar.vue'
+import NotificationSystem from '@/components/NotificationSystem.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
@@ -93,6 +94,7 @@ const handleSignOut = () => {
 
 <template>
   <v-app>
+    <NotificationSystem />
     <header>
       <NavBar
         :navigation-items="navigationItems"

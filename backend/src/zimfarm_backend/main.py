@@ -78,3 +78,11 @@ async def http_exception_handler(_, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code, content={"success": False, "message": exc.detail}
     )
+
+
+@app.exception_handler(Exception)
+async def generic_error_handler(_, __):  # pyright: ignore
+    return JSONResponse(
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        content={"success": False, "message": "Internal server error"},
+    )
