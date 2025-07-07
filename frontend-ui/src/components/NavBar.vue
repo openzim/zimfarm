@@ -13,17 +13,12 @@
       </div>
     </v-app-bar-title>
     <!-- Navigation Links -->
-    <v-tabs
-      :model-value="activeTab"
-      @update:model-value="handleTabChange"
-      class="d-none d-md-flex"
-      color="white"
-      slider-color="white"
-    >
+    <v-tabs class="d-none d-md-flex" color="white" slider-color="white">
       <v-tab
         v-for="item in navigationItems"
         :key="item.name"
         :disabled="item.disabled"
+        :to="{ name: item.name }"
         :value="item.name"
         class="text-none"
       >
@@ -83,8 +78,7 @@
 
 <script setup lang="ts">
 import UserButton from '@/components/UserButton.vue'
-import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
 
 // Props
 export interface NavigationItem {
@@ -109,28 +103,8 @@ defineEmits<{
   'sign-out': []
 }>()
 
-const route = useRoute()
-const router = useRouter()
-
 // Reactive data
 const drawer = ref(false)
-const activeTab = ref(route.name)
-
-// Watch for route changes and update activeTab
-watch(
-  () => route.name,
-  (newRouteName) => {
-    activeTab.value = newRouteName
-  },
-)
-
-// Handle tab changes
-const handleTabChange = (value: unknown) => {
-  const routeName = value as string
-  if (routeName && routeName !== route.name) {
-    router.push({ name: routeName })
-  }
-}
 </script>
 
 <style scoped>
