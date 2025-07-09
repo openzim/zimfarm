@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import check_password_hash
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import constants
+from zimfarm_backend.common import constants, getnow
 from zimfarm_backend.db import gen_dbsession
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
@@ -82,7 +82,7 @@ def _refresh_access_token(
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
-    now = datetime.datetime.now(datetime.UTC)
+    now = getnow()
     if db_refresh_token.expire_time < now:
         raise UnauthorizedError("Refresh token expired")
 

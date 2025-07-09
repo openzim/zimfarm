@@ -15,12 +15,10 @@ router = APIRouter(prefix="/tags", tags=["tags"])
 @router.get("")
 async def get_tags(
     session: OrmSession = Depends(gen_dbsession),
-    skip: Annotated[SkipField | None, Query()] = None,
-    limit: Annotated[LimitFieldMax200 | None, Query()] = None,
+    skip: Annotated[SkipField, Query()] = 0,
+    limit: Annotated[LimitFieldMax200, Query()] = 200,
 ):
     """Get a list of schedule tags"""
-    skip = skip or 0
-    limit = limit or 200
     result = db_get_tags(session, skip, limit)
     return ListResponse(
         items=result.tags,

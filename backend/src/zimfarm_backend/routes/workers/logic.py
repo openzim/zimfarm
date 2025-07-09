@@ -21,11 +21,11 @@ from zimfarm_backend.routes.workers.models import WorkerCheckInSchema
 router = APIRouter(prefix="/workers", tags=["workers"])
 
 
-@router.get("/")
+@router.get("")
 async def get_active_workers(
-    skip: Annotated[SkipField, Query()],
-    limit: Annotated[LimitFieldMax200, Query()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    skip: Annotated[SkipField, Query()] = 0,
+    limit: Annotated[LimitFieldMax200, Query()] = 20,
 ) -> ListResponse[WorkerLightSchema]:
     """Get a list of active workers."""
     results = db_get_active_workers(session, skip=skip, limit=limit)

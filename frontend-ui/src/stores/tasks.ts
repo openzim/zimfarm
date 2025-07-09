@@ -1,5 +1,4 @@
 import { useAuthStore } from '@/stores/auth'
-import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import { type TaskLight } from '@/types/tasks'
@@ -18,24 +17,22 @@ export const useTasksStore = defineStore('tasks', () => {
   })
   const errors = ref<string[]>([])
 
-  const loadingStore = useLoadingStore()
   const authStore = useAuthStore()
 
 
   const fetchTasks = async (limit: number = 100, skip: number = 0, status: string[]) => {
     try {
-      loadingStore.startLoading('Fetching tasks...')
       const service = await authStore.getApiService('tasks')
       const response = await service.get<null, ListResponse<TaskLight>>('', { params: { limit, skip, status } })
 
       tasks.value = response.items
       paginator.value = response.meta
-
+      errors.value = []
+      return tasks.value
     } catch (_error) {
       console.error('Failed to fetch tasks', _error)
       errors.value = translateErrors(_error as ErrorResponse)
-    } finally {
-      loadingStore.stopLoading()
+      return null
     }
   }
 

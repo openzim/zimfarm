@@ -47,9 +47,9 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 @router.get("")
 async def get_tasks(
-    skip: Annotated[SkipField, Query()],
-    limit: Annotated[LimitFieldMax200, Query()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
+    skip: Annotated[SkipField, Query()] = 0,
+    limit: Annotated[LimitFieldMax200, Query()] = 20,
     status: Annotated[list[TaskStatus] | None, Query()] = None,
     schedule_name: Annotated[str | None, Query()] = None,
 ) -> ListResponse[TaskLightSchema]:

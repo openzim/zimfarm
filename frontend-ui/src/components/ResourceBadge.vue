@@ -1,7 +1,8 @@
 <template>
   <v-chip
-    variant="outlined"
     size="small"
+    :density="density"
+    :variant="variant"
     class="mr-2"
   >
     <v-icon
@@ -22,10 +23,14 @@ interface Props {
   kind: 'cpu' | 'memory' | 'disk' | 'shm'
   value: number
   humanValue?: string
+  density?: 'compact' | 'default'
+  variant?: 'outlined' | 'text' | 'tonal' | 'plain' | 'elevated' | 'flat'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  humanValue: undefined
+  humanValue: undefined,
+  density: 'default',
+  variant: 'outlined'
 })
 
 // Computed properties

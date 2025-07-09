@@ -65,15 +65,12 @@ router = APIRouter(prefix="/users", tags=["users"])
 def get_users(
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: Annotated[SkipField | None, Query()] = None,
-    limit: Annotated[LimitFieldMax200 | None, Query()] = None,
+    skip: Annotated[SkipField, Query()] = 0,
+    limit: Annotated[LimitFieldMax200, Query()] = 20,
 ) -> ListResponse[UserSchema]:
     """Get a list of users"""
     if not check_user_permission(current_user, namespace="users", name="read"):
         raise UnauthorizedError("You are not allowed to access this resource")
-
-    skip = skip or 0
-    limit = limit or 20
 
     results = db_get_users(db_session, skip=skip, limit=limit)
     return ListResponse(
