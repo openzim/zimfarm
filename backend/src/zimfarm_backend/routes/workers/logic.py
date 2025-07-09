@@ -28,12 +28,14 @@ async def get_active_workers(
     limit: Annotated[LimitFieldMax200, Query()] = 20,
 ) -> ListResponse[WorkerLightSchema]:
     """Get a list of active workers."""
-    results = db_get_active_workers(session, skip=skip, limit=limit)
+    _skip = skip or 0
+    _limit = limit or 20
+    results = db_get_active_workers(session, skip=_skip, limit=_limit)
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
-            skip=skip,
-            limit=limit,
+            skip=_skip,
+            limit=_limit,
             page_size=len(results.workers),
         ),
         items=results.workers,
