@@ -9,6 +9,7 @@ from pathlib import Path
 import requests
 from dateutil.relativedelta import relativedelta
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 
 # url of the zimfarm API to request
@@ -22,7 +23,7 @@ offliners = os.getenv("OFFLINERS", "zimit").split(",")
 
 
 def main():
-    now = datetime.datetime.now(datetime.UTC)
+    now = getnow()
     start_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     start_of_last_month = start_of_this_month - relativedelta(months=1)
 

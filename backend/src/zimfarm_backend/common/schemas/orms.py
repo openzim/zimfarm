@@ -6,6 +6,7 @@ from uuid import UUID
 import pytz
 from pydantic import AfterValidator, Field, computed_field
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
@@ -267,8 +268,6 @@ class WorkerLightSchema(BaseModel):
     @computed_field
     @property
     def status(self) -> str:
-        if (
-            datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - self.last_seen
-        ).total_seconds() < WORKER_OFFLINE_DELAY_DURATION:
+        if (getnow() - self.last_seen).total_seconds() < WORKER_OFFLINE_DELAY_DURATION:
             return "online"
         return "offline"

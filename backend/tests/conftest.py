@@ -101,7 +101,7 @@ def public_key_data(private_key: RSAPrivateKey) -> bytes:
 
 @pytest.fixture
 def auth_message(user: User) -> str:
-    return f"{user.username}:{datetime.datetime.now(datetime.UTC).isoformat()}"
+    return f"{user.username}:{getnow().isoformat()}"
 
 
 @pytest.fixture
@@ -144,7 +144,7 @@ def create_user(
             key=public_key_data.decode("ascii"),
             fingerprint=paramiko.RSAKey(key=public_key).fingerprint,  # type: ignore
             type="RSA",
-            added=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+            added=getnow(),
             pkcs8_key=pubkey_pkcs8,
         )
         key.user = user
@@ -256,7 +256,7 @@ def schedule_duration(
     duration = ScheduleDuration(
         default=True,
         value=3600,  # 1 hour
-        on=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        on=getnow(),
     )
     duration.schedule = schedule
     duration.worker = worker

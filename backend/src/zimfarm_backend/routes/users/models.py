@@ -88,7 +88,8 @@ class PasswordUpdateSchema(BaseModel):
     Schema for updating a user's password
     """
 
-    current: NotEmptyString
+    # users with elevated permissions can omit the current password
+    current: NotEmptyString | None = None
     new: NotEmptyString
 
 

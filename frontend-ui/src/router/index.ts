@@ -5,89 +5,86 @@ import SignInView from '@/views/SignInView.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
 import UsersView from '@/views/UsersView.vue'
 import WorkersView from '@/views/WorkersView.vue'
-import { createRouter, createWebHistory } from "vue-router"
+import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-    {
-        path: '/',
-        name: 'home',
-        redirect: { name: 'pipeline' },
-    },
-    {
-      path: '/pipeline',
-      name: 'pipeline',
-      component: PipelineView,
-    },
-    {
-      path: '/support-us',
-      name: 'support',
-      component: PipelineView,
-    },
-    {
-      path: '/sign-in',
-      name: 'sign-in',
-      component: SignInView,
-    },
-    {
-      path: '/change-password',
-      name: 'change-password',
-      component: TaskDetailView,
-    },
+  {
+    path: '/',
+    name: 'home',
+    redirect: { name: 'pipeline' },
+  },
+  {
+    path: '/pipeline',
+    name: 'pipeline',
+    component: PipelineView,
+  },
+  {
+    path: '/support-us',
+    name: 'support',
+    component: PipelineView,
+  },
+  {
+    path: '/sign-in',
+    name: 'sign-in',
+    component: SignInView,
+  },
+  {
+    path: '/change-password',
+    name: 'change-password',
+    component: TaskDetailView,
+  },
+  {
+    path: '/tasks/:id',
+    name: 'task-detail',
+    component: TaskDetailView,
+  },
 
-    {
-      path: '/tasks/:id',
-      name: 'task-detail',
-      component: TaskDetailView,
-    },
-
-    {
-      path: '/recipes/:schedule_name',
-      name: 'schedule-detail',
-      component: ScheduleDetailView,
-    },
-    {
-      path: '/recipes',
-      name: 'schedules-list',
-      component: SchedulesView,
-    },
-    {
-      path: '/users/:username',
-      name: 'user-detail',
-      component: PipelineView,
-    },
-    {
-      path: '/users/:username/:selectedTab',
-      name: 'user-detail-tab',
-      component: PipelineView,
-      props: true,
-    },
-    {
-      path: '/users',
-      name: 'users-list',
-      component: UsersView,
-    },
-    {
-      path: '/workers',
-      name: 'workers',
-      component: WorkersView,
-    },
-    {
-      path: '/stats',
-      name: 'stats',
-      component: PipelineView,
-    },
-    {
-      path: '/:pathMatch(.*)*',
-      name: '404',
-      component: PipelineView,
-    },
-
-
+  {
+    path: '/recipes/:schedule_name',
+    name: 'schedule-detail',
+    component: ScheduleDetailView,
+  },
+  {
+    path: '/recipes',
+    name: 'schedules-list',
+    component: SchedulesView,
+  },
+  {
+    path: '/users/:username',
+    name: 'user-detail',
+    component: PipelineView,
+  },
+  {
+    path: '/users/:username/:selectedTab',
+    name: 'user-detail-tab',
+    component: PipelineView,
+    props: true,
+  },
+  {
+    path: '/users',
+    name: 'users-list',
+    component: UsersView,
+  },
+  {
+    path: '/workers',
+    name: 'workers',
+    component: WorkersView,
+  },
+  {
+    path: '/stats',
+    name: 'stats',
+    component: PipelineView,
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: '404',
+    component: PipelineView,
+  },
 ]
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+  history: createWebHistory(),
+  routes,
 })
 
 export default router

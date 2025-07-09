@@ -4,6 +4,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Refreshtoken, User
 from zimfarm_backend.db.refresh_token import (
@@ -21,8 +22,7 @@ def refresh_token(dbsession: OrmSession, users: list[User]) -> Refreshtoken:
     """Create a refresh token for a user"""
     token = Refreshtoken(
         token=uuid4(),
-        expire_time=datetime.datetime.now(datetime.UTC)
-        + datetime.timedelta(seconds=1_000),
+        expire_time=getnow() + datetime.timedelta(seconds=1_000),
     )
     token.user = users[0]
     dbsession.add(token)
@@ -63,7 +63,7 @@ def test_expire_refresh_tokens(dbsession: OrmSession, refresh_token: Refreshtoke
     """Test that expire_refresh_tokens expires the refresh tokens"""
     expire_refresh_tokens(
         dbsession,
-        datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=2_000),
+        getnow() + datetime.timedelta(seconds=2_000),
     )
     assert get_refresh_token_or_none(dbsession, refresh_token.token) is None
 

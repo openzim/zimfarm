@@ -8,8 +8,12 @@ from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
+from cryptography.hazmat.primitives.serialization import (
+    load_pem_public_key,
+    load_ssh_public_key,
+)
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
     JWT_SECRET,
     JWT_TOKEN_EXPIRY_DURATION,
@@ -27,7 +31,7 @@ def generate_access_token(
 ) -> str:
     """Generate a JWT access token for the given user ID with configured expiry."""
 
-    issue_time = datetime.datetime.now(datetime.UTC)
+    issue_time = getnow()
     expire_time = issue_time + datetime.timedelta(seconds=JWT_TOKEN_EXPIRY_DURATION)
     payload = {
         "iss": JWT_TOKEN_ISSUER,  # issuer
@@ -99,7 +103,17 @@ def get_public_key_fingerprint(public_key: RSAPublicKey) -> str:
 
 
 def load_rsa_public_key(key: str) -> RSAPublicKey:
-    """Load an RSA public key from a string."""
+    """Load an RSA public key from a string.
+
+    Attempts to load key public keys in PEM format or OpenSSH format
+    """
+
+    try:
+        return load_ssh_public_key(
+            bytes(key, encoding="ascii")
+        )  # pyright: ignore[reportReturnType]
+    except (ValueError, UnsupportedAlgorithm):
+        pass
 
     try:
         return load_pem_public_key(

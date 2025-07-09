@@ -1,4 +1,3 @@
-import datetime
 import ipaddress
 import json
 import logging
@@ -16,6 +15,7 @@ from kiwixstorage import (  # pyright: ignore[reportMissingTypeStubs]
 )
 
 import zimfarm_backend.db.models as dbm
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
     CMS_ENDPOINT,
     CMS_ZIM_DOWNLOAD_URL,
@@ -194,7 +194,7 @@ def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
     file_data["cms"] = {
         "status_code": -1,
         "succeeded": False,
-        "on": datetime.datetime.now(datetime.UTC),
+        "on": getnow(),
         "book_id": None,
         "title_ident": None,
     }

@@ -116,7 +116,7 @@ def authenticate_user_with_ssh_keys(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
     x_sshauth_message: Annotated[
         str,
-        Header(description="message (format): username:timestamp (UTC ISO)"),
+        Header(description="message (format): username:timestamp (ISO)"),
     ],
     x_sshauth_signature: Annotated[
         str, Header(description="signature, base64-encoded")
@@ -130,16 +130,14 @@ def authenticate_user_with_ssh_keys(
         raise BadRequestError("Invalid signature format (not base64)") from exc
 
     try:
-        # decode message: username:timestamp(UTC ISO)
+        # decode message: username:timestamp(ISO)
         username, timestamp_str = x_sshauth_message.split(":", 1)
         timestamp = datetime.datetime.fromisoformat(timestamp_str)
     except ValueError as exc:
         raise BadRequestError("Invalid message format.") from exc
 
     # verify timestamp is less than MESSAGE_VALIDITY
-    if (
-        datetime.datetime.now(datetime.UTC) - timestamp
-    ).total_seconds() > constants.MESSAGE_VALIDITY_DURATION:
+    if (getnow() - timestamp).total_seconds() > constants.MESSAGE_VALIDITY_DURATION:
         raise UnauthorizedError(
             "Difference betweeen message time and server time is "
             f"greater than {constants.MESSAGE_VALIDITY_DURATION}s"

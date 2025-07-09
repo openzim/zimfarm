@@ -1,4 +1,3 @@
-import datetime
 from typing import Any
 from uuid import UUID
 
@@ -7,7 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common import constants
+from zimfarm_backend.common import constants, getnow
 from zimfarm_backend.common.enums import (
     ScheduleCategory,
     SchedulePeriodicity,
@@ -41,7 +40,7 @@ from zimfarm_backend.db.models import (
 
 DEFAULT_SCHEDULE_DURATION = ScheduleDurationSchema(
     value=int(constants.DEFAULT_SCHEDULE_DURATION),
-    on=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+    on=getnow(),
     worker_name=None,
     default=True,
 )
