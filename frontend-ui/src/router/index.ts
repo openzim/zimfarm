@@ -1,3 +1,4 @@
+import NotFoundView from '@/views/NotFound.vue'
 import PipelineView from '@/views/PipelineView.vue'
 import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
 import SchedulesView from '@/views/SchedulesView.vue'
@@ -82,7 +83,7 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: '404',
-    component: PipelineView,
+    component: NotFoundView,
   },
 ]
 

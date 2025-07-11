@@ -1,20 +1,27 @@
-<!-- Simple back buttton to mimick browser back -->
+<!-- Simple back button to mimic browser back -->
 <template>
-  <button class="btn btn-secondary btn-sm" @click.prevent="goBack" v-show="has_history">
-    <font-awesome-icon icon="arrow-circle-left" size="sm" /> Go Back
-  </button>
+  <v-btn
+    color="secondary"
+    size="small"
+    variant="outlined"
+    prepend-icon="mdi-arrow-left-circle"
+    @click="goBack"
+  >
+    Go Back
+  </v-btn>
 </template>
 
-<script type="text/javascript">
-  export default {
-    name: 'BackButton',
-    computed: {
-      has_history() { return window.history.length > 1; }
-    },
-    methods: {
-      goBack() {
-        this.$router.back();
-      }
-    }
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const hasHistory = computed(() => window.history.length > 1)
+
+const goBack = () => {
+  if (hasHistory.value) {
+    router.back()
   }
+}
 </script>
