@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
-import type { User, UserWithSshKeys } from '@/types/user'
+import type { SshKeyRead, User, UserWithSshKeys } from '@/types/user'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -64,6 +64,84 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const fetchUser = async (username: string) => {
+    const service = await authStore.getApiService('users')
+    try {
+      const response = await service.get<null, UserWithSshKeys>(`/${username}`)
+      errors.value = []
+      return response
+    } catch (error) {
+      console.error('Failed to fetch user', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return null
+    }
+  }
+
+  const deleteSshKey = async (username: string, fingerprint: string) => {
+    const service = await authStore.getApiService('users')
+    try {
+      await service.delete(`/${username}/keys/${fingerprint}`)
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to delete SSH key', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
+  const changePassword = async (username: string, password: string) => {
+    const service = await authStore.getApiService('users')
+    try {
+      await service.patch<{ new: string }, null>(`/${username}/password`, { new: password })
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to change password', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
+  const updateUser = async (username: string, payload: { role?: string; email?: string }) => {
+    const service = await authStore.getApiService('users')
+    try {
+      await service.patch<{ role?: string; email?: string }, null>(`/${username}`, payload)
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to update user', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
+  const addSshKey = async (username: string, payload: { name: string; key: string }) => {
+    const service = await authStore.getApiService('users')
+    try {
+      await service.post<{ name: string; key: string }, SshKeyRead>(`/${username}/keys`, payload)
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to add SSH key', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
+  const deleteUser = async (username: string) => {
+    const service = await authStore.getApiService('users')
+    try {
+      await service.delete(`/${username}`)
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to delete user', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
   return {
     // State
     errors,
@@ -73,5 +151,11 @@ export const useUserStore = defineStore('user', () => {
     // Actions
     createUser,
     fetchUsers,
+    fetchUser,
+    deleteSshKey,
+    changePassword,
+    updateUser,
+    addSshKey,
+    deleteUser,
   }
 })

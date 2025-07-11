@@ -1,55 +1,95 @@
 <template>
-  <div class="alert alert-danger">
-    <p><font-awesome-icon icon="exclamation-triangle" /> You are about to <strong>permanently delete</strong> {{ description }} <code>{{ name }}</code>.</p>
-    <b-form inline @submit.prevent="deleteItem">
-      <p>Please type its <em>{{ property }}</em> to confirm:
-        <b-input autofocus class="mr-2" size="sm" v-model="form_name" :placeholder="'Type ' + property + ' here'" />
-        <b-button type="submit" :disabled="!ready" variant="danger" size="sm">delete {{ description }}</b-button>
-      </p>
-    </b-form>
-  </div>
+  <v-alert
+    type="error"
+    variant="tonal"
+    class="mb-4"
+  >
+    <template #prepend>
+      <v-icon icon="mdi-alert-triangle" />
+    </template>
+
+    <div class="text-body-1 mb-4">
+      You are about to <strong>permanently delete</strong> {{ description }} <code>{{ name }}</code>.
+    </div>
+
+    <v-form @submit.prevent="confirmDelete">
+      <div class="d-flex align-center flex-wrap gap-2">
+        <span class="text-body-2 mr-3">
+          Please type its <em>{{ property }}</em> to confirm:
+        </span>
+
+        <v-text-field
+          v-model="formName"
+          :placeholder="`Type ${property} here`"
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="flex-grow-1 mr-3"
+          style="max-width: 300px;"
+          autofocus
+        />
+
+        <v-btn
+          type="submit"
+          :disabled="!ready"
+          color="error"
+          variant="elevated"
+        >
+          delete {{ description }}
+        </v-btn>
+      </div>
+    </v-form>
+
+    <!-- Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showConfirmDialog"
+      :title="`Delete ${description}`"
+      :message="`Are you absolutely sure you want to permanently delete ${description} '${name}'? This action cannot be undone.`"
+      confirm-text="DELETE"
+      cancel-text="CANCEL"
+      confirm-color="error"
+      icon="mdi-delete"
+      icon-color="error"
+      @confirm="handleConfirmDelete"
+      @cancel="showConfirmDialog = false"
+    />
+  </v-alert>
 </template>
 
-<script type="text/javascript">
-  import ZimfarmMixins from '../components/Mixins.js'
+<script setup lang="ts">
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { computed, ref } from 'vue';
 
-  export default {
-    name: 'DeleteItem',
-    mixins: [ZimfarmMixins],
-    props: {
-      kind: String,
-      name: String
-    },
-    data() {
-      return {
-        valid_kinds: ["user", "schedule"],
-        form_name: null,
-      };
-    },
-    computed: {
-      is_valid() { return this.valid_kinds.indexOf(this.kind) != -1; },
-      ready() { return this.name && this.form_name && this.name == this.form_name; },
-      property() { return {user: "username", schedule: "name"}[this.kind] },
-      description() { return {user: "user account", schedule: "recipe"}[this.kind] },
-      target() { return {user: "users-list", schedule: "schedules-list"}[this.kind]; },
-      url() { return {user: "/users/" + this.name, schedule: "/schedules/" + this.name}[this.kind]; },
-    },
-    methods: {
-      deleteItem() {
-        let parent = this;
-        parent.toggleLoader("deleting " + parent.description + "…");
-        parent.queryAPI('delete', parent.url)
-          .then(function () {
-            parent.alertSuccess("Deleted!", parent.description + " <code>"+ parent.name +"</code> has been removed.");
-            parent.redirectTo(parent.target);
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-            parent.toggleLoader(false);
-          });
-      },
-    },
+// Props
+const props = defineProps<{
+  name: string
+  description: string
+  property: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'delete-item'): void
+}>()
+
+
+// Reactive data
+const formName = ref('')
+const showConfirmDialog = ref(false)
+
+// Computed properties
+const ready = computed(() =>
+  props.name && formName.value && props.name === formName.value
+)
+
+// Methods
+const confirmDelete = () => {
+  if (ready.value) {
+    showConfirmDialog.value = true
   }
+}
+
+const handleConfirmDelete = () => {
+  emit('delete-item')
+  showConfirmDialog.value = false
+}
 </script>
