@@ -1,279 +1,366 @@
-<!-- Placeholder view for listing workers and their current statuses: needs API update -->
-
 <template>
   <div class="container">
-    <div class="row mb-2" v-show="!error && ready">
-      <div class="col progress-col">
-        <b-progress>
-          <b-progress-bar
-            :value="current_memory"
-            :max="max_memory"
-            :variant="progress_class"
-            :label="overall_progress + '%'"
-            show-progress
-            animated>
-            </b-progress-bar>
-        </b-progress>
-      </div>
-      <div class="col">
-        <span class="badge badge-light mr-2"><font-awesome-icon icon="plug" /> {{ online_workers.length }}</span>
-        <ResourceBadge kind="cpu" :human_value="usage_cpu" />
-        <ResourceBadge kind="memory" :human_value="usage_memory" />
-        <ResourceBadge kind="disk" :human_value="usage_disk" />
-        <b-button class="toggle_btn"
-                  variant="outline-secondary btn-sm"
-                  @click.prevent="toggle_workerslist">{{ toggle_text }}</b-button>
-      </div>
-    </div>
-    <table v-if="!error && workers" class="table table-responsive-md table-sm table-striped table-hover">
+    <!-- Progress and Stats Section -->
+    <v-card v-if="!errors.length && ready" class="mb-4" flat>
+      <v-card-text>
+        <v-row>
+          <v-col>
+            <v-progress-linear
+              :model-value="currentMemory"
+              :max="maxMemory"
+              :color="progressColor"
+              height="24"
+              rounded
+              striped
+            >
+              <template #default="{ value }">
+                <strong>{{ Math.ceil(value) }}%</strong>
+              </template>
+            </v-progress-linear>
+          </v-col>
+          <v-col class="d-flex align-center justify-end flex-column flex-sm-row">
+            <v-chip
+              variant="text"
+              color="success"
+              prepend-icon="mdi-server"
+              density="compact"
+            >
+              {{ onlineWorkers.length }} online
+            </v-chip>
+            <ResourceBadge kind="cpu" :value="0" :human-value="usageCpu" density="compact" variant="text" />
+            <ResourceBadge kind="memory" :value="0" :human-value="usageMemory" density="compact" variant="text" />
+            <ResourceBadge kind="disk" :value="0" :human-value="usageDisk" density="compact" variant="text" />
+            <v-btn
+              variant="outlined"
+              size="small"
+              class="ml-2"
+              @click="toggleWorkersList"
+            >
+              {{ toggleText }}
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- Workers Table -->
+    <table v-if="!errors.length && workers.length > 0" class="table table-responsive-md table-sm table-striped table-hover">
       <tbody>
-        <tr v-for="row in rows" :key="row.id" >
-          <th v-if="row.kind == 'worker'"
-              :rowspan="row.rowspan"
-              :id="row.worker.name"
-              class= "bg-light"
-              :class="(row.status == 'online' ? 'text-success' : 'text-secondary')"><a :href="'#'+row.worker.name" :class=" (row.worker.name == $route.hash.split('#')[1] ? ' bg-warning' : 'bg-light')">{{ row.worker.name }}</a></th>
+        <tr v-for="row in tableRows" :key="row.id">
+          <th
+            v-if="row.kind === 'worker' && row.worker"
+            :rowspan="row.rowspan"
+            :id="row.worker.name"
+            class="bg-light"
+            :class="row.status === 'online' ? 'text-success' : 'text-secondary'"
+          >
+            <a
+              :href="'#' + row.worker.name"
+              :class="row.worker.name === $route.hash.split('#')[1] ? 'bg-warning' : 'bg-light'"
+            >
+              {{ row.worker.name }}
+            </a>
+          </th>
 
-
-          <td v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" v-tooltip="format_dt(row.worker.last_seen)">
-            <font-awesome-icon icon="skull-crossbones" /> {{ row.worker.last_seen | from_now}}
+          <td v-show="row.status === 'offline'" v-if="row.kind === 'worker' && row.worker" colspan="1">
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <span v-bind="props">
+                  <v-icon icon="mdi-skull-crossbones" size="small" />
+                  {{ fromNow(row.worker.last_seen) }}
+                </span>
+              </template>
+              <span>{{ formatDt(row.worker.last_seen) }}</span>
+            </v-tooltip>
           </td>
-          <th v-show="row.status == 'offline'" v-if="row.kind == 'worker'" colspan="1" class="text-right">Resources</th>
-          <th v-show="row.status == 'online'" v-if="row.kind == 'worker'" colspan="2" class="text-right">Resources</th>
+          <th v-show="row.status === 'offline'" v-if="row.kind === 'worker' && row.worker" colspan="1" class="text-right">Resources</th>
+          <th v-show="row.status === 'online'" v-if="row.kind === 'worker' && row.worker" colspan="2" class="text-right">Resources</th>
 
-          <th v-if="row.kind == 'worker'" class="text-center">
+          <th v-if="row.kind === 'worker' && row.worker" class="text-center">
             <ResourceBadge kind="cpu" :value="row.worker.resources.cpu" />
           </th>
-          <th v-if="row.kind == 'worker'" class="text-center">
+          <th v-if="row.kind === 'worker' && row.worker" class="text-center">
             <ResourceBadge kind="memory" :value="row.worker.resources.memory" />
           </th>
-          <th v-if="row.kind == 'worker'" class="text-center">
+          <th v-if="row.kind === 'worker' && row.worker" class="text-center">
             <ResourceBadge kind="disk" :value="row.worker.resources.disk" />
           </th>
-          <td v-if="row.kind == 'task'">
-            <router-link :to="{name: 'schedule-detail', params:{schedule_name: row.task.schedule_name}}">
+
+          <td v-if="row.kind === 'task' && row.task">
+            <router-link :to="{ name: 'schedule-detail', params: { schedule_name: row.task.schedule_name } }">
               {{ row.task.schedule_name }}
             </router-link>
           </td>
-          <td v-if="row.kind == 'task'">
-            <TaskLink :_id="row.task._id" :updated_at="started_on(row.task)" />
+          <td v-if="row.kind === 'task' && row.task">
+            <TaskLink
+              :id="row.task.id"
+              :updated-at="startedOn(row.task)"
+            />
           </td>
-          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.cpu }}</td>
-          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.memory| formattedBytesSize }}</td>
-          <td v-if="row.kind == 'task'" class="text-center">{{ row.task.config.resources.disk| formattedBytesSize }}</td>
+          <td v-if="row.kind === 'task' && row.task" class="text-center">{{ row.task.config.resources.cpu }}</td>
+          <td v-if="row.kind === 'task' && row.task" class="text-center">{{ formattedBytesSize(row.task.config.resources.memory) }}</td>
+          <td v-if="row.kind === 'task' && row.task" class="text-center">{{ formattedBytesSize(row.task.config.resources.disk) }}</td>
         </tr>
       </tbody>
     </table>
-    <ErrorMessage :message="error" v-else />
+
+    <!-- Error Messages -->
+    <ErrorMessage v-for="error in errors" :key="error" :message="error" />
   </div>
 </template>
 
-<script type="text/javascript">
-  import Constants from '../constants.js'
-  import ZimfarmMixins from '../components/Mixins.js'
-  import ErrorMessage from '../components/ErrorMessage.vue'
-  import ResourceBadge from '../components/ResourceBadge.vue'
-  import TaskLink from '../components/TaskLink.vue'
+<script setup lang="ts">
+import ErrorMessage from '@/components/ErrorMessage.vue'
+import ResourceBadge from '@/components/ResourceBadge.vue'
+import TaskLink from '@/components/TaskLink.vue'
+import constants from '@/constants'
+import { useNotificationStore } from '@/stores/notification'
+import { useTasksStore } from '@/stores/tasks'
+import { useWorkersStore } from '@/stores/workers'
+import type { TaskLight } from '@/types/tasks'
+import type { Worker } from '@/types/workers'
+import { formatDt, formattedBytesSize, fromNow } from '@/utils/format'
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { VueCookies } from 'vue-cookies'
 
-  export default {
-    name: 'WorkersView',
-    mixins: [ZimfarmMixins],
-    components: {ErrorMessage, ResourceBadge, TaskLink},
-    data() {
-      return {
-        ready: false,
-        showing_all: null,  // toggle switch for list of workers
-        error: null,  // API generated error
-        all_workers: [],  // list of workers as returned by API
-        running_tasks: [],  // running tasks returned by API
-        timer: null,  // auto-refresh data timer
-      };
-    },
-    computed: {
-      rows() {  // special list of `rows` to handle table with rowspans
-        let table_rows = [];
-        for (var i=0; i<this.workers.length; i++) {
-          let worker = this.workers[i];
-          let status = worker.status;
-          let rowspan = 1 + worker.tasks.length;
-          table_rows.push({
-              kind: "worker",
-              id: worker.name,
-              status: status,
-              rowspan: rowspan,
-              worker: worker,
-            });
-          for (var ii=0; ii<worker.tasks.length; ii++) {
-            let task = worker.tasks[ii];
-            table_rows.push({
-              kind: "task",
-              id:task._id,
-              status: status,
-              rowspan: 1,
-              task: task,
-            });
-          }
-        }
-        return table_rows;
-      },
-      toggle_text() { return this.showing_all ? 'Hide Offlines' : 'Show All'; },
-      workers() { return this.showing_all ? this.all_workers : this.online_workers; },
-      online_workers() { return this.all_workers.filter(function (worker) { return worker.status == "online"; }); },
-      workers_names() {
-        return this.workers.map(function (worker) { return worker.name; });
-      },
-      tasks() { // filtered list of running tasks matching our workers list
-        let parent = this;
-        return parent.running_tasks.filter(function(task) { return parent.workers_names.indexOf(task.worker) != -1; });
-      },
-      progress_class() {
-        if (this.overall_progress <= 10 || this.overall_progress > 100)
-          return 'danger';
-        if (this.overall_progress <= 50)
-          return 'warning';
-        if (this.overall_progress <= 70)
-          return 'info';
-        return 'success';
-      },
-      max_cpu() {
-        return this.online_workers.reduce(function(a, b) { return a + b.resources.cpu; }, 0);
-      },
-      max_memory() {
-        return this.online_workers.reduce(function(a, b) { return a + b.resources.memory; }, 0);
-      },
-      max_disk() {
-        return this.online_workers.reduce(function(a, b) { return a + b.resources.disk; }, 0);
-      },
-      current_cpu() {
-        return this.tasks.reduce(function(a, b) { return a + b.config.resources.cpu; }, 0);
-      },
-      current_memory() {
-        return this.tasks.reduce(function(a, b) { return a + b.config.resources.memory; }, 0);
-      },
-      current_disk() {
-        return this.tasks.reduce(function(a, b) { return a + b.config.resources.disk; }, 0);
-      },
-      usage_cpu() {
-        return this.current_cpu + "/" + this.max_cpu;
-      },
-      usage_memory() {
-        return Constants.formattedBytesSize(this.current_memory) + "/" + Constants.formattedBytesSize(this.max_memory);
-      },
-      usage_disk() {
-        return Constants.formattedBytesSize(this.current_disk) + "/" + Constants.formattedBytesSize(this.max_disk);
-      },
-      overall_progress() {
-        return this.max_memory ? (this.current_memory * 100 / this.max_memory).toFixed(0) : 0;
-      },
-    },
-    methods: {
-      getOnlinesOnlyPreference() {   // retrieve onlines-only value from cookie
-        let value = JSON.parse(this.$cookie.get('onlines-only'));
-        if (value === null)
-          value = false; // default state
-        return value;
-      },
-      saveOnlinesOnlyPreference(value) {  // save onlines-only pref into cookie
-        this.$cookie.set('onlines-only',
-                         JSON.stringify(value), 
-                         {expires: Constants.COOKIE_LIFETIME_EXPIRY});
-      },
-      started_on(task) {
-        return task.timestamp.started || "not started";
-      },
-      toggle_workerslist() {
-        this.showing_all = !this.showing_all;
-        this.saveOnlinesOnlyPreference(!this.showing_all);
-      },
-      addToWorker(task) {
-        for (var i=0; i<this.all_workers.length; i++){
-          if (this.all_workers[i].name == task.worker) {
-            this.all_workers[i].tasks.push(task);
-            return;
-          }
-        }
-      },
-      loadRunningTasks() {
-        let parent = this;
+const $cookies = inject<VueCookies>('$cookies')
 
-        parent.toggleLoader("fetching tasks…");
-        parent.queryAPI('get', '/tasks/', {params: {status: Constants.running_statuses, limit:200}})
-          .then(function (response) {
-            parent.error = null;
-            parent.running_tasks = [];
-            for (var i=0; i<response.data.items.length; i++){
-              let task = response.data.items[i];
-              parent.addToWorker(task);
-              parent.running_tasks.push(task);
-            }
+// Stores
+const workersStore = useWorkersStore()
+const tasksStore = useTasksStore()
+const notificationStore = useNotificationStore()
 
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-            parent.toggleLoader(false);
-            parent.ready = true;
-          });
-      },
-      loadWorkersList() {  // load workers list from API
-        let parent = this;
+// Reactive state
+const ready = ref<boolean>(false)
+const errors = ref<string[]>([])
+const showingAll = ref(!getOnlinesOnlyPreference())
+const intervalId = ref<number | null>(null)
+const runningTasks = ref<TaskLight[]>([])
 
-        parent.toggleLoader("fetching workers…");
-        parent.queryAPI('get', '/workers/', {params: {limit: 100}})
-          .then(function (response) {
-            parent.error = null;
-            parent.all_workers = [];
-            for (var i=0; i<response.data.items.length; i++){
-              response.data.items[i].tasks = []; // placeholder for tasks
-              parent.all_workers.push(response.data.items[i]);
-            }
-            parent.loadRunningTasks();
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-            parent.toggleLoader(false);
-          });
-      },
-      totalOffset(element) {
-        var top = 0;
-        if (element != null) {
-          do {
-            top += element.offsetTop || 0;
-            element = element.offsetParent;
-          } while (element);
-        }
-        return top;
-      },
-      scrollTo(target) {
-        const element=document.querySelector(target);
-        const totalOffsetContainer = this.totalOffset(document.querySelector('body'));
-        const totalOffsetElement = this.totalOffset(element);
-        const targetY = totalOffsetElement - totalOffsetContainer;
-        document.querySelector('body').scrollTop = targetY;
-        // in firefox body.scrollTop doesn't scroll the page thus if we are trying to scrollTop on a body tag we need to scroll on the documentElement
-        document.documentElement.scrollTop = targetY; 
-      },
-    },
-    mounted() {
-      this.showing_all = !this.getOnlinesOnlyPreference();
-      this.loadWorkersList();
-      this.timer = setInterval(this.loadWorkersList, 60000);
-    },
-    updated() {
-      this.scrollTo('#'+this.$route.hash.split('#')[1]);
-    },
-    beforeDestroy () {
-      clearInterval(this.timer)
+// Computed properties
+const allWorkers = computed(() => workersStore.workers)
+const onlineWorkers = computed(() => allWorkers.value.filter(worker => worker.status === 'online'))
+const workers = computed(() => showingAll.value ? allWorkers.value : onlineWorkers.value)
+const workerNames = computed(() => workers.value.map(worker => worker.name))
+
+const tasks = computed(() => {
+  return runningTasks.value.filter(task => workerNames.value.indexOf(task.worker_name) !== -1)
+})
+
+const toggleText = computed(() => showingAll.value ? 'Hide Offlines' : 'Show All')
+
+const progressColor = computed(() => {
+  const progress = Number(overallProgress.value)
+  if (progress <= 10 || progress > 100) return 'error'
+  if (progress <= 50) return 'warning'
+  if (progress <= 70) return 'info'
+  return 'success'
+})
+
+const maxCpu = computed(() => {
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0)
+})
+
+const maxMemory = computed(() => {
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.memory, 0)
+})
+
+const maxDisk = computed(() => {
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.disk, 0)
+})
+
+const currentCpu = computed(() => {
+  return tasks.value.reduce((sum, task) => sum + task.config.resources.cpu, 0)
+})
+
+const currentMemory = computed(() => {
+  return tasks.value.reduce((sum, task) => sum + task.config.resources.memory, 0)
+})
+
+const currentDisk = computed(() => {
+  return tasks.value.reduce((sum, task) => sum + task.config.resources.disk, 0)
+})
+
+const usageCpu = computed(() => `${currentCpu.value}/${maxCpu.value}`)
+const usageMemory = computed(() => `${formattedBytesSize(currentMemory.value)}/${formattedBytesSize(maxMemory.value)}`)
+const usageDisk = computed(() => `${formattedBytesSize(currentDisk.value)}/${formattedBytesSize(maxDisk.value)}`)
+const overallProgress = computed(() => {
+  return maxMemory.value ? (currentMemory.value * 100 / maxMemory.value).toFixed(0) : 0
+})
+
+// Table structure with rowspans like the old version
+const tableRows = computed(() => {
+  const rows: Array<{
+    id: string
+    kind: 'worker' | 'task'
+    status: string
+    rowspan: number
+    worker?: Worker
+    task?: TaskLight
+  }> = []
+
+  for (const worker of workers.value) {
+    const status = worker.status
+    const rowspan = 1 + worker.tasks.length
+    rows.push({
+      id: worker.name,
+      kind: 'worker',
+      status,
+      rowspan,
+      worker,
+    })
+
+    for (const task of worker.tasks) {
+      rows.push({
+        id: task.id,
+        kind: 'task',
+        status,
+        rowspan: 1,
+        task,
+      })
     }
   }
+
+  return rows
+})
+
+// Methods
+function getOnlinesOnlyPreference(): boolean {
+  const value = $cookies?.get('onlines-only')
+  return value === null ? false : JSON.parse(value)
+}
+
+function saveOnlinesOnlyPreference(value: boolean): void {
+  $cookies?.set('onlines-only', JSON.stringify(value), constants.COOKIE_LIFETIME_EXPIRY)
+}
+
+function startedOn(task: TaskLight): string {
+  return (task.timestamp as Record<string, unknown>).started as string || 'not started'
+}
+
+function toggleWorkersList(): void {
+  showingAll.value = !showingAll.value
+  saveOnlinesOnlyPreference(!showingAll.value)
+}
+
+async function loadRunningTasks(): Promise<void> {
+  const tasks = await tasksStore.fetchTasks(200, 0, [
+    'reserved',
+    'started',
+    'scraper_started',
+    'scraper_completed',
+    'scraper_killed',
+    'cancel_requested',
+  ])
+
+  // Clear existing tasks and add new ones to workers
+  workersStore.clearWorkerTasks()
+  if (tasks) {
+    runningTasks.value = tasks
+    for (const task of tasks) {
+      workersStore.addTaskToWorker(task)
+    }
+    ready.value = true
+  }
+
+  if (tasksStore.errors.length > 0) {
+    errors.value = tasksStore.errors
+    for (const error of errors.value) {
+      notificationStore.showError(error)
+    }
+  }
+}
+
+async function loadData(): Promise<void> {
+  await workersStore.fetchWorkers(100)
+  await loadRunningTasks()
+}
+
+// Lifecycle
+onMounted(async () => {
+  await loadData()
+
+  intervalId.value = window.setInterval(async () => {
+    await loadData()
+  }, 60000)
+})
+
+onBeforeUnmount(() => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
+})
 </script>
 
-<style type="text/css">
-  .col { line-height: unset; }
-  .progres-col { line-height: 0; }
-  .progress { height: 100%; }
-  .toggle_btn { float: right; }
+<style scoped>
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.text-secondary {
+  color: #6c757d !important;
+}
+
+.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.4em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+}
+
+.badge-light {
+  color: #212529;
+  background-color: #f8f9fa;
+}
+
+
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #212529;
+  border-collapse: collapse;
+}
+
+.table-responsive-md {
+  overflow-x: auto;
+}
+
+.table-sm td,
+.table-sm th {
+  padding: 0.3rem;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: top;
+  border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
+}
 </style>
