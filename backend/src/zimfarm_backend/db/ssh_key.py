@@ -1,10 +1,10 @@
-import datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Sshkey
 
@@ -36,7 +36,7 @@ def create_ssh_key(
         pkcs8_key=pkcs8_key,
         name=name,
         type="RSA",
-        added=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        added=getnow(),
     )
 
     ssh_key.user_id = user_id

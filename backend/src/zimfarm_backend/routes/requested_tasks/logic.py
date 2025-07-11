@@ -1,4 +1,3 @@
-import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -7,7 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import WorkersIpChangesCounts
+from zimfarm_backend.common import WorkersIpChangesCounts, getnow
 from zimfarm_backend.common.constants import (
     ENABLED_SCHEDULER,
     MAX_WORKER_IP_CHANGES_PER_DAY,
@@ -69,7 +68,7 @@ router = APIRouter(prefix="/requested-tasks", tags=["requested-tasks"])
 
 def record_ip_change(session: OrmSession, worker_name: str):
     """record that this worker changed its IP and trigger whitelist changes"""
-    today = datetime.datetime.now(datetime.UTC).date()
+    today = getnow().date()
     # counts and limits are per-day so reset it if date changed
     if today != WorkersIpChangesCounts.today:
         WorkersIpChangesCounts.reset()

@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import REFRESH_TOKEN_EXPIRY_DURATION
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Refreshtoken
@@ -29,7 +30,7 @@ def create_refresh_token(session: OrmSession, user_id: UUID) -> Refreshtoken:
     """Create a refresh token for a user"""
     refresh_token = Refreshtoken(
         token=uuid4(),
-        expire_time=datetime.datetime.now(datetime.UTC)
+        expire_time=getnow()
         + datetime.timedelta(seconds=REFRESH_TOKEN_EXPIRY_DURATION),
     )
     refresh_token.user = get_user_by_id(session, user_id=user_id)

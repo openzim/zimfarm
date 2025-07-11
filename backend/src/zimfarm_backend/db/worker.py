@@ -1,4 +1,3 @@
-import datetime
 from ipaddress import IPv4Address
 from uuid import UUID
 
@@ -45,7 +44,7 @@ def update_worker(
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
     worker = get_worker(session, worker_name=worker_name)
-    worker.last_seen = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    worker.last_seen = getnow()
     if ip_address is not None:
         worker.last_ip = IPv4Address(ip_address)
     session.add(worker)

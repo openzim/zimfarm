@@ -551,9 +551,7 @@ def find_requested_task_for_worker(
     logger.debug(f"opening_eta:{opening_eta}")
 
     # get the number of available seconds from now to that ETA
-    available_time = (
-        opening_eta - datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-    ).total_seconds()
+    available_time = (opening_eta - getnow()).total_seconds()
     logger.debug(f"we have approx. {available_time / 60}mn to reclaim resources")
 
     # loop on task[1+] to find the first task which can fit

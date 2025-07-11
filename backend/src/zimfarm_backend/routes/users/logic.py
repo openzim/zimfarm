@@ -144,7 +144,7 @@ def update_user(
 ) -> Response:
     """Update a specific user"""
     try:
-        get_user_by_username(db_session, username=username)
+        user = get_user_by_username(db_session, username=username)
     except RecordDoesNotExistError as exc:
         raise NotFoundError("User not found") from exc
 
@@ -154,7 +154,7 @@ def update_user(
 
     db_update_user(
         db_session,
-        user_id=current_user.id,
+        user_id=user.id,
         email=user_schema.email,
         scope=ROLES.get(user_schema.role) if user_schema.role else None,
     )
@@ -169,14 +169,14 @@ def delete_user(
 ) -> Response:
     """Delete a specific user"""
     try:
-        get_user_by_username(db_session, username=username)
+        user = get_user_by_username(db_session, username=username)
     except RecordDoesNotExistError as exc:
         raise NotFoundError("User not found") from exc
 
     if not check_user_permission(current_user, namespace="users", name="delete"):
         raise UnauthorizedError("You are not allowed to access this resource")
 
-    db_delete_user(db_session, user_id=current_user.id)
+    db_delete_user(db_session, user_id=user.id)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
@@ -188,6 +188,11 @@ def create_user_key(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> SshKeyRead:
     """Create a new SSH key for a user"""
+    try:
+        user = get_user_by_username(db_session, username=username)
+    except RecordDoesNotExistError as exc:
+        raise NotFoundError("User not found") from exc
+
     if username != current_user.username:
         if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
             raise UnauthorizedError("You are not allowed to access this resource")
@@ -201,14 +206,14 @@ def create_user_key(
 
     # check if key already exists
     db_ssh_key = get_ssh_key_by_fingerprint_or_none(db_session, fingerprint=fingerprint)
-    if db_ssh_key and db_ssh_key.user.id == current_user.id:
+    if db_ssh_key and db_ssh_key.user.id == user.id:
         raise BadRequestError("SSH key already exists")
 
     # add new ssh key to database
     db_ssh_key = create_ssh_key(
         db_session,
         fingerprint=fingerprint,
-        user_id=current_user.id,
+        user_id=user.id,
         key=ssh_key.key,
         pkcs8_key=serialize_rsa_public_key(rsa_public_key).decode("ascii"),
         name=ssh_key.name,
@@ -245,7 +250,15 @@ def update_user_password(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Update a user's password"""
+    try:
+        user = get_user_by_username(db_session, username=username)
+    except RecordDoesNotExistError as exc:
+        raise NotFoundError("User not found") from exc
+
     if current_user.username == username:
+        if password_update.current is None:
+            raise BadRequestError("You must enter your current password.")
+
         if not check_password_hash(
             current_user.password_hash or "", password_update.current
         ):
@@ -255,7 +268,7 @@ def update_user_password(
 
     db_update_user_password(
         db_session,
-        user_id=current_user.id,
+        user_id=user.id,
         password_hash=generate_password_hash(password_update.new),
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
@@ -309,9 +322,14 @@ def delete_user_key(
             raise UnauthorizedError("You are not allowed to access this resource")
 
     try:
+        user = get_user_by_username(db_session, username=username)
+    except RecordDoesNotExistError as exc:
+        raise NotFoundError("User not found") from exc
+
+    try:
         get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
     except RecordDoesNotExistError as exc:
         raise NotFoundError("SSH key not found") from exc
 
-    delete_ssh_key(db_session, fingerprint=fingerprint, user_id=current_user.id)
+    delete_ssh_key(db_session, fingerprint=fingerprint, user_id=user.id)
     return Response(status_code=HTTPStatus.NO_CONTENT)

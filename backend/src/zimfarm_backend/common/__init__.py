@@ -23,12 +23,12 @@ def to_naive_utc(timestamp_or_iso: datetime.datetime | int | str) -> datetime.da
 
 
 class WorkersIpChangesCounts:
-    today: datetime.date = datetime.datetime.now(datetime.UTC).date()
+    today: datetime.date = getnow().date()
     counts: ClassVar[dict[str, int]] = defaultdict(int)
 
     @classmethod
     def reset(cls):
-        cls.today = datetime.datetime.now(datetime.UTC).date()
+        cls.today = getnow()
         cls.counts = defaultdict(int)
 
     @classmethod
