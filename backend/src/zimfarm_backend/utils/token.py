@@ -8,7 +8,9 @@ from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
+from cryptography.hazmat.primitives.asymmetric.types import PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import (
+    SSHPublicKeyTypes,
     load_pem_public_key,
     load_ssh_public_key,
 )
@@ -108,19 +110,21 @@ def load_rsa_public_key(key: str) -> RSAPublicKey:
     Attempts to load key public keys in PEM format or OpenSSH format
     """
 
+    public_key: SSHPublicKeyTypes | PublicKeyTypes | None = None
     try:
-        return load_ssh_public_key(
-            bytes(key, encoding="ascii")
-        )  # pyright: ignore[reportReturnType]
+        public_key = load_ssh_public_key(bytes(key, encoding="ascii"))
     except (ValueError, UnsupportedAlgorithm):
-        pass
+        try:
+            public_key = load_pem_public_key(bytes(key, encoding="ascii"))
+        except (ValueError, UnsupportedAlgorithm):
+            pass
 
-    try:
-        return load_pem_public_key(
-            bytes(key, encoding="ascii")
-        )  # pyright: ignore[reportReturnType]
-    except (ValueError, UnsupportedAlgorithm) as exc:
-        raise PEMPublicKeyLoadError("Unable to load public key") from exc
+    if public_key is None:
+        raise PEMPublicKeyLoadError("Unable to load public key")
+
+    if not isinstance(public_key, RSAPublicKey):
+        raise PEMPublicKeyLoadError("Key is not an RSA public key")
+    return public_key
 
 
 def serialize_rsa_public_key(public_key: RSAPublicKey) -> bytes:
