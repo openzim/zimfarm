@@ -1,30 +1,134 @@
 <template>
-  <div class="container about">
-    <h2>Support Zimfarm <img :src="publicPath + 'assets/logo.svg'" /></h2>
+  <v-container class="py-8">
+    <v-row justify="center">
+      <v-col cols="12" md="10" lg="8">
+        <v-card class="pa-6" elevation="2">
+          <v-card-title class="d-flex align-center mb-4">
+            <h2 class="text-h4 font-weight-bold">Support Zimfarm</h2>
+            <img
+              src="/assets/logo.svg"
+              width="32"
+              height="32"
+              class="ml-2"
+              alt="Zimfarm Logo"
+            />
+          </v-card-title>
 
-    <p>Zimfarm is <a target="_blank" href="https://kiwix.org">Kiwix</a>’ platform for automating the creation and update of <a target="_blank" href="https://wiki.openzim.org/wiki/ZIM_File_Format">ZIM files</a>. Thousands or recipes are run by distributed <router-link :to="{name: 'workers'}">workers</router-link>. All day, every day, so you can enjoy offline content.</p>
+          <v-card-text class="text-body-1">
+            <p class="mb-4">
+              Zimfarm is
+              <a
+                href="https://kiwix.org"
+                target="_blank"
+                class="text-primary text-decoration-none"
+              >
+                Kiwix
+              </a>'s platform for automating the creation and update of
+              <a
+                href="https://wiki.openzim.org/wiki/ZIM_File_Format"
+                target="_blank"
+                class="text-primary text-decoration-none"
+              >
+                ZIM files
+              </a>.
+              Thousands of recipes are run by distributed
+              <router-link
+                :to="{name: 'workers'}"
+                class="text-primary text-decoration-none"
+              >
+                workers
+              </router-link>.
+              All day, every day, so you can enjoy offline content.
+            </p>
 
-    <p>It is <strong>entirely and only supported by donations</strong>. A few dollars may not mean much for you but will certainly help us a lot : if you can, <a target="_blank" href="https://support.kiwix.org/">consider supporting us</a> - even with the price of a cup of coffee (we love coffee and at times need quite a bit of it).</p>
+            <v-card variant="outlined" class="mb-4">
+              <v-card-title class="text-h6">
+                <v-icon class="mr-2">mdi-heart</v-icon>
+                Support with Donations
+              </v-card-title>
+              <v-card-text>
+                <p class="mb-0">
+                  It is <strong>entirely and only supported by donations</strong>.
+                  A few dollars may not mean much for you but will certainly help us a lot:
+                  if you can,
+                  <a
+                    href="https://support.kiwix.org/"
+                    target="_blank"
+                    class="text-primary text-decoration-none"
+                  >
+                    consider supporting us
+                  </a>
+                  - even with the price of a cup of coffee (we love coffee and at times need quite a bit of it).
+                </p>
+              </v-card-text>
+            </v-card>
 
-    <p>Another way to help is by <strong>donating a worker</strong> : if you have a GNU/Linux system with at least 4 cores, 2GB of RAM and a fixed public IP, <a target="_blank" href="https://github.com/openzim/zimfarm/blob/master/workers/README.md">follow these instructions</a>. And if you have a headless server you want to give us access to, <a href="mailto:contact+zimfarm@kiwix.org">it's even easier</a>!</p>
+            <v-alert
+              type="success"
+              variant="tonal"
+              class="mb-4"
+              border="start"
+            >
+              <p class="mb-3">
+                Another way to help is by <strong>donating a worker</strong>:
+                if you have a GNU/Linux system with at least 4 cores, 2GB of RAM and a fixed public IP,
+                <a
+                  href="https://github.com/openzim/zimfarm/blob/master/workers/README.md"
+                  target="_blank"
+                  class="text-primary text-decoration-none"
+                >
+                  follow these instructions
+                </a>.
+              </p>
+              <p class="mb-0">
+                And if you have a headless server you want to give us access to,
+                <a
+                  href="mailto:contact+zimfarm@kiwix.org"
+                  class="text-primary text-decoration-none"
+                >
+                  it's even easier
+                </a>!
+              </p>
+            </v-alert>
 
-    <p>Zimfarm is a Python project hosted <a target="_blank" href="https://github.com/openzim/zimfarm">on Github</a>. It is built on top of content-specific scrapers like <code>mwoffliner</code>, <code>youtube</code>, <code>sotoki</code>, and others. Check out <a target="_blank" href="https://github.com/openzim/zimfarm/blob/master/dispatcher/backend/src/common/schemas/offliners/__init__.py">OpenZIM's repositories</a> for a complete list.</p>
-  </div>
+            <v-divider class="my-4"></v-divider>
+
+            <p class="mb-0">
+              Zimfarm is a Python project hosted
+              <a
+                href="https://github.com/openzim/zimfarm"
+                target="_blank"
+                class="text-primary text-decoration-none"
+              >
+                on Github
+              </a>.
+              It is built on top of content-specific scrapers like
+              <v-chip size="small" variant="outlined" class="mx-1">mwoffliner</v-chip>,
+              <v-chip size="small" variant="outlined" class="mx-1">youtube</v-chip>,
+              <v-chip size="small" variant="outlined" class="mx-1">sotoki</v-chip>,
+              and others. Check out
+              <a
+                href="https://github.com/openzim/zimfarm/blob/master/dispatcher/backend/src/common/schemas/offliners/__init__.py"
+                target="_blank"
+                class="text-primary text-decoration-none"
+              >
+                OpenZIM's repositories
+              </a>
+              for a complete list.
+            </p>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
-<script type="text/javascript">
-  import ZimfarmMixins from '../components/Mixins.js'
+<script setup lang="ts">
 
-  export default {
-    name: 'SupportUs',
-    mixins: [ZimfarmMixins],
-  }
 </script>
 
-<style type="text/css">
-  .about h2 img {
-    width: 2rem;
-    height: 2rem;
-    margin-bottom: .5rem;
-  }
+<style scoped>
+.v-card-title h2 {
+  margin: 0;
+}
 </style>
