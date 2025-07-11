@@ -22,22 +22,19 @@
                 target="_blank"
                 class="text-primary text-decoration-none"
               >
-                Kiwix
-              </a>'s platform for automating the creation and update of
+                Kiwix</a>'s platform for automating the creation and update of
               <a
                 href="https://wiki.openzim.org/wiki/ZIM_File_Format"
                 target="_blank"
                 class="text-primary text-decoration-none"
               >
-                ZIM files
-              </a>.
+                ZIM files</a>.
               Thousands of recipes are run by distributed
               <router-link
                 :to="{name: 'workers'}"
                 class="text-primary text-decoration-none"
               >
-                workers
-              </router-link>.
+                workers</router-link>.
               All day, every day, so you can enjoy offline content.
             </p>
 
@@ -58,54 +55,52 @@
                   >
                     consider supporting us
                   </a>
-                  - even with the price of a cup of coffee (we love coffee and at times need quite a bit of it).
+                  — even with the price of a cup of coffee (we love coffee and at times need quite a bit of it).
                 </p>
               </v-card-text>
             </v-card>
 
-            <v-alert
-              type="success"
-              variant="tonal"
-              class="mb-4"
-              border="start"
-            >
-              <p class="mb-3">
-                Another way to help is by <strong>donating a worker</strong>:
-                if you have a GNU/Linux system with at least 4 cores, 2GB of RAM and a fixed public IP,
-                <a
-                  href="https://github.com/openzim/zimfarm/blob/master/workers/README.md"
-                  target="_blank"
-                  class="text-primary text-decoration-none"
-                >
-                  follow these instructions
-                </a>.
-              </p>
-              <p class="mb-0">
-                And if you have a headless server you want to give us access to,
-                <a
-                  href="mailto:contact+zimfarm@kiwix.org"
-                  class="text-primary text-decoration-none"
-                >
-                  it's even easier
-                </a>!
-              </p>
-            </v-alert>
+            <v-card variant="flat" class="mb-2">
+              <v-card-title class="text-h6 d-flex align-center">
+                <v-icon class="mr-2">mdi-server</v-icon>
+                Donate a Worker
+              </v-card-title>
+              <v-card-text>
+                <p>
+                  Another way to help is by <strong>donating a worker</strong>:
+                  if you have a GNU/Linux system with at least 4 cores, 2GB of RAM and a fixed public IP,
+                  <a
+                    href="https://github.com/openzim/zimfarm/blob/master/workers/README.md"
+                    target="_blank"
+                    class="text-primary text-decoration-none"
+                  >
+                    follow these instructions</a>.
+                </p>
+                <p>
+                  And if you have a headless server you want to give us access to,
+                  <a
+                    href="mailto:contact+zimfarm@kiwix.org"
+                    class="text-primary text-decoration-none"
+                  >
+                    it's even easier</a>!
+                </p>
+              </v-card-text>
+            </v-card>
 
-            <v-divider class="my-4"></v-divider>
+            <v-divider class="my-2"></v-divider>
 
-            <p class="mb-0">
+            <p>
               Zimfarm is a Python project hosted
               <a
                 href="https://github.com/openzim/zimfarm"
                 target="_blank"
                 class="text-primary text-decoration-none"
               >
-                on Github
-              </a>.
+                on Github</a>.
               It is built on top of content-specific scrapers like
-              <v-chip size="small" variant="outlined" class="mx-1">mwoffliner</v-chip>,
-              <v-chip size="small" variant="outlined" class="mx-1">youtube</v-chip>,
-              <v-chip size="small" variant="outlined" class="mx-1">sotoki</v-chip>,
+              <strong>mwoffliner</strong>,
+              <strong>youtube</strong>,
+              <strong>sotoki</strong>,
               and others. Check out
               <a
                 href="https://github.com/openzim/zimfarm/blob/master/dispatcher/backend/src/common/schemas/offliners/__init__.py"
