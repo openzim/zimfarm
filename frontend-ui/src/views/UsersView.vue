@@ -3,135 +3,247 @@
   - user profile (TBI) -->
 
 <template>
-  <div class="container" v-show="canReadUsers">
-
-    <div v-show="canCreateUsers">
-      <b-form class="row" @submit.prevent="createUser">
-        <div class="col-sm-12 col-md-6 col-lg-3 mb-1">
-          <label class="sr-only" for="cu_username">Username</label>
-          <b-input id="cu_username" placeholder="Username" v-model="form.username"></b-input>
-        </div>
-
-        <div class="col-sm-12 col-md-6 col-lg-3 mb-1">
-          <label class="sr-only" for="cu_email">Email</label>
-          <b-input type="email" id="cu_email" placeholder="Email" v-model="form.email"></b-input>
-        </div>
-
-        <div class="col-sm-12 col-md-6 col-lg-3 mb-1">
-          <b-select v-model="form.role">
-            <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
-          </b-select>
-        </div>
-        <div class="col-sm-12 col-md-6 col-lg-3 mb-1">
-          <b-button type="submit" class="form-control" :disabled="!payload" variant="primary">Create User</b-button>
-        </div>
-      </b-form>
-    </div>
-
-    <hr />
-
-    <table v-if="!error" class="table table-striped table-hover">
-      <tbody>
-        <tr v-for="user in users" :key="user.username">
-          <td><router-link :to="{name: 'user-detail', params: {'username': user.username}}">{{ user.username }}</router-link></td>
-          <td>{{ user.role }}</td>
-          <td><a :href="'mailto:' + user.email">{{ user.email }}</a></td>
-        </tr>
-      </tbody>
-    </table>
-
+  <div>
+    <!-- Error Message for permissions -->
     <ErrorMessage :message="error" v-if="error" />
+
+    <!-- Content only shown if user has permission -->
+    <div v-show="canReadUsers">
+      <!-- Create User Form -->
+      <v-card v-show="canCreateUsers" class="mb-6" flat>
+        <v-card-title class="text-h6">
+          <v-icon class="mr-2">mdi-account-plus</v-icon>
+          Create New User
+        </v-card-title>
+
+        <v-card-text>
+          <v-form @submit.prevent="createUser" ref="formRef">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="form.username"
+                  label="Username"
+                  placeholder="Enter username"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :rules="[rules.required, rules.minLength(3)]"
+                />
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="form.email"
+                  label="Email"
+                  type="email"
+                  placeholder="Enter email"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :rules="[rules.required, rules.email]"
+                />
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="form.role"
+                  :items="roles"
+                  label="Role"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :rules="[rules.required]"
+                />
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3" class="d-flex align-end">
+                <v-btn
+                  type="submit"
+                  color="primary"
+                  variant="elevated"
+                  :disabled="!isFormValid || isCreating"
+                  :loading="isCreating"
+                  block
+                >
+                  <v-icon class="mr-2">mdi-account-plus</v-icon>
+                  Create User
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+      </v-card>
+
+      <!-- Users Table -->
+      <UsersTable
+        :headers="headers"
+        :users="users"
+        :paginator="paginator"
+        :loading="loadingStore.isLoading"
+        :errors="userStore.errors"
+        @limit-changed="handleLimitChange"
+        @load-data="loadData"
+      />
+    </div>
   </div>
 </template>
 
-<script type="text/javascript">
-  import passwordGen from 'password-generator'
-  import Constants from '../constants.js'
-  import ZimfarmMixins from '../components/Mixins.js'
-  import ErrorMessage from '../components/ErrorMessage.vue'
+<script setup lang="ts">
+import { computed, inject, onMounted, ref } from 'vue'
+import type { VueCookies } from 'vue-cookies'
+import { useRouter } from 'vue-router'
 
-  export default {
-    name: 'UsersView',
-    mixins: [ZimfarmMixins],
-    components: {ErrorMessage},
-    data() {
-      return {
-        error: null,  // API generated error message
-        users: [],  // list of users returned by API
+import ErrorMessage from '@/components/ErrorMessage.vue'
+import UsersTable from '@/components/UsersTable.vue'
+import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
+import { useLoadingStore } from '@/stores/loading'
+import { useNotificationStore } from '@/stores/notification'
+import { useUserStore } from '@/stores/user'
+import type { Paginator } from '@/types/base'
+import type { User } from '@/types/user'
+import { generatePassword } from '@/utils/browsers'
 
-        form: {role: "editor"},  // create user data holder
-      };
-    },
-    computed: {
-      roles() { return Constants.ROLES; },
-      payload() {
-        let payload = {role: this.form.role};
-        if (this.form.username)
-          payload.username = this.form.username;
-        if (this.form.email)
-          payload.email = this.form.email;
+const $cookies = inject<VueCookies>('$cookies')
+const roles = constants.ROLES
 
-        if (Object.keys(payload).length == 1)
-          return null;
-        return payload;
-      },
-    },
-    methods: {
-      genPassword() { return passwordGen(8, true); },
-      createUser() {
-        if (this.payload === null) {
-          return;
-        }
+// Simple password generator function
+const genPassword = () => generatePassword(8)
 
-        let payload = Constants.duplicate(this.payload);
-        let parent = this;
-        payload.password = this.genPassword();
-        parent.toggleLoader("creating user…");
-        parent.queryAPI('post', '/users/', payload)
-        .then(function () {
-            parent.alertSuccess(
-              "User Created!",
-              "User <code>" + payload.username + "</code> has been created with password <code>" + payload.password + "</code>.",
-              false
-            );
-            parent.loadUsersList();
-        })
-        .catch(function (error) {
-          parent.standardErrorHandling(error);
-        })
-        .then(function () {
-            parent.toggleLoader(false);
-            parent.scrollToTop();
-        });
-      },
-      loadUsersList() {  // load users list from API
-        let parent = this;
+// Router and stores
+const router = useRouter()
+const authStore = useAuthStore()
+const loadingStore = useLoadingStore()
+const notificationStore = useNotificationStore()
+const userStore = useUserStore()
 
-        parent.toggleLoader("fetching workers…");
-        let params = {limit: 50};
-        parent.queryAPI('get', '/users/', {params: params})
-          .then(function (response) {
-            parent.error = null;
-            parent.users = [];
-            for (var i=0; i<response.data.items.length; i++){
-              parent.users.push(response.data.items[i]);
-            }
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-            parent.toggleLoader(false);
-          });
-      },
-    },
-    mounted() {
-      if (!this.canReadUsers) {
-        this.alertAccessRefused("users.read");
-        this.redirectTo('home');
-        return;
-      }
-      this.loadUsersList();
-    },
+// Form ref
+const formRef = ref()
+
+// Reactive data
+const users = ref<User[]>([])
+const isCreating = ref(false)
+const error = ref<string | null>(null)
+
+// Paginator state
+const paginator = ref<Paginator>({
+  page: 1,
+  limit: $cookies?.get('users-table-limit') || 20,
+  count: 0,
+  skip: 0,
+  page_size: 20,
+})
+
+// Form data
+const form = ref({
+  username: '',
+  email: '',
+  role: 'editor' as const
+})
+
+// Computed properties
+const canReadUsers = computed(() =>
+  authStore.hasPermission('users', 'read')
+)
+
+const canCreateUsers = computed(() =>
+  authStore.hasPermission('users', 'create')
+)
+
+const isFormValid = computed(() => {
+  return form.value.username &&
+         form.value.email &&
+         form.value.role
+})
+
+// Table headers
+const headers = [
+  { title: 'Username', key: 'username' },
+  { title: 'Role', key: 'role' },
+  { title: 'Email', key: 'email' }
+]
+
+// Form validation rules
+const rules = {
+  required: (value: string) => !!value || 'This field is required',
+  email: (value: string) => {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return pattern.test(value) || 'Please enter a valid email address'
+  },
+  minLength: (min: number) => (value: string) =>
+    value.length >= min || `This field must be at least ${min} characters long`
+}
+
+// Methods
+const createUser = async () => {
+  const { valid } = await formRef.value?.validate()
+  if (!valid) return
+
+  isCreating.value = true
+  loadingStore.startLoading('Creating user...')
+
+  const password = genPassword()
+
+  const response = await userStore.createUser(form.value.username, form.value.email, form.value.role, password)
+
+  if (response) {
+    // Show success notification
+    notificationStore.showSuccess(
+      `User "${response.username}" has been created with password "${password}".`,
+      8000
+    )
+
+    // Reset form
+    form.value = {
+      username: '',
+      email: '',
+      role: 'editor' as const
+    }
+    formRef.value?.reset()
+
+    // Reload users list
+    await loadData(paginator.value.limit, paginator.value.skip)
+  } else {
+    for (const error of userStore.errors) {
+      notificationStore.showError(error)
+    }
   }
+  isCreating.value = false
+  loadingStore.stopLoading()
+}
+
+const loadData = async (limit: number, skip: number) => {
+  if (!canReadUsers.value) {
+    notificationStore.showError('You do not have permission to read users.')
+    router.push({ name: 'home' })
+    return
+  }
+
+  loadingStore.startLoading('Fetching users...')
+
+  const response = await userStore.fetchUsers(skip, limit)
+  if (response) {
+    users.value = response
+    paginator.value = userStore.paginator
+  } else {
+    for (const error of userStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+  loadingStore.stopLoading()
+}
+
+const handleLimitChange = async (newLimit: number) => {
+  $cookies?.set('users-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
+  await loadData(newLimit, 0)
+}
+
+// Lifecycle
+onMounted(async () => {
+  if (!canReadUsers.value) {
+    error.value = 'You do not have permission to view users.'
+    return
+  }
+  await loadData(paginator.value.limit, paginator.value.skip)
+})
 </script>

@@ -1,7 +1,7 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
 import type { ErrorResponse } from '@/types/errors'
-import type { JWTPayload, Token, User } from '@/types/user'
+import type { JWTPayload, JWTUser, Token } from '@/types/user'
 import { translateErrors } from '@/utils/errors'
 import httpRequest from '@/utils/httpRequest'
 import { jwtDecode } from 'jwt-decode'
@@ -11,7 +11,7 @@ import type { VueCookies } from 'vue-cookies'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<Token | null>(null)
-  const user = ref<User | null>(null)
+  const user = ref<JWTUser | null>(null)
   const errors = ref<string[]>([])
 
   const $cookies = inject<VueCookies>('$cookies')

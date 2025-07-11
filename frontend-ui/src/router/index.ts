@@ -3,6 +3,7 @@ import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
 import SchedulesView from '@/views/SchedulesView.vue'
 import SignInView from '@/views/SignInView.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
+import UsersView from '@/views/UsersView.vue'
 import WorkersView from '@/views/WorkersView.vue'
 import { createRouter, createWebHistory } from "vue-router"
 
@@ -63,7 +64,7 @@ const routes = [
     {
       path: '/users',
       name: 'users-list',
-      component: PipelineView,
+      component: UsersView,
     },
     {
       path: '/workers',
