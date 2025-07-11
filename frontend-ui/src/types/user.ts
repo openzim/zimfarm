@@ -46,6 +46,6 @@ export interface SshKeyList {
   ssh_keys: SshKeyRead[]
 }
 
-export interface UserWithSshKeys extends BaseUser, SshKeyList {
+export interface UserWithSshKeys extends User, SshKeyList {
   ssh_keys: SshKeyRead[]
 }

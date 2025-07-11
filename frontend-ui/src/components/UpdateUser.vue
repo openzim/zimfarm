@@ -1,175 +1,259 @@
 <template>
   <div>
-    <b-form inline @submit.prevent="updateUser">
+    <!-- Update User Form -->
+    <v-card class="mb-4">
+      <v-card-text>
+        <v-form @submit.prevent="updateUser">
+          <v-row>
+            <v-col cols="12" sm="6" md="4">
+              <v-select
+                v-model="form.role"
+                :items="roles"
+                label="Role"
+                variant="outlined"
+                density="compact"
+                hide-details
+                required
+              />
+            </v-col>
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="form.email"
+                type="email"
+                label="Email"
+                placeholder="Email"
+                variant="outlined"
+                density="compact"
+                hide-details
+                required
+              />
+            </v-col>
+            <v-col cols="12" sm="6" md="4" class="d-flex align-end">
+              <v-btn
+                type="submit"
+                color="primary"
+                variant="elevated"
+                :disabled="!payload"
+                block
+              >
+                Update User
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+    </v-card>
 
-      <label class="mr-2" for="cu_email">Role</label>
-      <b-select class="mr-2" v-model="form.role">
-        <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
-      </b-select>
+    <!-- Change Password Form -->
+    <v-card class="mb-4">
+      <v-card-text>
+        <v-form @submit.prevent="emit('change-password', form.password)">
+          <v-row>
+            <v-col cols="8" sm="8" md="6">
+              <v-text-field
+                v-model="form.password"
+                label="Password (generated)"
+                placeholder="Password"
+                variant="outlined"
+                density="compact"
+                hide-details
+                required
+              />
+            </v-col>
+            <v-col>
+              <v-btn
+                type="submit"
+                color="primary"
+                variant="elevated"
+                :disabled="!form.password"
+                block
+              >
+                Change Password
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+    </v-card>
 
-      <label class="sr-only" for="cu_email">Email</label>
-      <b-input class="mr-2" type="email" id="cu_email" placeholder="Email" v-model="form.email"></b-input>
-
-      <b-button type="submit" class="form-control" :disabled="!payload" variant="primary">Update User</b-button>
-    </b-form>
-
-    <hr />
-
-    <b-form inline @submit.prevent="changePassword">
-      <label class="mr-2" for="cu_password">Password (generated)</label>
-      <b-input class="mr-2" id="cu_password" placeholder="Password" required v-model="form.password"></b-input>
-      <b-button type="submit" class="form-control" :disabled="!form.password" variant="primary">Change Password</b-button>
-    </b-form>
-
-    <hr />
-
-    <b-form v-if="form.role == 'worker'" inline @submit.prevent="addKey">
-      <label class="mr-2" for="key_file">RSA Public Key</label>
-      <input id="key_file" type="file" ref="keyFile" @change="keyFileSelected" />
-      <b-button type="submit" class="form-control" variant="primary" :disabled="Object.isEmpty(key_payload)">Add SSH Key</b-button>
-    </b-form>
+    <!-- Add SSH Key Form (only for workers) -->
+    <v-card v-if="form.role === 'worker'">
+      <v-card-text>
+        <v-form @submit.prevent="addKey">
+          <v-row>
+            <v-col cols="8" sm="8" md="6">
+              <v-file-input
+                ref="keyFile"
+                v-model="keyFile"
+                label="RSA Public Key"
+                placeholder="Select an RSA public key file (.pub)"
+                hint="Choose an RSA public key file (usually ends with .pub)"
+                accept=".pub,text/plain"
+                variant="outlined"
+                density="compact"
+                @update:model-value="keyFileSelected"
+              />
+            </v-col>
+            <v-col>
+              <v-btn
+                type="submit"
+                color="primary"
+                variant="elevated"
+                :disabled="!keyPayload.name || !keyPayload.key"
+                block
+              >
+                Add SSH Key
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
-<script type="text/javascript">
-  import passwordGen from 'password-generator'
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 
-  import Constants from '../constants.js'
-  import ZimfarmMixins from '../components/Mixins.js'
+import constants from '@/constants'
+import { useNotificationStore } from '@/stores/notification'
+import { generatePassword } from '@/utils/browsers'
 
-  export default {
-    name: 'UpdateUser',
-    mixins: [ZimfarmMixins],
-    props: {
-      user: Object
-    },
-    data() {
-      return {
-        form: {},
-        keyForm: {name: "", key: ""}
-      };
-    },
-    computed: {
-      payload() {
-        let payload = {role: this.form.role};
-        if (this.form.email != this.user.email)
-          payload.email = this.form.email;
-        return payload;
-      },
-      key_payload() {
-        const payload = {name: this.keyForm.name, key: this.keyForm.key};
-        if (!payload.name.length || !payload.key.length)
-          return {};
-        return payload;
-      },
-      roles() { return Constants.ROLES; },
-      ready() { return false; },
-    },
-    methods: {
-      keyFileSelected() {
-        let parent = this;
-        parent.keyForm.key = parent.keyForm.name = "";
+// Stores and services
+const notificationStore = useNotificationStore()
 
-        if (!this.$refs.keyFile.files || !this.$refs.keyFile.files.length){
-          parent.alertDanger("Error selecting file. Please try again.");
-          return;
-        }
-
-        let file = this.$refs.keyFile.files[0];
-        if (file.size > 512) {
-          parent.alertDanger("Error", "File {0} doesn't appear to be an RSA public file (too large).".format(file.name));
-          return;
-        }
-
-        let reader = new FileReader();
-        reader.onerror = evt => {
-          parent.alertDanger("Error", "File {0} failed to read: {1).".format(file.name, evt));
-        }
-        reader.onload = evt => {
-          let parts = evt.target.result.trim().split(/\s/);
-          if (parts.length != 3) {
-            parent.alertDanger("Error", "File {0} doesn't appear to be an RSA public file (format).".format(file.name));
-            return;
-          }
-
-          if (parts[0].toLowerCase().indexOf("rsa") == -1) {
-            parent.alertDanger("Error", "File {0} doesn't appear to be an RSA public file (no RSA prefix).".format(file.name));
-            return;
-          }
-          parent.keyForm.key = parts[1].trim();
-          parent.keyForm.name = parts[2].trim();
-        }
-        reader.readAsText(file, "UTF-8");
-      },
-      genPassword() { return passwordGen(8, true); },
-      changePassword() {
-        let parent = this;
-        if (!parent.form.password)
-          return;
-
-        parent.toggleLoader("changing password…");
-        parent.queryAPI('patch', '/users/' + parent.user.username + '/password', {new: parent.form.password})
-        .then(function () {
-            parent.alertSuccess(
-              "Password Changed!",
-              "Password for <code>" + parent.user.username + "</code> has been changed to <code>" + parent.form.password + "</code>.",
-              true
-            );
-            parent.redirectTo('users-list');
-        })
-        .catch(function (error) {
-          parent.standardErrorHandling(error, 10);
-        })
-        .then(function () {
-            parent.toggleLoader(false);
-            parent.scrollToTop();
-        });
-      },
-      updateUser() {
-        if (!this.payload)
-          return;
-
-        let parent = this;
-        parent.toggleLoader("updating user…");
-        parent.queryAPI('patch', '/users/' + parent.user.username, this.payload)
-          .then(function () {
-            parent.alertSuccess("Updated!", "User account <code>"+ parent.user.username +"</code> has been updated.");
-            parent.redirectTo('users-list');
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error, 10);
-          })
-          .then(function () {
-            parent.toggleLoader(false);
-          });
-      },
-      addKey() { // request token on API using credentials
-        if (!this.key_payload)
-          return;
-        let parent = this;
-        parent.toggleLoader("adding SSH key…");
-        parent.queryAPI('post', '/users/' + parent.user.username + '/keys', this.key_payload)
-            .then(function () {
-              parent.alertSuccess("Added!", "SSH key has been added.");
-              parent.redirectTo('users-list');
-            })
-            .catch(function (error) {
-              parent.standardErrorHandling(error, 10);
-            })
-            .then(function () {
-              parent.toggleLoader(false);
-            });
-        },
-    },
-    mounted() {
-      if (!this.form.length && this.user) {
-        let role = Constants.ROLES.indexOf(this.user.role) == -1 ? "editor" : this.user.role;
-        this.form = {
-          email: this.user.email,
-          role: role,
-          password: this.genPassword(),
-        }
-      }
-    },
+// Props
+interface Props {
+  user: {
+    username: string
+    email: string
+    role: string
   }
+}
+
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  (e: 'update-user', payload: { role: typeof constants.ROLES[number]; email?: string }): void
+  (e: 'change-password', password: string): void
+  (e: 'add-key', keyPayload: { name: string; key: string }): void
+}>()
+
+
+const roles = constants.ROLES
+
+// Reactive data
+const form = ref({
+  email: '',
+  role: '' as typeof constants.ROLES[number],
+  password: '',
+})
+
+const keyForm = ref({
+  name: '',
+  key: '',
+})
+
+const keyFile = ref<File | null>(null)
+
+// Computed properties
+const payload = computed(() => {
+  const payload: { role: typeof constants.ROLES[number]; email?: string } = { role: form.value.role }
+  if (form.value.email !== props.user.email) {
+    payload.email = form.value.email
+  }
+  return payload
+})
+
+const keyPayload = computed(() => {
+  const payload = { name: keyForm.value.name, key: keyForm.value.key }
+  if (!payload.name.length || !payload.key.length) {
+    return { name: '', key: '' }
+  }
+  return payload
+})
+
+
+// Simple password generator
+const genPassword = () => generatePassword(8)
+
+// Methods
+const keyFileSelected = () => {
+  keyForm.value.key = ''
+  keyForm.value.name = ''
+
+  const file = keyFile.value as File
+  if (!file) {
+    return
+  }
+
+  if (file.size > 1024) {
+    notificationStore.showError(
+      `File ${file.name} doesn't appear to be an RSA public file (too large). ${file.size}`
+    )
+    // Clear the file input on error
+    keyFile.value = null
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onerror = (evt) => {
+    notificationStore.showError(
+      `File ${file.name} failed to read: ${evt}`
+    )
+    // Clear the file input on error
+    keyFile.value = null
+  }
+  reader.onload = (evt) => {
+    const result = evt.target?.result as string
+    const parts = result.trim().split(/\s/)
+    if (parts.length !== 3) {
+      notificationStore.showError(
+        `File ${file.name} doesn't appear to be an RSA public file (format).`
+      )
+      // Clear the file input on error
+      keyFile.value = null
+      return
+    }
+
+    if (parts[0].toLowerCase().indexOf('rsa') === -1) {
+      notificationStore.showError(
+        `File ${file.name} doesn't appear to be an RSA public file (no RSA prefix).`
+      )
+      // Clear the file input on error
+      keyFile.value = null
+      return
+    }
+    keyForm.value.key = result.trim()
+    keyForm.value.name = parts[2].trim()
+  }
+  reader.readAsText(file, 'UTF-8')
+}
+
+
+
+const addKey = () => {
+  if (!keyPayload.value.name || !keyPayload.value.key) return
+  emit('add-key', keyPayload.value)
+}
+
+const updateUser = () => {
+  if (!(payload.value.role || payload.value.email)) return
+  emit('update-user', payload.value)
+}
+
+// Lifecycle
+onMounted(() => {
+  if (props.user) {
+    const role = constants.ROLES.includes(props.user.role as typeof constants.ROLES[number])
+      ? props.user.role as typeof constants.ROLES[number]
+      : 'editor'
+
+    form.value = {
+      email: props.user.email,
+      role,
+      password: genPassword(),
+    }
+  }
+})
 </script>
