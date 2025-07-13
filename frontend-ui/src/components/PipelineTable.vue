@@ -30,7 +30,7 @@
           <span v-if="item.schedule_name === null || item.schedule_name === 'none'">
             {{ item.original_schedule_name }}
           </span>
-          <router-link v-else :to="{ name: 'schedule-detail', params: { schedule_name: item.schedule_name } }">
+          <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: item.schedule_name } }">
             {{ item.schedule_name }}
           </router-link>
         </template>

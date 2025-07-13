@@ -1,52 +1,66 @@
 <template>
-  <div >
+  <div>
     <p>You are about to <strong>create a new recipe</strong> by cloning <code>{{ from }}</code>.</p>
     <p>Enter a (unique) <em>name</em> for this new recipe:</p>
-    <b-form inline @submit.prevent="cloneSchedule">
-      <b-input class="mt-1 mr-2" autofocus size="sm" v-model="form_name" placeholder="Type new recipe name" />
-      <b-button class="mt-1" type="submit" :disabled="!ready" variant="primary" size="sm">create recipe</b-button>
-    </b-form>
+
+    <v-form @submit.prevent="emit('clone', formName)">
+      <v-row no-gutters class="mt-3">
+        <v-col cols="auto" class="mr-2">
+          <v-text-field
+            v-model="formName"
+            placeholder="Type new recipe name"
+            size="small"
+            variant="outlined"
+            density="compact"
+            autofocus
+            :rules="[rules.required, rules.unique]"
+            hide-details="auto"
+          />
+        </v-col>
+        <v-col cols="auto">
+          <v-btn
+            type="submit"
+            :disabled="!ready"
+            color="primary"
+            :loading="loading"
+          >
+            create recipe
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-form>
   </div>
 </template>
 
-<script type="text/javascript">
-  import ZimfarmMixins from '../components/Mixins.js'
+<script setup lang="ts">
+import { computed, ref } from 'vue';
 
-  export default {
-    name: 'CloneSchedule',
-    mixins: [ZimfarmMixins],
-    props: {
-      from: String
-    },
-    data() {
-      return {
-        form_name: "",
-      };
-    },
-    computed: {
-      ready() { return this.from && this.form_name.trim() && this.from != this.form_name.trim(); },
-    },
-    methods: {
-      cloneSchedule() {
-        // trailing spaces not allowed in schedule names
-        this.form_name = this.form_name.trim();
-        if (!this.ready)
-          return;
-        let parent = this;
-        let payload = {name: this.form_name};
-        parent.toggleLoader("Cloning recipe…");
-        parent.queryAPI('post', '/schedules/' + parent.from + '/clone', payload)
-          .then(function () {
-            parent.alertSuccess("Created!", "Recipe <code>"+ payload.name +"</code> has been created off <code>" + parent.from + "</code>.");
-            parent.redirectTo('schedule-detail', {schedule_name: payload.name});
-          })
-          .catch(function (error) {
-            parent.standardErrorHandling(error);
-          })
-          .then(function () {
-            parent.toggleLoader(false);
-          });
-      },
-    },
+// Props
+const props = defineProps({
+  from: {
+    type: String,
+    required: true
   }
+})
+
+const emit = defineEmits<{
+  (e: 'clone', name: string): void
+}>()
+
+// Reactive data
+const formName = ref('')
+const loading = ref(false)
+
+// Validation rules
+const rules = {
+  required: (value: string) => !!value || 'Recipe name is required',
+  unique: (value: string) => value !== props.from || 'Recipe name must be different from the original'
+}
+
+// Computed
+const ready = computed(() => {
+  return props.from &&
+         formName.value.trim() &&
+         props.from !== formName.value.trim()
+})
 </script>

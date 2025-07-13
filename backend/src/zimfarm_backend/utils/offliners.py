@@ -103,7 +103,11 @@ def compute_flags(
 
 
 def command_for(
-    offliner: Offliner, config: ScheduleConfigSchema, mount_point: pathlib.Path
+    offliner: Offliner,
+    config: ScheduleConfigSchema,
+    mount_point: pathlib.Path,
+    *,
+    show_secrets: bool = True,
 ) -> list[str]:
     """Command list to be passed to docker run."""
     offliner_def = OFFLINER_DEFS[offliner]
@@ -135,7 +139,9 @@ def command_for(
     ):
         config.offliner.publisher = constants.DEFAULT_PUBLISHER
 
-    offliner_flags = config.offliner.model_dump(by_alias=True, mode="json")
+    offliner_flags = config.offliner.model_dump(
+        by_alias=True, mode="json", context={"show_secrets": show_secrets}
+    )
 
     if offliner_def.std_output:
         offliner_flags[
@@ -165,7 +171,9 @@ def command_for(
     return [cmd, *compute_flags(offliner_flags)]
 
 
-def expanded_config(config: ScheduleConfigSchema) -> ExpandedScheduleConfigSchema:
+def expanded_config(
+    config: ScheduleConfigSchema, *, show_secrets: bool = True
+) -> ExpandedScheduleConfigSchema:
     def get_shm(
         offliner_shm: int | None, config_resources: ResourcesSchema
     ) -> int | None:
@@ -194,7 +202,7 @@ def expanded_config(config: ScheduleConfigSchema) -> ExpandedScheduleConfigSchem
         new_resources.shm = dev_shm
 
     mount_point = mount_point_for(offliner_id)
-    command = command_for(offliner_id, config, mount_point)
+    command = command_for(offliner_id, config, mount_point, show_secrets=show_secrets)
 
     return ExpandedScheduleConfigSchema(
         warehouse_path=config.warehouse_path,

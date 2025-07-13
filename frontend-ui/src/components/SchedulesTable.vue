@@ -44,7 +44,7 @@
         @update:options="onUpdateOptions"
       >
         <template #[`item.name`]="{ item }">
-          <router-link :to="{ name: 'schedule-detail', params: { schedule_name: item.name } }">
+          <router-link :to="{ name: 'schedule-detail', params: { scheduleName: item.name } }">
             <span class="d-flex align-center">
               {{ item.name }}
               <v-icon v-if="!item.enabled" size="small" color="orange" class="ml-1">

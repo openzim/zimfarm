@@ -13,7 +13,8 @@ export const useWorkersStore = defineStore('workers', () => {
 
   const authStore = useAuthStore()
 
-  const fetchWorkers = async (limit: number = 100) => {
+  const fetchWorkers = async (params: {limit?: number} = {}) => {
+    const { limit = 100 } = params
     try {
       const service = await authStore.getApiService('workers')
       const response = await service.get<null, ListResponse<Worker>>('', { params: { limit } })
@@ -25,9 +26,11 @@ export const useWorkersStore = defineStore('workers', () => {
       }))
 
       errors.value = []
+      return response.items
     } catch (_error) {
       console.error('Failed to fetch workers', _error)
       errors.value = translateErrors(_error as ErrorResponse)
+      return null
     }
   }
 

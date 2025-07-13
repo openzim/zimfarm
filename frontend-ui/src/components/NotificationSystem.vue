@@ -17,7 +17,7 @@
             class="me-3"
             :color="getIconColor(notification.type)"
           />
-          <span class="notification-message">{{ notification.message }}</span>
+          <span class="notification-message" v-html="notification.message"></span>
         </div>
 
         <template #actions>

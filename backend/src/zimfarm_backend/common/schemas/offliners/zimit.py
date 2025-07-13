@@ -186,7 +186,7 @@ class ZimitFlagsFullSchema(CamelModel):
         title="Description",
         description="Description for ZIM",
     )
-    favicon: OptionalNotEmptyString = OptionalField(
+    favicon: AnyUrl | None = OptionalField(
         title="Illustration",
         description="URL for Illustration. "
         "If unspecified, will attempt to use favicon from main page.",

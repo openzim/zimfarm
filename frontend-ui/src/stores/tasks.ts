@@ -20,11 +20,25 @@ export const useTasksStore = defineStore('tasks', () => {
   const authStore = useAuthStore()
 
 
-  const fetchTasks = async (limit: number = 100, skip: number = 0, status: string[]) => {
+  const fetchTasks = async (params: {
+    limit?: number
+    skip?: number
+    status?: string[]
+    scheduleName?: string
+  } = {}) => {
+    const { limit = 100, skip = 0, status = [], scheduleName = null } = params
+    const cleanedParams = Object.fromEntries(
+      Object.entries({
+        limit,
+        skip,
+        status,
+        schedule_name: scheduleName,
+      })
+      .filter(([, value]) => !!value)
+    )
     try {
       const service = await authStore.getApiService('tasks')
-      const response = await service.get<null, ListResponse<TaskLight>>('', { params: { limit, skip, status } })
-
+      const response = await service.get<null, ListResponse<TaskLight>>('', { params: cleanedParams })
       tasks.value = response.items
       paginator.value = response.meta
       errors.value = []
@@ -36,10 +50,23 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  const cancelTask = async (id: string) => {
+    const service = await authStore.getApiService('tasks')
+    try {
+      await service.post(`/${id}/cancel`)
+      return true
+    } catch (_error) {
+      console.error('Failed to cancel task', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
   return {
     tasks,
     paginator,
     errors,
     fetchTasks,
+    cancelTask,
   }
 })

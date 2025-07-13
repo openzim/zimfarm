@@ -5,8 +5,10 @@ import NotificationSystem from '@/components/NotificationSystem.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
+import { useOfflinerStore } from '@/stores/offliner'
 import { usePlatformStore } from '@/stores/platform'
 import { useTagStore } from '@/stores/tag'
+import type { OfflinerDefinitionResponse } from '@/types/offliner'
 import { computed, onBeforeMount, onMounted } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 
@@ -16,8 +18,10 @@ const languageStore = useLanguageStore()
 const tagStore = useTagStore()
 const platformStore = usePlatformStore()
 const loadingStore = useLoadingStore()
+const offlinerStore = useOfflinerStore()
 
 const router = useRouter()
+
 
 onBeforeMount(async () => {
   await authStore.loadTokenFromCookie()
@@ -26,13 +30,18 @@ onBeforeMount(async () => {
 
 onMounted(async () => {
   // TODO: Call parent.alert[Danger|Success|Info|Warning] on error|response
-  // TODO: Implement a way to standardize the error messages
   // TODO: Set up the AlertFeedback component to use the alert system
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
   await platformStore.fetchPlatforms()
-  // TODO: Set up offliner store to load offliner definitions. Schema is a bit
-  // different from v1 because of switch to Pydantic
+  // load offliners and their definitions
+  let offlinerDefinitionRequests: Promise<OfflinerDefinitionResponse | null>[] = []
+  await offlinerStore.fetchOffliners()
+  offlinerDefinitionRequests = offlinerStore.offliners.map(async (offliner) => {
+    return offlinerStore.fetchOfflinerDefinition(offliner)
+  })
+  await Promise.all(offlinerDefinitionRequests)
+
   // TODO: Set up store to fetch schedules. Schema is a bit different from v1
   // because of switch to Pydantic and will need to do a db update to re-shape
   // the models as the config has changed shape.

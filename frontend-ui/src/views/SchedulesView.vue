@@ -40,7 +40,6 @@ import SchedulesFilter from '@/components/SchedulesFilter.vue'
 import SchedulesTable from '@/components/SchedulesTable.vue'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
-import { useCategoryStore } from '@/stores/category'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
@@ -95,7 +94,6 @@ const router = useRouter()
 const scheduleStore = useScheduleStore()
 const languageStore = useLanguageStore()
 const tagStore = useTagStore()
-const categoryStore = useCategoryStore()
 const authStore = useAuthStore()
 const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
@@ -105,7 +103,7 @@ const requestedTasksStore = useRequestedTasksStore()
 const canRequestTasks = computed(() => authStore.hasPermission('tasks', 'request'))
 const languages = computed(() => languageStore.languages)
 const tags = computed(() => tagStore.tags)
-const categories = computed(() => categoryStore.categories)
+const categories = constants.CATEGORIES
 
 // Methods
 async function loadData(limit: number, skip: number) {
@@ -159,7 +157,7 @@ async function handleFetchSchedules() {
   } else {
     const scheduleNames = schedules.value.map((schedule) => schedule.name).filter((name) => !!name)
     if (scheduleNames.length > 0) {
-      const requestedTasks = await requestedTasksStore.requestTasks(scheduleNames)
+      const requestedTasks = await requestedTasksStore.requestTasks({scheduleNames: scheduleNames})
       errors.value = requestedTasksStore.errors
       if (requestedTasks) {
         notificationStore.showSuccess(`Exactly ${requestedTasks.requested.length} recipes matching your selection have been requested`)
