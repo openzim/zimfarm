@@ -2,6 +2,7 @@ from http import HTTPStatus
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Path, Query, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
@@ -172,7 +173,9 @@ def get_schedule(
         show_secrets = True
 
     return JSONResponse(
-        content=schedule.model_dump(mode="json", context={"show_secrets": show_secrets})
+        content=schedule.model_dump(
+            mode="json", context={"show_secrets": show_secrets}, by_alias=True
+        )
     )
 
 
@@ -214,6 +217,7 @@ def update_schedule(
                         mode="json",
                         exclude={"offliner", "image"},
                         context={"show_secrets": True},
+                        by_alias=True,
                     ),
                     "offliner": {
                         "offliner_id": request.offliner,
@@ -226,7 +230,7 @@ def update_schedule(
                 }
             )
         except ValidationError as exc:
-            raise BadRequestError("Invalid flags for new offliner") from exc
+            raise RequestValidationError(exc.errors()) from exc
     elif request.flags is not None:
         # update the existing offliner flags
         try:
@@ -245,13 +249,14 @@ def update_schedule(
                             mode="json",
                             exclude={"offliner_id"},
                             context={"show_secrets": True},
+                            by_alias=True,
                         ),
                         **request.flags,
                     },
                 }
             )
         except ValidationError as exc:
-            raise BadRequestError("Invalid flags") from exc
+            raise RequestValidationError(exc.errors()) from exc
     else:
         new_schedule_config = schedule_config
 
@@ -275,17 +280,20 @@ def update_schedule(
     new_schedule_config.monitor = request.monitor or schedule_config.monitor
 
     new_schedule_config = cast(ScheduleConfigSchema, new_schedule_config)
-    db_update_schedule(
-        session,
-        schedule_name=schedule_name,
-        new_schedule_config=new_schedule_config,
-        language=request.language,
-        name=request.name,
-        category=request.category,
-        tags=request.tags,
-        enabled=request.enabled,
-        periodicity=request.periodicity,
+    schedule = create_schedule_full_schema(
+        db_update_schedule(
+            session,
+            schedule_name=schedule_name,
+            new_schedule_config=new_schedule_config,
+            language=request.language,
+            name=request.name,
+            category=request.category,
+            tags=request.tags,
+            enabled=request.enabled,
+            periodicity=request.periodicity,
+        )
     )
+    schedule.config = expanded_config(cast(ScheduleConfigSchema, schedule.config))
     return JSONResponse(
         content=schedule.model_dump(mode="json", context={"show_secrets": True})
     )

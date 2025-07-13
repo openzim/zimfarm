@@ -118,12 +118,12 @@ class KolibriFlagsSchema(DashModel):
         "Behavior differs on platforms/browsers.",
     )
 
-    output: OptionalZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = OptionalField(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
     )
 
-    tmp_dir: OptionalZIMOutputFolder = Field(
+    tmp_dir: OptionalZIMOutputFolder = OptionalField(
         title="Temp folder",
         description="Where to create temporay build folder. Leave it as `/output`",
     )
