@@ -2,6 +2,7 @@ import PipelineView from '@/views/PipelineView.vue'
 import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
 import SchedulesView from '@/views/SchedulesView.vue'
 import SignInView from '@/views/SignInView.vue'
+import SupportUsView from '@/views/SupportUs.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
 import UsersView from '@/views/UsersView.vue'
 import UserView from '@/views/UserView.vue'
@@ -22,7 +23,7 @@ const routes = [
   {
     path: '/support-us',
     name: 'support',
-    component: PipelineView,
+    component: SupportUsView,
   },
   {
     path: '/sign-in',
