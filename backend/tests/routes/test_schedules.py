@@ -240,7 +240,7 @@ def test_update_schedule_unauthorized(
                 "flags": {"mwUrl": "http://fr.wikipedia.org"},
                 "image": {"name": "openzim/phet", "tag": "latest"},
             },
-            HTTPStatus.BAD_REQUEST,
+            HTTPStatus.UNPROCESSABLE_ENTITY,
             id="wrong_flags",
         ),
         pytest.param(

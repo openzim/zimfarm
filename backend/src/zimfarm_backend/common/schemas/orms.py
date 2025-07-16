@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 from ipaddress import IPv4Address
 from typing import Annotated, Any
 from uuid import UUID
@@ -189,7 +190,7 @@ class ScheduleFullSchema(BaseModel):
     language_code: str = Field(exclude=True)
     language_name_en: str = Field(exclude=True)
     language_name_native: str = Field(exclude=True)
-    durations: list[ScheduleDurationSchema]
+    durations: list[ScheduleDurationSchema] = Field(exclude=True)
     name: str
     category: str
     config: ScheduleConfigSchema | ExpandedScheduleConfigSchema
@@ -219,8 +220,8 @@ class ScheduleFullSchema(BaseModel):
     def duration(self) -> dict[str, Any]:
         duration_res: dict[str, Any] = {}
         duration_res["available"] = False
-        duration_res["default"] = {}
-        duration_res["workers"] = {}
+        duration_res["default"] = None
+        workers_duration: dict[str, dict[str, Any]] = defaultdict(dict)
         for duration in self.durations:
             if duration.default:
                 duration_res["default"] = ScheduleDurationSchema.model_validate(
@@ -228,12 +229,15 @@ class ScheduleFullSchema(BaseModel):
                 ).model_dump(mode="json")
             if duration.worker_name:
                 duration_res["available"] = True
-                duration_res["workers"][duration.worker_name] = (
+                workers_duration["workers"][duration.worker_name] = (
                     ScheduleDurationSchema.model_validate(duration).model_dump(
                         mode="json"
                     )
                 )
-        return duration_res
+        return {
+            **duration_res,
+            "workers": workers_duration["workers"] if workers_duration else None,
+        }
 
 
 class Worker(BaseModel):
