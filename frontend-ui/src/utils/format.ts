@@ -53,7 +53,7 @@ export function formatDuration(value: number) {
 
 
 
-export function formatDt(value: string) {
+export function formatDt(value?: string) {
   // display a datetime in a standard format
   if (!value) return "";
   const dt = DateTime.fromISO(value);
@@ -82,4 +82,21 @@ export function fromNow(value: string) {
 export function formattedBytesSize(value: number) {
   if (!value) return "";
   return filesize(value, { base: 2, standard: "iec", precision: 3 }); // precision 3, display in KiB, MiB,... instead of KB, MB,...
+}
+
+
+export function getTimezoneDetails() {
+  const dt = DateTime.local();
+  const diff = Duration.fromObject({ minutes: Math.abs(dt.offset) });
+  let offsetstr = "";
+  let amount = "";
+  if (diff.minutes % 60 == 0) {
+    amount = `${diff.as("hour")} hour`;
+    if (diff.minutes > 60) amount += "s";
+  } else amount = `${diff.toHuman({ unitDisplay: "long" })}`;
+
+  if (dt.offset > 0) offsetstr = `${amount} ahead of UTC`;
+  else if (dt.offset < 0) offsetstr = `${amount} behind UTC`;
+  else offsetstr = "in par with UTC";
+  return { tz: dt.zoneName, offset: dt.offset, offsetstr: offsetstr };
 }

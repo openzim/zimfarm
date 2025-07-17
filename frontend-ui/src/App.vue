@@ -25,7 +25,6 @@ const router = useRouter()
 
 onBeforeMount(async () => {
   await authStore.loadTokenFromCookie()
-  // TODO: setup listener for 'on-schedule' event to load schedules
 })
 
 onMounted(async () => {
@@ -84,14 +83,6 @@ const navigationItems: NavigationItem[] = [
     icon: 'mdi-account-group',
     disabled: false,
     show: canReadUsers.value,
-  },
-  {
-    name: 'stats',
-    label: 'Stats',
-    route: 'stats',
-    icon: 'mdi-chart-line',
-    disabled: false,
-    show: true,
   },
 ]
 

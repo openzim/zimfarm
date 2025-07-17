@@ -1,12 +1,13 @@
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
-import { type TaskLight } from '@/types/tasks'
+import { type Task, type TaskLight } from '@/types/tasks'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useTasksStore = defineStore('tasks', () => {
+  const task = ref<Task | null>(null)
   const tasks = ref<TaskLight[]>([])
   const paginator = ref<Paginator>({
     page: 1,
@@ -62,11 +63,29 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  const fetchTask = async (id: string, hideSecrets: boolean = false) => {
+    const service = await authStore.getApiService('tasks')
+    try {
+      const response = await service.get<null, Task>(`/${id}`, { params: { hide_secrets: hideSecrets } })
+      task.value = response
+      return task.value
+    } catch (_error) {
+      console.error('Failed to get task', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return null
+    }
+  }
+
   return {
+    // State
+    task,
     tasks,
     paginator,
     errors,
+
+    // Actions
     fetchTasks,
     cancelTask,
+    fetchTask,
   }
 })

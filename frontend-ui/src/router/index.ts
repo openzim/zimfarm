@@ -42,6 +42,14 @@ const routes = [
     path: '/tasks/:id',
     name: 'task-detail',
     component: TaskDetailView,
+    props: true,
+  },
+
+  {
+    path: '/pipeline/:id/:selectedTab',
+    name: 'task-detail-tab',
+    component: TaskDetailView,
+    props: true,
   },
 
   {
@@ -82,11 +90,6 @@ const routes = [
     path: '/workers',
     name: 'workers',
     component: WorkersView,
-  },
-  {
-    path: '/stats',
-    name: 'stats',
-    component: PipelineView,
   },
   {
     path: '/:pathMatch(.*)*',

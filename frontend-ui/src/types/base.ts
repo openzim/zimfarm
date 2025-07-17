@@ -67,11 +67,29 @@ export interface MostRecentTask {
   status: string
   updated_at: string
 }
+export enum TaskStatus {
+  requested = "requested",
+  reserved = "reserved",
+  started = "started",
+  scraper_started = "scraper_started",
+  scraper_running = "scraper_running",
+  scraper_completed = "scraper_completed",
+  scraper_killed = "scraper_killed",
+  failed = "failed",
+  cancel_requested = "cancel_requested",
+  canceled = "canceled",
+  succeeded = "succeeded",
+  update = "update",
+  created_file = "created_file",
+  uploaded_file = "uploaded_file",
+  failed_file = "failed_file",
+  checked_file = "checked_file"
+}
 
 export interface BaseTask {
   id: string
   status: string
-  timestamp: Record<string, unknown>
+  timestamp: Record<TaskStatus, string>
   schedule_name: string
   worker_name: string
   updated_at: string
