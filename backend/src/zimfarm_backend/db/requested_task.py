@@ -36,6 +36,7 @@ from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worke
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.worker import get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.task import get_timestamp_for_status
 
 # Maximum positive integer value for PostgreSQL BigInteger
 MAX_BIG_INT_VAL = 2**63 - 1
@@ -94,7 +95,7 @@ def request_task(
     now = getnow()
     requested_task = RequestedTask(
         status=TaskStatus.requested,
-        timestamp={TaskStatus.requested.value: now},
+        timestamp=[(TaskStatus.requested.value, now)],
         events=[{"code": TaskStatus.requested, "timestamp": now}],
         requested_by=requested_by,
         priority=priority,
@@ -222,8 +223,7 @@ def get_requested_tasks(
         )
         .order_by(
             RequestedTask.priority.desc(),
-            RequestedTask.timestamp["reserved"]["$date"].astext.cast(BigInteger),
-            RequestedTask.timestamp["requested"]["$date"].astext.cast(BigInteger),
+            RequestedTask.updated_at.asc(),
         )
     )
 
@@ -280,7 +280,9 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
         schedule_name=task.schedule.name if task.schedule else None,
         worker=task.worker,
     )
-    elapsed = now - task.timestamp.get("started", task.timestamp["reserved"])
+    elapsed = now - get_timestamp_for_status(
+        task.timestamp, "started", get_timestamp_for_status(task.timestamp, "reserved")
+    )
     remaining = max([duration.value - elapsed.total_seconds(), 60])  # seconds
     remaining *= 1.005  # .5% margin
     eta = now + datetime.timedelta(seconds=remaining)
@@ -294,7 +296,7 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
 class RunningTask(BaseModel):
     config: ExpandedScheduleConfigSchema
     schedule_name: str
-    timestamp: dict[str, Any]
+    timestamp: list[tuple[str, datetime.datetime]]
     worker_name: str
     duration: ScheduleDurationSchema
     remaining: float
@@ -328,7 +330,7 @@ class RequestedTaskWithDuration(BaseModel):
     id: UUID
     status: str
     config: ExpandedScheduleConfigSchema
-    timestamp: dict[str, Any]
+    timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
     priority: int
     schedule_name: str

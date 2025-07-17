@@ -20,6 +20,7 @@ from zimfarm_backend import logger
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.requested_task import request_task
+from zimfarm_backend.utils.task import get_timestamp_for_status
 
 
 def relaunch_failed_recipes(session: OrmSession, start_date: str):
@@ -44,7 +45,8 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
     for task in tasks:
         schedule_name = task.schedule.name if task.schedule else "unknown"
         scraper_duration = (
-            task.timestamp["scraper_completed"] - task.timestamp["scraper_started"]
+            get_timestamp_for_status(task.timestamp, "scraper_completed")
+            - get_timestamp_for_status(task.timestamp, "scraper_started")
         ).total_seconds()
         if scraper_duration > max_scraper_duration:
             logger.info(

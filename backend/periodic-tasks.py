@@ -89,7 +89,7 @@ def status_to_cancel(
     for task in tasks:
         task.status = TaskStatus.canceled
         task.canceled_by = NAME
-        task.timestamp[TaskStatus.canceled] = now
+        task.timestamp.append((TaskStatus.canceled, now))
         task.events.append(
             {
                 "code": TaskStatus.canceled,
@@ -139,11 +139,11 @@ def staled_statuses(session: OrmSession):
     for task in tasks:
         if "exit_code" in task.container and int(task.container["exit_code"]) == 0:
             task.status = TaskStatus.succeeded
-            task.timestamp[TaskStatus.succeeded] = now
+            task.timestamp.append((TaskStatus.succeeded, now))
             nb_suceeded_tasks += 1
         else:
             task.status = TaskStatus.failed
-            task.timestamp[TaskStatus.failed] = now
+            task.timestamp.append((TaskStatus.failed, now))
             nb_failed_tasks += 1
     logger.info(f"::: succeeded {nb_suceeded_tasks} tasks")
     logger.info(f"::: failed {nb_failed_tasks} tasks")

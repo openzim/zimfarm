@@ -93,7 +93,7 @@ def save_event(
     # neither file events nor scraper_running should update timestamp list (not unique)
     if code not in TaskStatus.silent_events():
         # update task status, timestamp and other fields
-        task.timestamp[code] = timestamp
+        task.timestamp.append((code, timestamp))
         task.events.append({"code": code, "timestamp": timestamp})
         task.status = code
         task.updated_at = timestamp

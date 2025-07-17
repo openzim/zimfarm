@@ -37,6 +37,7 @@ from zimfarm_backend.db.models import (
     Task,
     Worker,
 )
+from zimfarm_backend.utils.task import get_timestamp_for_status
 
 DEFAULT_SCHEDULE_DURATION = ScheduleDurationSchema(
     value=int(constants.DEFAULT_SCHEDULE_DURATION),
@@ -142,11 +143,15 @@ def update_schedule_duration(
         workers_durations[task.worker_id] = {
             "value": int(
                 (
-                    task.timestamp[TaskStatus.scraper_completed]
-                    - task.timestamp[TaskStatus.started]
+                    get_timestamp_for_status(
+                        task.timestamp, TaskStatus.scraper_completed
+                    )
+                    - get_timestamp_for_status(task.timestamp, TaskStatus.started)
                 ).total_seconds()
             ),
-            "on": task.timestamp[TaskStatus.scraper_completed],
+            "on": get_timestamp_for_status(
+                task.timestamp, TaskStatus.scraper_completed
+            ),
         }
 
     # compute values that will be inserted (or updated) in the DB
