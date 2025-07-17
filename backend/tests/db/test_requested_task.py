@@ -369,7 +369,10 @@ def test_get_requested_tasks(
 
     # Sort the tasks as they are done in the get_requested_tasks function
     requested_tasks.sort(
-        key=lambda x: (-x.priority, x.timestamp["requested"], x.timestamp["reserved"])
+        key=lambda x: (
+            -x.priority,
+            x.updated_at,
+        )
     )
 
     for task, requested_task in zip(
@@ -442,7 +445,7 @@ def test_compute_requested_task_rank_with_multiple_tasks(
     # Create another task with different priority
     new_task = RequestedTask(
         status="requested",
-        timestamp={"requested": getnow(), "reserved": getnow()},
+        timestamp=[("requested", getnow()), ("reserved", getnow())],
         events=[{"code": "requested", "timestamp": getnow()}],
         requested_by="testuser2",
         priority=requested_task.priority + 1,  # Higher priority
@@ -486,7 +489,7 @@ def test_get_tasks_doable_by_worker(
     )
     task = RequestedTask(
         status=TaskStatus.requested,
-        timestamp={"requested": getnow(), "reserved": getnow()},
+        timestamp=[("requested", getnow()), ("reserved", getnow())],
         events=[{"code": TaskStatus.requested, "timestamp": getnow()}],
         requested_by=worker.user.username,
         priority=0,
@@ -520,7 +523,7 @@ def test_does_platform_allow_worker_to_run(
         id=uuid4(),
         status=TaskStatus.requested,
         config=expanded_config(schedule_config),
-        timestamp={"requested": getnow(), "reserved": getnow()},
+        timestamp=[("requested", getnow()), ("reserved", getnow())],
         requested_by=worker.user.username,
         priority=0,
         schedule_name="test_schedule",
@@ -547,7 +550,7 @@ def test_does_platform_allow_worker_to_run(
     running_task = RunningTask(
         config=expanded_config(schedule_config),
         schedule_name="test_schedule",
-        timestamp={"started": getnow(), "reserved": getnow()},
+        timestamp=[("started", getnow()), ("reserved", getnow())],
         worker_name=worker.name,
         duration=ScheduleDurationSchema(
             value=3600,
@@ -581,7 +584,7 @@ def test_find_requested_task_for_worker(
     )
     task = RequestedTask(
         status="requested",
-        timestamp={"requested": getnow(), "reserved": getnow()},
+        timestamp=[("requested", getnow()), ("reserved", getnow())],
         events=[{"code": "requested", "timestamp": getnow()}],
         requested_by=worker.user.username,
         priority=0,

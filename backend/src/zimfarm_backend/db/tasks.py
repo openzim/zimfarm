@@ -212,13 +212,11 @@ def get_oldest_task_timestamp(
     """
     Get the oldest task timestamp for a given status or now if no tasks with this status
     """
-    return min(
-        [
-            getnow(),
-            *session.scalars(
-                select(
-                    Task.timestamp[status],
-                ).where(Task.status == status)
-            ).all(),
-        ]
+    rows: list[list[tuple[str, datetime.datetime]]] = list(
+        session.scalars(
+            select(
+                Task.timestamp,
+            ).where(Task.status == status)
+        ).all()
     )
+    return min([getnow(), *[timestamp for row in rows for _, timestamp in row]])

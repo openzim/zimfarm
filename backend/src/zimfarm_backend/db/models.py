@@ -35,6 +35,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
             JSONB
         ),  # transform Python Dict[str, Any] into PostgreSQL JSONB
         list[dict[str, Any]]: MutableList.as_mutable(JSONB),
+        list[tuple[str, Any]]: MutableList.as_mutable(JSONB),
         datetime: DateTime(
             timezone=False
         ),  # transform Python datetime into PostgreSQL Datetime without timezone
@@ -150,7 +151,6 @@ class Task(Base):
     events: Mapped[list[dict[str, Any]]]
     debug: Mapped[dict[str, Any]]
     status: Mapped[str] = mapped_column(index=True)
-    timestamp: Mapped[dict[str, Any]]
     requested_by: Mapped[str]
     canceled_by: Mapped[str | None]
     container: Mapped[dict[str, Any]]
@@ -161,6 +161,7 @@ class Task(Base):
     files: Mapped[dict[str, Any]]
     upload: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
+    timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
 
     schedule_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("schedule.id"), init=False
@@ -246,7 +247,6 @@ class RequestedTask(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     status: Mapped[str]
-    timestamp: Mapped[dict[str, Any]]
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[list[dict[str, Any]]]
     requested_by: Mapped[str]
@@ -256,6 +256,8 @@ class RequestedTask(Base):
     upload: Mapped[dict[str, Any]]
     notification: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
+
+    timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
 
     schedule_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("schedule.id"), init=False

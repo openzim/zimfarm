@@ -14,6 +14,7 @@ from zimfarm_backend.common.constants import (
 )
 from zimfarm_backend.common.enums import SchedulePeriodicity, TaskStatus
 from zimfarm_backend.db.requested_task import request_task
+from zimfarm_backend.utils.task import get_timestamp_for_status
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,9 @@ def request_tasks_using_schedule(session: OrmSession):
                 # don't bother if it started after this rolling period's start
                 if (
                     last_run
-                    and last_run.timestamp.get("started", datetime.datetime(2019, 1, 1))
+                    and get_timestamp_for_status(
+                        last_run.timestamp, "started", datetime.datetime(2019, 1, 1)
+                    )
                     > period_start
                 ):
                     continue

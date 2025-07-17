@@ -43,6 +43,7 @@ from zimfarm_backend.db.models import (
 )
 from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
 from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.task import get_timestamp_for_status
 from zimfarm_backend.utils.token import generate_access_token, sign_message
 
 
@@ -401,8 +402,11 @@ def create_requested_task(
         now = getnow()
         events = list(TaskStatus)
 
-        timestamp = {event.value: request_date or now for event in events}
-        events = [create_event(event.value, timestamp[event.value]) for event in events]
+        timestamp = [(event.value, request_date or now) for event in events]
+        events = [
+            create_event(event.value, get_timestamp_for_status(timestamp, event.value))
+            for event in events
+        ]
 
         schedule_config = (
             _schedule_config if schedule_config is None else schedule_config

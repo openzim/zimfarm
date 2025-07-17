@@ -62,7 +62,7 @@ class BaseTaskSchema(BaseModel):
 
     id: UUID
     status: str
-    timestamp: dict[str, Any]
+    timestamp: list[tuple[str, datetime.datetime]]
     schedule_name: str | None
     worker_name: str
     updated_at: datetime.datetime
@@ -103,7 +103,7 @@ class ScheduleAwareTaskFullSchema(TaskFullSchema):
 class BaseRequestedTaskSchema(BaseModel):
     id: UUID
     status: str
-    timestamp: dict[str, Any]
+    timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
     priority: int
     schedule_name: str
