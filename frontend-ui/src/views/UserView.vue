@@ -289,7 +289,7 @@ const deleteKey = async (sshKey: { name: string; fingerprint: string }) => {
 const changePassword = async (password: string) => {
   loadingStore.startLoading('Changing password...')
 
-  const success = await userStore.changePassword(props.username, password)
+  const success = await userStore.changePassword(props.username, { new: password })
   if (success) {
     notificationStore.showSuccess(
       `Password for ${props.username} has been changed to ${password}.`,

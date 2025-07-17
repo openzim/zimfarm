@@ -90,10 +90,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const changePassword = async (username: string, password: string) => {
+  const changePassword = async (username: string, body: { current?: string, new: string }) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.patch<{ new: string }, null>(`/${username}/password`, { new: password })
+      await service.patch<{ current?: string, new: string }, null>(`/${username}/password`, body)
       errors.value = []
       return true
     } catch (error) {

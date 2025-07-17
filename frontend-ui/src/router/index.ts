@@ -1,3 +1,4 @@
+import ChangePasswordView from '@/views/ChangePasswordView.vue'
 import NotFoundView from '@/views/NotFound.vue'
 import PipelineView from '@/views/PipelineView.vue'
 import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
@@ -34,7 +35,7 @@ const routes = [
   {
     path: '/change-password',
     name: 'change-password',
-    component: TaskDetailView,
+    component: ChangePasswordView,
   },
 
   {
