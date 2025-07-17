@@ -25,7 +25,7 @@
           <v-list-item-title>Copy token</v-list-item-title>
         </v-list-item>
 
-        <v-list-item prepend-icon="mdi-wrench">
+        <v-list-item prepend-icon="mdi-wrench" :to="{ name: 'change-password' }">
           <v-list-item-title>Change password</v-list-item-title>
         </v-list-item>
 
