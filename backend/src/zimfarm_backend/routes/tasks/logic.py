@@ -88,10 +88,14 @@ async def get_task(
         current_user
         and check_user_permission(current_user, namespace="tasks", name="create")
     ):
-        return JSONResponse(content=task.model_dump(mode="json"))
+        show_secrets = False
+    else:
+        show_secrets = True
 
     return JSONResponse(
-        content=task.model_dump(mode="json", context={"show_secrets": True})
+        content=task.model_dump(
+            mode="json", context={"show_secrets": show_secrets}, by_alias=True
+        )
     )
 
 
@@ -144,7 +148,9 @@ async def create_task(
     db_delete_requested_task(db_session, requested_task_id)
 
     return JSONResponse(
-        content=task.model_dump(mode="json", context={"show_secrets": True}),
+        content=task.model_dump(
+            mode="json", context={"show_secrets": True}, by_alias=True
+        ),
         status_code=HTTPStatus.CREATED,
     )
 

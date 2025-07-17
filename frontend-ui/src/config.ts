@@ -1,10 +1,11 @@
-import type { PiniaPluginContext } from 'pinia'
-import httpRequest from '@/utils/httpRequest'
-import { inject } from 'vue'
 import constants from '@/constants'
+import httpRequest from '@/utils/httpRequest'
+import type { PiniaPluginContext } from 'pinia'
+import { inject } from 'vue'
 
 export interface Config {
   ZIMFARM_WEBAPI: string
+  ZIM_DOWNLOAD_URL: string
 }
 
 export const ConfigService = {

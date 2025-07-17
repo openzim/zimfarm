@@ -2,6 +2,7 @@ import constants from "@/constants";
 import type { ScheduleDuration, WorkerScheduleDuration } from "@/types/base";
 import type { OfflinerDefinition } from "@/types/offliner";
 import type { ExpandedScheduleConfig, ScheduleConfig } from "@/types/schedule";
+import type { Task } from "@/types/tasks";
 
 export function getSecretFields(offlinerDefinition: OfflinerDefinition[] | null) {
   if (offlinerDefinition === null) return [];
@@ -15,11 +16,11 @@ export function getSecretFields(offlinerDefinition: OfflinerDefinition[] | null)
 
 }
 
-export function imageHuman(config: ScheduleConfig) {
+export function imageHuman(config: ScheduleConfig | ExpandedScheduleConfig) {
   return config.image.name + ":" + config.image.tag;
 }
 
-export function imageUrl(config: ScheduleConfig) {
+export function imageUrl(config: ScheduleConfig | ExpandedScheduleConfig) {
   const prefix =
     config.image.name.indexOf("ghcr.io") != -1
       ? "https://"
@@ -134,4 +135,30 @@ export function buildScheduleDuration(duration: ScheduleDuration | null): Single
   const minValue = duration.workers[minWorker.worker_name || "default"].value;
   const maxValue = duration.workers[maxWorker.worker_name || "default"].value;
   return multipleDurations(minValue, maxValue, duration.workers);
+}
+
+export function logsUrl(task: Task) {
+  return uploadUrl(task.upload.logs.upload_uri, task.container.log);
+}
+
+export function artifactsUrl(task: Task) {
+  if (!(task.upload.artifacts && task.container.artifacts)) return "";
+  return uploadUrl(task.upload.artifacts.upload_uri, task.container.artifacts);
+}
+
+function uploadUrl(uri: string, filename: string) {
+  let url = new URL(uri);
+  const scheme = url.protocol.replace(/:$/, "");
+
+  if (["http", "https"].indexOf(scheme) == -1)
+    url = new URL(url.href.replace(new RegExp("^" + url.protocol), "https:"));
+
+  if (scheme == "s3") {
+    let log_url = url.protocol + "//" + url.host + url.pathname;
+    const bucketName = url.searchParams.get("bucketName");
+    if (bucketName) log_url += bucketName + "/";
+    return log_url + filename;
+  }
+
+  return filename;
 }
