@@ -16,6 +16,8 @@ export interface Resources {
   memory: number
   disk: number
   shm?: number
+  cap_add: string[]
+  cap_drop: string[]
 }
 
 export interface ConfigWithOnlyResources {
@@ -34,11 +36,17 @@ export interface DockerImage {
   tag: string
 }
 
-export interface ScheduleDuration {
+export interface WorkerScheduleDuration {
   value: number
   on: string
-  worker_name: string | null
+  worker_name: string | undefined
   default: boolean
+}
+
+export interface ScheduleDuration {
+  available: boolean
+  default: WorkerScheduleDuration | null
+  workers: Record<string, WorkerScheduleDuration> | null
 }
 
 
@@ -69,4 +77,5 @@ export interface BaseTask {
   updated_at: string
   original_schedule_name: string
   duration?: string
+  priority: number
 }

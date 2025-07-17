@@ -11,14 +11,19 @@ export const usePlatformStore = defineStore('platform', () => {
   const authStore = useAuthStore()
 
   const fetchPlatforms = async (limit: number = 100) => {
+    if (platforms.value.length > 0) {
+      return platforms.value
+    }
     try {
       loadingStore.startLoading('Fetching platforms...')
       const service = await authStore.getApiService('platforms')
       const response = await service.get<null, ListResponse<string>>('', { params: { limit } })
       platforms.value = response.items
+      return platforms.value
     } catch (_error) {
       console.error('Failed to fetch platforms', _error)
       error.value = _error as Error
+      return null
     } finally {
       loadingStore.stopLoading()
     }

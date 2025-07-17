@@ -44,9 +44,16 @@ const routes = [
   },
 
   {
-    path: '/recipes/:schedule_name',
+    path: '/recipes/:scheduleName',
     name: 'schedule-detail',
     component: ScheduleDetailView,
+    props: true,
+  },
+  {
+    path: '/recipes/:scheduleName/:selectedTab',
+    name: 'schedule-detail-tab',
+    component: ScheduleDetailView,
+    props: true,
   },
   {
     path: '/recipes',

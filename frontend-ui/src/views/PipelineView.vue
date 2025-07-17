@@ -143,31 +143,31 @@ async function loadData(limit: number, skip: number, filter?: string) {
   lastRunsLoaded.value = false
   switch (filter) {
     case 'todo':
-      await requestedTasksStore.fetchRequestedTasks(limit, skip)
+      await requestedTasksStore.fetchRequestedTasks({limit, skip})
       tasks.value = requestedTasksStore.requestedTasks
       paginator.value = requestedTasksStore.paginator
       errors.value = requestedTasksStore.errors
       break
     case 'doing':
-      await tasksStore.fetchTasks(limit, skip, [
+      await tasksStore.fetchTasks({limit, skip, status: [
         'reserved',
         'started',
         'scraper_started',
         'scraper_completed',
         'cancel_requested',
-      ])
+      ]})
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors
       break
     case 'done':
-      await tasksStore.fetchTasks(limit, skip, ['succeeded'])
+      await tasksStore.fetchTasks({limit, skip, status: ['succeeded']})
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors
       break
     case 'failed':
-      await tasksStore.fetchTasks(limit, skip, ['scraper_killed', 'failed', 'canceled'])
+      await tasksStore.fetchTasks({limit, skip, status: ['scraper_killed', 'failed', 'canceled']})
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors

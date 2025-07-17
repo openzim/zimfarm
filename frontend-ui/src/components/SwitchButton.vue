@@ -1,69 +1,50 @@
-<template id="switch-button">
-  <div class="switch-button-control">
-    <div class="switch-button" :class="{ enabled: isEnabled }" @click="toggle" :style="{'--color': color}">
-      <div class="button"></div>
+<template>
+    <div class="d-flex flex-column">
+      <span v-if="label" class="text-body-2">{{ label }}</span>
+      <div class="d-flex align-center">
+        <v-switch
+          :model-value="modelValue"
+          :color="color"
+          :disabled="disabled"
+          :density="density"
+          :hide-details="hideDetails"
+          @update:model-value="handleUpdate"
+        />
+        <span class="ml-2 text-body-2 text-medium-emphasis">
+          {{ modelValue ? 'Enabled' : 'Disabled' }}
+        </span>
+      </div>
     </div>
-    <div class="switch-button-label">
-      <slot></slot>
+    <div v-if="details" class="mt-1 text-caption text-medium-emphasis">
+      {{ details }}
     </div>
-  </div>
 </template>
 
-<script type="text/javascript">
-  export default {
-    name: 'SwitchButton',
-    model: {
-      prop: "isEnabled",
-      event: "toggle"
-    },
-    props: {
-      isEnabled: Boolean,
-      color: {
-        type: String,
-        required: false,
-        default: "#007bff"
-      }
-    },
-    methods: {
-      toggle: function() {
-        this.$emit("toggle", !this.isEnabled);
-      }
-    }
-};
-</script>
+<script setup lang="ts">
+interface Props {
+  modelValue: boolean
+  label?: string
+  details?: string
+  color?: string
+  disabled?: boolean
+  density?: 'default' | 'compact' | 'comfortable'
+  hideDetails?: boolean
+}
 
-<style type="text/css">
-  .switch-button-control {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-  }
-  .switch-button-control .switch-button {
-    height: 1.6em;
-    width: calc(1.6em * 2);
-    border: 2px solid var(--color);
-    box-shadow: inset 0px 0px 2px 0px rgba(0, 0, 0, 0.33);
-    border-radius: 1.6em;
-    transition: all 0.3s ease-in-out;
-    cursor: pointer;
-  }
-  .switch-button-control .switch-button .button {
-    height: calc(1.6em - (2 * 2px));
-    width: calc(1.6em - (2 * 2px));
-    border: 2px solid var(--color);
-    border-radius: calc(1.6em - (2 * 2px));
-    background: var(--color);
-    transition: all 0.3s ease-in-out;
-  }
-  .switch-button-control .switch-button.enabled {
-    background-color: var(--color);
-    box-shadow: none;
-  }
-  .switch-button-control .switch-button.enabled .button {
-    background: white;
-    transform: translateX(calc(calc(1.6em - (2 * 2px)) + (2 *2px)));
-  }
-  .switch-button-control .switch-button-label {
-    margin-left: 10px;
-  }
-</style>
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void
+}
+
+withDefaults(defineProps<Props>(), {
+  color: 'primary',
+  disabled: false,
+  density: 'default',
+  hideDetails: true
+})
+
+const emit = defineEmits<Emits>()
+
+const handleUpdate = (value: boolean | null) => {
+  emit('update:modelValue', value ?? false)
+}
+</script>

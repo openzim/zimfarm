@@ -28,6 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     baseURL: `${config.ZIMFARM_WEBAPI}/auth`,
   })
 
+
   // Computed properties
   const isLoggedIn = computed(() => {
     if (!token.value) return false

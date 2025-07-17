@@ -1,619 +1,840 @@
 <template>
-  <b-form @submit.prevent="commit_form" @reset.prevent="reset_form" v-if="editorReady">
-
-    <b-row class="mb-3">
-      <b-col class="text-right">
-        <b-button
-          :disabled="!payload"
+  <v-form @submit.prevent="handleSubmit" v-if="schedule">
+    <v-row class="mb-3">
+      <v-col class="text-right">
+        <v-btn
+          :disabled="!hasChanges"
           type="submit"
-          :variant="payload ? 'primary' : 'secondary'">Update Offliner details</b-button>
-        <b-button
+          :color="hasChanges ? 'primary' : 'secondary'"
+          variant="elevated">
+          Update Offliner details
+        </v-btn>
+        <v-btn
           type="reset"
-          :disabled="!payload"
-          :variant="payload ? 'dark' : 'secondary'"
-          class="ml-2">Reset</b-button>
-      </b-col>
-    </b-row>
+          :disabled="!hasChanges"
+          :color="hasChanges ? 'dark' : 'secondary'"
+          variant="outlined"
+          class="ml-2"
+          @click="handleReset">
+          Reset
+        </v-btn>
+      </v-col>
+    </v-row>
 
-    <hr />
+    <v-divider class="my-4" />
 
-    <b-row>
-      <b-col cols="10" class="mt-2"><h2>Content settings</h2></b-col>
-      <b-col cols="2" class="text-right mb-2">
-        <b-button
+    <v-row>
+      <v-col cols="10" class="mt-2">
+        <h2>Content settings</h2>
+      </v-col>
+      <v-col cols="2" class="text-right mb-2">
+        <v-btn
           href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Content-settings"
           target="_blank"
-          variant="primary">Help
-        </b-button>
-      </b-col>
-    </b-row>
+          color="primary"
+          variant="outlined">
+          Help
+        </v-btn>
+      </v-col>
+    </v-row>
 
-    <b-row>
-      <b-col>
-        <b-form-group label="Recipe Name:"
-                      label-for="es_name"
-                      description="Recipe's identifier.">
-          <b-form-input v-model="edit_schedule.name"
-                        id="es_name"
-                        type="text"
-                        required
-                        placeholder="wikipedia_fr_all"
-                        size="sm"></b-form-input>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Language:" label-for="es_language" description="Use API if wanted language not present.">
-          <b-form-select id="es_language"
-                         v-model="edit_schedule.language.code"
-                         :options="languagesOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Tags:" label-for="es_tags" description="Recipe tags, not ZIM tags. Use API to create others.">
-          <multiselect v-model="edit_schedule.tags"
-                 :options="tags"
-                 :multiple="true"
-                 :clear-on-select="true"
-                 :preserve-search="true"
-                 :searchable="true"
-                 :closeOnSelect="true"
-                 :taggable="true"
-                 placeholder="Tags"
-                 tag-placeholder="Create as new tag"
-                 @tag="addTag"
-                 size="sm"></multiselect>
-        </b-form-group>
-      </b-col>
-    </b-row>
+    <v-row>
+      <v-col>
+        <v-text-field
+          v-model="editSchedule.name"
+          label="Recipe Name"
+          hint="Recipe's identifier."
+          placeholder="wikipedia_fr_all"
+          required
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.language.code"
+          :items="languagesOptions"
+          label="Language"
+          hint="Use API if wanted language not present."
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.tags"
+          :items="tags"
+          label="Tags"
+          hint="Recipe tags, not ZIM tags. Use API to create others."
+          multiple
+          chips
+          closable-chips
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+    </v-row>
 
-    <b-row>
-      <b-col>
-        <b-form-group label="Category:" label-for="es_category">
-          <b-form-select id="es_category"
-                         v-model="edit_schedule.category"
-                         :options="categoriesOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Warehouse Path:" label-for="es_warehouse_path" description="Where to upload files. Usually matches category.">
-          <b-form-select id="es_warehouse_path"
-                          v-model="edit_schedule.config.warehouse_path"
-                          :options="warehouse_pathsOptions"
-                          required
-                          placeholder="Warehouse Path"
-                          size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Status:" label-for="es_enable" description="Disabled recipe can't be scheduled.">
-          <SwitchButton v-model="edit_schedule.enabled">{{ edit_schedule.enabled|yes_no("Enabled", "Disabled") }}</SwitchButton>
-        </b-form-group>
-      </b-col>
-    </b-row>
+    <v-row>
+      <v-col>
+        <v-select
+          v-model="editSchedule.category"
+          :items="categoriesOptions"
+          label="Category"
+          density="compact"
+          variant="outlined"
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.warehouse_path"
+          :items="warehousePathsOptions"
+          label="Warehouse Path"
+          hint="Where to upload files. Usually matches category."
+          required
+          placeholder="Warehouse Path"
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <SwitchButton
+          v-model="editSchedule.enabled"
+          label="Status"
+          density="compact"
+          details="Disabled recipes are not scheduled, but can be run manually."
+        />
+      </v-col>
+    </v-row>
 
-    <b-row>
-      <b-col cols="4">
-        <b-form-group label="Periodicity:" label-for="es_periodicity" description="How often to automatically request recipe">
-          <b-form-select id="es_periodicity"
-                          v-model="edit_schedule.periodicity"
-                          :options="periodicityOptions"
-                          required
-                          placeholder="Periodicity"
-                          size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-    </b-row>
+    <v-row>
+      <v-col cols="4">
+        <v-select
+          v-model="editSchedule.periodicity"
+          :items="periodicityOptions"
+          label="Periodicity"
+          hint="How often to automatically request recipe"
+          required
+          placeholder="Periodicity"
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+    </v-row>
 
-    <hr />
+    <v-divider class="my-4" />
 
-    <b-row>
-      <b-col cols="10" class="mt-2"><h2>Task settings</h2></b-col>
-      <b-col cols="2" class="text-right mb-2">
-        <b-button
+    <v-row>
+      <v-col cols="10" class="mt-2">
+        <h2>Task settings</h2>
+      </v-col>
+      <v-col cols="2" class="text-right mb-2">
+        <v-btn
           href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Task-settings"
           target="_blank"
-          variant="primary">Help
-        </b-button>
-      </b-col>
-    </b-row>
+          color="primary"
+          variant="outlined">
+          Help
+        </v-btn>
+      </v-col>
+    </v-row>
 
-    <b-row>
-      <b-col>
-        <b-form-group label="Offliner:"
-                      label-for="es_offliner"
-                      description="The kind of task to be run">
-          <b-form-select id="es_category"
-                         v-model="edit_schedule.config.task_name"
-                         :options="offlinersOptions"
-                         size="sm"
-                         @change="offliner_changed"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Platform:"
-                      label-for="es_platform"
-                      description="The platform targetted by the offliner">
-          <b-form-select id="es_platform"
-                         v-model="edit_schedule.config.platform"
-                         :options="platformsOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-    </b-row>
-    <b-row>
-      <b-col>
-        <b-form-group label="Image Name:" label-for="es_image" description="Image name without tag (docker_repo/name)">
-          <b-form-input v-model="edit_schedule.config.image.name"
-                        id="es_image"
-                        type="text"
-                        required
-                        placeholder="openzim/mwoffliner"
-                        @change="fetch_image_tags"
-                        size="sm"></b-form-input>
-        </b-form-group>
-      </b-col>
-      <b-col>
-         <b-form-group label="Image Tag:" label-for="es_imagetag" description="Set image name first to get existing values">
-          <b-form-select id="es_category"
-                         v-model="edit_schedule.config.image.tag"
-                         required
-                         :options="imageTagOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-         <b-form-group label="Monitoring:" label-for="es_monitor" description="Attach a monitoring companion to scraper">
-          <SwitchButton v-model="edit_schedule.config.monitor">{{ edit_schedule.config.monitor|yes_no("Enabled", "Disabled") }}</SwitchButton>
-        </b-form-group>
-      </b-col>
-    </b-row>
+    <v-row>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.offliner.offliner_id"
+          :items="offlinersOptions"
+          label="Offliner"
+          hint="The kind of task to be run"
+          density="compact"
+          variant="outlined"
+          @update:model-value="handleOfflinerChange"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.platform"
+          :items="platformsOptions"
+          label="Platform"
+          hint="The platform targetted by the offliner"
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+    </v-row>
 
-    <b-row>
-      <b-col>
-        <b-form-group label="CPU:"
-                      label-for="es_cpu"
-                      description="Number of CPU shares to use">
-          <b-form-input v-model="edit_schedule.config.resources.cpu"
-                        id="es_cpu"
-                        type="number"
-                        min="1"
-                        max="100"
-                        required
-                        placeholder="3"
-                        size="sm"></b-form-input>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Memory:"
-                      label-for="es_memory"
-                      description="Required memory. Use API for custom value.">
-          <b-form-select id="es_memory"
-                         v-model="edit_schedule.config.resources.memory"
-                         :options="memoryOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="Disk:"
-                      label-for="es_disk"
-                      description="Required disk space. Use API for custom value.">
-          <b-form-select id="es_disk"
-                         v-model="edit_schedule.config.resources.disk"
-                         :options="diskOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-      <b-col>
-        <b-form-group label="RAM fs:"
-                      label-for="es_shm"
-                      description="Amount of RAM to mount as /dev/shm. Constrained by RAM & Offliner.">
-          <b-form-select id="es_shm"
-                         v-model="edit_schedule.config.resources.shm"
-                         :options="memoryOptions"
-                         size="sm"></b-form-select>
-        </b-form-group>
-      </b-col>
-    </b-row>
+    <v-row>
+      <v-col>
+        <v-text-field
+          v-model="editSchedule.config.image.name"
+          label="Image Name"
+          hint="Image name without tag (docker_repo/name)"
+          placeholder="openzim/mwoffliner"
+          required
+          density="compact"
+          variant="outlined"
+          @update:model-value="handleImageNameChange"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.image.tag"
+          :items="imageTagOptions"
+          label="Image Tag"
+          hint="Set image name first to get existing values"
+          required
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <SwitchButton
+          v-model="editSchedule.config.monitor"
+          details="Attach a monitoring companion to scraper"
+          density="compact"
+          label="Monitoring"
+        />
+      </v-col>
+    </v-row>
 
-    <b-row>
-      <b-col>
-        <b-form-group label="Artifacts:"
-                      label-for="artifacts"
-                      description="! Experts only ! Beware to not include your ZIM files and logs ! Globs of artifacts to archive, one glob expression per line.">
-          <b-form-textarea id="artifacts"
-                         v-model="edit_schedule.config.artifacts_globs_str"></b-form-textarea>
-        </b-form-group>
-      </b-col>
-    </b-row>
+    <v-row>
+      <v-col>
+        <v-text-field
+          v-model="editSchedule.config.resources.cpu"
+          label="CPU"
+          hint="Number of CPU shares to use"
+          type="number"
+          min="1"
+          max="100"
+          required
+          placeholder="3"
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.resources.memory"
+          :items="memoryOptions"
+          label="Memory"
+          hint="Required memory. Use API for custom value."
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.resources.disk"
+          :items="diskOptions"
+          label="Disk"
+          hint="Required disk space. Use API for custom value."
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="editSchedule.config.resources.shm"
+          :items="memoryOptions"
+          label="RAM fs"
+          hint="Amount of RAM to mount as /dev/shm. Constrained by RAM & Offliner."
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
+    </v-row>
 
-    <hr />
+    <v-row>
+      <v-col>
+        <v-textarea
+          v-model="editSchedule.config.artifacts_globs_str"
+          label="Artifacts"
+          hint="! Experts only ! Beware to not include your ZIM files and logs ! Globs of artifacts to archive, one glob expression per line."
+          variant="outlined"
+          auto-grow
+          persistent-hint
+        />
+      </v-col>
+    </v-row>
 
-    <b-row v-if="edit_flags_fields.length > 0">
-      <b-col cols="10" class="mt-2"><h2>Scraper settings: <code>{{ edit_task_name}}</code> command flags</h2></b-col>
-      <b-col cols="2" class="text-right mb-2">
-        <b-button
-          :href="help"
+    <v-divider class="my-4" />
+
+    <v-row v-if="flagsFields.length > 0">
+      <v-col cols="10" class="mt-2">
+        <h2>Scraper settings: <code>{{ taskName }}</code> command flags</h2>
+      </v-col>
+      <v-col cols="2" class="text-right mb-2">
+        <v-btn
+          :href="helpUrl"
           target="_blank"
-          variant="primary">Help
-        </b-button>
-      </b-col>
-    </b-row>
+          color="primary"
+          variant="outlined">
+          Help
+        </v-btn>
+      </v-col>
+    </v-row>
 
-    <table class="table table-striped table-hover table-sm table-responsive-md">
+    <v-table v-if="flagsFields.length > 0" class="flags-table">
       <tbody>
-      <tr v-for="field in edit_flags_fields" :key="field.data_key">
-        <th>{{ field.label }}<sup v-if="field.required">&nbsp;<font-awesome-icon icon="asterisk" color="red" size="xs" /></sup></th>
-        <td>
-           <SwitchButton
-                v-if="field.component == 'switchbutton'"
-                :name="'es_flags_' + field.data_key"
-                v-model="edit_flags[field.data_key]">{{ edit_flags[field.data_key]|yes_no("Enabled", "Not set") }}
-            </SwitchButton>
-          <multiselect v-if="field.component == 'multiselect'"
-            v-model="edit_flags[field.data_key]"
-            :options="field.options"
-            :multiple="true"
-            :clear-on-select="true"
-            :preserve-search="true"
-            :searchable="true"
-            :closeOnSelect="true"
-            :placeholder="field.placeholder"
-            size="sm"></multiselect>
-          <component v-if="field.component != 'multiselect' && field.component != 'switchbutton'"
-            :is="field.component"
-            :name="'es_flags_' + field.data_key"
-            :required="field.required"
-            :placeholder="field.placeholder"
-            v-model="edit_flags[field.data_key]"
-            :style="{backgroundColor: field.bind_color ? edit_flags[field.data_key]: ''}"
-            size="sm"
-            :step="field.step"
-            :type="field.component_type">
-              <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.text }}</option>
-           </component>
-          <b-form-text>{{ field.description }}</b-form-text>
-        </td>
-      </tr>
-    </tbody>
-    </table>
+        <tr v-for="field in flagsFields" :key="field.dataKey">
+          <th class="w-25 align-top pa-4 font-weight-bold">
+            {{ field.label }}
+            <span v-if="field.required" class="text-red font-weight-bold text-subtitle-1">*</span>
+          </th>
+          <td class="align-top py-2">
+            <SwitchButton
+              v-if="field.component === 'switch'"
+              v-model="editFlags[field.dataKey]"
+              density="compact"
+            />
+            <v-select
+              v-else-if="field.component === 'multiselect'"
+              v-model="editFlags[field.dataKey]"
+              :items="field.options"
+              multiple
+              chips
+              closable-chips
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-select
+              v-else-if="field.component === 'select'"
+              v-model="editFlags[field.dataKey]"
+              :items="field.options"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-text-field
+              v-else-if="field.component === 'number'"
+              v-model="editFlags[field.dataKey]"
+              type="number"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              :step="field.step"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-text-field
+              v-else-if="field.component === 'url'"
+              v-model="editFlags[field.dataKey]"
+              type="url"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-text-field
+              v-else-if="field.component === 'email'"
+              v-model="editFlags[field.dataKey]"
+              type="email"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-text-field
+              v-else-if="field.component === 'color'"
+              v-model="editFlags[field.dataKey]"
+              type="color"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-textarea
+              v-else-if="field.component === 'textarea'"
+              v-model="editFlags[field.dataKey]"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              auto-grow
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-text-field
+              v-else
+              v-model="editFlags[field.dataKey]"
+              density="compact"
+              variant="outlined"
+              :placeholder="field.placeholder"
+              :required="field.required"
+              :rules="getFieldRules(field)"
+              :hide-details="'auto'"
+            />
+            <v-text class="text-caption">{{ field.description }}</v-text>
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
 
-  <b-row>
-      <b-col>
-        <b-button
+    <v-row>
+      <v-col>
+        <v-btn
           type="submit"
-          :disabled="!payload"
-          :variant="payload ? 'primary' : 'secondary'">Update Offliner details</b-button>
-        <b-button
+          :disabled="!hasChanges"
+          :color="hasChanges ? 'primary' : 'secondary'"
+          variant="elevated">
+          Update Offliner details
+        </v-btn>
+        <v-btn
           type="reset"
-          :disabled="!payload"
-          :variant="payload ? 'dark' : 'secondary'"
-          class="ml-2">Reset</b-button>
-      </b-col>
-    </b-row>
-
-  </b-form>
+          :disabled="!hasChanges"
+          :color="hasChanges ? 'dark' : 'secondary'"
+          variant="outlined"
+          class="ml-2"
+          @click="handleReset">
+          Reset
+        </v-btn>
+      </v-col>
+    </v-row>
+  </v-form>
   <p v-else>Loading…</p>
 </template>
 
-<script type="text/javascript">
-  import diff from 'deep-diff';
+<script setup lang="ts">
+import SwitchButton from '@/components/SwitchButton.vue'
+import constants from '@/constants'
+import type { Resources } from '@/types/base'
+import type { Language } from '@/types/language'
+import type { OfflinerDefinition } from '@/types/offliner'
+import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
+import { stringArrayEqual } from '@/utils/cmp'
+import { formattedBytesSize } from '@/utils/format'
+import diff from 'deep-diff'
+import { computed, ref, watch } from 'vue'
 
-  import Constants from '../constants.js'
-  import ZimfarmMixins from '../components/Mixins.js'
-  import SwitchButton from '../components/SwitchButton.vue'
+interface FlagField {
+  label: string
+  dataKey: string
+  required: boolean
+  description: string | null
+  placeholder: string
+  component: string
+  options?: Array<{ title: string; value: string | undefined }>
+  step?: number | null
+}
 
-  export default {
-    name: 'ScheduleEditor',
-    mixins: [ZimfarmMixins],
-    components: {SwitchButton},
-    props: {
-      schedule_name: String,  // the schedule name/ID
-    },
-    data() {
-      return {
-        error: null,  // API generated error message
-        edit_schedule: null, // data holder for edition
-        edit_flags: {}, // flags are handled separately
-        image_tags: [],
-      };
-    },
-    computed: {
-      schedule() { return this.$store.getters.schedule || null; },
-      editorReady() { return this.schedule && this.edit_schedule && this.flags_definition !== null; },
-      edit_task_name() { return this.edit_schedule.config.task_name || this.schedule.config.task_name; },
-      offliner_definition() { return this.$store.getters.offliners_defs[this.edit_task_name] || null },
-      flags_definition() { return this.offliner_definition ? this.offliner_definition.flags : null },
-      help() { return this.offliner_definition ? this.offliner_definition.help : null },
-      edit_flags_fields() {
-        let fields = [];
-        for (var i=0;i<this.flags_definition.length;i++) {
-          let field = this.flags_definition[i];
-          let component = "b-form-input";
-          let options = null;
-          let component_type = null;
-          let bind_color = null;
-          let step = null;
+export interface Props {
+  schedule: Schedule
+  languages: Language[]
+  tags: string[]
+  offliners: string[]
+  platforms: string[]
+  flagsDefinition: OfflinerDefinition[]
+  helpUrl: string
+  imageTags: string[]
+}
 
-          if (field.type == "hex-color") {
-            bind_color = true;
-          }
+interface Emits {
+  (e: 'submit', payload: ScheduleUpdateSchema): void
+  (e: 'image-name-change', imageName: string): void
+}
 
-          if (field.type == "url") {
-            component = "b-form-input";
-            component_type = "url";
-          }
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
-          if (field.type == "email") {
-            component = "b-form-input";
-            component_type = "email";
-          }
+const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const editFlags = ref<Record<string, any>>(JSON.parse(JSON.stringify(props.schedule.config.offliner)))
 
-          if (field.type == "integer") {
-            component = "b-form-input";
-            component_type = "number";
-            step = 1;
-          }
-
-          if (field.type == "float") {
-            component = "b-form-input";
-            component_type = "number";
-            step = 0.1
-          }
-
-          if (field.type == "list-of-string-enum") {
-            component = "multiselect";
-            options = field.choices;
-          }
-
-          if (field.type == "boolean") {
-            component = "switchbutton";
-            options = [{text: "True", value: true}, {text: "Not set", value: undefined}];
-          }
-
-          if (field.type == "string-enum") {
-            component = "b-form-select";
-            options = field.choices.map(function (option) { return {text: option, value: option}; });
-            if (field.required != true) {
-              options.push({text: "Not set", value: undefined});
-            }
-          }
-
-          if (field.type == "text") {
-            component = "b-form-input";
-            component_type = "text";
-          }
-
-          if (field.type == "long-text") {
-            component = "b-form-textarea";
-            component_type = "text";
-          }
-
-          fields.push({
-            label: field.label || field.data_key,
-            data_key: field.data_key,
-            required: field.required,
-            description: field.description,
-            placeholder: "Not set",  //field.placeholder,
-
-            component: component,
-            component_type: component_type,
-            options: options,
-            bind_color: bind_color,
-            step: step,
-          });
-
-        }
-        return fields;
-      },
-      flags_payload() {  // payload for edited flags
-        let changes = diff(this.schedule.config.flags, this.edit_flags);
-        if (!changes)
-          return false;
-        changes = changes.filter(function (change) {
-          if (change.kind == "N" && change.rhs == "") {  // empty change
-            return false;
-          }
-          return true;
-        });
-        if (!changes.length)
-          return false;
-
-        let payload = Constants.duplicate(this.edit_flags);
-        // strip payload of empty values
-        function recursivelyCleanup(obj)
-        {
-            for (var k in obj)
-            {
-                if (typeof obj[k] == "object" && obj[k] !== null)
-                  recursivelyCleanup(obj[k]);
-                else {
-                  if (!Object.isArray(obj) && obj[k] === "") {
-                    delete obj[k];
-                  }
-                }
-            }
-        }
-        recursivelyCleanup(payload);
-        if (Object.keys(payload).length == 0)
-          return null;
-
-        return payload;
-      },
-      payload() {
-        let payload = {};
-        let parent = this;
-
-        // trailing spaces not allowed in schedule names
-        parent.edit_schedule["name"] = parent.edit_schedule["name"].trim();
-
-        ["name", "category", "enabled", "periodicity"].forEach(function (key) {
-          if (parent.edit_schedule[key] != parent.schedule[key])
-            payload[key] = parent.edit_schedule[key];
-        });
-
-        // compare tags array
-        if (!parent.edit_schedule.tags.isEqual(parent.schedule.tags))
-          payload.tags = parent.edit_schedule.tags;
-
-        // language via its code
-        if (parent.edit_schedule.language.code != parent.schedule.language.code)
-          payload.language = this.languages.filter(function (language) { return language.code == this.edit_schedule.language.code }.bind(this))[0];
-
-        // config properties
-        ["warehouse_path", "task_name", "platform", "monitor"].forEach(function (key) {
-          if (parent.edit_schedule.config[key] != parent.schedule.config[key])
-            payload[key] = parent.edit_schedule.config[key];
-        });
-
-        // image is changed alltogether
-        if (parent.edit_schedule.config.image.name != parent.schedule.config.image.name ||
-              parent.edit_schedule.config.image.tag != parent.schedule.config.image.tag) {
-            payload.image = parent.edit_schedule.config.image;
-        }
-
-        // resources are changed alltogether
-        if (parent.edit_schedule.config.resources.cpu != parent.schedule.config.resources.cpu ||
-              parent.edit_schedule.config.resources.memory != parent.schedule.config.resources.memory ||
-              parent.edit_schedule.config.resources.disk != parent.schedule.config.resources.disk ||
-              parent.edit_schedule.config.resources.shm != parent.schedule.config.resources.shm) {
-            payload.resources = parent.edit_schedule.config.resources;
-        }
-
-        // artifacts globs needs to be transformed into a real list
-        let new_artifacts_globs = null;
-        if (parent.edit_schedule.config.artifacts_globs_str && parent.edit_schedule.config.artifacts_globs_str.trim() !== "") {
-          new_artifacts_globs = parent.edit_schedule.config.artifacts_globs_str.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        }
-        if (new_artifacts_globs != parent.schedule.config.artifacts_globs) {
-            payload.artifacts_globs = new_artifacts_globs;
-        }
-
-        if (this.flags_payload)
-          Object.assign(payload, {"flags": this.flags_payload});
-
-        if (Object.keys(payload).length == 0)
-          return null;
-        return payload;
-      },
-      memoryOptions() {
-        let values = Constants.memory_values;
-        if (values.indexOf(this.edit_schedule.config.resources.memory) == -1)
-          values.push(this.edit_schedule.config.resources.memory);
-        values.sort(function (a, b) { return a - b;});
-        return values.map(function (value) { return {text: Constants.formattedBytesSize(value), value: value}; });
-      },
-      diskOptions() {
-        let values = Constants.disk_values;
-        if (values.indexOf(this.edit_schedule.config.resources.disk) == -1)
-          values.push(this.edit_schedule.config.resources.disk);
-        values.sort(function (a, b) { return a - b;});
-        return values.map(function (value) { return {text: Constants.formattedBytesSize(value), value: value}; });
-      },
-      categoriesOptions() {
-        return this.categories.map(function (category) { return {text: category, value: category}; });
-      },
-      warehouse_pathsOptions() {
-        return this.warehouse_paths.map(function (warehouse_path) { return {text: warehouse_path, value: warehouse_path}; });
-      },
-      offlinersOptions() {
-        return this.offliners.map(function (offliner) { return {text: offliner, value: offliner}; });
-      },
-      platformsOptions() {
-        let values = this.platforms.map(function (platform) { return {text: platform, value: platform}; });
-        values.push({text: "None", value: null});
-        return values;
-      },
-      imageTagOptions() {
-        return this.image_tags.map(function (tag) { return {text: tag, value: tag}; });
-      },
-      languagesOptions() {
-        return this.languages.map(function (language) { return {text: language.name_en, value: language.code}; });
-      },
-      tagsOptions() {
-        return this.tags.map(function (tag) { return {text: tag, value: tag}; });
-      },
-      periodicityOptions() {
-        return this.periodicities.map(function (periodicity) { return {text: periodicity, value: periodicity}; });
-      },
-    },
-    methods: {
-      addTag (new_tag) {
-        this.tags.push(new_tag);
-        this.edit_schedule.tags.append(new_tag);
-      },
-      offliner_changed() { // assume flags are different so reset edit schedule
-        this.edit_flags = {};
-      },
-      fetch_image_tags() {
-        const parent = this;
-        const image_name = parent.edit_schedule.config.image.name;
-        const parts = image_name.split("/");
-        if (parts.length < 2) {
-           return; // invalid image_name
-        }
-        const hub_name = parts.splice(parts.length - 2, parts.length).join("/");
-        parent.queryAPI('get', '/schedules/' + this.schedule_name + '/image-names', {params: {hub_name: hub_name}})
-        .then(function (response) {
-          parent.image_tags = response.data.items;
-        })
-        .catch(function (error) {
-          parent.image_tags = [];
-          parent.standardErrorHandling(error);
-        });
-      },
-      commit_form() {
-        if (this.payload === null) {
-          return;
-        }
-
-        let parent = this;
-        parent.toggleLoader("commiting updates…");
-        parent.queryAPI('patch', '/schedules/' + this.schedule_name, parent.payload)
-        .then(function () {
-            parent.alertSuccess("Updated!", "Recipe updated successfuly.");
-            if (parent.payload.name !== undefined) {  // named changed so we need to redirect
-              parent.redirectTo('schedule-detail-tab', {schedule_name: parent.payload.name, selectedTab: 'edit'});
-              parent.loadSchedule(true, parent.payload.name);
-            } else
-              parent.loadSchedule(true);
-        })
-        .catch(function (error) {
-          parent.standardErrorHandling(error);
-          if (error.response.status == 400) {
-            parent.alertWarning("Error!", Constants.standardHTTPError(error.response));
-          }
-        })
-        .then(function () {
-            parent.toggleLoader(false);
-            parent.scrollToTop();
-        });
-
-      },
-      reset_form() {
-        this.edit_schedule = Constants.duplicate(this.schedule);
-        this.edit_flags = Constants.duplicate(this.schedule.config.flags);
-      },
-      loadSchedule(force, schedule_name) {
-        let parent = this;
-        if (schedule_name === undefined || schedule_name === null)
-          schedule_name = parent.schedule_name;
-
-        parent.$root.$emit('load-schedule', schedule_name, force,
-            function() { parent.reset_form(); parent.fetch_image_tags(); },
-            function(error) { console.error(error); parent.alertError(Constants.standardHTTPError(error.response)); });
-      },
-    },
-    mounted() {
-      this.loadSchedule(false);
-    },
+// Initialize edit data when schedule changes
+watch(() => props.schedule, (newSchedule) => {
+  if (newSchedule) {
+    editSchedule.value = JSON.parse(JSON.stringify(newSchedule))
+    editFlags.value = JSON.parse(JSON.stringify(newSchedule.config.offliner))
   }
+}, { deep: true })
+
+const taskName = computed(() => {
+  return editSchedule.value.config.offliner.offliner_id || props.schedule.config.offliner.offliner_id
+})
+
+const hasChanges = computed(() => {
+  if (!(props.schedule && editSchedule.value)) return false
+
+  // Check basic schedule properties
+  const basicProps: Array<keyof Schedule> = ['category', 'name', 'enabled', 'periodicity']
+  for (const prop of basicProps) {
+    if (editSchedule.value[prop] !== props.schedule[prop]) return true
+  }
+
+  // Check tags
+  if (!stringArrayEqual(editSchedule.value.tags, props.schedule.tags)) return true
+
+  // Check language
+  if (editSchedule.value.language.code !== props.schedule.language.code) return true
+
+  // Check config properties
+  const configProps: Array<keyof ScheduleConfig> = ['warehouse_path', 'platform', 'monitor']
+  for (const prop of configProps) {
+    if (editSchedule.value.config[prop] !== props.schedule.config[prop]) return true
+  }
+
+  // Check image
+  if (editSchedule.value.config.image.name !== props.schedule.config.image.name ||
+      editSchedule.value.config.image.tag !== props.schedule.config.image.tag) return true
+
+  // Check resources
+  const resourceProps: Array<keyof Resources> = ['cpu', 'memory', 'disk', 'shm']
+  for (const prop of resourceProps) {
+    if (editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop]) return true
+  }
+
+  // check offliner id
+  if (editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id) return true
+
+  // Check artifacts globs
+  if (!stringArrayEqual(editSchedule.value.config.artifacts_globs || [], props.schedule.config.artifacts_globs || [])) return true
+
+  // Check flags - use editFlags instead of the potentially mutated offliner object
+  let changes = diff(props.schedule.config.offliner, editFlags.value)
+
+  if (!changes) return false
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  changes = changes.filter(function (change: any) {
+    // Filter out empty changes (new empty fields or fields changed to empty)
+    if (change.kind === "N" && (change.rhs === "" || change.rhs === undefined || change.rhs === null)) {
+      return false;
+    }
+    if (change.kind === "E") {
+      // if we are toggling a switch to false and it's a null on the original object,
+      // then it's not a change
+      if (change.lhs === null && change.rhs === false) return false
+
+      if (change.rhs === "" || change.rhs === undefined || change.rhs === null) {
+        return false;
+      }
+    }
+    return true;
+  });
+  return changes.length > 0
+})
+
+const flagsFields = computed(() => {
+  if (!props.flagsDefinition) return []
+
+  return props.flagsDefinition.map((field) => {
+    let component = 'text'
+    let options: Array<{ title: string; value: string | undefined }> | undefined = undefined
+    let step = null
+
+    if (field.type === 'hex-color') {
+      component = 'color'
+    } else if (field.type === 'url') {
+      component = 'url'
+    } else if (field.type === 'email') {
+      component = 'email'
+    } else if (field.type === 'integer') {
+      component = 'number'
+      step = 1
+    } else if (field.type === 'float') {
+      component = 'number'
+      step = 0.1
+    } else if (field.type === 'list-of-string-enum') {
+      component = 'multiselect'
+      options = field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
+    } else if (field.type === 'boolean') {
+      component = 'switch'
+    } else if (field.type === 'string-enum') {
+      component = 'select'
+      options = field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
+      if (!field.required) {
+        options?.push({ title: 'Not set', value: undefined })
+      }
+    } else if (field.type === 'long-text') {
+      component = 'textarea'
+    }
+
+    return {
+      label: field.label || field.data_key,
+      dataKey: field.data_key,
+      required: field.required,
+      description: field.description,
+      placeholder: 'Not set',
+      component,
+      options,
+      step,
+    }
+  })
+})
+
+const getFieldRules = (field: FlagField) => {
+  const rules: Array<(value: unknown) => boolean | string> = []
+
+  if (field.required) {
+      rules.push((value: unknown) => {
+        if (!value || value === '' || value === undefined || value === null) {
+          return 'This field is required'
+        }
+        return true
+      })
+  }
+
+  // Add type-specific validation
+  if (field.component === 'url') {
+    rules.push((value: unknown) => {
+      if (value && typeof value === 'string' && value !== '') {
+        try {
+          new URL(value)
+          return true
+        } catch {
+          return 'Please enter a valid URL'
+        }
+      }
+      return true
+    })
+  }
+
+  if (field.component === 'email') {
+    rules.push((value: unknown) => {
+      if (value && typeof value === 'string' && value !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(value)) {
+          return 'Please enter a valid email address'
+        }
+      }
+      return true
+    })
+  }
+
+  if (field.component === 'number') {
+    rules.push((value: unknown) => {
+      if (value && value !== '') {
+        const num = Number(value)
+        if (isNaN(num)) {
+          return 'Please enter a valid number'
+        }
+      }
+      return true
+    })
+  }
+
+  return rules
+}
+
+const languagesOptions = computed(() => {
+  return props.languages.map((language) => ({ title: language.name_en, value: language.code }))
+})
+
+const categoriesOptions = computed(() => {
+  return constants.CATEGORIES.map((category) => ({ title: category, value: category }))
+})
+
+const warehousePathsOptions = computed(() => {
+  return constants.WAREHOUSE_PATHS.map((path) => ({ title: path, value: path }))
+})
+
+const offlinersOptions = computed(() => {
+  return props.offliners.map((offliner) => ({ title: offliner, value: offliner }))
+})
+
+const platformsOptions = computed(() => {
+  const values: Array<{ title: string; value: string | undefined }> = props.platforms.map((platform) => ({ title: platform, value: platform }))
+  values.push({ title: 'None', value: undefined })
+  return values
+})
+
+const periodicityOptions = computed(() => {
+  return constants.PERIODICITIES.map((periodicity) => ({ title: periodicity, value: periodicity }))
+})
+
+const memoryOptions = computed(() => {
+  const values = [...constants.MEMORY_VALUES]
+  if (values.indexOf(editSchedule.value.config.resources.memory) === -1) {
+    values.push(editSchedule.value.config.resources.memory)
+  }
+  values.sort((a, b) => a - b)
+  return values.map((value) => ({ title: formattedBytesSize(value), value }))
+})
+
+const diskOptions = computed(() => {
+  const values = [...constants.DISK_VALUES]
+  if (values.indexOf(editSchedule.value.config.resources.disk) === -1) {
+    values.push(editSchedule.value.config.resources.disk)
+  }
+  values.sort((a, b) => a - b)
+  return values.map((value) => ({ title: formattedBytesSize(value), value }))
+})
+
+const imageTagOptions = computed(() => {
+  return props.imageTags.map((tag) => ({ title: tag, value: tag }))
+})
+
+const handleSubmit = () => {
+  if (!hasChanges.value) return
+
+  const payload = buildPayload()
+  if (payload) {
+    emit('submit', payload)
+  }
+}
+
+const handleImageNameChange = (imageName: string) => {
+  emit('image-name-change', imageName)
+}
+
+const handleReset = () => {
+  if (props.schedule) {
+    editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
+    editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
+  }
+}
+
+const handleOfflinerChange = () => {
+  // assume flags are different, so reset edit schedule flags
+  editFlags.value = {}
+}
+
+
+const buildPayload = (): ScheduleUpdateSchema | null => {
+
+  const payload: Partial<ScheduleUpdateSchema> = {}
+
+  payload.name = editSchedule.value.name.trim()
+
+  // Basic properties
+  const basicProps: Array<keyof Schedule> = ['name', 'category', 'enabled', 'periodicity']
+  for (const prop of basicProps) {
+    if (editSchedule.value[prop] !== props.schedule[prop]) {
+      if (prop === 'name') {
+        payload.name = editSchedule.value[prop]
+      } else if (prop === 'category') {
+        payload.category = editSchedule.value[prop]
+      } else if (prop === 'enabled') {
+        payload.enabled = editSchedule.value[prop]
+      } else if (prop === 'periodicity') {
+        payload.periodicity = editSchedule.value[prop]
+      }
+    }
+  }
+
+  // Tags
+  if (!stringArrayEqual(editSchedule.value.tags, props.schedule.tags)) {
+    payload.tags = editSchedule.value.tags
+  }
+
+  // Language
+  if (editSchedule.value.language.code !== props.schedule.language.code) {
+    const language = props.languages.find(l => l.code === editSchedule.value.language.code)
+    if (language) {
+      // Create a proper Language object with all required fields
+      payload.language = {
+        code: language.code,
+        name_en: language.name_en,
+        name_native: language.name_native
+      }
+    }
+  }
+
+  // Config properties
+  const configProps: Array<keyof ScheduleConfig> = ['warehouse_path', 'platform', 'monitor']
+  for (const prop of configProps) {
+    if (editSchedule.value.config[prop] !== props.schedule.config[prop]) {
+      if (prop === 'warehouse_path') {
+        payload.warehouse_path = editSchedule.value.config[prop]
+      } else if (prop === 'platform') {
+        payload.platform = editSchedule.value.config[prop]
+      } else if (prop === 'monitor') {
+        payload.monitor = editSchedule.value.config[prop]
+      }
+    }
+  }
+
+  // Offliner name
+  if (editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id) {
+    payload.offliner = editSchedule.value.config.offliner.offliner_id as string
+  }
+
+  // Image
+  if (editSchedule.value.config.image.name !== props.schedule.config.image.name ||
+      editSchedule.value.config.image.tag !== props.schedule.config.image.tag) {
+    payload.image = editSchedule.value.config.image
+  }
+
+  // Resources
+  const resourceProps: Array<keyof Resources> = ['cpu', 'memory', 'disk', 'shm']
+  const resourcesChanged = resourceProps.some(prop =>
+    editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop]
+  )
+  if (resourcesChanged) {
+    payload.resources = editSchedule.value.config.resources
+  }
+
+  // Artifacts
+  if (!stringArrayEqual(editSchedule.value.config.artifacts_globs || [], props.schedule.config.artifacts_globs || [])) {
+    payload.artifacts_globs = editSchedule.value.config.artifacts_globs
+  }
+
+  // Flags
+  const flags = cleanFlagsPayload(JSON.parse(JSON.stringify(editFlags.value)))
+  // remove the offliner_id from the flags as it is not used by the server and the schema is strict
+  // server-side
+  delete flags.offliner_id
+  if (Object.keys(flags).length > 0) {
+    payload.flags = flags
+  }
+
+  if (Object.keys(payload).length === 0) {
+    return null
+  }
+
+  return payload as ScheduleUpdateSchema
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const cleanFlagsPayload = (flags: Record<string, any>) => {
+  const cleaned = JSON.parse(JSON.stringify(flags))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recursivelyCleanup = (obj: any) => {
+    for (const key in obj) {
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        recursivelyCleanup(obj[key])
+      } else if (obj[key] === '' || obj[key] === undefined || obj[key] === null) {
+        delete obj[key]
+      }
+    }
+  }
+
+  recursivelyCleanup(cleaned)
+  return cleaned
+}
+
 </script>
 
 
 <style type="text/css" scoped>
-  .form-control, .custom-select {
-    color: black;
-  }
+.align-top {
+  vertical-align: top;
+}
 </style>

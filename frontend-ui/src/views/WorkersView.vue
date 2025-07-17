@@ -87,7 +87,7 @@
           </th>
 
           <td v-if="row.kind === 'task' && row.task">
-            <router-link :to="{ name: 'schedule-detail', params: { schedule_name: row.task.schedule_name } }">
+            <router-link :to="{ name: 'schedule-detail', params: { scheduleName: row.task.schedule_name } }">
               {{ row.task.schedule_name }}
             </router-link>
           </td>
@@ -244,14 +244,14 @@ function toggleWorkersList(): void {
 }
 
 async function loadRunningTasks(): Promise<void> {
-  const tasks = await tasksStore.fetchTasks(200, 0, [
+  const tasks = await tasksStore.fetchTasks({limit: 200, skip: 0, status: [
     'reserved',
     'started',
     'scraper_started',
     'scraper_completed',
     'scraper_killed',
     'cancel_requested',
-  ])
+  ]})
 
   // Clear existing tasks and add new ones to workers
   workersStore.clearWorkerTasks()
@@ -272,7 +272,7 @@ async function loadRunningTasks(): Promise<void> {
 }
 
 async function loadData(): Promise<void> {
-  await workersStore.fetchWorkers(100)
+  await workersStore.fetchWorkers({limit: 100})
   await loadRunningTasks()
 }
 

@@ -13,13 +13,18 @@ export const useLanguageStore = defineStore('language', () => {
 
 
   const fetchLanguages = async (limit: number = 100) => {
+    if (languages.value.length > 0) {
+      return languages.value
+    }
     try {
       const service = await authStore.getApiService('languages')
       const response = await service.get<null, ListResponse<Language>>('', { params: { limit } })
       languages.value = response.items
+      return languages.value
     } catch (_error) {
       console.error('Failed to fetch languages', _error)
       error.value = translateErrors(_error as ErrorResponse)
+      return null
     }
   }
 

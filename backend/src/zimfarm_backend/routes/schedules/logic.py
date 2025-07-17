@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Annotated, Any, cast
 
+import requests
 from fastapi import APIRouter, Depends, Path, Query, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -39,6 +40,7 @@ from zimfarm_backend.routes.dependencies import (
 from zimfarm_backend.routes.http_errors import (
     BadRequestError,
     NotFoundError,
+    ServerError,
     UnauthorizedError,
 )
 from zimfarm_backend.routes.models import ListResponse
@@ -157,7 +159,6 @@ def get_schedule(
         raise NotFoundError(f"Schedule {schedule_name} not found") from e
 
     schedule = create_schedule_full_schema(db_schedule)
-    schedule.config = expanded_config(cast(ScheduleConfigSchema, schedule.config))
     if not (
         current_user
         and check_user_permission(current_user, namespace="schedules", name="update")
@@ -171,6 +172,10 @@ def get_schedule(
         show_secrets = False
     else:
         show_secrets = True
+
+    schedule.config = expanded_config(
+        cast(ScheduleConfigSchema, schedule.config), show_secrets=show_secrets
+    )
 
     return JSONResponse(
         content=schedule.model_dump(
@@ -330,7 +335,15 @@ def get_schedule_image_names(
     except Exception as e:
         raise BadRequestError(f"Error getting schedule image names: {e}") from e
 
-    tags = get_schedule_image_tags(hub_name)
+    try:
+        tags = get_schedule_image_tags(hub_name)
+    except requests.HTTPError as exc:
+        if exc.response.status_code == HTTPStatus.NOT_FOUND:
+            raise NotFoundError("Image tags not found for schedule") from exc
+        raise ServerError(
+            "An unexpected error occured while fetching image tags: "
+            f"{exc.response.reason}"
+        ) from exc
     return ListResponse(
         items=tags,
         meta=calculate_pagination_metadata(
