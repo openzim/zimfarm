@@ -50,7 +50,10 @@
         </v-tab>
         <v-tab
           value="config"
-          :to="{ name: 'schedule-detail-tab', params: { scheduleName: scheduleName, selectedTab: 'config' } }"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'config' },
+          }"
         >
           <v-icon class="mr-2">mdi-cog</v-icon>
           Config
@@ -58,7 +61,10 @@
         <v-tab
           v-if="canUpdateSchedules"
           value="edit"
-          :to="{ name: 'schedule-detail-tab', params: { scheduleName: scheduleName, selectedTab: 'edit' } }"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'edit' },
+          }"
         >
           <v-icon class="mr-2">mdi-pencil</v-icon>
           Edit
@@ -67,7 +73,10 @@
           v-if="canCreateSchedules"
           value="clone"
           color="info"
-          :to="{ name: 'schedule-detail-tab', params: { scheduleName: scheduleName, selectedTab: 'clone' } }"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'clone' },
+          }"
         >
           <v-icon class="mr-2">mdi-content-copy</v-icon>
           Clone
@@ -76,7 +85,10 @@
           v-if="canDeleteSchedules"
           value="delete"
           color="error"
-          :to="{ name: 'schedule-detail-tab', params: { scheduleName: scheduleName, selectedTab: 'delete' } }"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'delete' },
+          }"
         >
           <v-icon class="mr-2">mdi-delete</v-icon>
           Delete
@@ -92,7 +104,7 @@
               <v-table>
                 <tbody>
                   <tr>
-                    <th class="text-left" style="width: 200px;">API</th>
+                    <th class="text-left" style="width: 200px">API</th>
                     <td>
                       <a
                         target="_blank"
@@ -110,7 +122,10 @@
                   </tr>
                   <tr>
                     <th class="text-left">Language</th>
-                    <td>{{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code>)</td>
+                    <td>
+                      {{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code
+                      >)
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left">Enabled</th>
@@ -126,7 +141,9 @@
                   </tr>
                   <tr>
                     <th class="text-left">Periodicity</th>
-                    <td><code>{{ schedule?.periodicity }}</code></td>
+                    <td>
+                      <code>{{ schedule?.periodicity }}</code>
+                    </td>
                   </tr>
                   <tr v-if="schedule?.tags?.length">
                     <th class="text-left">Tags</th>
@@ -157,9 +174,7 @@
                       <TaskLink :id="lastRun.id" :updated-at="lastRun.updated_at" />
                     </td>
                     <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey">
-                        none 🙁
-                      </v-chip>
+                      <v-chip size="small" variant="outlined" color="grey"> none 🙁 </v-chip>
                     </td>
                   </tr>
                   <tr v-if="durationDict">
@@ -170,21 +185,19 @@
                         (<code>{{ durationDict.worker }}</code> on {{ formatDt(durationDict.on) }})
                       </span>
                       <span v-else>
-                        between {{ formatDuration(durationDict.minValue || 0) }}
-                        (<code
+                        between {{ formatDuration(durationDict.minValue || 0) }} (<code
                           class="text-pink-accent-2"
                           v-for="worker in durationDict.minWorkers || []"
                           :key="worker.worker_name"
                         >
-                          {{ worker.worker_name }}
-                        </code>) and {{ formatDuration(durationDict.maxValue || 0) }}
-                        (<code
+                          {{ worker.worker_name }} </code
+                        >) and {{ formatDuration(durationDict.maxValue || 0) }} (<code
                           class="text-pink-accent-2"
                           v-for="worker in durationDict.maxWorkers || []"
                           :key="worker.worker_name"
                         >
-                          {{ worker.worker_name }}
-                        </code>)
+                          {{ worker.worker_name }} </code
+                        >)
                       </span>
                     </td>
                   </tr>
@@ -194,8 +207,11 @@
                       <v-progress-circular indeterminate size="16" />
                     </td>
                     <td v-else-if="requestedTask">
-                      <code>{{ shortId(requestedTask.id) }}</code>,
-                      {{ fromNow(requestedTask.timestamp.requested as string) }}
+                      <code>{{ shortId(requestedTask.id) }}</code
+                      >,
+                      {{
+                        fromNow(getTimestampStringForStatus(requestedTask.timestamp, 'requested'))
+                      }}
                       <v-chip
                         v-if="requestedTask.priority"
                         size="small"
@@ -208,9 +224,7 @@
                       </v-chip>
                     </td>
                     <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey">
-                        no
-                      </v-chip>
+                      <v-chip size="small" variant="outlined" color="grey"> no </v-chip>
                     </td>
                   </tr>
                   <tr>
@@ -236,9 +250,7 @@
                       </v-table>
                     </td>
                     <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey">
-                        none 🙁
-                      </v-chip>
+                      <v-chip size="small" variant="outlined" color="grey"> none 🙁 </v-chip>
                     </td>
                   </tr>
                 </tbody>
@@ -254,16 +266,22 @@
               <v-table>
                 <tbody>
                   <tr>
-                    <th class="text-left" style="width: 200px;">Offliner</th>
-                    <td><code>{{ offliner }}</code></td>
+                    <th class="text-left" style="width: 200px">Offliner</th>
+                    <td>
+                      <code>{{ offliner }}</code>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left">Platform</th>
-                    <td><code>{{ platform || "-" }}</code></td>
+                    <td>
+                      <code>{{ platform || '-' }}</code>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left">Warehouse path</th>
-                    <td><code>{{ warehousePath }}</code></td>
+                    <td>
+                      <code>{{ warehousePath }}</code>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left">Image</th>
@@ -279,7 +297,11 @@
                       <ResourceBadge kind="cpu" :value="config.resources.cpu" />
                       <ResourceBadge kind="memory" :value="config.resources.memory" />
                       <ResourceBadge kind="disk" :value="config.resources.disk" />
-                      <ResourceBadge kind="shm" :value="config.resources.shm" v-if="config.resources.shm" />
+                      <ResourceBadge
+                        kind="shm"
+                        :value="config.resources.shm"
+                        v-if="config.resources.shm"
+                      />
                       <v-chip
                         v-if="config.monitor || false"
                         size="small"
@@ -294,7 +316,11 @@
                   </tr>
                   <tr v-if="schedule?.config?.artifacts_globs">
                     <th class="text-left">Artifacts</th>
-                    <td><code class="text-pink-accent-2">{{ schedule?.config?.artifacts_globs }}</code></td>
+                    <td>
+                      <code class="text-pink-accent-2">{{
+                        schedule?.config?.artifacts_globs
+                      }}</code>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left pa-4 align-top">Config</th>
@@ -313,7 +339,9 @@
                         Copy
                       </v-btn>
                     </th>
-                    <td class="py-2"><code class="text-pink-accent-2">{{ command }}</code></td>
+                    <td class="py-2">
+                      <code class="text-pink-accent-2">{{ command }}</code>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left pa-4 align-top">
@@ -328,7 +356,9 @@
                         Copy
                       </v-btn>
                     </th>
-                    <td class="py-2"><code class="text-pink-accent-2">{{ offlinerCommand }}</code></td>
+                    <td class="py-2">
+                      <code class="text-pink-accent-2">{{ offlinerCommand }}</code>
+                    </td>
                   </tr>
                 </tbody>
               </v-table>
@@ -339,7 +369,18 @@
         <!-- Edit Tab -->
         <v-window-item value="edit">
           <div v-if="canUpdateSchedules" class="pa-4">
-            <ScheduleEditor :schedule="schedule" :offliners="offliners" :platforms="platforms" :languages="languages" :tags="tags" :flags-definition="flagsDefinition" :help-url="helpUrl" :image-tags="imageTags" @submit="updateSchedule" @image-name-change="fetchScheduleImageTags" />
+            <ScheduleEditor
+              :schedule="schedule"
+              :offliners="offliners"
+              :platforms="platforms"
+              :languages="languages"
+              :tags="tags"
+              :flags-definition="flagsDefinition"
+              :help-url="helpUrl"
+              :image-tags="imageTags"
+              @submit="updateSchedule"
+              @image-name-change="fetchScheduleImageTags"
+            />
           </div>
         </v-window-item>
 
@@ -365,7 +406,6 @@
     </div>
 
     <ErrorMessage v-if="error" :message="error" />
-
   </v-container>
 </template>
 
@@ -400,7 +440,15 @@ import type { ExpandedScheduleConfig, Schedule, ScheduleUpdateSchema } from '@/t
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, formatDuration, fromNow } from '@/utils/format'
-import { buildCommandWithout, buildDockerCommand, buildScheduleDuration, getSecretFields, imageHuman as imageHumanFn, imageUrl as imageUrlFn } from '@/utils/offliner'
+import {
+  buildCommandWithout,
+  buildDockerCommand,
+  buildScheduleDuration,
+  getSecretFields,
+  imageHuman as imageHumanFn,
+  imageUrl as imageUrlFn,
+} from '@/utils/offliner'
+import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { inject } from 'vue'
 
 // Props
@@ -410,7 +458,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedTab: 'details'
+  selectedTab: 'details',
 })
 
 // Router and stores
@@ -461,7 +509,7 @@ const workers = ref<Worker[]>([])
 // Computed properties
 const webApiUrl = computed(() => appConfig.ZIMFARM_WEBAPI)
 const lastRun = computed(() => schedule.value?.most_recent_task || null)
-const config = computed(() => schedule.value?.config || {} as ExpandedScheduleConfig)
+const config = computed(() => schedule.value?.config || ({} as ExpandedScheduleConfig))
 const offliner = computed(() => config.value?.offliner?.offliner_id || '')
 const platform = computed(() => config.value?.platform || '')
 const warehousePath = computed(() => config.value?.warehouse_path || '')
@@ -498,40 +546,45 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
   requestedTask.value = null
   task.value = null
 
-    // Fetch requested tasks
-    const response = await requestedTasksStore.fetchRequestedTasks({scheduleName: props.scheduleName})
-    if (response) {
-      if (response.length > 0) {
-        requestedTask.value = response[0]
+  // Fetch requested tasks
+  const response = await requestedTasksStore.fetchRequestedTasks({
+    scheduleName: [props.scheduleName],
+  })
+  if (response) {
+    if (response.length > 0) {
+      requestedTask.value = response[0]
+    }
+    // fetch history runs
+    const historyRunsResponse = await tasksStore.fetchTasks({ scheduleName: props.scheduleName })
+    if (historyRunsResponse) {
+      historyRuns.value = historyRunsResponse
+    } else {
+      for (const error of tasksStore.errors) {
+        notificationStore.showError(error)
       }
-      // fetch history runs
-      const historyRunsResponse = await tasksStore.fetchTasks({scheduleName: props.scheduleName})
-      if (historyRunsResponse) {
-        historyRuns.value = historyRunsResponse
-      } else {
+    }
+
+    // fetch running tasks
+    const tasksResponse = await tasksStore.fetchTasks({
+      scheduleName: props.scheduleName,
+      status: constants.CANCELABLE_STATUSES,
+    })
+    if (tasksResponse) {
+      if (tasksResponse.length > 0) {
+        task.value = tasksResponse[0]
+      }
+      // now that we have received all the data, we can call the onSuccess callback
+      onSuccess?.()
+    } else {
+      if (tasksStore.errors.length > 0) {
         for (const error of tasksStore.errors) {
           notificationStore.showError(error)
         }
       }
-
-      // fetch running tasks
-      const tasksResponse = await tasksStore.fetchTasks({scheduleName: props.scheduleName, status: constants.CANCELABLE_STATUSES})
-      if (tasksResponse) {
-        if (tasksResponse.length > 0) {
-          task.value = tasksResponse[0]
-        }
-        // now that we have received all the data, we can call the onSuccess callback
-        onSuccess?.()
-      } else {
-        if (tasksStore.errors.length > 0) {
-          for (const error of tasksStore.errors) {
-            notificationStore.showError(error)
-          }
-        }
-      }
-    } else {
-      if (requestedTasksStore.errors.length > 0) {
-        for (const error of requestedTasksStore.errors) {
+    }
+  } else {
+    if (requestedTasksStore.errors.length > 0) {
+      for (const error of requestedTasksStore.errors) {
         notificationStore.showError(error)
       }
     }
@@ -543,14 +596,20 @@ const copyCommand = async (command: string) => {
     await navigator.clipboard.writeText(command)
     notificationStore.showSuccess('Command copied to clipboard!')
   } catch {
-    notificationStore.showWarning('Unable to copy command to clipboard 😞. Please copy it manually.')
+    notificationStore.showWarning(
+      'Unable to copy command to clipboard 😞. Please copy it manually.',
+    )
   }
 }
 
 const requestTask = async (workerName: string | null, priority?: boolean) => {
   workingText.value = 'Requesting task…'
 
-  const body: {scheduleNames: string[], worker: string | null, priority: number | null} = { scheduleNames: [props.scheduleName], worker: workerName, priority: priority ? constants.DEFAULT_FIRE_PRIORITY : null }
+  const body: { scheduleNames: string[]; worker: string | null; priority: number | null } = {
+    scheduleNames: [props.scheduleName],
+    worker: workerName,
+    priority: priority ? constants.DEFAULT_FIRE_PRIORITY : null,
+  }
 
   const response = await requestedTasksStore.requestTasks(body)
   if (response) {
@@ -575,7 +634,9 @@ const fireExistingTask = async () => {
 
   workingText.value = 'Firing it up…'
 
-  const response = await requestedTasksStore.updateRequestedTask(requestedTask.value.id, { priority: constants.DEFAULT_FIRE_PRIORITY })
+  const response = await requestedTasksStore.updateRequestedTask(requestedTask.value.id, {
+    priority: constants.DEFAULT_FIRE_PRIORITY,
+  })
   if (response) {
     const msg = `Added priority to request <code>${shortId(requestedTask.value.id)}</code>.`
     notificationStore.showSuccess(msg)
@@ -628,8 +689,10 @@ const unrequestTask = async () => {
 const cloneSchedule = async (newName: string) => {
   const response = await scheduleStore.cloneSchedule(props.scheduleName, newName)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${newName}</code> has been created off <code>${props.scheduleName}</code>.`)
-    router.push({ name: 'schedule-detail', params: { scheduleName: newName} })
+    notificationStore.showSuccess(
+      `Recipe <code>${newName}</code> has been created off <code>${props.scheduleName}</code>.`,
+    )
+    router.push({ name: 'schedule-detail', params: { scheduleName: newName } })
   } else {
     for (const error of scheduleStore.errors) {
       notificationStore.showError(error)
@@ -638,13 +701,15 @@ const cloneSchedule = async (newName: string) => {
 }
 
 const fetchScheduleImageTags = async (imageName: string) => {
-  const parts = imageName.split("/");
+  const parts = imageName.split('/')
   if (parts.length < 2) {
-    return; // invalid image_name
+    return // invalid image_name
   }
-  const hubName = parts.splice(parts.length - 2, parts.length).join("/");
+  const hubName = parts.splice(parts.length - 2, parts.length).join('/')
 
-  const response = await scheduleStore.fetchScheduleImageTags(props.scheduleName, { hubName: hubName })
+  const response = await scheduleStore.fetchScheduleImageTags(props.scheduleName, {
+    hubName: hubName,
+  })
   if (response) {
     imageTags.value = response
   } else {
@@ -660,10 +725,16 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
     notificationStore.showSuccess('Schedule updated successfully')
     // if name changed, redirect to the new schedule
     if (update.name) {
-      router.push({ name: 'schedule-detail-tab', params: { scheduleName: update.name, selectedTab: 'edit' } })
+      router.push({
+        name: 'schedule-detail-tab',
+        params: { scheduleName: update.name, selectedTab: 'edit' },
+      })
     }
     // update the schedule in the current view
-    const updatedSchedule = await scheduleStore.fetchSchedule(update.name || props.scheduleName, true)
+    const updatedSchedule = await scheduleStore.fetchSchedule(
+      update.name || props.scheduleName,
+      true,
+    )
     if (updatedSchedule) {
       schedule.value = updatedSchedule
     } else {
@@ -691,27 +762,29 @@ const deleteSchedule = async () => {
 }
 
 const refreshData = async (forceReload: boolean = false) => {
-    // Only set ready to false if we don't have any data yet
-    if (!schedule.value) {
-      ready.value = false
-    }
+  // Only set ready to false if we don't have any data yet
+  if (!schedule.value) {
+    ready.value = false
+  }
 
-    // Load schedule data (force reload and show secrets on edit tab or explicitly requested)
-    const response = await scheduleStore.fetchSchedule(props.scheduleName, currentTab.value === 'edit' || forceReload)
-    if (response) {
-      schedule.value = response
-      if (schedule.value.enabled) {
-        await fetchWorkers()
-      }
-      await fetchScheduleTasks()
-      if (schedule.value) {
-        ready.value = true
-      }
-    } else {
-      error.value = 'Failed to load schedule data'
+  // Load schedule data (force reload and show secrets on edit tab or explicitly requested)
+  const response = await scheduleStore.fetchSchedule(
+    props.scheduleName,
+    currentTab.value === 'edit' || forceReload,
+  )
+  if (response) {
+    schedule.value = response
+    if (schedule.value.enabled) {
+      await fetchWorkers()
     }
+    await fetchScheduleTasks()
+    if (schedule.value) {
+      ready.value = true
+    }
+  } else {
+    error.value = 'Failed to load schedule data'
+  }
 }
-
 
 const getStatusColor = (status: string): string => {
   switch (status) {
@@ -751,7 +824,9 @@ onMounted(async () => {
   // after fectching the all the data, we can fetch the offliner definition
   await refreshData(true)
   if (schedule.value) {
-    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(schedule.value.config.offliner.offliner_id as string)
+    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(
+      schedule.value.config.offliner.offliner_id as string,
+    )
     if (offlinerDefinition) {
       helpUrl.value = offlinerDefinition.help
       flagsDefinition.value = offlinerDefinition.flags
@@ -761,13 +836,16 @@ onMounted(async () => {
 })
 
 // Watch for tab changes
-watch(() => props.selectedTab, async (newTab) => {
-  currentTab.value = newTab
-  // Only refresh data if we don't have any data yet, or if switching to edit tab
-  if (!schedule.value || newTab === 'edit') {
-    await refreshData(newTab === 'edit')
-  }
-})
+watch(
+  () => props.selectedTab,
+  async (newTab) => {
+    currentTab.value = newTab
+    // Only refresh data if we don't have any data yet, or if switching to edit tab
+    if (!schedule.value || newTab === 'edit') {
+      await refreshData(newTab === 'edit')
+    }
+  },
+)
 </script>
 
 <style scoped>

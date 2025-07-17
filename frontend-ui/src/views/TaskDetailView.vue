@@ -354,6 +354,7 @@ import type { OfflinerDefinition } from '@/types/offliner'
 import type { Task, TaskFile } from '@/types/tasks'
 import { formatDt, formatDurationBetween, formattedBytesSize, getTimezoneDetails } from '@/utils/format'
 import { artifactsUrl, getSecretFields, imageHuman as imageHumanFn, imageUrl as imageUrlFn, logsUrl } from '@/utils/offliner'
+import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 
 // Props
@@ -419,26 +420,18 @@ const taskDebug = computed(() => {
 
 const taskDuration = computed(() => {
   if (!task.value?.events) return ''
-
-  const first = task.value.timestamp.started
+  const first = getTimestampStringForStatus(task.value?.timestamp ?? [], 'started')
   if (!first) return "not actually started"
-
   if (isRunning.value) {
     return formatDurationBetween(first, new Date().toISOString())
   }
-
   const last = task.value.updated_at
   return formatDurationBetween(first, last)
 })
 
-const startedOn = computed(() => {
-  return task.value?.timestamp.started || task.value?.timestamp.reserved
-})
+const startedOn = computed(() => getTimestampStringForStatus(task.value?.timestamp ?? [], 'started') || getTimestampStringForStatus(task.value?.timestamp ?? [], 'reserved'))
 
-const pipeDuration = computed(() => {
-  if (!task.value?.timestamp.requested || !task.value?.timestamp.started) return ""
-  return formatDurationBetween(task.value.timestamp.requested, task.value.timestamp.started)
-})
+const pipeDuration = computed(() => formatDurationBetween(getTimestampStringForStatus(task.value?.timestamp ?? [], 'requested'), getTimestampStringForStatus(task.value?.timestamp ?? [], 'started')))
 
 const sortedFiles = computed(() => {
   if (!task.value?.files) return []
@@ -474,7 +467,7 @@ const maxMemory = computed(() => {
 })
 
 const monitoringUrl = computed(() => {
-  return `http://monitoring.openzim.org/host/${scheduleName.value}_${shortId.value}.${task.value?.worker_name}/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${shortId.value}_submenu_cpu;after=${new Date(task.value?.timestamp?.scraper_started || 0).getTime()};before=${new Date(task.value?.timestamp?.scraper_completed || 0).getTime()};theme=slate;utc=Africa/Bamako`
+  return `http://monitoring.openzim.org/host/${scheduleName.value}_${shortId.value}.${task.value?.worker_name}/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${shortId.value}_submenu_cpu;after=${new Date(getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_started') || 0).getTime()};before=${new Date(getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_completed') || 0).getTime()};theme=slate;utc=Africa/Bamako`
 })
 
 const webApiUrl = computed(() => config.ZIMFARM_WEBAPI)
@@ -488,7 +481,7 @@ const canCreateTasks = computed(() => authStore.hasPermission('tasks', 'create')
 
 // Methods
 const createdAfter = (file: TaskFile, taskData: Task) => {
-  return formatDurationBetween(taskData.timestamp.scraper_started, file.created_timestamp)
+  return formatDurationBetween(getTimestampStringForStatus(taskData.timestamp ?? [], 'scraper_started'), file.created_timestamp)
 }
 
 const uploadDuration = (file: TaskFile) => {

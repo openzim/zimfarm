@@ -89,7 +89,7 @@ export enum TaskStatus {
 export interface BaseTask {
   id: string
   status: string
-  timestamp: Record<TaskStatus, string>
+  timestamp: [string, string][] // [status, datetime] tuples
   schedule_name: string
   worker_name: string
   updated_at: string
