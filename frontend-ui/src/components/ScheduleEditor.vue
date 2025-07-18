@@ -180,7 +180,8 @@
           required
           density="compact"
           variant="outlined"
-          @update:model-value="handleImageNameChange"
+          @update:model-value="debouncedImageNameChange"
+          @blur="() => handleImageNameBlur(editSchedule.config.image.name)"
           persistent-hint
         />
       </v-col>
@@ -430,7 +431,7 @@ import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/sch
 import { stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 
 interface FlagField {
   label: string
@@ -466,13 +467,55 @@ const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(JSON.parse(JSON.stringify(props.schedule.config.offliner)))
 
+// Debounced image name change handler
+let imageNameChangeTimeout: number | null = null
+const lastEmittedImageName = ref<string>('')
+
+const debouncedImageNameChange = (imageName: string) => {
+  // Clear existing timeout
+  if (imageNameChangeTimeout) {
+    clearTimeout(imageNameChangeTimeout)
+  }
+
+  // Set new timeout to emit after 1s of no typing
+  imageNameChangeTimeout = setTimeout(() => {
+    if (imageName !== lastEmittedImageName.value) {
+      lastEmittedImageName.value = imageName
+      emit('image-name-change', imageName)
+    }
+  }, 1000)
+}
+
+const handleImageNameBlur = (imageName: string) => {
+  // Clear any pending timeout
+  if (imageNameChangeTimeout) {
+    clearTimeout(imageNameChangeTimeout)
+    imageNameChangeTimeout = null
+  }
+
+  // Immediately emit if the value has changed
+  if (imageName !== lastEmittedImageName.value) {
+    lastEmittedImageName.value = imageName
+    emit('image-name-change', imageName)
+  }
+}
+
 // Initialize edit data when schedule changes
 watch(() => props.schedule, (newSchedule) => {
   if (newSchedule) {
     editSchedule.value = JSON.parse(JSON.stringify(newSchedule))
     editFlags.value = JSON.parse(JSON.stringify(newSchedule.config.offliner))
+    // Initialize lastEmittedImageName with current schedule's image name
+    lastEmittedImageName.value = newSchedule.config.image.name
   }
-}, { deep: true })
+}, { deep: true, immediate: true })
+
+// Cleanup timeout on component unmount
+onUnmounted(() => {
+  if (imageNameChangeTimeout) {
+    clearTimeout(imageNameChangeTimeout)
+  }
+})
 
 const taskName = computed(() => {
   return editSchedule.value.config.offliner.offliner_id || props.schedule.config.offliner.offliner_id
@@ -530,7 +573,6 @@ const hasChanges = computed(() => {
       // if we are toggling a switch to false and it's a null on the original object,
       // then it's not a change
       if (change.lhs === null && change.rhs === false) return false
-
       if (change.rhs === "" || change.rhs === undefined || change.rhs === null) {
         return false;
       }
@@ -699,10 +741,6 @@ const handleSubmit = () => {
   }
 }
 
-const handleImageNameChange = (imageName: string) => {
-  emit('image-name-change', imageName)
-}
-
 const handleReset = () => {
   if (props.schedule) {
     editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
@@ -820,7 +858,7 @@ const cleanFlagsPayload = (flags: Record<string, any>) => {
     for (const key in obj) {
       if (typeof obj[key] === 'object' && obj[key] !== null) {
         recursivelyCleanup(obj[key])
-      } else if (obj[key] === '' || obj[key] === undefined || obj[key] === null) {
+      } else if (!Array.isArray(obj[key]) && (obj[key] === '' || obj[key] === undefined || obj[key] === null)) {
         delete obj[key]
       }
     }
