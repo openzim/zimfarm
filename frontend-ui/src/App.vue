@@ -28,8 +28,6 @@ onBeforeMount(async () => {
 })
 
 onMounted(async () => {
-  // TODO: Call parent.alert[Danger|Success|Info|Warning] on error|response
-  // TODO: Set up the AlertFeedback component to use the alert system
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
   await platformStore.fetchPlatforms()
@@ -41,9 +39,6 @@ onMounted(async () => {
   })
   await Promise.all(offlinerDefinitionRequests)
 
-  // TODO: Set up store to fetch schedules. Schema is a bit different from v1
-  // because of switch to Pydantic and will need to do a db update to re-shape
-  // the models as the config has changed shape.
 })
 
 // Navigation items logic
