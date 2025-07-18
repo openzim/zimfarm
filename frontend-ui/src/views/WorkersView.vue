@@ -120,6 +120,7 @@ import { useWorkersStore } from '@/stores/workers'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, formattedBytesSize, fromNow } from '@/utils/format'
+import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { VueCookies } from 'vue-cookies'
 
@@ -235,7 +236,7 @@ function saveOnlinesOnlyPreference(value: boolean): void {
 }
 
 function startedOn(task: TaskLight): string {
-  return (task.timestamp as Record<string, unknown>).started as string || 'not started'
+  return getTimestampStringForStatus(task.timestamp, 'started') || 'not started'
 }
 
 function toggleWorkersList(): void {

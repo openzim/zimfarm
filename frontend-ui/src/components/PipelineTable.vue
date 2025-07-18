@@ -39,10 +39,10 @@
           <v-tooltip location="bottom">
             <template #activator="{ props }">
               <span v-bind="props">
-                {{ fromNow((item.timestamp as Record<string, unknown>).requested as string) }}
+                {{ fromNow(getTimestampStringForStatus(item.timestamp, 'requested')) }}
               </span>
             </template>
-            <span>{{ formatDt((item.timestamp as Record<string, unknown>).requested as string) }}</span>
+            <span>{{ formatDt(getTimestampStringForStatus(item.timestamp, 'requested')) }}</span>
           </v-tooltip>
         </template>
 
@@ -51,11 +51,11 @@
             <template #activator="{ props }">
               <span v-bind="props">
                 <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
-                  {{ fromNow((item.timestamp as Record<string, unknown>).reserved as string) }}
+                  {{ fromNow(getTimestampStringForStatus(item.timestamp, 'reserved')) }}
                 </router-link>
               </span>
             </template>
-            <span>{{ formatDt((item.timestamp as Record<string, unknown>).reserved as string) }}</span>
+            <span>{{ formatDt(getTimestampStringForStatus(item.timestamp, 'reserved')) }}</span>
           </v-tooltip>
         </template>
 
@@ -101,7 +101,7 @@
         </template>
 
         <template #[`item.duration`]="{ item }">
-          {{ formatDurationBetween((item.timestamp as Record<string, unknown>).started as string, item.updated_at) }}
+          {{ formatDurationBetween(getTimestampStringForStatus(item.timestamp, 'started'), item.updated_at) }}
         </template>
 
         <template #[`item.status`]="{ item }">
@@ -139,6 +139,7 @@ import type { MostRecentTask, Paginator } from '@/types/base';
 import type { RequestedTaskLight } from '@/types/requestedTasks';
 import type { TaskLight } from '@/types/tasks';
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format';
+import { getTimestampStringForStatus } from '@/utils/timestamp';
 import { ref, watch } from 'vue';
 
 const props = defineProps<{
