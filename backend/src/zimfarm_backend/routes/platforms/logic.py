@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
-from zimfarm_backend.common.schemas.models import Paginator, Platform
+from zimfarm_backend.common.enums import Platform
+from zimfarm_backend.common.schemas.models import Paginator
 from zimfarm_backend.routes.models import ListResponse
 
 router = APIRouter(prefix="/platforms", tags=["platforms"])

@@ -316,7 +316,9 @@ def get_currently_running_tasks(
     )
     return [
         RunningTask(
-            config=ExpandedScheduleConfigSchema.model_validate(task.config),
+            config=ExpandedScheduleConfigSchema.model_validate(
+                task.config, context={"skip_validation": True}
+            ),
             schedule_name=task.schedule.name if task.schedule else "none",
             timestamp=task.timestamp,
             worker_name=task.worker.name,
@@ -374,7 +376,9 @@ def get_tasks_doable_by_worker(
                 status=task.status,
                 schedule_name=task.schedule.name if task.schedule else "none",
                 original_schedule_name=task.original_schedule_name,
-                config=ExpandedScheduleConfigSchema.model_validate(task.config),
+                config=ExpandedScheduleConfigSchema.model_validate(
+                    task.config, context={"skip_validation": True}
+                ),
                 timestamp=task.timestamp,
                 requested_by=task.requested_by,
                 priority=task.priority,
@@ -576,7 +580,9 @@ def _create_requested_task_full_schema(
     return RequestedTaskFullSchema(
         id=requested_task.id,
         status=requested_task.status,
-        config=ExpandedScheduleConfigSchema.model_validate(requested_task.config),
+        config=ExpandedScheduleConfigSchema.model_validate(
+            requested_task.config, context={"skip_validation": True}
+        ),
         timestamp=requested_task.timestamp,
         requested_by=requested_task.requested_by,
         priority=requested_task.priority,

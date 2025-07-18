@@ -17,14 +17,13 @@ from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import generate_password_hash
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import TaskStatus, WarehousePath
+from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
 from zimfarm_backend.common.roles import ROLES, RoleEnum
 from zimfarm_backend.common.schemas.models import (
     DockerImageName,
     DockerImageSchema,
     LanguageSchema,
     PlaftormLimitSchema,
-    Platform,
     PlatformsLimitSchema,
     ResourcesSchema,
     ScheduleConfigSchema,

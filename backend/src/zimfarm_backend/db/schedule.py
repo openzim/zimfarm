@@ -344,7 +344,9 @@ def create_schedule_full_schema(schedule: Schedule) -> ScheduleFullSchema:
         ],
         name=schedule.name,
         category=schedule.category,
-        config=ScheduleConfigSchema.model_validate(schedule.config),
+        config=ScheduleConfigSchema.model_validate(
+            schedule.config, context={"skip_validation": True}
+        ),
         enabled=schedule.enabled,
         tags=schedule.tags,
         periodicity=schedule.periodicity,

@@ -5,7 +5,6 @@ from pydantic import Field
 
 from zimfarm_backend.common.enums import (
     Offliner,
-    Platform,
     ScheduleCategory,
     SchedulePeriodicity,
 )
@@ -13,6 +12,7 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     NotEmptyString,
+    PlatformField,
     ScheduleNameField,
     SkipField,
     WarehousePathField,
@@ -21,7 +21,6 @@ from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     LanguageSchema,
     ResourcesSchema,
-    ScheduleConfigSchema,
     ScheduleNotificationSchema,
 )
 
@@ -42,7 +41,7 @@ class ScheduleCreateSchema(BaseModel):
     periodicity: SchedulePeriodicity
     tags: list[NotEmptyString] = Field(default_factory=list)
     enabled: bool
-    config: ScheduleConfigSchema
+    config: dict[str, Any]  # will be validated in the route
     notification: ScheduleNotificationSchema | None = None
 
 
@@ -60,7 +59,7 @@ class ScheduleUpdateSchema(BaseModel):
     offliner: Offliner | None = None
     warehouse_path: WarehousePathField | None = None
     image: DockerImageSchema | None = None
-    platform: Platform | None = None
+    platform: PlatformField | None = None
     resources: ResourcesSchema | None = None
     monitor: bool | None = None
     flags: dict[str, Any] | None = None

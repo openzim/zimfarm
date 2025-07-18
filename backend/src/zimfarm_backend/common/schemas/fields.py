@@ -1,9 +1,18 @@
+import re
+from collections.abc import Callable, Sized
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, AnyUrl, Field, SecretStr, WrapSerializer
+from pydantic import (
+    AfterValidator,
+    AnyUrl,
+    Field,
+    SecretStr,
+    ValidationInfo,
+    WrapSerializer,
+)
 from pydantic_core.core_schema import SerializationInfo
 
-from zimfarm_backend.common.enums import WarehousePath
+from zimfarm_backend.common.enums import Platform, WarehousePath
 
 
 def no_null_char(value: str) -> str:
@@ -32,6 +41,62 @@ def not_empty(value: str) -> str:
     return value
 
 
+def between(
+    *, low: int | None = None, high: int | None = None
+) -> Callable[[int, ValidationInfo], int]:
+    """Validate that value is between low and high (if set)"""
+
+    def _validate(value: int, info: ValidationInfo):
+        context = info.context
+        if context and context.get("skip_validation"):
+            return value
+        if low is not None and value < low:
+            raise ValueError(
+                f"Value must be greater than or equal to {low}, got {value}"
+            )
+        if high is not None and value > high:
+            raise ValueError(f"Value must be less than or equal to {high}, got {value}")
+        return value
+
+    return _validate
+
+
+def length_between(
+    *, low: int | None = None, high: int | None = None
+) -> Callable[[Sized, ValidationInfo], Sized]:
+    """Validate that length of value is between low and high"""
+
+    def _validate(value: Sized, info: ValidationInfo):
+        context = info.context
+        if context and context.get("skip_validation"):
+            return value
+        if low is not None and len(value) < low:
+            raise ValueError(
+                f"Value must be greater than or equal to {low}, got {len(value)}"
+            )
+        if high is not None and len(value) > high:
+            raise ValueError(
+                f"Value must be less than or equal to {high}, got {len(value)}"
+            )
+        return value
+
+    return _validate
+
+
+def pattern(pattern: str) -> Callable[[str, ValidationInfo], str]:
+    """Validate that value matches the pattern"""
+
+    def _validate(value: str, info: ValidationInfo):
+        context = info.context
+        if context and context.get("skip_validation"):
+            return value
+        if not re.match(pattern, value):
+            raise ValueError(f"Value must match the pattern {pattern}, got {value}")
+        return value
+
+    return _validate
+
+
 NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 
 OptionalNotEmptyString = NotEmptyString | None
@@ -50,7 +115,7 @@ ZIMSecretStr = Annotated[SecretStr, WrapSerializer(show_secrets)]
 
 OptionalZIMSecretStr = ZIMSecretStr | None
 
-Percentage = Annotated[int, Field(gt=0, le=100)]
+Percentage = Annotated[int, AfterValidator(between(low=1, high=100))]
 
 
 OptionalPercentage = Percentage | None
@@ -69,86 +134,89 @@ S3OptimizationCache = Annotated[
 
 OptionalS3OptimizationCache = S3OptimizationCache | None
 
-ZIMLongDescription = Annotated[str, Field(max_length=4000)]
+ZIMLongDescription = Annotated[str, AfterValidator(length_between(low=1, high=4000))]
 
 OptionalZIMLongDescription = ZIMLongDescription | None
 
-ZIMTitle = Annotated[str, Field(max_length=30)]
+ZIMTitle = Annotated[str, AfterValidator(length_between(low=1, high=30))]
 
 OptionalZIMTitle = ZIMTitle | None
 
-ZIMDescription = Annotated[str, Field(max_length=80)]
+ZIMDescription = Annotated[str, AfterValidator(length_between(low=1, high=80))]
 
 OptionalZIMDescription = ZIMDescription | None
 
 ZIMFileName = Annotated[
     str,
-    Field(pattern=r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"),
+    AfterValidator(
+        pattern(r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|\{period\}).zim$")
+    ),
 ]
 
 OptionalZIMFileName = ZIMFileName | None
 
-SlackTarget = Annotated[str, Field(pattern=r"^[#|@].+$")]
+SlackTarget = Annotated[str, AfterValidator(pattern(r"^[#|@].+$"))]
 
 OptionalSlackTarget = SlackTarget | None
 
-ZIMPlatformValue = Annotated[int, Field(gt=0)]
-
+ZIMPlatformValue = Annotated[int, AfterValidator(between(low=1))]
 
 OptionalZIMPlatformValue = ZIMPlatformValue | None
 
-ZIMLangCode = Annotated[str, Field(min_length=2, max_length=8)]
+ZIMLangCode = Annotated[str, AfterValidator(length_between(low=2, high=8))]
 
 OptionalZIMLangCode = ZIMLangCode | None
 
-ZIMOutputFolder = Annotated[str, Field(pattern=r"^/output$")]
+ZIMOutputFolder = Annotated[str, AfterValidator(pattern(r"^/output$"))]
 
 OptionalZIMOutputFolder = ZIMOutputFolder | None
 
 ZIMProgressFile = Annotated[
-    NotEmptyString, Field(pattern=r"^/output/task_progress\.json$")
+    NotEmptyString, AfterValidator(pattern(r"^/output/task_progress\.json$"))
 ]
 
 OptionalZIMProgressFile = ZIMProgressFile | None
 
-ZIMCPU = Annotated[int, Field(gt=0)]
+ZIMCPU = Annotated[int, AfterValidator(between(low=1))]
 
 OptionalZIMCPU = ZIMCPU | None
 
-ZIMMemory = Annotated[int, Field(gt=0)]
+ZIMMemory = Annotated[int, AfterValidator(between(low=1))]
 
 OptionalZIMMemory = ZIMMemory | None
 
-ZIMDisk = Annotated[int, Field(gt=0)]
+ZIMDisk = Annotated[int, AfterValidator(between(low=1))]
 
 OptionalZIMDisk = ZIMDisk | None
 
-SkipField = Annotated[int, Field(default=0, ge=0)]
+SkipField = Annotated[int, AfterValidator(between(low=0))]
 
 OptionalSkipField = SkipField | None
 
-LimitFieldMax500 = Annotated[int, Field(default=20, gt=0, le=500)]
+LimitFieldMax500 = Annotated[int, AfterValidator(between(low=1, high=500))]
 
 OptionalLimitFieldMax500 = LimitFieldMax500 | None
 
-LimitFieldMax200 = Annotated[int, Field(default=20, gt=0, le=200)]
+LimitFieldMax200 = Annotated[int, AfterValidator(between(low=1, high=200))]
 
 OptionalLimitFieldMax200 = LimitFieldMax200 | None
 
-PriorityField = Annotated[int, Field(default=1, gt=0, le=10)]
-
+PriorityField = Annotated[int, AfterValidator(between(low=1, high=10))]
 
 OptionalPriorityField = PriorityField | None
 
-WorkerField = Annotated[NotEmptyString, Field(min_length=3)]
+WorkerField = Annotated[NotEmptyString, AfterValidator(length_between(low=3))]
 
 OptionalWorkerField = WorkerField | None
 
 
-def validate_schedule_name(name: str) -> str:
+def validate_schedule_name(name: str, info: ValidationInfo) -> str:
     """
     Validate name is not empty and does not contain leading and/or trailing space(s)
     """
+    context = info.context
+    if context and context.get("skip_validation"):
+        return name
     if name == "none":
         raise ValueError("`none` is a restricted keyword")
     if not name.strip() or name != name.strip():
@@ -161,11 +229,28 @@ ScheduleNameField = Annotated[NotEmptyString, AfterValidator(validate_schedule_n
 OptionalScheduleNameField = ScheduleNameField | None
 
 
-def validate_warehouse_path(warehouse_path: str) -> str:
+def validate_warehouse_path(warehouse_path: str, info: ValidationInfo) -> str:
     """Validate that the string is a valid warehouse path."""
+    context = info.context
+    if context and context.get("skip_validation"):
+        return warehouse_path
     if warehouse_path not in WarehousePath.all():
         raise ValueError(f"{warehouse_path} is not a valid Warehouse path")
     return warehouse_path
 
 
 WarehousePathField = Annotated[str, AfterValidator(validate_warehouse_path)]
+
+
+def validate_platform_value(platform: str, info: ValidationInfo) -> str:
+    context = info.context
+    if context and context.get("skip_validation"):
+        return platform
+    if platform not in Platform.all():
+        raise ValueError(f"{platform} is not a valid Platform")
+    return platform
+
+
+PlatformField = Annotated[str, AfterValidator(validate_platform_value)]
+
+OptionalPlatformField = PlatformField | None
