@@ -107,7 +107,7 @@
       <v-tooltip activator="parent" location="top">
         Request with high priority
       </v-tooltip>
-      <v-icon size="small" class="mr-1">mdi-sort-amount-up</v-icon>
+      <v-icon size="small" class="mr-1">mdi-priority-high</v-icon>
       Request
     </v-btn>
 
@@ -122,7 +122,7 @@
       :disabled="working"
       @click="emit('fire-existing-task')"
     >
-      <v-icon size="small" class="mr-1">mdi-sort-amount-up</v-icon>
+      <v-icon size="small" class="mr-1">mdi-fire</v-icon>
       Prioritize
     </v-btn>
 

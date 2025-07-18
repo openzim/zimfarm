@@ -399,11 +399,13 @@ def update_schedule(
         schedule.language_code = language.code
         schedule.language_name_en = language.name_en
         schedule.language_name_native = language.name_native
-    schedule.name = name or schedule.name
-    schedule.category = category or schedule.category
-    schedule.tags = tags or schedule.tags
-    schedule.enabled = enabled or schedule.enabled
-    schedule.periodicity = periodicity or schedule.periodicity
+    schedule.name = name if name is not None else schedule.name
+    schedule.category = category if category is not None else schedule.category
+    schedule.tags = tags if tags is not None else schedule.tags
+    schedule.enabled = enabled if enabled is not None else schedule.enabled
+    schedule.periodicity = (
+        periodicity if periodicity is not None else schedule.periodicity
+    )
     schedule.config = new_schedule_config.model_dump(
         mode="json", context={"show_secrets": True}
     )
