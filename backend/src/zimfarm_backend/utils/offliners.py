@@ -7,7 +7,6 @@ from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
-    ExpandedScheduleDockerImageSchema,
     ResourcesSchema,
     ScheduleConfigSchema,
 )
@@ -204,18 +203,26 @@ def expanded_config(
     mount_point = mount_point_for(offliner_id)
     command = command_for(offliner_id, config, mount_point, show_secrets=show_secrets)
 
-    return ExpandedScheduleConfigSchema(
-        warehouse_path=config.warehouse_path,
-        resources=new_resources,
-        offliner=config.offliner,
-        platform=config.platform,
-        artifacts_globs=config.artifacts_globs,
-        monitor=config.monitor,
-        image=ExpandedScheduleDockerImageSchema(
-            name=Offliner.get_image_name(offliner_id),
-            tag=config.image.tag,
-        ),
-        mount_point=mount_point,
-        command=command,
-        str_command=" ".join(command),
+    return ExpandedScheduleConfigSchema.model_validate(
+        {
+            "warehouse_path": config.warehouse_path,
+            "resources": new_resources,
+            "offliner": config.offliner,
+            "platform": config.platform,
+            "artifacts_globs": config.artifacts_globs,
+            "monitor": config.monitor,
+            "image": {
+                "name": Offliner.get_image_name(offliner_id),
+                "tag": config.image.tag,
+            },
+            "mount_point": mount_point,
+            "command": command,
+            "str_command": " ".join(command),
+        },
+        context={"skip_validation": True},
     )
+
+
+def get_key_differences(d1: dict[str, Any], d2: dict[str, Any]) -> list[str]:
+    """Return the keys that are in d1 but not in d2"""
+    return list(set(d1.keys()) - set(d2.keys()))

@@ -10,14 +10,12 @@ from pydantic import (
 )
 
 from zimfarm_backend.common import constants
-from zimfarm_backend.common.enums import (
-    DockerImageName,
-    Platform,
-)
+from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     NotEmptyString,
+    PlatformField,
     SlackTarget,
     WarehousePathField,
     ZIMDisk,
@@ -100,7 +98,7 @@ class BaseScheduleConfigSchema(BaseModel):
     warehouse_path: WarehousePathField
     resources: ResourcesSchema
     offliner: OfflinerSchema = Field(discriminator="offliner_id")
-    platform: Platform | None = None
+    platform: PlatformField | None = None
     artifacts_globs: list[NotEmptyString] = Field(default_factory=list)
     monitor: bool
 
@@ -134,7 +132,7 @@ class ScheduleNotificationSchema(BaseModel):
 
 
 class PlaftormLimitSchema(BaseModel):
-    platform: Platform
+    platform: PlatformField
     limit: ZIMPlatformValue
 
 

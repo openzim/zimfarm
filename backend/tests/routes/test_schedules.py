@@ -122,7 +122,7 @@ def test_create_schedule(
             },
             "tags": ["important"],
             "config": schedule_config.model_dump(
-                mode="json", context={"show_secrets": True}
+                mode="json", context={"show_secrets": True}, by_alias=True
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,

@@ -52,7 +52,7 @@ from zimfarm_backend.routes.schedules.models import (
     ScheduleUpdateSchema,
 )
 from zimfarm_backend.routes.utils import get_schedule_image_tags
-from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.offliners import expanded_config, get_key_differences
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
 
@@ -89,24 +89,48 @@ def create_schedule(
     schedule: ScheduleCreateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
-) -> ScheduleCreateResponseSchema:
+) -> JSONResponse:
     """Create a new schedule"""
     if not check_user_permission(current_user, namespace="schedules", name="create"):
         raise UnauthorizedError("You are not allowed to create a schedule")
+
+    try:
+        config = ScheduleConfigSchema.model_validate(schedule.config)
+    except ValidationError as exc:
+        raise RequestValidationError(exc.errors()) from exc
+
+    # We need to compare the raw offliner config with the validated offliner
+    # config to ensure the caller didn't pass extra fields for the offliner config
+    raw_offliner_config = schedule.config.get("offliner", {})
+    validated_offliner_dump = config.offliner.model_dump(mode="json", by_alias=True)
+
+    if extra_keys := get_key_differences(raw_offliner_config, validated_offliner_dump):
+        raise RequestValidationError(
+            [
+                {
+                    "loc": [key],
+                    "msg": "Extra inputs are not permitted",
+                    "type": "value_error",
+                }
+                for key in extra_keys
+            ]
+        )
 
     db_schedule = db_create_schedule(
         session,
         name=schedule.name,
         category=ScheduleCategory(schedule.category),
         language=schedule.language,
-        config=schedule.config,
+        config=config,
         tags=schedule.tags,
         enabled=schedule.enabled,
         notification=schedule.notification,
         periodicity=schedule.periodicity,
     )
-    return ScheduleCreateResponseSchema(
-        id=db_schedule.id,
+    return JSONResponse(
+        content=ScheduleCreateResponseSchema(
+            id=db_schedule.id,
+        ).model_dump(mode="json")
     )
 
 
@@ -213,6 +237,41 @@ def update_schedule(
         if request.image is None:
             raise BadRequestError("Image is required when changing offliner")
 
+        # determine if the caller passed extra fields for the new offliner config
+        if request.flags:
+            # Create a temporary config to get the new offliner schema for validation
+            temp_config = ScheduleConfigSchema.model_validate(
+                {
+                    **schedule_config.model_dump(
+                        mode="json",
+                        exclude={"offliner", "image"},
+                        context={"show_secrets": True},
+                        by_alias=True,
+                    ),
+                    "offliner": {
+                        "offliner_id": request.offliner,
+                    },
+                    "image": {
+                        "name": request.image.name,
+                        "tag": request.image.tag,
+                    },
+                }
+            )
+            if extra_keys := get_key_differences(
+                request.flags,
+                temp_config.offliner.model_dump(mode="json", by_alias=True),
+            ):
+                raise RequestValidationError(
+                    [
+                        {
+                            "loc": [key],
+                            "msg": "Extra inputs are not permitted",
+                            "type": "value_error",
+                        }
+                        for key in extra_keys
+                    ]
+                )
+
         # create a new schedule config for the new offliner
         try:
             new_schedule_config = ScheduleConfigSchema.model_validate(
@@ -237,6 +296,21 @@ def update_schedule(
         except ValidationError as exc:
             raise RequestValidationError(exc.errors()) from exc
     elif request.flags is not None:
+        # determine if the caller passed extra fields for the existing offliner config
+        if extra_keys := get_key_differences(
+            request.flags,
+            schedule_config.offliner.model_dump(mode="json", by_alias=True),
+        ):
+            raise RequestValidationError(
+                [
+                    {
+                        "loc": [key],
+                        "msg": "Extra inputs are not permitted",
+                        "type": "value_error",
+                    }
+                    for key in extra_keys
+                ]
+            )
         # update the existing offliner flags
         try:
             new_schedule_config = ScheduleConfigSchema.model_validate(

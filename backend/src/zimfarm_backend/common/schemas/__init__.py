@@ -15,7 +15,6 @@ class CamelModel(pydantic.BaseModel):
         populate_by_name=True,
         from_attributes=True,
         alias_generator=to_camel,
-        extra="forbid",
     )
 
 
@@ -28,5 +27,4 @@ class DashModel(pydantic.BaseModel):
         populate_by_name=True,
         alias_generator=to_kebab_case,
         use_enum_values=True,
-        extra="forbid",
     )
