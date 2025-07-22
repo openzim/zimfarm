@@ -19,7 +19,8 @@ class TedFlagsSchema(SerializableSchema):
             "label": "Topics",
             "description": (
                 "Comma-separated list of topics to scrape; as given on ted.com/talks. "
-                "Pass all for all topics"
+                "Pass all for all topics. Exclusive with playlists and links, only one "
+                "must be set."
             ),
         },
     )
@@ -29,7 +30,18 @@ class TedFlagsSchema(SerializableSchema):
             "label": "TED Playlists",
             "description": (
                 "Comma-separated list of TED playlist IDs to scrape. Pass all for all "
-                "playlists"
+                "playlists. Exclusive with topics and links, only one must be set."
+            ),
+        },
+    )
+
+    links = String(
+        metadata={
+            "label": "Links",
+            "description": (
+                "Comma-separated TED talk URLs to scrape, each in the format: "
+                "https://www.ted.com/talks/<talk_slug>. Exclusive with topics and "
+                "playlists, only one must be set."
             ),
         },
     )
@@ -235,4 +247,15 @@ class TedFlagsSchema(SerializableSchema):
             "description": "The locale to use for the translations in ZIM",
         },
         data_key="locale",
+    )
+
+    language_threshold = fields.Float(
+        metadata={
+            "label": "Language Threshold",
+            "description": "Add language in ZIM metadata only if present in at least "
+            "this percentage of videos. Number between 0 and 1. "
+            "Defaults to 0.5: language must be used in 50% of videos to be considered "
+            "as ZIM language.",
+        },
+        data_key="language-threshold",
     )
