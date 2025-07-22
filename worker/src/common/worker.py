@@ -9,7 +9,7 @@ import urllib.parse
 from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import docker
 import jwt
@@ -55,7 +55,7 @@ class WebApiConnection:
 class BaseWorker:
     webapi_uris: list[urllib.parse.ParseResult]
     username: str
-    task: dict[str, Any]
+    task: ClassVar[dict[str, Any]]
     workdir: Path
     worker_name: str
 

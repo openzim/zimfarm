@@ -85,11 +85,11 @@ class WorkerManager(BaseWorker):
             f"\n\tCPU : {host_stats.cpu.total} (total) ;  {host_stats.cpu.available} "
             "(avail)"
             f"\n\tRAM : {format_size(host_stats.memory.total)} (total) ;  "
-            "{format_size(host_stats.memory.available)} (avail)"
+            f"{format_size(host_stats.memory.available)} (avail)"
             f"\n\tDisk: {format_size(host_stats.disk.total)} (configured) ; "
-            "{format_size(host_stats.disk.available)} (avail) ; "
+            f"{format_size(host_stats.disk.available)} (avail) ; "
             f"{format_size(host_stats.disk.used)} (reserved) ; "
-            "{format_size(host_stats.disk.remaining)} (remain)"
+            f"{format_size(host_stats.disk.remaining)} (remaining)"
         )
 
         if host_stats.disk.available < host_stats.disk.remaining:

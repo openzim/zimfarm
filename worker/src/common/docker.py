@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from docker import DockerClient
 from docker.errors import APIError, ImageNotFound, NotFound
@@ -343,8 +343,8 @@ def get_sysctl():
     return {"net.ipv6.conf.all.disable_ipv6": "1"} if DISABLE_IPV6 else None
 
 
-def start_dnscache(client: DockerClient, *, task_id: str, schedule_name: str):
-    name = get_container_name("dnscache", task_id)
+def start_dnscache(client: DockerClient, task: dict[str, Any]) -> Container:
+    name = get_container_name("dnscache", task["id"])
     environment = {"USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "no"}
     image = get_or_pull_image(client, DNSCACHE_IMAGE)
     return run_container(
@@ -356,9 +356,9 @@ def start_dnscache(client: DockerClient, *, task_id: str, schedule_name: str):
         remove=False,
         labels={
             "zimfarm": "",
-            "task_id": task_id,
-            "tid": short_id(task_id),
-            "schedule_name": schedule_name,
+            "task_id": task["id"],
+            "tid": short_id(task["id"]),
+            "schedule_name": task["schedule_name"],
         },
         sysctls=get_sysctl(),
     )
@@ -423,7 +423,7 @@ def start_monitor(
 
 
 def start_checker(
-    client: DockerClient, *, task: dict[str, Any], host_workdir: str, filename: str
+    client: DockerClient, *, task: dict[str, Any], host_workdir: Path, filename: str
 ):
     name = get_container_name("checker", task["id"])
     image = get_or_pull_image(client, CHECKER_IMAGE)
@@ -467,7 +467,7 @@ def start_checker(
 
 
 def start_scraper(
-    client: DockerClient, *, task: dict[str, Any], dns: str, host_workdir: str
+    client: DockerClient, *, task: dict[str, Any], dns: list[str], host_workdir: Path
 ):
     config = task["config"]
     container_name = get_scraper_container_name(
@@ -645,13 +645,13 @@ def start_uploader(
     kind: str,
     username: str,
     host_workdir: Path,
-    upload_dir: Path,
+    upload_dir: Path | str,
     filename: str,
     move: bool,
     delete: bool,
     compress: bool,
     resume: bool,
-    watch: bool,
+    watch: bool | None = None,
 ):
     container_name = upload_container_name(task["id"], filename, kind, unique=False)
 
@@ -715,8 +715,8 @@ def start_uploader(
         "environment": {"RSA_KEY": str(PRIVATE_KEY)},
         "labels": {
             "zimfarm": "",
-            "task_id": task["_id"],
-            "tid": short_id(task["_id"]),
+            "task_id": task["id"],
+            "tid": short_id(task["id"]),
             "schedule_name": task["schedule_name"],
             "filename": filename,
         },
@@ -730,7 +730,9 @@ def start_uploader(
     return run_container(client, **kwargs)
 
 
-def get_container_logs(client: DockerClient, *, container_name: str, tail: str = "all"):
+def get_container_logs(
+    client: DockerClient, container_name: str, tail: int | Literal["all"] = "all"
+):
     try:
         return container_logs(
             client, container_name, stdout=True, stderr=True, tail=tail
