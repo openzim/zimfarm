@@ -1,36 +1,63 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import binascii
 import datetime
 import os
-import pathlib
 import signal
 import sys
 import urllib.parse
+from dataclasses import dataclass
+from http import HTTPStatus
+from pathlib import Path
+from typing import Any
 
 import docker
 import jwt
 import paramiko
-import requests
 
-from common import logger
+from common import getnow, logger
 from common.constants import (
     DOCKER_CLIENT_TIMEOUT,
     DOCKER_SOCKET,
     PRIVATE_KEY,
-    access_token,
-    authenticated_on,
-    authentication_expires_on,
-    refresh_token,
-    token_payload,
 )
-from common.dispatcher import get_token_ssh, query_api
+from common.cryptography import generate_auth_message, load_private_key_from_path
+from common.docker import list_containers
+from common.requests import Response, get_token, query_api
+
+
+@dataclass
+class JwtUser:
+    username: str
+    email: str
+    scope: dict[str, Any]
+
+
+@dataclass
+class JwtPayload:
+    iss: str
+    exp: float
+    iat: float
+    subject: str
+    user: JwtUser
+
+
+@dataclass
+class WebApiConnection:
+    uri: str
+    access_token: str
+    refresh_token: str
+    jwt_payload: JwtPayload
+    authenticated_on: datetime.datetime
+    authentication_expires_on: datetime.datetime
 
 
 class BaseWorker:
-    def print_config(self, **kwargs):
+    webapi_uris: list[str]
+    username: str
+    task: dict[str, Any]
+
+    def print_config(self, **kwargs: Any):
         # log configuration values
         config_str = "configuration:"
         for key, value in kwargs.items():
@@ -41,7 +68,7 @@ class BaseWorker:
         logger.info(config_str)
 
     def check_workdir(self):
-        self.workdir = pathlib.Path(self.workdir).resolve()
+        self.workdir = Path(self.workdir).resolve()
         logger.info(f"testing workdir at {self.workdir}…")
         if (
             not self.workdir.exists()
@@ -64,35 +91,41 @@ class BaseWorker:
             sys.exit(1)
 
         try:
-            self.fingerprint = binascii.hexlify(
-                paramiko.RSAKey.from_private_key(
-                    open(PRIVATE_KEY, "r")
-                ).get_fingerprint()
-            ).decode("ASCII")
+            private_key = load_private_key_from_path(PRIVATE_KEY)
         except Exception as exc:
             logger.critical("\tprivate key is not valid RSA")
             logger.exception(exc)
             sys.exit(1)
         else:
+            self.fingerprint: Any = paramiko.RSAKey(
+                key=private_key
+            ).fingerprint  # pyright: ignore[reportGeneralTypeIssues]
+
             logger.info(f"\tprivate key is available and readable ({self.fingerprint})")
 
     def check_auth(self):
-        self.connections = {
-            webapi_uri: {
-                "uri": urllib.parse.urlparse(webapi_uri),
-                access_token: None,
-                refresh_token: None,
-                token_payload: None,
-                authenticated_on: datetime.datetime(2019, 1, 1),
-                authentication_expires_on: datetime.datetime(2019, 1, 1),
-            }
-            for webapi_uri in self.webapi_uris
+        self.connections: dict[str, WebApiConnection] = {
+            uri: WebApiConnection(
+                uri=uri,
+                access_token="",
+                refresh_token="",
+                jwt_payload=JwtPayload(
+                    iss="",
+                    exp=0,
+                    iat=0,
+                    subject="",
+                    user=JwtUser(username="", email="", scope={}),
+                ),
+                authenticated_on=datetime.datetime(2019, 1, 1),
+                authentication_expires_on=datetime.datetime(2019, 1, 1),
+            )
+            for uri in self.webapi_uris
         }
 
-        for webapi_uri in self.connections.keys():
-            logger.info(f"testing authentication with {webapi_uri}…")
-            success, _, _ = self.query_api("GET", "/auth/test", webapi_uri=webapi_uri)
-            if success:
+        for uri in self.connections.keys():
+            logger.info(f"testing authentication with {uri}…")
+            response = query_api("GET", f"{uri}/auth/test")
+            if response.success:
                 logger.info("\tauthentication successful")
             else:
                 logger.critical("\tauthentication failed.")
@@ -111,7 +144,7 @@ class BaseWorker:
             base_url=f"unix://{DOCKER_SOCKET}", timeout=DOCKER_CLIENT_TIMEOUT
         )
         try:
-            if len(self.docker.containers.list(all=False)) < 1:
+            if len(list_containers(self.docker)) < 1:
                 logger.warning("\tno running container, am I out-of-docker?")
         except Exception as exc:
             logger.critical("\tdocker API access failed: exiting.")
@@ -126,27 +159,24 @@ class BaseWorker:
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGQUIT, self.exit_gracefully)
 
-    def authenticate(self, webapi_uri=None, force=False):
+    def authenticate(self, uri: str, *, force: bool = False):
         # our access token should grant us access for 60mn
-        if (
-            force
-            or self.connections[webapi_uri][authentication_expires_on]
-            <= datetime.datetime.now()
-        ):
+        if force or self.connections[uri].authentication_expires_on <= getnow():
             try:
-                (
-                    self.connections[webapi_uri][access_token],
-                    self.connections[webapi_uri][refresh_token],
-                ) = get_token_ssh(webapi_uri, self.username, PRIVATE_KEY)
-                self.connections[webapi_uri][token_payload] = jwt.decode(
-                    self.connections[webapi_uri][access_token],
+                private_key = load_private_key_from_path(PRIVATE_KEY)
+                auth_message = generate_auth_message(self.username, private_key)
+                token = get_token(uri, auth_message)
+                self.connections[uri].access_token = token.access_token
+                self.connections[uri].refresh_token = token.refresh_token
+                self.connections[uri].jwt_payload = jwt.decode(
+                    self.connections[uri].access_token,
                     algorithms=["HS256"],
                     options={"verify_signature": False},
                 )
-                self.connections[webapi_uri][authenticated_on] = datetime.datetime.now()
-                self.connections[webapi_uri][authentication_expires_on] = (
+                self.connections[uri].authenticated_on = getnow()
+                self.connections[uri].authentication_expires_on = (
                     datetime.datetime.fromtimestamp(
-                        self.connections[webapi_uri][token_payload]["exp"]
+                        self.connections[uri].jwt_payload.exp
                     )
                 )
                 return True
@@ -158,43 +188,64 @@ class BaseWorker:
 
     def can_stream_logs(self):
         try:
-            upload_uri = urllib.parse.urlparse(
-                self.task.get("upload", {}).get("logs", {}).get("upload_uri", 1)
+            upload_uri = (  # pyright: ignore[reportUnknownVariableType]
+                urllib.parse.urlparse(
+                    self.task.get("upload", {}).get("logs", {}).get("upload_uri", 1)
+                )
             )
         except Exception:
             return False
-        return upload_uri.scheme in ("scp", "sftp")
+        return upload_uri.scheme in (  # pyright: ignore[reportUnknownMemberType]
+            "scp",
+            "sftp",
+        )
 
     def query_api(
-        self, method, path, payload=None, params=None, headers=None, webapi_uri=None
-    ):
+        self,
+        *,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        webapi_uri: str | None = None,
+    ) -> Response:
         if not webapi_uri:
-            webapi_uri = list(self.connections.keys())[0]
+            webapi_uri = next(iter(self.connections.keys()))
 
-        if not self.authenticate(webapi_uri=webapi_uri):
-            return (False, 0, "")
+        if not self.authenticate(uri=webapi_uri):
+            return Response(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                success=False,
+                json={},
+            )
 
         attempts = 0
+        headers = headers or {}
+        headers["Authorization"] = f"Bearer {self.connections[webapi_uri].access_token}"
         while attempts <= 1:
-            success, status_code, response = query_api(
-                self.connections[webapi_uri][access_token],
-                method,
-                f"{webapi_uri}{path}",
-                payload,
-                params,
-                headers or {},
+            response = query_api(
+                url=f"{webapi_uri}{path}",
+                method=method,
+                payload=payload,
+                params=params,
+                headers=headers,
             )
             attempts += 1
 
             # Unauthorised error: attempt to re-auth as scheduler might have restarted?
-            if status_code == requests.codes.UNAUTHORIZED:
-                self.authenticate(webapi_uri=webapi_uri, force=True)
+            if response.status_code == HTTPStatus.UNAUTHORIZED:
+                self.authenticate(uri=webapi_uri, force=True)
                 continue
             else:
-                break
+                return response
 
-        return success, status_code, response
+        return Response(
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+            success=False,
+            json={},
+        )
 
-    def exit_gracefully(self, signum, frame):
+    def exit_gracefully(self, *args: Any, **kwargs: Any):
         # to be overriden
         pass
