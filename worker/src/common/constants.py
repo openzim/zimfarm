@@ -169,7 +169,7 @@ ALL_PLATFORMS = [
     "libretexts",
     "phet",
 ]
-PLATFORMS_TASKS = {}
+PLATFORMS_TASKS: dict[str, int] = {}
 for platform in ALL_PLATFORMS:
     name = f"PLATFORM_{platform}_MAX_TASKS"
     value = getenv(name, default=None)
