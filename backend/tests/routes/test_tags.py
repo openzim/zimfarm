@@ -13,7 +13,7 @@ def test_get_tags(client: TestClient, create_schedule: Callable[..., Schedule]):
     create_schedule(name="schedule3", tags=["tag3", "tag4"])
     create_schedule(name="schedule4", tags=["tag4", "tag5"])
 
-    response = client.get("/api/v2/tags?skip=0&limit=2")
+    response = client.get("/v2/tags?skip=0&limit=2")
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert "meta" in data

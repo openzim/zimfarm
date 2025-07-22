@@ -17,7 +17,7 @@ from zimfarm_backend.utils.token import sign_message
 @pytest.mark.num_users(1)
 def test_auth_with_credentials(client: TestClient, users: list[User]):
     response = client.post(
-        "/api/v2/auth/authorize",
+        "/v2/auth/authorize",
         json={"username": users[0].username, "password": "testpassword"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -29,7 +29,7 @@ def test_auth_with_credentials(client: TestClient, users: list[User]):
 
 def test_auth_with_credentials_invalid_credentials(client: TestClient):
     response = client.post(
-        "/api/v2/auth/authorize",
+        "/v2/auth/authorize",
         json={"username": "testuser", "password": "invalidpassword"},
     )
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -41,7 +41,7 @@ def test_refresh_access_token(
 ):
     token = create_refresh_token(session=dbsession, user_id=users[0].id)
     response = client.post(
-        "/api/v2/auth/refresh",
+        "/v2/auth/refresh",
         json={"refresh_token": str(token.token)},
     )
     assert response.status_code == HTTPStatus.OK
@@ -53,7 +53,7 @@ def test_refresh_access_token(
 
 def test_refresh_access_token_invalid_token(client: TestClient):
     response = client.post(
-        "/api/v2/auth/refresh",
+        "/v2/auth/refresh",
         json={"refresh_token": str(uuid.uuid4())},
     )
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -69,7 +69,7 @@ def test_refresh_access_token_expired_token(
         expire_time=getnow() + datetime.timedelta(seconds=1),
     )
     response = client.post(
-        "/api/v2/auth/refresh",
+        "/v2/auth/refresh",
         json={"refresh_token": str(token.token)},
     )
     assert response.status_code == HTTPStatus.OK
@@ -114,7 +114,7 @@ def test_authenticate_user(
     signature = sign_message(private_key, bytes(message, encoding="ascii"))
     x_sshauth_signature = base64.b64encode(signature).decode()
     response = client.post(
-        "/api/v2/auth/ssh-authorize",
+        "/v2/auth/ssh-authorize",
         headers={
             "Content-type": "application/json",
             "X-SSHAuth-Message": message,

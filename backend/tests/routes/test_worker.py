@@ -17,7 +17,7 @@ def test_get_active_workers_success(
         create_worker(name=f"test-worker-{i}")
 
     response = client.get(
-        "/api/v2/workers?limit=5&skip=0",
+        "/v2/workers?limit=5&skip=0",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -35,7 +35,7 @@ def test_check_in_worker_not_found(
 ):
     """Test that check_in_worker raises NotFoundError for non-existent worker"""
     response = client.put(
-        "/api/v2/workers/non-existent/check-in",
+        "/v2/workers/non-existent/check-in",
         json={
             "selfish": True,
             "cpu": 1,
@@ -58,7 +58,7 @@ def test_check_in_worker_deleted(
     worker = create_worker(deleted=True)
 
     response = client.put(
-        f"/api/v2/workers/{worker.name}/check-in",
+        f"/v2/workers/{worker.name}/check-in",
         json={
             "selfish": True,
             "cpu": 1,
@@ -81,7 +81,7 @@ def test_check_in_worker_success(
     worker = create_worker()
 
     response = client.put(
-        f"/api/v2/workers/{worker.name}/check-in",
+        f"/v2/workers/{worker.name}/check-in",
         json={
             "selfish": True,
             "cpu": 1,

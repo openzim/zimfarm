@@ -11,7 +11,7 @@ from zimfarm_backend.utils.token import generate_access_token
 
 
 def test_list_users_no_auth(client: TestClient):
-    response = client.get("/api/v2/users")
+    response = client.get("/v2/users")
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
@@ -25,7 +25,7 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
         email=user.email,
     )
     response = client.get(
-        "/api/v2/users", headers={"Authorization": f"Bearer {access_token}"}
+        "/v2/users", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == HTTPStatus.OK
 
@@ -54,7 +54,7 @@ def test_list_users_with_param(
         scope=user.scope,
         email=user.email,
     )
-    url = f"/api/v2/users?skip={skip}&limit={limit}"
+    url = f"/v2/users?skip={skip}&limit={limit}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -83,7 +83,7 @@ def test_skip_deleted_users(
         dbsession.add(users[i])
         dbsession.flush()
 
-    url = f"/api/v2/users?skip={0}&limit={100}"
+    url = f"/v2/users?skip={0}&limit={100}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -96,7 +96,7 @@ def test_skip_deleted_users(
 
 @pytest.mark.num_users(1)
 def test_get_user_by_username(client: TestClient, users: list[User]):
-    url = f"/api/v2/users/{users[0].username}"
+    url = f"/v2/users/{users[0].username}"
     user = users[0]
     access_token = generate_access_token(
         user_id=str(user.id),
@@ -116,7 +116,7 @@ def test_get_user_by_username_not_found(
     client: TestClient,
     users: list[User],
 ):
-    url = f"/api/v2/users/{users[0].username}1"
+    url = f"/v2/users/{users[0].username}1"
     user = users[0]
     access_token = generate_access_token(
         user_id=str(user.id),
@@ -131,7 +131,7 @@ def test_get_user_by_username_not_found(
 @pytest.mark.num_users(1)
 def test_patch_user_email(client: TestClient, users: list[User]):
     user = users[0]
-    url = f"/api/v2/users/{user.username}"
+    url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
         user_id=str(user.id),
         username=user.username,
@@ -149,7 +149,7 @@ def test_patch_user_email(client: TestClient, users: list[User]):
 @pytest.mark.num_users(2)
 def test_delete_user(client: TestClient, users: list[User]):
     user = users[0]
-    url = f"/api/v2/users/{user.username}"
+    url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
         user_id=str(user.id),
         username=user.username,
@@ -168,7 +168,7 @@ def test_delete_user(client: TestClient, users: list[User]):
         email=user.email,
     )
     response = client.post(
-        "/api/v2/users",
+        "/v2/users",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "username": users[0].username,
@@ -182,7 +182,7 @@ def test_delete_user(client: TestClient, users: list[User]):
 
 @pytest.mark.num_users(1)
 def test_create_user(client: TestClient, users: list[User]):
-    url = "/api/v2/users/"
+    url = "/v2/users/"
     user = users[0]
     access_token = generate_access_token(
         user_id=str(user.id),
@@ -205,7 +205,7 @@ def test_create_user(client: TestClient, users: list[User]):
 
 @pytest.mark.num_users(1)
 def test_create_user_duplicate(client: TestClient, users: list[User]):
-    url = "/api/v2/users/"
+    url = "/v2/users/"
     user = users[0]
     access_token = generate_access_token(
         user_id=str(user.id),
@@ -236,7 +236,7 @@ def test_list_user_keys(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/api/v2/users/{users[0].username}/keys"
+    url = f"/v2/users/{users[0].username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -264,7 +264,7 @@ def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/api/v2/users/{users[1].username}/keys"
+    url = f"/v2/users/{users[1].username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
@@ -285,7 +285,7 @@ def test_create_user_key(client: TestClient, users: list[User], public_key_data:
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
-    url = f"/api/v2/users/{users[0].username}/keys"
+    url = f"/v2/users/{users[0].username}/keys"
     key_data = {"name": "test-key", "key": public_key_data.decode(encoding="ascii")}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
@@ -310,7 +310,7 @@ def test_create_user_key_invalid(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/api/v2/users/{user.username}/keys"
+    url = f"/v2/users/{user.username}/keys"
     key_data = {"name": "test-key", "key": "invalid-key"}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
@@ -328,7 +328,7 @@ def test_create_user_key_duplicate(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/api/v2/users/{users[0].username}/keys"
+    url = f"/v2/users/{users[0].username}/keys"
     key_data = {"name": "test-key", "key": users[0].ssh_keys[0].key}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
@@ -347,7 +347,7 @@ def test_get_user_key(client: TestClient, users: list[User]):
         email=user.email,
     )
     fingerprint = user.ssh_keys[0].fingerprint
-    url = f"/api/v2/users/{user.username}/keys/{fingerprint}"
+    url = f"/v2/users/{user.username}/keys/{fingerprint}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -368,7 +368,7 @@ def test_get_user_key_not_found(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/api/v2/users/{user.username}/keys/non-existent-fingerprint"
+    url = f"/v2/users/{user.username}/keys/non-existent-fingerprint"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -384,7 +384,7 @@ def test_delete_user_key(client: TestClient, users: list[User]):
         email=user.email,
     )
     fingerprint = user.ssh_keys[0].fingerprint
-    url = f"/api/v2/users/{user.username}/keys/{fingerprint}"
+    url = f"/v2/users/{user.username}/keys/{fingerprint}"
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NO_CONTENT
 
@@ -397,7 +397,7 @@ def test_delete_user_key(client: TestClient, users: list[User]):
 def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
     """Test deleting another user's SSH key without permission"""
     user = users[0]
-    url = f"/api/v2/users/{users[1].username}/keys/some-fingerprint"
+    url = f"/v2/users/{users[1].username}/keys/some-fingerprint"
     access_token = generate_access_token(
         user_id=str(user.id),
         username=user.username,

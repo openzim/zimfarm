@@ -25,6 +25,9 @@ def create_app(*, debug: bool = True):
     app = FastAPI(
         debug=debug,
         docs_url="/",
+        title="Zimfarm API",
+        version="2.0.0",
+        description="Zimfarm API for managing tasks, workers, and other resources",
     )
 
     if origins := os.getenv("ALLOWED_ORIGINS", None):
@@ -36,7 +39,7 @@ def create_app(*, debug: bool = True):
             allow_headers=["*"],
         )
 
-    main_router = APIRouter(prefix="/api/v2")
+    main_router = APIRouter(prefix="/v2")
     main_router.include_router(router=auth.router)
     main_router.include_router(router=languages.router)
     main_router.include_router(router=platforms.router)

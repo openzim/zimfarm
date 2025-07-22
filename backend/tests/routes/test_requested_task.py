@@ -24,7 +24,7 @@ def test_create_request_task_no_permission(
     )
 
     response = client.post(
-        "/api/v2/requested-tasks",
+        "/v2/requested-tasks",
         json={
             "schedule_names": ["test-schedule"],
             "worker": "test-worker",
@@ -48,7 +48,7 @@ def test_create_request_task_no_enabled_schedules(
     dbsession.flush()
 
     response = client.post(
-        "/api/v2/requested-tasks",
+        "/v2/requested-tasks",
         json={"schedule_names": [schedule.name], "worker": worker.name, "priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -63,7 +63,7 @@ def test_create_request_task_success(
 ):
     """Test successful creation of requested task"""
     response = client.post(
-        "/api/v2/requested-tasks",
+        "/v2/requested-tasks",
         json={"schedule_names": [schedule.name], "worker": worker.name, "priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -85,7 +85,7 @@ def test_get_requested_tasks_success(
         create_requested_task(worker=worker)
 
     response = client.get(
-        "/api/v2/requested-tasks?limit=5&worker_name=test-worker",
+        "/v2/requested-tasks?limit=5&worker_name=test-worker",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -111,7 +111,7 @@ def test_get_requested_tasks_for_worker_success(
     create_requested_task(worker=worker)
 
     response = client.get(
-        f"/api/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
+        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
         headers={
             "Authorization": f"Bearer {access_token}",
             "X-Forwarded-For": "127.0.0.1",
@@ -135,7 +135,7 @@ def test_get_requested_task_success(
 ):
     """Test successful retrieval of a single requested task"""
     response = client.get(
-        f"/api/v2/requested-tasks/{requested_task.id}?hide_secrets={hide_secrets}",
+        f"/v2/requested-tasks/{requested_task.id}?hide_secrets={hide_secrets}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -169,7 +169,7 @@ def test_update_requested_task_no_permission(
     )
 
     response = client.patch(
-        f"/api/v2/requested-tasks/{requested_task.id}",
+        f"/v2/requested-tasks/{requested_task.id}",
         json={"priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -192,7 +192,7 @@ def test_update_requested_task_success(
     )
 
     response = client.patch(
-        f"/api/v2/requested-tasks/{requested_task.id}",
+        f"/v2/requested-tasks/{requested_task.id}",
         json={"priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -216,7 +216,7 @@ def test_delete_requested_task_no_permission(
     )
 
     response = client.delete(
-        f"/api/v2/requested-tasks/{requested_task.id}",
+        f"/v2/requested-tasks/{requested_task.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.FORBIDDEN
@@ -237,7 +237,7 @@ def test_delete_requested_task_success(
     )
 
     response = client.delete(
-        f"/api/v2/requested-tasks/{requested_task.id}",
+        f"/v2/requested-tasks/{requested_task.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
