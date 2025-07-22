@@ -44,7 +44,7 @@ class JwtPayload:
 
 @dataclass
 class WebApiConnection:
-    uri: str
+    uri: urllib.parse.ParseResult
     access_token: str
     refresh_token: str
     jwt_payload: JwtPayload
@@ -53,9 +53,11 @@ class WebApiConnection:
 
 
 class BaseWorker:
-    webapi_uris: list[str]
+    webapi_uris: list[urllib.parse.ParseResult]
     username: str
     task: dict[str, Any]
+    workdir: Path
+    worker_name: str
 
     def print_config(self, **kwargs: Any):
         # log configuration values
@@ -104,7 +106,7 @@ class BaseWorker:
             logger.info(f"\tprivate key is available and readable ({self.fingerprint})")
 
     def check_auth(self):
-        self.connections: dict[str, WebApiConnection] = {
+        self.connections: dict[urllib.parse.ParseResult, WebApiConnection] = {
             uri: WebApiConnection(
                 uri=uri,
                 access_token="",
@@ -159,13 +161,13 @@ class BaseWorker:
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGQUIT, self.exit_gracefully)
 
-    def authenticate(self, uri: str, *, force: bool = False):
+    def authenticate(self, uri: urllib.parse.ParseResult, *, force: bool = False):
         # our access token should grant us access for 60mn
         if force or self.connections[uri].authentication_expires_on <= getnow():
             try:
                 private_key = load_private_key_from_path(PRIVATE_KEY)
                 auth_message = generate_auth_message(self.username, private_key)
-                token = get_token(uri, auth_message)
+                token = get_token(uri.geturl(), auth_message)
                 self.connections[uri].access_token = token.access_token
                 self.connections[uri].refresh_token = token.refresh_token
                 self.connections[uri].jwt_payload = jwt.decode(
@@ -208,7 +210,7 @@ class BaseWorker:
         payload: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-        webapi_uri: str | None = None,
+        webapi_uri: urllib.parse.ParseResult | None = None,
     ) -> Response:
         if not webapi_uri:
             webapi_uri = next(iter(self.connections.keys()))
@@ -225,7 +227,7 @@ class BaseWorker:
         headers["Authorization"] = f"Bearer {self.connections[webapi_uri].access_token}"
         while attempts <= 1:
             response = query_api(
-                url=f"{webapi_uri}{path}",
+                url=f"{webapi_uri.geturl()}{path}",
                 method=method,
                 payload=payload,
                 params=params,

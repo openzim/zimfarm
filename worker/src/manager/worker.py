@@ -1,24 +1,21 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import collections
 import datetime
-import os
 import signal
 import time
 import urllib.parse
-from typing import Dict
+from http import HTTPStatus
+from typing import Any, ClassVar, NamedTuple
 
-import requests
-
-from common import logger
+from common import getnow, logger
 from common.constants import (
     CANCEL_REQUESTED,
     CANCELED,
     CANCELING,
     PLATFORMS_TASKS,
     SUPPORTED_OFFLINERS,
+    getenv,
 )
 from common.docker import (
     get_label_value,
@@ -31,10 +28,13 @@ from common.docker import (
 from common.utils import as_pos_int, format_size
 from common.worker import BaseWorker
 
-TaskIdent = collections.namedtuple("TaskIdent", ["api_uri", "id"])
+
+class TaskIdent(NamedTuple):
+    api_uri: urllib.parse.ParseResult
+    id: str
 
 
-def ident_repr(self):
+def ident_repr(self: TaskIdent):
     return f"{self.id}@{self.api_uri.netloc}"
 
 
@@ -42,12 +42,18 @@ TaskIdent.__str__ = ident_repr
 
 
 class WorkerManager(BaseWorker):
-    poll_interval = int(os.getenv("POLL_INTERVAL", 180))  # seconds between each poll
-    sleep_interval = int(os.getenv("SLEEP_INTERVAL", 5))  # seconds to sleep while idle
-    selfish = bool(os.getenv("SELFISH", False))  # whether to only accept assigned tasks
-    config_keys = ["poll_interval", "sleep_interval", "selfish"]
+    poll_interval = int(
+        getenv("POLL_INTERVAL", default=180)
+    )  # seconds between each poll
+    sleep_interval = int(
+        getenv("SLEEP_INTERVAL", default=5)
+    )  # seconds to sleep while idle
+    selfish = (
+        getenv("SELFISH", default="false").lower() == "true"
+    )  # whether to only accept assigned tasks
+    config_keys: ClassVar[list[str]] = ["poll_interval", "sleep_interval", "selfish"]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         # include our class config values in the config print
         kwargs.update({k: getattr(self, k) for k in self.config_keys})
         kwargs.update({"OFFLINERS": SUPPORTED_OFFLINERS})
@@ -55,7 +61,7 @@ class WorkerManager(BaseWorker):
         self.print_config(**kwargs)
 
         # set data holders
-        self.tasks: Dict[TaskIdent, Dict] = {}
+        self.tasks: dict[TaskIdent, dict[str, Any]] = {}
         self.last_poll = datetime.datetime(2020, 1, 1)
         self.should_stop = False
 
@@ -76,22 +82,17 @@ class WorkerManager(BaseWorker):
 
         logger.info(
             "Host hardware resources:"
-            "\n\tCPU : {cpu_total} (total) ;  {cpu_avail} (avail)"
-            "\n\tRAM : {mem_total} (total) ;  {mem_avail} (avail)"
-            "\n\tDisk: {disk_total} (configured) ; {disk_avail} (avail) ; "
-            "{disk_used} (reserved) ; {disk_remain} (remain)".format(
-                mem_total=format_size(host_stats["memory"]["total"]),
-                mem_avail=format_size(host_stats["memory"]["available"]),
-                cpu_total=host_stats["cpu"]["total"],
-                cpu_avail=host_stats["cpu"]["available"],
-                disk_avail=format_size(host_stats["disk"]["available"]),
-                disk_used=format_size(host_stats["disk"]["used"]),
-                disk_remain=format_size(host_stats["disk"]["remaining"]),
-                disk_total=format_size(host_stats["disk"]["total"]),
-            )
+            f"\n\tCPU : {host_stats.cpu.total} (total) ;  {host_stats.cpu.available} "
+            "(avail)"
+            f"\n\tRAM : {format_size(host_stats.memory.total)} (total) ;  "
+            "{format_size(host_stats.memory.available)} (avail)"
+            f"\n\tDisk: {format_size(host_stats.disk.total)} (configured) ; "
+            "{format_size(host_stats.disk.available)} (avail) ; "
+            f"{format_size(host_stats.disk.used)} (reserved) ; "
+            "{format_size(host_stats.disk.remaining)} (remain)"
         )
 
-        if host_stats["disk"]["available"] < host_stats["disk"]["remaining"]:
+        if host_stats.disk.available < host_stats.disk.remaining:
             self.should_stop = True
             logger.critical("Configured disk space is not available. Exiting.")
             return
@@ -105,9 +106,7 @@ class WorkerManager(BaseWorker):
 
     @property
     def should_poll(self):
-        return (
-            datetime.datetime.now() - self.last_poll
-        ).total_seconds() > self.poll_interval
+        return (getnow() - self.last_poll).total_seconds() > self.poll_interval
 
     def sleep(self):
         time.sleep(self.sleep_interval)
@@ -118,7 +117,7 @@ class WorkerManager(BaseWorker):
         Maintains an ordered iterator so each are called one after another"""
 
         def _get_iter():
-            uris = [conn["uri"] for conn in self.connections.values()]
+            uris = [conn.uri for conn in self.connections.values()]
             index = 0
             while True:
                 yield uris[index]
@@ -141,85 +140,87 @@ class WorkerManager(BaseWorker):
             if self.poll_api(self.get_next_webapi_uri()):
                 break
 
-    def poll_api(self, webapi_uri) -> bool:
+    def poll_api(self, webapi_uri: urllib.parse.ParseResult) -> bool:
         logger.debug(f"polling {webapi_uri.netloc}…")
-        self.last_poll = datetime.datetime.now()
+        self.last_poll = getnow()
 
         host_stats = query_host_stats(self.docker, self.workdir)
-        expected_disk_avail = as_pos_int(
-            host_stats["disk"]["total"] - host_stats["disk"]["used"]
-        )
-        if host_stats["disk"]["available"] < expected_disk_avail:
+        expected_disk_avail = as_pos_int(host_stats.disk.total - host_stats.disk.used)
+        if host_stats.disk.available < expected_disk_avail:
             self.should_stop = True
             logger.critical(
-                f"Available disk space ({format_size(host_stats['disk']['available'])})"
+                f"Available disk space ({format_size(host_stats.disk.available)})"
                 f" is lower than expected ({format_size(expected_disk_avail)}). Exiting"
             )
-            return
+            return False
 
-        success, status_code, response = self.query_api(
-            "GET",
-            "/requested-tasks/worker",
+        response = self.query_api(
+            method="GET",
+            path="/requested-tasks/worker",
             params={
                 "worker": self.worker_name,
-                "avail_cpu": host_stats["cpu"]["available"],
-                "avail_memory": host_stats["memory"]["available"],
-                "avail_disk": host_stats["disk"]["available"],
+                "avail_cpu": host_stats.cpu.available,
+                "avail_memory": host_stats.memory.available,
+                "avail_disk": host_stats.disk.available,
             },
-            webapi_uri=webapi_uri.geturl(),
+            webapi_uri=webapi_uri,
         )
-        if not success:
-            logger.warning(f"poll failed with HTTP {status_code}: {response}")
-            return
+        if not response.success:
+            logger.warning(
+                f"poll failed with HTTP {response.status_code}: {response.json}"
+            )
+            return False
 
         if self.selfish:
-            response["items"] = [
-                t for t in response["items"] if t["worker"] == self.worker_name
+            response.json["items"] = [
+                t
+                for t in response.json["items"]
+                if t["worker_name"] == self.worker_name
             ]
 
-        if response["items"]:
+        if response.json["items"]:
             logger.info(
                 "API is offering {nb} task(s): {ids}".format(
-                    nb=len(response["items"]),
-                    ids=[task["_id"] for task in response["items"]],
+                    nb=len(response.json["items"]),
+                    ids=[task["id"] for task in response.json["items"]],
                 )
             )
-            self.start_task(response["items"].pop(), webapi_uri)
+            self.start_task(response.json["items"].pop(), webapi_uri)
             # we need to allow the task to start, its container to start and
             # eventually its scraper to start so docker can report to us
             # the assigned resources (on the scraper) _before_ polling again
-            self.last_poll = datetime.datetime.now() + datetime.timedelta(seconds=90)
+            self.last_poll = getnow() + datetime.timedelta(seconds=90)
             return True
         return False
 
     def check_in(self):
         """check_in_at() to all connections"""
         for connection in self.connections.values():
-            self.check_in_at(connection["uri"])
+            self.check_in_at(connection.uri)
 
     def check_in_at(self, webapi_uri: urllib.parse.ParseResult):
         """inform backend that we started a manager, sending resources info"""
         logger.info(f"checking-in with the API at {webapi_uri.netloc}…")
 
         host_stats = query_host_stats(self.docker, self.workdir)
-        success, status_code, response = self.query_api(
-            "PUT",
-            f"/workers/{self.worker_name}/check-in",
+        response = self.query_api(
+            method="PUT",
+            path=f"/workers/{self.worker_name}/check-in",
             payload={
                 "username": self.username,
                 "selfish": self.selfish,
-                "cpu": host_stats["cpu"]["total"],
-                "memory": host_stats["memory"]["total"],
-                "disk": host_stats["disk"]["total"],
+                "cpu": host_stats.cpu.total,
+                "memory": host_stats.memory.total,
+                "disk": host_stats.disk.total,
                 "offliners": SUPPORTED_OFFLINERS,
                 "platforms": PLATFORMS_TASKS,
             },
-            webapi_uri=webapi_uri.geturl(),
+            webapi_uri=webapi_uri,
         )
-        if not success:
+        if not response.success:
             logger.error("\tunable to check-in with the API.")
-            logger.debug(status_code)
-            logger.debug(response)
+            logger.debug(response.status_code)
+            logger.debug(response.json)
             raise SystemExit()
         logger.info("\tchecked-in!")
 
@@ -249,19 +250,21 @@ class WorkerManager(BaseWorker):
         """request task object from server and update locally"""
 
         logger.debug(f"update_task_data: {task_ident}")
-        success, status_code, response = self.query_api(
-            "GET", f"/tasks/{task_ident.id}", webapi_uri=task_ident.api_uri.geturl()
+        response = self.query_api(
+            method="GET",
+            path=f"/tasks/{task_ident.id}",
+            webapi_uri=task_ident.api_uri,
         )
-        if success and status_code == requests.codes.OK:
-            self.tasks[task_ident] = response
+        if response.success and response.status_code == HTTPStatus.OK:
+            self.tasks[task_ident] = response.json
             return True
 
-        if status_code == requests.codes.NOT_FOUND:
+        if response.status_code == HTTPStatus.NOT_FOUND:
             logger.warning(f"task {task_ident.id} is gone. cancelling it")
             self.cancel_and_remove_task(task_ident)
         else:
             logger.warning(f"couldn't retrieve task detail for {task_ident.id}")
-        return success
+        return response.success
 
     def sync_tasks_and_containers(self):
         # list of completed containers (successfuly ran)
@@ -302,44 +305,46 @@ class WorkerManager(BaseWorker):
                 logger.info(f"task {task_ident} is not running anymore, unwatching.")
                 self.tasks.pop(task_ident, None)
 
-    def stop_task_worker(self, task_ident: TaskIdent, timeout=20):
+    def stop_task_worker(self, task_ident: TaskIdent, timeout: int = 20):
         logger.debug(f"stop_task_worker: {task_ident.id}")
-        stop_task_worker(self.docker, task_ident.id, timeout=timeout)
+        stop_task_worker(self.docker, task_id=task_ident.id, timeout=timeout)
 
-    def start_task(self, requested_task: Dict, webapi_uri: urllib.parse.ParseResult):
-        task_ident = TaskIdent(webapi_uri, requested_task["_id"])
+    def start_task(
+        self, requested_task: dict[str, Any], webapi_uri: urllib.parse.ParseResult
+    ):
+        task_ident = TaskIdent(webapi_uri, requested_task["id"])
         logger.debug(f"start_task: {task_ident}")
 
-        success, status_code, response = self.query_api(
-            "POST",
-            f"/tasks/{task_ident.id}",
+        response = self.query_api(
+            method="POST",
+            path=f"/tasks/{task_ident.id}",
             params={"worker_name": self.worker_name},
-            webapi_uri=task_ident.api_uri.geturl(),
+            webapi_uri=task_ident.api_uri,
         )
-        if success and status_code == requests.codes.CREATED:
+        if response.success and response.status_code == HTTPStatus.CREATED:
             self.update_task_data(task_ident)
             self.start_task_worker(requested_task, webapi_uri)
-        elif status_code == requests.codes.LOCKED:
+        elif response.status_code == HTTPStatus.LOCKED:
             logger.warning(f"task {task_ident.id} belongs to another worker. skipping")
         else:
             logger.warning(f"couldn't request task: {task_ident.id}")
-            logger.warning(f"HTTP {status_code}: {response}")
+            logger.warning(f"HTTP {response.status_code}: {response.json}")
 
     def start_task_worker(
-        self, requested_task: Dict, webapi_uri: urllib.parse.ParseResult
+        self, requested_task: dict[str, Any], webapi_uri: urllib.parse.ParseResult
     ):
         """launch docker task-worker container for task"""
-        logger.debug(f"start_task_worker: {requested_task['_id']}")
+        logger.debug(f"start_task_worker: {requested_task['id']}")
         start_task_worker(
             self.docker,
-            requested_task,
-            webapi_uri.geturl(),
-            self.username,
-            self.workdir,
-            self.worker_name,
+            task=requested_task,
+            webapi_uri=webapi_uri.geturl(),
+            username=self.username,
+            workdir=self.workdir,
+            worker_name=self.worker_name,
         )
 
-    def exit_gracefully(self, signum, frame):
+    def exit_gracefully(self, signum: int, _: Any):
         signame = signal.strsignal(signum)
         self.should_stop = True
         if signum == signal.SIGQUIT:

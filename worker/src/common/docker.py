@@ -196,14 +196,14 @@ def query_containers_resources(client: DockerClient):
 
 @dataclass(kw_only=True)
 class ResourceStats:
-    total: int | None = None
-    used: int | None = None
-    available: int | None = None
+    total: int = 0
+    used: int = 0
+    available: int = 0
 
 
 @dataclass(kw_only=True)
 class ResourceStatsWithRemaining(ResourceStats):
-    remaining: int | None = None
+    remaining: int = 0
 
 
 @dataclass(kw_only=True)
@@ -213,7 +213,7 @@ class HostStats:
     memory: ResourceStatsWithRemaining
 
 
-def query_host_stats(client: DockerClient, workdir: str):
+def query_host_stats(client: DockerClient, workdir: Path):
     # query cpu and ram usage in our containers
     stats = query_containers_resources(client)
 
@@ -334,7 +334,7 @@ def get_ip_address(client: DockerClient, name: str) -> str:
     return get_container(client, name).attrs["NetworkSettings"]["IPAddress"]
 
 
-def get_label_value(client: DockerClient, name: str, label: str) -> str | None:
+def get_label_value(client: DockerClient, name: str, label: str) -> str:
     """direct access to a single label value"""
     return get_container(client, name).attrs["Config"]["Labels"].get(label)
 
