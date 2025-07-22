@@ -24,6 +24,7 @@ dependencies = [
     "cryptography == 45.0.3",
     "docker == 7.1.0",
     "requests == 2.32.3",
+    "psutil == 7.0.0",
 ]
 
 [project.optional-dependencies]
@@ -80,12 +81,14 @@ features = ["dev"]
 
 [tool.hatch.envs.manager]
 dependencies = [
-    "psutil == 7.0.0",
+    "requests == 2.32.3",
 ]
 
 [tool.hatch.envs.task]
 dependencies = [
     "kiwixstorage == 0.9.0",
+    "libzim == 3.7.0",
+    "ujson == 5.10.0",
 ]
 
 [tool.hatch.envs.test]
