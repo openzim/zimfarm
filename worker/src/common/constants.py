@@ -1,36 +1,51 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import math
 import multiprocessing
 import os
-import pathlib
 import re
+from pathlib import Path
+from typing import Any
 
 import humanfriendly
 import psutil
 
-from common import logger
-from common.utils import as_pos_int, format_size
+from common.utils import as_pos_int
+
+
+def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
+    value = os.getenv(key, default=default)
+
+    if mandatory and not value:
+        raise OSError(f"Please set the {key} environment variable")
+
+    return value
+
+
+DEBUG = getenv("DEBUG", default="false").lower() == "true"
+
 
 # worker names
 WORKER_MANAGER = "worker-manager"
 TASK_WORKER = "task-worker"
 
 # images
-TASK_WORKER_IMAGE = (
-    os.getenv("TASK_WORKER_IMAGE") or "ghcr.io/openzim/zimfarm-task-worker:latest"
+TASK_WORKER_IMAGE = getenv(
+    "TASK_WORKER_IMAGE", default="ghcr.io/openzim/zimfarm-task-worker:latest"
 )
-DNSCACHE_IMAGE = os.getenv("DNSCACHE_IMAGE") or "ghcr.io/openzim/dnscache:latest"
-UPLOADER_IMAGE = os.getenv("UPLOADER_IMAGE") or "ghcr.io/openzim/uploader:latest"
-CHECKER_IMAGE = os.getenv("CHECKER_IMAGE") or "ghcr.io/openzim/zim-tools:3.5.0"
-MONITOR_IMAGE = os.getenv("MONITOR_IMAGE") or "ghcr.io/openzim/zimfarm-monitor:latest"
+DNSCACHE_IMAGE = getenv("DNSCACHE_IMAGE", default="ghcr.io/openzim/dnscache:latest")
+UPLOADER_IMAGE = getenv("UPLOADER_IMAGE", default="ghcr.io/openzim/uploader:latest")
+CHECKER_IMAGE = getenv("CHECKER_IMAGE", default="ghcr.io/openzim/zim-tools:3.5.0")
+MONITOR_IMAGE = getenv(
+    "MONITOR_IMAGE", default="ghcr.io/openzim/zimfarm-monitor:latest"
+)
 
 # paths
-DEFAULT_WORKDIR = os.getenv("WORKDIR", "/data")  # in-container workdir for manager
-DOCKER_SOCKET = pathlib.Path(os.getenv("DOCKER_SOCKET", "/var/run/docker.sock"))
-PRIVATE_KEY = pathlib.Path(os.getenv("PRIVATE_KEY", "/etc/ssh/keys/zimfarm"))
-OPENSSL_BIN = os.getenv("OPENSSL_BIN", "/usr/bin/openssl")
+DEFAULT_WORKDIR = getenv("WORKDIR", default="/data")  # in-container workdir for manager
+DOCKER_SOCKET = Path(getenv("DOCKER_SOCKET", default="/var/run/docker.sock"))
+PRIVATE_KEY = Path(getenv("PRIVATE_KEY", default="/etc/ssh/keys/zimfarm"))
+OPENSSL_BIN = getenv("OPENSSL_BIN", default="/usr/bin/openssl")
 
 # task-related
 CANCELED = "canceled"
@@ -49,63 +64,47 @@ DEFAULT_CPU_SHARE = 1024
 DOCKER_CLIENT_TIMEOUT = 180  # 3mn for read timeout on docker API socket
 
 # configuration
-ZIMFARM_CPUS, ZIMFARM_MEMORY, ZIMFARM_DISK_SPACE = None, None, None
+ZIMFARM_DISK_SPACE = as_pos_int(
+    humanfriendly.parse_size(getenv("ZIMFARM_DISK", mandatory=True))
+)
+physical_cpu = multiprocessing.cpu_count()
+zimfarm_cpus = as_pos_int(int(getenv("ZIMFARM_CPUS", default=physical_cpu)))
+ZIMFARM_CPUS = min([zimfarm_cpus, physical_cpu])
 
-try:
-    ZIMFARM_DISK_SPACE = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_DISK")))
-except Exception as exc:
-    ZIMFARM_DISK_SPACE = 2**34  # 16GiB
-    logger.error(
-        f"Incorrect or missing `ZIMFARM_DISK` env. "
-        f"defaulting to {format_size(ZIMFARM_DISK_SPACE)} ({exc})"
-    )
+ZIMFARM_TASK_CPUS = float(getenv("ZIMFARM_TASK_CPUS", default=math.inf))
 
-try:
-    ZIMFARM_CPUS = as_pos_int(int(os.getenv("ZIMFARM_CPUS")))
-except Exception:
-    physical_cpu = multiprocessing.cpu_count()
-    if ZIMFARM_CPUS:
-        ZIMFARM_CPUS = min([ZIMFARM_CPUS, physical_cpu])
-    else:
-        ZIMFARM_CPUS = physical_cpu
-
-try:
-    ZIMFARM_TASK_CPUS = float(os.getenv("ZIMFARM_TASK_CPUS"))
-except Exception:
-    ZIMFARM_TASK_CPUS = None
-
-ZIMFARM_TASK_CPUSET = os.getenv("ZIMFARM_TASK_CPUSET", "")
+zimfarm_task_cpuset = getenv("ZIMFARM_TASK_CPUSET", default="")
 if (
-    not ZIMFARM_TASK_CPUSET.isdigit()
-    and not re.match(r"^\d+\-\d+$", ZIMFARM_TASK_CPUSET)
-    and not all([part.isdigit() for part in ZIMFARM_TASK_CPUSET.split(",")])
+    not zimfarm_task_cpuset.isdigit()
+    and not re.match(r"^\d+\-\d+$", zimfarm_task_cpuset)
+    and not all(part.isdigit() for part in zimfarm_task_cpuset.split(","))
 ):
-    ZIMFARM_TASK_CPUSET = None
+    zimfarm_task_cpuset = None
+
+ZIMFARM_TASK_CPUSET = zimfarm_task_cpuset
 
 
-try:
-    ZIMFARM_MEMORY = as_pos_int(humanfriendly.parse_size(os.getenv("ZIMFARM_MEMORY")))
-except Exception:
-    physical_mem = psutil.virtual_memory().total
-    if ZIMFARM_MEMORY:
-        ZIMFARM_MEMORY = min([ZIMFARM_MEMORY, physical_mem])
-    else:
-        ZIMFARM_MEMORY = physical_mem
+physical_mem = psutil.virtual_memory().total
+zimfarm_memory = as_pos_int(
+    humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=physical_mem))
+)
+ZIMFARM_MEMORY = min([zimfarm_memory, physical_mem])
 
-USE_PUBLIC_DNS = bool(os.getenv("USE_PUBLIC_DNS", False))
-DISABLE_IPV6 = bool(os.getenv("DISABLE_IPV6", False))
+USE_PUBLIC_DNS = getenv("USE_PUBLIC_DNS", default="False").lower() == "true"
+DISABLE_IPV6 = getenv("DISABLE_IPV6", default="False").lower() == "true"
 
 # docker container names
 CONTAINER_TASK_IDENT = "zimtask"
 CONTAINER_SCRAPER_IDENT = "zimscraper"
 
 # monitoring-related
-MONITORING_DEST = os.getenv("MONITORING_DEST")  # {ip}:{port}
-MONITORING_KEY = os.getenv("MONITORING_DEST")  # {uuid}
+MONITORING_DEST = getenv("MONITORING_DEST", default=None)  # {ip}:{port}
+MONITORING_KEY = getenv("MONITORING_DEST", default=None)  # {uuid}
 
 # dispatcher-related
-DEFAULT_WEB_API_URLS = os.getenv(
-    "WEB_API_URIS", os.getenv("WEB_API_URI", "https://api.farm.openzim.org/v1")
+DEFAULT_WEB_API_URLS = getenv(
+    "WEB_API_URIS",
+    default=getenv("WEB_API_URI", default="https://api.farm.openzim.org/v1"),
 ).split(",")
 DEFAULT_WEB_API_URL = DEFAULT_WEB_API_URLS[0]  # used in task-worker's argparse default
 
@@ -142,12 +141,14 @@ ALL_OFFLINERS = [
     OFFLINER_DEVDOCS,
     OFFLINER_MINDTOUCH,
 ]
-SUPPORTED_OFFLINERS = [
-    offliner
-    for offliner in (
-        list(filter(bool, os.getenv("OFFLINERS", "").split(","))) or ALL_OFFLINERS
-    )
-    if offliner in ALL_OFFLINERS
+# Get offliners from environment variable
+offliners_env: str = getenv("OFFLINERS", default="")
+offliners_list: list[str] = (
+    list(filter(bool, offliners_env.split(","))) if offliners_env else ALL_OFFLINERS
+)
+
+SUPPORTED_OFFLINERS: list[str] = [
+    offliner for offliner in offliners_list if offliner in ALL_OFFLINERS
 ]
 PROGRESS_CAPABLE_OFFLINERS = [
     OFFLINER_ZIMIT,
@@ -171,10 +172,13 @@ ALL_PLATFORMS = [
 PLATFORMS_TASKS = {}
 for platform in ALL_PLATFORMS:
     name = f"PLATFORM_{platform}_MAX_TASKS"
-    value = os.getenv(name)
+    value = getenv(name, default=None)
     if not value:
         continue
-    try:
-        PLATFORMS_TASKS[platform] = int(value)
-    except Exception:
-        logger.debug(f"Incorrect value for {name} ({value}). Ignored.")
+    PLATFORMS_TASKS[platform] = int(value)
+
+# number of times to retry a call to the Docker daemon
+DOCKER_API_RETRIES = int(getenv("DOCKER_API_RETRIES", default=10))
+DOCKER_API_RETRY_SECONDS = humanfriendly.parse_timespan(
+    getenv("DOCKER_API_RETRY_DURATION", default="5s")
+)

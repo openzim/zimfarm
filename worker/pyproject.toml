@@ -1,0 +1,228 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zimfarm_worker"
+version = "0.1.0"
+authors = [
+  { name = "Kiwix", email = "dev@kiwix.org" },
+]
+keywords = ["zimfarm"]
+requires-python = ">=3.13,<3.14"
+description = "zimfarm Worker"
+license = {text = "GPL-3.0-or-later"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+]
+dependencies = [
+    "paramiko == 3.5.1",
+    "PyJWT == 2.10.1",
+    "humanfriendly == 10.0",
+    "cryptography == 45.0.3",
+    "docker == 7.1.0",
+    "requests == 2.32.3",
+]
+
+[project.optional-dependencies]
+scripts = [
+    "invoke == 2.2.0",
+]
+lint = [
+    "black == 25.1.0",
+    "ruff == 0.11.10",
+]
+check = [
+    "pyright == 1.1.400",
+    "types-humanfriendly == 10.0.0"
+]
+
+test = [
+    "coverage == 7.8.0",
+    "pytest == 8.3.5",
+]
+
+dev = [
+    "pre-commit == 4.2.0",
+    "ipykernel == 6.29.5",
+    "zimfarm_worker[scripts]",
+    "zimfarm_worker[lint]",
+    "zimfarm_worker[test]",
+    "zimfarm_worker[check]",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/openzim/zimfarm/worker"
+Donate = "https://www.kiwix.org/en/support-us/"
+
+[tool.hatch.build]
+exclude = [
+  "/.github",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/task", "src/common", "src/manager"]
+
+[tool.hatch.build.targets.task]
+packages = ["src/task", "src/common"]
+
+[tool.hatch.build.targets.manager]
+packages = ["src/manager", "src/common"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.hatch.envs.manager]
+dependencies = [
+    "psutil == 7.0.0",
+]
+
+[tool.hatch.envs.task]
+dependencies = [
+    "kiwixstorage == 0.9.0",
+]
+
+[tool.hatch.envs.test]
+features = ["scripts", "test"]
+
+[tool.hatch.envs.test.scripts]
+run = "inv test --args '{args}'"
+run-cov = "inv test-cov --args '{args}'"
+report-cov = "inv report-cov"
+coverage = "inv coverage --args '{args}'"
+html = "inv coverage --html --args '{args}'"
+
+[tool.hatch.envs.lint]
+template = "lint"
+skip-install = false
+features = ["scripts", "lint"]
+
+[tool.hatch.envs.lint.scripts]
+black = "inv lint-black --args '{args}'"
+ruff = "inv lint-ruff --args '{args}'"
+all = "inv lintall --args '{args}'"
+fix-black = "inv fix-black --args '{args}'"
+fix-ruff = "inv fix-ruff --args '{args}'"
+fixall = "inv fixall --args '{args}'"
+
+[tool.hatch.envs.check]
+features = ["scripts", "test", "check"]
+
+[tool.hatch.envs.check.scripts]
+pyright = "inv check-pyright --args '{args}'"
+all = "inv checkall --args '{args}'"
+
+[tool.black]
+line-length = 88
+target-version = ['py313']
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+  "A",  # flake8-builtins
+  # "ANN",  # flake8-annotations
+  "ARG",  # flake8-unused-arguments
+  # "ASYNC",  # flake8-async
+  "B",  # flake8-bugbear
+  # "BLE",  # flake8-blind-except
+  "C4",  # flake8-comprehensions
+  "C90",  # mccabe
+  # "COM",  # flake8-commas
+  # "D",  # pydocstyle
+  # "DJ",  # flake8-django
+  "DTZ",  # flake8-datetimez
+  "E",  # pycodestyle (default)
+  "EM",  # flake8-errmsg
+  # "ERA",  # eradicate
+  # "EXE",  # flake8-executable
+  "F",  # Pyflakes (default)
+  # "FA",  # flake8-future-annotations
+  "FBT",  # flake8-boolean-trap
+  # "FLY",  # flynt
+  # "G",  # flake8-logging-format
+  "I",  # isort
+  "ICN",  # flake8-import-conventions
+  # "INP",  # flake8-no-pep420
+  # "INT",  # flake8-gettext
+  "ISC",  # flake8-implicit-str-concat
+  "N",  # pep8-naming
+  # "NPY",  # NumPy-specific rules
+  # "PD",  # pandas-vet
+  # "PGH",  # pygrep-hooks
+  # "PIE",  # flake8-pie
+  # "PL",  # Pylint
+  "PLC",  # Pylint: Convention
+  "PLE",  # Pylint: Error
+  "PLR",  # Pylint: Refactor
+  "PLW",  # Pylint: Warning
+  # "PT",  # flake8-pytest-style
+  # "PTH",  # flake8-use-pathlib
+  # "PYI",  # flake8-pyi
+  "Q",  # flake8-quotes
+  # "RET",  # flake8-return
+  # "RSE",  # flake8-raise
+  "RUF",  # Ruff-specific rules
+  "S",  # flake8-bandit
+  # "SIM",  # flake8-simplify
+  # "SLF",  # flake8-self
+  "T10",  # flake8-debugger
+  "T20",  # flake8-print
+  # "TCH",  # flake8-type-checking
+  # "TD",  # flake8-todos
+  "TID",  # flake8-tidy-imports
+  # "TRY",  # tryceratops
+  "UP",  # pyupgrade
+  "W",  # pycodestyle
+  "YTT",  # flake8-2020
+]
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow datetime methods with tz info
+  "DTZ001", "DTZ006",
+  # Remove flake8-errmsg since we consider they bloat the code and provide limited value
+  "EM",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore warnings on subprocess.run / popen
+  "S603",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["zimfarm_worker"]
+
+[tool.ruff.lint.flake8-bugbear]
+# add exceptions to B008 for fastapi.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+
+[tool.pyright]
+include = ["src", "tests", "tasks.py"]
+exclude = [".env/**", ".venv/**"]
+extraPaths = ["src"]
+pythonVersion = "3.13"
+typeCheckingMode="strict"
