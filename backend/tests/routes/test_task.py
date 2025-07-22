@@ -24,7 +24,7 @@ def test_get_tasks(
         create_task()
 
     response = client.get(
-        "/api/v2/tasks?limit=5&skip=0",
+        "/v2/tasks?limit=5&skip=0",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -44,7 +44,7 @@ def test_get_task_no_auth(
 ):
     """Test successful retrieval of a single task"""
     response = client.get(
-        f"/api/v2/tasks/{task.id}?hide_secrets={hide_secrets}",
+        f"/v2/tasks/{task.id}?hide_secrets={hide_secrets}",
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -67,7 +67,7 @@ def test_get_task_with_auth(
 ):
     """Test successful retrieval of a single task"""
     response = client.get(
-        f"/api/v2/tasks/{task.id}?hide_secrets={hide_secrets}",
+        f"/v2/tasks/{task.id}?hide_secrets={hide_secrets}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -101,7 +101,7 @@ def test_create_task_no_permission(
     )
 
     response = client.post(
-        f"/api/v2/tasks/{requested_task.id}",
+        f"/v2/tasks/{requested_task.id}",
         json={"worker_name": worker.name},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -116,7 +116,7 @@ def test_create_task_no_requested_task(
     """Test that create_task raises NotFoundError with non-existent requested task"""
     uuid = uuid4()
     response = client.post(
-        f"/api/v2/tasks/{uuid}",
+        f"/v2/tasks/{uuid}",
         json={"worker_name": worker.name},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -130,7 +130,7 @@ def test_create_task_no_worker(
 ):
     """Test that create_task raises NotFoundError with non-existent worker"""
     response = client.post(
-        f"/api/v2/tasks/{requested_task.id}",
+        f"/v2/tasks/{requested_task.id}",
         json={"worker_name": "nonexistent-worker"},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -145,7 +145,7 @@ def test_create_task_success(
 ):
     """Test successful creation of task"""
     response = client.post(
-        f"/api/v2/tasks/{requested_task.id}",
+        f"/v2/tasks/{requested_task.id}",
         json={"worker_name": worker.name},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -170,7 +170,7 @@ def test_update_task_no_permission(
     )
 
     response = client.patch(
-        f"/api/v2/tasks/{task.id}",
+        f"/v2/tasks/{task.id}",
         json={"event": TaskStatus.started.value, "payload": {"worker": "test-worker"}},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -183,7 +183,7 @@ def test_update_task_not_found(
 ):
     """Test that update_task raises NotFoundError with non-existent task"""
     response = client.patch(
-        "/api/v2/tasks/00000000-0000-0000-0000-000000000000",
+        "/v2/tasks/00000000-0000-0000-0000-000000000000",
         json={"event": TaskStatus.started.value, "payload": {"worker": "test-worker"}},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -207,7 +207,7 @@ def test_update_task_success(
     )
 
     response = client.patch(
-        f"/api/v2/tasks/{task.id}",
+        f"/v2/tasks/{task.id}",
         json={"event": TaskStatus.started.value, "payload": {"worker": worker.name}},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -230,7 +230,7 @@ def test_cancel_task_no_permission(
     )
 
     response = client.post(
-        f"/api/v2/tasks/{task.id}/cancel",
+        f"/v2/tasks/{task.id}/cancel",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.FORBIDDEN
@@ -242,7 +242,7 @@ def test_cancel_task_not_found(
 ):
     """Test that cancel_task raises NotFoundError with non-existent task"""
     response = client.post(
-        "/api/v2/tasks/00000000-0000-0000-0000-000000000000/cancel",
+        "/v2/tasks/00000000-0000-0000-0000-000000000000/cancel",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -259,7 +259,7 @@ def test_cancel_task_completed(
     dbsession.add(task)
     dbsession.flush()
     response = client.post(
-        f"/api/v2/tasks/{task.id}/cancel",
+        f"/v2/tasks/{task.id}/cancel",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -281,7 +281,7 @@ def test_cancel_task_success(
     )
 
     response = client.post(
-        f"/api/v2/tasks/{task.id}/cancel",
+        f"/v2/tasks/{task.id}/cancel",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT

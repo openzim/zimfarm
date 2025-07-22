@@ -69,7 +69,7 @@ def test_get_schedules(
         dbsession.add(schedule)
         dbsession.flush()
 
-    url = "/api/v2/schedules?skip=0&limit=5"
+    url = "/v2/schedules?skip=0&limit=5"
     response = client.get(
         url + query_string,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -110,7 +110,7 @@ def test_create_schedule(
     schedule_config = create_schedule_config()
 
     response = client.post(
-        "/api/v2/schedules",
+        "/v2/schedules",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "name": "test_schedule",
@@ -162,7 +162,7 @@ def test_get_schedule(
 
     _hide_secrets = "true" if hide_secrets else "false"
     response = client.get(
-        f"/api/v2/schedules/{schedule.name}?hide_secrets={_hide_secrets}",
+        f"/v2/schedules/{schedule.name}?hide_secrets={_hide_secrets}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
@@ -192,7 +192,7 @@ def test_update_schedule_unauthorized(
     )
 
     response = client.patch(
-        "/api/v2/schedules/nonexistent",
+        "/v2/schedules/nonexistent",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "name": "test_schedule",
@@ -293,7 +293,7 @@ def test_update_schedule(
     dbsession.flush()
 
     response = client.patch(
-        f"/api/v2/schedules/{schedule.name}",
+        f"/v2/schedules/{schedule.name}",
         headers={"Authorization": f"Bearer {access_token}"},
         json=payload,
     )
@@ -328,7 +328,7 @@ def test_delete_schedule(
     dbsession.flush()
 
     response = client.delete(
-        f"/api/v2/schedules/{schedule.name}",
+        f"/v2/schedules/{schedule.name}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
@@ -344,7 +344,7 @@ def test_get_schedule_image_names(
     dbsession.flush()
 
     response = client.get(
-        f"/api/v2/schedules/{schedule.name}/image-names?hub_name=openzim/mwoffliner",
+        f"/v2/schedules/{schedule.name}/image-names?hub_name=openzim/mwoffliner",
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -372,7 +372,7 @@ def test_clone_schedule(
     dbsession.flush()
 
     response = client.post(
-        f"/api/v2/schedules/{schedule.name}/clone",
+        f"/v2/schedules/{schedule.name}/clone",
         headers={"Authorization": f"Bearer {access_token}"},
         json={"name": "test_schedule_clone"},
     )

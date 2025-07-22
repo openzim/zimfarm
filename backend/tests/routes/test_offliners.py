@@ -6,7 +6,7 @@ from zimfarm_backend.common.enums import Offliner
 
 
 def test_get_offliners(client: TestClient):
-    response = client.get("/api/v2/offliners")
+    response = client.get("/v2/offliners")
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert "meta" in data
@@ -16,5 +16,5 @@ def test_get_offliners(client: TestClient):
 
 
 def test_get_offliner(client: TestClient):
-    response = client.get("/api/v2/offliners/mwoffliner")
+    response = client.get("/v2/offliners/mwoffliner")
     assert response.status_code == HTTPStatus.OK

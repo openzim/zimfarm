@@ -40,6 +40,6 @@ def test_status_get(
 
     # needed to ensure that the task is older than 1 second
     time.sleep(1)
-    response = client.get(f"/api/v2/status/{query}")
+    response = client.get(f"/v2/status/{query}")
     assert response.status_code == HTTPStatus.OK
     assert response.text == expected_reponse
