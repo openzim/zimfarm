@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import constants, getnow
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refresh_tokens
-from zimfarm_backend.utils.token import sign_message
+from zimfarm_backend.utils.token import sign_message_with_rsa_key
 
 
 @pytest.mark.num_users(1)
@@ -105,13 +105,15 @@ def test_refresh_access_token_expired_token(
 def test_authenticate_user(
     client: TestClient,
     users: list[User],
-    private_key: RSAPrivateKey,
+    rsa_private_key: RSAPrivateKey,
     datetime_str: str,
     expected_status: int,
     expected_response_contents: list[str],
 ):
     message = f"{users[0].username}:{datetime_str}"
-    signature = sign_message(private_key, bytes(message, encoding="ascii"))
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message, encoding="ascii")
+    )
     x_sshauth_signature = base64.b64encode(signature).decode()
     response = client.post(
         "/v2/auth/ssh-authorize",

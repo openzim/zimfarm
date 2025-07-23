@@ -4,7 +4,6 @@ from collections.abc import Callable, Generator
 from ipaddress import IPv4Address
 from typing import Any, cast
 
-import paramiko
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -43,7 +42,11 @@ from zimfarm_backend.db.models import (
 from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.task import get_timestamp_for_status
-from zimfarm_backend.utils.token import generate_access_token, sign_message
+from zimfarm_backend.utils.token import (
+    generate_access_token,
+    get_public_key_fingerprint,
+    sign_message_with_rsa_key,
+)
 
 
 @pytest.fixture
@@ -81,19 +84,19 @@ def data_gen(faker: Faker) -> Faker:
 
 
 @pytest.fixture
-def private_key() -> RSAPrivateKey:
+def rsa_private_key() -> RSAPrivateKey:
     return rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
 @pytest.fixture
-def public_key(private_key: RSAPrivateKey) -> RSAPublicKey:
-    return private_key.public_key()
+def rsa_public_key(rsa_private_key: RSAPrivateKey) -> RSAPublicKey:
+    return rsa_private_key.public_key()
 
 
 @pytest.fixture
-def public_key_data(private_key: RSAPrivateKey) -> bytes:
+def rsa_public_key_data(rsa_private_key: RSAPrivateKey) -> bytes:
     """Serialize public key using PEM format."""
-    return private_key.public_key().public_bytes(
+    return rsa_private_key.public_key().public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
@@ -105,9 +108,11 @@ def auth_message(user: User) -> str:
 
 
 @pytest.fixture
-def x_sshauth_signature(private_key: RSAPrivateKey, auth_message: str) -> str:
+def rsa_x_sshauth_signature(rsa_private_key: RSAPrivateKey, auth_message: str) -> str:
     """Sign a message using RSA private key and encode it in base64"""
-    signature = sign_message(private_key, bytes(auth_message, encoding="ascii"))
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(auth_message, encoding="ascii")
+    )
     return base64.b64encode(signature).decode()
 
 
@@ -124,12 +129,12 @@ def access_token(user: User) -> str:
 @pytest.fixture
 def create_user(
     dbsession: OrmSession,
-    public_key: RSAPublicKey,
-    public_key_data: bytes,
+    rsa_public_key: RSAPublicKey,
+    rsa_public_key_data: bytes,
     data_gen: Faker,
 ) -> Callable[..., User]:
     def _create_user(*, permission: RoleEnum = RoleEnum.ADMIN):
-        pubkey_pkcs8 = public_key_data.decode("ascii")
+        pubkey_pkcs8 = rsa_public_key_data.decode("ascii")
 
         user = User(
             username=data_gen.first_name(),
@@ -141,8 +146,8 @@ def create_user(
 
         key = Sshkey(
             name=data_gen.word(),
-            key=public_key_data.decode("ascii"),
-            fingerprint=paramiko.RSAKey(key=public_key).fingerprint,  # type: ignore
+            key=rsa_public_key_data.decode("ascii"),
+            fingerprint=get_public_key_fingerprint(rsa_public_key),
             type="RSA",
             added=getnow(),
             pkcs8_key=pubkey_pkcs8,
