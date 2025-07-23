@@ -44,6 +44,12 @@ test = [
     "pytest == 8.3.5",
 ]
 
+task = [
+    "kiwixstorage == 0.9.0",
+    "libzim == 3.7.0",
+    "ujson == 5.10.0",
+]
+
 dev = [
     "pre-commit == 4.2.0",
     "ipykernel == 6.29.5",
@@ -64,10 +70,13 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/task", "src/common", "src/manager"]
+packages = ["src/common"]
 
 [tool.hatch.build.targets.task]
 packages = ["src/task", "src/common"]
+require-runtime-features = [
+    "task",
+]
 
 [tool.hatch.build.targets.manager]
 packages = ["src/manager", "src/common"]
@@ -79,16 +88,10 @@ allow-direct-references = true
 features = ["dev"]
 
 [tool.hatch.envs.manager]
-dependencies = [
-    "requests == 2.32.3",
-]
+features = ["dev"]
 
 [tool.hatch.envs.task]
-dependencies = [
-    "kiwixstorage == 0.9.0",
-    "libzim == 3.7.0",
-    "ujson == 5.10.0",
-]
+features = ["dev", "task"]
 
 [tool.hatch.envs.test]
 features = ["scripts", "test"]

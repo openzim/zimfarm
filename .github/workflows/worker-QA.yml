@@ -1,0 +1,39 @@
+name: Worker QA
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "worker/**"
+    branches:
+      - main
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: worker/pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        working-directory: worker
+        run: |
+          pip install -U pip
+          pip install -e .[lint,scripts,test,check,task]
+
+      - name: Check black formatting
+        working-directory: worker
+        run: inv lint-black
+
+      - name: Check ruff
+        working-directory: worker
+        run: inv lint-ruff
+
+      - name: Check pyright
+        working-directory: worker
+        run: inv check-pyright

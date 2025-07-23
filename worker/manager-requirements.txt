@@ -1,6 +1,0 @@
-requests==2.31.0
-docker==7.0.0
-psutil==7.0.0
-humanfriendly==10.0
-PyJWT==2.8.0
-paramiko==2.11.0
