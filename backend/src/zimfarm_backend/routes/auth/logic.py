@@ -1,6 +1,7 @@
 import base64
 import binascii
 import datetime
+from http import HTTPStatus
 from typing import Annotated
 from uuid import UUID
 
@@ -28,6 +29,7 @@ from zimfarm_backend.routes.auth.models import (
     RefreshTokenIn,
     Token,
 )
+from zimfarm_backend.routes.dependencies import get_current_user
 from zimfarm_backend.routes.http_errors import (
     BadRequestError,
     ForbiddenError,
@@ -187,3 +189,11 @@ def oauth2(
         return _refresh_access_token(db_session, credentials.refresh_token, response)
     else:
         raise BadRequestError("Invalid grant type")
+
+
+@router.get("/test")
+def test(
+    _: User = Depends(get_current_user),
+):
+    """Test if user's authentication tokens are still valid."""
+    return Response(status_code=HTTPStatus.NO_CONTENT)
