@@ -102,7 +102,7 @@ class BaseWorker:
             logger.exception(exc)
             sys.exit(1)
         else:
-            self.fingerprint: Any = get_public_key_fingerprint(private_key.public_key())
+            self.fingerprint: str = get_public_key_fingerprint(private_key.public_key())
 
             logger.info(f"\tprivate key is available and readable ({self.fingerprint})")
 
