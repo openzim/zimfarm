@@ -1,6 +1,7 @@
 import base64
 import datetime
 import uuid
+from collections.abc import Callable
 from http import HTTPStatus
 
 import pytest
@@ -9,9 +10,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import constants, getnow
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refresh_tokens
-from zimfarm_backend.utils.token import sign_message_with_rsa_key
+from zimfarm_backend.utils.token import generate_access_token, sign_message_with_rsa_key
 
 
 @pytest.mark.num_users(1)
@@ -127,3 +129,23 @@ def test_authenticate_user(
     data = response.text
     for content in expected_response_contents:
         assert content in data
+
+
+def test_authentication_token(
+    client: TestClient,
+    create_user: Callable[..., User],
+):
+    """Test that authentication token is valid."""
+    user = create_user(permission=RoleEnum.PROCESSOR)
+    access_token = generate_access_token(
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    response = client.get(
+        "/v2/auth/test",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.NO_CONTENT
