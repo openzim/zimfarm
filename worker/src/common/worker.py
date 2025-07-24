@@ -5,15 +5,13 @@ import datetime
 import os
 import signal
 import sys
-import urllib.parse
 from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 import docker
 import jwt
-import paramiko
 
 from common import getnow, logger
 from common.constants import (
@@ -21,19 +19,23 @@ from common.constants import (
     DOCKER_SOCKET,
     PRIVATE_KEY,
 )
-from common.cryptography import generate_auth_message, load_private_key_from_path
+from common.cryptography import (
+    generate_auth_message,
+    get_public_key_fingerprint,
+    load_private_key_from_path,
+)
 from common.docker import list_containers
 from common.requests import Response, get_token, query_api
 
 
-@dataclass
+@dataclass(kw_only=True)
 class JwtUser:
     username: str
     email: str
     scope: dict[str, Any]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class JwtPayload:
     iss: str
     exp: float
@@ -42,9 +44,9 @@ class JwtPayload:
     user: JwtUser
 
 
-@dataclass
+@dataclass(kw_only=True)
 class WebApiConnection:
-    uri: urllib.parse.ParseResult
+    uri: str
     access_token: str
     refresh_token: str
     jwt_payload: JwtPayload
@@ -53,24 +55,26 @@ class WebApiConnection:
 
 
 class BaseWorker:
-    webapi_uris: list[urllib.parse.ParseResult]
-    username: str
-    task: ClassVar[dict[str, Any]]
-    workdir: Path
-    worker_name: str
+    def __init__(
+        self,
+        username: str,
+        webapi_uris: list[str],
+        workdir: Path,
+    ):
+        self.username = username
+        self.webapi_uris = webapi_uris
+        self.workdir = workdir.resolve()
 
     def print_config(self, **kwargs: Any):
         # log configuration values
         config_str = "configuration:"
         for key, value in kwargs.items():
-            setattr(self, key, value)
             if key == "password":
                 continue
             config_str += f"\n\t{key}={value}"
         logger.info(config_str)
 
     def check_workdir(self):
-        self.workdir = Path(self.workdir).resolve()
         logger.info(f"testing workdir at {self.workdir}…")
         if (
             not self.workdir.exists()
@@ -99,14 +103,12 @@ class BaseWorker:
             logger.exception(exc)
             sys.exit(1)
         else:
-            self.fingerprint: Any = paramiko.RSAKey(
-                key=private_key
-            ).fingerprint  # pyright: ignore[reportGeneralTypeIssues]
+            self.fingerprint: Any = get_public_key_fingerprint(private_key.public_key())
 
             logger.info(f"\tprivate key is available and readable ({self.fingerprint})")
 
     def check_auth(self):
-        self.connections: dict[urllib.parse.ParseResult, WebApiConnection] = {
+        self.connections: dict[str, WebApiConnection] = {
             uri: WebApiConnection(
                 uri=uri,
                 access_token="",
@@ -126,7 +128,10 @@ class BaseWorker:
 
         for uri in self.connections.keys():
             logger.info(f"testing authentication with {uri}…")
-            response = query_api("GET", f"{uri}/auth/test")
+            response = self.query_api(
+                path=f"{uri}/auth/test",
+                method="GET",
+            )
             if response.success:
                 logger.info("\tauthentication successful")
             else:
@@ -161,19 +166,30 @@ class BaseWorker:
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGQUIT, self.exit_gracefully)
 
-    def authenticate(self, uri: urllib.parse.ParseResult, *, force: bool = False):
+    def authenticate(self, uri: str, *, force: bool = False):
         # our access token should grant us access for 60mn
         if force or self.connections[uri].authentication_expires_on <= getnow():
             try:
                 private_key = load_private_key_from_path(PRIVATE_KEY)
                 auth_message = generate_auth_message(self.username, private_key)
-                token = get_token(uri.geturl(), auth_message)
+                token = get_token(uri, auth_message)
                 self.connections[uri].access_token = token.access_token
                 self.connections[uri].refresh_token = token.refresh_token
-                self.connections[uri].jwt_payload = jwt.decode(
+                jwt_payload = jwt.decode(
                     self.connections[uri].access_token,
                     algorithms=["HS256"],
                     options={"verify_signature": False},
+                )
+                self.connections[uri].jwt_payload = JwtPayload(
+                    iss=jwt_payload["iss"],
+                    exp=jwt_payload["exp"],
+                    iat=jwt_payload["iat"],
+                    subject=jwt_payload["sub"],
+                    user=JwtUser(
+                        username=jwt_payload["user"]["username"],
+                        email=jwt_payload["user"]["email"],
+                        scope=jwt_payload["user"]["scope"],
+                    ),
                 )
                 self.connections[uri].authenticated_on = getnow()
                 self.connections[uri].authentication_expires_on = (
@@ -188,20 +204,6 @@ class BaseWorker:
                 return False
         return True
 
-    def can_stream_logs(self):
-        try:
-            upload_uri = (  # pyright: ignore[reportUnknownVariableType]
-                urllib.parse.urlparse(
-                    self.task.get("upload", {}).get("logs", {}).get("upload_uri", 1)
-                )
-            )
-        except Exception:
-            return False
-        return upload_uri.scheme in (  # pyright: ignore[reportUnknownMemberType]
-            "scp",
-            "sftp",
-        )
-
     def query_api(
         self,
         *,
@@ -210,7 +212,7 @@ class BaseWorker:
         payload: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-        webapi_uri: urllib.parse.ParseResult | None = None,
+        webapi_uri: str | None = None,
     ) -> Response:
         if not webapi_uri:
             webapi_uri = next(iter(self.connections.keys()))
@@ -227,7 +229,7 @@ class BaseWorker:
         headers["Authorization"] = f"Bearer {self.connections[webapi_uri].access_token}"
         while attempts <= 1:
             response = query_api(
-                url=f"{webapi_uri.geturl()}{path}",
+                url=f"{webapi_uri}{path}",
                 method=method,
                 payload=payload,
                 params=params,

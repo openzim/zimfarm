@@ -1,12 +1,13 @@
 import base64
 import datetime
+from base64 import encodebytes
 from dataclasses import dataclass
 from pathlib import Path
 
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.asymmetric.types import (
     PrivateKeyTypes,
 )
@@ -46,6 +47,14 @@ def load_private_key_from_path(private_key_fpath: Path) -> RSAPrivateKey:
     if not isinstance(private_key, RSAPrivateKey):
         raise ValueError("Key is not an RSA private key")
     return private_key
+
+
+def get_public_key_fingerprint(public_key: RSAPublicKey) -> str:
+    """Compute the SHA256 fingerprint of a public key."""
+    # Modified from: https://github.com/paramiko/paramiko/blob/2af0dd788d8e97dff51212baed2d870abf3b38eb/paramiko/pkey.py#L357-L369
+    hashy = serialization.ssh_key_fingerprint(public_key, hashes.SHA256())
+    cleaned = encodebytes(hashy).decode("utf8").strip().rstrip("=")
+    return f"SHA256:{cleaned}"
 
 
 def get_signature(message: str, private_key: RSAPrivateKey) -> str:

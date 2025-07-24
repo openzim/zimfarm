@@ -4,9 +4,10 @@ import signal
 import sys
 import tarfile
 import time
+import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import ujson
 from docker.errors import NotFound
@@ -50,11 +51,23 @@ CHK = "check"
 
 
 class TaskWorker(BaseWorker):
-    task_id: str
+    def __init__(
+        self,
+        username: str,
+        webapi_uris: list[str],
+        workdir: Path,
+        task_id: str,
+    ) -> None:
+        super().__init__(username, webapi_uris, workdir)
 
-    def __init__(self, **kwargs: Any) -> None:
-        # print config
-        self.print_config(**kwargs)
+        self.task_id = task_id
+
+        self.print_config(
+            username=username,
+            webapi_uris=webapi_uris,
+            workdir=workdir,
+            task_id=task_id,
+        )
 
         # check workdir
         self.check_workdir()
@@ -92,7 +105,7 @@ class TaskWorker(BaseWorker):
         self.monitor: Container | None = None  # monitor container
 
         self.zim_files: dict[str, dict[str, str]] = {}  # ZIM files registry
-        self.zim_retries = {}  # ZIM files with upload errors (registry)
+        self.zim_retries: dict[str, int] = {}  # ZIM files with upload errors (registry)
         self.uploader: Container | None = None  # zim-files uploader container
         self.checker: Container | None = None  # zim-files uploader container
 
@@ -759,14 +772,17 @@ class TaskWorker(BaseWorker):
         # not running but _was_ running
         if self.uploader:
             # find file
-            zim_file = self.uploader.labels[  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-                "filename"
-            ]
+            zim_file = cast(
+                str,
+                self.uploader.labels[  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                    "filename"
+                ],
+            )
             # get result of container
             if self.uploader.attrs["State"]["ExitCode"] == 0:
                 self.zim_files[zim_file][UP] = UPLOADED
                 self.mark_file_completed(
-                    zim_file,  # pyright: ignore[reportUnknownArgumentType]
+                    zim_file,
                     "uploaded",
                 )
             else:
@@ -774,25 +790,18 @@ class TaskWorker(BaseWorker):
                     f"ZIM Uploader:: "
                     f"{get_container_logs(self.docker, self.uploader.name)}"  # pyright: ignore[reportArgumentType]
                 )
-                self.zim_retries[  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
-                    zim_file
-                ] = (
-                    self.zim_retries.get(  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+                self.zim_retries[zim_file] = (
+                    self.zim_retries.get(
                         zim_file,
-                        0,  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+                        0,
                     )
                     + 1
                 )
-                if (
-                    self.zim_retries[  # pyright: ignore[reportUnknownMemberType]
-                        zim_file
-                    ]
-                    >= MAX_ZIM_RETRIES
-                ):
+                if self.zim_retries[zim_file] >= MAX_ZIM_RETRIES:
                     logger.error(f"{zim_file} exhausted retries ({MAX_ZIM_RETRIES})")
                     self.zim_files[zim_file][UP] = FAILED
                     self.mark_file_completed(
-                        zim_file,  # pyright: ignore[reportUnknownArgumentType]
+                        zim_file,
                         "failed",
                     )
                 else:
@@ -910,4 +919,20 @@ class TaskWorker(BaseWorker):
             "succeeded"
             if (self.scraper_succeeded and len(self.zim_files) > 0)
             else "failed"
+        )
+
+    def can_stream_logs(self):
+        if not self.task:
+            return False
+        try:
+            upload_uri = (  # pyright: ignore[reportUnknownVariableType]
+                urllib.parse.urlparse(
+                    self.task.get("upload", {}).get("logs", {}).get("upload_uri", 1)
+                )
+            )
+        except Exception:
+            return False
+        return upload_uri.scheme in (  # pyright: ignore[reportUnknownMemberType]
+            "scp",
+            "sftp",
         )

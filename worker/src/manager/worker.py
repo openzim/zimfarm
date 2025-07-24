@@ -6,7 +6,8 @@ import signal
 import time
 import urllib.parse
 from http import HTTPStatus
-from typing import Any, ClassVar, NamedTuple
+from pathlib import Path
+from typing import Any, NamedTuple
 
 from common import getnow, logger
 from common.constants import (
@@ -30,12 +31,13 @@ from common.worker import BaseWorker
 
 
 class TaskIdent(NamedTuple):
-    api_uri: urllib.parse.ParseResult
+    api_uri: str
     id: str
 
 
 def ident_repr(self: TaskIdent):
-    return f"{self.id}@{self.api_uri.netloc}"
+    netloc = urllib.parse.urlparse(self.api_uri).netloc
+    return f"{self.id}@{netloc}"
 
 
 TaskIdent.__str__ = ident_repr
@@ -51,14 +53,28 @@ class WorkerManager(BaseWorker):
     selfish = (
         getenv("SELFISH", default="false").lower() == "true"
     )  # whether to only accept assigned tasks
-    config_keys: ClassVar[list[str]] = ["poll_interval", "sleep_interval", "selfish"]
 
-    def __init__(self, **kwargs: Any):
-        # include our class config values in the config print
-        kwargs.update({k: getattr(self, k) for k in self.config_keys})
-        kwargs.update({"OFFLINERS": SUPPORTED_OFFLINERS})
-        kwargs.update({"PLATFORMS_TASKS": PLATFORMS_TASKS})
-        self.print_config(**kwargs)
+    def __init__(
+        self,
+        username: str,
+        webapi_uris: list[str],
+        workdir: Path,
+        worker_name: str,
+    ):
+        super().__init__(username, webapi_uris, workdir)
+        self.worker_name = worker_name
+
+        self.print_config(
+            username=username,
+            webapi_uris=webapi_uris,
+            workdir=workdir,
+            worker_name=worker_name,
+            OFFLINERS=SUPPORTED_OFFLINERS,
+            PLATFORMS_TASKS=PLATFORMS_TASKS,
+            poll_interval=self.poll_interval,
+            sleep_interval=self.sleep_interval,
+            selfish=self.selfish,
+        )
 
         # set data holders
         self.tasks: dict[TaskIdent, dict[str, Any]] = {}
@@ -111,7 +127,7 @@ class WorkerManager(BaseWorker):
     def sleep(self):
         time.sleep(self.sleep_interval)
 
-    def get_next_webapi_uri(self) -> urllib.parse.ParseResult:
+    def get_next_webapi_uri(self) -> str:
         """Next endpoint URI in line for polling
 
         Maintains an ordered iterator so each are called one after another"""
@@ -140,8 +156,8 @@ class WorkerManager(BaseWorker):
             if self.poll_api(self.get_next_webapi_uri()):
                 break
 
-    def poll_api(self, webapi_uri: urllib.parse.ParseResult) -> bool:
-        logger.debug(f"polling {webapi_uri.netloc}…")
+    def poll_api(self, webapi_uri: str) -> bool:
+        logger.debug(f"polling {webapi_uri}…")
         self.last_poll = getnow()
 
         host_stats = query_host_stats(self.docker, self.workdir)
@@ -198,9 +214,10 @@ class WorkerManager(BaseWorker):
         for connection in self.connections.values():
             self.check_in_at(connection.uri)
 
-    def check_in_at(self, webapi_uri: urllib.parse.ParseResult):
+    def check_in_at(self, webapi_uri: str):
         """inform backend that we started a manager, sending resources info"""
-        logger.info(f"checking-in with the API at {webapi_uri.netloc}…")
+        netloc = urllib.parse.urlparse(webapi_uri).netloc
+        logger.info(f"checking-in with the API at {netloc}…")
 
         host_stats = query_host_stats(self.docker, self.workdir)
         response = self.query_api(
@@ -280,9 +297,7 @@ class WorkerManager(BaseWorker):
         # list of task_ids for running containers
         running_task_idents = [
             TaskIdent(
-                urllib.parse.urlparse(
-                    get_label_value(self.docker, container.name, "webapi_uri")
-                ),
+                get_label_value(self.docker, container.name, "webapi_uri"),
                 get_label_value(self.docker, container.name, "task_id"),
             )
             for container in running_containers
@@ -309,9 +324,7 @@ class WorkerManager(BaseWorker):
         logger.debug(f"stop_task_worker: {task_ident.id}")
         stop_task_worker(self.docker, task_id=task_ident.id, timeout=timeout)
 
-    def start_task(
-        self, requested_task: dict[str, Any], webapi_uri: urllib.parse.ParseResult
-    ):
+    def start_task(self, requested_task: dict[str, Any], webapi_uri: str):
         task_ident = TaskIdent(webapi_uri, requested_task["id"])
         logger.debug(f"start_task: {task_ident}")
 
@@ -330,15 +343,13 @@ class WorkerManager(BaseWorker):
             logger.warning(f"couldn't request task: {task_ident.id}")
             logger.warning(f"HTTP {response.status_code}: {response.json}")
 
-    def start_task_worker(
-        self, requested_task: dict[str, Any], webapi_uri: urllib.parse.ParseResult
-    ):
+    def start_task_worker(self, requested_task: dict[str, Any], webapi_uri: str):
         """launch docker task-worker container for task"""
         logger.debug(f"start_task_worker: {requested_task['id']}")
         start_task_worker(
             self.docker,
             task=requested_task,
-            webapi_uri=webapi_uri.geturl(),
+            webapi_uri=webapi_uri,
             username=self.username,
             workdir=self.workdir,
             worker_name=self.worker_name,
