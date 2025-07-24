@@ -21,7 +21,6 @@ dependencies = [
     "fastapi[all] == 0.115.2",
     "pydantic == 2.11.4", # this is also a sub-dep of fastapi but we rely a lot on it
     "SQLAlchemy == 2.0.41",
-    "paramiko == 3.5.1",
     "PyJWT == 2.10.1",
     "pymongo == 4.13.0",
     "pytz == 2025.2",

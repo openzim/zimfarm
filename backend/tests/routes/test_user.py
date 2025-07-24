@@ -270,7 +270,7 @@ def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
 
 
 @pytest.mark.num_users(1)
-def test_create_user_key(client: TestClient, users: list[User], public_key_data: bytes):
+def test_create_user_key(client: TestClient, users: list[User]):
     """Test creating a new SSH key for a user"""
     user = users[0]
     access_token = generate_access_token(
@@ -281,12 +281,12 @@ def test_create_user_key(client: TestClient, users: list[User], public_key_data:
     )
     new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = new_key.public_key()
-    public_key_data = public_key.public_bytes(
+    rsa_public_key_data = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
     url = f"/v2/users/{users[0].username}/keys"
-    key_data = {"name": "test-key", "key": public_key_data.decode(encoding="ascii")}
+    key_data = {"name": "test-key", "key": rsa_public_key_data.decode(encoding="ascii")}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
     )

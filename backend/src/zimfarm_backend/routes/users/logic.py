@@ -54,8 +54,8 @@ from zimfarm_backend.routes.users.models import (
 )
 from zimfarm_backend.utils.token import (
     get_public_key_fingerprint,
-    load_rsa_public_key,
-    serialize_rsa_public_key,
+    load_public_key,
+    serialize_public_key,
 )
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -198,11 +198,11 @@ def create_user_key(
             raise UnauthorizedError("You are not allowed to access this resource")
 
     try:
-        rsa_public_key = load_rsa_public_key(ssh_key.key)
+        public_key = load_public_key(bytes(ssh_key.key, encoding="ascii"))
     except PEMPublicKeyLoadError as e:
-        raise BadRequestError("Invalid RSA public key") from e
+        raise BadRequestError("Invalid public key") from e
 
-    fingerprint = get_public_key_fingerprint(rsa_public_key)
+    fingerprint = get_public_key_fingerprint(public_key)
 
     # check if key already exists
     db_ssh_key = get_ssh_key_by_fingerprint_or_none(db_session, fingerprint=fingerprint)
@@ -215,7 +215,7 @@ def create_user_key(
         fingerprint=fingerprint,
         user_id=user.id,
         key=ssh_key.key,
-        pkcs8_key=serialize_rsa_public_key(rsa_public_key).decode("ascii"),
+        pkcs8_key=serialize_public_key(public_key).decode("ascii"),
         name=ssh_key.name,
     )
     return SshKeyRead.model_validate(db_ssh_key)
