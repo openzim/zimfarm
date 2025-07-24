@@ -14,12 +14,12 @@ from common.enum import Offliner
 od = collections.namedtuple("OfflinerDef", ["cmd", "std_output", "std_stats"])
 OFFLINER_DEFS = {
     Offliner.freecodecamp: od("fcc2zim", True, False),
-    Offliner.gutenberg: od("gutenberg2zim", False, False),
+    Offliner.gutenberg: od("gutenberg2zim", False, True),
     Offliner.sotoki: od("sotoki", True, True),
     Offliner.wikihow: od("wikihow2zim", True, True),
     Offliner.ifixit: od("ifixit2zim", True, True),
     Offliner.mwoffliner: od("mwoffliner", "outputDirectory", False),
-    Offliner.youtube: od("youtube2zim", True, False),
+    Offliner.youtube: od("youtube2zim", True, True),
     Offliner.ted: od("ted2zim", True, False),
     Offliner.openedx: od("openedx2zim", True, False),
     Offliner.nautilus: od("nautiluszim", True, False),

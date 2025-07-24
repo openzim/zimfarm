@@ -1,4 +1,4 @@
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from common.schemas import SerializableSchema, String
 from common.schemas.fields import validate_zim_description, validate_zim_title
@@ -132,4 +132,17 @@ class GutenbergFlagsSchema(SerializableSchema):
             "label": "Publisher",
             "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise",
         }
+    )
+
+    stats_filename = String(
+        metadata={
+            "label": "Stats filename",
+            "placeholder": "/output/task_progress.json",
+            "description": "Scraping progress file. "
+            "Leave it as `/output/task_progress.json`",
+        },
+        data_key="stats-filename",
+        load_default="/output/task_progress.json",
+        dump_default="/output/task_progress.json",
+        validate=validate.Equal("/output/task_progress.json"),
     )
