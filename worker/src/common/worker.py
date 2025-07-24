@@ -59,11 +59,11 @@ class BaseWorker:
         self,
         username: str,
         webapi_uris: list[str],
-        workdir: Path,
+        workdir: Path | str,
     ):
         self.username = username
         self.webapi_uris = webapi_uris
-        self.workdir = workdir.resolve()
+        self.workdir = Path(workdir).resolve()
 
     def print_config(self, **kwargs: Any):
         # log configuration values
