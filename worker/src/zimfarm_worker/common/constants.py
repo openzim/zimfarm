@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# vim: ai ts=4 sts=4 et sw=4 nu
-
-import math
 import multiprocessing
 import os
 import re
@@ -11,7 +7,7 @@ from typing import Any
 import humanfriendly
 import psutil
 
-from common.utils import as_pos_int
+from zimfarm_worker.common.utils import as_pos_int
 
 
 def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
@@ -65,13 +61,15 @@ DOCKER_CLIENT_TIMEOUT = 180  # 3mn for read timeout on docker API socket
 
 # configuration
 ZIMFARM_DISK_SPACE = as_pos_int(
-    humanfriendly.parse_size(getenv("ZIMFARM_DISK", mandatory=True))
+    humanfriendly.parse_size(getenv("ZIMFARM_DISK", default=str(2**34)))
 )
+
 physical_cpu = multiprocessing.cpu_count()
 zimfarm_cpus = as_pos_int(int(getenv("ZIMFARM_CPUS", default=physical_cpu)))
 ZIMFARM_CPUS = min([zimfarm_cpus, physical_cpu])
 
-ZIMFARM_TASK_CPUS = float(getenv("ZIMFARM_TASK_CPUS", default=math.inf))
+zimfarm_task_cpus = getenv("ZIMFARM_TASK_CPUS", default="")
+ZIMFARM_TASK_CPUS = float(zimfarm_task_cpus) if zimfarm_task_cpus else None
 
 zimfarm_task_cpuset = getenv("ZIMFARM_TASK_CPUSET", default="")
 if (
@@ -86,7 +84,7 @@ ZIMFARM_TASK_CPUSET = zimfarm_task_cpuset
 
 physical_mem = psutil.virtual_memory().total
 zimfarm_memory = as_pos_int(
-    humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=physical_mem))
+    humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=str(physical_mem)))
 )
 ZIMFARM_MEMORY = min([zimfarm_memory, physical_mem])
 

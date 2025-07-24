@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import datetime
@@ -13,19 +12,19 @@ from typing import Any
 import docker
 import jwt
 
-from common import getnow, logger
-from common.constants import (
+from zimfarm_worker.common import getnow, logger
+from zimfarm_worker.common.constants import (
     DOCKER_CLIENT_TIMEOUT,
     DOCKER_SOCKET,
     PRIVATE_KEY,
 )
-from common.cryptography import (
+from zimfarm_worker.common.cryptography import (
     generate_auth_message,
     get_public_key_fingerprint,
     load_private_key_from_path,
 )
-from common.docker import list_containers
-from common.requests import Response, get_token, query_api
+from zimfarm_worker.common.docker import list_containers
+from zimfarm_worker.common.requests import Response, get_token, query_api
 
 
 @dataclass(kw_only=True)

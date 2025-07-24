@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from common.constants import DEBUG
+from zimfarm_worker.common.constants import DEBUG
 
 logger = logging.getLogger("worker")
 

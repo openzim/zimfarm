@@ -1,13 +1,16 @@
-#!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import argparse
 import os
 import sys
 
-from common import logger
-from common.constants import DEFAULT_WEB_API_URLS, DEFAULT_WORKDIR, WORKER_MANAGER
-from manager.worker import WorkerManager
+from zimfarm_worker.common import logger
+from zimfarm_worker.common.constants import (
+    DEFAULT_WEB_API_URLS,
+    DEFAULT_WORKDIR,
+    WORKER_MANAGER,
+)
+from zimfarm_worker.manager.worker import WorkerManager
 
 
 def main():
@@ -71,7 +74,3 @@ def main():
         logger.exception(exc)
         logger.error("exiting.")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
