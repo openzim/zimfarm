@@ -6,7 +6,8 @@
           :disabled="!hasChanges"
           type="submit"
           :color="hasChanges ? 'primary' : 'secondary'"
-          variant="elevated">
+          variant="elevated"
+        >
           Update Offliner details
         </v-btn>
         <v-btn
@@ -15,7 +16,8 @@
           :color="hasChanges ? 'dark' : 'secondary'"
           variant="outlined"
           class="ml-2"
-          @click="handleReset">
+          @click="handleReset"
+        >
           Reset
         </v-btn>
       </v-col>
@@ -32,7 +34,8 @@
           href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Content-settings"
           target="_blank"
           color="primary"
-          variant="outlined">
+          variant="outlined"
+        >
           Help
         </v-btn>
       </v-col>
@@ -138,7 +141,8 @@
           href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Task-settings"
           target="_blank"
           color="primary"
-          variant="outlined">
+          variant="outlined"
+        >
           Help
         </v-btn>
       </v-col>
@@ -275,16 +279,12 @@
 
     <v-row v-if="flagsFields.length > 0">
       <v-col cols="10" class="mt-2">
-        <h2>Scraper settings: <code>{{ taskName }}</code> command flags</h2>
+        <h2>
+          Scraper settings: <code>{{ taskName }}</code> command flags
+        </h2>
       </v-col>
       <v-col cols="2" class="text-right mb-2">
-        <v-btn
-          :href="helpUrl"
-          target="_blank"
-          color="primary"
-          variant="outlined">
-          Help
-        </v-btn>
+        <v-btn :href="helpUrl" target="_blank" color="primary" variant="outlined"> Help </v-btn>
       </v-col>
     </v-row>
 
@@ -403,7 +403,8 @@
           type="submit"
           :disabled="!hasChanges"
           :color="hasChanges ? 'primary' : 'secondary'"
-          variant="elevated">
+          variant="elevated"
+        >
           Update Offliner details
         </v-btn>
         <v-btn
@@ -412,7 +413,8 @@
           :color="hasChanges ? 'dark' : 'secondary'"
           variant="outlined"
           class="ml-2"
-          @click="handleReset">
+          @click="handleReset"
+        >
           Reset
         </v-btn>
       </v-col>
@@ -465,7 +467,9 @@ const emit = defineEmits<Emits>()
 
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const editFlags = ref<Record<string, any>>(JSON.parse(JSON.stringify(props.schedule.config.offliner)))
+const editFlags = ref<Record<string, any>>(
+  JSON.parse(JSON.stringify(props.schedule.config.offliner)),
+)
 
 // Debounced image name change handler
 let imageNameChangeTimeout: number | null = null
@@ -501,14 +505,18 @@ const handleImageNameBlur = (imageName: string) => {
 }
 
 // Initialize edit data when schedule changes
-watch(() => props.schedule, (newSchedule) => {
-  if (newSchedule) {
-    editSchedule.value = JSON.parse(JSON.stringify(newSchedule))
-    editFlags.value = JSON.parse(JSON.stringify(newSchedule.config.offliner))
-    // Initialize lastEmittedImageName with current schedule's image name
-    lastEmittedImageName.value = newSchedule.config.image.name
-  }
-}, { deep: true, immediate: true })
+watch(
+  () => props.schedule,
+  (newSchedule) => {
+    if (newSchedule) {
+      editSchedule.value = JSON.parse(JSON.stringify(newSchedule))
+      editFlags.value = JSON.parse(JSON.stringify(newSchedule.config.offliner))
+      // Initialize lastEmittedImageName with current schedule's image name
+      lastEmittedImageName.value = newSchedule.config.image.name
+    }
+  },
+  { deep: true, immediate: true },
+)
 
 // Cleanup timeout on component unmount
 onUnmounted(() => {
@@ -518,7 +526,9 @@ onUnmounted(() => {
 })
 
 const taskName = computed(() => {
-  return editSchedule.value.config.offliner.offliner_id || props.schedule.config.offliner.offliner_id
+  return (
+    editSchedule.value.config.offliner.offliner_id || props.schedule.config.offliner.offliner_id
+  )
 })
 
 const hasChanges = computed(() => {
@@ -543,20 +553,31 @@ const hasChanges = computed(() => {
   }
 
   // Check image
-  if (editSchedule.value.config.image.name !== props.schedule.config.image.name ||
-      editSchedule.value.config.image.tag !== props.schedule.config.image.tag) return true
+  if (
+    editSchedule.value.config.image.name !== props.schedule.config.image.name ||
+    editSchedule.value.config.image.tag !== props.schedule.config.image.tag
+  )
+    return true
 
   // Check resources
   const resourceProps: Array<keyof Resources> = ['cpu', 'memory', 'disk', 'shm']
   for (const prop of resourceProps) {
-    if (editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop]) return true
+    if (editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop])
+      return true
   }
 
   // check offliner id
-  if (editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id) return true
+  if (editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id)
+    return true
 
   // Check artifacts globs
-  if (!stringArrayEqual(editSchedule.value.config.artifacts_globs || [], props.schedule.config.artifacts_globs || [])) return true
+  if (
+    !stringArrayEqual(
+      editSchedule.value.config.artifacts_globs || [],
+      props.schedule.config.artifacts_globs || [],
+    )
+  )
+    return true
 
   // Check flags - use editFlags instead of the potentially mutated offliner object
   let changes = diff(props.schedule.config.offliner, editFlags.value)
@@ -566,19 +587,22 @@ const hasChanges = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   changes = changes.filter(function (change: any) {
     // Filter out empty changes (new empty fields or fields changed to empty)
-    if (change.kind === "N" && (change.rhs === "" || change.rhs === undefined || change.rhs === null)) {
-      return false;
+    if (
+      change.kind === 'N' &&
+      (change.rhs === '' || change.rhs === undefined || change.rhs === null)
+    ) {
+      return false
     }
-    if (change.kind === "E") {
+    if (change.kind === 'E') {
       // if we are toggling a switch to false and it's a null on the original object,
       // then it's not a change
       if (change.lhs === null && change.rhs === false) return false
-      if (change.rhs === "" || change.rhs === undefined || change.rhs === null) {
-        return false;
+      if (change.rhs === undefined || change.rhs === null) {
+        return false
       }
     }
-    return true;
-  });
+    return true
+  })
   return changes.length > 0
 })
 
@@ -604,12 +628,14 @@ const flagsFields = computed(() => {
       step = 0.1
     } else if (field.type === 'list-of-string-enum') {
       component = 'multiselect'
-      options = field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
+      options =
+        field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
     } else if (field.type === 'boolean') {
       component = 'switch'
     } else if (field.type === 'string-enum') {
       component = 'select'
-      options = field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
+      options =
+        field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
       if (!field.required) {
         options?.push({ title: 'Not set', value: undefined })
       }
@@ -634,12 +660,12 @@ const getFieldRules = (field: FlagField) => {
   const rules: Array<(value: unknown) => boolean | string> = []
 
   if (field.required) {
-      rules.push((value: unknown) => {
-        if (!value || value === '' || value === undefined || value === null) {
-          return 'This field is required'
-        }
-        return true
-      })
+    rules.push((value: unknown) => {
+      if (!value || value === '' || value === undefined || value === null) {
+        return 'This field is required'
+      }
+      return true
+    })
   }
 
   // Add type-specific validation
@@ -701,7 +727,9 @@ const offlinersOptions = computed(() => {
 })
 
 const platformsOptions = computed(() => {
-  const values: Array<{ title: string; value: string | undefined }> = props.platforms.map((platform) => ({ title: platform, value: platform }))
+  const values: Array<{ title: string; value: string | undefined }> = props.platforms.map(
+    (platform) => ({ title: platform, value: platform }),
+  )
   values.push({ title: 'None', value: undefined })
   return values
 })
@@ -753,9 +781,7 @@ const handleOfflinerChange = () => {
   editFlags.value = {}
 }
 
-
 const buildPayload = (): ScheduleUpdateSchema | null => {
-
   const payload: Partial<ScheduleUpdateSchema> = {}
 
   payload.name = editSchedule.value.name.trim()
@@ -783,13 +809,13 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
 
   // Language
   if (editSchedule.value.language.code !== props.schedule.language.code) {
-    const language = props.languages.find(l => l.code === editSchedule.value.language.code)
+    const language = props.languages.find((l) => l.code === editSchedule.value.language.code)
     if (language) {
       // Create a proper Language object with all required fields
       payload.language = {
         code: language.code,
         name_en: language.name_en,
-        name_native: language.name_native
+        name_native: language.name_native,
       }
     }
   }
@@ -809,27 +835,36 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   }
 
   // Offliner name
-  if (editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id) {
+  if (
+    editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id
+  ) {
     payload.offliner = editSchedule.value.config.offliner.offliner_id as string
   }
 
   // Image
-  if (editSchedule.value.config.image.name !== props.schedule.config.image.name ||
-      editSchedule.value.config.image.tag !== props.schedule.config.image.tag) {
+  if (
+    editSchedule.value.config.image.name !== props.schedule.config.image.name ||
+    editSchedule.value.config.image.tag !== props.schedule.config.image.tag
+  ) {
     payload.image = editSchedule.value.config.image
   }
 
   // Resources
   const resourceProps: Array<keyof Resources> = ['cpu', 'memory', 'disk', 'shm']
-  const resourcesChanged = resourceProps.some(prop =>
-    editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop]
+  const resourcesChanged = resourceProps.some(
+    (prop) => editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop],
   )
   if (resourcesChanged) {
     payload.resources = editSchedule.value.config.resources
   }
 
   // Artifacts
-  if (!stringArrayEqual(editSchedule.value.config.artifacts_globs || [], props.schedule.config.artifacts_globs || [])) {
+  if (
+    !stringArrayEqual(
+      editSchedule.value.config.artifacts_globs || [],
+      props.schedule.config.artifacts_globs || [],
+    )
+  ) {
     payload.artifacts_globs = editSchedule.value.config.artifacts_globs
   }
 
@@ -858,8 +893,18 @@ const cleanFlagsPayload = (flags: Record<string, any>) => {
     for (const key in obj) {
       if (typeof obj[key] === 'object' && obj[key] !== null) {
         recursivelyCleanup(obj[key])
-      } else if (!Array.isArray(obj[key]) && (obj[key] === '' || obj[key] === undefined || obj[key] === null)) {
-        delete obj[key]
+      } else if (
+        !Array.isArray(obj) &&
+        (obj[key] === '' || obj[key] === undefined || obj[key] === null)
+      ) {
+        // if an object is set to empty string, we update it to null as it should
+        // be on the backend since fields are either set or not set and fields that
+        // are set shouldn't be empty
+        if (obj[key] == '') {
+          obj[key] = null
+        } else {
+          delete obj[key]
+        }
       }
     }
   }
@@ -867,9 +912,7 @@ const cleanFlagsPayload = (flags: Record<string, any>) => {
   recursivelyCleanup(cleaned)
   return cleaned
 }
-
 </script>
-
 
 <style type="text/css" scoped>
 .align-top {
