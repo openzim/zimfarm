@@ -573,7 +573,7 @@ const hasChanges = computed(() => {
       // if we are toggling a switch to false and it's a null on the original object,
       // then it's not a change
       if (change.lhs === null && change.rhs === false) return false
-      if (change.rhs === "" || change.rhs === undefined || change.rhs === null) {
+      if (change.rhs === undefined || change.rhs === null) {
         return false;
       }
     }
@@ -858,7 +858,7 @@ const cleanFlagsPayload = (flags: Record<string, any>) => {
     for (const key in obj) {
       if (typeof obj[key] === 'object' && obj[key] !== null) {
         recursivelyCleanup(obj[key])
-      } else if (!Array.isArray(obj[key]) && (obj[key] === '' || obj[key] === undefined || obj[key] === null)) {
+      } else if (!Array.isArray(obj) && (obj[key] === '' || obj[key] === undefined || obj[key] === null)) {
         delete obj[key]
       }
     }
