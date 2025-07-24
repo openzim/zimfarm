@@ -3,7 +3,7 @@ from typing import Any
 
 import requests
 
-from common.cryptography import AuthMessage
+from zimfarm_worker.common.cryptography import AuthMessage
 
 
 @dataclass

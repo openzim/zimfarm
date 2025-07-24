@@ -13,13 +13,13 @@ import ujson
 from docker.errors import NotFound
 from docker.models.containers import Container
 
-from common import getnow, logger
-from common.constants import (
+from zimfarm_worker.common import getnow, logger
+from zimfarm_worker.common.constants import (
     CONTAINER_TASK_IDENT,
     MONITORING_KEY,
     PROGRESS_CAPABLE_OFFLINERS,
 )
-from common.docker import (
+from zimfarm_worker.common.docker import (
     RUNNING_STATUSES,
     container_logs,
     get_container_logs,
@@ -33,9 +33,9 @@ from common.docker import (
     start_scraper,
     start_uploader,
 )
-from common.utils import format_key, format_size
-from common.worker import BaseWorker
-from task.zim import get_zim_info
+from zimfarm_worker.common.utils import format_key, format_size
+from zimfarm_worker.common.worker import BaseWorker
+from zimfarm_worker.task.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 PENDING = "pending"

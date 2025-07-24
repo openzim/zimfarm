@@ -5,7 +5,7 @@ import io
 import pathlib
 from typing import Any, NamedTuple
 
-from libzim.reader import Archive
+from libzim.reader import Archive  # pyright: ignore[reportMissingModuleSource]
 
 
 def get_zim_info(fpath: pathlib.Path) -> dict[str, Any]:

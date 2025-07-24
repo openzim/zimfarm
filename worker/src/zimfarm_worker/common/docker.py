@@ -16,8 +16,8 @@ from docker.models.containers import Container
 from docker.models.images import Image
 from docker.types import Mount
 
-from common import logger
-from common.constants import (
+from zimfarm_worker.common import logger
+from zimfarm_worker.common.constants import (
     CHECKER_IMAGE,
     CONTAINER_SCRAPER_IDENT,
     CONTAINER_TASK_IDENT,
@@ -40,7 +40,7 @@ from common.constants import (
     ZIMFARM_TASK_CPUS,
     ZIMFARM_TASK_CPUSET,
 )
-from common.utils import as_pos_int, format_size, short_id
+from zimfarm_worker.common.utils import as_pos_int, format_size, short_id
 
 RUNNING_STATUSES = ("created", "running", "restarting", "paused", "removing")
 STOPPED_STATUSES = ("exited", "dead")

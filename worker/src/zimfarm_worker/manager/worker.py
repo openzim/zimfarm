@@ -9,8 +9,8 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from common import getnow, logger
-from common.constants import (
+from zimfarm_worker.common import getnow, logger
+from zimfarm_worker.common.constants import (
     CANCEL_REQUESTED,
     CANCELED,
     CANCELING,
@@ -18,7 +18,7 @@ from common.constants import (
     SUPPORTED_OFFLINERS,
     getenv,
 )
-from common.docker import (
+from zimfarm_worker.common.docker import (
     get_label_value,
     list_containers,
     query_host_stats,
@@ -26,8 +26,8 @@ from common.docker import (
     start_task_worker,
     stop_task_worker,
 )
-from common.utils import as_pos_int, format_size
-from common.worker import BaseWorker
+from zimfarm_worker.common.utils import as_pos_int, format_size
+from zimfarm_worker.common.worker import BaseWorker
 
 
 class TaskIdent(NamedTuple):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import argparse
@@ -6,9 +5,9 @@ import os
 import sys
 import traceback
 
-from common import logger
-from common.constants import DEFAULT_WEB_API_URL, TASK_WORKER
-from task.worker import TaskWorker
+from zimfarm_worker.common import logger
+from zimfarm_worker.common.constants import DEFAULT_WEB_API_URL, TASK_WORKER
+from zimfarm_worker.task.worker import TaskWorker
 
 
 def main():
@@ -72,7 +71,3 @@ def main():
         except Exception:
             logger.error("Could not submit failure details")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
