@@ -26,6 +26,20 @@ services:
       - ../backend/periodic-scheduler.py:/app/periodic-scheduler.py
       - ../backend/periodic-tasks.py:/app/periodic-tasks.py
       - ../backend/maint-scripts:/app/maint-scripts
+      - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
+    command:
+      - uvicorn
+      - zimfarm_backend.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "80"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+      - --reload
+      - --reload-dir
+      - /usr/local/lib/python3.13/site-packages/zimfarm_backend
     ports:
       - 127.0.0.1:8000:80
     environment:
@@ -115,29 +129,31 @@ services:
   #   depends_on:
   #     - backend
 
-  # # uncomment this only if you want to run a worker manager
-  # worker_mgr:
-  #   build:
-  #     context: ../workers
-  #     dockerfile: manager-Dockerfile
-  #   container_name: zf_worker_mgr
-  #   depends_on:
-  #     - backend
-  #   command: worker-manager --webapi-uri 'http://backend:8000/v1' --username test_worker --name test_worker
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
+  # uncomment this only if you want to run a worker manager
+  worker_mgr:
+    build:
+      context: ../worker
+      dockerfile: manager-Dockerfile
+    container_name: zf_worker_mgr
+    depends_on:
+      - backend
+    command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
+    environment:
+      - DEBUG=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
 
   # # uncomment this only if you want to run a 'standalone' task worker
   # # you have to modify the <your_task_id> in the command with a real requested task
   # task_worker:
   #   build:
-  #     context: ../workers
+  #     context: ../worker
   #     dockerfile: task-Dockerfile
   #   container_name: zf_task_worker
   #   depends_on:
   #     - backend
-  #   command: task-worker --webapi-uri 'http://backend:8000/v1' --username test_worker --task-id <your_task_id>
+  #   command: task-worker --webapi-uri 'http://backend:80/v1' --username test_worker --task-id <your_task_id>
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm

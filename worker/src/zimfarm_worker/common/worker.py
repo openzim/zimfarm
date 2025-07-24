@@ -128,8 +128,9 @@ class BaseWorker:
         for uri in self.connections.keys():
             logger.info(f"testing authentication with {uri}…")
             response = self.query_api(
-                path=f"{uri}/auth/test",
+                path="/auth/test",
                 method="GET",
+                webapi_uri=uri
             )
             if response.success:
                 logger.info("\tauthentication successful")
@@ -183,7 +184,7 @@ class BaseWorker:
                     iss=jwt_payload["iss"],
                     exp=jwt_payload["exp"],
                     iat=jwt_payload["iat"],
-                    subject=jwt_payload["sub"],
+                    subject=jwt_payload["subject"],
                     user=JwtUser(
                         username=jwt_payload["user"]["username"],
                         email=jwt_payload["user"]["email"],
