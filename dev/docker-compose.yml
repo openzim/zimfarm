@@ -3,7 +3,7 @@ services:
     image: postgres:17.3-bookworm
     container_name: zf_postgresdb
     ports:
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:2345:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
       - ./postgres-initdb:/docker-entrypoint-initdb.d
@@ -45,7 +45,7 @@ services:
     environment:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm1
       ALEMBIC_UPGRADE_HEAD_ON_START: "1"
       # upload artifacts, logs and zim to receiver for simplicity
       ARTIFACTS_UPLOAD_URI: sftp://uploader@receiver:22/logs/ # reusing logs dir, kind of a hack
@@ -56,11 +56,6 @@ services:
     depends_on:
       postgresdb:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/v2/healthcheck"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
   frontend-ui:
     build: ../frontend-ui
     container_name: zf_frontend-ui

@@ -68,7 +68,7 @@ def retry(
                 # we still want to avoid crashing on 404 due to temporary
                 # docker-hub issues
                 except (ImageNotFound, APIError) as exc:
-                    if attempt <= retries:
+                    if attempt <= retries and exc.is_server_error():
                         logger.error(
                             f"docker api error for {func.__name__} "
                             f"(attempt {attempt}): {exc}"
