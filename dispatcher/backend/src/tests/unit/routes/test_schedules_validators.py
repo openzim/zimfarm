@@ -109,8 +109,8 @@ class TestMWOfflinerFlagsValidator:
         [
             {"mwUrl": "http:/example.com"},
             {"adminEmail": "user @example.com"},
-            {"articleList": "abc"},
-            {"articleListToIgnore": "abc"},
+            {"articleList": 123},
+            {"articleListToIgnore": 123},
             {"customZimFavicon": "http:/example.com"},
             {"customZimTitle": 123},
             {"customZimDescription": None},
