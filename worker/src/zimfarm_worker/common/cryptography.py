@@ -1,5 +1,4 @@
 import base64
-import datetime
 from base64 import encodebytes
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +17,8 @@ from cryptography.hazmat.primitives.asymmetric.types import (
 from cryptography.hazmat.primitives.serialization import (
     SSHPrivateKeyTypes,
 )
+
+from zimfarm_worker.common import getnow
 
 
 @dataclass
@@ -107,7 +108,7 @@ def generate_auth_message(
     worker_id: str, private_key: RSAPrivateKey | EllipticCurvePrivateKey
 ) -> AuthMessage:
     """Generate an authentication message for a worker"""
-    body = f"{worker_id}:{datetime.datetime.now(datetime.UTC).isoformat()}"
+    body = f"{worker_id}:{getnow().isoformat()}"
     return AuthMessage(
         body=body, signature=get_signature(bytes(body, encoding="ascii"), private_key)
     )

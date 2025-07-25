@@ -103,8 +103,12 @@ SECRET_REPLACEMENT = "--------"  # nosec
 # using the following, it is possible to automate
 # the update of a whitelist of workers IPs on Wasabi (S3 provider)
 # enable this feature (default is off)
-USES_WORKERS_IPS_WHITELIST = bool(getenv("USES_WORKERS_IPS_WHITELIST", default=False))
-MAX_WORKER_IP_CHANGES_PER_DAY = 4
+USES_WORKERS_IPS_WHITELIST = (
+    getenv("USES_WORKERS_IPS_WHITELIST", default="false").lower() == "true"
+)
+MAX_WORKER_IP_CHANGES_PER_DAY = int(
+    getenv("MAX_WORKER_IP_CHANGES_PER_DAY", default="4")
+)
 # wasabi URL with credentials to update policy
 WASABI_URL = getenv("WASABI_URL", default="")
 # policy ARN such as arn:aws:iam::xxxxxxxxxxxx:policy/yyyyyyyy

@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from zimfarm_backend.routes import (
     auth,
+    healthcheck,
     languages,
     offliners,
     platforms,
@@ -40,6 +41,7 @@ def create_app(*, debug: bool = True):
         )
 
     main_router = APIRouter(prefix="/v2")
+    main_router.include_router(router=healthcheck.router)
     main_router.include_router(router=auth.router)
     main_router.include_router(router=languages.router)
     main_router.include_router(router=platforms.router)

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Path, Query, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from zimfarm_backend import logger
 from zimfarm_backend.common.constants import ENABLED_SCHEDULER
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
@@ -176,6 +177,7 @@ async def update_task(
             db_session, task.id, task_update_schema.event, task_update_schema.payload
         )
     except Exception as exc:
+        logger.exception("Unexpected error while updating task.")
         raise ServerError("Unable to update task.") from exc
 
     return Response(status_code=HTTPStatus.NO_CONTENT)

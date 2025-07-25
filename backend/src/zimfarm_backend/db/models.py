@@ -238,7 +238,7 @@ class ScheduleDuration(Base):
 
     worker: Mapped[Optional["Worker"]] = relationship(init=False)
 
-    __table__args = (UniqueConstraint("schedule_id", "worker_id"),)
+    __table_args__ = (UniqueConstraint("schedule_id", "worker_id"),)
 
 
 class RequestedTask(Base):

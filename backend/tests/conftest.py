@@ -22,8 +22,6 @@ from zimfarm_backend.common.schemas.models import (
     DockerImageName,
     DockerImageSchema,
     LanguageSchema,
-    PlaftormLimitSchema,
-    PlatformsLimitSchema,
     ResourcesSchema,
     ScheduleConfigSchema,
 )
@@ -207,23 +205,15 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
         memory: int = 1024,
         disk: int = 1024,
         offliners: list[str] | None = None,
-        platforms: PlatformsLimitSchema | None = None,
+        platforms: dict[str, int] | None = None,
         last_seen: datetime.datetime | None = None,
         last_ip: IPv4Address | None = None,
         deleted: bool = False,
     ) -> Worker:
-        _platforms = platforms or PlatformsLimitSchema(
-            limits=[
-                PlaftormLimitSchema(
-                    platform=Platform.wikimedia,
-                    limit=100,
-                ),
-                PlaftormLimitSchema(
-                    platform=Platform.youtube,
-                    limit=100,
-                ),
-            ]
-        )
+        _platforms = platforms or {
+            Platform.wikimedia: 100,
+            Platform.youtube: 100,
+        }
 
         _ip = last_ip or IPv4Address("127.0.0.1")
 
@@ -234,7 +224,7 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
             memory=memory,
             disk=disk,
             offliners=offliners or ["mwoffliner", "youtube"],
-            platforms=_platforms.model_dump(mode="json"),
+            platforms=_platforms,
             last_seen=last_seen or getnow(),
             last_ip=_ip,
             deleted=deleted,

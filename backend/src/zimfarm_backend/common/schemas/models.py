@@ -21,7 +21,6 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMDisk,
     ZIMLangCode,
     ZIMMemory,
-    ZIMPlatformValue,
 )
 from zimfarm_backend.common.schemas.offliners import (
     DevDocsFlagsSchema,
@@ -129,15 +128,6 @@ class ScheduleNotificationSchema(BaseModel):
     requested: EventNotificationSchema | None = None
     started: EventNotificationSchema | None = None
     ended: EventNotificationSchema | None = None
-
-
-class PlaftormLimitSchema(BaseModel):
-    platform: PlatformField
-    limit: ZIMPlatformValue
-
-
-class PlatformsLimitSchema(BaseModel):
-    limits: list[PlaftormLimitSchema]
 
 
 class Paginator(BaseModel):

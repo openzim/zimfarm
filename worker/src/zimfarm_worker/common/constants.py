@@ -20,7 +20,7 @@ def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
 
 
 DEBUG = getenv("DEBUG", default="false").lower() == "true"
-
+ENVIRONMENT = getenv("ENVIRONMENT", default="production")
 
 # worker names
 WORKER_MANAGER = "worker-manager"
@@ -41,7 +41,6 @@ MONITOR_IMAGE = getenv(
 DEFAULT_WORKDIR = getenv("WORKDIR", default="/data")  # in-container workdir for manager
 DOCKER_SOCKET = Path(getenv("DOCKER_SOCKET", default="/var/run/docker.sock"))
 PRIVATE_KEY = Path(getenv("PRIVATE_KEY", default="/etc/ssh/keys/zimfarm"))
-OPENSSL_BIN = getenv("OPENSSL_BIN", default="/usr/bin/openssl")
 
 # task-related
 CANCELED = "canceled"
@@ -176,7 +175,7 @@ for platform in ALL_PLATFORMS:
     PLATFORMS_TASKS[platform] = int(value)
 
 # number of times to retry a call to the Docker daemon
-DOCKER_API_RETRIES = int(getenv("DOCKER_API_RETRIES", default=10))
+DOCKER_API_RETRIES = int(getenv("DOCKER_API_RETRIES", default=5))
 DOCKER_API_RETRY_SECONDS = humanfriendly.parse_timespan(
     getenv("DOCKER_API_RETRY_DURATION", default="5s")
 )

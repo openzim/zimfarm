@@ -5,7 +5,6 @@ import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas.models import PlatformsLimitSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User, Worker
 from zimfarm_backend.db.worker import (
@@ -123,7 +122,7 @@ def test_check_in_worker_update(dbsession: OrmSession, worker: Worker):
         disk=4096,
         selfish=True,
         offliners=[Offliner.mwoffliner, Offliner.youtube],
-        platforms=PlatformsLimitSchema.model_validate(worker.platforms),
+        platforms=worker.platforms,
         user_id=worker.user_id,
     )
     original_last_seen = worker.last_seen

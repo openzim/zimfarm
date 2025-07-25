@@ -2,12 +2,6 @@ FROM python:3.13-slim-bookworm
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source=https://github.com/openzim/zimfarm
 
-ENV TASK_WORKER_IMAGE=""
-ENV DNSCACHE_IMAGE=""
-ENV UPLOADER_IMAGE=""
-ENV CHECKER_IMAGE=""
-ENV MONITOR_IMAGE=""
-
 ENV WEB_API_URI=https://api.farm.openzim.org/v2
 ENV WORKDIR=/data
 

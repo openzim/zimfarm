@@ -105,13 +105,13 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 
 ### Breaking Changes
 
-1. **API Endpoints**: All endpoints now use `/api/v2` prefix instead of `/v1`
+1. **API Endpoints**: All endpoints now use `/v2` prefix instead of `/v1`
 2. **Request Validation**: Automatic validation with Pydantic models
 3. **Schema Changes**: Modified schema definitions (See openAPI docs)
 
 ### Required Actions for Migration
 
-1. **Update API Client**: Modify all API calls to use `/api/v2` prefix
+1. **Update API Client**: Modify all API calls to use `/v2` prefix
 2. **Update Authentication**: With the exception of SSH authentication via headers, authentication expects JSON payloads.
 3. **Update Error Handling**: Adapt to new error response format
 

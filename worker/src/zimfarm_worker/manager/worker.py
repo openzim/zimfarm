@@ -174,7 +174,7 @@ class WorkerManager(BaseWorker):
             method="GET",
             path="/requested-tasks/worker",
             params={
-                "worker": self.worker_name,
+                "worker_name": self.worker_name,
                 "avail_cpu": host_stats.cpu.available,
                 "avail_memory": host_stats.memory.available,
                 "avail_disk": host_stats.disk.available,
@@ -306,7 +306,7 @@ class WorkerManager(BaseWorker):
         # remove completed containers
         for container in completed_containers:
             logger.info(f"container {container.name} exited successfuly, removing.")
-            remove_container(self.docker, container.name)
+            remove_container(self.docker, container=container.name)
 
         # make sure we are tracking task for all running containers
         for task_ident in running_task_idents:
@@ -331,7 +331,7 @@ class WorkerManager(BaseWorker):
         response = self.query_api(
             method="POST",
             path=f"/tasks/{task_ident.id}",
-            params={"worker_name": self.worker_name},
+            payload={"worker_name": self.worker_name},
             webapi_uri=task_ident.api_uri,
         )
         if response.success and response.status_code == HTTPStatus.CREATED:

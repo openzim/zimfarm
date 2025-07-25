@@ -290,7 +290,11 @@ class TaskWorker(BaseWorker):
         self.task_workdir.mkdir(exist_ok=True)
         self.host_task_workdir = host_mounts[self.workdir].joinpath(folder_name)
 
-        if self.task and self.task["config"]["task_name"] in PROGRESS_CAPABLE_OFFLINERS:
+        if (
+            self.task
+            and self.task["config"]["offliner"]["offliner_id"]
+            in PROGRESS_CAPABLE_OFFLINERS
+        ):
             self.progress_file = self.task_workdir.joinpath("task_progress.json")
 
     def cleanup_workdir(self):
@@ -473,7 +477,7 @@ class TaskWorker(BaseWorker):
             with open(fpath, "wb") as fh:
                 for line in container_logs(
                     self.docker,
-                    container_name=self.scraper.name,
+                    container=self.scraper.name,
                     stdout=True,
                     stderr=True,
                     stream=True,

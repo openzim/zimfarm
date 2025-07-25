@@ -1,7 +1,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Path, Query
+from fastapi import APIRouter, Depends, Path, Query
+from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
 
@@ -163,11 +164,11 @@ def get_requested_tasks(
 
 @router.get("/worker")
 def get_requested_tasks_for_worker(
+    request: Request,
     worker_name: Annotated[WorkerField, Query()],
     avail_cpu: Annotated[ZIMCPU, Query()],
     avail_memory: Annotated[ZIMMemory, Query()],
     avail_disk: Annotated[ZIMDisk, Query()],
-    x_forwarded_for: Annotated[str, Header()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> ListResponse[RequestedTaskLightSchema]:
@@ -183,38 +184,35 @@ def get_requested_tasks_for_worker(
             items=[],
         )
 
-    # update the worker's last seen time and IP address if the worker
-    # is the same user
     try:
         worker = get_worker(session, worker_name=worker_name)
     except RecordDoesNotExistError as exc:
         raise NotFoundError(f"Worker {worker_name} not found") from exc
 
+    fallback_ip = request.client.host if request.client else None
+    x_forwarded_for = request.headers.get("X-Forwarded-For", fallback_ip)
     if worker.user.username == current_user.username:
         ip_changed = str(worker.last_ip) != x_forwarded_for
-        if ip_changed:
-            logger.info(
-                f"Worker {worker_name} IP changed from {worker.last_ip} to "
-                f"{x_forwarded_for}"
-            )
-            worker = update_worker(
-                session, worker_name=worker_name, ip_address=x_forwarded_for
-            )
-        else:
-            worker = update_worker(session, worker_name=worker_name)
 
-        # commit explicitly last_ip and last_seen changes, since we are not
-        # using an explicit transaction, and do it before calling Wasabi so
-        # that changes are propagated quickly and transaction is not blocking
-        session.commit()
-        if ip_changed and USES_WORKERS_IPS_WHITELIST:
+        if ip_changed:
             try:
-                record_ip_change(session, worker_name)
+                if USES_WORKERS_IPS_WHITELIST:
+                    record_ip_change(session, worker_name)
             except Exception as exc:
                 logger.exception("Pushing IP changes to Wasabi failed")
                 raise ServiceUnavailableError(
                     "Pushing IP changes to Wasabi failed"
                 ) from exc
+            finally:
+                logger.info(
+                    f"Worker {worker_name} IP changed from {worker.last_ip} to "
+                    f"{x_forwarded_for}"
+                )
+                worker = update_worker(
+                    session, worker_name=worker_name, ip_address=x_forwarded_for
+                )
+        else:
+            worker = update_worker(session, worker_name=worker_name)
 
     task = find_requested_task_for_worker(
         session=session,

@@ -27,6 +27,7 @@ from zimfarm_worker.common.constants import (
     DOCKER_API_RETRIES,
     DOCKER_API_RETRY_SECONDS,
     DOCKER_SOCKET,
+    ENVIRONMENT,
     MONITOR_IMAGE,
     MONITORING_DEST,
     MONITORING_KEY,
@@ -67,7 +68,7 @@ def retry(
                 # we still want to avoid crashing on 404 due to temporary
                 # docker-hub issues
                 except (ImageNotFound, APIError) as exc:
-                    if attempt <= retries:
+                    if attempt <= retries and exc.is_server_error():
                         logger.error(
                             f"docker api error for {func.__name__} "
                             f"(attempt {attempt}): {exc}"
@@ -389,12 +390,12 @@ def start_monitor(
         "SCRAPER_CONTAINER": get_ip_address(
             client,
             get_scraper_container_name(
-                offliner=task["offliner"]["offliner_id"], task_id=task["id"]
+                offliner=task["config"]["offliner"]["offliner_id"], task_id=task["id"]
             ),
         ),
         "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
             task_ident=get_container_name(task["schedule_name"], task["id"]),
-            worker=task["worker"],
+            worker=task["worker_name"],
         ),
     }
     if MONITORING_DEST:
@@ -430,7 +431,7 @@ def start_checker(
 
     # remove container should it exists (should not)
     try:
-        remove_container(client, name)
+        remove_container(client, container=name)
         prune_containers(client, {"label": [f"filename={filename}"]})
     except NotFound:
         pass
@@ -471,12 +472,12 @@ def start_scraper(
 ):
     config = task["config"]
     container_name = get_scraper_container_name(
-        offliner=task["offliner"]["offliner_id"], task_id=task["id"]
+        offliner=config["offliner"]["offliner_id"], task_id=task["id"]
     )
 
     # remove container should it exists (should not)
     try:
-        remove_container(client, container_name)
+        remove_container(client, container=container_name)
     except NotFound:
         pass
 
@@ -553,7 +554,7 @@ def start_task_worker(
 
     # remove container should it exists (should not)
     try:
-        remove_container(client, container_name)
+        remove_container(client, container=container_name)
     except NotFound:
         pass
 
@@ -625,6 +626,11 @@ def start_task_worker(
         name=container_name,
         remove=False,  # zimtask containers are pruned periodically
         sysctls=get_sysctl(),
+        network_mode=(
+            f"container:{get_running_container_name()}"
+            if ENVIRONMENT == "development"
+            else "bridge"
+        ),
     )
 
 
@@ -657,7 +663,7 @@ def start_uploader(
 
     # remove container should it exists (should not)
     try:
-        remove_container(client, container_name)
+        remove_container(client, container=container_name)
         prune_containers(client, {"label": [f"filename={filename}"]})
     except NotFound:
         pass
@@ -735,7 +741,7 @@ def get_container_logs(
 ):
     try:
         return container_logs(
-            client, container_name, stdout=True, stderr=True, tail=tail
+            client, container=container_name, stdout=True, stderr=True, tail=tail
         ).decode("UTF-8")
     except NotFound:
         return f"Container `{container_name}` gone. Can't get logs"
