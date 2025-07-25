@@ -127,11 +127,7 @@ class BaseWorker:
 
         for uri in self.connections.keys():
             logger.info(f"testing authentication with {uri}…")
-            response = self.query_api(
-                path="/auth/test",
-                method="GET",
-                webapi_uri=uri
-            )
+            response = self.query_api(path="/auth/test", method="GET", webapi_uri=uri)
             if response.success:
                 logger.info("\tauthentication successful")
             else:
