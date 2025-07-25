@@ -2,7 +2,8 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Integer, func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import cast as sql_cast
+from sqlalchemy.dialects.postgresql import JSONPATH, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 
@@ -127,13 +128,34 @@ def update_schedule_duration(
     # we don't mind to retrieve all of them because they are regularly purged
     tasks = session.execute(
         select(Task)
-        .where(Task.timestamp.has_key(TaskStatus.started))
-        .where(Task.timestamp.has_key(TaskStatus.scraper_completed))
-        .where(Task.container["exit_code"].astext.cast(Integer) == 0)
-        .where(Task.schedule_id == schedule.id)
+        .where(
+            # Task timestamp has changed from dict[str, Any] to
+            # list[tuple[str, Any]. As such we use jsonb_path query functions
+            # to search for timestamp objects.
+            func.jsonb_path_exists(
+                Task.timestamp,
+                sql_cast(f'$[*] ? (@[0] == "{TaskStatus.started}")', JSONPATH),
+            ),
+            func.jsonb_path_exists(
+                Task.timestamp,
+                sql_cast(
+                    f'$[*] ? (@[0] == "{TaskStatus.scraper_completed}")', JSONPATH
+                ),
+            ),
+            Task.container["exit_code"].astext.cast(Integer) == 0,
+            Task.schedule_id == schedule.id,
+        )
         .order_by(
-            Task.timestamp[TaskStatus.scraper_completed]["$date"].astext.cast(
-                BigInteger
+            sql_cast(
+                func.jsonb_path_query_first(
+                    Task.timestamp,
+                    sql_cast(
+                        f'$[*] ? (@[0] == "{TaskStatus.scraper_completed}")', JSONPATH
+                    ),
+                )
+                .op("->")(1)
+                .op("->>")("$date"),
+                BigInteger,
             )
         )
     ).scalars()

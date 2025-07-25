@@ -5,7 +5,6 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMDisk,
     ZIMMemory,
 )
-from zimfarm_backend.common.schemas.models import PlatformsLimitSchema
 
 
 class WorkerCheckInSchema(BaseModel):
@@ -18,4 +17,4 @@ class WorkerCheckInSchema(BaseModel):
     memory: ZIMMemory
     disk: ZIMDisk
     offliners: list[Offliner]
-    platforms: PlatformsLimitSchema | None = None  # pyright: ignore
+    platforms: dict[str, int] | None = None  # mapping of platforms to max tasks

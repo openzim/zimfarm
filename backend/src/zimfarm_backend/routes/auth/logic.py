@@ -134,7 +134,7 @@ def authenticate_user_with_ssh_keys(
     try:
         # decode message: username:timestamp(ISO)
         username, timestamp_str = x_sshauth_message.split(":", 1)
-        timestamp = datetime.datetime.fromisoformat(timestamp_str).astimezone(datetime.UTC).replace(tzinfo=None)
+        timestamp = datetime.datetime.fromisoformat(timestamp_str)
     except ValueError as exc:
         raise BadRequestError("Invalid message format.") from exc
 
