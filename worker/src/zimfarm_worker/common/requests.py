@@ -67,5 +67,5 @@ def query_api(
     return Response(
         status_code=resp.status_code,
         success=resp.ok,
-        json=resp.json() if resp.text else None,
+        json=resp.json() if resp.text else {},
     )
