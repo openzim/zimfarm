@@ -26,6 +26,20 @@ services:
       - ../backend/periodic-scheduler.py:/app/periodic-scheduler.py
       - ../backend/periodic-tasks.py:/app/periodic-tasks.py
       - ../backend/maint-scripts:/app/maint-scripts
+      - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
+    command:
+      - uvicorn
+      - zimfarm_backend.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "80"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+      - --reload
+      - --reload-dir
+      - /usr/local/lib/python3.13/site-packages/zimfarm_backend
     ports:
       - 127.0.0.1:8000:80
     environment:
@@ -50,7 +64,8 @@ services:
     ports:
       - 127.0.0.1:8001:80
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
   frontend-ui-dev:
     build:
       dockerfile: ../dev/frontend-ui-dev/Dockerfile
@@ -62,7 +77,8 @@ services:
     ports:
       - 127.0.0.1:8002:80
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
   backend-tools:
     build:
       dockerfile: ../dev/backend-tools-tests/Dockerfile
@@ -98,9 +114,10 @@ services:
     volumes:
       - ./receiver/create-warehouse-paths.sh:/contrib/create-warehouse-paths.sh
     environment:
-      - ZIMFARM_WEBAPI=http://backend:8000/v1
+      - ZIMFARM_WEBAPI=http://backend:80/v2
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   # # uncomment this only if you want to run a StackExchange dumps watcher
   # watcher:
@@ -115,35 +132,43 @@ services:
   #   depends_on:
   #     - backend
 
-  # # uncomment this only if you want to run a worker manager
+  # uncomment this only if you want to run a worker manager
   # worker_mgr:
   #   build:
-  #     context: ../workers
+  #     context: ../worker
   #     dockerfile: manager-Dockerfile
   #   container_name: zf_worker_mgr
   #   depends_on:
-  #     - backend
-  #   command: worker-manager --webapi-uri 'http://backend:8000/v1' --username test_worker --name test_worker
+  #     backend:
+  #       condition: service_healthy
+  #     task_worker:
+  #       condition: service_started
+  #   command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
+  #   environment:
+  #     - DEBUG=true
+  #     - TASK_WORKER_IMAGE=zf_task_worker
+  #     - ENVIRONMENT=development
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
 
-  # # uncomment this only if you want to run a 'standalone' task worker
-  # # you have to modify the <your_task_id> in the command with a real requested task
+  # uncomment this only if you want to run a 'standalone' task worker
+  # you have to modify the command
   # task_worker:
   #   build:
-  #     context: ../workers
+  #     context: ../worker
   #     dockerfile: task-Dockerfile
+  #   image: zf_task_worker
   #   container_name: zf_task_worker
   #   depends_on:
   #     - backend
-  #   command: task-worker --webapi-uri 'http://backend:8000/v1' --username test_worker --task-id <your_task_id>
+  #   command: task-worker --help
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
   #   environment:
-  #     - DEBUG=1
-  #     - DOCKER_NETWORK=zimfarm_default
+  #     - DEBUG=true
+  #     - ENVIRONMENT=development
 
 volumes:
   pg_data_zimfarm:
