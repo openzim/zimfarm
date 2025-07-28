@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.models import PlatformsLimitSchema
 from zimfarm_backend.common.schemas.orms import ConfigResourcesSchema, WorkerLightSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User, Worker
@@ -99,7 +98,7 @@ def check_in_worker(
     disk: int,
     selfish: bool,
     offliners: list[Offliner],
-    platforms: PlatformsLimitSchema | None = None,
+    platforms: dict[str, int] | None = None,
     user_id: UUID,
 ) -> None:
     """Check in a worker."""
@@ -110,7 +109,7 @@ def check_in_worker(
         memory=memory,
         disk=disk,
         offliners=offliners,
-        platforms=platforms.model_dump(mode="json") if platforms else {},
+        platforms=platforms if platforms is not None else {},
         last_ip=None,
         last_seen=getnow(),
         user_id=user_id,
