@@ -20,6 +20,10 @@ ENV MAILGUN_FROM Zimfarm <info@farm.openzim.org>
 # ENV suffixed with event: `GLOBAL_NOTIFICATION_started` or `GLOBAL_NOTIFICATION_ended`
 # ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|mailgun,reg@kiwix.org
 
+# curl needed for healthcheck
+RUN apt-get update && apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
 # prestart script (former entrypoint - database init)
 COPY prestart.sh /app/prestart.sh
 RUN chmod +x /app/prestart.sh
@@ -53,5 +57,8 @@ RUN pip install --no-cache-dir /app  \
 
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -f http://localhost/v2/healthcheck || exit 1
 
 CMD ["uvicorn", "zimfarm_backend.main:app", "--host", "0.0.0.0", "--port", "80"]
