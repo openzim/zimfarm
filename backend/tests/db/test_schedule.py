@@ -4,11 +4,20 @@ from collections.abc import Callable
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
+from zimfarm_backend.common.enums import (
+    ScheduleCategory,
+    SchedulePeriodicity,
+    TaskStatus,
+)
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import LanguageSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task, Worker
+from zimfarm_backend.db.models import (
+    RequestedTask,
+    Schedule,
+    Task,
+    Worker,
+)
 from zimfarm_backend.db.schedule import (
     DEFAULT_SCHEDULE_DURATION,
     count_enabled_schedules,
@@ -21,6 +30,7 @@ from zimfarm_backend.db.schedule import (
     get_schedule_or_none,
     get_schedules,
     update_schedule,
+    update_schedule_duration,
 )
 
 
@@ -271,3 +281,161 @@ def test_get_schedules(
         assert result_schedule.config is not None
         assert result_schedule.nb_requested_tasks == 1
         assert result_schedule.most_recent_task is not None
+
+
+def test_update_schedule_duration_no_tasks(
+    dbsession: OrmSession, create_schedule: Callable[..., Schedule]
+):
+    """Test that update_schedule_duration does nothing when no matching tasks exist"""
+    schedule = create_schedule(name="test_schedule")
+
+    update_schedule_duration(dbsession, schedule_name=schedule.name)
+
+    assert len(schedule.durations) == 1
+    assert schedule.durations[0].default is True
+
+
+def test_update_schedule_duration_with_completed_tasks(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    create_task: Callable[..., Task],
+    worker: Worker,
+):
+    """Test that update_schedule_duration creates worker-specific durations"""
+    schedule = create_schedule(name="test_schedule")
+
+    # Create a task that completed successfully
+    started_time = datetime.datetime(2023, 1, 1, 10, 0, 0)
+    completed_time = datetime.datetime(2023, 1, 1, 12, 0, 0)  # 2 hours later
+
+    task = create_task(
+        schedule_name=schedule.name,
+        status=TaskStatus.scraper_completed,
+        worker=worker,
+    )
+
+    # Set up the task with proper timestamps and exit code
+    task.timestamp = [
+        (TaskStatus.started.value, started_time),
+        (TaskStatus.scraper_completed.value, completed_time),
+    ]
+    task.container = {"exit_code": 0}
+    dbsession.add(task)
+    dbsession.flush()
+
+    update_schedule_duration(dbsession, schedule_name=schedule.name)
+
+    # Expire the schedule to force a reload of the schedule
+    dbsession.expire(schedule)
+    updated_schedule = get_schedule(dbsession, schedule_name=schedule.name)
+
+    assert len(updated_schedule.durations) == 2  # Default + worker-specific
+
+    # Find the worker-specific duration
+    worker_duration = next(
+        (d for d in updated_schedule.durations if d.worker_id == worker.id), None
+    )
+
+    assert worker_duration is not None
+    assert worker_duration.default is False
+    assert worker_duration.on == completed_time
+
+
+def test_update_schedule_duration_with_failed_tasks(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    create_task: Callable[..., Task],
+    worker: Worker,
+):
+    """Test that update_schedule_duration ignores tasks with non-zero exit codes"""
+    schedule = create_schedule(name="test_schedule")
+
+    # Create a task that failed (exit_code != 0)
+    started_time = datetime.datetime(2023, 1, 1, 10, 0, 0)
+    completed_time = datetime.datetime(2023, 1, 1, 12, 0, 0)
+
+    task = create_task(
+        schedule_name=schedule.name,
+        status=TaskStatus.scraper_completed,
+        worker=worker,
+    )
+
+    # Set up the task with proper timestamps but failed exit code
+    task.timestamp = [
+        (TaskStatus.started.value, started_time),
+        (TaskStatus.scraper_completed.value, completed_time),
+    ]
+    task.container = {"exit_code": 1}  # Failed task
+    dbsession.add(task)
+    dbsession.flush()
+
+    update_schedule_duration(dbsession, schedule_name=schedule.name)
+
+    # Expire the schedule to force a reload of the schedule
+    dbsession.expire(schedule)
+    updated_schedule = get_schedule(dbsession, schedule_name=schedule.name)
+
+    # Verify no new durations were created (only the default remains)
+    assert len(updated_schedule.durations) == 1
+    assert updated_schedule.durations[0].default is True
+
+
+def test_update_schedule_duration_multiple_workers(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    create_task: Callable[..., Task],
+    create_worker: Callable[..., Worker],
+):
+    """Test that update_schedule_duration handles multiple workers correctly"""
+    schedule = create_schedule(name="test_schedule")
+    worker1 = create_worker(name="worker1")
+    worker2 = create_worker(name="worker2")
+
+    # Create tasks for both workers
+    task1 = create_task(
+        schedule_name=schedule.name,
+        status=TaskStatus.scraper_completed,
+        worker=worker1,
+    )
+    task1.timestamp = [
+        (TaskStatus.started.value, datetime.datetime(2023, 1, 1, 10, 0, 0)),
+        (
+            TaskStatus.scraper_completed.value,
+            datetime.datetime(2023, 1, 1, 11, 0, 0),
+        ),  # 1 hour
+    ]
+    task1.container = {"exit_code": 0}
+
+    task2 = create_task(
+        schedule_name=schedule.name,
+        status=TaskStatus.scraper_completed,
+        worker=worker2,
+    )
+    task2.timestamp = [
+        (TaskStatus.started.value, datetime.datetime(2023, 1, 1, 10, 0, 0)),
+        (
+            TaskStatus.scraper_completed.value,
+            datetime.datetime(2023, 1, 1, 12, 0, 0),
+        ),  # 2 hours
+    ]
+    task2.container = {"exit_code": 0}
+
+    dbsession.add_all([task1, task2])
+    dbsession.flush()
+
+    update_schedule_duration(dbsession, schedule_name=schedule.name)
+
+    dbsession.expire(schedule)
+    updated_schedule = get_schedule(dbsession, schedule_name=schedule.name)
+
+    assert len(updated_schedule.durations) == 3  # Default + 2 worker-specific
+
+    worker1_duration = next(
+        (d for d in updated_schedule.durations if d.worker_id == worker1.id), None
+    )
+    assert worker1_duration is not None
+
+    worker2_duration = next(
+        (d for d in updated_schedule.durations if d.worker_id == worker2.id), None
+    )
+    assert worker2_duration is not None
