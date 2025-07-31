@@ -10,7 +10,7 @@
             variant="outlined"
             density="compact"
             hide-details
-            @update:model-value="emitFilters"
+            @change="emitFilters"
           />
         </v-col>
         <v-col cols="12" sm="6" md="3">
