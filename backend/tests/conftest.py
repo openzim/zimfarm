@@ -39,7 +39,7 @@ from zimfarm_backend.db.models import (
 )
 from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
 from zimfarm_backend.utils.offliners import expanded_config
-from zimfarm_backend.utils.task import get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 from zimfarm_backend.utils.token import (
     generate_access_token,
     get_public_key_fingerprint,

@@ -14,7 +14,7 @@ from zimfarm_backend.common.constants import (
 )
 from zimfarm_backend.common.enums import SchedulePeriodicity, TaskStatus
 from zimfarm_backend.db.requested_task import request_task
-from zimfarm_backend.utils.task import get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 logger = logging.getLogger(__name__)
 

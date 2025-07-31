@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Integer, func, select
+from sqlalchemy import Integer, func, select
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import JSONPATH, insert
 from sqlalchemy.exc import IntegrityError
@@ -38,7 +38,10 @@ from zimfarm_backend.db.models import (
     Task,
     Worker,
 )
-from zimfarm_backend.utils.task import get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import (
+    get_status_timestamp_expr,
+    get_timestamp_for_status,
+)
 
 DEFAULT_SCHEDULE_DURATION = ScheduleDurationSchema(
     value=int(constants.DEFAULT_SCHEDULE_DURATION),
@@ -146,17 +149,7 @@ def update_schedule_duration(
             Task.schedule_id == schedule.id,
         )
         .order_by(
-            sql_cast(
-                func.jsonb_path_query_first(
-                    Task.timestamp,
-                    sql_cast(
-                        f'$[*] ? (@[0] == "{TaskStatus.scraper_completed}")', JSONPATH
-                    ),
-                )
-                .op("->")(1)
-                .op("->>")("$date"),
-                BigInteger,
-            )
+            get_status_timestamp_expr(Task.timestamp, TaskStatus.scraper_completed),
         )
     ).scalars()
 

@@ -20,7 +20,7 @@ from zimfarm_backend import logger
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.requested_task import request_task
-from zimfarm_backend.utils.task import get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 
 def relaunch_failed_recipes(session: OrmSession, start_date: str):

@@ -128,6 +128,7 @@ def get_tasks(
             (Schedule.name == schedule_name) | (schedule_name is None),
             (Task.status.in_(status)),
         )
+        .order_by(Task.updated_at.desc())
         .offset(skip)
         .limit(limit)
     )

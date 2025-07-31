@@ -36,7 +36,10 @@ from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worke
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.worker import get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
-from zimfarm_backend.utils.task import get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import (
+    get_status_timestamp_expr,
+    get_timestamp_for_status,
+)
 
 # Maximum positive integer value for PostgreSQL BigInteger
 MAX_BIG_INT_VAL = 2**63 - 1
@@ -148,31 +151,6 @@ def get_requested_tasks(
 
     Tasks are sorted by priority (descending), reserved timestamp, and
     requested timestamp.
-
-    Args:
-        session: SQLAlchemy database session
-        worker_name: Optional worker name to filter tasks by. If None, tasks for all
-            workers are returned.
-        skip: Number of records to skip (for pagination)
-        limit: Maximum number of records to return (for pagination)
-        matching_offliners: Optional list of offliner IDs to filter tasks by. If None,
-            tasks for all offliners are returned.
-        schedule_name: Optional list of schedule names to filter tasks by. If None,
-            tasks for all schedules are returned.
-        priority: Optional minimum priority to filter tasks by. If None, no priority
-            filter is applied.
-        cpu: Optional maximum CPU requirement to filter tasks by. If None, no CPU filter
-            is applied.
-        memory: Optional maximum memory requirement to filter tasks by. If None, no
-            memory filter is applied.
-        disk: Optional maximum disk requirement to filter tasks by. If None, no disk
-            filter is applied.
-
-    Returns:
-        RequestedTaskListResult containing:
-            - nb_records: Total number of records matching the filters (no pagination)
-            - requested_tasks: List of RequestedTaskLightSchema objects matching the
-                filters and pagination
     """
     # Set reasonable defaults if a client omits a param
     offliners = (
@@ -223,7 +201,8 @@ def get_requested_tasks(
         )
         .order_by(
             RequestedTask.priority.desc(),
-            RequestedTask.updated_at.asc(),
+            get_status_timestamp_expr(RequestedTask.timestamp, TaskStatus.reserved),
+            get_status_timestamp_expr(RequestedTask.timestamp, TaskStatus.requested),
         )
     )
 
