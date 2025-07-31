@@ -27,6 +27,7 @@ from zimfarm_backend.db.requested_task import (
     update_requested_task_priority,
 )
 from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 
 @pytest.fixture(autouse=True)
@@ -371,7 +372,8 @@ def test_get_requested_tasks(
     requested_tasks.sort(
         key=lambda x: (
             -x.priority,
-            x.updated_at,
+            get_timestamp_for_status(x.timestamp, TaskStatus.reserved),
+            get_timestamp_for_status(x.timestamp, TaskStatus.requested),
         )
     )
 

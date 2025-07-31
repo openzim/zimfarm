@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from zimfarm_backend.utils.task import DEFAULT_TIMESTAMP, get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import DEFAULT_TIMESTAMP, get_timestamp_for_status
 
 
 @pytest.mark.parametrize(
