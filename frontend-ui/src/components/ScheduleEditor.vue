@@ -600,6 +600,8 @@ const hasChanges = computed(() => {
       if (change.rhs === undefined || change.rhs === null) {
         return false
       }
+      // If a value is empty and the previous value is null, it's not a change
+      if (change.lhs === null && change.rhs === '') return false
     }
     return true
   })
