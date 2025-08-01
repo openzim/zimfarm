@@ -32,16 +32,22 @@ def get_languages(
 
     return LanguageListResult(
         nb_languages=count_from_stmt(session, query),
-        languages=[
-            LanguageSchema(
-                code=language_code,
-                name_en=language_name_en,
-                name_native=language_name_native,
-            )
-            for (
-                language_code,
-                language_name_en,
-                language_name_native,
-            ) in session.execute(query.offset(skip).limit(limit)).all()
-        ],
+        languages=sorted(
+            [
+                LanguageSchema.model_validate(
+                    {
+                        "code": language_code,
+                        "name_en": language_name_en,
+                        "name_native": language_name_native,
+                    },
+                    context={"skip_validation": True},
+                )
+                for (
+                    language_code,
+                    language_name_en,
+                    language_name_native,
+                ) in session.execute(query.offset(skip).limit(limit)).all()
+            ],
+            key=lambda language: (language.name_en, language.code),
+        ),
     )
