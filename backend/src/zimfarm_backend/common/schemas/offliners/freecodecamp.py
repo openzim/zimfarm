@@ -1,7 +1,7 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -13,22 +13,26 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMDescription,
     ZIMOutputFolder,
     ZIMTitle,
+    enum_member,
 )
 
 
 class FCCLanguage(StrEnum):
-    """Language of zim file and curriculum. One of"""
+    """Language of zim file and curriculum"""
 
-    eng = "english"
-    spa = "espanol"
-    deu = "german"
-    ita = "italian"
-    jpn = "japanese"
-    por = "portuguese"
-    ukr = "ukrainian"
-    swa = "swahili"
+    ENGLISH = "eng"
+    ESPANOL = "spa"
+    GERMAN = "deu"
+    ITALIAN = "ita"
+    JAPANESE = "jpn"
+    PORTOGUESE = "por"
+    UKRAINIAN = "ukr"
+    SWAHILI = "swa"
     # cmn = "chinese"
     # lzh = "chinese-traditional"
+
+
+FCCLanguageValue = Annotated[FCCLanguage, WrapValidator(enum_member(FCCLanguage))]
 
 
 class FreeCodeCampFlagsSchema(DashModel):
@@ -39,13 +43,8 @@ class FreeCodeCampFlagsSchema(DashModel):
         description="Course or course list (separated by commas)",
     )
 
-    language: FCCLanguage = Field(
-        title="Language",
-        description="Language of zim file and curriculum. One of "
-        + ", ".join(
-            [f"'{language.name}' ({language.value})" for language in FCCLanguage]
-        )
-        + ".",
+    language: FCCLanguageValue = Field(
+        title="Language", description="Language of zim file and curriculum."
     )
 
     name: NotEmptyString = Field(

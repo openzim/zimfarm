@@ -63,7 +63,7 @@ def test_get_field_type(field_type: Any, expected_type: str):
     ),
 )
 def test_get_enum_choices(field_type: Any, expected_choices: list[str]):
-    choices = get_enum_choices(field_type)
+    choices = [choice["value"] for choice in get_enum_choices(field_type)]
     assert len(choices) == len(expected_choices)
     for choice in choices:
         assert choice in expected_choices

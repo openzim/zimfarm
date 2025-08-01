@@ -1,7 +1,7 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AnyUrl, EmailStr, Field
+from pydantic import AnyUrl, EmailStr, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -14,12 +14,16 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
     ZIMSecretStr,
+    enum_member,
 )
 
 
 class VideoFormat(StrEnum):
     WEBM = "webm"
     MP4 = "mp4"
+
+
+VideoFormatValue = Annotated[VideoFormat, WrapValidator(enum_member(VideoFormat))]
 
 
 class OpenedxFlagsSchema(DashModel):
@@ -86,7 +90,7 @@ class OpenedxFlagsSchema(DashModel):
         description="Remove the top sequential navigation bar in the ZIM",
     )
 
-    video_format: VideoFormat | None = OptionalField(
+    video_format: VideoFormatValue | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
     )

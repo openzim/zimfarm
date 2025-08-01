@@ -1,7 +1,7 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import CamelModel
 from zimfarm_backend.common.schemas.fields import (
@@ -15,6 +15,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
+    enum_member,
 )
 
 
@@ -28,10 +29,20 @@ class ZimitScopeType(StrEnum):
     CUSTOM = "custom"
 
 
+ZimitScopeTypeValue = Annotated[
+    ZimitScopeType, WrapValidator(enum_member(ZimitScopeType))
+]
+
+
 class ZimitDedupPolicy(StrEnum):
     SKIP = "skip"
     REVISIT = "revisit"
     KEEP = "keep"
+
+
+ZimitDedupPolicyValue = Annotated[
+    ZimitDedupPolicy, WrapValidator(enum_member(ZimitDedupPolicy))
+]
 
 
 # https://github.com/puppeteer/puppeteer/blob/main/src/common/DeviceDescriptors.ts
@@ -155,6 +166,9 @@ class ZimitDevice(StrEnum):
     MOTO_G4_LANDSCAPE = "Moto G4 landscape"
 
 
+ZimitDeviceValue = Annotated[ZimitDevice, WrapValidator(enum_member(ZimitDevice))]
+
+
 class ZimitFlagsFullSchema(CamelModel):
     seeds: OptionalNotEmptyString = OptionalField(
         title="Seeds",
@@ -244,7 +258,7 @@ class ZimitFlagsFullSchema(CamelModel):
         description="Timeout for each page to load (in seconds). Default is 90",
     )
 
-    scope_type: ZimitScopeType | None = OptionalField(
+    scope_type: ZimitScopeTypeValue | None = OptionalField(
         title="Scope Type",
         description="A predfined scope of the crawl. For more customization, "
         "use 'custom' and set scopeIncludeRx/scopeExcludeRx regexes. Default is "
@@ -268,7 +282,7 @@ class ZimitFlagsFullSchema(CamelModel):
         "crawling or when different hashtags load dynamic content",
     )
 
-    mobile_device: ZimitDevice | None = OptionalField(
+    mobile_device: ZimitDeviceValue | None = OptionalField(
         title="As device",
         description="Device to crawl as. See Pupeeter's Device.ts for a list",
     )
@@ -360,7 +374,7 @@ class ZimitFlagsFullSchema(CamelModel):
         "after behaviors before moving on to next page. Default is 0.",
     )
 
-    dedup_policy: ZimitDedupPolicy | None = OptionalField(
+    dedup_policy: ZimitDedupPolicyValue | None = OptionalField(
         title="Dedup policy",
         description="Deduplication policy. Default is skip",
     )

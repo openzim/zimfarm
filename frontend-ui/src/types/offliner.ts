@@ -2,7 +2,10 @@ export interface OfflinerDefinition {
   data_key: string;
   secret?: boolean;
   description: string | null;
-  choices: string[] | null;
+  choices: {
+    title: string;
+    value: string;
+  }[] | null;
   label: string;
   key: string;
   required: boolean;

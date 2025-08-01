@@ -1,7 +1,7 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -14,12 +14,16 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    enum_member,
 )
 
 
 class VideoFormat(StrEnum):
     WEBM = "webm"
     MP4 = "mp4"
+
+
+VideoFormatValue = Annotated[VideoFormat, WrapValidator(enum_member(VideoFormat))]
 
 
 class TedFlagsSchema(DashModel):
@@ -66,7 +70,7 @@ class TedFlagsSchema(DashModel):
         ),
     )
 
-    video_format: VideoFormat | None = OptionalField(
+    video_format: VideoFormatValue | None = OptionalField(
         title="Video format",
         description="Format to download/transcode video to. webm is smaller",
         alias="format",
