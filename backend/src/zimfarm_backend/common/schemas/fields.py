@@ -1,5 +1,6 @@
 import re
 from collections.abc import Callable, Sized
+from enum import Enum
 from typing import Annotated, Any
 
 from pydantic import (
@@ -8,6 +9,7 @@ from pydantic import (
     Field,
     SecretStr,
     ValidationInfo,
+    ValidatorFunctionWrapHandler,
     WrapSerializer,
 )
 from pydantic_core.core_schema import SerializationInfo
@@ -93,6 +95,27 @@ def pattern(pattern: str) -> Callable[[str, ValidationInfo], str]:
         if not re.match(pattern, value):
             raise ValueError(f"Value must match the pattern {pattern}, got {value}")
         return value
+
+    return _validate
+
+
+def enum_member(
+    enum_cls: type[Enum],
+) -> Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]:
+    """Validate that a value is an enum member."""
+
+    def _validate(
+        value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+    ) -> Any:
+        context = info.context
+        if context and context.get("skip_validation"):
+            return value
+        allowed_values = {e.value for e in enum_cls}
+        if value not in allowed_values:
+            raise ValueError(
+                f"Value must be one of {', '.join(allowed_values)}, got {value}"
+            )
+        return handler(value)
 
     return _validate
 

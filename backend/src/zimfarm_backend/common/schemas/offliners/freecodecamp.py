@@ -1,7 +1,7 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -13,6 +13,7 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMDescription,
     ZIMOutputFolder,
     ZIMTitle,
+    enum_member,
 )
 
 
@@ -31,6 +32,9 @@ class FCCLanguage(StrEnum):
     # lzh = "chinese-traditional"
 
 
+FCCLanguageValue = Annotated[FCCLanguage, WrapValidator(enum_member(FCCLanguage))]
+
+
 class FreeCodeCampFlagsSchema(DashModel):
     offliner_id: Literal["freecodecamp"] = Field(alias="offliner_id")
 
@@ -39,7 +43,7 @@ class FreeCodeCampFlagsSchema(DashModel):
         description="Course or course list (separated by commas)",
     )
 
-    language: FCCLanguage = Field(
+    language: FCCLanguageValue = Field(
         title="Language",
         description="Language of zim file and curriculum. One of "
         + ", ".join(

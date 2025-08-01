@@ -1,8 +1,8 @@
 # ruff: noqa: N815,S108
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AnyUrl, EmailStr, Field
+from pydantic import AnyUrl, EmailStr, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -14,6 +14,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMSecretStr,
     OptionalZIMTitle,
+    enum_member,
 )
 
 
@@ -29,8 +30,19 @@ class MWOfflinerFormatFlavour(StrEnum):
     NODET_NOPIC = "nodet,nopic"
 
 
+MWOfflinerFormatFlavourValue = Annotated[
+    MWOfflinerFormatFlavour, WrapValidator(enum_member(MWOfflinerFormatFlavour))
+]
+
+
 class MWOfflinerCustomProcessorPath(StrEnum):
     WIKTIONARY_FR = "/tmp/mwoffliner/extensions/wiktionary_fr.js"
+
+
+MWOfflinerCustomProcessorPathValue = Annotated[
+    MWOfflinerCustomProcessorPath,
+    WrapValidator(enum_member(MWOfflinerCustomProcessorPath)),
+]
 
 
 class MWOfflinerVerbosity(StrEnum):
@@ -41,12 +53,22 @@ class MWOfflinerVerbosity(StrEnum):
     QUIET = "quiet"
 
 
+MWOfflinerVerbosityValue = Annotated[
+    MWOfflinerVerbosity, WrapValidator(enum_member(MWOfflinerVerbosity))
+]
+
+
 class MWOfflinerForceRender(StrEnum):
     VISUALEDITOR = "VisualEditor"
     WIKIMEDIADESKTOP = "WikimediaDesktop"
     WIKIMEDIAMOBILE = "WikimediaMobile"
     RESTAPI = "RestApi"
     ACTIONPARSE = "ActionParse"
+
+
+MWOfflinerForceRenderValue = Annotated[
+    MWOfflinerForceRender, WrapValidator(enum_member(MWOfflinerForceRender))
+]
 
 
 class MWOfflinerFlagsSchema(DashModel):
@@ -108,13 +130,13 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Filename prefix",
         description="Custome filename up to the formats and date parts.",
     )
-    formats: list[MWOfflinerFormatFlavour] | None = OptionalField(
+    formats: list[MWOfflinerFormatFlavourValue] | None = OptionalField(
         description="Which flavours to build, as `<flavour>:<custom-suffix>`. "
         "Empty option is full without suffix.",
         alias="format",
     )
 
-    customFlavour: MWOfflinerCustomProcessorPath | None = OptionalField(
+    customFlavour: MWOfflinerCustomProcessorPathValue | None = OptionalField(
         title="Custom Flavour",
         description="Custom processor to filter and process articles "
         "(see extensions/*.js)",
@@ -193,7 +215,7 @@ class MWOfflinerFlagsSchema(DashModel):
     withoutZimFullTextIndex: bool | None = OptionalField(
         description="Don't include a fulltext search index to the ZIM",
     )
-    verbose: MWOfflinerVerbosity | None = OptionalField(
+    verbose: MWOfflinerVerbosityValue | None = OptionalField(
         title="Verbose",
         description="Level of log verbosity, one of info, log, warn, error or "
         "quiet. Default is error.",
@@ -204,7 +226,7 @@ class MWOfflinerFlagsSchema(DashModel):
         description="Convert images to Webp",
     )
 
-    forceRender: MWOfflinerForceRender | None = OptionalField(
+    forceRender: MWOfflinerForceRenderValue | None = OptionalField(
         title="Force Render",
         description="Force the usage of a specific API end-point/render, "
         "automatically chosen otherwise",
