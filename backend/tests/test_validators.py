@@ -15,7 +15,7 @@ class TestModel(BaseModel):
 
 def test_enum_validator_accepts_valid_value():
     with does_not_raise():
-        TestModel.model_validate({"value": "english"})
+        TestModel.model_validate({"value": "eng"})
 
 
 def test_enum_validator_rejects_invalid_value():

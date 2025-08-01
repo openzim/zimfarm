@@ -631,16 +631,13 @@ const flagsFields = computed(() => {
     } else if (field.type === 'list-of-string-enum') {
       component = 'multiselect'
       options =
-        field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
+        field.choices?.map((choice) => ({ title: choice.title, value: choice.value })) || undefined
     } else if (field.type === 'boolean') {
       component = 'switch'
     } else if (field.type === 'string-enum') {
       component = 'select'
       options =
-        field.choices?.map((choice: string) => ({ title: choice, value: choice })) || undefined
-      if (!field.required) {
-        options?.push({ title: 'Not set', value: undefined })
-      }
+        field.choices?.map((choice) => ({ title: choice.title, value: choice.value })) || undefined
     } else if (field.type === 'long-text') {
       component = 'textarea'
     }
@@ -732,7 +729,6 @@ const platformsOptions = computed(() => {
   const values: Array<{ title: string; value: string | undefined }> = props.platforms.map(
     (platform) => ({ title: platform, value: platform }),
   )
-  values.push({ title: 'None', value: undefined })
   return values
 })
 

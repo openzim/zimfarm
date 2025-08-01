@@ -59,11 +59,11 @@ MWOfflinerVerbosityValue = Annotated[
 
 
 class MWOfflinerForceRender(StrEnum):
-    VISUALEDITOR = "VisualEditor"
-    WIKIMEDIADESKTOP = "WikimediaDesktop"
-    WIKIMEDIAMOBILE = "WikimediaMobile"
-    RESTAPI = "RestApi"
-    ACTIONPARSE = "ActionParse"
+    VISUAL_EDITOR = "VisualEditor"
+    WIKIMEDIA_DESKTOP = "WikimediaDesktop"
+    WIKIMEDIA_MOBILE = "WikimediaMobile"
+    REST_API = "RestApi"
+    ACTION_PARSE = "ActionParse"
 
 
 MWOfflinerForceRenderValue = Annotated[

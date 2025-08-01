@@ -65,13 +65,20 @@ def get_field_type(field_type: Any) -> str:
     return "string"
 
 
-def get_enum_choices(field_type: Any) -> list[str]:
+def get_enum_choices(field_type: Any) -> list[dict[str, str]]:
     """Extract choices from an enum field."""
+
+    def _build_choices(enum_cls: type[Enum]) -> list[dict[str, str]]:
+        return [
+            {"title": choice.name.replace("_", " ").title(), "value": choice.value}
+            for choice in enum_cls
+        ]
+
     # Get the base type first
     base_type = get_base_type(field_type)
 
     if isinstance(base_type, type) and issubclass(base_type, Enum):
-        return [choice.value for choice in base_type]
+        return _build_choices(base_type)
 
     # Handle Union types with enums
     origin = get_origin(field_type)
@@ -81,7 +88,7 @@ def get_enum_choices(field_type: Any) -> list[str]:
             if arg is not type(None):  # Skip None
                 # Check if the arg is an enum directly
                 if isinstance(arg, type) and issubclass(arg, Enum):
-                    return [choice.value for choice in arg]
+                    return _build_choices(arg)
 
                 arg_origin = get_origin(arg)
                 if arg_origin is list:
@@ -95,7 +102,7 @@ def get_enum_choices(field_type: Any) -> list[str]:
                     if isinstance(base_arg_type, type) and issubclass(
                         base_arg_type, Enum
                     ):
-                        return [choice.value for choice in base_arg_type]
+                        return _build_choices(base_arg_type)
 
     # Handle list types with enums
     if origin is list:
@@ -104,14 +111,14 @@ def get_enum_choices(field_type: Any) -> list[str]:
             element_type = args[0]
             # Check if the list element is an enum
             if isinstance(element_type, type) and issubclass(element_type, Enum):
-                return [choice.value for choice in element_type]
+                return _build_choices(element_type)
             # Check if the list element is an Annotated type that might be an enum
             elif get_origin(element_type) is Annotated:
                 base_element_type = get_base_type(element_type)
                 if isinstance(base_element_type, type) and issubclass(
                     base_element_type, Enum
                 ):
-                    return [choice.value for choice in base_element_type]
+                    return _build_choices(base_element_type)
 
     return []
 

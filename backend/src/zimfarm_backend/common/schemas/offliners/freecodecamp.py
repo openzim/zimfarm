@@ -18,16 +18,16 @@ from zimfarm_backend.common.schemas.fields import (
 
 
 class FCCLanguage(StrEnum):
-    """Language of zim file and curriculum. One of"""
+    """Language of zim file and curriculum"""
 
-    eng = "english"
-    spa = "espanol"
-    deu = "german"
-    ita = "italian"
-    jpn = "japanese"
-    por = "portuguese"
-    ukr = "ukrainian"
-    swa = "swahili"
+    ENGLISH = "eng"
+    ESPANOL = "spa"
+    GERMAN = "deu"
+    ITALIAN = "ita"
+    JAPANESE = "jpn"
+    PORTOGUESE = "por"
+    UKRAINIAN = "ukr"
+    SWAHILI = "swa"
     # cmn = "chinese"
     # lzh = "chinese-traditional"
 
@@ -44,12 +44,7 @@ class FreeCodeCampFlagsSchema(DashModel):
     )
 
     language: FCCLanguageValue = Field(
-        title="Language",
-        description="Language of zim file and curriculum. One of "
-        + ", ".join(
-            [f"'{language.name}' ({language.value})" for language in FCCLanguage]
-        )
-        + ".",
+        title="Language", description="Language of zim file and curriculum."
     )
 
     name: NotEmptyString = Field(
