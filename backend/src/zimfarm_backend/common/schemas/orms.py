@@ -83,7 +83,7 @@ class TaskFullSchema(BaseTaskSchema):
     """
 
     config: ExpandedScheduleConfigSchema
-    events: list[dict[str, Any]]
+    events: list[dict[str, str | datetime.datetime]]
     debug: dict[str, Any]
     requested_by: str
     canceled_by: str | None
@@ -126,7 +126,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     """
 
     config: ExpandedScheduleConfigSchema
-    events: list[dict[str, Any]]
+    events: list[dict[str, str | datetime.datetime]]
     upload: dict[str, Any]
     notification: ScheduleNotificationSchema | None
     rank: int | None = None
@@ -209,10 +209,13 @@ class ScheduleFullSchema(BaseModel):
     @computed_field
     @property
     def language(self) -> LanguageSchema:
-        return LanguageSchema(
-            code=self.language_code,
-            name_en=self.language_name_en,
-            name_native=self.language_name_native,
+        return LanguageSchema.model_validate(
+            {
+                "code": self.language_code,
+                "name_en": self.language_name_en,
+                "name_native": self.language_name_native,
+            },
+            context={"skip_validation": True},
         )
 
     @computed_field

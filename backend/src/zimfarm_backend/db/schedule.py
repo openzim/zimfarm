@@ -277,10 +277,13 @@ def get_schedules(
                 name=schedule_name,
                 category=category,
                 enabled=enabled,
-                language=LanguageSchema(
-                    code=language_code,
-                    name_en=language_name_en,
-                    name_native=language_name_native,
+                language=LanguageSchema.model_validate(
+                    {
+                        "code": language_code,
+                        "name_en": language_name_en,
+                        "name_native": language_name_native,
+                    },
+                    context={"skip_validation": True},
                 ),
                 config=ConfigOfflinerOnlySchema(
                     offliner=config["offliner"]["offliner_id"],
