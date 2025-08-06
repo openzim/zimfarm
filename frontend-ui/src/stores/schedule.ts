@@ -1,5 +1,4 @@
 import { useAuthStore } from '@/stores/auth'
-import { useLoadingStore } from '@/stores/loading'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { Schedule, ScheduleLight, ScheduleUpdateSchema } from '@/types/schedule'
@@ -19,7 +18,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     count: 0,
   })
   const authStore = useAuthStore()
-  const loadingStore = useLoadingStore()
 
   const fetchSchedule = async (
     scheduleName: string,
@@ -72,7 +70,6 @@ export const useScheduleStore = defineStore('schedule', () => {
       .filter(([, value]) => !!value)
     )
     try {
-      loadingStore.startLoading('Fetching schedules...')
       const response = await service.get<null, ListResponse<ScheduleLight>>("", { params: cleanedParams  })
       schedules.value = response.items
       paginator.value = response.meta
@@ -82,8 +79,6 @@ export const useScheduleStore = defineStore('schedule', () => {
       console.error('Failed to fetch schedules', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return null
-    } finally {
-      loadingStore.stopLoading()
     }
   }
 

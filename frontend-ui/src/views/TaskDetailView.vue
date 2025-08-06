@@ -516,7 +516,7 @@ const cancel = async () => {
 }
 
 const refreshData = async () => {
-  loadingStore.startLoading("fetching task…")
+  loadingStore.startLoading("Fetching task...")
   const response = await tasksStore.fetchTask(props.id, !canCreateTasks.value)
   if (response) {
     task.value = response

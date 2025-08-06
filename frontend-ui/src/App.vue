@@ -28,6 +28,8 @@ onBeforeMount(async () => {
 })
 
 onMounted(async () => {
+  loadingStore.startLoading('Loading application data...')
+
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
   await platformStore.fetchPlatforms()
@@ -39,6 +41,7 @@ onMounted(async () => {
   })
   await Promise.all(offlinerDefinitionRequests)
 
+  loadingStore.stopLoading()
 })
 
 // Navigation items logic

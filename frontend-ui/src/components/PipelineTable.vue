@@ -1,13 +1,13 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
-      <v-card-title class="d-flex align-center justify-space-between">
+      <v-card-title v-if="props.paginator.count > 0" class="d-flex align-center justify-space-between">
         <span class="text-subtitle-1 d-flex align-center">
           Showing max.
           <v-select
             v-model="selectedLimit"
             :items="limits"
-            @change="emit('limitChanged', selectedLimit)"
+            @update:modelValue="emit('limitChanged', $event)"
             hide-details
             density="compact"
           />
@@ -18,14 +18,31 @@
         :headers="headers"
         :items="tasks"
         :loading="loading"
+        :loading-text="loadingText"
         :items-per-page="selectedLimit"
         :items-length="props.paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
         item-key="id"
-        @update:itemsPerPage="emit('limitChanged', $event)"
         @update:options="onUpdateOptions"
+        :hide-default-footer="props.paginator.count === 0"
+        :hide-default-header="props.paginator.count === 0"
       >
+
+        <template #loading>
+          <div class="d-flex flex-column align-center justify-center pa-8">
+            <v-progress-circular indeterminate size="64" />
+              <div class="mt-4 text-body-1">{{ loadingText || 'Fetching tasks...' }}</div>
+            </div>
+        </template>
+
+        <template #no-data>
+          <div class="text-center pa-4">
+            <v-icon size="x-large" class="mb-2">mdi-format-list-bulleted</v-icon>
+            <div class="text-h6 text-grey-darken-1 mb-2">No tasks found</div>
+          </div>
+        </template>
+
         <template #[`item.schedule_name`]="{ item }">
           <span v-if="item.schedule_name === null || item.schedule_name === 'none'">
             {{ item.original_schedule_name }}
@@ -146,6 +163,7 @@ const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
   canUnRequestTasks: boolean // whether the user can unrequest tasks
   loading: boolean // whether the table is loading
+  loadingText: string // the text to display when the table is loading
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
   paginator: Paginator // the paginator
   lastRunsLoaded: boolean // whether the last runs have been loaded
@@ -169,8 +187,7 @@ function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
 
 watch(() => props.paginator, (newPaginator) => {
   selectedLimit.value = newPaginator.limit;
-});
-
+}, { immediate: true })
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'
