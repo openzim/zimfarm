@@ -8,7 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
-    OptionalS3OptimizationCache,
+    OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLongDescription,
@@ -130,7 +130,7 @@ class TedFlagsSchema(DashModel):
         ),
     )
 
-    optimization_cache: OptionalS3OptimizationCache = OptionalField(
+    optimization_cache: OptionalSecretUrl = OptionalField(
         title="Optimization Cache URL",
         description=("URL with credentials and bucket name to S3 Optimization Cache"),
     )

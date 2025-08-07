@@ -6,13 +6,13 @@ from pydantic import AnyUrl, EmailStr, SecretStr
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
-    OptionalS3OptimizationCache,
+    OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMSecretStr,
     OptionalZIMTitle,
-    S3OptimizationCache,
+    SecretUrl,
 )
 from zimfarm_backend.common.schemas.offliners.mwoffliner import (
     MWOfflinerFlagsSchema,
@@ -82,10 +82,8 @@ def test_get_enum_choices(field_type: Any, expected_choices: list[str]):
             OptionalZIMLongDescription, False, id="OptionalZIMLongDescription"
         ),
         pytest.param(OptionalZIMTitle, False, id="OptionalZIMTitle"),
-        pytest.param(
-            OptionalS3OptimizationCache, True, id="OptionalS3OptimizationCache"
-        ),
-        pytest.param(S3OptimizationCache, True, id="S3OptimizationCache"),
+        pytest.param(OptionalSecretUrl, True, id="OptionalSecretUrl"),
+        pytest.param(SecretUrl, True, id="SecretUrl"),
     ),
 )
 def test_is_secret(field: Any, *, is_secret_field: bool):

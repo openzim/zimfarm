@@ -144,18 +144,16 @@ Percentage = Annotated[int, AfterValidator(between(low=1, high=100))]
 OptionalPercentage = Percentage | None
 
 
-def validate_optimization_cache(v: ZIMSecretStr | str) -> ZIMSecretStr:
+def validate_secret_url(v: ZIMSecretStr | str) -> ZIMSecretStr:
     url = v.get_secret_value() if isinstance(v, SecretStr) else v
     AnyUrl(url)
 
     return SecretStr(url)
 
 
-S3OptimizationCache = Annotated[
-    ZIMSecretStr, AfterValidator(validate_optimization_cache)
-]
+SecretUrl = Annotated[ZIMSecretStr, AfterValidator(validate_secret_url)]
 
-OptionalS3OptimizationCache = S3OptimizationCache | None
+OptionalSecretUrl = SecretUrl | None
 
 ZIMLongDescription = Annotated[str, AfterValidator(length_between(low=1, high=4000))]
 

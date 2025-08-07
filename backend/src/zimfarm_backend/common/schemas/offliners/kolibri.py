@@ -7,7 +7,7 @@ from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
-    OptionalS3OptimizationCache,
+    OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLongDescription,
@@ -146,7 +146,7 @@ class KolibriFlagsSchema(DashModel):
         "Default: 1",
     )
 
-    optimization_cache: OptionalS3OptimizationCache = OptionalField(
+    optimization_cache: OptionalSecretUrl = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
     )
