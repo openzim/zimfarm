@@ -1,4 +1,5 @@
 import pathlib
+import shlex
 from typing import Any, NamedTuple
 
 from pydantic import AnyUrl
@@ -89,15 +90,15 @@ def compute_flags(
         elif isinstance(value, list):
             for item in value:
                 if use_equals:
-                    params.append(f'--{key}="{simplified(item)}"')
+                    params.append(f"--{key}={shlex.quote(simplified(item))}")
                 else:
                     params.append(f"--{key}")
-                    params.append(f"{simplified(item)}")
+                    params.append(shlex.quote(simplified(item)))
         elif use_equals:
-            params.append(f'--{key}="{simplified(value)}"')
+            params.append(f"--{key}={shlex.quote(simplified(value))}")
         else:
             params.append(f"--{key}")
-            params.append(f"{simplified(value)}")
+            params.append(shlex.quote(simplified(value)))
     return params
 
 
