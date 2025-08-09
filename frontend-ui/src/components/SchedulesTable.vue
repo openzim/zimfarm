@@ -1,13 +1,13 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
-      <v-card-title class="d-flex align-center justify-space-between">
+      <v-card-title v-if="paginator.count > 0" class="d-flex align-center justify-space-between">
         <span class="text-subtitle-1 d-flex align-center">
           Showing max.
           <v-select
             v-model="selectedLimit"
             :items="limits"
-            @update:model-value="emit('limitChanged', selectedLimit)"
+            @update:model-value="emit('limitChanged', $event)"
             hide-details
             density="compact"
           />
@@ -31,6 +31,7 @@
           </v-btn>
         </div>
       </v-card-title>
+
       <v-data-table-server
         :headers="headers"
         :items="schedules"
@@ -40,9 +41,17 @@
         :items-per-page-options="limits"
         class="elevation-1"
         item-key="name"
-        @update:itemsPerPage="emit('limitChanged', $event)"
         @update:options="onUpdateOptions"
+        :hide-default-footer="props.paginator.count === 0"
+        :hide-default-header="props.paginator.count === 0"
       >
+        <template #loading>
+          <div class="d-flex flex-column align-center justify-center pa-8">
+            <v-progress-circular indeterminate size="64" />
+              <div class="mt-4 text-body-1">{{ loadingText || 'Fetching recipes...' }}</div>
+            </div>
+        </template>
+
         <template #[`item.name`]="{ item }">
           <router-link :to="{ name: 'schedule-detail', params: { scheduleName: item.name } }">
             <span class="d-flex align-center">
@@ -85,6 +94,13 @@
           </div>
           <span v-else>-</span>
         </template>
+
+        <template #no-data>
+          <div class="text-center pa-4">
+            <v-icon size="x-large" class="mb-2">mdi-format-list-bulleted</v-icon>
+            <div class="text-h6 text-grey-darken-1 mb-2">No recipes found</div>
+          </div>
+        </template>
       </v-data-table-server>
     </v-card>
   </div>
@@ -105,6 +121,7 @@ interface Props {
   paginator: Paginator
   loading: boolean
   errors: string[]
+  loadingText: string
   canRequestTasks: boolean
   filters: {
     name: string
@@ -135,7 +152,7 @@ function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
 
 watch(() => props.paginator, (newPaginator) => {
   selectedLimit.value = newPaginator.limit
-})
+}, { immediate: true })
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'

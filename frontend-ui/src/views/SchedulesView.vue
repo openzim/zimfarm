@@ -9,21 +9,13 @@
       :tags="tags"
       @filters-changed="handleFiltersChange"
     />
-
-    <!-- Loading state when data hasn't been loaded yet -->
-    <div v-if="!dataLoaded && loadingStore.isLoading" class="text-center pa-8">
-      <v-progress-circular indeterminate size="64" />
-      <div class="mt-4 text-body-1">{{ loadingStore.loadingText }}</div>
-    </div>
-
-    <!-- Table only shown when data is loaded -->
     <SchedulesTable
-      v-if="dataLoaded"
       :requesting-text="requestingText"
       :headers="headers"
       :schedules="schedules"
       :paginator="paginator"
       :loading="loadingStore.isLoading"
+      :loading-text="loadingStore.loadingText"
       :errors="errors"
       :can-request-tasks="canRequestTasks"
       :filters="filters"
@@ -76,7 +68,6 @@ const paginator = ref<Paginator>({
 })
 
 const blockUrlUpdates = ref<boolean>(false)
-const dataLoaded = ref<boolean>(false)
 
 const errors = ref<string[]>([])
 
@@ -106,7 +97,10 @@ const tags = computed(() => tagStore.tags)
 const categories = constants.CATEGORIES
 
 // Methods
-async function loadData(limit: number, skip: number) {
+async function loadData(limit: number, skip: number, hideLoading: boolean = false) {
+  if (!hideLoading) {
+    loadingStore.startLoading('Fetching recipes...')
+  }
   await scheduleStore.fetchSchedules(
     limit,
     skip,
@@ -118,11 +112,14 @@ async function loadData(limit: number, skip: number) {
 
   schedules.value = scheduleStore.schedules
   paginator.value = scheduleStore.paginator
+  $cookies?.set('schedules-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
   errors.value = scheduleStore.errors
   for (const error of errors.value) {
     notificationStore.showError(error)
   }
-  dataLoaded.value = true
+  if (loadingStore.isLoading) {
+    loadingStore.stopLoading()
+  }
 }
 
 async function handleFiltersChange(newFilters: typeof filters.value) {
@@ -133,7 +130,6 @@ async function handleFiltersChange(newFilters: typeof filters.value) {
 
 async function handleLimitChange(newLimit: number) {
   $cookies?.set('schedules-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
-  await loadData(newLimit, 0)
 }
 
 async function clearFilters() {
@@ -231,8 +227,6 @@ function loadFiltersFromUrl() {
 // Lifecycle
 onMounted(async () => {
 
-  loadingStore.startLoading('Loading schedules...')
-
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
@@ -240,14 +234,10 @@ onMounted(async () => {
   // Load filters from URL
   loadFiltersFromUrl()
 
-  // Load schedules
-  await loadData(paginator.value.limit, 0)
-
   // Set up auto-refresh
   intervalId.value = window.setInterval(async () => {
-    await loadData(paginator.value.limit, paginator.value.skip)
+    await loadData(paginator.value.limit, paginator.value.skip, true)
   }, 60000)
-  loadingStore.stopLoading()
 })
 
 onBeforeUnmount(() => {

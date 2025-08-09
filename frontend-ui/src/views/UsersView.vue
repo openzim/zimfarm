@@ -74,12 +74,12 @@
         </v-card-text>
       </v-card>
 
-      <!-- Users Table -->
       <UsersTable
         :headers="headers"
         :users="users"
         :paginator="paginator"
         :loading="loadingStore.isLoading"
+        :loading-text="loadingStore.loadingText"
         :errors="userStore.errors"
         @limit-changed="handleLimitChange"
         @load-data="loadData"
@@ -225,6 +225,7 @@ const loadData = async (limit: number, skip: number) => {
   if (response) {
     users.value = response
     paginator.value = userStore.paginator
+    $cookies?.set('users-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)
@@ -235,7 +236,6 @@ const loadData = async (limit: number, skip: number) => {
 
 const handleLimitChange = async (newLimit: number) => {
   $cookies?.set('users-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
-  await loadData(newLimit, 0)
 }
 
 // Lifecycle
@@ -244,6 +244,5 @@ onMounted(async () => {
     error.value = 'You do not have permission to view users.'
     return
   }
-  await loadData(paginator.value.limit, paginator.value.skip)
 })
 </script>

@@ -1,16 +1,16 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
-      <v-card-title class="d-flex align-center justify-space-between">
+      <v-card-title v-if="paginator.count > 0" class="d-flex align-center justify-space-between">
         <span class="text-subtitle-1 d-flex align-center">
           <v-icon class="mr-2">mdi-account-group</v-icon>
           Showing max.
           <v-select
             v-model="selectedLimit"
             :items="limits"
-            @change="emit('limitChanged', selectedLimit)"
             hide-details
             density="compact"
+            @update:modelValue="emit('limitChanged', $event)"
           />
           out of <strong class="ml-1 mr-1">{{ props.paginator.count }}</strong> users
         </span>
@@ -24,9 +24,17 @@
         :items-per-page-options="limits"
         class="elevation-1"
         item-key="username"
-        @update:itemsPerPage="emit('limitChanged', $event)"
         @update:options="onUpdateOptions"
+        :hide-default-footer="props.paginator.count === 0"
+        :hide-default-header="props.paginator.count === 0"
       >
+        <template #loading>
+          <div class="d-flex flex-column align-center justify-center pa-8">
+            <v-progress-circular indeterminate size="64" />
+              <div class="mt-4 text-body-1">{{ loadingText || 'Fetching users...' }}</div>
+            </div>
+        </template>
+
         <template #[`item.username`]="{ item }">
           <router-link
             :to="{ name: 'user-detail', params: { username: item.username } }"
@@ -79,6 +87,7 @@ const props = defineProps<{
   paginator: Paginator
   loading: boolean
   errors: string[]
+  loadingText: string
 }>()
 
 const emit = defineEmits<{
@@ -97,7 +106,7 @@ function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
 
 watch(() => props.paginator, (newPaginator) => {
   selectedLimit.value = newPaginator.limit
-})
+}, { immediate: true })
 
 const getRoleColor = (role: string): string => {
   const colorMap: Record<string, string> = {

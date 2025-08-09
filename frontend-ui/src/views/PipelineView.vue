@@ -11,6 +11,7 @@
     :tasks="tasks"
     :paginator="paginator"
     :loading="loadingStore.isLoading"
+    :loading-text="loadingStore.loadingText"
     :errors="errors"
     :canUnRequestTasks="canUnRequestTasks"
     :lastRunsLoaded="lastRunsLoaded"
@@ -103,7 +104,7 @@ const paginator = ref<Paginator>({
   limit: $cookies?.get('pipeline-table-limit') || 20,
   count: 0,
   skip: 0,
-  page_size: 20,
+  page_size: $cookies?.get('pipeline-table-limit') || 20,
 })
 const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
@@ -133,14 +134,26 @@ const handleFilterChange = (newFilter: string) => {
 
 // Watch for filter changes and load data
 watch(currentFilter, async (newFilter) => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value)
+  }
   await loadData(paginator.value.limit, paginator.value.skip, newFilter)
+  intervalId.value = window.setInterval(async () => {
+    await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value, true)
+  }, 60000)
 })
 
-async function loadData(limit: number, skip: number, filter?: string) {
+async function loadData(limit: number, skip: number, filter?: string, hideLoading: boolean = false) {
   if (!filter) {
     filter = currentFilter.value
   }
+  if (!hideLoading) {
+    loadingStore.startLoading('Fetching tasks...')
+  }
+
   lastRunsLoaded.value = false
+  tasks.value = []
+
   switch (filter) {
     case 'todo':
       await requestedTasksStore.fetchRequestedTasks({limit, skip})
@@ -171,12 +184,19 @@ async function loadData(limit: number, skip: number, filter?: string) {
       tasks.value = tasksStore.tasks
       paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors
+      if (loadingStore.isLoading) {
+        loadingStore.stopLoading()
+      }
       if (errors.value.length === 0) {
         await loadLastRuns()
       }
       break
     default:
       throw new Error(`Invalid filter: ${filter}`)
+  }
+  $cookies?.set('pipeline-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+  if (loadingStore.isLoading) {
+    loadingStore.stopLoading()
   }
 }
 
@@ -202,24 +222,20 @@ async function loadLastRuns() {
           )
         }
       }
-      // Add a 100ms pause between requests to avoid overwhelming the backend
+      // Add a pause between requests to avoid overwhelming the backend
       await new Promise((resolve) => setTimeout(resolve, constants.TASKS_LOAD_SCHEDULES_DELAY))
     }
   }
 
-  loadingStore.stopLoading()
 }
 
 async function handleLimitChange(newLimit: number) {
   $cookies?.set('pipeline-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
-  await loadData(newLimit, paginator.value.skip, currentFilter.value)
 }
 
 onMounted(async () => {
-  await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value)
-
   intervalId.value = window.setInterval(async () => {
-    await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value)
+    await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value, true)
   }, 60000)
 })
 

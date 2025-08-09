@@ -1,111 +1,123 @@
 <template>
   <div class="container">
-    <!-- Progress and Stats Section -->
-    <v-card v-if="!errors.length && ready" class="mb-4" flat>
-      <v-card-text>
-        <v-row>
-          <v-col>
-            <v-progress-linear
-              :model-value="currentMemory"
-              :max="maxMemory"
-              :color="progressColor"
-              height="24"
-              rounded
-              striped
+    <!-- Loading state when data hasn't been loaded yet -->
+    <div v-if="!dataLoaded && loadingStore.isLoading" class="text-center pa-8">
+      <v-progress-circular indeterminate size="64" />
+      <div class="mt-4 text-body-1">{{ loadingStore.loadingText }}</div>
+    </div>
+
+    <!-- Content only shown when data is loaded -->
+    <div v-if="dataLoaded">
+      <!-- Progress and Stats Section -->
+      <v-card v-if="!errors.length && ready" class="mb-4" flat>
+        <v-card-text>
+          <v-row>
+            <v-col>
+              <v-progress-linear
+                :model-value="currentMemory"
+                :max="maxMemory"
+                :color="progressColor"
+                height="24"
+                rounded
+                striped
+              >
+                <template #default="{ value }">
+                  <strong>{{ Math.ceil(value) }}%</strong>
+                </template>
+              </v-progress-linear>
+            </v-col>
+            <v-col class="d-flex align-center justify-end flex-column flex-sm-row">
+              <v-chip
+                variant="text"
+                color="success"
+                prepend-icon="mdi-server"
+                density="compact"
+              >
+                {{ onlineWorkers.length }} online
+              </v-chip>
+              <ResourceBadge kind="cpu" :value="0" :human-value="usageCpu" density="compact" variant="text" />
+              <ResourceBadge kind="memory" :value="0" :human-value="usageMemory" density="compact" variant="text" />
+              <ResourceBadge kind="disk" :value="0" :human-value="usageDisk" density="compact" variant="text" />
+              <v-btn
+                variant="outlined"
+                size="small"
+                class="ml-2"
+                @click="toggleWorkersList"
+              >
+                {{ toggleText }}
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+
+      <!-- Workers Table -->
+      <table v-if="!errors.length" class="table table-responsive-md table-sm table-striped table-hover">
+        <tbody>
+          <tr v-for="row in tableRows" :key="row.id">
+            <th
+              v-if="row.kind === 'worker' && row.worker"
+              :rowspan="row.rowspan"
+              :id="row.worker.name"
+              class="bg-light"
+              :class="row.status === 'online' ? 'text-success' : 'text-secondary'"
             >
-              <template #default="{ value }">
-                <strong>{{ Math.ceil(value) }}%</strong>
-              </template>
-            </v-progress-linear>
-          </v-col>
-          <v-col class="d-flex align-center justify-end flex-column flex-sm-row">
-            <v-chip
-              variant="text"
-              color="success"
-              prepend-icon="mdi-server"
-              density="compact"
-            >
-              {{ onlineWorkers.length }} online
-            </v-chip>
-            <ResourceBadge kind="cpu" :value="0" :human-value="usageCpu" density="compact" variant="text" />
-            <ResourceBadge kind="memory" :value="0" :human-value="usageMemory" density="compact" variant="text" />
-            <ResourceBadge kind="disk" :value="0" :human-value="usageDisk" density="compact" variant="text" />
-            <v-btn
-              variant="outlined"
-              size="small"
-              class="ml-2"
-              @click="toggleWorkersList"
-            >
-              {{ toggleText }}
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+              <a
+                :href="'#' + row.worker.name"
+                :class="row.worker.name === $route.hash.split('#')[1] ? 'bg-warning' : 'bg-light'"
+              >
+                {{ row.worker.name }}
+              </a>
+            </th>
 
-    <!-- Workers Table -->
-    <table v-if="!errors.length && workers.length > 0" class="table table-responsive-md table-sm table-striped table-hover">
-      <tbody>
-        <tr v-for="row in tableRows" :key="row.id">
-          <th
-            v-if="row.kind === 'worker' && row.worker"
-            :rowspan="row.rowspan"
-            :id="row.worker.name"
-            class="bg-light"
-            :class="row.status === 'online' ? 'text-success' : 'text-secondary'"
-          >
-            <a
-              :href="'#' + row.worker.name"
-              :class="row.worker.name === $route.hash.split('#')[1] ? 'bg-warning' : 'bg-light'"
-            >
-              {{ row.worker.name }}
-            </a>
-          </th>
+            <td v-show="row.status === 'offline'" v-if="row.kind === 'worker' && row.worker" colspan="1">
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <span v-bind="props">
+                    <v-icon icon="mdi-skull-crossbones" size="small" />
+                    {{ fromNow(row.worker.last_seen) }}
+                  </span>
+                </template>
+                <span>{{ formatDt(row.worker.last_seen) }}</span>
+              </v-tooltip>
+            </td>
+            <th v-show="row.status === 'offline'" v-if="row.kind === 'worker' && row.worker" colspan="1" class="text-right">Resources</th>
+            <th v-show="row.status === 'online'" v-if="row.kind === 'worker' && row.worker" colspan="2" class="text-right">Resources</th>
 
-          <td v-show="row.status === 'offline'" v-if="row.kind === 'worker' && row.worker" colspan="1">
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <span v-bind="props">
-                  <v-icon icon="mdi-skull-crossbones" size="small" />
-                  {{ fromNow(row.worker.last_seen) }}
-                </span>
-              </template>
-              <span>{{ formatDt(row.worker.last_seen) }}</span>
-            </v-tooltip>
-          </td>
-          <th v-show="row.status === 'offline'" v-if="row.kind === 'worker' && row.worker" colspan="1" class="text-right">Resources</th>
-          <th v-show="row.status === 'online'" v-if="row.kind === 'worker' && row.worker" colspan="2" class="text-right">Resources</th>
+            <th v-if="row.kind === 'worker' && row.worker" class="text-center">
+              <ResourceBadge kind="cpu" :value="row.worker.resources.cpu" />
+            </th>
+            <th v-if="row.kind === 'worker' && row.worker" class="text-center">
+              <ResourceBadge kind="memory" :value="row.worker.resources.memory" />
+            </th>
+            <th v-if="row.kind === 'worker' && row.worker" class="text-center">
+              <ResourceBadge kind="disk" :value="row.worker.resources.disk" />
+            </th>
 
-          <th v-if="row.kind === 'worker' && row.worker" class="text-center">
-            <ResourceBadge kind="cpu" :value="row.worker.resources.cpu" />
-          </th>
-          <th v-if="row.kind === 'worker' && row.worker" class="text-center">
-            <ResourceBadge kind="memory" :value="row.worker.resources.memory" />
-          </th>
-          <th v-if="row.kind === 'worker' && row.worker" class="text-center">
-            <ResourceBadge kind="disk" :value="row.worker.resources.disk" />
-          </th>
+            <td v-if="row.kind === 'task' && row.task">
+              <span v-if="row.task.schedule_name === null || row.task.schedule_name === 'none'">
+                {{ row.task.original_schedule_name }}
+              </span>
+              <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: row.task.schedule_name } }">
+                {{ row.task.schedule_name }}
+              </router-link>
+            </td>
+            <td v-if="row.kind === 'task' && row.task">
+              <TaskLink
+                :id="row.task.id"
+                :updated-at="startedOn(row.task)"
+              />
+            </td>
+            <td v-if="row.kind === 'task' && row.task" class="text-center">{{ row.task.config.resources.cpu }}</td>
+            <td v-if="row.kind === 'task' && row.task" class="text-center">{{ formattedBytesSize(row.task.config.resources.memory) }}</td>
+            <td v-if="row.kind === 'task' && row.task" class="text-center">{{ formattedBytesSize(row.task.config.resources.disk) }}</td>
+          </tr>
+        </tbody>
+      </table>
 
-          <td v-if="row.kind === 'task' && row.task">
-            <router-link :to="{ name: 'schedule-detail', params: { scheduleName: row.task.schedule_name } }">
-              {{ row.task.schedule_name }}
-            </router-link>
-          </td>
-          <td v-if="row.kind === 'task' && row.task">
-            <TaskLink
-              :id="row.task.id"
-              :updated-at="startedOn(row.task)"
-            />
-          </td>
-          <td v-if="row.kind === 'task' && row.task" class="text-center">{{ row.task.config.resources.cpu }}</td>
-          <td v-if="row.kind === 'task' && row.task" class="text-center">{{ formattedBytesSize(row.task.config.resources.memory) }}</td>
-          <td v-if="row.kind === 'task' && row.task" class="text-center">{{ formattedBytesSize(row.task.config.resources.disk) }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Error Messages -->
-    <ErrorMessage v-for="error in errors" :key="error" :message="error" />
+      <!-- Error Messages -->
+      <ErrorMessage v-for="error in errors" :key="error" :message="error" />
+    </div>
   </div>
 </template>
 
@@ -114,6 +126,7 @@ import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import constants from '@/constants'
+import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useTasksStore } from '@/stores/tasks'
 import { useWorkersStore } from '@/stores/workers'
@@ -130,6 +143,7 @@ const $cookies = inject<VueCookies>('$cookies')
 const workersStore = useWorkersStore()
 const tasksStore = useTasksStore()
 const notificationStore = useNotificationStore()
+const loadingStore = useLoadingStore()
 
 // Reactive state
 const ready = ref<boolean>(false)
@@ -137,6 +151,7 @@ const errors = ref<string[]>([])
 const showingAll = ref(!getOnlinesOnlyPreference())
 const intervalId = ref<number | null>(null)
 const runningTasks = ref<TaskLight[]>([])
+const dataLoaded = ref<boolean>(false)
 
 // Computed properties
 const allWorkers = computed(() => workersStore.workers)
@@ -253,7 +268,6 @@ async function loadRunningTasks(): Promise<void> {
     'scraper_killed',
     'cancel_requested',
   ]})
-
   // Clear existing tasks and add new ones to workers
   workersStore.clearWorkerTasks()
   if (tasks) {
@@ -275,15 +289,20 @@ async function loadRunningTasks(): Promise<void> {
 async function loadData(): Promise<void> {
   await workersStore.fetchWorkers({limit: 100})
   await loadRunningTasks()
+  dataLoaded.value = true
 }
 
 // Lifecycle
 onMounted(async () => {
+  loadingStore.startLoading('Loading workers...')
+
   await loadData()
 
   intervalId.value = window.setInterval(async () => {
     await loadData()
   }, 60000)
+
+  loadingStore.stopLoading()
 })
 
 onBeforeUnmount(() => {
