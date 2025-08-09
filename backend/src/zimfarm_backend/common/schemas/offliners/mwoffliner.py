@@ -8,7 +8,7 @@ from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
-    OptionalS3OptimizationCache,
+    OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
@@ -142,7 +142,7 @@ class MWOfflinerFlagsSchema(DashModel):
         "(see extensions/*.js)",
     )
 
-    optimisationCacheUrl: OptionalS3OptimizationCache = OptionalField(
+    optimisationCacheUrl: OptionalSecretUrl = OptionalField(
         title="Optimisation Cache URL",
         description="S3 Storage URL including credentials and bucket",
     )

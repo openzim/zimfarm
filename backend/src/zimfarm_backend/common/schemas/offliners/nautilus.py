@@ -7,6 +7,7 @@ from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
+    OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
@@ -21,7 +22,7 @@ class NautilusFlagsSchema(DashModel):
         title="Archive",
         description="URL to a ZIP archive containing all the documents",
     )
-    collection: AnyUrl | None = OptionalField(
+    collection: OptionalSecretUrl = OptionalField(
         title="Custom Collection",
         description=(
             "Different collection JSON URL. Otherwise using `collection.json` "

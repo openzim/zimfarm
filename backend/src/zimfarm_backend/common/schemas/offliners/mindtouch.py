@@ -7,7 +7,7 @@ from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
-    OptionalS3OptimizationCache,
+    OptionalSecretUrl,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
@@ -104,7 +104,7 @@ class MindtouchFlagsSchema(DashModel):
         description="URL to illustration to use for ZIM illustration and favicon",
     )
 
-    optimization_cache: OptionalS3OptimizationCache = OptionalField(
+    optimization_cache: OptionalSecretUrl = OptionalField(
         title="Optimization Cache URL",
         description="S3 Storage URL including credentials and bucket",
     )
