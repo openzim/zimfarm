@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.13-slim-bookworm
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
@@ -48,7 +48,7 @@ VOLUME /mnt/quarantine
 VOLUME /mnt/zim
 VOLUME /mnt/check_logs
 
-ENV ZIM_TOOLS_URL https://download.openzim.org/release/zim-tools/zim-tools_linux-x86_64-3.5.0.tar.gz
+ENV ZIM_TOOLS_URL https://download.openzim.org/release/zim-tools/zim-tools_linux-x86_64-3.6.0.tar.gz
 ENV ZIM_SRC_DIR /jail/zim
 ENV ZIM_DST_DIR /mnt/zim
 ENV ZIM_QUAR_DIR /mnt/quarantine
@@ -65,7 +65,7 @@ COPY apps/check_zim.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/check_zim.sh /usr/local/bin/check_zims.sh
 
 # OpenSSH public-key auth relay
-ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v1
+ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v2
 ENV ZIMFARM_USERNAME uploader
 
 COPY apps/requirements.txt /tmp/requirements.txt

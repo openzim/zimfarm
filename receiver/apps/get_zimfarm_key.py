@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-""" OpenSSH AuthorizedKeysCommand tool for the Zimfarm API
+"""OpenSSH AuthorizedKeysCommand tool for the Zimfarm API
 
-    - launched by sshd on autehtication attempt with two parameters
-        - username: username being authenticated (should be `uploader`)
-        - fingerprint: the MD5 fingerprint of the tested key
-    - must respond with a list of public keys to authenticate it with
-    - connects to the Zimfarm API to request a public key from the fingerprint
-    - requests it to be associated with a user having zim.upload permission
+- launched by sshd on autehtication attempt with two parameters
+    - username: username being authenticated (should be `uploader`)
+    - fingerprint: the SHA 256 fingerprint of the tested key
+- must respond with a list of public keys to authenticate it with
+- connects to the Zimfarm API to request a public key from the fingerprint
+- requests it to be associated with a user having zim.upload permission
 """
 
 import json
@@ -20,7 +20,7 @@ import sys
 import requests
 
 default_environ = {
-    "ZIMFARM_WEBAPI": "https://api.farm.openzim.org/v1",
+    "ZIMFARM_WEBAPI": "https://api.farm.openzim.org/v2",
     "ZIMFARM_USERNAME": "uploader",
 }
 
@@ -68,8 +68,8 @@ def fetch_public_keys_for(username, raw_fingerprint):
 
     if req.status_code != requests.codes.OK:
         reason = f"HTTP {req.status_code}."
-        if response and "error" in response:
-            reason += f" {response['error']}"
+        if response and "message" in response:
+            reason += f" {response['message']}"
         logger.warning(
             f"failed login attempt using {raw_fingerprint}/{fingerprint}: {reason}"
         )
