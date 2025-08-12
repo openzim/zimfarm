@@ -1,3 +1,4 @@
+import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -26,5 +27,5 @@ class Token(BaseModel):
 
     access_token: str
     token_type: str = "Bearer"
-    expires_in: float
+    expires_time: datetime.datetime
     refresh_token: str

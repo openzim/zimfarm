@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
 from zimfarm_backend.db.worker import get_worker
@@ -21,6 +22,7 @@ def test_create_request_task_no_permission(
     """Test that create_request_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -320,6 +322,7 @@ def test_update_requested_task_no_permission(
     """Test that update_requested_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -343,6 +346,7 @@ def test_update_requested_task_success(
     """Test successful update of requested task priority"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -367,6 +371,7 @@ def test_delete_requested_task_no_permission(
     """Test that delete_requested_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -388,6 +393,7 @@ def test_delete_requested_task_success(
     """Test successful deletion of requested task"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,

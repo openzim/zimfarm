@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
@@ -48,6 +49,7 @@ def test_get_schedules(
     """Test that get_schedules raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -101,6 +103,7 @@ def test_create_schedule(
     """Test that create_schedule raises ForbiddenError without permission"""
     user = create_user(permission=permission)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -150,6 +153,7 @@ def test_get_schedule(
     """Test that get_schedule raises ForbiddenError without permission"""
     user = create_user(permission=permission)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -185,6 +189,7 @@ def test_update_schedule_unauthorized(
     """Test that update_schedule raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -282,6 +287,7 @@ def test_update_schedule(
 ):
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -317,6 +323,7 @@ def test_delete_schedule(
 ):
     user = create_user(permission=permission)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -361,6 +368,7 @@ def test_clone_schedule(
 ):
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,

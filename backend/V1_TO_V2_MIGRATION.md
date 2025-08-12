@@ -11,11 +11,13 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 ### 1. Web Framework Migration
 
 **v1 (Flask):**
+
 - Uses Flask
 - Traditional WSGI application
 - Manual error handling with custom exception classes
 
 **v2 (FastAPI):**
+
 - Uses FastAPI
 - ASGI application with uvicorn server
 - Automatic request validation and error handling with Pydantic
@@ -23,18 +25,22 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 ### 2. Python Version Upgrade
 
 **v1:**
+
 - Python 3.8
 
 **v2:**
+
 - Python 3.13
 
 ### 3. Dependency Management
 
 **v1:**
+
 - Uses `requirements.txt` with loose version constraints
 - Manual dependency specification
 
 **v2:**
+
 - Uses `pyproject.toml` with modern Python packaging standards
 - Strict version pinning for all dependencies
 - Optional dependency groups (dev, test, lint, check)
@@ -42,20 +48,21 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 
 ### 4. Key Dependency Updates
 
-| Dependency | v1 | v2 | Notes |
-|------------|----|----|-------|
-| Web Framework | Flask 2.3.x | FastAPI 0.115.2 | Complete framework change |
-| Validation | Marshmallow 3.19.x | Pydantic 2.11.4 | Modern type validation |
-| MongoDB (for JSONB marshalling) | pymongo 3.12.0 | pymongo 4.13.0 | Major version upgrade |
-
+| Dependency                      | v1                 | v2              | Notes                     |
+| ------------------------------- | ------------------ | --------------- | ------------------------- |
+| Web Framework                   | Flask 2.3.x        | FastAPI 0.115.2 | Complete framework change |
+| Validation                      | Marshmallow 3.19.x | Pydantic 2.11.4 | Modern type validation    |
+| MongoDB (for JSONB marshalling) | pymongo 3.12.0     | pymongo 4.13.0  | Major version upgrade     |
 
 ### 5. API Changes
 
 **v1:**
+
 - API prefix: `/v1`
 - Accepted a mixture of formats (form, json, headers) for authentication
 
 **v2:**
+
 - API prefix: `/v2`
 - Accepts json for authentication payload with support for SSH authentication via headers
 - Changed schema to create a schedule (see openAPI docs for change in payload shape)
@@ -65,37 +72,45 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 ### 6. Authentication & Authorization
 
 **v1:**
+
 - Custom authentication decorators
 - Uses subprocess to invoke openssl for cryptographic functions
 - Only supports SSH keys in the RSA format
+- Token payload contains `expires_in` which is a float
 
 **v2:**
+
 - FastAPI dependency injection for authentication
 - Uses `cryptography` library for cryptographic functions
 - Supports SSH keys in RSA and PEM formats
-
+- Token payload `expires_in` renamed to `expires_time` and is a datetime isoformat string
 
 ### 7. Models
 
 **v1:**
+
 - Uses `Dict`, `List`, `Optional` from typing
 
 **v2:**
+
 - Uses modern type annotations (`dict`, `list`, `|` union syntax)
 
 ### 8. Containerization
 
 **v1:**
+
 - Uses `rgaudin/uwsgi-nginx:python3.8` base image
 - uWSGI + Nginx setup
 
 **v2:**
+
 - Uses `python:3.13-slim-bookworm` base image
 - uvicorn ASGI server
 
 ### 9. Development Tools
 
 **v2 New Features:**
+
 - Black code formatter
 - Ruff linter
 - Pyright type checker

@@ -19,7 +19,6 @@ from cryptography.hazmat.primitives.serialization import (
     load_ssh_public_key,
 )
 
-from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
     JWT_SECRET,
     JWT_TOKEN_EXPIRY_DURATION,
@@ -32,12 +31,12 @@ def generate_access_token(
     *,
     user_id: str,
     username: str,
+    issue_time: datetime.datetime,
     email: str | None = None,
     scope: dict[str, Any] | None = None,
 ) -> str:
     """Generate a JWT access token for the given user ID with configured expiry."""
 
-    issue_time = getnow()
     expire_time = issue_time + datetime.timedelta(seconds=JWT_TOKEN_EXPIRY_DURATION)
     payload = {
         "iss": JWT_TOKEN_ISSUER,  # issuer
