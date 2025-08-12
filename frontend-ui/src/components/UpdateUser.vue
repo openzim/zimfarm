@@ -83,7 +83,6 @@
           <v-row>
             <v-col cols="8" sm="8" md="6">
               <v-file-input
-                ref="keyFile"
                 v-model="keyFile"
                 label="RSA Public Key"
                 placeholder="Select an RSA public key file (.pub)"
