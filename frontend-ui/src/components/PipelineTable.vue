@@ -103,9 +103,11 @@
         </template>
 
         <template #[`item.resources`]="{ item }">
-          <ResourceBadge kind="cpu" :value="item.config.resources.cpu" />
-          <ResourceBadge kind="memory" :value="item.config.resources.memory" />
-          <ResourceBadge kind="disk" :value="item.config.resources.disk" />
+          <div class="d-flex flex-sm-column flex-lg-row py-1">
+            <ResourceBadge kind="cpu" :value="item.config.resources.cpu" variant="text"/>
+            <ResourceBadge kind="memory" :value="item.config.resources.memory" variant="text"/>
+            <ResourceBadge kind="disk" :value="item.config.resources.disk"  variant="text"/>
+          </div>
         </template>
 
         <template #[`item.worker`]="{ item }">
