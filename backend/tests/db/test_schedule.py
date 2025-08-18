@@ -103,7 +103,7 @@ def test_create_schedule(
         session=dbsession,
         name="test_schedule",
         category=ScheduleCategory.other,
-        language=LanguageSchema(code="en", name_en="English", name_native="English"),
+        language=LanguageSchema(code="eng", name_en="English", name_native="English"),
         config=schedule_config,
         tags=["test"],
         enabled=True,
@@ -112,7 +112,7 @@ def test_create_schedule(
     )
     assert schedule.name == "test_schedule"
     assert schedule.category == ScheduleCategory.other
-    assert schedule.language_code == "en"
+    assert schedule.language_code == "eng"
     assert schedule.language_name_en == "English"
     assert schedule.language_name_native == "English"
     assert schedule.config == schedule_config.model_dump(
@@ -186,8 +186,8 @@ def test_delete_schedule_not_found(dbsession: OrmSession):
     "name,lang,categories,tags,expected_count",
     [
         pytest.param(None, None, None, None, 30, id="all"),
-        pytest.param("wiki", ["en"], None, None, 10, id="wiki_en"),
-        pytest.param("wiki", ["en", "fr"], None, None, 20, id="wiki_en_fr"),
+        pytest.param("wiki", ["eng"], None, None, 10, id="wiki_eng"),
+        pytest.param("wiki", ["eng", "fra"], None, None, 20, id="wiki_eng_fra"),
         pytest.param(
             "schedule",
             None,
@@ -196,15 +196,15 @@ def test_delete_schedule_not_found(dbsession: OrmSession):
             0,
             id="schedule_wikipedia",
         ),
-        pytest.param(None, ["en"], None, ["important"], 10, id="en_important"),
+        pytest.param(None, ["eng"], None, ["important"], 10, id="eng_important"),
         pytest.param("nonexistent", None, None, None, 0, id="nonexistent"),
         pytest.param(
             "schedule",
-            ["en"],
+            ["eng"],
             [ScheduleCategory.other],
             ["test"],
             10,
-            id="schedule_en_other_test",
+            id="schedule_eng_other_test",
         ),
     ],
 )
@@ -222,10 +222,10 @@ def test_get_schedules(
     """Test that get_schedules works correctly with combined filters"""
     for i in range(10):
         schedule = create_schedule(
-            name=f"wiki_en_{i}",
+            name=f"wiki_eng_{i}",
             category=ScheduleCategory.wikipedia,
             language=LanguageSchema(
-                code="en", name_en="English", name_native="English"
+                code="eng", name_en="English", name_native="English"
             ),
             tags=["important"],
         )
@@ -237,10 +237,10 @@ def test_get_schedules(
 
     for i in range(10):
         schedule = create_schedule(
-            name=f"wiki_fr_{i}",
+            name=f"wiki_fra_{i}",
             category=ScheduleCategory.wikipedia,
             language=LanguageSchema(
-                code="fr", name_en="French", name_native="Français"
+                code="fra", name_en="French", name_native="Français"
             ),
             tags=["important"],
         )
@@ -255,7 +255,7 @@ def test_get_schedules(
             name=f"other_schedule_{i}",
             category=ScheduleCategory.other,
             language=LanguageSchema(
-                code="en", name_en="English", name_native="English"
+                code="eng", name_en="English", name_native="English"
             ),
             tags=["test"],
         )

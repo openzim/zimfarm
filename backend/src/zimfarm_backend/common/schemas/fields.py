@@ -170,7 +170,9 @@ OptionalZIMDescription = ZIMDescription | None
 ZIMFileName = Annotated[
     str,
     AfterValidator(
-        pattern(r"^(.+?_)([a-z\-]{2,3}?_)(.+_|)([\d]{4}-[\d]{2}|\{period\}).zim$")
+        pattern(
+            r"^([a-z0-9\-\.]+_)([a-z\-]{2,3}?_)([a-z0-9\-\.]+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"
+        )
     ),
 ]
 
@@ -184,7 +186,7 @@ ZIMPlatformValue = Annotated[int, AfterValidator(between(low=1))]
 
 OptionalZIMPlatformValue = ZIMPlatformValue | None
 
-ZIMLangCode = Annotated[str, AfterValidator(length_between(low=2, high=8))]
+ZIMLangCode = Annotated[str, AfterValidator(length_between(low=3, high=3))]
 
 OptionalZIMLangCode = ZIMLangCode | None
 
