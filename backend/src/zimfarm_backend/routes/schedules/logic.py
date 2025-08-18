@@ -130,7 +130,7 @@ def create_schedule(
     return JSONResponse(
         content=ScheduleCreateResponseSchema(
             id=db_schedule.id,
-        ).model_dump(mode="json")
+        ).model_dump(mode="json", by_alias=True)
     )
 
 
@@ -150,10 +150,15 @@ def get_schedules_backup(
     else:
         exclude_notifications = False
 
-    if hide_secrets or exclude_notifications:
+    # if the user doesn't have the appropriate permission, then their flag
+    # does not matter
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="update")
+    ):
         show_secrets = False
     else:
-        show_secrets = True
+        show_secrets = not hide_secrets
 
     results = get_all_schedules(session)
     schedules = cast(list[ScheduleFullSchema], results.schedules)
@@ -163,7 +168,9 @@ def get_schedules_backup(
             schedule.notification = None
 
         content.append(
-            schedule.model_dump(mode="json", context={"show_secrets": show_secrets})
+            schedule.model_dump(
+                mode="json", context={"show_secrets": show_secrets}, by_alias=True
+            )
         )
 
     return JSONResponse(content=content)
@@ -187,15 +194,15 @@ def get_schedule(
         current_user
         and check_user_permission(current_user, namespace="schedules", name="update")
     ):
-        exclude_notifications = True
         schedule.notification = None
-    else:
-        exclude_notifications = False
 
-    if hide_secrets or exclude_notifications:
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="update")
+    ):
         show_secrets = False
     else:
-        show_secrets = True
+        show_secrets = not hide_secrets
 
     schedule.config = expanded_config(
         cast(ScheduleConfigSchema, schedule.config), show_secrets=show_secrets
@@ -374,7 +381,9 @@ def update_schedule(
     )
     schedule.config = expanded_config(cast(ScheduleConfigSchema, schedule.config))
     return JSONResponse(
-        content=schedule.model_dump(mode="json", context={"show_secrets": True})
+        content=schedule.model_dump(
+            mode="json", context={"show_secrets": True}, by_alias=True
+        )
     )
 
 

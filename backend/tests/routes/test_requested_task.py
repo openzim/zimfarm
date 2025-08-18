@@ -289,7 +289,7 @@ def test_get_requested_task_success(
     client: TestClient,
     access_token: str,
     requested_task: RequestedTask,
-    hide_secrets: bool,  # noqa: FBT001
+    hide_secrets: str,
 ):
     """Test successful retrieval of a single requested task"""
     response = client.get(
@@ -304,7 +304,7 @@ def test_get_requested_task_success(
     assert "offliner_id" in config["offliner"]
     assert "mwPassword" in config["offliner"]
 
-    if hide_secrets:
+    if hide_secrets == "true":
         for char in config["offliner"]["mwPassword"]:
             assert char == "*"
     else:
