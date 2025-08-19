@@ -171,12 +171,19 @@ ZIMFileName = Annotated[
     str,
     AfterValidator(
         pattern(
-            r"^([a-z0-9\-\.]+_)([a-z\-]{2,3}?_)([a-z0-9\-\.]+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"
+            r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+_)([a-z0-9\-\.]+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"
         )
     ),
 ]
 
 OptionalZIMFileName = ZIMFileName | None
+
+ZIMName = Annotated[
+    str,
+    AfterValidator(pattern(r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+)$")),
+]
+
+OptionalZIMName = ZIMName | None
 
 SlackTarget = Annotated[str, AfterValidator(pattern(r"^[#|@].+$"))]
 

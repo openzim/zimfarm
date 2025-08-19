@@ -14,6 +14,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
+    ZIMName,
     ZIMSecretStr,
 )
 
@@ -44,7 +45,7 @@ class YoutubeFlagsSchema(DashModel):
         description="ISO-639-3 (3 chars) language code of content",
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="ZIM Name",
         description="Used as identifier and filename (date will be appended)",
     )

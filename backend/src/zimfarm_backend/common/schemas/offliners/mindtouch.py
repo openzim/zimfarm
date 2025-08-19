@@ -12,6 +12,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     ZIMDescription,
+    ZIMName,
     ZIMTitle,
 )
 
@@ -42,7 +43,7 @@ class MindtouchFlagsSchema(DashModel):
         "will be automatically added. Defaults to {name}_{period}",
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="ZIM name",
         description="Name of the ZIM.",
     )

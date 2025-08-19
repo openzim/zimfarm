@@ -10,6 +10,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMName,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
 )
@@ -23,7 +24,7 @@ class SotokiFlagsSchema(DashModel):
         description="Domain name from StackExchange to scrape.",
     )
 
-    name: OptionalNotEmptyString = OptionalField(
+    name: OptionalZIMName = OptionalField(
         title="Name",
         description="ZIM name. Used as identifier and filename "
         "(date will be appended). Constructed from domain if not supplied",

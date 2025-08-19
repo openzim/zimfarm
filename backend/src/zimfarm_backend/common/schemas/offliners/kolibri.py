@@ -13,6 +13,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    ZIMName,
 )
 
 
@@ -36,7 +37,7 @@ class KolibriFlagsSchema(DashModel):
         "If unspecified, will attempt to detect from main page, or use 'eng'",
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="Name",
         description="ZIM name. Used as identifier and filename (date will be appended)",
     )

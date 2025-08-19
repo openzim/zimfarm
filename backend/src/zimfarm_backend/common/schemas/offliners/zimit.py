@@ -5,7 +5,6 @@ from pydantic import AnyUrl, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import CamelModel
 from zimfarm_backend.common.schemas.fields import (
-    NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
     OptionalPercentage,
@@ -15,6 +14,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
+    ZIMName,
     enum_member,
 )
 
@@ -181,7 +181,7 @@ class ZimitFlagsFullSchema(CamelModel):
         description="If set, read a list of seed urls, one per line. HTTPS URL"
         " to an online file.",
     )
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="Name",
         description="Name of the ZIM. "
         "Used to compose filename if not otherwise defined",

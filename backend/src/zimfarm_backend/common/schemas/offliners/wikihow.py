@@ -10,6 +10,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMName,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
@@ -24,7 +25,7 @@ class WikihowFlagsSchema(DashModel):
         description="wikiHow website to build from. 2-letters language code.",
     )
 
-    name: OptionalNotEmptyString = OptionalField(
+    name: OptionalZIMName = OptionalField(
         title="Name",
         description="ZIM name. Used as identifier and filename "
         "(date will be appended). Constructed from language if not supplied",

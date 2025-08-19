@@ -11,6 +11,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMName,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
@@ -25,7 +26,7 @@ class IFixitFlagsSchema(DashModel):
         description="iFixIt website to build from",
     )
 
-    name: OptionalNotEmptyString = OptionalField(
+    name: OptionalZIMName = OptionalField(
         title="Name",
         description="ZIM name. Used as identifier and filename "
         "(date will be appended). Constructed from language if not supplied",

@@ -39,40 +39,44 @@ def test_enum_validator_skips_validation_when_context_set():
 @pytest.mark.parametrize(
     "filename,expected",
     [
-        ("wikipedia_en_2024-01.zim", does_not_raise()),
-        ("ted-talks_eng_2024-03.zim", does_not_raise()),
-        ("ted-talks_eng_{period}.zim", does_not_raise()),
+        ("wikipedia_en_all_2024-01.zim", does_not_raise()),
+        ("ted-talks_eng_all_2024-03.zim", does_not_raise()),
         ("wikipedia_eng_all_{period}.zim", does_not_raise()),
+        ("ted-talks_eng_football_{period}.zim", does_not_raise()),
+        ("wikipedia_en_all_nopic_2024-01.zim", does_not_raise()),  # selection + flavor
         # Invalid filenames
         (
-            "wikipedia_eng_2024-01",
+            "wikipedia_eng_all_2024-01",
             pytest.raises(ValidationError),
         ),  # Missing .zim extension
         (
-            "WIKIPEDIA_EN_2024-01.zim",
+            "WIKIPEDIA_EN_ALL_2024-01.zim",
             pytest.raises(ValidationError),
         ),  # Uppercase letters
         (
-            "wikipedia_en_2024_01.zim",
+            "wikipedia_eng_all_2024_01.zim",
             pytest.raises(ValidationError),
         ),  # Wrong date format (underscore instead of dash)
-        ("_en_2024-01.zim", pytest.raises(ValidationError)),  # Empty first part
+        ("_en_all_2024-01.zim", pytest.raises(ValidationError)),  # Empty first part
         (
-            "wikipedia__2024-01.zim",
+            "wikipedia__all_2024-01.zim",
             pytest.raises(ValidationError),
         ),  # Empty language part
-        ("wikipedia_en_.zim", pytest.raises(ValidationError)),  # Empty date part
+        ("wikipedia_en_all_.zim", pytest.raises(ValidationError)),  # Empty date part
         (
-            "wikipedia_en_2024-01_.zim",
+            "wikipedia_en_all_2024-01_.zim",
             pytest.raises(ValidationError),
-        ),  # Trailing underscore
-        ("_en_2024-01.zim", pytest.raises(ValidationError)),  # Leading underscore
+        ),  # Trailing underscore after period
         (
-            "wikipedia en_2024-01.zim",
+            "_wikipedia_en_all_2024-01.zim",
+            pytest.raises(ValidationError),
+        ),  # Leading underscore
+        (
+            "wikipedia en_all_2024-01.zim",
             pytest.raises(ValidationError),
         ),  # Space in first part
         (
-            "wikipedia_en 2024-01.zim",
+            "wikipedia_en_all 2024-01.zim",
             pytest.raises(ValidationError),
         ),  # Space in date part
     ],
