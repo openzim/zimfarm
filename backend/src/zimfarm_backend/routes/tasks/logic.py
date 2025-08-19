@@ -85,13 +85,15 @@ async def get_task(
     ):
         task.notification = None
 
-    if hide_secrets or not (
+    # if the user does not have the appropriate permission, then their flag does
+    # not matter
+    if not (
         current_user
         and check_user_permission(current_user, namespace="tasks", name="create")
     ):
         show_secrets = False
     else:
-        show_secrets = True
+        show_secrets = not hide_secrets
 
     return JSONResponse(
         content=task.model_dump(

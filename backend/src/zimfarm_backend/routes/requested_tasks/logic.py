@@ -280,15 +280,27 @@ def get_requested_task(
 
     # exclude notification to not expose private information (privacy)
     # on anonymous requests and requests for users without schedules_update
-    if not current_user or not check_user_permission(
-        current_user, namespace="schedules", name="update"
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="update")
     ):
         requested_task.notification = None
 
-    if hide_secrets:
-        return JSONResponse(content=requested_task.model_dump(mode="json"))
+    # if the user doesn't have permission, then their flag to hide secret
+    # does not matter
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="update")
+    ):
+        show_secrets = False
+    else:
+        show_secrets = not hide_secrets
 
-    return JSONResponse(content=requested_task.model_dump(context={}, mode="json"))
+    return JSONResponse(
+        content=requested_task.model_dump(
+            context={"show_secrets": show_secrets}, mode="json", by_alias=True
+        )
+    )
 
 
 @router.patch("/{requested_task_id}")

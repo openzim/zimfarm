@@ -40,7 +40,7 @@ def test_get_tasks(
 def test_get_task_no_auth(
     client: TestClient,
     task: Task,
-    hide_secrets: bool,  # noqa: FBT001
+    hide_secrets: str,
 ):
     """Test successful retrieval of a single task"""
     response = client.get(
