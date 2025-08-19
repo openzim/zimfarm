@@ -1,4 +1,10 @@
-import type { ConfigWithOnlyOffliner, DockerImage, MostRecentTask, Resources, ScheduleDuration } from '@/types/base'
+import type {
+  ConfigWithOnlyOffliner,
+  DockerImage,
+  MostRecentTask,
+  Resources,
+  ScheduleDuration,
+} from '@/types/base'
 import type { Language } from '@/types/language'
 
 export interface OfflinerFlags {
@@ -32,15 +38,14 @@ export interface Schedule {
 }
 
 export interface ScheduleLight {
-    name: string
-    category: string
-    most_recent_task: MostRecentTask | null
-    config: ConfigWithOnlyOffliner
-    language: Language
-    enabled: boolean
-    is_requested: boolean
+  name: string
+  category: string
+  most_recent_task: MostRecentTask | null
+  config: ConfigWithOnlyOffliner
+  language: Language
+  enabled: boolean
+  is_requested: boolean
 }
-
 
 export interface ScheduleUpdateSchema {
   name: string | null
@@ -59,45 +64,43 @@ export interface ScheduleUpdateSchema {
   artifacts_globs: string[] | null
 }
 
-
 export interface ScheduleUpdateSchema {
-    name: string | null
-    language: Language | null
-    category: string | null
-    periodicity: string | null
-    tags: string[] | null
-    enabled: boolean | null
-    offliner: string | null
-    warehouse_path: string | null
-    image: DockerImage | null
-    platform: string | null
-    resources: Resources | null
-    monitor: boolean | null
-    flags: Record<string, unknown> | null
-    artifacts_globs: string[] | null
+  name: string | null
+  language: Language | null
+  category: string | null
+  periodicity: string | null
+  tags: string[] | null
+  enabled: boolean | null
+  offliner: string | null
+  warehouse_path: string | null
+  image: DockerImage | null
+  platform: string | null
+  resources: Resources | null
+  monitor: boolean | null
+  flags: Record<string, unknown> | null
+  artifacts_globs: string[] | null
 }
 
 export interface EventNotification {
-    mailgun: string[] | null
-    webhook: string[] | null
-    slack: string[] | null
+  mailgun: string[] | null
+  webhook: string[] | null
+  slack: string[] | null
 }
 
 export interface ScheduleNotification {
-    requested: EventNotification | null
-    started: EventNotification | null
-    ended: EventNotification | null
+  requested: EventNotification | null
+  started: EventNotification | null
+  ended: EventNotification | null
 }
 
 export interface ExpandedScheduleDockerImage {
-    name: string
-    tag: string
+  name: string
+  tag: string
 }
 
-
-export interface ExpandedScheduleConfig  extends ScheduleConfig{
-    image: ExpandedScheduleDockerImage
-    mount_point: string
-    command: string[]
-    str_command: string
+export interface ExpandedScheduleConfig extends ScheduleConfig {
+  image: ExpandedScheduleDockerImage
+  mount_point: string
+  command: string[]
+  str_command: string
 }
