@@ -78,7 +78,10 @@ async def get_task(
     hide_secrets: Annotated[bool, Query()] = True,
 ) -> JSONResponse:
     """Get a task by ID"""
-    task = db_get_task(db_session, task_id)
+    try:
+        task = db_get_task(db_session, task_id)
+    except RecordDoesNotExistError as exc:
+        raise NotFoundError(f"Task {task_id} not found") from exc
     if not (
         current_user
         and check_user_permission(current_user, namespace="schedules", name="update")
