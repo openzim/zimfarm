@@ -4,7 +4,7 @@ import pytest
 from _pytest.python_api import RaisesContext
 from pydantic import ValidationError
 
-from zimfarm_backend.common.schemas.fields import ZIMFileName
+from zimfarm_backend.common.schemas.fields import ZIMFileName, ZIMName
 from zimfarm_backend.common.schemas.models import BaseModel
 from zimfarm_backend.common.schemas.offliners.freecodecamp import (
     FCCLanguageValue,
@@ -17,6 +17,10 @@ class TestModel(BaseModel):
 
 class TestZIMFileNameModel(BaseModel):
     value: ZIMFileName
+
+
+class TestZIMNameModel(BaseModel):
+    value: ZIMName
 
 
 def test_enum_validator_accepts_valid_value():
@@ -92,4 +96,93 @@ def test_zimfilename_skips_validation_when_context_set():
     with does_not_raise():
         TestZIMFileNameModel.model_validate(
             {"value": "invalid_filename"}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        # Zim name is made of three parts {domain}_{lang}_{selection} with _ as
+        # the seperator
+        # Valid ZIM names
+        pytest.param(
+            "android.stackexchange.com_eng_all",
+            does_not_raise(),
+            id="first_part_domain_name",
+        ),
+        pytest.param(
+            "ted-talks_eng_football", does_not_raise(), id="hypen_in_first_part"
+        ),
+        pytest.param(
+            "wikipedia_nds-nl_top", does_not_raise(), id="hypen_in_second_part"
+        ),
+        # Invalid ZIM names
+        pytest.param(
+            "wikipedia_en_all_2024-01", pytest.raises(ValidationError), id="four_parts"
+        ),  # Too many parts (4 instead of 3)
+        pytest.param(
+            "wikipedia_en", pytest.raises(ValidationError), id="two_parts"
+        ),  # Too few parts (2 instead of 3)
+        pytest.param(
+            "WIKIPEDIA_EN_ALL", pytest.raises(ValidationError), id="upper_case_letters"
+        ),  # Uppercase letters
+        pytest.param(
+            "wikipedia EN all",
+            pytest.raises(ValidationError),
+            id="space_separator",
+        ),  # Spaces instead of underscores
+        pytest.param(
+            "wikipedia_en_all_",
+            pytest.raises(ValidationError),
+            id="trailing_underscore",
+        ),  # Trailing underscore
+        pytest.param(
+            "_wikipedia_en_all",
+            pytest.raises(ValidationError),
+            id="leading_underscore",
+        ),  # Leading underscore
+        pytest.param(
+            "wikipedia__all", pytest.raises(ValidationError), id="missing_middle_part"
+        ),  # Empty middle part
+        pytest.param(
+            "wikipedia_en_", pytest.raises(ValidationError), id="empty_last_part"
+        ),  # Empty last part
+        pytest.param(
+            "_en_all",
+            pytest.raises(ValidationError),
+        ),  # Empty first part
+        pytest.param(
+            "wikipedia_en_all.zim",
+            does_not_raise(),
+            id="file_extension_in_name",
+        ),  # File extension not allowed (not sure yet??)
+        pytest.param(
+            "wikipedia@en_all", pytest.raises(ValidationError), id="special_char_at"
+        ),  # Special character @
+        pytest.param(
+            "wikipedia&en_all",
+            pytest.raises(ValidationError),
+            id="special_char_ampersand",
+        ),  # Special character &
+        pytest.param(
+            "wikipedia*en_all",
+            pytest.raises(ValidationError),
+            id="special_char_astersik",
+        ),  # Special character *
+        pytest.param(
+            "", pytest.raises(ValidationError), id="empty_string"
+        ),  # Empty string
+    ],
+)
+def test_zimname_pattern(name: str, expected: RaisesContext[Exception]):
+    """Test ZIMName pattern validation with various inputs."""
+    with expected:
+        TestZIMNameModel.model_validate({"value": name})
+
+
+def test_zimname_skips_validation_when_context_set():
+    """Test that ZIMName validation is skipped when context is set."""
+    with does_not_raise():
+        TestZIMNameModel.model_validate(
+            {"value": "invalid_name"}, context={"skip_validation": True}
         )
