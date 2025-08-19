@@ -52,6 +52,8 @@
 </template>
 
 <script setup lang="ts">
+import { useNotificationStore } from '@/stores/notification'
+
 defineOptions({
   name: 'UserButton',
 })
@@ -66,12 +68,14 @@ defineEmits<{
   'sign-out': []
 }>()
 
+const notificationStore = useNotificationStore()
+
 const copyToken = async () => {
   try {
     if (props.accessToken) {
       await navigator.clipboard.writeText(props.accessToken)
       // You might want to add a toast notification here
-      console.log('Token copied to clipboard!')
+      notificationStore.showSuccess('Token copied to clipboard!')
     }
   } catch (error) {
     console.error('Failed to copy token:', error)

@@ -1,43 +1,35 @@
 <template>
-  <v-alert
-    type="error"
-    variant="tonal"
-    class="mb-4"
-  >
-    <template #prepend>
-      <v-icon icon="mdi-alert-triangle" />
-    </template>
-
-    <div class="text-body-1 mb-4">
-      You are about to <strong>permanently delete</strong> {{ description }} <code>{{ name }}</code>.
+  <v-alert type="error" variant="tonal" class="mb-4 mx-auto" width="auto">
+    <div class="text-body-1 mb-2">
+      You are about to <strong>permanently delete</strong> {{ description }} <code>{{ name }}</code
+      >.
     </div>
 
     <v-form @submit.prevent="confirmDelete">
-      <div class="d-flex align-center flex-wrap gap-2">
-        <span class="text-body-2 mr-3">
-          Please type its <em>{{ property }}</em> to confirm:
-        </span>
+      <v-row dense>
+        <v-col cols="12">
+          <span class="text-body-2">
+            Please type its <em>{{ property }}</em> to confirm:
+          </span>
+        </v-col>
 
-        <v-text-field
-          v-model="formName"
-          :placeholder="`Type ${property} here`"
-          density="compact"
-          variant="outlined"
-          hide-details
-          class="flex-grow-1 mr-3"
-          style="max-width: 300px;"
-          autofocus
-        />
+        <v-col cols="12" sm="6">
+          <v-text-field
+            v-model="formName"
+            :placeholder="`Type ${property} here`"
+            density="compact"
+            variant="outlined"
+            hide-details
+            autofocus
+          />
+        </v-col>
 
-        <v-btn
-          type="submit"
-          :disabled="!ready"
-          color="error"
-          variant="elevated"
-        >
-          delete {{ description }}
-        </v-btn>
-      </div>
+        <v-col cols="12" sm="6">
+          <v-btn type="submit" :disabled="!ready" color="error" variant="elevated">
+            delete {{ description }}
+          </v-btn>
+        </v-col>
+      </v-row>
     </v-form>
 
     <!-- Confirmation Dialog -->
@@ -57,8 +49,8 @@
 </template>
 
 <script setup lang="ts">
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import { computed, ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { computed, ref } from 'vue'
 
 // Props
 const props = defineProps<{
@@ -71,15 +63,12 @@ const emit = defineEmits<{
   (e: 'delete-item'): void
 }>()
 
-
 // Reactive data
 const formName = ref('')
 const showConfirmDialog = ref(false)
 
 // Computed properties
-const ready = computed(() =>
-  props.name && formName.value && props.name === formName.value
-)
+const ready = computed(() => props.name && formName.value && props.name === formName.value)
 
 // Methods
 const confirmDelete = () => {

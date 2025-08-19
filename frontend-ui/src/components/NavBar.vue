@@ -4,13 +4,13 @@
     <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
 
     <v-app-bar-title class="d-flex align-center">
-      <div class="branding d-flex align-center">
+      <router-link :to="{ name: 'home' }" class="branding d-flex align-center text-decoration-none">
         <div class="icon position-relative">
           <img src="/assets/logo.svg" width="32" height="32" alt="Zimfarm Logo" class="logo-img" />
           <Loading :should-display="isLoading" :loading-text="loadingText" />
         </div>
-        <span class="ml-2">Zimfarm</span>
-      </div>
+        <span class="ml-2 text-white">Zimfarm</span>
+      </router-link>
     </v-app-bar-title>
     <!-- Navigation Links -->
     <v-tabs class="d-none d-md-flex" color="white" slider-color="white">

@@ -1,35 +1,32 @@
 <template>
   <v-form @submit.prevent="handleSubmit" v-if="schedule">
-    <v-row class="mb-3">
-      <v-col class="text-right">
-        <v-btn
-          :disabled="!hasChanges"
-          type="submit"
-          :color="hasChanges ? 'primary' : 'secondary'"
-          variant="elevated"
-        >
-          Update Offliner details
-        </v-btn>
-        <v-btn
-          type="reset"
-          :disabled="!hasChanges"
-          :color="hasChanges ? 'dark' : 'secondary'"
-          variant="outlined"
-          class="ml-2"
-          @click="handleReset"
-        >
-          Reset
-        </v-btn>
-      </v-col>
-    </v-row>
+    <div class="d-flex flex-column flex-sm-row justify-end ga-2">
+      <v-btn
+        :disabled="!hasChanges"
+        type="submit"
+        :color="hasChanges ? 'primary' : 'secondary'"
+        variant="elevated"
+      >
+        Update Offliner details
+      </v-btn>
+      <v-btn
+        type="reset"
+        :disabled="!hasChanges"
+        :color="hasChanges ? 'dark' : 'secondary'"
+        variant="outlined"
+        @click="handleReset"
+      >
+        Reset
+      </v-btn>
+    </div>
 
     <v-divider class="my-4" />
 
     <v-row>
-      <v-col cols="10" class="mt-2">
+      <v-col cols="9">
         <h2>Content settings</h2>
       </v-col>
-      <v-col cols="2" class="text-right mb-2">
+      <v-col cols="3" class="text-right">
         <v-btn
           href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Content-settings"
           target="_blank"
@@ -42,7 +39,7 @@
     </v-row>
 
     <v-row>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-text-field
           v-model="editSchedule.name"
           label="Recipe Name"
@@ -54,7 +51,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.language.code"
           :items="languagesOptions"
@@ -65,7 +62,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.tags"
           :items="tags"
@@ -82,7 +79,7 @@
     </v-row>
 
     <v-row>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.category"
           :items="categoriesOptions"
@@ -91,7 +88,7 @@
           variant="outlined"
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.config.warehouse_path"
           :items="warehousePathsOptions"
@@ -104,7 +101,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="4">
         <SwitchButton
           v-model="editSchedule.enabled"
           label="Status"
@@ -115,7 +112,7 @@
     </v-row>
 
     <v-row>
-      <v-col cols="4">
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.periodicity"
           :items="periodicityOptions"
@@ -133,10 +130,10 @@
     <v-divider class="my-4" />
 
     <v-row>
-      <v-col cols="10" class="mt-2">
+      <v-col cols="9">
         <h2>Task settings</h2>
       </v-col>
-      <v-col cols="2" class="text-right mb-2">
+      <v-col cols="3" class="text-right">
         <v-btn
           href="https://github.com/openzim/zimfarm/wiki/Recipe-configuration-%E2%80%90-Task-settings"
           target="_blank"
@@ -149,7 +146,7 @@
     </v-row>
 
     <v-row>
-      <v-col>
+      <v-col cols="12" sm="6">
         <v-select
           v-model="editSchedule.config.offliner.offliner_id"
           :items="offlinersOptions"
@@ -161,7 +158,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="6">
         <v-select
           v-model="editSchedule.config.platform"
           :items="platformsOptions"
@@ -175,7 +172,7 @@
     </v-row>
 
     <v-row>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-text-field
           v-model="editSchedule.config.image.name"
           label="Image Name"
@@ -189,7 +186,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.config.image.tag"
           :items="imageTagOptions"
@@ -201,7 +198,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="4">
         <SwitchButton
           v-model="editSchedule.config.monitor"
           details="Attach a monitoring companion to scraper"
@@ -212,7 +209,7 @@
     </v-row>
 
     <v-row>
-      <v-col>
+      <v-col cols="12" sm="3">
         <v-text-field
           v-model="editSchedule.config.resources.cpu"
           label="CPU"
@@ -227,7 +224,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="3">
         <v-select
           v-model="editSchedule.config.resources.memory"
           :items="memoryOptions"
@@ -238,7 +235,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="3">
         <v-select
           v-model="editSchedule.config.resources.disk"
           :items="diskOptions"
@@ -249,7 +246,7 @@
           persistent-hint
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" sm="3">
         <v-select
           v-model="editSchedule.config.resources.shm"
           :items="memoryOptions"
@@ -278,12 +275,12 @@
     <v-divider class="my-4" />
 
     <v-row v-if="flagsFields.length > 0">
-      <v-col cols="10" class="mt-2">
+      <v-col cols="9">
         <h2>
           Scraper settings: <code>{{ taskName }}</code> command flags
         </h2>
       </v-col>
-      <v-col cols="2" class="text-right mb-2">
+      <v-col cols="3" class="text-right">
         <v-btn :href="helpUrl" target="_blank" color="primary" variant="outlined"> Help </v-btn>
       </v-col>
     </v-row>
@@ -397,28 +394,25 @@
       </tbody>
     </v-table>
 
-    <v-row>
-      <v-col>
-        <v-btn
-          type="submit"
-          :disabled="!hasChanges"
-          :color="hasChanges ? 'primary' : 'secondary'"
-          variant="elevated"
-        >
-          Update Offliner details
-        </v-btn>
-        <v-btn
-          type="reset"
-          :disabled="!hasChanges"
-          :color="hasChanges ? 'dark' : 'secondary'"
-          variant="outlined"
-          class="ml-2"
-          @click="handleReset"
-        >
-          Reset
-        </v-btn>
-      </v-col>
-    </v-row>
+    <div class="d-flex flex-column flex-sm-row justify-end ga-2">
+      <v-btn
+        :disabled="!hasChanges"
+        type="submit"
+        :color="hasChanges ? 'primary' : 'secondary'"
+        variant="elevated"
+      >
+        Update Offliner details
+      </v-btn>
+      <v-btn
+        type="reset"
+        :disabled="!hasChanges"
+        :color="hasChanges ? 'dark' : 'secondary'"
+        variant="outlined"
+        @click="handleReset"
+      >
+        Reset
+      </v-btn>
+    </div>
   </v-form>
   <p v-else>Loading…</p>
 </template>

@@ -26,9 +26,13 @@
         <code class="text-h6">#{{ shortId }}</code>
       </v-col>
       <v-col cols="12" sm="8" md="9" lg="10" v-if="scheduleName">
-        <code class="text-h6">{{ scheduleName }}</code>
+        <router-link :to="{ name: 'schedule-detail' , params: { scheduleName: scheduleName }}" class="text-decoration-none">
+          <code class="text-h6 text-primary">
+            {{ scheduleName }}
+          </code>
+        </router-link>
       </v-col>
-    </v-row>
+    </v-row
 
     <!-- Content -->
     <div v-if="!error && task">

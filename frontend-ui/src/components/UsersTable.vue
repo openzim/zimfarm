@@ -3,7 +3,6 @@
     <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
       <v-card-title v-if="paginator.count > 0" class="d-flex align-center justify-space-between">
         <span class="text-subtitle-1 d-flex align-center">
-          <v-icon class="mr-2">mdi-account-group</v-icon>
           Showing max.
           <v-select
             v-model="selectedLimit"
