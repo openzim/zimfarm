@@ -43,9 +43,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def _access_token_response(db_session: OrmSession, db_user: User, response: Response):
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
+    issue_time = getnow()
     return Token(
         access_token=generate_access_token(
             user_id=str(db_user.id),
+            issue_time=issue_time,
             username=db_user.username,
             scope=db_user.scope,
             email=db_user.email,
@@ -53,7 +55,8 @@ def _access_token_response(db_session: OrmSession, db_user: User, response: Resp
         refresh_token=str(
             create_refresh_token(session=db_session, user_id=db_user.id).token
         ),
-        expires_in=constants.JWT_TOKEN_EXPIRY_DURATION,
+        expires_time=issue_time
+        + datetime.timedelta(seconds=constants.JWT_TOKEN_EXPIRY_DURATION),
     )
 
 

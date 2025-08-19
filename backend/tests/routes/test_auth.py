@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common import constants, getnow
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refresh_tokens
@@ -26,7 +26,10 @@ def test_auth_with_credentials(client: TestClient, users: list[User]):
     data = response.json()
     assert data["access_token"] is not None
     assert data["refresh_token"] is not None
-    assert data["expires_in"] == constants.JWT_TOKEN_EXPIRY_DURATION
+    assert (
+        datetime.datetime.fromisoformat(data["expires_time"]).replace(tzinfo=None)
+        > getnow()
+    )
 
 
 def test_auth_with_credentials_invalid_credentials(client: TestClient):
@@ -50,7 +53,10 @@ def test_refresh_access_token(
     data = response.json()
     assert data["access_token"] is not None
     assert data["refresh_token"] is not None
-    assert data["expires_in"] == constants.JWT_TOKEN_EXPIRY_DURATION
+    assert (
+        datetime.datetime.fromisoformat(data["expires_time"]).replace(tzinfo=None)
+        > getnow()
+    )
 
 
 def test_refresh_access_token_invalid_token(client: TestClient):
@@ -78,7 +84,10 @@ def test_refresh_access_token_expired_token(
     data = response.json()
     assert data["access_token"] is not None
     assert data["refresh_token"] is not None
-    assert data["expires_in"] == constants.JWT_TOKEN_EXPIRY_DURATION
+    assert (
+        datetime.datetime.fromisoformat(data["expires_time"]).replace(tzinfo=None)
+        > getnow()
+    )
 
 
 @pytest.mark.parametrize(
@@ -99,7 +108,7 @@ def test_refresh_access_token_expired_token(
         (
             getnow().isoformat(),
             HTTPStatus.OK,
-            ["access_token", "token_type", "expires_in"],
+            ["access_token", "token_type", "expires_time"],
         ),
     ],
 )
@@ -138,6 +147,7 @@ def test_authentication_token(
     """Test that authentication token is valid."""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,

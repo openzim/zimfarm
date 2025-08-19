@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import RequestedTask, Task, User, Worker
@@ -94,6 +95,7 @@ def test_create_task_no_permission(
     """Test that create_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -163,6 +165,7 @@ def test_update_task_no_permission(
     """Test that update_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -200,6 +203,7 @@ def test_update_task_success(
     """Test successful update of task"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -223,6 +227,7 @@ def test_cancel_task_no_permission(
     """Test that cancel_task raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,
@@ -274,6 +279,7 @@ def test_cancel_task_success(
     """Test successful cancellation of task"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         email=user.email,

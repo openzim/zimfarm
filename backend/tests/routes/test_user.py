@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.db.models import User
 from zimfarm_backend.utils.token import generate_access_token
 
@@ -19,6 +20,7 @@ def test_list_users_no_auth(client: TestClient):
 def test_list_users_no_param(client: TestClient, users: list[User]):
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -49,6 +51,7 @@ def test_list_users_with_param(
 ):
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -73,6 +76,7 @@ def test_skip_deleted_users(
 ):
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -99,6 +103,7 @@ def test_get_user_by_username(client: TestClient, users: list[User]):
     url = f"/v2/users/{users[0].username}"
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -119,6 +124,7 @@ def test_get_user_by_username_not_found(
     url = f"/v2/users/{users[0].username}1"
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -133,6 +139,7 @@ def test_patch_user_email(client: TestClient, users: list[User]):
     user = users[0]
     url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -151,6 +158,7 @@ def test_delete_user(client: TestClient, users: list[User]):
     user = users[0]
     url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -162,6 +170,7 @@ def test_delete_user(client: TestClient, users: list[User]):
     # We still shouldn't be able to create a user with same username
     user = users[1]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -185,6 +194,7 @@ def test_create_user(client: TestClient, users: list[User]):
     url = "/v2/users/"
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -208,6 +218,7 @@ def test_create_user_duplicate(client: TestClient, users: list[User]):
     url = "/v2/users/"
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -231,6 +242,7 @@ def test_list_user_keys(client: TestClient, users: list[User]):
     """Test listing a user's SSH keys"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -259,6 +271,7 @@ def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
     """Test listing another user's SSH keys without permission"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -274,6 +287,7 @@ def test_create_user_key(client: TestClient, users: list[User]):
     """Test creating a new SSH key for a user"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -305,6 +319,7 @@ def test_create_user_key_invalid(client: TestClient, users: list[User]):
     """Test creating an invalid SSH key"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -323,6 +338,7 @@ def test_create_user_key_duplicate(client: TestClient, users: list[User]):
     """Test creating a duplicate SSH key"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -341,6 +357,7 @@ def test_get_user_key(client: TestClient, users: list[User]):
     """Test getting a specific SSH key"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -363,6 +380,7 @@ def test_get_user_key_not_found(client: TestClient, users: list[User]):
     """Test getting a non-existent SSH key"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -378,6 +396,7 @@ def test_delete_user_key(client: TestClient, users: list[User]):
     """Test deleting a user's SSH key"""
     user = users[0]
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,
@@ -399,6 +418,7 @@ def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
     user = users[0]
     url = f"/v2/users/{users[1].username}/keys/some-fingerprint"
     access_token = generate_access_token(
+        issue_time=getnow(),
         user_id=str(user.id),
         username=user.username,
         scope=user.scope,

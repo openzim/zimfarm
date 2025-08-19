@@ -8,8 +8,8 @@ from pydantic.alias_generators import to_camel
 def serialize_datetime(value: datetime.datetime) -> str:
     """Serialize datetime with 'Z' suffix for naive datetimes"""
     if value.tzinfo is None:
-        return value.isoformat() + "Z"
-    return value.isoformat()
+        return value.isoformat(timespec="seconds") + "Z"
+    return value.isoformat(timespec="seconds")
 
 
 class BaseModel(pydantic.BaseModel):

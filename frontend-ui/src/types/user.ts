@@ -22,7 +22,7 @@ export interface User extends JWTUser {
 export interface Token {
   access_token: string
   refresh_token: string
-  expires_in: number
+  expires_time: string
 }
 
 export interface BaseSshKey {
@@ -37,10 +37,7 @@ export interface SshKeyRead extends BaseSshKey {
   pkcs8_key: string
 }
 
-export interface BaseUserWithSshKeys extends BaseUser, BaseSshKey
-{
-}
-
+export interface BaseUserWithSshKeys extends BaseUser, BaseSshKey {}
 
 export interface SshKeyList {
   ssh_keys: SshKeyRead[]
