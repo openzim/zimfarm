@@ -565,13 +565,9 @@ const hasChanges = computed(() => {
     return true
 
   // Check artifacts globs
-  if (
-    !stringArrayEqual(
-      editSchedule.value.config.artifacts_globs || [],
-      props.schedule.config.artifacts_globs || [],
-    )
-  )
-    return true
+  const artifacts_globs = processArtifactsGlobs(editSchedule.value.config.artifacts_globs_str)
+
+  if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) return true
 
   // Check flags - use editFlags instead of the potentially mutated offliner object
   let changes = diff(props.schedule.config.offliner, editFlags.value)
@@ -768,6 +764,15 @@ const handleReset = () => {
   }
 }
 
+const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] => {
+  return artifactsGlobsStr
+    ? artifactsGlobsStr
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '')
+    : []
+}
+
 const handleOfflinerChange = () => {
   // assume flags are different, so reset edit schedule flags
   editFlags.value = {}
@@ -851,13 +856,10 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   }
 
   // Artifacts
-  if (
-    !stringArrayEqual(
-      editSchedule.value.config.artifacts_globs || [],
-      props.schedule.config.artifacts_globs || [],
-    )
-  ) {
-    payload.artifacts_globs = editSchedule.value.config.artifacts_globs
+  const artifacts_globs = processArtifactsGlobs(editSchedule.value.config.artifacts_globs_str)
+
+  if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) {
+    payload.artifacts_globs = artifacts_globs
   }
 
   // Flags
