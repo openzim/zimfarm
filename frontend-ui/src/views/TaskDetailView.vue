@@ -32,7 +32,7 @@
           </code>
         </router-link>
       </v-col>
-    </v-row
+    </v-row>
 
     <!-- Content -->
     <div v-if="!error && task">
@@ -71,7 +71,10 @@
                   <tr>
                     <th class="text-left w-20">Recipe</th>
                     <td>
-                      <router-link :to="{ name: 'schedule-detail', params: { scheduleName: task.schedule_name } }">
+                      <span v-if="task.schedule_name === null || task.schedule_name === 'none'">
+                        {{ task.original_schedule_name }}
+                      </span>
+                      <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: task.schedule_name } }">
                         {{ task.schedule_name }}
                       </router-link>
                     </td>
