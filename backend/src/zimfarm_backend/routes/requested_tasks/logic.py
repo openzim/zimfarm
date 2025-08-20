@@ -28,7 +28,7 @@ from zimfarm_backend.common.schemas.orms import (
     RequestedTaskLightSchema,
 )
 from zimfarm_backend.common.utils import task_event_handler
-from zimfarm_backend.db import gen_dbsession
+from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.requested_task import (
@@ -50,6 +50,7 @@ from zimfarm_backend.db.worker import get_worker, update_worker
 from zimfarm_backend.routes.dependencies import (
     get_current_user,
     get_current_user_or_none,
+    get_current_user_or_none_with_session,
 )
 from zimfarm_backend.routes.http_errors import (
     ForbiddenError,
@@ -169,8 +170,10 @@ def get_requested_tasks_for_worker(
     avail_cpu: Annotated[ZIMCPU, Query()],
     avail_memory: Annotated[ZIMMemory, Query()],
     avail_disk: Annotated[ZIMDisk, Query()],
-    session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[OrmSession, Depends(gen_manual_dbsession)],
+    current_user: Annotated[
+        User, Depends(get_current_user_or_none_with_session(session_type="manual"))
+    ],
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
     if not ENABLED_SCHEDULER:
@@ -195,24 +198,29 @@ def get_requested_tasks_for_worker(
         ip_changed = str(worker.last_ip) != x_forwarded_for
 
         if ip_changed:
+            logger.info(
+                f"Worker {worker_name} IP changed from {worker.last_ip} to "
+                f"{x_forwarded_for}"
+            )
+            worker = update_worker(
+                session, worker_name=worker_name, ip_address=x_forwarded_for
+            )
+        else:
+            worker = update_worker(session, worker_name=worker_name)
+
+        # commit explicitly last_ip and last_seen changes, since we are not
+        # using an explicit transaction, and do it before calling Wasabi so
+        # that changes are propagated quickly and transaction is not blocking
+        session.commit()
+
+        if ip_changed and USES_WORKERS_IPS_WHITELIST:
             try:
-                if USES_WORKERS_IPS_WHITELIST:
-                    record_ip_change(session, worker_name)
+                record_ip_change(session, worker_name)
             except Exception as exc:
                 logger.exception("Pushing IP changes to Wasabi failed")
                 raise ServiceUnavailableError(
                     "Pushing IP changes to Wasabi failed"
                 ) from exc
-            finally:
-                logger.info(
-                    f"Worker {worker_name} IP changed from {worker.last_ip} to "
-                    f"{x_forwarded_for}"
-                )
-                worker = update_worker(
-                    session, worker_name=worker_name, ip_address=x_forwarded_for
-                )
-        else:
-            worker = update_worker(session, worker_name=worker_name)
 
     task = find_requested_task_for_worker(
         session=session,
