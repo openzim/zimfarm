@@ -95,7 +95,7 @@
             </th>
 
             <td v-if="row.kind === 'task' && row.task">
-              <span v-if="row.task.schedule_name === null || row.task.schedule_name === 'none'">
+              <span v-if="row.task.schedule_name === null">
                 {{ row.task.original_schedule_name }}
               </span>
               <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: row.task.schedule_name } }">

@@ -1,7 +1,10 @@
 <template>
   <div>
-    <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
-      <v-card-title v-if="props.paginator.count > 0" class="d-flex align-center justify-space-between">
+    <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
+      <v-card-title
+        v-if="props.paginator.count > 0"
+        class="d-flex align-center justify-space-between"
+      >
         <span class="text-subtitle-1 d-flex align-center">
           Showing max.
           <v-select
@@ -28,12 +31,11 @@
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
       >
-
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
             <v-progress-circular indeterminate size="64" />
-              <div class="mt-4 text-body-1">{{ loadingText || 'Fetching tasks...' }}</div>
-            </div>
+            <div class="mt-4 text-body-1">{{ loadingText || 'Fetching tasks...' }}</div>
+          </div>
         </template>
 
         <template #no-data>
@@ -44,10 +46,13 @@
         </template>
 
         <template #[`item.schedule_name`]="{ item }">
-          <span v-if="item.schedule_name === null || item.schedule_name === 'none'">
+          <span v-if="item.schedule_name === null">
             {{ item.original_schedule_name }}
           </span>
-          <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: item.schedule_name } }">
+          <router-link
+            v-else
+            :to="{ name: 'schedule-detail', params: { scheduleName: item.schedule_name } }"
+          >
             {{ item.schedule_name }}
           </router-link>
         </template>
@@ -104,9 +109,9 @@
 
         <template #[`item.resources`]="{ item }">
           <div class="d-flex flex-sm-column flex-lg-row py-1">
-            <ResourceBadge kind="cpu" :value="item.config.resources.cpu" variant="text"/>
-            <ResourceBadge kind="memory" :value="item.config.resources.memory" variant="text"/>
-            <ResourceBadge kind="disk" :value="item.config.resources.disk"  variant="text"/>
+            <ResourceBadge kind="cpu" :value="item.config.resources.cpu" variant="text" />
+            <ResourceBadge kind="memory" :value="item.config.resources.memory" variant="text" />
+            <ResourceBadge kind="disk" :value="item.config.resources.disk" variant="text" />
           </div>
         </template>
 
@@ -116,11 +121,20 @@
         </template>
 
         <template #[`item.remove`]="{ item }">
-          <RemoveRequestedTaskButton v-if="canUnRequestTasks" :id="item.id" @requested-task-removed="emit('loadData', selectedLimit, 0)" />
+          <RemoveRequestedTaskButton
+            v-if="canUnRequestTasks"
+            :id="item.id"
+            @requested-task-removed="emit('loadData', selectedLimit, 0)"
+          />
         </template>
 
         <template #[`item.duration`]="{ item }">
-          {{ formatDurationBetween(getTimestampStringForStatus(item.timestamp, 'started'), item.updated_at) }}
+          {{
+            formatDurationBetween(
+              getTimestampStringForStatus(item.timestamp, 'started'),
+              item.updated_at,
+            )
+          }}
         </template>
 
         <template #[`item.status`]="{ item }">
@@ -128,10 +142,10 @@
         </template>
 
         <template #[`item.last_run`]="{ item }">
-          <span v-if="lastRunsLoaded && schedulesLastRuns[item.schedule_name]">
+          <span v-if="lastRunsLoaded && item.schedule_name && schedulesLastRuns[item.schedule_name]">
             <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
-              {{ schedulesLastRuns[item.schedule_name].status }}
-            </code>,
+              {{ schedulesLastRuns[item.schedule_name].status }} </code
+            >,
             <TaskLink
               :id="schedulesLastRuns[item.schedule_name].id"
               :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
@@ -142,7 +156,6 @@
         <template #[`item.requested_by`]="{ item }">
           {{ (item as any).requested_by }}
         </template>
-
       </v-data-table-server>
       <ErrorMessage v-for="error in errors" :key="error" :message="error" />
     </v-card>
@@ -150,16 +163,16 @@
 </template>
 
 <script setup lang="ts">
-import ErrorMessage from '@/components/ErrorMessage.vue';
-import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue';
-import ResourceBadge from '@/components/ResourceBadge.vue';
-import TaskLink from '@/components/TaskLink.vue';
-import type { MostRecentTask, Paginator } from '@/types/base';
-import type { RequestedTaskLight } from '@/types/requestedTasks';
-import type { TaskLight } from '@/types/tasks';
-import { formatDt, formatDurationBetween, fromNow } from '@/utils/format';
-import { getTimestampStringForStatus } from '@/utils/timestamp';
-import { ref, watch } from 'vue';
+import ErrorMessage from '@/components/ErrorMessage.vue'
+import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue'
+import ResourceBadge from '@/components/ResourceBadge.vue'
+import TaskLink from '@/components/TaskLink.vue'
+import type { MostRecentTask, Paginator } from '@/types/base'
+import type { RequestedTaskLight } from '@/types/requestedTasks'
+import type { TaskLight } from '@/types/tasks'
+import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
+import { getTimestampStringForStatus } from '@/utils/timestamp'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
@@ -171,25 +184,29 @@ const props = defineProps<{
   lastRunsLoaded: boolean // whether the last runs have been loaded
   schedulesLastRuns: Record<string, MostRecentTask> // the last runs for each schedule
   errors: string[] // the errors to display
-}>();
+}>()
 
 const emit = defineEmits<{
-  'limitChanged': [limit: number]
-  'loadData': [limit: number, skip: number]
-}>();
+  limitChanged: [limit: number]
+  loadData: [limit: number, skip: number]
+}>()
 
-const limits = [10, 20, 50, 100];
-const selectedLimit = ref(props.paginator.limit);
+const limits = [10, 20, 50, 100]
+const selectedLimit = ref(props.paginator.limit)
 
-function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
+function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   //  number is the next number, we need to calculate the skip for the request
   const page = options.page > 1 ? options.page - 1 : 0
-  emit('loadData', options.itemsPerPage, page * options.itemsPerPage);
+  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
 }
 
-watch(() => props.paginator, (newPaginator) => {
-  selectedLimit.value = newPaginator.limit;
-}, { immediate: true })
+watch(
+  () => props.paginator,
+  (newPaginator) => {
+    selectedLimit.value = newPaginator.limit
+  },
+  { immediate: true },
+)
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'

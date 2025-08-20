@@ -274,7 +274,7 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
 
 class RunningTask(BaseModel):
     config: ExpandedScheduleConfigSchema
-    schedule_name: str
+    schedule_name: str | None
     timestamp: list[tuple[str, datetime.datetime]]
     worker_name: str
     duration: ScheduleDurationSchema
@@ -298,7 +298,7 @@ def get_currently_running_tasks(
             config=ExpandedScheduleConfigSchema.model_validate(
                 task.config, context={"skip_validation": True}
             ),
-            schedule_name=task.schedule.name if task.schedule else "none",
+            schedule_name=task.schedule.name if task.schedule else None,
             timestamp=task.timestamp,
             worker_name=task.worker.name,
             **compute_task_eta(session, task),
@@ -314,7 +314,7 @@ class RequestedTaskWithDuration(BaseModel):
     timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
     priority: int
-    schedule_name: str
+    schedule_name: str | None
     original_schedule_name: str
     worker_name: str
     duration: ScheduleDurationSchema
@@ -353,7 +353,7 @@ def get_tasks_doable_by_worker(
             RequestedTaskWithDuration(
                 id=task.id,
                 status=task.status,
-                schedule_name=task.schedule.name if task.schedule else "none",
+                schedule_name=task.schedule.name if task.schedule else None,
                 original_schedule_name=task.original_schedule_name,
                 config=ExpandedScheduleConfigSchema.model_validate(
                     task.config, context={"skip_validation": True}
@@ -566,7 +566,7 @@ def _create_requested_task_full_schema(
         requested_by=requested_task.requested_by,
         priority=requested_task.priority,
         schedule_name=(
-            requested_task.schedule.name if requested_task.schedule else "none"
+            requested_task.schedule.name if requested_task.schedule else None
         ),
         original_schedule_name=requested_task.original_schedule_name,
         worker_name=requested_task.worker.name if requested_task.worker else None,

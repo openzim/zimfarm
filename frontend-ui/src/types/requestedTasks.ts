@@ -17,5 +17,5 @@ export interface RequestedTaskFullSchema {
     upload: Record<string, unknown>
     notification: ScheduleNotification | null
     rank: number | null
-    schedule_name: string
+    schedule_name: string | null
 }
