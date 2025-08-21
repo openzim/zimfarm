@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ class Token:
     """Access token on successful authentication."""
 
     access_token: str
-    expires_in: float
+    expires_time: datetime.datetime
     refresh_token: str
     token_type: str = "Bearer"
 
@@ -39,7 +40,13 @@ def get_token(
         timeout=30,
     )
     request.raise_for_status()
-    return Token(**request.json())
+    data = request.json()
+    return Token(
+        access_token=data["access_token"],
+        expires_time=datetime.datetime.fromisoformat(data["expires_time"]),
+        refresh_token=data["refresh_token"],
+        token_type=data["token_type"],
+    )
 
 
 def query_api(
