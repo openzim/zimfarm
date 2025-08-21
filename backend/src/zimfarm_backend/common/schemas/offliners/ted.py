@@ -5,7 +5,6 @@ from pydantic import Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
-    NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
@@ -14,6 +13,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    ZIMName,
     enum_member,
 )
 
@@ -88,7 +88,7 @@ class TedFlagsSchema(DashModel):
         ),
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="Name",
         description=(
             "ZIM name. Used as identifier and filename (date will be appended)"

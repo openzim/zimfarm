@@ -16,7 +16,7 @@ def test_get_languages_empty(dbsession: OrmSession):
 def english_schedule(dbsession: OrmSession):
     """Create a test schedule with English language code."""
     schedule = Schedule(
-        language_code="en",
+        language_code="eng",
         language_name_en="English",
         language_name_native="English",
         name="test",
@@ -47,7 +47,7 @@ def test_get_languages_duplicate(dbsession: OrmSession):
     """Test getting languages with duplicate language codes but different names."""
     # Create test schedules with same language code but different names
     schedule1 = Schedule(
-        language_code="en",
+        language_code="eng",
         language_name_en="English",
         language_name_native="English",
         name="test",
@@ -59,7 +59,7 @@ def test_get_languages_duplicate(dbsession: OrmSession):
         notification={"test": "test"},
     )
     schedule2 = Schedule(
-        language_code="en",
+        language_code="eng",
         language_name_en="English (US)",
         language_name_native="English (US)",
         name="test2",

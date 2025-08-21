@@ -10,8 +10,9 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
     OptionalZIMFileName,
     OptionalZIMLongDescription,
+    OptionalZIMOutputFolder,
     ZIMDescription,
-    ZIMOutputFolder,
+    ZIMName,
     ZIMTitle,
     enum_member,
 )
@@ -47,7 +48,7 @@ class FreeCodeCampFlagsSchema(DashModel):
         title="Language", description="Language of zim file and curriculum."
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="Name",
         description="ZIM name",
     )
@@ -82,7 +83,7 @@ class FreeCodeCampFlagsSchema(DashModel):
         description="Enable verbose output",
     )
 
-    output: ZIMOutputFolder = Field(
+    output: OptionalZIMOutputFolder = Field(
         title="Output folder",
         description="Output folder for ZIM file(s). Leave it as `/output`",
     )

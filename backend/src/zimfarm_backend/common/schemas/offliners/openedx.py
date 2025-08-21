@@ -5,7 +5,6 @@ from pydantic import AnyUrl, EmailStr, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
-    NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
@@ -13,6 +12,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    ZIMName,
     ZIMSecretStr,
     enum_member,
 )
@@ -107,7 +107,7 @@ class OpenedxFlagsSchema(DashModel):
         ),
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="Name",
         description=(
             "ZIM name. Used as identifier and filename (date will be appended)"

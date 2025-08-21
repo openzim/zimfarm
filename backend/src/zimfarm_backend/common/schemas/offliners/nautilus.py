@@ -4,7 +4,6 @@ from pydantic import AnyUrl, Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
-    NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
@@ -12,6 +11,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    ZIMName,
 )
 
 
@@ -30,7 +30,7 @@ class NautilusFlagsSchema(DashModel):
         ),
     )
 
-    name: NotEmptyString = Field(
+    name: ZIMName = Field(
         title="ZIM Name",
         description="Used as identifier and filename (date will be appended)",
     )

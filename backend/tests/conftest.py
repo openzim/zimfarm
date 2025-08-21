@@ -264,7 +264,7 @@ def schedule_duration(
 @pytest.fixture
 def language() -> LanguageSchema:
     return LanguageSchema(
-        code="en",
+        code="eng",
         name_en="English",
         name_native="English",
     )

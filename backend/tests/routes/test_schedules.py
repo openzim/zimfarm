@@ -19,20 +19,20 @@ from zimfarm_backend.utils.token import generate_access_token
     "query_string,expected_count",
     [
         pytest.param("", 10, id="all"),
-        pytest.param("&name=wiki&lang=en", 10, id="wiki_en"),
-        pytest.param("&name=wiki&lang=fr", 0, id="wiki_fr"),
+        pytest.param("&name=wiki&lang=eng", 10, id="wiki_eng"),
+        pytest.param("&name=wiki&lang=fra", 0, id="wiki_fra"),
         pytest.param("&name=schedule&category=wikipedia", 0, id="schedule_wikipedia"),
-        pytest.param("&name=schedule&lang=en&tag=important", 0, id="en_important"),
+        pytest.param("&name=schedule&lang=eng&tag=important", 0, id="eng_important"),
         pytest.param("&name=nonexistent", 0, id="nonexistent"),
         pytest.param(
-            "&name=schedule&lang=en&category=other&tag=test",
+            "&name=schedule&lang=eng&category=other&tag=test",
             0,
-            id="schedule_en_other_test",
+            id="schedule_eng_other_test",
         ),
         pytest.param(
-            "&name=wiki&lang=en&category=wikipedia&tag=important",
+            "&name=wiki&lang=eng&category=wikipedia&tag=important",
             10,
-            id="wiki_en_important",
+            id="wiki_eng_important",
         ),
     ],
 )
@@ -58,10 +58,10 @@ def test_get_schedules(
 
     for i in range(10):
         schedule = create_schedule(
-            name=f"wiki_en_{i}",
+            name=f"wiki_eng_{i}",
             category=ScheduleCategory.wikipedia,
             language=LanguageSchema(
-                code="en", name_en="English", name_native="English"
+                code="eng", name_en="English", name_native="English"
             ),
             tags=["important"],
         )
@@ -119,7 +119,7 @@ def test_create_schedule(
             "name": "test_schedule",
             "category": ScheduleCategory.wikipedia.value,
             "language": {
-                "code": "en",
+                "code": "eng",
                 "name_en": "English",
                 "name_native": "English",
             },
