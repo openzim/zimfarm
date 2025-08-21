@@ -106,7 +106,7 @@ class BaseRequestedTaskSchema(BaseModel):
     timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
     priority: int
-    schedule_name: str
+    schedule_name: str | None
     original_schedule_name: str
     worker_name: str | None
     updated_at: datetime.datetime
@@ -130,7 +130,6 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     upload: dict[str, Any]
     notification: ScheduleNotificationSchema | None
     rank: int | None = None
-    schedule_name: str
     schedule_id: UUID | None = Field(exclude=True)
 
 

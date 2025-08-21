@@ -90,7 +90,7 @@ export interface BaseTask {
   id: string
   status: string
   timestamp: [string, string][] // [status, datetime] tuples
-  schedule_name: string
+  schedule_name: string | null
   worker_name: string
   updated_at: string
   original_schedule_name: string
