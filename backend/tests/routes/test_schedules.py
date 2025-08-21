@@ -135,6 +135,69 @@ def test_create_schedule(
 
 
 @pytest.mark.parametrize(
+    "schedule_name,expected_status_code",
+    [
+        pytest.param("test_schedule", HTTPStatus.OK, id="valid-schedule-name"),
+        pytest.param(
+            "test-schedule/",
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="slash-in-schedule-name",
+        ),
+        pytest.param(
+            "none", HTTPStatus.UNPROCESSABLE_ENTITY, id="none-as-schedule-name"
+        ),
+        pytest.param(
+            "  test-schedule  ",
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="spaces-in-schedule-name",
+        ),
+        pytest.param(
+            "testSchedule", HTTPStatus.UNPROCESSABLE_ENTITY, id="uppercase-char"
+        ),
+    ],
+)
+def test_schedule_name(
+    client: TestClient,
+    create_user: Callable[..., User],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    schedule_name: str,
+    expected_status_code: int,
+):
+    """Test that create_schedule raises Unprocessable entity with invalid name"""
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule_config = create_schedule_config()
+
+    response = client.post(
+        "/v2/schedules",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "name": schedule_name,
+            "category": ScheduleCategory.wikipedia.value,
+            "language": {
+                "code": "eng",
+                "name_en": "English",
+                "name_native": "English",
+            },
+            "tags": ["important"],
+            "config": schedule_config.model_dump(
+                mode="json", context={"show_secrets": True}, by_alias=True
+            ),
+            "enabled": True,
+            "periodicity": SchedulePeriodicity.manually.value,
+        },
+    )
+    assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
     "permission,hide_secrets,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, False, HTTPStatus.OK, id="admin"),

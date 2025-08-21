@@ -251,6 +251,10 @@ def validate_schedule_name(name: str, info: ValidationInfo) -> str:
         raise ValueError("`none` is a restricted keyword")
     if not name.strip() or name != name.strip():
         raise ValueError("Recipe name cannot contain leading and/or trailing space(s)")
+    if "/" in name:
+        raise ValueError("Recipe name cannot contain slash")
+    if any(char.isupper() for char in name):
+        raise ValueError("Recipe name should only contain lower case characters")
     return name
 
 

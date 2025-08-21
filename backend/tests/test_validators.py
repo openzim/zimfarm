@@ -11,31 +11,31 @@ from zimfarm_backend.common.schemas.offliners.freecodecamp import (
 )
 
 
-class TestModel(BaseModel):
+class FCCLanguageModel(BaseModel):
     value: FCCLanguageValue
 
 
-class TestZIMFileNameModel(BaseModel):
+class ZIMFileNameModel(BaseModel):
     value: ZIMFileName
 
 
-class TestZIMNameModel(BaseModel):
+class ZIMNameModel(BaseModel):
     value: ZIMName
 
 
 def test_enum_validator_accepts_valid_value():
     with does_not_raise():
-        TestModel.model_validate({"value": "eng"})
+        FCCLanguageModel.model_validate({"value": "eng"})
 
 
 def test_enum_validator_rejects_invalid_value():
     with pytest.raises(ValidationError):
-        TestModel.model_validate({"value": "jp"})
+        FCCLanguageModel.model_validate({"value": "jp"})
 
 
 def test_enum_validator_skips_validation_when_context_set():
     with does_not_raise():
-        TestModel.model_validate(
+        FCCLanguageModel.model_validate(
             {"value": "invalid"}, context={"skip_validation": True}
         )
 
@@ -88,13 +88,13 @@ def test_enum_validator_skips_validation_when_context_set():
 def test_zimfilename_pattern(filename: str, expected: RaisesContext[Exception]):
     """Test ZIMFileName pattern validation with various inputs."""
     with expected:
-        TestZIMFileNameModel.model_validate({"value": filename})
+        ZIMFileNameModel.model_validate({"value": filename})
 
 
 def test_zimfilename_skips_validation_when_context_set():
     """Test that ZIMFileName validation is skipped when context is set."""
     with does_not_raise():
-        TestZIMFileNameModel.model_validate(
+        ZIMFileNameModel.model_validate(
             {"value": "invalid_filename"}, context={"skip_validation": True}
         )
 
@@ -177,12 +177,12 @@ def test_zimfilename_skips_validation_when_context_set():
 def test_zimname_pattern(name: str, expected: RaisesContext[Exception]):
     """Test ZIMName pattern validation with various inputs."""
     with expected:
-        TestZIMNameModel.model_validate({"value": name})
+        ZIMNameModel.model_validate({"value": name})
 
 
 def test_zimname_skips_validation_when_context_set():
     """Test that ZIMName validation is skipped when context is set."""
     with does_not_raise():
-        TestZIMNameModel.model_validate(
+        ZIMNameModel.model_validate(
             {"value": "invalid_name"}, context={"skip_validation": True}
         )
