@@ -45,11 +45,27 @@ else:
 
 
 def gen_dbsession() -> Generator[OrmSession]:
-    """FastAPI's Depends() compatible helper to provide a begin DB Session"""
+    """FastAPI's Depends() compatible helper to provide a DB transaction.
+
+    Commit is automatically performed and transactions are rolled back in
+    the event of exceptions
+    """
     if Session is None:
         raise RuntimeError("DB is disabled")
 
     with Session.begin() as session:
+        yield session
+
+
+def gen_manual_dbsession() -> Generator[OrmSession]:
+    """FastAPI's Depends() compatible helper to provide a DB Session.
+
+    Transaction must be managed by the developer (e.g perform  a commit/rollback)
+    """
+    if Session is None:
+        raise RuntimeError("DB is disabled")
+
+    with Session() as session:
         yield session
 
 

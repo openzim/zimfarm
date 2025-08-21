@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 import jwt
 from fastapi import Depends
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.constants import JWT_SECRET
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.db import gen_dbsession
+from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import get_user_by_id_or_none
 from zimfarm_backend.routes.http_errors import UnauthorizedError
@@ -52,28 +52,43 @@ def get_jwt_claims_or_none(
     return claims
 
 
-def get_current_user_or_none(
-    claims: Annotated[JWTClaims | None, Depends(get_jwt_claims_or_none)],
-    session: Annotated[OrmSession, Depends(gen_dbsession)],
-) -> User | None:
-    """
-    Get the current user or None if the user is not authenticated
-    """
-    if claims is None:
-        return None
-    return get_user_by_id_or_none(session, user_id=claims.subject)
+def get_current_user_or_none_with_session(
+    session_type: Literal["auto", "manual"] = "auto",
+):
+    def _get_current_user_or_none(
+        claims: Annotated[JWTClaims | None, Depends(get_jwt_claims_or_none)],
+        session: Annotated[
+            OrmSession,
+            Depends(gen_dbsession if session_type == "auto" else gen_manual_dbsession),
+        ],
+    ) -> User | None:
+        if claims is None:
+            return None
+        return get_user_by_id_or_none(session, user_id=claims.subject)
+
+    return _get_current_user_or_none
 
 
-def get_current_user(
-    user: Annotated[User | None, Depends(get_current_user_or_none)],
-) -> User:
-    """
-    Get the current user
-    """
-    if user is None:
-        raise UnauthorizedError()
+def get_current_user_with_session(
+    session_type: Literal["auto", "manual"] = "auto",
+):
+    def _get_current_user(
+        user: Annotated[
+            User | None,
+            Depends(get_current_user_or_none_with_session(session_type=session_type)),
+        ],
+    ) -> User:
+        if user is None:
+            raise UnauthorizedError()
 
-    if user.deleted:
-        raise UnauthorizedError()
+        if user.deleted:
+            raise UnauthorizedError()
 
-    return user
+        return user
+
+    return _get_current_user
+
+
+# Convenience functions for common cases
+get_current_user_or_none = get_current_user_or_none_with_session(session_type="auto")
+get_current_user = get_current_user_with_session(session_type="auto")

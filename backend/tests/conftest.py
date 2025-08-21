@@ -49,13 +49,14 @@ from zimfarm_backend.utils.token import (
 
 @pytest.fixture
 def dbsession() -> Generator[OrmSession]:
-    with Session.begin() as session:
-        # Ensure we are starting with an empty database
-        engine = session.get_bind()
-        Base.metadata.drop_all(bind=engine)
-        Base.metadata.create_all(bind=engine)
-        yield session
-        session.rollback()
+    session = Session()
+    # Ensure we are starting with an empty database
+    engine = session.get_bind()
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    yield session
+    session.rollback()
+    session.close()
 
 
 @pytest.fixture
