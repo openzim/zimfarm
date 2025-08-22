@@ -2,31 +2,31 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-""" Watch StackExchange dump files repository for updates to download/upload all
+"""Watch StackExchange dump files repository for updates to download/upload all
 
-    StackExchange dump repository, hosted by Archive.org is refreshed every quarter.
-    Archive.org's mirrors are all very slow to download from.
+StackExchange dump repository, hosted by Archive.org is refreshed every quarter.
+Archive.org's mirrors are all very slow to download from.
 
-    To speed-up sotoki's scrapes, we need to mirror these dumps on a faster server.
+To speed-up sotoki's scrapes, we need to mirror these dumps on a faster server.
 
-    This tool runs forever and checks periodically for those dumps on the main server.
-    Since 2025, it automatically detects the latest dump based on a search query on
-    Archive.org server.
+This tool runs forever and checks periodically for those dumps on the main server.
+Since 2025, it automatically detects the latest dump based on a search query on
+Archive.org server.
 
-    Then, it retrieves the list of 7z files in the dump, and for each of them:
-    - ignore sites which are not of interest (ignore all meta websites basically)
-    - retrieve its `last-modified` value with a HEAD request on Archive.org
-    - check whether we have this version is in our S3 bucket
-    - check whether zimfarm is currently using the current dump and skip in that case
-    - check whether there's a pending task for this dump and delete it in that case
-    - if we had the same file but for another version, we'd delete it from bucket first
-    - upload the file to our S3 bucket with a Metadata for the `last-modified` value
-    - delete the local file we downloaded
-    - schedule matching and enabled recipe(s) on the Zimfarm when we have updated dump
+Then, it retrieves the list of 7z files in the dump, and for each of them:
+- ignore sites which are not of interest (ignore all meta websites basically)
+- retrieve its `last-modified` value with a HEAD request on Archive.org
+- check whether we have this version is in our S3 bucket
+- check whether zimfarm is currently using the current dump and skip in that case
+- check whether there's a pending task for this dump and delete it in that case
+- if we had the same file but for another version, we'd delete it from bucket first
+- upload the file to our S3 bucket with a Metadata for the `last-modified` value
+- delete the local file we downloaded
+- schedule matching and enabled recipe(s) on the Zimfarm when we have updated dump
 
-    This tool does not:
-    - cleanup S3 dumps from deleted StackExchange sites
-    """
+This tool does not:
+- cleanup S3 dumps from deleted StackExchange sites
+"""
 
 import argparse
 import concurrent.futures as cf
@@ -91,9 +91,11 @@ def get_token(api_url, username, password):
     req = requests.post(
         url=f"{api_url}/auth/authorize",
         headers={
+            "Content-type": "application/json",
+        },
+        json={
             "username": username,
             "password": password,
-            "Content-type": "application/json",
         },
     )
     req.raise_for_status()
@@ -105,7 +107,7 @@ def query_api(token, method, url, payload=None, params=None, headers=None, attem
     req_headers = {}
     req_headers.update(headers or {})
     try:
-        req_headers.update({"Authorization": f"Token {token}"})
+        req_headers.update({"Authorization": f"Bearer {token}"})
         req = getattr(requests, method.lower(), "get")(
             url=url, headers=req_headers, json=payload, params=params
         )
@@ -318,7 +320,7 @@ class WatcherRunner:
         success, status, payload = self.query_api(
             "GET",
             "/schedules/",
-            params={"category": "stack_exchange", "name": f"{domain}_.+"},
+            params={"category": ["stack_exchange"], "name": f"{domain}_.+"},
         )
         if not success:
             logger.error(f"Can't get `{domain}` schedules from zimfarm")
@@ -355,7 +357,7 @@ class WatcherRunner:
                 re.sub(r"Z$", "", task["scraper_started"])
             )
             if started_on < datetime.datetime.now() - datetime.timedelta(days=1):
-                logger.debug(f"{prefix} Zimfarm task #{task['_id']} is blocking it")
+                logger.debug(f"{prefix} Zimfarm task #{task['id']} is blocking it")
                 return True
 
         return False
@@ -381,8 +383,8 @@ class WatcherRunner:
             return False
 
         for task in tasks:
-            self.query_api("DELETE", f"/requested-tasks/{task['_id']}")
-            logger.debug(f"{prefix} Zimfarm requested-task #{task['_id']} deleted")
+            self.query_api("DELETE", f"/requested-tasks/{task['id']}")
+            logger.debug(f"{prefix} Zimfarm requested-task #{task['id']} deleted")
 
         return True
 
