@@ -369,6 +369,25 @@
         <!-- Edit Tab -->
         <v-window-item value="edit">
           <div v-if="canUpdateSchedules" class="pa-4">
+            <!-- Validation Status -->
+            <v-alert
+              v-if="schedule"
+              :type="schedule.is_valid ? 'success' : 'error'"
+              variant="tonal"
+              class="mb-4"
+              closable
+            >
+              <template #prepend>
+                <v-icon :icon="schedule.is_valid ? 'mdi-check-circle' : 'mdi-alert-circle'" />
+              </template>
+              <strong>{{
+                schedule.is_valid ? 'Schedule is valid' : 'Schedule has validation errors'
+              }}</strong>
+              <div v-if="!schedule.is_valid" class="mt-2">
+                Please fix the configuration issues below.
+              </div>
+            </v-alert>
+
             <ScheduleEditor
               :schedule="schedule"
               :offliners="offliners"
@@ -749,6 +768,15 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
   }
 }
 
+const validateSchedule = async () => {
+  await scheduleStore.validateSchedule(props.scheduleName)
+  if (scheduleStore.errors.length > 0) {
+    for (const error of scheduleStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+}
+
 const deleteSchedule = async () => {
   const response = await scheduleStore.deleteSchedule(props.scheduleName)
   if (response) {
@@ -832,6 +860,10 @@ onMounted(async () => {
       flagsDefinition.value = offlinerDefinition.flags
     }
     await fetchScheduleImageTags(schedule.value.config.image.name)
+    // Get validation errors about the schedule on mount
+    if (!schedule.value.is_valid) {
+      await validateSchedule()
+    }
   }
 })
 

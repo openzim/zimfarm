@@ -197,6 +197,7 @@ class ScheduleFullSchema(BaseModel):
     notification: ScheduleNotificationSchema | None
     most_recent_task: MostRecentTaskSchema | None
     nb_requested_tasks: int = Field(exclude=True)
+    is_valid: bool
 
     @computed_field
     @property

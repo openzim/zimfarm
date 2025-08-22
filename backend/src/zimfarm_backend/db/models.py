@@ -12,6 +12,7 @@ from sqlalchemy import (
     UniqueConstraint,
     false,
     text,
+    true,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INET, JSON, JSONB
 from sqlalchemy.ext.mutable import MutableDict, MutableList
@@ -190,6 +191,7 @@ class Schedule(Base):
     tags: Mapped[list[str]] = mapped_column(index=True)
     periodicity: Mapped[str]
     notification: Mapped[dict[str, Any] | None]
+    is_valid: Mapped[bool] = mapped_column(default=True, server_default=true())
 
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration

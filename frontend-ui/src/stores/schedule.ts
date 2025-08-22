@@ -135,6 +135,20 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  const validateSchedule = async (scheduleName: string) => {
+    const service = await authStore.getApiService('schedules')
+    errors.value = []
+    try {
+      await service.get<null, null>(`/${scheduleName}/validate`)
+      return true
+    }
+    catch (_error) {
+      console.error('Failed to validate schedule', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
   return {
     // State
     schedule,
@@ -149,5 +163,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     fetchScheduleImageTags,
     updateSchedule,
     deleteSchedule,
+    validateSchedule,
   }
 })

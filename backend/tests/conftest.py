@@ -511,12 +511,3 @@ def create_task(
 @pytest.fixture
 def task(create_task: Callable[..., Task]) -> Task:
     return create_task()
-
-
-# @pytest.fixture
-# def set_default_publisher() -> Generator[Callable]:
-#     def _set_default_publisher(publisher: str):
-#         constants.DEFAULT_PUBLISHER = publisher
-#
-#     yield _set_default_publisher
-#     constants.DEFAULT_PUBLISHER = None  # Reset to default after test

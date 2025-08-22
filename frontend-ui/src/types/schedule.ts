@@ -35,6 +35,7 @@ export interface Schedule {
   notification: ScheduleNotification | null
   most_recent_task: MostRecentTask | null
   is_requested: boolean
+  is_valid: boolean
 }
 
 export interface ScheduleLight {

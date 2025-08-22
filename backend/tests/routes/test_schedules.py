@@ -12,6 +12,7 @@ from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import LanguageSchema
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
+from zimfarm_backend.db.schedule import get_schedule
 from zimfarm_backend.utils.token import generate_access_token
 
 
@@ -82,6 +83,42 @@ def test_get_schedules(
     assert "skip" in data["meta"]
     assert data["meta"]["count"] == expected_count
     assert len(data["items"]) <= 5
+
+
+def test_create_schedule_invald_config(
+    client: TestClient,
+    create_user: Callable[..., User],
+):
+    """Test that create_schedule raises Unprocessable Entity with invalid config"""
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    response = client.post(
+        "/v2/schedules",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "name": "test_schedule",
+            "category": ScheduleCategory.wikipedia.value,
+            "language": "eng",
+            "tags": ["important"],
+            "config": {
+                "offliner": {
+                    "mwUrl": "https://en.wikipedia.org",
+                    "mwUsername": "test",
+                    "mwPassword": "test",
+                },
+            },
+            "enabled": True,
+            "periodicity": SchedulePeriodicity.manually.value,
+        },
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize(
@@ -413,11 +450,21 @@ def test_get_schedule_image_names(
         assert isinstance(item, str)
 
 
+@pytest.mark.parametrize(
+    "new_language_code,expected_validity_status",
+    [
+        pytest.param("invalid", False, id="invalid-language-code"),
+        pytest.param("eng", True, id="valid-language-code"),
+    ],
+)
 def test_clone_schedule(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
     create_schedule: Callable[..., Schedule],
+    new_language_code: str,
+    *,
+    expected_validity_status: bool,
 ):
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
@@ -429,6 +476,7 @@ def test_clone_schedule(
     )
 
     schedule = create_schedule(name="test_schedule")
+    schedule.language_code = new_language_code
     dbsession.add(schedule)
     dbsession.flush()
 
@@ -443,6 +491,63 @@ def test_clone_schedule(
     assert data["id"] is not None
     assert str(data["id"]) != str(schedule.id)
 
+    new_schedule = get_schedule(dbsession, schedule_name="test_schedule_clone")
+    assert new_schedule.is_valid == expected_validity_status
+
+
+@pytest.mark.parametrize(
+    "permission,new_language_code,expected_status_code",
+    [
+        pytest.param(
+            RoleEnum.ADMIN,
+            "invalid",
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="invalid-language-code-admin",
+        ),
+        pytest.param(
+            RoleEnum.ADMIN,
+            "eng",
+            HTTPStatus.OK,
+            id="valid-language-code-admin",
+        ),
+        pytest.param(
+            RoleEnum.PROCESSOR,
+            "eng",
+            HTTPStatus.UNAUTHORIZED,
+            id="valid-language-code-processor",
+        ),
+    ],
+)
+def test_validate_schedule(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    permission: RoleEnum,
+    new_language_code: str,
+    *,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+    schedule = create_schedule(name="test_schedule")
+    # set the new language code in the db
+    schedule.language_code = new_language_code
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.get(
+        f"/v2/schedules/{schedule.name}/validate",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == expected_status_code
+
 
 def test_create_duplicate_schedule(
     client: TestClient,
@@ -451,6 +556,11 @@ def test_create_duplicate_schedule(
     create_schedule: Callable[..., Schedule],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
 ):
+    schedule_config = create_schedule_config()
+    schedule = create_schedule(name="test_schedule", schedule_config=schedule_config)
+    dbsession.add(schedule)
+    dbsession.flush()
+
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -459,11 +569,6 @@ def test_create_duplicate_schedule(
         email=user.email,
         scope=user.scope,
     )
-
-    schedule_config = create_schedule_config()
-    schedule = create_schedule(name="test_schedule", schedule_config=schedule_config)
-    dbsession.add(schedule)
-    dbsession.flush()
 
     response = client.post(
         "/v2/schedules",

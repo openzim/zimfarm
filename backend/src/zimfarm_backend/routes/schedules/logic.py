@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common.enums import Offliner, ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.schemas.fields import ScheduleNameField
 from zimfarm_backend.common.schemas.models import (
+    LanguageSchema,
     ScheduleNotificationSchema,
     calculate_pagination_metadata,
 )
@@ -213,6 +214,13 @@ def get_schedule(
     else:
         show_secrets = not hide_secrets
 
+    # validity field in DB might not reflect the actual validity of the schedule
+    # as constraints evolve
+    try:
+        create_schedule_full_schema(db_schedule, skip_validation=False)
+    except ValidationError:
+        schedule.is_valid = False
+
     schedule.config = expanded_config(
         cast(ScheduleConfigSchema, schedule.config), show_secrets=show_secrets
     )
@@ -396,6 +404,8 @@ def update_schedule(
             tags=request.tags,
             enabled=request.enabled,
             periodicity=request.periodicity,
+            # schedule must be valid if it has not failed validation yet
+            is_valid=True,
         )
     except RecordAlreadyExistsError as exc:
         raise BadRequestError(f"Schedule {request.name} already exists") from exc
@@ -472,17 +482,23 @@ def clone_schedule(
     except RecordDoesNotExistError as e:
         raise NotFoundError(f"Schedule {schedule_name} not found") from e
 
+    # Skip validation while cloning a schedule
     try:
         language = get_language_from_code(schedule.language_code)
-    except RecordDoesNotExistError as e:
-        raise BadRequestError(f"Language {schedule.language_code} not found") from e
+    except RecordDoesNotExistError:
+        language = LanguageSchema.model_validate(
+            {"code": schedule.language_code, "name": schedule.language_code},
+            context={"skip_validation": True},
+        )
 
     try:
         new_schedule = db_create_schedule(
             session,
             name=request.name,
             category=ScheduleCategory(schedule.category),
-            config=ScheduleConfigSchema.model_validate(schedule.config),
+            config=ScheduleConfigSchema.model_validate(
+                schedule.config, context={"skip_validation": True}
+            ),
             tags=schedule.tags,
             enabled=False,
             notification=(
@@ -496,6 +512,39 @@ def clone_schedule(
     except RecordAlreadyExistsError as e:
         raise BadRequestError(f"Schedule {request.name} already exists") from e
 
+    # validate the new schedule as we skipped validation to allow users clone
+    # an invalid schedule. If validation fails, mark as invalid
+    try:
+        create_schedule_full_schema(new_schedule, skip_validation=False)
+    except ValidationError:
+        db_update_schedule(
+            session,
+            schedule_name=new_schedule.name,
+            is_valid=False,
+        )
+
     return ScheduleCreateResponseSchema(
         id=new_schedule.id,
     )
+
+
+@router.get("/{schedule_name}/validate")
+def validate_schedule(
+    schedule_name: Annotated[ScheduleNameField, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> JSONResponse:
+    if not check_user_permission(current_user, namespace="schedules", name="update"):
+        raise UnauthorizedError("You are not allowed to validate a schedule")
+
+    try:
+        schedule = db_get_schedule(session, schedule_name=schedule_name)
+    except RecordDoesNotExistError as e:
+        raise NotFoundError(f"Schedule {schedule_name} not found") from e
+
+    try:
+        create_schedule_full_schema(schedule, skip_validation=False)
+    except ValidationError as exc:
+        raise RequestValidationError(exc.errors()) from exc
+
+    return JSONResponse(content={"message": "Schedule validated with success"})

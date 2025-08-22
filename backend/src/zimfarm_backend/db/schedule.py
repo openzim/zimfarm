@@ -346,16 +346,16 @@ def create_schedule(
     return schedule
 
 
-def create_schedule_full_schema(schedule: Schedule) -> ScheduleFullSchema:
+def create_schedule_full_schema(
+    schedule: Schedule, *, skip_validation: bool = True
+) -> ScheduleFullSchema:
     """Create a full schedule schema"""
-    # Given this function is almost always called while serializing an already
-    # loaded schedule, we want to relax constraints while validating the schema
     try:
         language = get_language_from_code(schedule.language_code)
     except RecordDoesNotExistError:
         language = LanguageSchema.model_validate(
             {"code": schedule.language_code, "name": schedule.language_code},
-            context={"skip_validation": True},
+            context={"skip_validation": skip_validation},
         )
     return ScheduleFullSchema(
         language=language,
@@ -371,7 +371,7 @@ def create_schedule_full_schema(schedule: Schedule) -> ScheduleFullSchema:
         name=schedule.name,
         category=schedule.category,
         config=ScheduleConfigSchema.model_validate(
-            schedule.config, context={"skip_validation": True}
+            schedule.config, context={"skip_validation": skip_validation}
         ),
         enabled=schedule.enabled,
         tags=schedule.tags,
@@ -391,6 +391,7 @@ def create_schedule_full_schema(schedule: Schedule) -> ScheduleFullSchema:
             else None
         ),
         nb_requested_tasks=len(schedule.requested_tasks),
+        is_valid=schedule.is_valid,
     )
 
 
@@ -411,15 +412,17 @@ def update_schedule(
     session: OrmSession,
     *,
     schedule_name: str,
-    new_schedule_config: ScheduleConfigSchema,
+    new_schedule_config: ScheduleConfigSchema | None = None,
     language: LanguageSchema | None = None,
     name: str | None = None,
+    is_valid: bool | None = None,
     category: ScheduleCategory | None = None,
     tags: list[str] | None = None,
     enabled: bool | None = None,
     periodicity: SchedulePeriodicity | None = None,
 ) -> Schedule:
-    """Update a schedule"""
+    """Update a schedule with the given values that are set."""
+
     schedule = get_schedule(session, schedule_name=schedule_name)
     if language:
         schedule.language_code = language.code
@@ -430,9 +433,12 @@ def update_schedule(
     schedule.periodicity = (
         periodicity if periodicity is not None else schedule.periodicity
     )
-    schedule.config = new_schedule_config.model_dump(
-        mode="json", context={"show_secrets": True}
-    )
+    if new_schedule_config:
+        schedule.config = new_schedule_config.model_dump(
+            mode="json", context={"show_secrets": True}
+        )
+    schedule.is_valid = is_valid if is_valid is not None else schedule.is_valid
+
     session.add(schedule)
     try:
         session.flush()
