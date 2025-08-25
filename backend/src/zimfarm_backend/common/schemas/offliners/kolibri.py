@@ -10,6 +10,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMLangCode,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
@@ -31,7 +32,7 @@ class KolibriFlagsSchema(DashModel):
         "the scraper. Defaults to the root of the channel.",
     )
 
-    lang: OptionalNotEmptyString = OptionalField(
+    lang: OptionalZIMLangCode = OptionalField(
         title="Language",
         description="ISO-639-3 (3 chars) language code of content. "
         "If unspecified, will attempt to detect from main page, or use 'eng'",

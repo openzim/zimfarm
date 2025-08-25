@@ -9,6 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMLangCode,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
     ZIMName,
@@ -60,7 +61,7 @@ class NautilusFlagsSchema(DashModel):
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided)",
     )
-    language: OptionalNotEmptyString = OptionalField(
+    language: OptionalZIMLangCode = OptionalField(
         title="Language",
         description="ISO-639-3 (3 chars) language code of content",
     )

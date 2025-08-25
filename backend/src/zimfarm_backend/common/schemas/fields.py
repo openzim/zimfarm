@@ -3,6 +3,7 @@ from collections.abc import Callable, Sized
 from enum import Enum
 from typing import Annotated, Any
 
+import pycountry
 from pydantic import (
     AfterValidator,
     AnyUrl,
@@ -61,6 +62,18 @@ def between(
         return value
 
     return _validate
+
+
+def validate_language_code(value: str, info: ValidationInfo) -> str:
+    """Validate that string is a valid ISO-693-3 language code"""
+    context = info.context
+    if context and context.get("skip_validation"):
+        return value
+    if pycountry.languages.get(alpha_3=value):
+        return value
+    raise ValueError(
+        f"Language code '{value}' is not a recognized ISO-639-3 language code"
+    )
 
 
 def length_between(
@@ -193,7 +206,11 @@ ZIMPlatformValue = Annotated[int, AfterValidator(between(low=1))]
 
 OptionalZIMPlatformValue = ZIMPlatformValue | None
 
-ZIMLangCode = Annotated[str, AfterValidator(length_between(low=3, high=3))]
+ZIMLangCode = Annotated[
+    str,
+    AfterValidator(length_between(low=3, high=3)),
+    AfterValidator(validate_language_code),
+]
 
 OptionalZIMLangCode = ZIMLangCode | None
 

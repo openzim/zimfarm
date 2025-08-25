@@ -10,6 +10,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
     OptionalSecretUrl,
     OptionalZIMDescription,
+    OptionalZIMLangCode,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMSecretStr,
@@ -118,7 +119,7 @@ class MWOfflinerFlagsSchema(DashModel):
         title="ZIM Tags",
         description="Semi-colon separated list of ZIM tags",
     )
-    customZimLanguage: OptionalNotEmptyString = OptionalField(
+    customZimLanguage: OptionalZIMLangCode = OptionalField(
         title="ZIM Language metadata",
         description="Custom ISO-639-3 language code for the ZIM",
     )
