@@ -4,6 +4,7 @@
 
 import datetime
 import logging
+import os
 
 import sqlalchemy as sa
 import sqlalchemy.orm as so
@@ -31,6 +32,12 @@ STALLED_COMPLETED_TIMEOUT = 24 * ONE_HOUR
 # cancel_request are picked-up during polls and may take a few minutes
 # to be effective and reported
 STALLED_CANCELREQ_TIMEOUT = 30 * ONE_MN
+# tasks older than this are removed
+TASKS_OLDER_THAN = datetime.timedelta(days=int(os.getenv("TASKS_OLDER_THAN", 10)))
+# flag to determine whether to remove old tasks
+SHOULD_REMOVE_OLD_TASKS = (
+    os.getenv("SHOULD_REMOVE_OLD_TASKS", "false").lower() == "true"
+)
 
 logger = logging.getLogger(NAME)
 logger.setLevel(logging.DEBUG)
@@ -148,6 +155,49 @@ def staled_statuses(session: so.Session):
     logger.info(f"::: failed {nb_failed_tasks} tasks")
 
 
+def tasks_cleanup(session: so.Session):
+    """removes old tasks excluding most recent tasks for schedules"""
+
+    if not SHOULD_REMOVE_OLD_TASKS:
+        logger.info(f":: skipping removal of tasks older than {TASKS_OLDER_THAN} days")
+        return
+
+    logger.info(f":: removing tasks older than {TASKS_OLDER_THAN} days")
+
+    now = getnow()
+
+    # Get the list of most recent task IDs for schedules
+    most_recent_task_ids = (
+        session.execute(
+            sa.select(dbm.Schedule.most_recent_task_id).filter(
+                dbm.Schedule.most_recent_task_id.is_not(None)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    # Delete tasks older than TASKS_OLDER_THAN, but exclude most recent tasks
+    # for schedules as there is a foreign key restraint on schedules to it
+    result = session.execute(
+        sa.delete(dbm.Task).where(
+            sa.and_(
+                dbm.Task.updated_at < now - TASKS_OLDER_THAN,
+                (
+                    dbm.Task.id.not_in(most_recent_task_ids)
+                    if most_recent_task_ids
+                    else sa.true()
+                ),
+            )
+        )
+    )
+
+    logger.info(
+        f"::: deleted {result.rowcount} tasks (excluded "
+        f"{len(most_recent_task_ids)} most recent tasks for schedules)"
+    )
+
+
 @dbsession
 def main(session: so.Session):
     logger.info("running periodic tasks-cleaner")
@@ -155,6 +205,8 @@ def main(session: so.Session):
     history_cleanup(session)
 
     staled_statuses(session)
+
+    tasks_cleanup(session)
 
 
 if __name__ == "__main__":
