@@ -60,9 +60,7 @@ def test_get_schedules(
         schedule = create_schedule(
             name=f"wiki_eng_{i}",
             category=ScheduleCategory.wikipedia,
-            language=LanguageSchema(
-                code="eng", name_en="English", name_native="English"
-            ),
+            language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
         requested_task = create_requested_task(schedule_name=schedule.name)
@@ -118,11 +116,7 @@ def test_create_schedule(
         json={
             "name": "test_schedule",
             "category": ScheduleCategory.wikipedia.value,
-            "language": {
-                "code": "eng",
-                "name_en": "English",
-                "name_native": "English",
-            },
+            "language": "eng",
             "tags": ["important"],
             "config": schedule_config.model_dump(
                 mode="json", context={"show_secrets": True}, by_alias=True
@@ -181,11 +175,7 @@ def test_schedule_name(
         json={
             "name": schedule_name,
             "category": ScheduleCategory.wikipedia.value,
-            "language": {
-                "code": "eng",
-                "name_en": "English",
-                "name_native": "English",
-            },
+            "language": "eng",
             "tags": ["important"],
             "config": schedule_config.model_dump(
                 mode="json", context={"show_secrets": True}, by_alias=True

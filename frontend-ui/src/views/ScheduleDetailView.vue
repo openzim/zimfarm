@@ -123,7 +123,7 @@
                   <tr>
                     <th class="text-left">Language</th>
                     <td>
-                      {{ schedule.language.name_en }} (<code>{{ schedule.language.code }}</code
+                      {{ schedule.language.name }} (<code>{{ schedule.language.code }}</code
                       >)
                     </td>
                   </tr>

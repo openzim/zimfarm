@@ -700,7 +700,7 @@ const getFieldRules = (field: FlagField) => {
 }
 
 const languagesOptions = computed(() => {
-  return props.languages.map((language) => ({ title: language.name_en, value: language.code }))
+  return props.languages.map((language) => ({ title: language.name, value: language.code }))
 })
 
 const categoriesOptions = computed(() => {
@@ -806,15 +806,7 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
 
   // Language
   if (editSchedule.value.language.code !== props.schedule.language.code) {
-    const language = props.languages.find((l) => l.code === editSchedule.value.language.code)
-    if (language) {
-      // Create a proper Language object with all required fields
-      payload.language = {
-        code: language.code,
-        name_en: language.name_en,
-        name_native: language.name_native,
-      }
-    }
+    payload.language = editSchedule.value.language.code
   }
 
   // Config properties

@@ -16,10 +16,10 @@ from zimfarm_backend.common.schemas.fields import (
     ScheduleNameField,
     SkipField,
     WarehousePathField,
+    ZIMLangCode,
 )
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
-    LanguageSchema,
     ResourcesSchema,
     ScheduleNotificationSchema,
 )
@@ -36,7 +36,7 @@ class SchedulesGetSchema(BaseModel):
 
 class ScheduleCreateSchema(BaseModel):
     name: ScheduleNameField
-    language: LanguageSchema
+    language: ZIMLangCode
     category: ScheduleCategory
     periodicity: SchedulePeriodicity
     tags: list[NotEmptyString] = Field(default_factory=list)
@@ -51,7 +51,7 @@ class ScheduleCreateResponseSchema(BaseModel):
 
 class ScheduleUpdateSchema(BaseModel):
     name: ScheduleNameField | None = None
-    language: LanguageSchema | None = None
+    language: ZIMLangCode | None = None
     category: ScheduleCategory | None = None
     periodicity: SchedulePeriodicity | None = None
     tags: list[NotEmptyString] | None = None

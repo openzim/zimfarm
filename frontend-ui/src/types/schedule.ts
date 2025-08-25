@@ -49,7 +49,7 @@ export interface ScheduleLight {
 
 export interface ScheduleUpdateSchema {
   name: string | null
-  language: Language | null
+  language: string | null
   category: string | null
   periodicity: string | null
   tags: string[] | null
@@ -64,22 +64,6 @@ export interface ScheduleUpdateSchema {
   artifacts_globs: string[] | null
 }
 
-export interface ScheduleUpdateSchema {
-  name: string | null
-  language: Language | null
-  category: string | null
-  periodicity: string | null
-  tags: string[] | null
-  enabled: boolean | null
-  offliner: string | null
-  warehouse_path: string | null
-  image: DockerImage | null
-  platform: string | null
-  resources: Resources | null
-  monitor: boolean | null
-  flags: Record<string, unknown> | null
-  artifacts_globs: string[] | null
-}
 
 export interface EventNotification {
   mailgun: string[] | null

@@ -187,8 +187,6 @@ class Schedule(Base):
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str] = mapped_column(index=True)
-    language_name_native: Mapped[str]
-    language_name_en: Mapped[str]
     tags: Mapped[list[str]] = mapped_column(index=True)
     periodicity: Mapped[str]
     notification: Mapped[dict[str, Any] | None]

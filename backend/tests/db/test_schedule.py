@@ -103,7 +103,7 @@ def test_create_schedule(
         session=dbsession,
         name="test_schedule",
         category=ScheduleCategory.other,
-        language=LanguageSchema(code="eng", name_en="English", name_native="English"),
+        language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
         tags=["test"],
         enabled=True,
@@ -113,8 +113,6 @@ def test_create_schedule(
     assert schedule.name == "test_schedule"
     assert schedule.category == ScheduleCategory.other
     assert schedule.language_code == "eng"
-    assert schedule.language_name_en == "English"
-    assert schedule.language_name_native == "English"
     assert schedule.config == schedule_config.model_dump(
         mode="json", context={"show_secrets": True}
     )
@@ -224,9 +222,7 @@ def test_get_schedules(
         schedule = create_schedule(
             name=f"wiki_eng_{i}",
             category=ScheduleCategory.wikipedia,
-            language=LanguageSchema(
-                code="eng", name_en="English", name_native="English"
-            ),
+            language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
         requested_task = create_requested_task(schedule_name=schedule.name)
@@ -239,9 +235,7 @@ def test_get_schedules(
         schedule = create_schedule(
             name=f"wiki_fra_{i}",
             category=ScheduleCategory.wikipedia,
-            language=LanguageSchema(
-                code="fra", name_en="French", name_native="Français"
-            ),
+            language=LanguageSchema(code="fra", name="French"),
             tags=["important"],
         )
         requested_task = create_requested_task(schedule_name=schedule.name)
@@ -254,9 +248,7 @@ def test_get_schedules(
         schedule = create_schedule(
             name=f"other_schedule_{i}",
             category=ScheduleCategory.other,
-            language=LanguageSchema(
-                code="eng", name_en="English", name_native="English"
-            ),
+            language=LanguageSchema(code="eng", name="English"),
             tags=["test"],
         )
         requested_task = create_requested_task(schedule_name=schedule.name)
