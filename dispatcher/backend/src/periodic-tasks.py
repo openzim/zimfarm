@@ -32,11 +32,13 @@ STALLED_COMPLETED_TIMEOUT = 24 * ONE_HOUR
 # cancel_request are picked-up during polls and may take a few minutes
 # to be effective and reported
 STALLED_CANCELREQ_TIMEOUT = 30 * ONE_MN
-# tasks older than this are removed
-TASKS_OLDER_THAN = datetime.timedelta(days=int(os.getenv("TASKS_OLDER_THAN", 10)))
-# flag to determine whether to remove old tasks
-SHOULD_REMOVE_OLD_TASKS = (
-    os.getenv("SHOULD_REMOVE_OLD_TASKS", "false").lower() == "true"
+# tasks older than this are deleted
+OLD_TASK_DELETION_THRESHOLD = datetime.timedelta(
+    days=int(os.getenv("TASKS_OLDER_THAN", 180))
+)
+# flag to determine whether to deleted old tasks
+OLD_TASK_DELETION_ENABLED = (
+    os.getenv("OLD_TASK_DELETION_ENABLED", "false").lower() == "true"
 )
 
 logger = logging.getLogger(NAME)
@@ -158,44 +160,28 @@ def staled_statuses(session: so.Session):
 def tasks_cleanup(session: so.Session):
     """removes old tasks excluding most recent tasks for schedules"""
 
-    if not SHOULD_REMOVE_OLD_TASKS:
-        logger.info(f":: skipping removal of tasks older than {TASKS_OLDER_THAN} days")
+    threshold = getnow() - OLD_TASK_DELETION_THRESHOLD
+
+    if not OLD_TASK_DELETION_ENABLED:
+        logger.info(
+            ":: skipping deletion of tasks older than "
+            f"{threshold.isoformat(timespec='seconds')}"
+        )
         return
 
-    logger.info(f":: removing tasks older than {TASKS_OLDER_THAN} days")
-
-    now = getnow()
-
-    # Get the list of most recent task IDs for schedules
-    most_recent_task_ids = (
-        session.execute(
-            sa.select(dbm.Schedule.most_recent_task_id).filter(
-                dbm.Schedule.most_recent_task_id.is_not(None)
-            )
-        )
-        .scalars()
-        .all()
+    logger.info(
+        f":: deleting tasks older than {threshold.isoformat(timespec='seconds')}"
     )
 
-    # Delete tasks older than TASKS_OLDER_THAN, but exclude most recent tasks
-    # for schedules as there is a foreign key restraint on schedules to it
     result = session.execute(
         sa.delete(dbm.Task).where(
             sa.and_(
-                dbm.Task.updated_at < now - TASKS_OLDER_THAN,
-                (
-                    dbm.Task.id.not_in(most_recent_task_ids)
-                    if most_recent_task_ids
-                    else sa.true()
-                ),
+                dbm.Task.updated_at < threshold,
             )
         )
     )
 
-    logger.info(
-        f"::: deleted {result.rowcount} tasks (excluded "
-        f"{len(most_recent_task_ids)} most recent tasks for schedules)"
-    )
+    logger.info(f"::: deleted {result.rowcount} tasks.")
 
 
 @dbsession

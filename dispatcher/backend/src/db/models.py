@@ -276,10 +276,10 @@ class Schedule(Base):
     # but it is still not totally handled automatically, the migration
     # has been partially modified to create the FK afterwards
     most_recent_task_id: Mapped[Optional[UUID]] = mapped_column(
-        ForeignKey("task.id", use_alter=True), init=False
+        ForeignKey("task.id", use_alter=True, ondelete="SET NULL"), init=False
     )
     most_recent_task: Mapped[Optional["Task"]] = relationship(
-        init=False, foreign_keys=[most_recent_task_id]
+        init=False, foreign_keys=[most_recent_task_id], passive_deletes=True
     )
 
     tasks: Mapped[List["Task"]] = relationship(
