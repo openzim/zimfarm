@@ -10,6 +10,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMLangCode,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
@@ -40,7 +41,7 @@ class YoutubeFlagsSchema(DashModel):
         alias="id",
     )
 
-    language: OptionalNotEmptyString = OptionalField(
+    language: OptionalZIMLangCode = OptionalField(
         title="Language",
         description="ISO-639-3 (3 chars) language code of content",
     )

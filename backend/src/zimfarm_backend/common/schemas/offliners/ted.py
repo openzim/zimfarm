@@ -1,7 +1,12 @@
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import Field, WrapValidator
+from pydantic import (
+    Field,
+    ValidationInfo,
+    WrapValidator,
+    field_validator,
+)
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -15,6 +20,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMTitle,
     ZIMName,
     enum_member,
+    validate_language_code,
 )
 
 
@@ -48,7 +54,7 @@ class TedFlagsSchema(DashModel):
     languages: OptionalNotEmptyString = OptionalField(
         title="Languages",
         description=(
-            "Comma-separated list of languages to filter videos. Do not "
+            "Comma-separated list of ISO-639-3 language codes to filter videos. Do not "
             "pass this parameter for all languages"
         ),
     )
@@ -170,3 +176,11 @@ class TedFlagsSchema(DashModel):
         title="Locale",
         description="The locale to use for the translations in ZIM",
     )
+
+    @field_validator("languages", mode="after")
+    @classmethod
+    def validate_languages(cls, value: str, info: ValidationInfo) -> str:
+        """Validate that comma-seperated languages are all ISO 693-3 compliant."""
+        for code in value.split(","):
+            validate_language_code(code, info)
+        return value

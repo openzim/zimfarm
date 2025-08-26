@@ -4,8 +4,13 @@ import pytest
 from _pytest.python_api import RaisesContext
 from pydantic import ValidationError
 
-from zimfarm_backend.common.schemas.fields import ZIMFileName, ZIMName
+from zimfarm_backend.common.schemas.fields import (
+    ZIMFileName,
+    ZIMLangCode,
+    ZIMName,
+)
 from zimfarm_backend.common.schemas.models import BaseModel
+from zimfarm_backend.common.schemas.offliners import TedFlagsSchema
 from zimfarm_backend.common.schemas.offliners.freecodecamp import (
     FCCLanguageValue,
 )
@@ -21,6 +26,10 @@ class ZIMFileNameModel(BaseModel):
 
 class ZIMNameModel(BaseModel):
     value: ZIMName
+
+
+class ZIMLanguageCodeModel(BaseModel):
+    value: ZIMLangCode
 
 
 def test_enum_validator_accepts_valid_value():
@@ -185,4 +194,59 @@ def test_zimname_skips_validation_when_context_set():
     with does_not_raise():
         ZIMNameModel.model_validate(
             {"value": "invalid_name"}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "language_code,expected",
+    [
+        ("eng", does_not_raise()),
+        ("fra", does_not_raise()),
+        ("jpn", does_not_raise()),
+        ("jp", pytest.raises(ValidationError)),
+        ("en", pytest.raises(ValidationError)),
+        ("invalid", pytest.raises(ValidationError)),
+    ],
+)
+def test_language_code_validator(
+    language_code: str, expected: RaisesContext[Exception]
+):
+    """Test language code validator with various inputs."""
+    with expected:
+        ZIMLanguageCodeModel.model_validate({"value": language_code})
+
+
+def test_language_code_validator_skips_validation_when_context_set():
+    """Test that language code validator is skipped when context is set."""
+    with does_not_raise():
+        ZIMLanguageCodeModel.model_validate(
+            {"value": "invalid"}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "languages,expected",
+    [
+        pytest.param("eng,fra,jpn", does_not_raise(), id="valid_languages"),
+        pytest.param(
+            "en,fr,jp", pytest.raises(ValidationError), id="invalid_language_code"
+        ),
+    ],
+)
+def test_ted_flags_schema(languages: str, expected: RaisesContext[Exception]):
+    with expected:
+        TedFlagsSchema(
+            name="ted-talks_mul_football", offliner_id="ted", languages=languages
+        )
+
+
+def test_ted_flags_schema_skips_validation_when_context_set():
+    with does_not_raise():
+        TedFlagsSchema.model_validate(
+            {
+                "name": "ted-talks_mul_football",
+                "offliner_id": "ted",
+                "languages": "invalid",
+            },
+            context={"skip_validation": True},
         )

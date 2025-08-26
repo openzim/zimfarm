@@ -10,6 +10,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalPercentage,
     OptionalZIMDescription,
     OptionalZIMFileName,
+    OptionalZIMLangCode,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
@@ -497,7 +498,7 @@ class ZimitFlagsFullSchema(CamelModel):
         description="The depth of the crawl for all seeds. Default is -1 (infinite).",
     )
     # Dash aliases
-    zim_lang: OptionalNotEmptyString = OptionalField(
+    zim_lang: OptionalZIMLangCode = OptionalField(
         title="ZIM Language",
         description="Language metadata of ZIM (warc2zim --lang param). "
         "ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
