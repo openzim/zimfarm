@@ -186,6 +186,38 @@ def test_get_schedule_with_invalid_language_from_db(
 
 
 @pytest.mark.parametrize(
+    "code",
+    ["en", "fr", "invalid"],
+)
+def test_get_schedule_with_invalid_language_from_db(
+    dbsession: OrmSession,
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    code: str,
+):
+    # Create test schedule with invalid language code
+    dbsession.add(
+        Schedule(
+            language_code=code,
+            name="test1",
+            category="test",
+            config=create_schedule_config().model_dump(mode="json"),
+            enabled=True,
+            tags=["test"],
+            periodicity="test",
+            notification={"test": "test"},
+        )
+    )
+    dbsession.flush()
+    # assert we can read schedules with invalid codes from db
+    schedule = get_schedule(dbsession, schedule_name="test1")
+    assert schedule.language_code == code
+    schedule_schema = create_schedule_full_schema(schedule)
+    # for unknown languages, the code and name should be the same
+    assert schedule_schema.language.code == code
+    assert schedule_schema.language.name == code
+
+
+@pytest.mark.parametrize(
     "code,name",
     [
         ("eng", "English"),
