@@ -186,9 +186,7 @@ class ScheduleFullSchema(BaseModel):
     Schema for reading a schedule model with all fields
     """
 
-    language_code: str = Field(exclude=True)
-    language_name_en: str = Field(exclude=True)
-    language_name_native: str = Field(exclude=True)
+    language: LanguageSchema
     durations: list[ScheduleDurationSchema] = Field(exclude=True)
     name: str
     category: str
@@ -204,18 +202,6 @@ class ScheduleFullSchema(BaseModel):
     @property
     def is_requested(self) -> bool:
         return self.nb_requested_tasks > 0
-
-    @computed_field
-    @property
-    def language(self) -> LanguageSchema:
-        return LanguageSchema.model_validate(
-            {
-                "code": self.language_code,
-                "name_en": self.language_name_en,
-                "name_native": self.language_name_native,
-            },
-            context={"skip_validation": True},
-        )
 
     @computed_field
     @property

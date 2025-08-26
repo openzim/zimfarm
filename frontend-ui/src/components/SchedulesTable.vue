@@ -68,7 +68,7 @@
         </template>
 
         <template #[`item.language`]="{ item }">
-          {{ item.language.name_en }}
+          {{ item.language.name }}
         </template>
 
         <template #[`item.offliner`]="{ item }">

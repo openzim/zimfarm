@@ -67,7 +67,8 @@ def create_recipe(ted_topic_name: str, access_token: str):
     data = {
         "category": "ted",
         "config": {
-            "flags": {
+            "offliner": {
+                "offliner_id": "ted",
                 "description": f"A collection of TED videos about {ted_topic_name}",
                 "title": f"TED {ted_topic_name}",
                 "topics": ted_topic_name,
@@ -94,15 +95,10 @@ def create_recipe(ted_topic_name: str, access_token: str):
                 "disk": 32212254720,
                 "memory": 2147483648,
             },
-            "task_name": "ted",
             "warehouse_path": "/.hidden/dev",
         },
         "enabled": True,
-        "language": {
-            "code": "mul",
-            "name_en": "Multiple Languages",
-            "name_native": "Multiple Languages",
-        },
+        "language": "mul",
         "name": schedule_name,
         "periodicity": "quarterly",
         "tags": [

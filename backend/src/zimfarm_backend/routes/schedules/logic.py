@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common.enums import Offliner, ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.schemas.fields import ScheduleNameField
 from zimfarm_backend.common.schemas.models import (
-    LanguageSchema,
     ScheduleNotificationSchema,
     calculate_pagination_metadata,
 )
@@ -24,6 +23,7 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
+from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.schedule import create_schedule as db_create_schedule
 from zimfarm_backend.db.schedule import create_schedule_full_schema, get_all_schedules
@@ -116,11 +116,16 @@ def create_schedule(
             ]
         )
 
+    try:
+        language = get_language_from_code(schedule.language)
+    except RecordDoesNotExistError as exc:
+        raise BadRequestError(f"Language code {schedule.language} not found.") from exc
+
     db_schedule = db_create_schedule(
         session,
         name=schedule.name,
         category=ScheduleCategory(schedule.category),
-        language=schedule.language,
+        language=language,
         config=config,
         tags=schedule.tags,
         enabled=schedule.enabled,
@@ -366,12 +371,22 @@ def update_schedule(
     new_schedule_config.monitor = request.monitor or schedule_config.monitor
 
     new_schedule_config = cast(ScheduleConfigSchema, new_schedule_config)
+    if request.language:
+        try:
+            language = get_language_from_code(request.language)
+        except RecordDoesNotExistError as exc:
+            raise BadRequestError(
+                f"Language code {request.language} not found."
+            ) from exc
+    else:
+        language = None
+
     schedule = create_schedule_full_schema(
         db_update_schedule(
             session,
             schedule_name=schedule_name,
             new_schedule_config=new_schedule_config,
-            language=request.language,
+            language=language,
             name=request.name,
             category=request.category,
             tags=request.tags,
@@ -451,15 +466,15 @@ def clone_schedule(
         raise NotFoundError(f"Schedule {schedule_name} not found") from e
 
     try:
+        language = get_language_from_code(schedule.language_code)
+    except RecordDoesNotExistError as e:
+        raise BadRequestError(f"Language {schedule.language_code} not found") from e
+
+    try:
         new_schedule = db_create_schedule(
             session,
             name=request.name,
             category=ScheduleCategory(schedule.category),
-            language=LanguageSchema(
-                code=schedule.language_code,
-                name_en=schedule.language_name_en,
-                name_native=schedule.language_name_native,
-            ),
             config=ScheduleConfigSchema.model_validate(schedule.config),
             tags=schedule.tags,
             enabled=False,
@@ -469,6 +484,7 @@ def clone_schedule(
                 else None
             ),
             periodicity=SchedulePeriodicity(schedule.periodicity),
+            language=language,
         )
     except RecordAlreadyExistsError as e:
         raise BadRequestError(f"Schedule {request.name} already exists") from e

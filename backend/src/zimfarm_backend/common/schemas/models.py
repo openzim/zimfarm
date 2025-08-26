@@ -45,8 +45,7 @@ from zimfarm_backend.common.schemas.offliners import (
 
 class LanguageSchema(BaseModel):
     code: ZIMLangCode
-    name_en: NotEmptyString
-    name_native: NotEmptyString
+    name: NotEmptyString
 
 
 class ResourcesSchema(BaseModel):

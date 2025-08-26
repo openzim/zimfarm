@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import type { Language } from '../types/language'
 
 // Props
 interface Props {
@@ -75,7 +76,7 @@ interface Props {
     tags: string[]
   }
   categories: string[]
-  languages: { code: string; name_en: string }[]
+  languages: Language[]
   tags: string[]
 }
 
@@ -119,7 +120,7 @@ const categoriesOptions = computed(() => {
 
 const languagesOptions = computed(() => {
   return props.languages.map(language => ({
-    title: language.name_en,
+    title: language.name,
     value: language.code
   }))
 })

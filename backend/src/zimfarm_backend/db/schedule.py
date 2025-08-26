@@ -31,6 +31,7 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
+from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import (
     RequestedTask,
     Schedule,
@@ -228,8 +229,6 @@ def get_schedules(
             Schedule.category,
             Schedule.enabled,
             Schedule.language_code,
-            Schedule.language_name_en,
-            Schedule.language_name_native,
             Schedule.config,
             Task.id.label("task_id"),
             Task.status.label("task_status"),
@@ -261,8 +260,6 @@ def get_schedules(
         category,
         enabled,
         language_code,
-        language_name_en,
-        language_name_native,
         config,
         task_id,
         task_status,
@@ -271,20 +268,21 @@ def get_schedules(
     ) in session.execute(stmt).all():
         # Because the SQL window function returns the total_records
         # for every row, assign that value to the nb_records
+        try:
+            language = get_language_from_code(language_code)
+        except RecordDoesNotExistError:
+            language = LanguageSchema.model_validate(
+                {"code": language_code, "name": language_code},
+                context={"skip_validation": True},
+            )
+
         results.nb_records = nb_records
         results.schedules.append(
             ScheduleLightSchema(
                 name=schedule_name,
                 category=category,
                 enabled=enabled,
-                language=LanguageSchema.model_validate(
-                    {
-                        "code": language_code,
-                        "name_en": language_name_en,
-                        "name_native": language_name_native,
-                    },
-                    context={"skip_validation": True},
-                ),
+                language=language,
                 config=ConfigOfflinerOnlySchema(
                     offliner=config["offliner"]["offliner_id"],
                 ),
@@ -321,8 +319,6 @@ def create_schedule(
         name=name,
         category=category,
         language_code=language.code,
-        language_name_en=language.name_en,
-        language_name_native=language.name_native,
         config=config.model_dump(mode="json", context={"show_secrets": True}),
         tags=tags,
         enabled=enabled,
@@ -347,10 +343,17 @@ def create_schedule(
 
 def create_schedule_full_schema(schedule: Schedule) -> ScheduleFullSchema:
     """Create a full schedule schema"""
+    # Given this function is almost always called while serializing an already
+    # loaded schedule, we want to relax constraints while validating the schema
+    try:
+        language = get_language_from_code(schedule.language_code)
+    except RecordDoesNotExistError:
+        language = LanguageSchema.model_validate(
+            {"code": schedule.language_code, "name": schedule.language_code},
+            context={"skip_validation": True},
+        )
     return ScheduleFullSchema(
-        language_code=schedule.language_code,
-        language_name_en=schedule.language_name_en,
-        language_name_native=schedule.language_name_native,
+        language=language,
         durations=[
             ScheduleDurationSchema(
                 value=duration.value,
@@ -415,8 +418,6 @@ def update_schedule(
     schedule = get_schedule(session, schedule_name=schedule_name)
     if language:
         schedule.language_code = language.code
-        schedule.language_name_en = language.name_en
-        schedule.language_name_native = language.name_native
     schedule.name = name if name is not None else schedule.name
     schedule.category = category if category is not None else schedule.category
     schedule.tags = tags if tags is not None else schedule.tags

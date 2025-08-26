@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 from fastapi import APIRouter, FastAPI, HTTPException
@@ -20,6 +21,17 @@ from zimfarm_backend.routes import (
     users,
     workers,
 )
+from zimfarm_backend.utils.database import (
+    create_initial_user,
+    upgrade_db_schema,
+)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    upgrade_db_schema()
+    create_initial_user()
+    yield
 
 
 def create_app(*, debug: bool = True):
@@ -29,6 +41,7 @@ def create_app(*, debug: bool = True):
         title="Zimfarm API",
         version="2.0.0",
         description="Zimfarm API for managing tasks, workers, and other resources",
+        lifespan=lifespan,
     )
 
     if origins := os.getenv("ALLOWED_ORIGINS", None):
