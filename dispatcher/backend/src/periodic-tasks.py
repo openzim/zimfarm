@@ -4,6 +4,7 @@
 
 import datetime
 import logging
+import os
 
 import sqlalchemy as sa
 import sqlalchemy.orm as so
@@ -31,6 +32,14 @@ STALLED_COMPLETED_TIMEOUT = 24 * ONE_HOUR
 # cancel_request are picked-up during polls and may take a few minutes
 # to be effective and reported
 STALLED_CANCELREQ_TIMEOUT = 30 * ONE_MN
+# tasks older than this are deleted
+OLD_TASK_DELETION_THRESHOLD = datetime.timedelta(
+    days=int(os.getenv("TASKS_OLDER_THAN", 180))
+)
+# flag to determine whether to deleted old tasks
+OLD_TASK_DELETION_ENABLED = (
+    os.getenv("OLD_TASK_DELETION_ENABLED", "false").lower() == "true"
+)
 
 logger = logging.getLogger(NAME)
 logger.setLevel(logging.DEBUG)
@@ -148,6 +157,33 @@ def staled_statuses(session: so.Session):
     logger.info(f"::: failed {nb_failed_tasks} tasks")
 
 
+def tasks_cleanup(session: so.Session):
+    """removes old tasks excluding most recent tasks for schedules"""
+
+    threshold = getnow() - OLD_TASK_DELETION_THRESHOLD
+
+    if not OLD_TASK_DELETION_ENABLED:
+        logger.info(
+            ":: skipping deletion of tasks older than "
+            f"{threshold.isoformat(timespec='seconds')}"
+        )
+        return
+
+    logger.info(
+        f":: deleting tasks older than {threshold.isoformat(timespec='seconds')}"
+    )
+
+    result = session.execute(
+        sa.delete(dbm.Task).where(
+            sa.and_(
+                dbm.Task.updated_at < threshold,
+            )
+        )
+    )
+
+    logger.info(f"::: deleted {result.rowcount} tasks.")
+
+
 @dbsession
 def main(session: so.Session):
     logger.info("running periodic tasks-cleaner")
@@ -155,6 +191,8 @@ def main(session: so.Session):
     history_cleanup(session)
 
     staled_statuses(session)
+
+    tasks_cleanup(session)
 
 
 if __name__ == "__main__":
