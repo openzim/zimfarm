@@ -121,17 +121,21 @@ def create_schedule(
     except RecordDoesNotExistError as exc:
         raise BadRequestError(f"Language code {schedule.language} not found.") from exc
 
-    db_schedule = db_create_schedule(
-        session,
-        name=schedule.name,
-        category=ScheduleCategory(schedule.category),
-        language=language,
-        config=config,
-        tags=schedule.tags,
-        enabled=schedule.enabled,
-        notification=schedule.notification,
-        periodicity=schedule.periodicity,
-    )
+    try:
+        db_schedule = db_create_schedule(
+            session,
+            name=schedule.name,
+            category=ScheduleCategory(schedule.category),
+            language=language,
+            config=config,
+            tags=schedule.tags,
+            enabled=schedule.enabled,
+            notification=schedule.notification,
+            periodicity=schedule.periodicity,
+        )
+    except RecordAlreadyExistsError as exc:
+        raise BadRequestError(f"Schedule {schedule.name} already exists") from exc
+
     return JSONResponse(
         content=ScheduleCreateResponseSchema(
             id=db_schedule.id,
