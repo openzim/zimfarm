@@ -310,6 +310,7 @@
               :placeholder="field.placeholder"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'eager blur'"
             />
             <v-select
               v-else-if="field.component === 'select'"
@@ -321,6 +322,7 @@
               :required="field.required"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-text-field
               v-else-if="field.component === 'number'"
@@ -333,6 +335,7 @@
               :step="field.step"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-text-field
               v-else-if="field.component === 'url'"
@@ -344,6 +347,7 @@
               :required="field.required"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-text-field
               v-else-if="field.component === 'email'"
@@ -355,6 +359,7 @@
               :required="field.required"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-text-field
               v-else-if="field.component === 'color'"
@@ -366,6 +371,7 @@
               :required="field.required"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-textarea
               v-else-if="field.component === 'textarea'"
@@ -377,6 +383,7 @@
               auto-grow
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-text-field
               v-else
@@ -387,6 +394,7 @@
               :required="field.required"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
+              :validate-on="'blur'"
             />
             <v-text class="text-caption">{{ field.description }}</v-text>
           </td>
@@ -438,6 +446,11 @@ interface FlagField {
   component: string
   options?: Array<{ title: string; value: string | undefined }>
   step?: number | null
+  min: number | null
+  max: number | null
+  min_length: number | null
+  max_length: number | null
+  pattern: string | null
 }
 
 export interface Props {
@@ -525,6 +538,34 @@ const taskName = computed(() => {
   )
 })
 
+// Helper function to validate a single field value against its rules
+const validateFieldValue = (field: FlagField, value: unknown): boolean => {
+  const rules = getFieldRules(field)
+
+  for (const rule of rules) {
+    const result = rule(value)
+    if (result !== true) {
+      return false // Validation failed
+    }
+  }
+
+  return true // All rules passed
+}
+
+// Check if all flag fields are valid
+const areAllFieldsValid = computed(() => {
+  if (!flagsFields.value.length) return true
+
+  for (const field of flagsFields.value) {
+    const value = editFlags.value[field.dataKey]
+    if (!validateFieldValue(field, value)) {
+      return false
+    }
+  }
+
+  return true
+})
+
 const hasChanges = computed(() => {
   if (!(props.schedule && editSchedule.value)) return false
 
@@ -595,7 +636,11 @@ const hasChanges = computed(() => {
     }
     return true
   })
-  return changes.length > 0
+
+  const hasActualChanges = changes.length > 0
+
+  // Return true only if there are changes AND all fields are valid
+  return hasActualChanges && areAllFieldsValid.value
 })
 
 const flagsFields = computed(() => {
@@ -637,6 +682,11 @@ const flagsFields = computed(() => {
       dataKey: field.data_key,
       required: field.required,
       description: field.description,
+      min: field.min,
+      max: field.max,
+      min_length: field.min_length,
+      max_length: field.max_length,
+      pattern: field.pattern,
       placeholder: 'Not set',
       component,
       options,
@@ -690,6 +740,80 @@ const getFieldRules = (field: FlagField) => {
         const num = Number(value)
         if (isNaN(num)) {
           return 'Please enter a valid number'
+        }
+      }
+      return true
+    })
+  }
+
+  // Add validation for min, max, min_length, and pattern constraints
+  const shouldValidate = (value: unknown) => {
+    return value !== null && value !== undefined && value !== ''
+  }
+
+  // Min length validation
+  if (field.min_length !== null) {
+    rules.push((value: unknown) => {
+      if (shouldValidate(value) && typeof value === 'string') {
+        if (value.length < field.min_length!) {
+          return `Minimum length is ${field.min_length} characters`
+        }
+      }
+      return true
+    })
+  }
+
+  // Max length validation
+  if (field.max_length !== null) {
+    rules.push((value: unknown) => {
+      if (shouldValidate(value) && typeof value === 'string') {
+        if (value.length > field.max_length!) {
+          return `Maximum length is ${field.max_length} characters`
+        }
+      }
+      return true
+    })
+  }
+
+  // Min value validation (for numbers)
+  if (field.min !== null) {
+    rules.push((value: unknown) => {
+      if (shouldValidate(value)) {
+        const num = Number(value)
+        if (!isNaN(num) && num < field.min!) {
+          return `Minimum value is ${field.min}`
+        }
+      }
+      return true
+    })
+  }
+
+  // Max value validation (for numbers)
+  if (field.max !== null) {
+    rules.push((value: unknown) => {
+      if (shouldValidate(value)) {
+        const num = Number(value)
+        if (!isNaN(num) && num > field.max!) {
+          return `Maximum value is ${field.max}`
+        }
+      }
+      return true
+    })
+  }
+
+  // Pattern validation (regex)
+  if (field.pattern !== null) {
+    rules.push((value: unknown) => {
+      if (shouldValidate(value) && typeof value === 'string') {
+        try {
+          // construct the regex from the pattern string
+          const regex = new RegExp(field.pattern!)
+          if (!regex.test(value)) {
+            return `Value must match pattern: ${field.pattern}`
+          }
+        } catch {
+          // If regex is invalid, skip validation
+          console.warn(`Invalid regex pattern for field ${field.dataKey}:`, field.pattern)
         }
       }
       return true

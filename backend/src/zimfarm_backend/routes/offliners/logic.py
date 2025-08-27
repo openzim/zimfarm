@@ -47,11 +47,11 @@ async def get_offliner(offliner: Annotated[Offliner, Path()]) -> JSONResponse:
     if schema_cls is None:
         raise NotFoundError(f"Offliner {offliner} not found")
 
-    definition = schema_to_flags(schema_cls)
+    flags = schema_to_flags(schema_cls)
 
     return JSONResponse(
         content={
-            "flags": definition["flags"],
+            "flags": [flag.model_dump(mode="json") for flag in flags],
             "help": (  # dynamic + sourced from backend because it might be custom
                 f"https://github.com/openzim/{offliner}/wiki/Frequently-Asked-Questions"
             ),

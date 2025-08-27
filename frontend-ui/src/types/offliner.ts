@@ -10,6 +10,11 @@ export interface OfflinerDefinition {
   key: string;
   required: boolean;
   type: string;
+  min: number | null;
+  max: number | null;
+  min_length: number | null;
+  max_length: number | null;
+  pattern: string | null;
 }
 
 export interface OfflinerDefinitionResponse {

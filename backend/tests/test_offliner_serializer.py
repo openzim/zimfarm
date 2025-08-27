@@ -63,7 +63,7 @@ def test_get_field_type(field_type: Any, expected_type: str):
     ),
 )
 def test_get_enum_choices(field_type: Any, expected_choices: list[str]):
-    choices = [choice["value"] for choice in get_enum_choices(field_type)]
+    choices = [choice.value for choice in get_enum_choices(field_type)]
     assert len(choices) == len(expected_choices)
     for choice in choices:
         assert choice in expected_choices
@@ -90,35 +90,35 @@ def test_is_secret(field: Any, *, is_secret_field: bool):
     assert is_secret(field) == is_secret_field
 
 
-def test_schema_to_flags():
+def test_mw_offliner_schema_to_flags():
     flags = schema_to_flags(MWOfflinerFlagsSchema)
-    for flag in flags["flags"]:
-        key = flag["key"]
+    for flag in flags:
+        key = flag.key
 
         # Check if the flag is required
         if key in (
             "mwUrl",
             "adminEmail",
         ):
-            assert flag["required"]
+            assert flag.required
         else:
-            assert not flag["required"]
+            assert not flag.required
 
         # Check if the flag is secret
         if key in ("mwPassword", "optimisationCacheUrl"):
-            assert flag["secret"]
+            assert flag.secret
         else:
-            assert "secret" not in flag
+            assert not flag.secret
 
         if key in ("format",):
-            assert flag["type"] == "list-of-string-enum"
-            assert "choices" in flag
+            assert flag.type == "list-of-string-enum"
+            assert flag.choices is not None
         elif key in ("customFlavour", "verbose", "forceRender"):
-            assert flag["type"] == "string-enum"
-            assert "choices" in flag
+            assert flag.type == "string-enum"
+            assert flag.choices is not None
         elif key in ("adminEmail",):
-            assert flag["type"] == "email"
-            assert "choices" not in flag
+            assert flag.type == "email"
+            assert flag.choices is None
         elif key in (
             "getCategories",
             "keepEmptyParagraphs",
@@ -127,17 +127,33 @@ def test_schema_to_flags():
             "insecure",
             "withoutZimFullTextIndex",
         ):
-            assert flag["type"] == "boolean"
-            assert "choices" not in flag
+            assert flag.type == "boolean"
+            assert flag.choices is None
         elif key in ("requestTimeout",):
-            assert flag["type"] == "integer"
-            assert "choices" not in flag
+            assert flag.type == "integer"
+            assert flag.choices is None
         elif key in ("speed",):
-            assert flag["type"] == "float"
-            assert "choices" not in flag
+            assert flag.type == "float"
+            assert flag.choices is None
         elif key in ("mwUrl", "articleList", "articleListToIgnore", "customZimFavicon"):
-            assert flag["type"] == "url"
-            assert "choices" not in flag
+            assert flag.type == "url"
+            assert flag.choices is None
         else:
-            assert flag["type"] == "string"
-            assert "choices" not in flag
+            assert flag.type == "string"
+            assert flag.choices is None
+
+        # Validat that restrictions are correctly inferred
+        if key in ("customZIMTitle",):
+            assert flag.min_length == 1
+            assert flag.min_length == 30
+        elif key in ("customZIMDescription",):
+            assert flag.min_length == 1
+            assert flag.min_length == 80
+        elif key in ("customZIMLongDescription",):
+            assert flag.min_length == 1
+            assert flag.min_length == 4000
+        elif key in ("customZimLanguage",):
+            assert flag.min_length == 3
+            assert flag.max_length == 3
+        elif key in ("outputDirectory",):
+            assert flag.pattern is not None
