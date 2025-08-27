@@ -189,7 +189,7 @@ class ZimitFlagsFullSchema(CamelModel):
     )
     lang: OptionalNotEmptyString = OptionalField(
         title="Browser Language",
-        description="If set, sets the language used by the browser, should be"
+        description="If set, sets the language used by the browser, should be "
         "ISO 639 language[-country] code, e.g. `en` or `en-GB`",
     )
     title: OptionalZIMTitle = OptionalField(

@@ -1,5 +1,4 @@
-import re
-from collections.abc import Callable, Sized
+from collections.abc import Callable
 from enum import Enum
 from typing import Annotated, Any
 
@@ -12,6 +11,7 @@ from pydantic import (
     ValidationInfo,
     ValidatorFunctionWrapHandler,
     WrapSerializer,
+    WrapValidator,
 )
 from pydantic_core.core_schema import SerializationInfo
 
@@ -44,26 +44,6 @@ def not_empty(value: str) -> str:
     return value
 
 
-def between(
-    *, low: int | None = None, high: int | None = None
-) -> Callable[[int, ValidationInfo], int]:
-    """Validate that value is between low and high (if set)"""
-
-    def _validate(value: int, info: ValidationInfo):
-        context = info.context
-        if context and context.get("skip_validation"):
-            return value
-        if low is not None and value < low:
-            raise ValueError(
-                f"Value must be greater than or equal to {low}, got {value}"
-            )
-        if high is not None and value > high:
-            raise ValueError(f"Value must be less than or equal to {high}, got {value}")
-        return value
-
-    return _validate
-
-
 def validate_language_code(value: str, info: ValidationInfo) -> str:
     """Validate that string is a valid ISO-693-3 language code"""
     context = info.context
@@ -74,42 +54,6 @@ def validate_language_code(value: str, info: ValidationInfo) -> str:
     raise ValueError(
         f"Language code '{value}' is not a recognized ISO-639-3 language code"
     )
-
-
-def length_between(
-    *, low: int | None = None, high: int | None = None
-) -> Callable[[Sized, ValidationInfo], Sized]:
-    """Validate that length of value is between low and high"""
-
-    def _validate(value: Sized, info: ValidationInfo):
-        context = info.context
-        if context and context.get("skip_validation"):
-            return value
-        if low is not None and len(value) < low:
-            raise ValueError(
-                f"Value must be greater than or equal to {low}, got {len(value)}"
-            )
-        if high is not None and len(value) > high:
-            raise ValueError(
-                f"Value must be less than or equal to {high}, got {len(value)}"
-            )
-        return value
-
-    return _validate
-
-
-def pattern(pattern: str) -> Callable[[str, ValidationInfo], str]:
-    """Validate that value matches the pattern"""
-
-    def _validate(value: str, info: ValidationInfo):
-        context = info.context
-        if context and context.get("skip_validation"):
-            return value
-        if not re.match(pattern, value):
-            raise ValueError(f"Value must match the pattern {pattern}, got {value}")
-        return value
-
-    return _validate
 
 
 def enum_member(
@@ -147,11 +91,21 @@ def show_secrets(value: Any, handler: Any, info: SerializationInfo) -> Any:
     return handler(value, info)
 
 
+def skip_validation(
+    value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+) -> Any:
+    """Skip pydantic validation"""
+    context = info.context
+    if context and context.get("skip_validation"):
+        return value
+    return handler(value)
+
+
 ZIMSecretStr = Annotated[SecretStr, WrapSerializer(show_secrets)]
 
 OptionalZIMSecretStr = ZIMSecretStr | None
 
-Percentage = Annotated[int, AfterValidator(between(low=1, high=100))]
+Percentage = Annotated[int, Field(ge=1, le=100), WrapValidator(skip_validation)]
 
 
 OptionalPercentage = Percentage | None
@@ -168,91 +122,106 @@ SecretUrl = Annotated[ZIMSecretStr, AfterValidator(validate_secret_url)]
 
 OptionalSecretUrl = SecretUrl | None
 
-ZIMLongDescription = Annotated[str, AfterValidator(length_between(low=1, high=4000))]
+ZIMLongDescription = Annotated[
+    str, Field(min_length=1, max_length=4000), WrapValidator(skip_validation)
+]
 
 OptionalZIMLongDescription = ZIMLongDescription | None
 
-ZIMTitle = Annotated[str, AfterValidator(length_between(low=1, high=30))]
+ZIMTitle = Annotated[
+    str, Field(min_length=1, max_length=30), WrapValidator(skip_validation)
+]
 
 OptionalZIMTitle = ZIMTitle | None
 
-ZIMDescription = Annotated[str, AfterValidator(length_between(low=1, high=80))]
+ZIMDescription = Annotated[
+    str, Field(min_length=1, max_length=80), WrapValidator(skip_validation)
+]
 
 OptionalZIMDescription = ZIMDescription | None
 
 ZIMFileName = Annotated[
     str,
-    AfterValidator(
-        pattern(
-            r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+_)([a-z0-9\-\.]+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"
-        )
+    Field(
+        pattern=r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+_)([a-z0-9\-\.]+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"
     ),
+    WrapValidator(skip_validation),
 ]
 
 OptionalZIMFileName = ZIMFileName | None
 
 ZIMName = Annotated[
     str,
-    AfterValidator(pattern(r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+)$")),
+    Field(pattern=r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+)$"),
+    WrapValidator(skip_validation),
 ]
 
 OptionalZIMName = ZIMName | None
 
-SlackTarget = Annotated[str, AfterValidator(pattern(r"^[#|@].+$"))]
+SlackTarget = Annotated[
+    str, Field(pattern=r"^[#|@].+$"), WrapValidator(skip_validation)
+]
 
 OptionalSlackTarget = SlackTarget | None
 
-ZIMPlatformValue = Annotated[int, AfterValidator(between(low=1))]
+ZIMPlatformValue = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
 
 OptionalZIMPlatformValue = ZIMPlatformValue | None
 
 ZIMLangCode = Annotated[
     str,
-    AfterValidator(length_between(low=3, high=3)),
+    Field(min_length=3, max_length=3),
+    WrapValidator(skip_validation),
     AfterValidator(validate_language_code),
 ]
 
 OptionalZIMLangCode = ZIMLangCode | None
 
-ZIMOutputFolder = Annotated[str, AfterValidator(pattern(r"^/output$"))]
+ZIMOutputFolder = Annotated[
+    str, Field(pattern=r"^/output$"), WrapValidator(skip_validation)
+]
 
 OptionalZIMOutputFolder = ZIMOutputFolder | None
 
 ZIMProgressFile = Annotated[
-    NotEmptyString, AfterValidator(pattern(r"^/output/task_progress\.json$"))
+    NotEmptyString,
+    Field(pattern=r"^/output/task_progress\.json$"),
+    WrapValidator(skip_validation),
 ]
 
 OptionalZIMProgressFile = ZIMProgressFile | None
 
-ZIMCPU = Annotated[int, AfterValidator(between(low=1))]
+ZIMCPU = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
 
 OptionalZIMCPU = ZIMCPU | None
 
-ZIMMemory = Annotated[int, AfterValidator(between(low=1))]
+ZIMMemory = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
 
 OptionalZIMMemory = ZIMMemory | None
 
-ZIMDisk = Annotated[int, AfterValidator(between(low=1))]
+ZIMDisk = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
 
 OptionalZIMDisk = ZIMDisk | None
 
-SkipField = Annotated[int, AfterValidator(between(low=0))]
+SkipField = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
 OptionalSkipField = SkipField | None
 
-LimitFieldMax500 = Annotated[int, AfterValidator(between(low=1, high=500))]
+LimitFieldMax500 = Annotated[int, Field(ge=1, le=500), WrapValidator(skip_validation)]
 
 OptionalLimitFieldMax500 = LimitFieldMax500 | None
 
-LimitFieldMax200 = Annotated[int, AfterValidator(between(low=1, high=200))]
+LimitFieldMax200 = Annotated[int, Field(ge=1, le=200), WrapValidator(skip_validation)]
 
 OptionalLimitFieldMax200 = LimitFieldMax200 | None
 
-PriorityField = Annotated[int, AfterValidator(between(low=1, high=10))]
+PriorityField = Annotated[int, Field(ge=1, le=10), WrapValidator(skip_validation)]
 
 OptionalPriorityField = PriorityField | None
 
-WorkerField = Annotated[NotEmptyString, AfterValidator(length_between(low=3))]
+WorkerField = Annotated[
+    NotEmptyString, Field(min_length=3), WrapValidator(skip_validation)
+]
 
 OptionalWorkerField = WorkerField | None
 
