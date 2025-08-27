@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.8
         uses: actions/setup-python@v5
@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 3.8
         uses: actions/setup-python@v5
@@ -75,6 +75,6 @@ jobs:
           cd $GITHUB_WORKSPACE/dispatcher/backend/src
           PYTHONPATH=$PWD pytest tests/ --cov=./
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
