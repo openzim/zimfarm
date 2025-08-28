@@ -680,6 +680,7 @@ const flagsFields = computed(() => {
     return {
       label: field.label || field.data_key,
       dataKey: field.data_key,
+      key: field.key,
       required: field.required,
       description: field.description,
       min: field.min,

@@ -238,7 +238,7 @@
                         variant="text"
                         size="small"
                         class="ml-2"
-                        @click="copyOutput(command, 'command')"
+                        @click="copyCommand(command)"
                       >
                         <v-icon>mdi-content-copy</v-icon>
                       </v-btn>
@@ -502,6 +502,17 @@ const copyLog = async (log: string) => {
     notificationStore.showSuccess("zimcheck log copied to Clipboard!")
   } catch {
     notificationStore.showError("Unable to copy zimcheck log to clipboard 😞. Please copy it manually.")
+  }
+}
+
+const copyCommand = async (command: string) => {
+  try {
+    await navigator.clipboard.writeText(command)
+    notificationStore.showSuccess('Command copied to clipboard!')
+  } catch {
+    notificationStore.showWarning(
+      'Unable to copy command to clipboard 😞. Please copy it manually.',
+    )
   }
 }
 
