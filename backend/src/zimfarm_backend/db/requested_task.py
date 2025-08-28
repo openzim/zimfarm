@@ -110,7 +110,7 @@ def request_task(
         priority=priority,
         config=expanded_config(
             ScheduleConfigSchema.model_validate(schedule.config)
-        ).model_dump(mode="json", by_alias=True, context={"show_secrets": True}),
+        ).model_dump(mode="json", context={"show_secrets": True}),
         upload={
             "zim": {
                 "upload_uri": ZIM_UPLOAD_URI,

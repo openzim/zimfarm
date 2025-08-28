@@ -103,7 +103,7 @@ def create_schedule(
     # We need to compare the raw offliner config with the validated offliner
     # config to ensure the caller didn't pass extra fields for the offliner config
     raw_offliner_config = schedule.config.get("offliner", {})
-    validated_offliner_dump = config.offliner.model_dump(mode="json", by_alias=True)
+    validated_offliner_dump = config.offliner.model_dump(mode="json")
 
     if extra_keys := get_key_differences(raw_offliner_config, validated_offliner_dump):
         raise RequestValidationError(
@@ -140,7 +140,7 @@ def create_schedule(
     return JSONResponse(
         content=ScheduleCreateResponseSchema(
             id=db_schedule.id,
-        ).model_dump(mode="json", by_alias=True)
+        ).model_dump(mode="json")
     )
 
 
@@ -178,9 +178,7 @@ def get_schedules_backup(
             schedule.notification = None
 
         content.append(
-            schedule.model_dump(
-                mode="json", context={"show_secrets": show_secrets}, by_alias=True
-            )
+            schedule.model_dump(mode="json", context={"show_secrets": show_secrets})
         )
 
     return JSONResponse(content=content)
@@ -226,9 +224,7 @@ def get_schedule(
     )
 
     return JSONResponse(
-        content=schedule.model_dump(
-            mode="json", context={"show_secrets": show_secrets}, by_alias=True
-        )
+        content=schedule.model_dump(mode="json", context={"show_secrets": show_secrets})
     )
 
 
@@ -270,7 +266,6 @@ def update_schedule(
                         mode="json",
                         exclude={"offliner", "image"},
                         context={"show_secrets": True},
-                        by_alias=True,
                     ),
                     "offliner": {
                         "offliner_id": request.offliner,
@@ -283,7 +278,7 @@ def update_schedule(
             )
             if extra_keys := get_key_differences(
                 request.flags,
-                temp_config.offliner.model_dump(mode="json", by_alias=True),
+                temp_config.offliner.model_dump(mode="json"),
             ):
                 raise RequestValidationError(
                     [
@@ -305,7 +300,6 @@ def update_schedule(
                         mode="json",
                         exclude={"offliner", "image"},
                         context={"show_secrets": True},
-                        by_alias=True,
                     ),
                     "offliner": {
                         "offliner_id": request.offliner,
@@ -323,7 +317,7 @@ def update_schedule(
         # determine if the caller passed extra fields for the existing offliner config
         if extra_keys := get_key_differences(
             request.flags,
-            schedule_config.offliner.model_dump(mode="json", by_alias=True),
+            schedule_config.offliner.model_dump(mode="json"),
         ):
             raise RequestValidationError(
                 [
@@ -352,7 +346,6 @@ def update_schedule(
                             mode="json",
                             exclude={"offliner_id"},
                             context={"show_secrets": True},
-                            by_alias=True,
                         ),
                         **request.flags,
                     },
@@ -414,9 +407,7 @@ def update_schedule(
     schedule = create_schedule_full_schema(schedule)
     schedule.config = expanded_config(cast(ScheduleConfigSchema, schedule.config))
     return JSONResponse(
-        content=schedule.model_dump(
-            mode="json", context={"show_secrets": True}, by_alias=True
-        )
+        content=schedule.model_dump(mode="json", context={"show_secrets": True})
     )
 
 

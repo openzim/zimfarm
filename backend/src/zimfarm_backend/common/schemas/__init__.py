@@ -28,6 +28,7 @@ class CamelModel(pydantic.BaseModel):
         from_attributes=True,
         alias_generator=to_camel,
         json_encoders={datetime.datetime: serialize_datetime},
+        serialize_by_alias=True,
     )
 
 
@@ -41,4 +42,5 @@ class DashModel(pydantic.BaseModel):
         alias_generator=to_kebab_case,
         use_enum_values=True,
         json_encoders={datetime.datetime: serialize_datetime},
+        serialize_by_alias=True,
     )
