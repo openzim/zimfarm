@@ -1,8 +1,35 @@
 from enum import Enum
 from types import UnionType
-from typing import Annotated, Any, Union, get_args, get_origin
+from typing import Annotated, Any, Union, cast, get_args, get_origin
 
+from annotated_types import Ge, Le, MaxLen, MinLen
 from pydantic import AnyUrl, BaseModel, EmailStr, SecretStr
+from pydantic.fields import FieldInfo
+
+
+class Choice(BaseModel):
+    title: str
+    value: str
+
+
+class Flag(BaseModel):
+    """
+    A flag object for the offliner schema.
+    """
+
+    data_key: str
+    description: str
+    key: str
+    label: str
+    required: bool
+    type: str
+    choices: list[Choice] | None = None
+    secret: bool
+    min: int | None = None
+    max: int | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    pattern: str | None = None
 
 
 def get_base_type(field_type: Any) -> Any:
@@ -65,12 +92,40 @@ def get_field_type(field_type: Any) -> str:
     return "string"
 
 
-def get_enum_choices(field_type: Any) -> list[dict[str, str]]:
+def get_field_metadata(field_info: FieldInfo) -> list[Any]:
+    """Get the metadata for a field."""
+
+    # Get the original metadata of the field. For non-optional types,
+    # the metadata will directly contain the metadata for the field.
+    metadata = list(field_info.metadata)
+
+    origin = get_origin(field_info.annotation)
+
+    # Our optional types are unions of types and None
+    if origin is Union or origin is UnionType:
+        # Get the non-None types
+        args = [arg for arg in get_args(field_info.annotation) if arg is not type(None)]
+        for arg in args:
+            origin = get_origin(arg)
+            # custom types are typically defined as
+            # Annotated[base_type, Field(...), WrapValidator]
+            if origin is Annotated:
+                # extend the metadata from pydantic Field(...)
+                for member in get_args(arg):
+                    if isinstance(member, FieldInfo):
+                        metadata.extend(get_field_metadata(member))
+    return metadata
+
+
+def get_enum_choices(field_type: Any) -> list[Choice]:
     """Extract choices from an enum field."""
 
-    def _build_choices(enum_cls: type[Enum]) -> list[dict[str, str]]:
+    def _build_choices(enum_cls: type[Enum]) -> list[Choice]:
         return [
-            {"title": choice.name.replace("_", " ").title(), "value": choice.value}
+            Choice(
+                title=choice.name.replace("_", " ").title(),
+                value=choice.value,
+            )
             for choice in enum_cls
         ]
 
@@ -128,17 +183,11 @@ def is_secret(field_type: Any) -> bool:
     return get_base_type(field_type) == SecretStr
 
 
-def schema_to_flags(schema_class: type[BaseModel]) -> dict[str, list[dict[str, Any]]]:
+def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
     """
     Convert an offliner schema class to the flags format.
-
-    Args:
-        schema_class: The schema class to convert
-
-    Returns:
-        Dictionary with 'flags' key containing list of flag objects
     """
-    flags: list[dict[str, Any]] = []
+    flags: list[Flag] = []
 
     # Get the model fields
     model_fields = schema_class.model_fields
@@ -151,8 +200,8 @@ def schema_to_flags(schema_class: type[BaseModel]) -> dict[str, list[dict[str, A
         field_alias = field_info.alias or field_name
 
         # Get field metadata
-        title = getattr(field_info, "title", field_name)
-        description = getattr(field_info, "description", "")
+        title = getattr(field_info, "title", None) or field_name
+        description = getattr(field_info, "description", None) or ""
 
         # Determine if field is required
         required = field_info.is_required()
@@ -163,27 +212,39 @@ def schema_to_flags(schema_class: type[BaseModel]) -> dict[str, list[dict[str, A
         # Get enum choices if applicable
         choices = get_enum_choices(field_type)
 
-        # Check if field is secret
-        secret = is_secret(field_type)
-
         # Build flag object
-        flag_obj = {
-            "data_key": field_alias,
-            "description": description,
-            "key": field_alias,
-            "label": title,
-            "required": required,
-            "type": field_type_str,
-        }
+        flag_obj = Flag(
+            data_key=field_alias,
+            description=description,
+            key=field_alias,
+            label=title,
+            required=required,
+            type=field_type_str,
+            secret=is_secret(field_type),
+        )
 
         # Add choices if available
         if choices:
-            flag_obj["choices"] = choices
+            flag_obj.choices = choices
 
-        # Add secret flag if applicable
-        if secret:
-            flag_obj["secret"] = True
+        # retrieve minlength, maxlength, pattern, ge, le, etc from metadata
+        for metadata in get_field_metadata(field_info):
+            if isinstance(metadata, Ge):
+                flag_obj.min = cast(int, metadata.ge)
+            if isinstance(metadata, Le):
+                flag_obj.max = cast(int, metadata.le)
+            if isinstance(metadata, MinLen):
+                flag_obj.min_length = metadata.min_length
+            if isinstance(metadata, MaxLen):
+                flag_obj.max_length = metadata.max_length
+            # the underlying type that holds the regex for the pattern is an internal
+            # pydantic type which is not exported but it exists for a field that sets it
+            if hasattr(metadata, "pattern"):
+                flag_obj.pattern = cast(
+                    str,
+                    metadata.pattern,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                )
 
         flags.append(flag_obj)
 
-    return {"flags": flags}
+    return flags
