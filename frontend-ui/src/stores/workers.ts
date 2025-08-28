@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { TaskLight } from '@/types/tasks'
-import type { Worker } from '@/types/workers'
+import type { Worker, WorkerMetrics, WorkerUpdateSchema } from '@/types/workers'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
@@ -58,6 +58,33 @@ export const useWorkersStore = defineStore('workers', () => {
     }))
   }
 
+  const fetchWorkerMetrics = async (name: string) => {
+    try {
+      const service = await authStore.getApiService('workers')
+      const response = await service.get<null, WorkerMetrics>(`/${name}/metrics`)
+      errors.value = []
+      return response
+    } catch (_error) {
+      console.error('Failed to fetch worker metrics', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return null
+    }
+  }
+
+  const updateWorkerContext = async (name: string, payload: WorkerUpdateSchema) => {
+    try {
+      const service = await authStore.getApiService('workers')
+      await service.put(`/${name}/context`, payload)
+      errors.value = []
+      return true
+    } catch (_error) {
+      console.error('Failed to update worker context', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
+
   return {
     // State
     workers,
@@ -68,5 +95,7 @@ export const useWorkersStore = defineStore('workers', () => {
     fetchWorkers,
     updateWorkerTasks,
     savePaginatorLimit,
+    fetchWorkerMetrics,
+    updateWorkerContext,
   }
 })

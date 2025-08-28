@@ -257,7 +257,7 @@ async function handleLimitChange(newLimit: number) {
 onMounted(async () => {
   intervalId.value = window.setInterval(async () => {
     await loadData(paginator.value.limit, paginator.value.skip, true)
-  }, 6000)
+  }, 60000)
 })
 
 onBeforeUnmount(() => {

@@ -62,10 +62,12 @@ def update_worker(
     worker_name: str,
     ip_address: str | None = None,
     contexts: list[str] | None = None,
+    update_last_seen: bool = True,
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
     worker = get_worker(session, worker_name=worker_name)
-    worker.last_seen = getnow()
+    if update_last_seen:
+        worker.last_seen = getnow()
     if ip_address is not None:
         worker.last_ip = IPv4Address(ip_address)
     if contexts is not None:

@@ -81,7 +81,9 @@ async def update_worker_context(
     if worker.deleted:
         raise BadRequestError("Worker has been marked as deleted")
 
-    db_update_worker(session, worker_name=name, contexts=request.contexts)
+    db_update_worker(
+        session, worker_name=name, contexts=request.contexts, update_last_seen=False
+    )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 

@@ -551,6 +551,8 @@ def test_does_platform_allow_worker_to_run(
 
     # Test with platform limit reached
     running_task = RunningTask(
+        id=task.id,
+        updated_at=task.updated_at,
         config=expanded_config(schedule_config),
         schedule_name="test_schedule",
         timestamp=[("started", getnow()), ("reserved", getnow())],

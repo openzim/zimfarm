@@ -137,7 +137,7 @@
           variant="outlined"
           persistent-hint
           :menu-props="{ maxHeight: '200px' }"
-          :custom-filter="fuzzyFilter"
+          :custom-filter="(value, query) => fuzzyFilter(value, query, contexts)"
         />
       </v-col>
     </v-row>
@@ -447,10 +447,9 @@ import type { Resources } from '@/types/base'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
-import { stringArrayEqual } from '@/utils/cmp'
+import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
-import Fuse from 'fuse.js'
 import { computed, onUnmounted, ref, watch } from 'vue'
 
 interface FlagField {
@@ -494,15 +493,6 @@ const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 const editFlags = ref<Record<string, any>>(
   JSON.parse(JSON.stringify(props.schedule.config.offliner)),
 )
-
-const fuzzyFilter = (value: string, query: string) => {
-  const fuse = new Fuse(props.contexts, {
-    includeScore: true,
-    threshold: 0.3,
-  })
-  const results = fuse.search(query).find(r => r.item == value)
-  return !!results
-}
 
 // Debounced image name change handler
 let imageNameChangeTimeout: number | null = null

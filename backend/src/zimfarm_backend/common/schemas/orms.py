@@ -277,6 +277,8 @@ class WorkerLightSchema(BaseModel):
 
 
 class RunningTask(BaseModel):
+    id: UUID
+    updated_at: datetime.datetime
     config: ExpandedScheduleConfigSchema
     schedule_name: str | None
     timestamp: list[tuple[str, datetime.datetime]]

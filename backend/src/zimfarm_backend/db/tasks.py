@@ -249,11 +249,13 @@ def get_currently_running_tasks(
     )
     return [
         RunningTask(
+            id=task.id,
             config=ExpandedScheduleConfigSchema.model_validate(
                 task.config, context={"skip_validation": True}
             ),
             schedule_name=task.schedule.name if task.schedule else None,
             timestamp=task.timestamp,
+            updated_at=task.updated_at,
             worker_name=task.worker.name,
             **compute_task_eta(session, task),
         )
