@@ -1,12 +1,14 @@
 from typing import Any
 from uuid import UUID
 
+from psycopg.errors import UniqueViolation
 from sqlalchemy import Integer, func, select
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import JSONPATH, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend import logger
 from zimfarm_backend.common import constants, getnow
 from zimfarm_backend.common.enums import (
     ScheduleCategory,
@@ -335,9 +337,12 @@ def create_schedule(
     try:
         session.flush()
     except IntegrityError as exc:
-        raise RecordAlreadyExistsError(
-            f"Schedule with name {name} already exists"
-        ) from exc
+        if isinstance(exc.orig, UniqueViolation):
+            raise RecordAlreadyExistsError(
+                f"Schedule with name {name} already exists"
+            ) from exc
+        logger.exception("Unknown exception encountered while creating schedule")
+        raise
     return schedule
 
 
@@ -432,9 +437,12 @@ def update_schedule(
     try:
         session.flush()
     except IntegrityError as exc:
-        raise RecordAlreadyExistsError(
-            f"Schedule with name {name} already exists"
-        ) from exc
+        if isinstance(exc.orig, UniqueViolation):
+            raise RecordAlreadyExistsError(
+                f"Schedule with name {name} already exists"
+            ) from exc
+        logger.exception("Unknown exception encountered while updating schedule")
+        raise
     return schedule
 
 

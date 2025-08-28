@@ -11,7 +11,10 @@ from zimfarm_backend.common.enums import (
 )
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import LanguageSchema
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
+from zimfarm_backend.db.exceptions import (
+    RecordAlreadyExistsError,
+    RecordDoesNotExistError,
+)
 from zimfarm_backend.db.models import (
     RequestedTask,
     Schedule,
@@ -125,6 +128,37 @@ def test_create_schedule(
     assert schedule.durations[0].on == DEFAULT_SCHEDULE_DURATION.on
     assert schedule.durations[0].worker is None
     assert schedule.durations[0].default
+
+
+def test_create_duplicate_schedule_with_existing_name(
+    dbsession: OrmSession, create_schedule_config: Callable[..., ScheduleConfigSchema]
+):
+    """Test that create_schedule creates a schedule with the correct duration"""
+    schedule_config = create_schedule_config(cpu=1, memory=2**10, disk=2**10)
+    schedule_name = "test_schedule"
+    create_schedule(
+        session=dbsession,
+        name=schedule_name,
+        category=ScheduleCategory.other,
+        language=LanguageSchema(code="eng", name="English"),
+        config=schedule_config,
+        tags=["test"],
+        enabled=True,
+        notification=None,
+        periodicity=SchedulePeriodicity.manually,
+    )
+    with pytest.raises(RecordAlreadyExistsError):
+        create_schedule(
+            session=dbsession,
+            name=schedule_name,
+            category=ScheduleCategory.other,
+            language=LanguageSchema(code="eng", name="English"),
+            config=schedule_config,
+            tags=["test"],
+            enabled=True,
+            notification=None,
+            periodicity=SchedulePeriodicity.manually,
+        )
 
 
 def test_get_all_schedules(

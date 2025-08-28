@@ -121,17 +121,21 @@ def create_schedule(
     except RecordDoesNotExistError as exc:
         raise BadRequestError(f"Language code {schedule.language} not found.") from exc
 
-    db_schedule = db_create_schedule(
-        session,
-        name=schedule.name,
-        category=ScheduleCategory(schedule.category),
-        language=language,
-        config=config,
-        tags=schedule.tags,
-        enabled=schedule.enabled,
-        notification=schedule.notification,
-        periodicity=schedule.periodicity,
-    )
+    try:
+        db_schedule = db_create_schedule(
+            session,
+            name=schedule.name,
+            category=ScheduleCategory(schedule.category),
+            language=language,
+            config=config,
+            tags=schedule.tags,
+            enabled=schedule.enabled,
+            notification=schedule.notification,
+            periodicity=schedule.periodicity,
+        )
+    except RecordAlreadyExistsError as exc:
+        raise BadRequestError(f"Schedule {schedule.name} already exists") from exc
+
     return JSONResponse(
         content=ScheduleCreateResponseSchema(
             id=db_schedule.id,
@@ -381,8 +385,8 @@ def update_schedule(
     else:
         language = None
 
-    schedule = create_schedule_full_schema(
-        db_update_schedule(
+    try:
+        schedule = db_update_schedule(
             session,
             schedule_name=schedule_name,
             new_schedule_config=new_schedule_config,
@@ -393,7 +397,10 @@ def update_schedule(
             enabled=request.enabled,
             periodicity=request.periodicity,
         )
-    )
+    except RecordAlreadyExistsError as exc:
+        raise BadRequestError(f"Schedule {request.name} already exists") from exc
+
+    schedule = create_schedule_full_schema(schedule)
     schedule.config = expanded_config(cast(ScheduleConfigSchema, schedule.config))
     return JSONResponse(
         content=schedule.model_dump(

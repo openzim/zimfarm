@@ -26,7 +26,7 @@ def get_language_from_code(language_code: str) -> LanguageSchema:
         )
 
     return LanguageSchema(
-        code=language.alpha_3,  # return alpha_3 code for consistency
+        code=language.alpha_3,
         name=language.name,
     )
 

@@ -442,3 +442,107 @@ def test_clone_schedule(
     assert "id" in data
     assert data["id"] is not None
     assert str(data["id"]) != str(schedule.id)
+
+
+def test_create_duplicate_schedule(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule_config = create_schedule_config()
+    schedule = create_schedule(name="test_schedule", schedule_config=schedule_config)
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.post(
+        "/v2/schedules",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "name": "test_schedule",
+            "category": ScheduleCategory.wikipedia.value,
+            "language": "eng",
+            "tags": ["important"],
+            "config": schedule_config.model_dump(
+                mode="json", context={"show_secrets": True}, by_alias=True
+            ),
+            "enabled": True,
+            "periodicity": SchedulePeriodicity.manually.value,
+        },
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_clone_existing_schedule(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule_config = create_schedule_config()
+    schedule = create_schedule(name="test_schedule", schedule_config=schedule_config)
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.post(
+        f"/v2/schedules/{schedule.name}/clone",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"name": "test_schedule"},
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_update_existing_schedule_with_existing_name(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+):
+    """Test that updating a schedule name with another existing schedule name fails"""
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule_config = create_schedule_config()
+    schedules = [
+        create_schedule(name=f"test_schedule_{i}", schedule_config=schedule_config)
+        for i in range(3)
+    ]
+    dbsession.add_all(schedules)
+    dbsession.flush()
+
+    # attempt to update schedule_1 with the name of schedule_2
+    response = client.patch(
+        "/v2/schedules/test_schedule_1",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "name": "test_schedule_2",
+        },
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
