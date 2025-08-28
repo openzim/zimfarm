@@ -65,7 +65,7 @@ class ScheduleUpdateSchema(BaseModel):
     monitor: bool | None = None
     flags: dict[str, Any] | None = None
     artifacts_globs: list[NotEmptyString] | None = None
-    context: NotEmptyString | None = None
+    context: str | None = None
 
 
 class CloneSchema(BaseModel):
