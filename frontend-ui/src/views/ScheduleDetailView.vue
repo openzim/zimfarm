@@ -394,6 +394,7 @@
               :platforms="platforms"
               :languages="languages"
               :tags="tags"
+              :contexts="contexts"
               :flags-definition="flagsDefinition"
               :help-url="helpUrl"
               :image-tags="imageTags"
@@ -443,6 +444,7 @@ import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
+import { useContextStore } from '@/stores/context'
 import { useLanguageStore } from '@/stores/language'
 import { useNotificationStore } from '@/stores/notification'
 import { useOfflinerStore } from '@/stores/offliner'
@@ -490,6 +492,7 @@ const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const workersStore = useWorkersStore()
 const tagStore = useTagStore()
+const contextStore = useContextStore()
 const languageStore = useLanguageStore()
 const offlinerStore = useOfflinerStore()
 const platformStore = usePlatformStore()
@@ -506,6 +509,7 @@ const error = ref<string | null>(null)
 const workingText = ref<string | null>(null)
 const imageTags = ref<string[]>([])
 const tags = ref<string[]>([])
+const contexts = ref<string[]>([])
 const languages = ref<Language[]>([])
 const offliners = ref<string[]>([])
 const platforms = ref<string[]>([])
@@ -846,6 +850,7 @@ onMounted(async () => {
   // Or we fetch again here (if for some reason, say network connection is slow)
   // and we couldn't fetch on app mount.
   tags.value = (await tagStore.fetchTags()) || []
+  contexts.value = (await contextStore.fetchContexts()) || []
   languages.value = (await languageStore.fetchLanguages()) || []
   offliners.value = (await offlinerStore.fetchOffliners()) || []
   platforms.value = (await platformStore.fetchPlatforms()) || []

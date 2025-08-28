@@ -3,6 +3,7 @@ import type { NavigationItem } from '@/components/NavBar.vue'
 import NavBar from '@/components/NavBar.vue'
 import NotificationSystem from '@/components/NotificationSystem.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useContextStore } from '@/stores/context'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
 import { useOfflinerStore } from '@/stores/offliner'
@@ -16,6 +17,7 @@ import { RouterView, useRouter } from 'vue-router'
 const authStore = useAuthStore()
 const languageStore = useLanguageStore()
 const tagStore = useTagStore()
+const contextStore = useContextStore()
 const platformStore = usePlatformStore()
 const loadingStore = useLoadingStore()
 const offlinerStore = useOfflinerStore()
@@ -32,6 +34,7 @@ onMounted(async () => {
 
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
+  await contextStore.fetchContexts()
   await platformStore.fetchPlatforms()
   // load offliners and their definitions
   let offlinerDefinitionRequests: Promise<OfflinerDefinitionResponse | null>[] = []
