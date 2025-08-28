@@ -125,12 +125,12 @@
           persistent-hint
         />
       </v-col>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="4">
         <v-combobox
           v-model="editSchedule.context"
           :items="contexts"
           label="Context"
-          hint="Defines what values a worker must have to be able to execute tasks for this schedule"
+          hint="Execute schedule only on workers associated with this context"
           placeholder="Context"
           :clearable="!!editSchedule.context"
           density="compact"
