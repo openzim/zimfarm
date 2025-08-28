@@ -140,7 +140,7 @@ def command_for(
         config.offliner.publisher = constants.DEFAULT_PUBLISHER
 
     offliner_flags = config.offliner.model_dump(
-        by_alias=True, mode="json", context={"show_secrets": show_secrets}
+        mode="json", context={"show_secrets": show_secrets}
     )
 
     if offliner_def.std_output:

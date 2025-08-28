@@ -99,9 +99,7 @@ async def get_task(
         show_secrets = not hide_secrets
 
     return JSONResponse(
-        content=task.model_dump(
-            mode="json", context={"show_secrets": show_secrets}, by_alias=True
-        )
+        content=task.model_dump(mode="json", context={"show_secrets": show_secrets})
     )
 
 
@@ -154,9 +152,7 @@ async def create_task(
     db_delete_requested_task(db_session, requested_task_id)
 
     return JSONResponse(
-        content=task.model_dump(
-            mode="json", context={"show_secrets": True}, by_alias=True
-        ),
+        content=task.model_dump(mode="json", context={"show_secrets": True}),
         status_code=HTTPStatus.CREATED,
     )
 

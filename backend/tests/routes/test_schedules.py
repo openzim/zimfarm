@@ -156,7 +156,7 @@ def test_create_schedule(
             "language": "eng",
             "tags": ["important"],
             "config": schedule_config.model_dump(
-                mode="json", context={"show_secrets": True}, by_alias=True
+                mode="json", context={"show_secrets": True}
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,
@@ -215,7 +215,7 @@ def test_schedule_name(
             "language": "eng",
             "tags": ["important"],
             "config": schedule_config.model_dump(
-                mode="json", context={"show_secrets": True}, by_alias=True
+                mode="json", context={"show_secrets": True}
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,
@@ -579,7 +579,7 @@ def test_create_duplicate_schedule(
             "language": "eng",
             "tags": ["important"],
             "config": schedule_config.model_dump(
-                mode="json", context={"show_secrets": True}, by_alias=True
+                mode="json", context={"show_secrets": True}
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,

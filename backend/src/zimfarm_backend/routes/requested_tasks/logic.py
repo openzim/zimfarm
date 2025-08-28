@@ -307,7 +307,7 @@ def get_requested_task(
 
     return JSONResponse(
         content=requested_task.model_dump(
-            context={"show_secrets": show_secrets}, mode="json", by_alias=True
+            context={"show_secrets": show_secrets}, mode="json"
         )
     )
 
