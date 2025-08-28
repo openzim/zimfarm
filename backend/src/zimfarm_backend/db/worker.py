@@ -35,17 +35,36 @@ def get_worker(session: OrmSession, *, worker_name: str) -> Worker:
     return worker
 
 
+def create_worker_schema(worker: Worker) -> WorkerLightSchema:
+    return WorkerLightSchema(
+        last_seen=worker.last_seen,
+        name=worker.name,
+        offliners=worker.offliners,
+        last_ip=worker.last_ip,
+        resources=ConfigResourcesSchema(
+            cpu=worker.cpu,
+            disk=worker.disk,
+            memory=worker.memory,
+        ),
+        username=worker.user.username,
+        contexts=worker.contexts,
+    )
+
+
 def update_worker(
     session: OrmSession,
     *,
     worker_name: str,
     ip_address: str | None = None,
+    contexts: list[str] | None = None,
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
     worker = get_worker(session, worker_name=worker_name)
     worker.last_seen = getnow()
     if ip_address is not None:
         worker.last_ip = IPv4Address(ip_address)
+    if contexts is not None:
+        worker.contexts = contexts
     session.add(worker)
     session.flush()
     return worker
@@ -72,20 +91,7 @@ def get_active_workers(
     results = ActiveWorkersListResult(nb_records=0, workers=[])
     for nb_records, worker in session.execute(stmt).all():
         results.nb_records = nb_records
-        results.workers.append(
-            WorkerLightSchema(
-                last_seen=worker.last_seen,
-                name=worker.name,
-                offliners=worker.offliners,
-                last_ip=worker.last_ip,
-                resources=ConfigResourcesSchema(
-                    cpu=worker.cpu,
-                    disk=worker.disk,
-                    memory=worker.memory,
-                ),
-                username=worker.user.username,
-            )
-        )
+        results.workers.append(create_worker_schema(worker))
     return results
 
 

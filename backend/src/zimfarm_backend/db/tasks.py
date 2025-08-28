@@ -50,6 +50,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             Task.upload,
             Task.updated_at,
             Task.original_schedule_name,
+            Task.context,
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
@@ -88,6 +89,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             original_schedule_name=row.original_schedule_name,
             schedule_name=row.schedule_name,
             worker_name=row.worker_name,
+            context=row.context,
         )
     return None
 
@@ -114,6 +116,7 @@ def get_tasks(
             Task.status,
             Task.timestamp,
             Task.original_schedule_name,
+            Task.context,
             Bundle(  # pyright: ignore[reportUnknownArgumentType]
                 "config",
                 Task.config["resources"].label("resources"),
@@ -140,6 +143,7 @@ def get_tasks(
         _status,
         timestamp,
         original_schedule_name,
+        context,
         config,
         updated_at,
         _schedule_name,
@@ -154,6 +158,7 @@ def get_tasks(
                 status=_status,
                 timestamp=timestamp,
                 original_schedule_name=original_schedule_name,
+                context=context,
                 config=ConfigWithOnlyResourcesSchema(
                     resources=ConfigResourcesSchema(
                         cpu=config.resources["cpu"],
@@ -196,6 +201,7 @@ def create_task(
         files={},
         upload=requested_task.upload,
         original_schedule_name=requested_task.original_schedule_name,
+        context=requested_task.context,
     )
     task.id = requested_task.id
     task.schedule_id = requested_task.schedule_id

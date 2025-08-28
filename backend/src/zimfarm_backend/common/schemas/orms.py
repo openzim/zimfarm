@@ -67,6 +67,7 @@ class BaseTaskSchema(BaseModel):
     worker_name: str
     updated_at: datetime.datetime
     original_schedule_name: str
+    context: str
 
 
 class TaskLightSchema(BaseTaskSchema):
@@ -110,6 +111,7 @@ class BaseRequestedTaskSchema(BaseModel):
     original_schedule_name: str
     worker_name: str | None
     updated_at: datetime.datetime
+    context: str
 
 
 class RequestedTaskLightSchema(BaseRequestedTaskSchema):
@@ -131,6 +133,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     notification: ScheduleNotificationSchema | None
     rank: int | None = None
     schedule_id: UUID | None = Field(exclude=True)
+    context: str
 
 
 class MostRecentTaskSchema(BaseModel):
@@ -163,6 +166,7 @@ class ScheduleLightSchema(BaseModel):
     language: LanguageSchema
     enabled: bool
     nb_requested_tasks: int = Field(exclude=True)
+    context: str
 
     @computed_field
     @property
@@ -198,6 +202,7 @@ class ScheduleFullSchema(BaseModel):
     most_recent_task: MostRecentTaskSchema | None
     nb_requested_tasks: int = Field(exclude=True)
     is_valid: bool
+    context: str
 
     @computed_field
     @property
@@ -251,16 +256,21 @@ class WorkerLightSchema(BaseModel):
     Schema for reading a worker model with some fields
     """
 
-    last_seen: datetime.datetime
+    last_seen: datetime.datetime | None
     name: str
     last_ip: IPv4Address | None
     resources: ConfigResourcesSchema
     username: str
     offliners: list[str]
+    contexts: list[str]
 
     @computed_field
     @property
     def status(self) -> str:
-        if (getnow() - self.last_seen).total_seconds() < WORKER_OFFLINE_DELAY_DURATION:
+        if (
+            self.last_seen
+            and (getnow() - self.last_seen).total_seconds()
+            < WORKER_OFFLINE_DELAY_DURATION
+        ):
             return "online"
         return "offline"

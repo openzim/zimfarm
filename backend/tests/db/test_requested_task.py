@@ -531,6 +531,7 @@ def test_does_platform_allow_worker_to_run(
         schedule_name="test_schedule",
         original_schedule_name="test_schedule",
         worker_name=worker.name,
+        context="",
         duration=ScheduleDurationSchema(
             value=3600,
             on=getnow(),
@@ -635,3 +636,95 @@ def test_find_requested_task_for_worker(
             avail_memory=worker.memory,
             avail_disk=worker.disk,
         )
+
+
+@pytest.mark.parametrize(
+    "schedule_context,worker_contexts,found",
+    [
+        # worker has priority context, schedule has priority context
+        # so the task should be assigned to worker
+        pytest.param(
+            "priority",
+            ["priority", "general"],
+            True,
+            id="schedule-priority-worker-priority-general",
+        ),
+        # schedule has priority context, worker has general context
+        # so the task should not be assigned to worker
+        pytest.param(
+            "priority",
+            ["general"],
+            False,
+            id="schedule-priority-worker-general",
+        ),
+        # schedule has no context but worker has contexts, worker should still
+        # be assigned to the task
+        pytest.param(
+            "",
+            ["priority", "general"],
+            True,
+            id="schedule-no-context-worker-priority-general",
+        ),
+        # schedule has context while worker does not have context, so worker should
+        # not be assigned to the task
+        pytest.param(
+            "priority",
+            [],
+            False,
+            id="schedule-priority-worker-no-context",
+        ),
+        # both schedule and worker have no context, so the task should be assigned
+        # to worker
+        pytest.param(
+            "",
+            [],
+            True,
+            id="schedule-no-context-worker-no-context",
+        ),
+    ],
+)
+def test_find_requested_task_for_worker_with_schedule_(
+    dbsession: OrmSession,
+    worker: Worker,
+    user: User,
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    schedule_context: str,
+    worker_contexts: list[str],
+    *,
+    found: bool,
+):
+    # Create a task that matches worker's capabilities
+    schedule_config = create_schedule_config(
+        cpu=worker.cpu, memory=worker.memory, disk=worker.disk
+    )
+    # Create a requested tag with specific tags
+    task = RequestedTask(
+        status="requested",
+        timestamp=[("requested", getnow()), ("reserved", getnow())],
+        events=[{"code": "requested", "timestamp": getnow()}],
+        requested_by=worker.user.username,
+        priority=0,
+        config=expanded_config(schedule_config).model_dump(
+            mode="json", context={"show_secrets": True}
+        ),
+        upload={},
+        notification={},
+        updated_at=getnow(),
+        original_schedule_name="test_schedule",
+        context=schedule_context,
+    )
+    worker.contexts = worker_contexts
+    task.worker = worker
+    dbsession.add(task)
+    dbsession.flush()
+
+    # Test finding task with sufficient resources
+    found_task = find_requested_task_for_worker(
+        session=dbsession,
+        username=user.username,
+        worker_name=worker.name,
+        avail_cpu=worker.cpu,
+        avail_memory=worker.memory,
+        avail_disk=worker.disk,
+    )
+    assert bool(found_task) == found

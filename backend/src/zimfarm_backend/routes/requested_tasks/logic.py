@@ -258,6 +258,7 @@ def get_requested_tasks_for_worker(
                     original_schedule_name=task.original_schedule_name,
                     worker_name=task.worker_name,
                     updated_at=task.updated_at,
+                    context=task.context,
                 ),
             ]
             if task

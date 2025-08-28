@@ -129,6 +129,9 @@ class Worker(Base):
     last_seen: Mapped[datetime | None]
     last_ip: Mapped[IPv4Address | None]
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
+    contexts: Mapped[list[str]] = mapped_column(
+        server_default="{}", default_factory=list
+    )
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
@@ -162,6 +165,7 @@ class Task(Base):
     files: Mapped[dict[str, Any]]
     upload: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
+    context: Mapped[str] = mapped_column(default="", server_default="")
     timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
 
     schedule_id: Mapped[UUID | None] = mapped_column(
@@ -192,6 +196,8 @@ class Schedule(Base):
     periodicity: Mapped[str]
     notification: Mapped[dict[str, Any] | None]
     is_valid: Mapped[bool] = mapped_column(default=True, server_default=true())
+    # context that a worker must have to run this schedule
+    context: Mapped[str] = mapped_column(default="", server_default="")
 
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration
@@ -256,6 +262,8 @@ class RequestedTask(Base):
     upload: Mapped[dict[str, Any]]
     notification: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
+    # context requirement from the schedule when the recipe was created
+    context: Mapped[str] = mapped_column(default="", server_default="")
 
     timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
 
