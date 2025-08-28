@@ -274,3 +274,41 @@ class WorkerLightSchema(BaseModel):
         ):
             return "online"
         return "offline"
+
+
+class RunningTask(BaseModel):
+    config: ExpandedScheduleConfigSchema
+    schedule_name: str | None
+    timestamp: list[tuple[str, datetime.datetime]]
+    worker_name: str
+    duration: ScheduleDurationSchema
+    remaining: float
+    eta: datetime.datetime
+
+
+class WorkerMetricsSchema(WorkerLightSchema):
+    """
+    Schema for reading a worker model with full details and metrics
+    """
+
+    running_tasks: list[RunningTask]
+    nb_tasks_total: int
+    nb_tasks_completed: int
+    nb_tasks_succeeded: int
+    nb_tasks_failed: int
+
+    @computed_field
+    @property
+    def current_usage(self) -> ConfigResourcesSchema:
+        total_cpu = 0
+        total_memory = 0
+        total_disk = 0
+        for task in self.running_tasks:
+            total_cpu += task.config.resources.cpu
+            total_memory += task.config.resources.memory
+            total_disk += task.config.resources.disk
+        return ConfigResourcesSchema(
+            cpu=total_cpu,
+            memory=total_memory,
+            disk=total_disk,
+        )

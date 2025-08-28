@@ -5,8 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.db.models import User, Worker
+from zimfarm_backend.db.models import Task, User, Worker
 from zimfarm_backend.utils.token import generate_access_token
 
 
@@ -97,6 +98,53 @@ def test_check_in_worker_success(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
+
+
+def test_get_worker_metrics_no_tasks(client: TestClient, worker: Worker):
+    """Worker metrics should be zero when no tasks exist."""
+    response = client.get(f"/v2/workers/{worker.name}/metrics")
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert data["name"] == worker.name
+    assert data["nb_tasks_total"] == 0
+    assert data["nb_tasks_completed"] == 0
+    assert data["nb_tasks_succeeded"] == 0
+    assert data["nb_tasks_failed"] == 0
+    assert isinstance(data["running_tasks"], list)
+    assert len(data["running_tasks"]) == 0
+
+
+def test_get_worker_metrics_with_tasks(
+    client: TestClient,
+    worker: Worker,
+    create_task: Callable[..., Task],
+):
+    """Worker metrics should reflect counts of total, completed, succeeded, failed."""
+    # Create tasks across statuses
+    for _ in range(3):
+        create_task(status=TaskStatus.succeeded)
+    for _ in range(2):
+        create_task(status=TaskStatus.failed)
+    for _ in range(1):
+        create_task(status=TaskStatus.canceled)
+    for _ in range(2):
+        create_task(status=TaskStatus.started)
+    for _ in range(1):
+        create_task(status=TaskStatus.requested)
+
+    response = client.get(f"/v2/workers/{worker.name}/metrics")
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+
+    # Totals
+    assert data["nb_tasks_total"] == 9
+    assert data["nb_tasks_completed"] == 6  # 3 succeeded + 2 failed + 1 canceled
+    assert data["nb_tasks_succeeded"] == 3
+    assert data["nb_tasks_failed"] == 2
+
+    # Running tasks are non-complete
+    assert isinstance(data["running_tasks"], list)
+    assert len(data["running_tasks"]) == 3  # 2 started + 1 requested
 
 
 @pytest.mark.parametrize(

@@ -1,5 +1,4 @@
 import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import Field
@@ -33,13 +32,13 @@ from zimfarm_backend.common.schemas.orms import (
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
+from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
+from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
 from zimfarm_backend.db.worker import get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
-    get_timestamp_for_status,
 )
 
 # Maximum positive integer value for PostgreSQL BigInteger
@@ -261,62 +260,6 @@ def get_requested_tasks(
         )
 
     return results
-
-
-def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
-    """compute task duration (dict), remaining (seconds) and eta (datetime)"""
-    now = getnow()
-    duration = get_schedule_duration(
-        session,
-        schedule_name=task.schedule.name if task.schedule else None,
-        worker=task.worker,
-    )
-    elapsed = now - get_timestamp_for_status(
-        task.timestamp, "started", get_timestamp_for_status(task.timestamp, "reserved")
-    )
-    remaining = max([duration.value - elapsed.total_seconds(), 60])  # seconds
-    remaining *= 1.005  # .5% margin
-    eta = now + datetime.timedelta(seconds=remaining)
-    return {
-        "duration": duration,
-        "remaining": remaining,
-        "eta": eta,
-    }
-
-
-class RunningTask(BaseModel):
-    config: ExpandedScheduleConfigSchema
-    schedule_name: str | None
-    timestamp: list[tuple[str, datetime.datetime]]
-    worker_name: str
-    duration: ScheduleDurationSchema
-    remaining: float
-    eta: datetime.datetime
-
-
-def get_currently_running_tasks(
-    session: OrmSession,
-    worker: Worker,
-) -> list[RunningTask]:
-    """list of tasks being run by worker at this moment, including ETA"""
-
-    stmt = (
-        select(Task)
-        .join(Worker)
-        .where(Task.status.notin_(TaskStatus.complete()), Worker.name == worker.name)
-    )
-    return [
-        RunningTask(
-            config=ExpandedScheduleConfigSchema.model_validate(
-                task.config, context={"skip_validation": True}
-            ),
-            schedule_name=task.schedule.name if task.schedule else None,
-            timestamp=task.timestamp,
-            worker_name=task.worker.name,
-            **compute_task_eta(session, task),
-        )
-        for task in session.scalars(stmt).all()
-    ]
 
 
 class RequestedTaskWithDuration(BaseModel):

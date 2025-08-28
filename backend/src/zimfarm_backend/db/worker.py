@@ -6,11 +6,16 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import Offliner
+from zimfarm_backend.common.enums import Offliner, TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.orms import ConfigResourcesSchema, WorkerLightSchema
+from zimfarm_backend.common.schemas.orms import (
+    ConfigResourcesSchema,
+    WorkerLightSchema,
+    WorkerMetricsSchema,
+)
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import User, Worker
+from zimfarm_backend.db.models import Task, User, Worker
+from zimfarm_backend.db.tasks import get_currently_running_tasks
 
 
 class ActiveWorkersListResult(BaseModel):
@@ -93,6 +98,45 @@ def get_active_workers(
         results.nb_records = nb_records
         results.workers.append(create_worker_schema(worker))
     return results
+
+
+def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetricsSchema:
+    """Get a worker with full details and metrics."""
+    worker = get_worker(session, worker_name=worker_name)
+
+    # SQL-level metrics for this worker's tasks
+    metrics_stmt = select(
+        func.count(Task.id).label("nb_total"),
+        func.count(Task.id)
+        .filter(Task.status.in_(TaskStatus.complete()))
+        .label("nb_completed"),
+        func.count(Task.id)
+        .filter(Task.status == TaskStatus.succeeded)
+        .label("nb_succeeded"),
+        func.count(Task.id).filter(Task.status == TaskStatus.failed).label("nb_failed"),
+    ).where(Task.worker_id == worker.id)
+    nb_total, nb_completed, nb_succeeded, nb_failed = session.execute(
+        metrics_stmt
+    ).one()
+
+    return WorkerMetricsSchema(
+        name=worker.name,
+        last_seen=worker.last_seen,
+        last_ip=worker.last_ip,
+        username=worker.user.username,
+        resources=ConfigResourcesSchema(
+            cpu=worker.cpu,
+            disk=worker.disk,
+            memory=worker.memory,
+        ),
+        offliners=worker.offliners,
+        contexts=worker.contexts,
+        running_tasks=get_currently_running_tasks(session, worker),
+        nb_tasks_total=nb_total or 0,
+        nb_tasks_completed=nb_completed or 0,
+        nb_tasks_succeeded=nb_succeeded or 0,
+        nb_tasks_failed=nb_failed or 0,
+    )
 
 
 def check_in_worker(

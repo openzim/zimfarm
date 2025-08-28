@@ -7,13 +7,14 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
-from zimfarm_backend.common.schemas.orms import WorkerLightSchema
+from zimfarm_backend.common.schemas.orms import WorkerLightSchema, WorkerMetricsSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
 from zimfarm_backend.db.worker import get_active_workers as db_get_active_workers
 from zimfarm_backend.db.worker import get_worker as db_get_worker
+from zimfarm_backend.db.worker import get_worker_metrics as db_get_worker_metrics
 from zimfarm_backend.db.worker import update_worker as db_update_worker
 from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
 from zimfarm_backend.routes.http_errors import (
@@ -47,6 +48,18 @@ async def get_active_workers(
         ),
         items=results.workers,
     )
+
+
+@router.get("/{name}/metrics")
+async def get_worker_metrics(
+    name: Annotated[str, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> WorkerMetricsSchema:
+    """Get a single worker with full details and metrics."""
+    try:
+        return db_get_worker_metrics(session, worker_name=name)
+    except RecordDoesNotExistError as exc:
+        raise NotFoundError(f"Worker {name} not found") from exc
 
 
 @router.put("/{name}/context")
