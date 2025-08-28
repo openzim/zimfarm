@@ -1,29 +1,46 @@
+import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
-import type { ListResponse } from '@/types/base'
+import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { inject, ref } from 'vue'
+import type { VueCookies } from 'vue-cookies'
 
 export const useWorkersStore = defineStore('workers', () => {
+  const $cookies = inject<VueCookies>('$cookies')
   const workers = ref<Worker[]>([])
   const errors = ref<string[]>([])
+  const limit = Number($cookies?.get('workers-table-limit') || 20)
+  const paginator = ref<Paginator>({
+    page: 1,
+    page_size: limit,
+    skip: 0,
+    limit: limit,
+    count: 0,
+  })
 
   const authStore = useAuthStore()
 
-  const fetchWorkers = async (params: {limit?: number} = {}) => {
-    const { limit = 100 } = params
+  const savePaginatorLimit = (limit: number) => {
+    $cookies?.set('workers-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+  }
+
+  const fetchWorkers = async (params: { limit?: number; skip?: number } = {}) => {
+    const { limit = 20, skip = 0 } = params
     try {
       const service = await authStore.getApiService('workers')
-      const response = await service.get<null, ListResponse<Worker>>('', { params: { limit } })
+      const response = await service.get<null, ListResponse<Worker>>('', { params: { limit, skip } })
 
-      // Initialize tasks array for each worker
+      // Preserve existing tasks when fetching workers
+      const existingTasks = new Map(workers.value.map(w => [w.name, w.tasks || []]))
       workers.value = response.items.map(worker => ({
         ...worker,
-        tasks: []
+        tasks: existingTasks.get(worker.name) || []
       }))
+      paginator.value = response.meta
 
       errors.value = []
       return response.items
@@ -34,27 +51,22 @@ export const useWorkersStore = defineStore('workers', () => {
     }
   }
 
-  const addTaskToWorker = (task: TaskLight) => {
-    const worker = workers.value.find(w => w.name === task.worker_name)
-    if (worker) {
-      worker.tasks.push(task)
-    }
-  }
-
-  const clearWorkerTasks = () => {
-    workers.value.forEach(worker => {
-      worker.tasks = []
-    })
+  const updateWorkerTasks = (tasks: TaskLight[]) => {
+    workers.value = workers.value.map(worker => ({
+      ...worker,
+      tasks: tasks.filter(task => task.worker_name === worker.name)
+    }))
   }
 
   return {
     // State
     workers,
     errors,
+    paginator,
 
     // Actions
     fetchWorkers,
-    addTaskToWorker,
-    clearWorkerTasks,
+    updateWorkerTasks,
+    savePaginatorLimit,
   }
 })

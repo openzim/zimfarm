@@ -1,19 +1,6 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
-      <v-card-title v-if="paginator.count > 0" class="d-flex align-center justify-space-between">
-        <span class="text-subtitle-1 d-flex align-center">
-          Showing max.
-          <v-select
-            v-model="selectedLimit"
-            :items="limits"
-            hide-details
-            density="compact"
-            @update:modelValue="emit('limitChanged', $event)"
-          />
-          out of <strong class="ml-1 mr-1">{{ props.paginator.count }}</strong> users
-        </span>
-      </v-card-title>
       <v-data-table-server
         :headers="headers"
         :items="users"

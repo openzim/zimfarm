@@ -80,7 +80,6 @@ export function fromNow(value: string) {
 
 
 export function formattedBytesSize(value: number) {
-  if (!value) return "";
   return filesize(value, { base: 2, standard: "iec", precision: 3 }); // precision 3, display in KiB, MiB,... instead of KB, MB,...
 }
 

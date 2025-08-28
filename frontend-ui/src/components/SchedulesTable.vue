@@ -1,18 +1,7 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
-      <v-card-title v-if="paginator.count > 0" class="d-flex align-center justify-space-between flex-wrap py-2">
-        <span class="text-subtitle-1 d-flex align-center">
-          Showing max.
-          <v-select
-            v-model="selectedLimit"
-            :items="limits"
-            @update:model-value="emit('limitChanged', $event)"
-            hide-details
-            density="compact"
-          />
-         out of <strong class="ml-1 mr-1">{{ paginator.count }}</strong> results
-        </span>
+      <v-card-title class="d-flex align-center justify-end flex-wrap py-2">
         <div class="d-flex align-center">
           <RequestSelectionButton
             :can-request-tasks="canRequestTasks"

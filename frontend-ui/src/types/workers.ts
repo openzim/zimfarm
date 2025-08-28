@@ -10,4 +10,5 @@ export interface Worker {
   tasks: TaskLight[] // Will be populated with running tasks
   offliners: string[]
   username: string
+  contexts: string[]
 }

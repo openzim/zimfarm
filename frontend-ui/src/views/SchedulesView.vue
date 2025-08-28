@@ -38,14 +38,10 @@ import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTagStore } from '@/stores/tag'
-import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
 import { isFirefoxOnIOS } from '@/utils/browsers'
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { VueCookies } from 'vue-cookies'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-
-const $cookies = inject<VueCookies>('$cookies')
 
 // Define headers for the table
 const headers = [
@@ -59,13 +55,7 @@ const headers = [
 
 // Reactive state
 const schedules = ref<ScheduleLight[]>([])
-const paginator = ref<Paginator>({
-  page: 1,
-  limit: $cookies?.get('schedules-table-limit') || 20,
-  count: 0,
-  skip: 0,
-  page_size: 20,
-})
+const paginator = computed(() => scheduleStore.paginator)
 
 const blockUrlUpdates = ref<boolean>(false)
 
@@ -111,8 +101,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   )
 
   schedules.value = scheduleStore.schedules
-  paginator.value = scheduleStore.paginator
-  $cookies?.set('schedules-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+  scheduleStore.savePaginatorLimit(limit)
   errors.value = scheduleStore.errors
   for (const error of errors.value) {
     notificationStore.showError(error)
@@ -129,7 +118,7 @@ async function handleFiltersChange(newFilters: typeof filters.value) {
 }
 
 async function handleLimitChange(newLimit: number) {
-  $cookies?.set('schedules-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
+  scheduleStore.savePaginatorLimit(newLimit)
 }
 
 async function clearFilters() {
