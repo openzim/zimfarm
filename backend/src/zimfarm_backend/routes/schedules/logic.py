@@ -406,6 +406,7 @@ def update_schedule(
             periodicity=request.periodicity,
             # schedule must be valid if it has not failed validation yet
             is_valid=True,
+            context=request.context,
         )
     except RecordAlreadyExistsError as exc:
         raise BadRequestError(f"Schedule {request.name} already exists") from exc
@@ -508,6 +509,7 @@ def clone_schedule(
             ),
             periodicity=SchedulePeriodicity(schedule.periodicity),
             language=language,
+            context=schedule.context,
         )
     except RecordAlreadyExistsError as e:
         raise BadRequestError(f"Schedule {request.name} already exists") from e

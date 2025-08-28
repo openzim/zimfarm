@@ -18,3 +18,11 @@ class WorkerCheckInSchema(BaseModel):
     disk: ZIMDisk
     offliners: list[Offliner]
     platforms: dict[str, int] | None = None  # mapping of platforms to max tasks
+
+
+class WorkerUpdateSchema(BaseModel):
+    """
+    Schema for updating a worker.
+    """
+
+    contexts: list[str] | None = None

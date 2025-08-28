@@ -36,6 +36,7 @@ export interface Schedule {
   most_recent_task: MostRecentTask | null
   is_requested: boolean
   is_valid: boolean
+  context: string
 }
 
 export interface ScheduleLight {
@@ -46,6 +47,7 @@ export interface ScheduleLight {
   language: Language
   enabled: boolean
   is_requested: boolean
+  context: string
 }
 
 export interface ScheduleUpdateSchema {
@@ -63,8 +65,8 @@ export interface ScheduleUpdateSchema {
   monitor: boolean | null
   flags: Record<string, unknown> | null
   artifacts_globs: string[] | null
+  context: string | null
 }
-
 
 export interface EventNotification {
   mailgun: string[] | null

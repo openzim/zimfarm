@@ -146,3 +146,12 @@ def test_check_in_worker_update(dbsession: OrmSession, worker: Worker):
     assert original_last_seen is not None
     assert updated_worker.last_seen > original_last_seen
     assert updated_worker.last_ip == original_last_ip
+
+
+def test_update_worker_context(dbsession: OrmSession, worker: Worker):
+    """Test that update_worker_context updates the worker's context"""
+
+    updated_worker = update_worker(
+        dbsession, worker_name=worker.name, contexts=["priority", "general"]
+    )
+    assert updated_worker.contexts == ["priority", "general"]

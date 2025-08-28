@@ -1,9 +1,13 @@
 from collections.abc import Callable
 from http import HTTPStatus
 
+import pytest
 from fastapi.testclient import TestClient
 
-from zimfarm_backend.db.models import Worker
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.roles import RoleEnum
+from zimfarm_backend.db.models import User, Worker
+from zimfarm_backend.utils.token import generate_access_token
 
 
 def test_get_active_workers_success(
@@ -93,3 +97,66 @@ def test_check_in_worker_success(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
+
+
+@pytest.mark.parametrize(
+    "permission,contexts,deleted,expected_status",
+    [
+        [RoleEnum.ADMIN, ["priority", "general"], False, HTTPStatus.NO_CONTENT],
+        [RoleEnum.PROCESSOR, ["general"], False, HTTPStatus.UNAUTHORIZED],
+        [RoleEnum.ADMIN, ["priority", "general"], True, HTTPStatus.BAD_REQUEST],
+    ],
+)
+def test_update_worker_context(
+    client: TestClient,
+    create_worker: Callable[..., Worker],
+    create_user: Callable[..., User],
+    *,
+    permission: RoleEnum,
+    contexts: list[str],
+    expected_status: HTTPStatus,
+    deleted: bool,
+):
+    """Test successful update of a worker's context"""
+    user = create_user(permission=permission)
+    worker = create_worker(user=user, deleted=deleted)
+
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    response = client.put(
+        f"/v2/workers/{worker.name}/context",
+        json={"contexts": contexts},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == expected_status
+
+
+def test_update_worker_context_not_found(
+    client: TestClient,
+    create_worker: Callable[..., Worker],
+    create_user: Callable[..., User],
+):
+    """Test successful update of a worker's context"""
+    user = create_user(permission=RoleEnum.ADMIN)
+    create_worker(user=user, deleted=False)
+
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    response = client.put(
+        "/v2/workers/non-existent/context",
+        json={"contexts": ["priority", "general"]},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.NOT_FOUND

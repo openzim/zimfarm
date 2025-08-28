@@ -10,13 +10,22 @@ from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.common.schemas.orms import WorkerLightSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
+from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
 from zimfarm_backend.db.worker import get_active_workers as db_get_active_workers
 from zimfarm_backend.db.worker import get_worker as db_get_worker
+from zimfarm_backend.db.worker import update_worker as db_update_worker
 from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
-from zimfarm_backend.routes.http_errors import BadRequestError, NotFoundError
+from zimfarm_backend.routes.http_errors import (
+    BadRequestError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from zimfarm_backend.routes.models import ListResponse
-from zimfarm_backend.routes.workers.models import WorkerCheckInSchema
+from zimfarm_backend.routes.workers.models import (
+    WorkerCheckInSchema,
+    WorkerUpdateSchema,
+)
 
 router = APIRouter(prefix="/workers", tags=["workers"])
 
@@ -40,6 +49,29 @@ async def get_active_workers(
         ),
         items=results.workers,
     )
+
+
+@router.put("/{name}/context")
+async def update_worker_context(
+    name: Annotated[str, Path()],
+    request: WorkerUpdateSchema,
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Response:
+    """Update the context of a worker."""
+    try:
+        worker = db_get_worker(session, worker_name=name)
+    except RecordDoesNotExistError as exc:
+        raise NotFoundError(f"Worker {name} not found") from exc
+
+    if not (check_user_permission(current_user, namespace="users", name="update")):
+        raise UnauthorizedError("You are not allowed to access this resource")
+
+    if worker.deleted:
+        raise BadRequestError("Worker has been marked as deleted")
+
+    db_update_worker(session, worker_name=name, contexts=request.contexts)
+    return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
 @router.put("/{name}/check-in")

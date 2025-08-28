@@ -43,6 +43,7 @@ class ScheduleCreateSchema(BaseModel):
     enabled: bool
     config: dict[str, Any]  # will be validated in the route
     notification: ScheduleNotificationSchema | None = None
+    context: NotEmptyString | None = None
 
 
 class ScheduleCreateResponseSchema(BaseModel):
@@ -64,6 +65,7 @@ class ScheduleUpdateSchema(BaseModel):
     monitor: bool | None = None
     flags: dict[str, Any] | None = None
     artifacts_globs: list[NotEmptyString] | None = None
+    context: NotEmptyString | None = None
 
 
 class CloneSchema(BaseModel):

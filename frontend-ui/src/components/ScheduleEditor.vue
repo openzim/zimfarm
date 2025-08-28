@@ -125,6 +125,17 @@
           persistent-hint
         />
       </v-col>
+      <v-col cols="12" sm="6">
+        <v-text-field
+          v-model="editSchedule.context"
+          label="Context"
+          hint="Defines what values a worker must have to be able to execute tasks for this schedule"
+          placeholder="Context"
+          density="compact"
+          variant="outlined"
+          persistent-hint
+        />
+      </v-col>
     </v-row>
 
     <v-divider class="my-4" />
@@ -575,6 +586,16 @@ const hasChanges = computed(() => {
     if (editSchedule.value[prop] !== props.schedule[prop]) return true
   }
 
+  // Check context with null/empty string equivalence
+  const originalContext = props.schedule.context
+  const editedContext = editSchedule.value.context
+  if (originalContext !== editedContext) {
+    // Consider null and empty string as equivalent
+    if (!((originalContext === null || originalContext === '') && (editedContext === null || editedContext === ''))) {
+      return true
+    }
+  }
+
   // Check tags
   if (!stringArrayEqual(editSchedule.value.tags, props.schedule.tags)) return true
 
@@ -921,6 +942,16 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
       } else if (prop === 'periodicity') {
         payload.periodicity = editSchedule.value[prop]
       }
+    }
+  }
+
+  // Context with null/empty string equivalence
+  const originalContext = props.schedule.context
+  const editedContext = editSchedule.value.context
+  if (originalContext !== editedContext) {
+    // Consider null and empty string as equivalent
+    if (!((originalContext === null || originalContext === '') && (editedContext === null || editedContext === ''))) {
+      payload.context = editedContext
     }
   }
 

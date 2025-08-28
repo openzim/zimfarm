@@ -200,6 +200,8 @@ def user(create_user: Callable[..., User]):
 
 @pytest.fixture
 def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
+    _user = user
+
     def _create_worker(
         *,
         name: str = "testworker",
@@ -208,10 +210,14 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
         disk: int = 1024,
         offliners: list[str] | None = None,
         platforms: dict[str, int] | None = None,
+        contexts: list[str] | None = None,
         last_seen: datetime.datetime | None = None,
         last_ip: IPv4Address | None = None,
+        user: User | None = None,
         deleted: bool = False,
     ) -> Worker:
+        user = _user if user is None else user
+
         _platforms = platforms or {
             Platform.wikimedia: 100,
             Platform.youtube: 100,
@@ -227,6 +233,7 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
             disk=disk,
             offliners=offliners or ["mwoffliner", "youtube"],
             platforms=_platforms,
+            contexts=contexts or [],
             last_seen=last_seen or getnow(),
             last_ip=_ip,
             deleted=deleted,
@@ -320,6 +327,7 @@ def create_schedule(
         notification: dict[str, Any] | None = None,
         language: LanguageSchema | None = None,
         tags: list[str] | None = None,
+        context: str | None = None,
         schedule_config: ScheduleConfigSchema | None = None,
         worker: Worker | None = None,
     ) -> Schedule:
@@ -338,6 +346,7 @@ def create_schedule(
             language_code=language.code,
             periodicity=periodicity,
             notification=notification,
+            context=context or "",
         )
         schedule_duration = ScheduleDuration(
             value=DEFAULT_SCHEDULE_DURATION.value,
@@ -421,6 +430,7 @@ def create_requested_task(
             upload={},
             notification={},
             original_schedule_name=schedule_name,
+            context=schedule.context,
         )
         requested_task.schedule = schedule
         requested_task.worker = _worker if worker is None else worker
@@ -497,6 +507,7 @@ def create_task(
             files={},
             upload=requested_task.upload,
             original_schedule_name=requested_task.original_schedule_name,
+            context=requested_task.context,
         )
         task.id = requested_task.id
         task.schedule_id = requested_task.schedule_id

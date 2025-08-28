@@ -2,6 +2,7 @@ import datetime
 from typing import Any
 from uuid import UUID
 
+from pydantic import Field
 from sqlalchemy import BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 
@@ -62,6 +63,7 @@ def request_task(
 
     Schedule can't be requested if already requested on same worker.
     Schedule can't be requested if it's disabled.
+    Schedule can't be requested if worker does not have appropriate context.
     """
 
     query = (
@@ -94,6 +96,10 @@ def request_task(
         if worker is None:
             return None
 
+    # Check if worker is allowed to be assigned a task from this recipe
+    if worker and schedule.context and schedule.context not in worker.contexts:
+        return None
+
     # Otherwise, create a new requested task
     now = getnow()
     requested_task = RequestedTask(
@@ -123,6 +129,9 @@ def request_task(
         notification=schedule.notification if schedule.notification else {},
         updated_at=now,
         original_schedule_name=schedule.name,
+        # Track the worker context requirement for this schedule (from the schedule)
+        # as schedule might be deleted from DB
+        context=schedule.context,
     )
     requested_task.schedule = schedule
     if worker:
@@ -174,6 +183,7 @@ def get_requested_tasks(
             RequestedTask.priority,
             RequestedTask.original_schedule_name,
             RequestedTask.updated_at,
+            RequestedTask.context,
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
@@ -220,6 +230,7 @@ def get_requested_tasks(
         _priority,
         original_schedule_name,
         updated_at,
+        context,
         _schedule_name,
         _worker_name,
     ) in session.execute(query).all():
@@ -245,6 +256,7 @@ def get_requested_tasks(
                 updated_at=updated_at,
                 worker_name=_worker_name,
                 schedule_name=_schedule_name,
+                context=context,
             )
         )
 
@@ -317,6 +329,7 @@ class RequestedTaskWithDuration(BaseModel):
     schedule_name: str | None
     original_schedule_name: str
     worker_name: str
+    context: str = Field(exclude=True)
     duration: ScheduleDurationSchema
     updated_at: datetime.datetime
 
@@ -338,6 +351,13 @@ def get_tasks_doable_by_worker(
         RequestedTask.config["resources"]["disk"].astext.cast(BigInteger)
         <= worker.disk,
         RequestedTask.config["offliner"]["offliner_id"].astext.in_(worker.offliners),
+        # if requested task has a context, worker must have that context
+        or_(
+            # if a task has a context set to empty string, it should be
+            # considered
+            RequestedTask.context == "",
+            RequestedTask.context.in_(worker.contexts),
+        ),
     )
     if worker.selfish:
         query = query.where(RequestedTask.worker_id == worker.id)
@@ -362,6 +382,7 @@ def get_tasks_doable_by_worker(
                 requested_by=task.requested_by,
                 priority=task.priority,
                 worker_name=task.worker.name if task.worker else worker.name,
+                context=task.context,
                 duration=get_schedule_duration(
                     session,
                     schedule_name=task.schedule.name if task.schedule else None,
@@ -570,6 +591,7 @@ def _create_requested_task_full_schema(
         ),
         original_schedule_name=requested_task.original_schedule_name,
         worker_name=requested_task.worker.name if requested_task.worker else None,
+        context=requested_task.context,
         events=requested_task.events,
         upload=requested_task.upload,
         notification=(

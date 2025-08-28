@@ -236,6 +236,7 @@ def get_schedules(
             Task.status.label("task_status"),
             Task.updated_at.label("task_updated_at"),
             func.coalesce(subquery.c.nb_requested_tasks, 0).label("nb_requested_tasks"),
+            Schedule.context,
         )
         .join(Task, Schedule.most_recent_task, isouter=True)
         .join(subquery, subquery.c.schedule_id == Schedule.id, isouter=True)
@@ -267,6 +268,7 @@ def get_schedules(
         task_status,
         task_updated_at,
         nb_requested_tasks,
+        context,
     ) in session.execute(stmt).all():
         # Because the SQL window function returns the total_records
         # for every row, assign that value to the nb_records
@@ -298,6 +300,7 @@ def get_schedules(
                     else None
                 ),
                 nb_requested_tasks=nb_requested_tasks,
+                context=context,
             )
         )
 
@@ -315,6 +318,7 @@ def create_schedule(
     enabled: bool,
     notification: ScheduleNotificationSchema | None,
     periodicity: SchedulePeriodicity,
+    context: str | None = None,
 ) -> Schedule:
     """Create a new schedule"""
     schedule = Schedule(
@@ -326,6 +330,7 @@ def create_schedule(
         enabled=enabled,
         notification=notification.model_dump(mode="json") if notification else None,
         periodicity=periodicity,
+        context=context or "",
     )
     schedule_duration = ScheduleDuration(
         value=DEFAULT_SCHEDULE_DURATION.value,
@@ -392,6 +397,7 @@ def create_schedule_full_schema(
         ),
         nb_requested_tasks=len(schedule.requested_tasks),
         is_valid=schedule.is_valid,
+        context=schedule.context,
     )
 
 
@@ -420,6 +426,7 @@ def update_schedule(
     tags: list[str] | None = None,
     enabled: bool | None = None,
     periodicity: SchedulePeriodicity | None = None,
+    context: str | None = None,
 ) -> Schedule:
     """Update a schedule with the given values that are set."""
 
@@ -438,6 +445,8 @@ def update_schedule(
             mode="json", context={"show_secrets": True}
         )
     schedule.is_valid = is_valid if is_valid is not None else schedule.is_valid
+
+    schedule.context = context if context is not None else schedule.context
 
     session.add(schedule)
     try:
