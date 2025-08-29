@@ -89,8 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue'
-import type { VueCookies } from 'vue-cookies'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import ErrorMessage from '@/components/ErrorMessage.vue'
@@ -100,11 +99,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useUserStore } from '@/stores/user'
-import type { Paginator } from '@/types/base'
 import type { User } from '@/types/user'
 import { generatePassword } from '@/utils/browsers'
 
-const $cookies = inject<VueCookies>('$cookies')
 const roles = constants.ROLES
 
 // Simple password generator function
@@ -125,14 +122,8 @@ const users = ref<User[]>([])
 const isCreating = ref(false)
 const error = ref<string | null>(null)
 
-// Paginator state
-const paginator = ref<Paginator>({
-  page: 1,
-  limit: $cookies?.get('users-table-limit') || 20,
-  count: 0,
-  skip: 0,
-  page_size: 20,
-})
+// Paginator state (from store)
+const paginator = computed(() => userStore.paginator)
 
 // Form data
 const form = ref({
@@ -224,8 +215,7 @@ const loadData = async (limit: number, skip: number) => {
   const response = await userStore.fetchUsers(skip, limit)
   if (response) {
     users.value = response
-    paginator.value = userStore.paginator
-    $cookies?.set('users-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+    userStore.savePaginatorLimit(limit)
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)
@@ -235,7 +225,7 @@ const loadData = async (limit: number, skip: number) => {
 }
 
 const handleLimitChange = async (newLimit: number) => {
-  $cookies?.set('users-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
+  userStore.savePaginatorLimit(newLimit)
 }
 
 // Lifecycle

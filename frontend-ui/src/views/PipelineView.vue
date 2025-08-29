@@ -31,14 +31,12 @@ import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTasksStore } from '@/stores/tasks'
-import type { MostRecentTask, Paginator } from '@/types/base'
+import type { MostRecentTask } from '@/types/base'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { VueCookies } from 'vue-cookies'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-const $cookies = inject<VueCookies>('$cookies')
 // Filter options
 const filterOptions = [
   { value: 'todo', label: 'TODO' },
@@ -99,12 +97,17 @@ const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
 
 const currentFilter = ref(props.filter)
 const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
-const paginator = ref<Paginator>({
-  page: 1,
-  limit: $cookies?.get('pipeline-table-limit') || 20,
-  count: 0,
-  skip: 0,
-  page_size: $cookies?.get('pipeline-table-limit') || 20,
+const paginator = computed(() => {
+  switch (currentFilter.value) {
+    case 'todo':
+      return requestedTasksStore.paginator
+    case 'doing':
+    case 'done':
+    case 'failed':
+      return tasksStore.paginator
+    default:
+      return tasksStore.paginator
+  }
 })
 const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
@@ -158,8 +161,8 @@ async function loadData(limit: number, skip: number, filter?: string, hideLoadin
     case 'todo':
       await requestedTasksStore.fetchRequestedTasks({limit, skip})
       tasks.value = requestedTasksStore.requestedTasks
-      paginator.value = requestedTasksStore.paginator
       errors.value = requestedTasksStore.errors
+      requestedTasksStore.savePaginatorLimit(limit)
       break
     case 'doing':
       await tasksStore.fetchTasks({limit, skip, status: [
@@ -170,20 +173,20 @@ async function loadData(limit: number, skip: number, filter?: string, hideLoadin
         'cancel_requested',
       ]})
       tasks.value = tasksStore.tasks
-      paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors
+      tasksStore.savePaginatorLimit(limit)
       break
     case 'done':
       await tasksStore.fetchTasks({limit, skip, status: ['succeeded']})
       tasks.value = tasksStore.tasks
-      paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors
+      tasksStore.savePaginatorLimit(limit)
       break
     case 'failed':
       await tasksStore.fetchTasks({limit, skip, status: ['scraper_killed', 'failed', 'canceled']})
       tasks.value = tasksStore.tasks
-      paginator.value = tasksStore.paginator
       errors.value = tasksStore.errors
+      tasksStore.savePaginatorLimit(limit)
       if (loadingStore.isLoading) {
         loadingStore.stopLoading()
       }
@@ -194,7 +197,6 @@ async function loadData(limit: number, skip: number, filter?: string, hideLoadin
     default:
       throw new Error(`Invalid filter: ${filter}`)
   }
-  $cookies?.set('pipeline-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
   if (loadingStore.isLoading) {
     loadingStore.stopLoading()
   }
@@ -230,7 +232,16 @@ async function loadLastRuns() {
 }
 
 async function handleLimitChange(newLimit: number) {
-  $cookies?.set('pipeline-table-limit', newLimit, constants.COOKIE_LIFETIME_EXPIRY)
+  switch (currentFilter.value) {
+    case 'todo':
+      requestedTasksStore.savePaginatorLimit(newLimit)
+      break
+    case 'doing':
+    case 'done':
+    case 'failed':
+      tasksStore.savePaginatorLimit(newLimit)
+      break
+  }
 }
 
 onMounted(async () => {

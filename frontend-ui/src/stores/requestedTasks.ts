@@ -1,3 +1,4 @@
+import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
@@ -8,20 +9,27 @@ import type {
 } from '@/types/requestedTasks'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { inject, ref } from 'vue'
+import type { VueCookies } from 'vue-cookies'
 
 export const useRequestedTasksStore = defineStore('requestedTasks', () => {
+  const $cookies = inject<VueCookies>('$cookies')
+  const limit = Number($cookies?.get('requested-tasks-table-limit') || 20)
   const requestedTasks = ref<RequestedTaskLight[]>([])
   const paginator = ref<Paginator>({
     page: 1,
-    page_size: 100,
+    page_size: limit,
     skip: 0,
-    limit: 100,
+    limit: limit,
     count: 0,
   })
 
   const errors = ref<string[]>([])
   const authStore = useAuthStore()
+
+  const savePaginatorLimit = (limit: number) => {
+    $cookies?.set('requested-tasks-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+  }
 
   const fetchRequestedTasks = async (
     params: {
@@ -135,5 +143,6 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     requestTasks,
     updateRequestedTask,
     deleteRequestedTask,
+    savePaginatorLimit,
   }
 })

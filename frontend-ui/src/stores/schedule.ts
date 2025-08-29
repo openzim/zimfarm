@@ -1,20 +1,24 @@
+import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { Schedule, ScheduleLight, ScheduleUpdateSchema } from '@/types/schedule'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { inject, ref } from 'vue'
+import type { VueCookies } from 'vue-cookies'
 
 export const useScheduleStore = defineStore('schedule', () => {
+  const $cookies = inject<VueCookies>('$cookies')
   const schedule = ref<Schedule | null>(null)
   const errors = ref<string[]>([])
   const schedules = ref<ScheduleLight[]>([])
+  const limit = Number($cookies?.get('schedules-table-limit') || 20)
   const paginator = ref<Paginator>({
     page: 1,
-    page_size: 100,
+    page_size: limit,
     skip: 0,
-    limit: 100,
+    limit: limit,
     count: 0,
   })
   const authStore = useAuthStore()
@@ -149,6 +153,10 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  const savePaginatorLimit = (limit: number) => {
+    $cookies?.set('schedules-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+  }
+
   return {
     // State
     schedule,
@@ -164,5 +172,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     updateSchedule,
     deleteSchedule,
     validateSchedule,
+    savePaginatorLimit,
   }
 })
