@@ -152,11 +152,27 @@
                         v-for="tag in schedule?.tags || []"
                         :key="tag"
                         size="small"
-                        variant="flat"
-                        density="compact"
-                        class="mr-2 mb-1"
+                        color="primary"
+                        variant="outlined"
+                        density="comfortable"
+                        class="mr-2 mb-1 text-caption text-uppercase"
                       >
                         {{ tag }}
+                      </v-chip>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Context</th>
+                    <td>
+                      <v-chip
+                        v-if="schedule.context"
+                        size="small"
+                        variant="outlined"
+                        density="comfortable"
+                        color="primary"
+                        class="mr-2 mb-1 text-caption text-uppercase"
+                        >
+                        {{ schedule.context }}
                       </v-chip>
                     </td>
                   </tr>
@@ -394,6 +410,7 @@
               :platforms="platforms"
               :languages="languages"
               :tags="tags"
+              :contexts="contexts"
               :flags-definition="flagsDefinition"
               :help-url="helpUrl"
               :image-tags="imageTags"
@@ -443,6 +460,7 @@ import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
+import { useContextStore } from '@/stores/context'
 import { useLanguageStore } from '@/stores/language'
 import { useNotificationStore } from '@/stores/notification'
 import { useOfflinerStore } from '@/stores/offliner'
@@ -490,6 +508,7 @@ const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const workersStore = useWorkersStore()
 const tagStore = useTagStore()
+const contextStore = useContextStore()
 const languageStore = useLanguageStore()
 const offlinerStore = useOfflinerStore()
 const platformStore = usePlatformStore()
@@ -506,6 +525,7 @@ const error = ref<string | null>(null)
 const workingText = ref<string | null>(null)
 const imageTags = ref<string[]>([])
 const tags = ref<string[]>([])
+const contexts = ref<string[]>([])
 const languages = ref<Language[]>([])
 const offliners = ref<string[]>([])
 const platforms = ref<string[]>([])
@@ -761,6 +781,18 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
         notificationStore.showError(error)
       }
     }
+
+    // if context was changed, fetch the new contexts
+    if (update.context !== null ||  update.context !== undefined) {
+      const newContexts = await contextStore.fetchContexts()
+      if (newContexts) {
+        contexts.value = newContexts
+      } else {
+        for (const error of contextStore.errors) {
+          notificationStore.showError(error)
+        }
+      }
+    }
   } else {
     for (const error of scheduleStore.errors) {
       notificationStore.showError(error)
@@ -846,6 +878,7 @@ onMounted(async () => {
   // Or we fetch again here (if for some reason, say network connection is slow)
   // and we couldn't fetch on app mount.
   tags.value = (await tagStore.fetchTags()) || []
+  contexts.value = (await contextStore.fetchContexts()) || []
   languages.value = (await languageStore.fetchLanguages()) || []
   offliners.value = (await offlinerStore.fetchOffliners()) || []
   platforms.value = (await platformStore.fetchPlatforms()) || []

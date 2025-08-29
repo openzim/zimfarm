@@ -125,15 +125,19 @@
           persistent-hint
         />
       </v-col>
-      <v-col cols="12" sm="6">
-        <v-text-field
+      <v-col cols="12" sm="4">
+        <v-combobox
           v-model="editSchedule.context"
+          :items="contexts"
           label="Context"
-          hint="Defines what values a worker must have to be able to execute tasks for this schedule"
+          hint="Execute schedule only on workers associated with this context"
           placeholder="Context"
+          :clearable="!!editSchedule.context"
           density="compact"
           variant="outlined"
           persistent-hint
+          :menu-props="{ maxHeight: '200px' }"
+          :custom-filter="fuzzyFilter"
         />
       </v-col>
     </v-row>
@@ -446,6 +450,7 @@ import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/sch
 import { stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
+import Fuse from 'fuse.js'
 import { computed, onUnmounted, ref, watch } from 'vue'
 
 interface FlagField {
@@ -468,6 +473,7 @@ export interface Props {
   schedule: Schedule
   languages: Language[]
   tags: string[]
+  contexts: string[]
   offliners: string[]
   platforms: string[]
   flagsDefinition: OfflinerDefinition[]
@@ -488,6 +494,15 @@ const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 const editFlags = ref<Record<string, any>>(
   JSON.parse(JSON.stringify(props.schedule.config.offliner)),
 )
+
+const fuzzyFilter = (value: string, query: string) => {
+  const fuse = new Fuse(props.contexts, {
+    includeScore: true,
+    threshold: 0.3,
+  })
+  const results = fuse.search(query).find(r => r.item == value)
+  return !!results
+}
 
 // Debounced image name change handler
 let imageNameChangeTimeout: number | null = null
@@ -951,7 +966,9 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
     if (!((originalContext === null || originalContext === '') && (editedContext === null || editedContext === ''))) {
-      payload.context = editedContext
+      // If edited context is null (because the user cleared the field), set it to an
+      // empty string as the API expects a string. Null values are considered as unset.
+      payload.context = editedContext || ''
     }
   }
 

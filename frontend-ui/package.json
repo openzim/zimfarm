@@ -18,6 +18,7 @@
     "axios": "^1.10.0",
     "deep-diff": "^1.0.2",
     "filesize": "^10.1.6",
+    "fuse.js": "^7.1.0",
     "jwt-decode": "^4.0.0",
     "luxon": "^3.6.1",
     "pinia": "^3.0.3",
