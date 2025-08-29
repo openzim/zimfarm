@@ -23,6 +23,19 @@ class TaskStatus(StrEnum):
     checked_file = "checked_file"
 
     @classmethod
+    def running(cls):
+        return [
+            cls.requested,
+            cls.reserved,
+            cls.started,
+            cls.scraper_started,
+            cls.scraper_completed,
+            cls.scraper_running,
+            cls.scraper_killed,
+            cls.cancel_requested,
+        ]
+
+    @classmethod
     def incomplete(cls):
         return [
             cls.requested,

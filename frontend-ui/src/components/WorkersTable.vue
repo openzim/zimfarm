@@ -41,7 +41,9 @@
         </template>
 
         <template #[`item.name`]="{ item }">
-          <code>{{ item.name }}</code>
+          <router-link :to="{ name: 'worker-detail', params: { workerName: item.name } }">
+            <code>{{ item.name }}</code>
+          </router-link>
         </template>
 
         <template #[`item.status`]="{ item }">
