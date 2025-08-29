@@ -21,13 +21,15 @@ class Language(BaseModel):
 normalization_map: dict[str, Language] = {
     "bat-smg": Language(name="Samogitian", alpha_3="sgs"),
     # There is no ISO 639-3 code for Belarusian (Taraškievica orthography)
-    # "be-x-old": Language(name="Belarusian (Taraškievica orthography)", alpha_3=...)
+    # So, we use the nearest parent language => bel
+    "be-x-old": Language(name="Belarusian (Taraškievica orthography)", alpha_3="bel"),
     "bh": Language(name="Bhojpuri", alpha_3="bho"),
     "cbk-zam": Language(name="Chavacano", alpha_3="cbk"),
     "nds-nl": Language(name="Low Saxon", alpha_3="nds"),
     # Emiliano-Romagnolo  ISO 639-3 code has been deprecated as the ethnicities have
     # been split into Emilian and Romagnolo. What should we default to? egl for Emilian
-    # or rgn for Romagnol?
+    # or rgn for Romagnol? For now, use mul
+    "eml": Language(name="Emilian-Romagnol", alpha_3="mul"),
     "fiu-vro": Language(name="Võro", alpha_3="vro"),
     "in": Language(name="Indonesian", alpha_3="ind"),
     "iw": Language(name="Hebrew", alpha_3="heb"),
@@ -37,11 +39,14 @@ normalization_map: dict[str, Language] = {
     #  - Mayan languages
     #  - Nahuati and Nahuatl langauges
     #  - North American Indian languages
+    # Use mul for such languages
+    "nah": Language(name="Nāhuatl", alpha_3="mul"),
+    "myn": Language(name="Mayan Languages", alpha_3="mul"),
+    "nai": Language(name="North American Indian Languages", alpha_3="mul"),
     "roa-rup": Language(name="Aromanian", alpha_3="rup"),
     "roa-tara": Language(name="Tarantino", alpha_3="nap"),
-    # some languages are unknown in the db. Such languages include:
-    # - Unknown language [ef]
-    # - Unknown language [sp]
+    "ef": Language(name="Unknown[ef]", alpha_3="efi"),  # Efik
+    "sp": Language(name="Unknown[sp]", alpha_3="nso"),  # Sepedi
     "zh-classical": Language(name="Classical Chinese", alpha_3="lzh"),
     "zh-min-nan": Language(name="Chinese (Min Nan)", alpha_3="nan"),
     "zh-yue": Language(name="Cantonese", alpha_3="yue"),
@@ -66,14 +71,14 @@ def update_schedule_language_codes():
                 continue
 
             if schedule.language_code != language.alpha_3:
-                logger.info(
-                    f"Updating schedule language code {schedule.language_code} to "
-                    f"{language.alpha_3}"
-                )
+                pass
+                # logger.info(
+                #     f"Updating schedule language code {schedule.language_code} to "
+                #     f"{language.alpha_3}"
+                # )
 
             # Normalize the language code to the ISO 639-3 code
             schedule.language_code = language.alpha_3
-            session.add(schedule)
 
 
 if __name__ == "__main__":
