@@ -152,11 +152,27 @@
                         v-for="tag in schedule?.tags || []"
                         :key="tag"
                         size="small"
-                        variant="flat"
-                        density="compact"
-                        class="mr-2 mb-1"
+                        color="primary"
+                        variant="outlined"
+                        density="comfortable"
+                        class="mr-2 mb-1 text-caption text-uppercase"
                       >
                         {{ tag }}
+                      </v-chip>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Context</th>
+                    <td>
+                      <v-chip
+                        v-if="schedule.context"
+                        size="small"
+                        variant="outlined"
+                        density="comfortable"
+                        color="primary"
+                        class="mr-2 mb-1 text-caption text-uppercase"
+                        >
+                        {{ schedule.context }}
                       </v-chip>
                     </td>
                   </tr>
@@ -763,6 +779,18 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
     } else {
       for (const error of scheduleStore.errors) {
         notificationStore.showError(error)
+      }
+    }
+
+    // if context was changed, fetch the new contexts
+    if (update.context !== null ||  update.context !== undefined) {
+      const newContexts = await contextStore.fetchContexts()
+      if (newContexts) {
+        contexts.value = newContexts
+      } else {
+        for (const error of contextStore.errors) {
+          notificationStore.showError(error)
+        }
       }
     }
   } else {
