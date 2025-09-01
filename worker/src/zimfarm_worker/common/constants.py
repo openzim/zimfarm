@@ -32,7 +32,7 @@ TASK_WORKER_IMAGE = getenv(
 )
 DNSCACHE_IMAGE = getenv("DNSCACHE_IMAGE", default="ghcr.io/openzim/dnscache:latest")
 UPLOADER_IMAGE = getenv("UPLOADER_IMAGE", default="ghcr.io/openzim/uploader:latest")
-CHECKER_IMAGE = getenv("CHECKER_IMAGE", default="ghcr.io/openzim/zim-tools:3.5.0")
+CHECKER_IMAGE = getenv("CHECKER_IMAGE", default="ghcr.io/openzim/zim-tools:3.6.0")
 MONITOR_IMAGE = getenv(
     "MONITOR_IMAGE", default="ghcr.io/openzim/zimfarm-monitor:latest"
 )
