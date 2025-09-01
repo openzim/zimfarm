@@ -33,11 +33,9 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "logo-format": (_get_icon_url_for_slug(item["slug"])),
                     "output": "/output",
                     "slug": item["slug"],
-                    "file-name-format": (
-                        "devdocs_en_"
-                        f"{_get_cleaned(_get_slug_with_version(item['slug']))}"
-                        "_{period}"
-                    ),
+                    "file-name-format": f"devdocs_en_"
+                    f"{_get_cleaned(_get_slug_with_version(item['slug']))}"
+                    "_{period}",
                     "name-format": check_zim_name(
                         f"devdocs_en_{_get_cleaned(_get_slug_with_version(item['slug']))}"
                     ),
@@ -125,7 +123,7 @@ def definition_for_name(items: list[dict[str, Any]], name: str) -> dict[str, Any
     variant = sorted(
         variants, key=lambda variant: variant.get("release", "aaa"), reverse=True
     )[0]
-    logger.info(f"{name}: {variant['slug']}")
+    logger.debug(f"{name}: {variant['slug']}")
     return {"name": name, "slug": variant["slug"]}
 
 

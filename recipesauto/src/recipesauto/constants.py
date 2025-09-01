@@ -13,3 +13,7 @@ logging.basicConfig(
     level=logging.INFO, format="[%(asctime)s: %(levelname)s] %(message)s"
 )
 logger: logging.Logger = logging.getLogger(NAME)
+
+TITLE_MAX_LEN = 30
+DESCRIPTION_MAX_LEN = 80
+LONG_DESCRIPTION_MAX_LEN = 4000

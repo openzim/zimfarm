@@ -54,6 +54,8 @@ class Processor:
             import recipesauto.shamela as setmodule
         elif context.kind == "phet":
             import recipesauto.phet as setmodule
+        elif context.kind == "gutenberg":
+            import recipesauto.gutenberg as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
