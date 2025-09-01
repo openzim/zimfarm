@@ -11,7 +11,6 @@ context = Context.get()
 
 
 class Processor:
-
     def run(self):
         """Run the tool allowing to create / maintain Zimfarm recipes automatically"""
 
@@ -75,25 +74,25 @@ class Processor:
         )
 
         logger.info(
-            f'{len(self.overrides["do_not_create"])} recipes overriden for no create'
+            f"{len(self.overrides['do_not_create'])} recipes overriden for no create"
         )
         for recipe in self.overrides["do_not_create"]:
             logger.info(f"- {recipe}")
         logger.info(
-            f'{len(self.overrides["do_not_update"])} recipes overriden for no update'
+            f"{len(self.overrides['do_not_update'])} recipes overriden for no update"
         )
         for recipe in self.overrides["do_not_update"]:
             logger.info(f"- {recipe}")
         logger.info(
-            f'{len(self.overrides["do_not_delete"])} recipes overriden for no delete'
+            f"{len(self.overrides['do_not_delete'])} recipes overriden for no delete"
         )
         for recipe in self.overrides["do_not_delete"]:
             logger.info(f"- {recipe}")
         logger.info(
-            f'{len(self.overrides["overrides"])} recipes overriden for settings'
+            f"{len(self.overrides['overrides'])} recipes overriden for settings"
         )
         for recipe in self.overrides["overrides"]:
-            logger.info(f'- {recipe["name"]}')
+            logger.info(f"- {recipe['name']}")
 
         self._create_new_recipes(
             expected_recipes=expected_recipes,
@@ -131,7 +130,7 @@ class Processor:
                 )
             ask_for_confirmation = True
             for recipe in recipes_to_create:
-                logger.info(f'- {recipe["name"]}')
+                logger.info(f"- {recipe['name']}")
                 if not context.push:
                     continue
                 # automatically set warehouse_path to /.hidden/dev and periodicity to
@@ -210,9 +209,9 @@ class Processor:
                 )
             ask_for_confirmation = True
             for expected_recipe in recipes_to_maintain:
-                logger.info(f'- {expected_recipe["name"]}')
+                logger.info(f"- {expected_recipe['name']}")
                 if override := self._get_recipe_overrides(expected_recipe["name"]):
-                    logger.debug(f'Overriding config with {override["overrides"]}')
+                    logger.debug(f"Overriding config with {override['overrides']}")
                     self._patch_dictionary(expected_recipe, override["overrides"])
                 changes = {}
                 current_recipe = self._get_recipe_definition_on_zf(
@@ -247,7 +246,7 @@ class Processor:
                     expected_value = expected_recipe["config"][current_recipe_key]
                     if current_recipe_value == expected_value:
                         continue
-                    if current_recipe_key != "flags":
+                    if current_recipe_key != "offliner":
                         logger.info(
                             f"config.{current_recipe_key}: {current_recipe_value} => "
                             f"{expected_value}"
@@ -255,7 +254,9 @@ class Processor:
                     else:
                         logger.info("Flags have changed:")
                         current_flags = set(current_recipe_value.items())
-                        expected_flags = set(expected_recipe["config"]["flags"].items())
+                        expected_flags = set(
+                            expected_recipe["config"]["offliner"].items()
+                        )
                         if new_keys := expected_flags - current_flags:
                             logger.info(f"Added keys: {new_keys}")
                         if previous_keys := current_flags - expected_flags:
@@ -378,7 +379,7 @@ class Processor:
     def get_zf_headers(self):
         """Build zimfarm headers"""
         return {
-            "Authorization": f"Token {self.zf_access_token}",
+            "Authorization": f"Bearer {self.zf_access_token}",
             "Content-type": "application/json",
         }
 
@@ -387,11 +388,13 @@ class Processor:
         req = requests.post(
             url=self.get_zf_url("/auth/authorize"),
             headers={
-                "username": context.zimfarm_username,
-                "password": context.zimfarm_password,
                 "Content-type": "application/json",
             },
             timeout=context.http_timeout,
+            json={
+                "username": context.zimfarm_username,
+                "password": context.zimfarm_password,
+            },
         )
         req.raise_for_status()
         self.zf_access_token = req.json().get("access_token")

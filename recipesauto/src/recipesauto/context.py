@@ -22,7 +22,7 @@ class Context:
     kind: str
 
     # URL to Zimfarm API
-    zimfarm_api_url: str = "https://api.farm.openzim.org/v1"
+    zimfarm_api_url: str = "https://api.farm.openzim.org/v2"
 
     # Credentials to Zimfarm
     zimfarm_username: str

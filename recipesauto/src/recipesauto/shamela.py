@@ -1,17 +1,11 @@
-from dataclasses import dataclass
-from enum import Enum
-import json
-from pathlib import Path
+# ruff: noqa: E501
 import re
-import shutil
 from typing import Any
-import zipfile
-from bs4 import BeautifulSoup
 
 import requests
+from bs4 import BeautifulSoup
 
 from recipesauto.context import Context
-from recipesauto.constants import logger
 from recipesauto.utils import check_zim_name
 
 context = Context.get()
@@ -230,8 +224,7 @@ def get_recipe_tag() -> str:
 
 
 def _get_category_include_regex(category: int):
-
-    resp = requests.get(f"https://shamela.ws/category/{category}")
+    resp = requests.get(f"https://shamela.ws/category/{category}", timeout=30)
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "lxml")
@@ -247,13 +240,12 @@ def _get_category_include_regex(category: int):
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
-
     return [
         {
             "category": "other",
             "config": {
                 "artifacts_globs": ["**/*.warc.gz"],
-                "flags": {
+                "offliner": {
                     "adminEmail": "contact+zimfarm@kiwix.org",
                     "custom-css": "https://drive.farm.openzim.org/zimit_custom_css/shamela.ws.css",
                     "description": category_data["description"],
@@ -275,6 +267,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "workers": "4",
                     "zim-lang": "ara",
                     "zimit-progress-file": "/output/task_progress.json",
+                    "offliner_id": "zimit",
                 },
                 "image": {
                     "name": "ghcr.io/openzim/zimit",
@@ -288,17 +281,12 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "memory": 4294967296,
                     "shm": 1073741824,
                 },
-                "task_name": "zimit",
                 "warehouse_path": (
                     "/zimit" if category_data.get("in_prod", False) else "/.hidden/dev"
                 ),
             },
             "enabled": False,
-            "language": {
-                "code": "ar",
-                "name_en": "Arabic",
-                "name_native": "العربية",
-            },
+            "language": "ara",
             "name": f"shamela.ws_ar_{category_key}-{category_data['number']}",
             "periodicity": (
                 "quarterly" if category_data.get("in_prod", False) else "manually"
@@ -312,7 +300,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     ]
 
 
-def _is_needed(category_key: Any, category_data: Any) -> bool:
+def _is_needed(category_key: Any, category_data: Any) -> bool:  # noqa
     return True
     # return category_data["number"] in [1, 2, 3, 4, 5, 6, 34]
     # return category_data["number"] == 1
