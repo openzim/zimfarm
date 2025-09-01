@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
     OptionalSecretUrl,
     OptionalZIMDescription,
+    OptionalZIMProgressFile,
     OptionalZIMTitle,
 )
 
@@ -97,4 +98,9 @@ class GutenbergFlagsSchema(DashModel):
     publisher: OptionalNotEmptyString = OptionalField(
         title="Publisher",
         description="Custom publisher name (ZIM metadata). “openZIM” otherwise",
+    )
+
+    stats_filename: OptionalZIMProgressFile = OptionalField(
+        title="Stats filename",
+        description="Scraping progress file. Leave it as `/output/task_progress.json`",
     )
