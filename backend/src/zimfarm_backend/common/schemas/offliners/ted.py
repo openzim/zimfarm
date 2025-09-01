@@ -1,11 +1,13 @@
+import re
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import (
     Field,
     ValidationInfo,
     WrapValidator,
     field_validator,
+    model_validator,
 )
 
 from zimfarm_backend.common.schemas import DashModel
@@ -39,7 +41,8 @@ class TedFlagsSchema(DashModel):
         title="Topics",
         description=(
             "Comma-separated list of topics to scrape; as given on ted.com/talks. "
-            "Pass all for all topics"
+            "Pass all for all topics. Exclusive with playlists and links, only one "
+            "must be set."
         ),
     )
 
@@ -47,7 +50,16 @@ class TedFlagsSchema(DashModel):
         title="TED Playlists",
         description=(
             "Comma-separated list of TED playlist IDs to scrape. Pass all for all "
-            "playlists"
+            "playlists. Exclusive with topics and links, only one must set."
+        ),
+    )
+
+    links: OptionalNotEmptyString = OptionalField(
+        title="Links",
+        description=(
+            "Comma-separated TED talk URLs to scrape, each in the format: "
+            "https://www.ted.com/talks/<talk_slug>. Exclusive with topics and "
+            "playlists, only one must be set."
         ),
     )
 
@@ -177,10 +189,58 @@ class TedFlagsSchema(DashModel):
         description="The locale to use for the translations in ZIM",
     )
 
+    language_threshold: float | None = OptionalField(
+        title="Language Threshold",
+        description=(
+            "Add language in ZIM metadata only if present in at least "
+            "this percentage of videos. Number between 0 and 1. "
+            "Defaults to 0.5: language must be used in 50% of videos to be considered "
+            "as ZIM language."
+        ),
+        ge=0,
+        le=1,
+    )
+
     @field_validator("languages", mode="after")
     @classmethod
-    def validate_languages(cls, value: str, info: ValidationInfo) -> str:
+    def validate_languages(cls, value: str | None, info: ValidationInfo) -> str | None:
         """Validate that comma-seperated languages are all ISO 693-3 compliant."""
+        if value is None:
+            return value
         for code in value.split(","):
             validate_language_code(code, info)
         return value
+
+    @field_validator("links", mode="after")
+    @classmethod
+    def validate_links(cls, value: str | None, info: ValidationInfo) -> str | None:
+        if value is None:
+            return value
+
+        context = info.context
+        if context and context.get("skip_validation"):
+            return value
+
+        for link in value.split(","):
+            if not re.match(r"^https://www\.ted\.com/talks/[a-zA-Z0-9_-]+$", link):
+                raise ValueError(f"Invalid TED talk URL: '{link}'")
+        return value
+
+    @model_validator(mode="after")
+    def check_exclusive_fields(self, info: ValidationInfo) -> Self:
+        context = info.context
+        if context and context.get("skip_validation"):
+            return self
+
+        set_fields = [
+            name
+            for name in ("links", "topics", "playlists")
+            if getattr(self, name) is not None
+        ]
+
+        if len(set_fields) != 1:
+            raise ValueError(
+                "One and only one of 'links', 'topics', or 'playlists' must be set"
+            )
+
+        return self
