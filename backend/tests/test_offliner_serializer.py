@@ -135,7 +135,7 @@ def test_mw_offliner_schema_to_flags():
         elif key in ("speed",):
             assert flag.type == "float"
             assert flag.choices is None
-        elif key in ("mwUrl", "articleList", "articleListToIgnore", "customZimFavicon"):
+        elif key in ("mwUrl", "customZimFavicon"):
             assert flag.type == "url"
             assert flag.choices is None
         else:
