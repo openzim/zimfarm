@@ -1,5 +1,4 @@
 import sys
-import tempfile
 
 from recipesauto.constants import logger
 from recipesauto.entrypoint import prepare_context
@@ -7,7 +6,6 @@ from recipesauto.entrypoint import prepare_context
 
 def main():
     try:
-
         prepare_context(sys.argv[1:])
 
         # import this only once the Context has been initialized, so that it gets an

@@ -1,16 +1,17 @@
-from dataclasses import dataclass
-from enum import Enum
+# ruff: noqa: E501,RUF001,PLR2004
 import json
-from pathlib import Path
 import re
 import shutil
-from typing import Any
 import zipfile
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Any
 
 import requests
 
-from recipesauto.context import Context
 from recipesauto.constants import logger
+from recipesauto.context import Context
 from recipesauto.utils import check_zim_name
 
 context = Context.get()
@@ -220,7 +221,6 @@ def get_recipe_tag() -> str:
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
-
     work_folder = Path("fcc_work")
     if work_folder.exists():
         shutil.rmtree(work_folder)
@@ -239,7 +239,6 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     del resp
 
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        count = 0
         for member in zip_ref.namelist():
             if not member.endswith("/") and (
                 member.startswith("freeCodeCamp-main/curriculum/challenges/_meta")
@@ -266,7 +265,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             )
         )
 
-    curriculum_ts = list(extract_folder.rglob("**/curriculum.ts"))[0]
+    curriculum_ts = next(iter(extract_folder.rglob("**/curriculum.ts")))
 
     # map enum to slug, e.g. RespWebDesignNew => 2022/responsive-web-design
     curriculum_map: dict[str, str] = {}
@@ -318,11 +317,13 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             if match := re.match(r".*SuperBlocks\.(.*),.*", line):
                 superblock = match.group(1)
                 if superblock not in curriculum_map:
-                    print(curriculum_map)
+                    logger.info(curriculum_map)
                     raise Exception(
                         f"Unknown superblock found in curriculum.ts: '{superblock}'"
                     )
-                not_audited_curriculum[current_language].append(
+                not_audited_curriculum[
+                    current_language
+                ].append(  # pyright: ignore[reportArgumentType]
                     curriculum_map[superblock]
                 )
         if is_super_blocks_enum:
@@ -333,14 +334,15 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         {
             "category": "freecodecamp",
             "config": {
-                "flags": {
+                "offliner": {
+                    "offliner_id": "freecodecamp",
                     "course": ",".join(
                         course.dashed_name
                         for course in sorted(
                             curriculum.courses, key=lambda course: course.order
                         )
                         # take-home-projects are not yet supported
-                        if not course.dashed_name in ["take-home-projects"]
+                        if course.dashed_name not in ["take-home-projects"]
                     ),
                     "debug": True,
                     "description": _get_description(
@@ -369,7 +371,6 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 536870912,
                     "memory": 2147483648,
                 },
-                "task_name": "freecodecamp",
                 "warehouse_path": "/freecodecamp",
             },
             "enabled": True,
@@ -388,7 +389,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         {
             "category": "freecodecamp",
             "config": {
-                "flags": {
+                "offliner": {
                     "course": ",".join(
                         course.dashed_name
                         for curriculum in curriculums.values()
@@ -399,7 +400,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                             curriculum.courses, key=lambda course: course.order
                         )
                         # take-home-projects are not yet supported
-                        if not course.dashed_name in ["take-home-projects"]
+                        if course.dashed_name not in ["take-home-projects"]
                     ),
                     "debug": True,
                     "description": _get_all_description(language=language),
@@ -409,6 +410,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "output": "/output",
                     "publisher": "openZIM",
                     "title": _get_all_title(language=language),
+                    "offliner_id": "freecodecamp",
                 },
                 "image": {
                     "name": "ghcr.io/openzim/freecodecamp",
@@ -421,7 +423,6 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 536870912,
                     "memory": 2147483648,
                 },
-                "task_name": "freecodecamp",
                 "warehouse_path": "/freecodecamp",
             },
             "enabled": True,
@@ -441,61 +442,29 @@ class UndefinedMetadataError(Exception):
     pass
 
 
-def _get_zf_language(language: SpokenLanguage) -> dict[str, str]:
+def _get_zf_language(language: SpokenLanguage) -> str:
     if language == SpokenLanguage.CHINESE:
         raise NotImplementedError()
     elif language == SpokenLanguage.CHINESE_TRADITIONAL:
         raise NotImplementedError()
     elif language == SpokenLanguage.ENGLISH:
-        return {
-            "code": "en",
-            "name_en": "English",
-            "name_native": "English",
-        }
+        return "eng"
     elif language == SpokenLanguage.ESPANOL:
-        return {
-            "code": "es",
-            "name_en": "Spanish",
-            "name_native": "español",
-        }
+        return "spa"
     elif language == SpokenLanguage.GERMAN:
-        return {
-            "code": "de",
-            "name_en": "German",
-            "name_native": "Deutsch",
-        }
+        return "deu"
     elif language == SpokenLanguage.ITALIAN:
-        return {
-            "code": "it",
-            "name_en": "Italian",
-            "name_native": "italiano",
-        }
+        return "ita"
     elif language == SpokenLanguage.JAPANESE:
-        return {
-            "code": "ja",
-            "name_en": "Japanese",
-            "name_native": "日本語",
-        }
+        return "jpn"
     elif language == SpokenLanguage.KOREAN:
         raise NotImplementedError()
     elif language == SpokenLanguage.PORTUGUESE:
-        return {
-            "code": "pt",
-            "name_en": "Portuguese",
-            "name_native": "português",
-        }
+        return "por"
     elif language == SpokenLanguage.SWAHILI:
-        return {
-            "code": "sw",
-            "name_en": "Swahili",
-            "name_native": "Kiswahili",
-        }
+        return "swa"
     elif language == SpokenLanguage.UKRANIAN:
-        return {
-            "code": "uk",
-            "name_en": "Ukrainian",
-            "name_native": "українська",
-        }
+        return "ukr"
 
 
 def _get_name(curriculum: Curriculum, language: SpokenLanguage) -> str:
@@ -520,7 +489,7 @@ def _get_illustration(curriculum: Curriculum) -> str:
     elif curriculum.dashed_name == "coding-interview-prep":
         return "https://github.com/openzim/freecodecamp/raw/refs/heads/main/zimui/src/assets/icon_coding_interview.svg"
     else:
-        raise Exception(f"Unsupported dashed name: {curriculum.dashed_name }")
+        raise Exception(f"Unsupported dashed name: {curriculum.dashed_name}")
 
 
 def _get_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
@@ -573,23 +542,23 @@ def _get_zim_name_lang(language: SpokenLanguage) -> str:
     elif language == SpokenLanguage.CHINESE_TRADITIONAL:
         raise UndefinedMetadataError
     elif language == SpokenLanguage.ENGLISH:
-        return "en"
+        return "eng"
     elif language == SpokenLanguage.ESPANOL:
-        return "es"
+        return "spa"
     elif language == SpokenLanguage.GERMAN:
-        return "de"
+        return "deu"
     elif language == SpokenLanguage.ITALIAN:
-        return "it"
+        return "ita"
     elif language == SpokenLanguage.JAPANESE:
-        return "ja"
+        return "jpn"
     elif language == SpokenLanguage.KOREAN:
-        return "ko"
+        return "kor"
     elif language == SpokenLanguage.PORTUGUESE:
-        return "pt"
+        return "por"
     elif language == SpokenLanguage.SWAHILI:
-        return "sw"
+        return "swa"
     elif language == SpokenLanguage.UKRANIAN:
-        return "ua"
+        return "ukr"
     else:
         raise UndefinedMetadataError
 

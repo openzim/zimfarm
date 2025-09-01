@@ -1,16 +1,8 @@
-from dataclasses import dataclass
-from enum import Enum
-import json
-from pathlib import Path
-import re
-import shutil
 from typing import Any
-import zipfile
 
 import requests
 
 from recipesauto.context import Context
-from recipesauto.constants import logger
 from recipesauto.utils import check_zim_name
 
 context = Context.get()
@@ -28,7 +20,6 @@ def _ignore_locale(locale: str) -> bool:
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
-
     resp = requests.get(
         "https://phet.colorado.edu/services/metadata/1.3/simulations?format=json&summary",
         allow_redirects=True,
@@ -56,7 +47,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         {
             "category": "phet",
             "config": {
-                "flags": {
+                "offliner": {
                     "includeLanguages": locale,
                     "withoutLanguageVariants": True,
                 },
@@ -65,23 +56,17 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "tag": "3.1.0",
                 },
                 "monitor": False,
-                "platform": None,
                 "resources": {
                     "cpu": 3,
                     "disk": 10737418240,
                     "memory": 7516192768,
                 },
-                "task_name": "phet",
+                "offliner_id": "phet",
                 "platform": "phet",
                 "warehouse_path": "/phet",
             },
             "enabled": True,
-            # TODO: use proper language, but this is a pain to do because of name_en + name_native + already existing values in ZF DB
-            "language": {
-                "code": "mul",
-                "name_en": "Multiple Languages",
-                "name_native": "Multiple Languages",
-            },
+            "language": "mul",
             "name": check_zim_name(_get_name(locale)),
             "periodicity": "quarterly",
             "tags": [
@@ -94,7 +79,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         {
             "category": "phet",
             "config": {
-                "flags": {
+                "offliner": {
                     "mulOnly": True,
                     "withoutLanguageVariants": True,
                 },
@@ -103,22 +88,17 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "tag": "3.1.0",
                 },
                 "monitor": False,
-                "platform": None,
                 "resources": {
                     "cpu": 3,
                     "disk": 10737418240,
                     "memory": 7516192768,
                 },
-                "task_name": "phet",
+                "offliner_id": "phet",
                 "platform": "phet",
                 "warehouse_path": "/phet",
             },
             "enabled": True,
-            "language": {
-                "code": "mul",
-                "name_en": "Multiple Languages",
-                "name_native": "Multiple Languages",
-            },
+            "language": "mul",
             "name": check_zim_name(_get_name("mul")),
             "periodicity": "quarterly",
             "tags": [

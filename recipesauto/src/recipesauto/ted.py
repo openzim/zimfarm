@@ -53,7 +53,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         {
             "category": "ted",
             "config": {
-                "flags": {
+                "offliner": {
                     "description": f"A collection of TED videos about {topic}",
                     "title": f"TED {topic}",
                     "topics": topic,
@@ -65,6 +65,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "tmp-dir": "/output",
                     "subtitles": "all",
                     "publisher": "openZIM",
+                    "offliner_id": "ted",
                 },
                 "image": {
                     "name": "ghcr.io/openzim/ted",
@@ -77,15 +78,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 32212254720,
                     "memory": 2147483648,
                 },
-                "task_name": "ted",
                 "warehouse_path": "/ted",
             },
             "enabled": True,
-            "language": {
-                "code": "mul",
-                "name_en": "Multiple Languages",
-                "name_native": "Multiple Languages",
-            },
+            "language": "mul",
             "name": f"ted_topic_{_get_clean_topic_name(topic)}",
             "periodicity": "quarterly",
             "tags": [
