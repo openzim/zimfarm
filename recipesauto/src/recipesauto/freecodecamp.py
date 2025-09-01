@@ -1,4 +1,3 @@
-# ruff: noqa: E501,RUF001,PLR2004
 import json
 import re
 import shutil
@@ -10,7 +9,12 @@ from typing import Any
 
 import requests
 
-from recipesauto.constants import logger
+from recipesauto.constants import (
+    DESCRIPTION_MAX_LEN,
+    LONG_DESCRIPTION_MAX_LEN,
+    TITLE_MAX_LEN,
+    logger,
+)
 from recipesauto.context import Context
 from recipesauto.utils import check_zim_name
 
@@ -71,7 +75,8 @@ static_data = {
     "freecodecamp_ja_all": {
         "title": "FreeCodeCamp",
         "description": "すべてのFreeCodeCampコース",
-        "long_description": "すべてのFreeCodeCampコースでトレーニングし、学びましょう。",
+        "long_description": "すべてのFreeCodeCampコースでトレーニングし、学びましょ"
+        "う。",
     },
     "freecodecamp_pt_all": {
         "title": "FreecodeCamp",
@@ -80,7 +85,7 @@ static_data = {
     },
     "freecodecamp_ua_all": {
         "title": "FreeCodeCamp",
-        "description": "Усі курси FreeCodeCamp",
+        "description": "Усі курси FreeCodeCamp",  # noqa: RUF001
         "long_description": "Тренуйтеся та навчайтеся з усіма курсами FreeCodeCamp.",
     },
     "freecodecamp_sw_all": {
@@ -91,127 +96,181 @@ static_data = {
     "freecodecamp_en_javascript-algorithms-and-data-structures": {
         "title": "FreeCodeCamp JavaScript",
         "description": "JavaScript courses",
-        "long_description": "In the JavaScript Algorithm and Data Structures Certification, you'll learn the fundamentals of JavaScript including variables, arrays, objects, loops, and functions.",
+        "long_description": "In the JavaScript Algorithm and Data Structures "
+        "Certification, you'll learn the fundamentals of JavaScript including "
+        "variables, arrays, objects, loops, and functions.",
     },
     "freecodecamp_es_javascript-algorithms-and-data-structures": {
         "title": "FreeCodeCamp JavaScript",
         "description": "Cursos de JavaScript",
-        "long_description": "En la Certificación de estructuras de datos y algoritmos de JavaScript, aprenderá los fundamentos de JavaScript, incluidas variables, matrices, objetos, bucles y funciones.",
+        "long_description": "En la Certificación de estructuras de datos y algoritmos "
+        "de JavaScript, aprenderá los fundamentos de JavaScript, incluidas variables, "
+        "matrices, objetos, bucles y funciones.",
     },
     "freecodecamp_de_javascript-algorithms-and-data-structures": {
         "title": "FreeCodeCamp JavaScript",
         "description": "JavaScript-Kurse",
-        "long_description": "In der Zertifizierung „JavaScript-Algorithmus und Datenstrukturen“ lernen Sie die Grundlagen von JavaScript, einschließlich Variablen, Arrays, Objekte, Schleifen und Funktionen.",
+        "long_description": "In der Zertifizierung „JavaScript-Algorithmus und "
+        "Datenstrukturen“ lernen Sie die Grundlagen von JavaScript, einschließlich "
+        "Variablen, Arrays, Objekte, Schleifen und Funktionen.",
     },
     "freecodecamp_it_javascript-algorithms-and-data-structures": {
         "title": "FreeCodeCamp JavaScript",
         "description": "Corsi JavaScript",
-        "long_description": "Nella certificazione sugli algoritmi JavaScript e sulle strutture dati imparerai i fondamenti di JavaScript, tra cui variabili, array, oggetti, loop e funzioni.",
+        "long_description": "Nella certificazione sugli algoritmi JavaScript e sulle "
+        "strutture dati imparerai i fondamenti di JavaScript, tra cui variabili, "
+        "array, oggetti, loop e funzioni.",
     },
     "freecodecamp_ja_javascript-algorithms-and-data-structures": {
         "title": "FreeCodeCamp JavaScript",
         "description": "JavaScriptコース",
-        "long_description": "JavaScript アルゴリズムおよびデータ構造認定では、変数、配列、オブジェクト、ループ、関数などの JavaScript の基礎を学びます",
+        "long_description": "JavaScript アルゴリズムおよびデータ構造認定では、"
+        "変数、配列、オブジェクト、ループ、関数などの "
+        "JavaScript の基礎を学びます",
     },
     "freecodecamp_pt_javascript-algorithms-and-data-structures": {
         "title": "FreecodeCamp JavaScript",
         "description": "Cursos JavaScript",
-        "long_description": "Na Certificação de Algoritmo JavaScript e Estruturas de Dados, você aprenderá os fundamentos do JavaScript, incluindo variáveis, arrays, objetos, loops e funções.",
+        "long_description": "Na Certificação de Algoritmo JavaScript e Estruturas de "
+        "Dados, você aprenderá os fundamentos do JavaScript, incluindo variáveis, "
+        "arrays, objetos, loops e funções.",
     },
     "freecodecamp_ua_javascript-algorithms-and-data-structures": {
         "title": "FreeCodeCamp JavaScript",
         "description": "Курси Javascript",
-        "long_description": "Під час сертифікації JavaScript Algorithm and Data Structures Certification ви дізнаєтесь про основи JavaScript, зокрема про змінні, масиви, об’єкти, цикли та функції.",
+        "long_description": "Під час сертифікації JavaScript Algorithm and Data "
+        "Structures Certification ви дізнаєтесь про основи JavaScript, зокрема "
+        "про змінні, масиви, об’єкти, цикли та функції.",  # noqa: RUF001
     },
     "freecodecamp_en_coding-interview-prep": {
         "title": "FreeCodeCamp Interview Prep",
         "description": "Coding exercises",
-        "long_description": "Dozens of coding challenges that test your knowledge of algorithms, data structures, and mathematics. It also has a number of take-home projects you can use to strengthen your skills, or add to your portfolio.",
+        "long_description": "Dozens of coding challenges that test your knowledge of "
+        "algorithms, data structures, and mathematics. It also has a number of "
+        "take-home projects you can use to strengthen your skills, or add to your "
+        "portfolio.",
     },
     "freecodecamp_it_coding-interview-prep": {
         "title": "Intervista di FreeCodeCamp",
         "description": "Esercizi di codifica",
-        "long_description": "Decine di sfide di codifica che mettono alla prova la tua conoscenza di algoritmi, strutture dati e matematica. Ha anche una serie di progetti da portare a casa che puoi utilizzare per rafforzare le tue capacità o aggiungere al tuo portfolio.",
+        "long_description": "Decine di sfide di codifica che mettono alla prova la "
+        "tua conoscenza di algoritmi, strutture dati e matematica. Ha anche una serie "
+        "di progetti da portare a casa che puoi utilizzare per rafforzare le tue "
+        "capacità o aggiungere al tuo portfolio.",
     },
     "freecodecamp_ja_coding-interview-prep": {
         "title": "FreeCodeCamp の面接準備",
         "description": "コーディング演習",
-        "long_description": "アルゴリズム、データ構造、数学の知識をテストする数十のコーディング課題。また、スキルを強化したり、ポートフォリオに追加したりできる、持ち帰り用のプロジェクトも多数あります",
+        "long_description": "アルゴリズム、データ構造、数学の知識をテストする数十のコー"
+        "ディング課題。また、スキルを強化したり、ポートフォリオに"
+        "追加したりできる、持ち帰り用のプロジェクトも多数あります",
     },
     "freecodecamp_pt_coding-interview-prep": {
         "title": "Entrevista FreeCodeCamp",
         "description": "Exercícios de codificação",
-        "long_description": "Dezenas de desafios de codificação que testam seu conhecimento de algoritmos, estruturas de dados e matemática. Ele também possui vários projetos para levar para casa que você pode usar para fortalecer suas habilidades ou adicionar ao seu portfólio.",
+        "long_description": "Dezenas de desafios de codificação que testam seu "
+        "conhecimento de algoritmos, estruturas de dados e matemática. Ele também "
+        "possui vários projetos para levar para casa que você pode usar para "
+        "fortalecer suas habilidades ou adicionar ao seu portfólio.",
     },
     "freecodecamp_ua_coding-interview-prep": {
-        "title": "Iнтерв’ю FreeCodeCamp",
+        "title": "Iнтерв’ю FreeCodeCamp",  # noqa: RUF001
         "description": "Вправи з кодування",
-        "long_description": "Десятки завдань кодування, які перевіряють ваші знання алгоритмів, структур даних і математики. У ньому також є кілька проектів, які можна використати для вдосконалення ваших навичок або додати до свого портфоліо.",
+        "long_description": "Десятки завдань кодування, які перевіряють ваші знання "
+        "алгоритмів, структур даних і математики. У ньому також є кілька проектів, "  # noqa: RUF001
+        "які можна використати для вдосконалення ваших навичок або додати до свого "  # noqa: RUF001
+        "портфоліо.",
     },
     "freecodecamp_en_project-euler": {
         "title": "Project Euler",
         "description": "Programming challenges",
-        "long_description": "These problems will harden your algorithm and mathematics knowledge. They range in difficulty and, for many, the experience is inductive chain learning as solving one problem will expose you to a new concept that allows you to undertake a previously inaccessible challenge",
+        "long_description": "These problems will harden your algorithm and mathematics"
+        " knowledge. They range in difficulty and, for many, the experience is "
+        "inductive chain learning as solving one problem will expose you to a new "
+        "concept that allows you to undertake a previously inaccessible challenge",
     },
     "freecodecamp_it_project-euler": {
         "title": "Progetto Eulero",
         "description": "Sfide di programmazione",
-        "long_description": "Questi problemi rafforzeranno le tue conoscenze di algoritmi e matematica. Variano in termini di difficoltà e, per molti, l'esperienza è un apprendimento a catena induttivo poiché risolvere un problema ti esporrà a un nuovo concetto che ti consentirà di intraprendere una sfida precedentemente inaccessibile",
+        "long_description": "Questi problemi rafforzeranno le tue conoscenze di "
+        "algoritmi e matematica. Variano in termini di difficoltà e, per molti, "
+        "l'esperienza è un apprendimento a catena induttivo poiché risolvere un "
+        "problema ti esporrà a un nuovo concetto che ti consentirà di intraprendere "
+        "una sfida precedentemente inaccessibile",
     },
     "freecodecamp_ja_project-euler": {
         "title": "プロジェクト・オイラー",
         "description": "プログラミングの課題",
-        "long_description": "これらの問題は、アルゴリズムと数学の知識を強化します。難易度はさまざまで、多くの人にとって、1 つの問題を解決することで、これまでアクセスできなかった課題に取り組むことができる新しい概念に触れることができるため、その経験は帰納的連鎖学習です。",
+        "long_description": "これらの問題は、アルゴリズムと数学の知識を強化します。"
+        "難易度はさまざまで、多くの人にとって、1 つの問題を解決することで、これまでア"
+        "クセスできなかった課題"
+        "に取り組むことができる新しい概念に触れることができるため、その経験は帰納的連鎖学習です。",
     },
     "freecodecamp_pt_project-euler": {
         "title": "Projeto Euler",
         "description": "Desafios de programação",
-        "long_description": "Esses problemas fortalecerão seu algoritmo e conhecimento matemático. Eles variam em dificuldade e, para muitos, a experiência é uma aprendizagem em cadeia indutiva, pois a resolução de um problema irá expô-lo a um novo conceito que lhe permitirá enfrentar um desafio anteriormente inacessível.",
+        "long_description": "Esses problemas fortalecerão seu algoritmo e conhecimento"
+        " matemático. Eles variam em dificuldade e, para muitos, a experiência é uma "
+        "aprendizagem em cadeia indutiva, pois a resolução de um problema irá expô-lo "
+        "a um novo conceito que lhe permitirá enfrentar um desafio anteriormente "
+        "inacessível.",
     },
     "freecodecamp_ua_project-euler": {
         "title": "Проект Ейлера",
         "description": "Проблеми програмування",
-        "long_description": "Ці завдання зміцнять ваш алгоритм і знання математики. Вони різняться за складністю, і для багатьох досвід є індуктивним ланцюговим навчанням, оскільки розв’язання однієї проблеми відкриє вам нову концепцію, яка дозволить вам взятися за завдання, яке раніше було недоступним",
+        "long_description": "Ці завдання зміцнять ваш алгоритм і знання математики. "  # noqa: RUF001
+        "Вони різняться за складністю, і для багатьох досвід є індуктивним ланцюговим "  # noqa: RUF001
+        "навчанням, оскільки розв’язання однієї проблеми відкриє вам нову концепцію, "  # noqa: RUF001
+        "яка дозволить вам взятися за завдання, яке раніше було недоступним",
     },
     "freecodecamp_en_rosetta-code": {
         "title": "Rosetta Code",
         "description": "Level up your creative problem solving skills",
-        "long_description": "These challenges can prove to be difficult, but they will push your algorithm logic to new heights.",
+        "long_description": "These challenges can prove to be difficult, but they "
+        "will push your algorithm logic to new heights.",
     },
     "freecodecamp_es_rosetta-code": {
         "title": "Código Rosetta",
         "description": "Mejora tus habilidades creativas para resolver problemas",
-        "long_description": "Estos desafíos pueden resultar difíciles, pero llevarán la lógica de su algoritmo a nuevas alturas.",
+        "long_description": "Estos desafíos pueden resultar difíciles, pero llevarán "
+        "la lógica de su algoritmo a nuevas alturas.",
     },
     "freecodecamp_de_rosetta-code": {
         "title": "Rosetta-Code",
         "description": "Verbessern Sie Ihre kreativen Fähigkeiten zur Problemlösung",
-        "long_description": "Diese Herausforderungen können sich als schwierig erweisen, aber sie werden Ihre Algorithmuslogik auf ein neues Niveau heben.",
+        "long_description": "Diese Herausforderungen können sich als schwierig "
+        "erweisen, aber sie werden Ihre Algorithmuslogik auf ein neues Niveau heben.",
     },
     "freecodecamp_ja_rosetta-code": {
         "title": "ロゼッタコード",
         "description": "創造的な問題解決スキルをレベルアップする",
-        "long_description": "これらの課題は難しいことが判明する可能性がありますが、アルゴリズムのロジックを新たな高みに押し上げるでしょう。",
+        "long_description": "これらの課題は難しいことが判明する可能性がありますが、"
+        "アルゴリズムのロジックを新たな高みに押し上げるでしょう。",
     },
     "freecodecamp_pt_rosetta-code": {
         "title": "Código Roseta",
-        "description": "Aumente o nível de suas habilidades criativas de resolução de problemas",
-        "long_description": "Esses desafios podem ser difíceis, mas levarão a lógica do seu algoritmo a novos patamares.",
+        "description": "Aumente o nível de suas habilidades criativas de resolução "
+        "de problemas",
+        "long_description": "Esses desafios podem ser difíceis, mas levarão a lógica "
+        "do seu algoritmo a novos patamares.",
     },
     "freecodecamp_sw_rosetta-code": {
         "title": "Kanuni ya Rosetta",
         "description": "Ongeza ujuzi wako wa ubunifu wa kutatua matatizo",
-        "long_description": "Changamoto hizi zinaweza kuwa ngumu, lakini zitasukuma mantiki yako ya algorithm kufikia urefu mpya.",
+        "long_description": "Changamoto hizi zinaweza kuwa ngumu, lakini zitasukuma "
+        "mantiki yako ya algorithm kufikia urefu mpya.",
     },
     "freecodecamp_ua_rosetta-code": {
         "title": "Кодекс Розетти",
         "description": "Розвивайте свої навички творчого вирішення проблем",
-        "long_description": "Ці виклики можуть виявитися складними, але вони піднімуть логіку вашого алгоритму на нові висоти.",
+        "long_description": "Ці виклики можуть виявитися складними, але вони піднімуть"
+        " логіку вашого алгоритму на нові висоти.",
     },
     "freecodecamp_it_rosetta-code": {
         "title": "Codice Rosetta",
         "description": "Migliora le tue capacità creative di risoluzione dei problemi",
-        "long_description": "Queste sfide possono rivelarsi difficili, ma spingeranno la logica del tuo algoritmo a nuovi livelli.",
+        "long_description": "Queste sfide possono rivelarsi difficili, ma spingeranno "
+        "la logica del tuo algoritmo a nuovi livelli.",
     },
 }
 
@@ -317,13 +376,13 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             if match := re.match(r".*SuperBlocks\.(.*),.*", line):
                 superblock = match.group(1)
                 if superblock not in curriculum_map:
-                    logger.info(curriculum_map)
+                    logger.debug(curriculum_map)
                     raise Exception(
                         f"Unknown superblock found in curriculum.ts: '{superblock}'"
                     )
-                not_audited_curriculum[
-                    current_language
-                ].append(  # pyright: ignore[reportArgumentType]
+                if not current_language:
+                    raise Exception("current_language cannot be None")
+                not_audited_curriculum[current_language].append(
                     curriculum_map[superblock]
                 )
         if is_super_blocks_enum:
@@ -474,7 +533,7 @@ def _get_name(curriculum: Curriculum, language: SpokenLanguage) -> str:
 def _get_title(curriculum: Curriculum, language: SpokenLanguage) -> str:
     key = _get_name(curriculum=curriculum, language=language)
     title = static_data[key]["title"]
-    if len(title) > 30:
+    if len(title) > TITLE_MAX_LEN:
         logger.warning(f"Title is too long for {key}")
     return title
 
@@ -495,7 +554,7 @@ def _get_illustration(curriculum: Curriculum) -> str:
 def _get_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
     key = _get_name(curriculum=curriculum, language=language)
     description = static_data[key]["description"]
-    if len(description) > 80:
+    if len(description) > DESCRIPTION_MAX_LEN:
         logger.warning(f"Description is too long for {key}")
     return description
 
@@ -503,7 +562,7 @@ def _get_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
 def _get_long_description(curriculum: Curriculum, language: SpokenLanguage) -> str:
     key = _get_name(curriculum=curriculum, language=language)
     long_description = static_data[key]["long_description"]
-    if len(long_description) > 4000:
+    if len(long_description) > LONG_DESCRIPTION_MAX_LEN:
         logger.warning(f"LongDescription is too long for {key}")
     return long_description
 
@@ -515,7 +574,7 @@ def _get_all_name(language: SpokenLanguage) -> str:
 def _get_all_title(language: SpokenLanguage) -> str:
     key = _get_all_name(language=language)
     title = static_data[key]["title"]
-    if len(title) > 30:
+    if len(title) > TITLE_MAX_LEN:
         logger.warning(f"Title is too long for {key}")
     return title
 
@@ -523,7 +582,7 @@ def _get_all_title(language: SpokenLanguage) -> str:
 def _get_all_description(language: SpokenLanguage) -> str:
     key = _get_all_name(language=language)
     description = static_data[key]["description"]
-    if len(description) > 80:
+    if len(description) > DESCRIPTION_MAX_LEN:
         logger.warning(f"Description is too long for {key}")
     return description
 
@@ -531,7 +590,7 @@ def _get_all_description(language: SpokenLanguage) -> str:
 def _get_all_long_description(language: SpokenLanguage) -> str:
     key = _get_all_name(language=language)
     long_description = static_data[key]["long_description"]
-    if len(long_description) > 4000:
+    if len(long_description) > LONG_DESCRIPTION_MAX_LEN:
         logger.warning(f"LongDescription is too long for {key}")
     return long_description
 

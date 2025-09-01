@@ -22,6 +22,11 @@ def _ignore_locale(locale: str) -> bool:
 def get_expected_recipes() -> list[dict[str, Any]]:
     resp = requests.get(
         "https://phet.colorado.edu/services/metadata/1.3/simulations?format=json&summary",
+        headers={
+            "Cookie": "phet-common-info=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+            "eyJsb2dnZWRJbiI6ZmFsc2UsImlhdCI6MTc0OTE5NDk2NiwiZXhwIjoxNzUxODMwMTY2fQ."
+            "FhVrkk4qJsdRmYayQWUoiYEMQZa7qUNAWkA5Nm03iYo"
+        },
         allow_redirects=True,
         timeout=context.http_timeout,
     )
