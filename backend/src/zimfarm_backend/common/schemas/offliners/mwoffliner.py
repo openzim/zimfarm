@@ -181,6 +181,10 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Module Path",
         description="Mediawiki module load path. Otherwise `/w/load.php`.",
     )
+    mwIndexPhpPath: OptionalNotEmptyString = OptionalField(
+        title="index.php path",
+        description="Path to Mediawiki index.php. Otherwise `/w/index.php`.",
+    )
     mwDomain: OptionalNotEmptyString = OptionalField(
         title="User Domain",
         description="Mediawiki user domain (for private wikis)",
