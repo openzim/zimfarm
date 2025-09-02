@@ -5,6 +5,7 @@ import datetime
 import logging
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONPATH
 from sqlalchemy.orm import Session as OrmSession
 
 import zimfarm_backend.db.models as dbm
@@ -85,13 +86,22 @@ def status_to_cancel(
     logger.info(f":: canceling tasks `{status}` for more than {timeout}s")
     ago = now - datetime.timedelta(seconds=timeout)
     tasks = session.execute(
-        sa.select(dbm.Task)
-        .filter(dbm.Task.status == status)
-        .filter(
+        sa.select(dbm.Task).where(
+            dbm.Task.status == status,
             sa.func.to_timestamp(
-                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger) / 1000
+                sa.func.cast(
+                    sa.func.jsonb_path_query_first(
+                        dbm.Task.timestamp,
+                        sa.cast(
+                            f'$[*] ? (@[0] == "{status}")[1]."$date"',
+                            JSONPATH,
+                        ),
+                    ),
+                    sa.BigInteger,
+                )
+                / 1000
             )
-            <= ago
+            <= ago,
         )
     ).scalars()
 
@@ -135,13 +145,22 @@ def staled_statuses(session: OrmSession):
     )
     ago = now - datetime.timedelta(seconds=STALLED_COMPLETED_TIMEOUT)
     tasks = session.execute(
-        sa.select(dbm.Task)
-        .filter(dbm.Task.status == status)
-        .filter(
+        sa.select(dbm.Task).where(
+            dbm.Task.status == status,
             sa.func.to_timestamp(
-                dbm.Task.timestamp[status]["$date"].astext.cast(sa.BigInteger) / 1000
+                sa.cast(
+                    sa.func.jsonb_path_query_first(
+                        dbm.Task.timestamp,
+                        sa.cast(
+                            f'$[*] ? (@[0] == "{status}")[1]."$date"',
+                            JSONPATH,
+                        ),
+                    ),
+                    sa.BigInteger,
+                )
+                / 1000
             )
-            <= ago
+            <= ago,
         )
     ).scalars()
     nb_suceeded_tasks = 0
@@ -192,6 +211,8 @@ def main(session: OrmSession):
     history_cleanup(session)
 
     staled_statuses(session)
+
+    tasks_cleanup(session)
 
 
 if __name__ == "__main__":
