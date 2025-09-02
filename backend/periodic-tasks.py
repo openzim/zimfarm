@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 import zimfarm_backend.db.models as dbm
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import getenv
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.db import Session
 
@@ -30,6 +31,15 @@ STALLED_COMPLETED_TIMEOUT = 24 * ONE_HOUR
 # cancel_request are picked-up during polls and may take a few minutes
 # to be effective and reported
 STALLED_CANCELREQ_TIMEOUT = 30 * ONE_MN
+# tasks older than this are removed
+OLD_TASK_DELETION_THRESHOLD = datetime.timedelta(
+    days=int(getenv("TASKS_OLDER_THAN", default=10))
+)
+# flag to determine whether to remove old tasks
+OLD_TASK_DELETION_ENABLED = (
+    getenv("SHOULD_REMOVE_OLD_TASKS", default="false").lower() == "true"
+)
+
 
 logger = logging.getLogger(NAME)
 logger.setLevel(logging.DEBUG)
@@ -147,6 +157,33 @@ def staled_statuses(session: OrmSession):
             nb_failed_tasks += 1
     logger.info(f"::: succeeded {nb_suceeded_tasks} tasks")
     logger.info(f"::: failed {nb_failed_tasks} tasks")
+
+
+def tasks_cleanup(session: OrmSession):
+    """removes old tasks excluding most recent tasks for schedules"""
+
+    threshold = getnow() - OLD_TASK_DELETION_THRESHOLD
+
+    if not OLD_TASK_DELETION_ENABLED:
+        logger.info(
+            ":: skipping deletion of tasks older than "
+            f"{threshold.isoformat(timespec='seconds')}"
+        )
+        return
+
+    logger.info(
+        f":: deleting tasks older than {threshold.isoformat(timespec='seconds')}"
+    )
+
+    result = session.execute(
+        sa.delete(dbm.Task).where(
+            sa.and_(
+                dbm.Task.updated_at < threshold,
+            )
+        )
+    )
+
+    logger.info(f"::: deleted {result.rowcount} tasks.")
 
 
 def main(session: OrmSession):
