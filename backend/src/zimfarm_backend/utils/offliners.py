@@ -28,12 +28,12 @@ class OfflinerDefinition(NamedTuple):
 
 OFFLINER_DEFS: dict[Offliner, OfflinerDefinition] = {
     Offliner.freecodecamp: OfflinerDefinition("fcc2zim", True, False),
-    Offliner.gutenberg: OfflinerDefinition("gutenberg2zim", False, False),
+    Offliner.gutenberg: OfflinerDefinition("gutenberg2zim", False, True),
     Offliner.sotoki: OfflinerDefinition("sotoki", True, True),
     Offliner.wikihow: OfflinerDefinition("wikihow2zim", True, True),
     Offliner.ifixit: OfflinerDefinition("ifixit2zim", True, True),
     Offliner.mwoffliner: OfflinerDefinition("mwoffliner", "outputDirectory", False),
-    Offliner.youtube: OfflinerDefinition("youtube2zim", True, False),
+    Offliner.youtube: OfflinerDefinition("youtube2zim", True, True),
     Offliner.ted: OfflinerDefinition("ted2zim", True, False),
     Offliner.openedx: OfflinerDefinition("openedx2zim", True, False),
     Offliner.nautilus: OfflinerDefinition("nautiluszim", True, False),
