@@ -236,7 +236,10 @@ def test_language_code_validator_skips_validation_when_context_set():
 def test_ted_flags_schema(languages: str, expected: RaisesContext[Exception]):
     with expected:
         TedFlagsSchema(
-            name="ted-talks_mul_football", offliner_id="ted", languages=languages
+            name="ted-talks_mul_football",
+            offliner_id="ted",
+            languages=languages,
+            topics="football",
         )
 
 
@@ -249,4 +252,106 @@ def test_ted_flags_schema_skips_validation_when_context_set():
                 "languages": "invalid",
             },
             context={"skip_validation": True},
+        )
+
+
+@pytest.mark.parametrize(
+    "links,topics,playlists,expected",
+    [
+        pytest.param(
+            "https://www.ted.com/talks/football",
+            None,
+            None,
+            does_not_raise(),
+            id="only-links-set",
+        ),
+        pytest.param(
+            None,
+            "football,soccer,sports",
+            None,
+            does_not_raise(),
+            id="only-topics-set",
+        ),
+        pytest.param(
+            None,
+            None,
+            "football,soccer,sports",
+            does_not_raise(),
+            id="only-playlists-set",
+        ),
+        pytest.param(None, None, None, pytest.raises(ValidationError), id="none-set"),
+        pytest.param(
+            "https://www.ted.com/talks/test",
+            "science",
+            None,
+            pytest.raises(ValidationError),
+            id="links-and-topics-set",
+        ),
+        pytest.param(
+            "https://www.ted.com/talks/test",
+            None,
+            "playlist1",
+            pytest.raises(ValidationError),
+            id="links-and-playlists-set",
+        ),
+        pytest.param(
+            None,
+            "science",
+            "playlist1",
+            pytest.raises(ValidationError),
+            id="topics-and-playlists-set",
+        ),
+        pytest.param(
+            "https://www.ted.com/talks/test",
+            "science",
+            "playlist1",
+            pytest.raises(ValidationError),
+            id="links-topics-playlist-set",
+        ),
+    ],
+)
+def test_ted_flags_schema_fields_exclusivity(
+    links: str, topics: str, playlists: str, expected: RaisesContext[Exception]
+):
+    with expected:
+        TedFlagsSchema(
+            links=links,
+            topics=topics,
+            playlists=playlists,
+            offliner_id="ted",
+            name="ted-talks_mul_football",
+        )
+
+
+@pytest.mark.parametrize(
+    "links,expected",
+    [
+        pytest.param(
+            "https://www.ted.com/talks/football",
+            does_not_raise(),
+            id="valid-link",
+        ),
+        pytest.param(
+            "https://www.ted.com/talks/football&",
+            pytest.raises(ValidationError),
+            id="invalid-link-with-ampersand",
+        ),
+        pytest.param(
+            "https://www.ted.com/talks/football&,https://www.ted.com/talks/football",
+            pytest.raises(ValidationError),
+            id="invalid-link-with-valid-link",
+        ),
+        pytest.param(
+            "https://www.ted.com/talks/test,https://www.ted.com/talks/test",
+            does_not_raise(),
+            id="multiple-valid-links",
+        ),
+    ],
+)
+def test_ted_flags_schema_links(links: str, expected: RaisesContext[Exception]):
+    with expected:
+        TedFlagsSchema(
+            links=links,
+            offliner_id="ted",
+            name="ted-talks_mul_football",
         )
