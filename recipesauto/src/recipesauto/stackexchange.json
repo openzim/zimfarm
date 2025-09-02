@@ -1,0 +1,1658 @@
+{
+ "3dprinting.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 5368709120
+  },
+  "title": "3D Printing Q&A",
+  "description": "Stack Exchange Q&A for 3D printing enthusiasts"
+ },
+ "academia.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 7516192768
+  },
+  "title": "Academia Q&A",
+  "description": "Stack Exchange Q&A for academics and those enrolled in higher education"
+ },
+ "ai.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 7516192768
+  },
+  "title": "Artificial Intelligence Q&A",
+  "description": "Stack Exchange Q&A for people interested in conceptual questions about AI"
+ },
+ "alcohol.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Beer, Wine & Spirits Q&A",
+  "description": "Stack Exchange Q&A for alcoholic beverage aficionados"
+ },
+ "android.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 9663676416
+  },
+  "title": "Android Enthusiasts Q&A",
+  "description": "Stack Exchange Q&A for enthusiasts and power users of Android operating system"
+ },
+ "anime.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 8589934592
+  },
+  "title": "Anime & Manga Q&A",
+  "description": "Stack Exchange Q&A for anime and manga fans"
+ },
+ "apple.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 9663676416
+  },
+  "title": "Apple Q&A",
+  "description": "Stack Exchange Q&A for power users of Apple hardware and software"
+ },
+ "arduino.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 8589934592
+  },
+  "title": "Arduino Q&A",
+  "description": "Stack Exchange Q&A about open-source Arduino hardware and software"
+ },
+ "askubuntu.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 42949672960,
+   "memory": 9663676416
+  },
+  "title": "Ask Ubuntu Q&A",
+  "description": "Stack Exchange Q&A for Ubuntu users and developers"
+ },
+ "astronomy.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 11811160064
+  },
+  "title": "Astronomy Q&A",
+  "description": "Stack Exchange Q&A for astronomers and astrophysicists"
+ },
+ "aviation.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 10737418240
+  },
+  "title": "Aviation Q&A",
+  "description": "Stack Exchange Q&A for aircraft pilots, mechanics, and enthusiasts"
+ },
+ "avp.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Video Production Q&A",
+  "description": "Stack Exchange Q&A for people involved with video and media creation"
+ },
+ "bicycles.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 11811160064
+  },
+  "title": "Bicycles Q&A",
+  "description": "Stack Exchange Q&A for people involved with bicycles"
+ },
+ "bioinformatics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Bioinformatics Q&A",
+  "description": "Stack Exchange Q&A for academics and end users interested in bioinformatics"
+ },
+ "biology.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 9663676416
+  },
+  "title": "Biology Q&A",
+  "description": "Stack Exchange Q&A for biology researchers, academics, and students"
+ },
+ "bitcoin.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 6442450944
+  },
+  "title": "Bitcoin Q&A",
+  "description": "Stack Exchange Q&A for Bitcoin users, developers, and enthusiasts"
+ },
+ "blender.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 53687091200,
+   "memory": 12884901888
+  },
+  "title": "Blender Q&A",
+  "description": "Stack Exchange Q&A for people who use Blender software to create"
+ },
+ "boardgames.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Board & Card Games Q&A",
+  "description": "Stack Exchange Q&A for people playing, modifying, designing board or card games"
+ },
+ "bricks.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 10737418240
+  },
+  "title": "Bricks Q&A",
+  "description": "Stack Exchange Q&A for LEGO\u00ae and building block enthusiasts"
+ },
+ "buddhism.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Buddhism Q&A",
+  "description": "Stack Exchange Q&A on Buddhist philosophy, teaching, and practice"
+ },
+ "chemistry.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 8589934592
+  },
+  "title": "Chemistry Q&A",
+  "description": "Stack Exchange Q&A for scientists, academics, teachers and students in chemistry"
+ },
+ "chess.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Chess Q&A",
+  "description": "Stack Exchange Q&A for serious players and enthusiasts of chess"
+ },
+ "chinese.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Chinese Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Chinese language"
+ },
+ "christianity.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Christianity Q&A",
+  "description": "Stack Exchange Q&A for Christians and experts in Christianity"
+ },
+ "civicrm.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "CiviCRM Q&A",
+  "description": "Stack Exchange Q&A for CiviCRM software users"
+ },
+ "codegolf.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 9663676416
+  },
+  "title": "Code Golf Q&A",
+  "description": "Stack Exchange Q&A for programming puzzle enthusiasts and code golfers"
+ },
+ "codereview.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 8589934592
+  },
+  "title": "Code Review Q&A",
+  "description": "Stack Exchange Q&A for peer programmer code reviews"
+ },
+ "coffee.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Coffee Q&A",
+  "description": "Stack Exchange Q&A for people with interests in producing or consuming coffee"
+ },
+ "cogsci.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Psychology & Neuroscience Q&A",
+  "description": "Stack Exchange Q&A about cognitive science, psychology, neuroscience, psychiatry"
+ },
+ "computergraphics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Computer Graphics Q&A",
+  "description": "Stack Exchange Q&A for computer graphics researchers and programmers"
+ },
+ "conlang.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Constructed Languages Q&A",
+  "description": "Stack Exchange Q&A for designers and users of artificial or invented languages"
+ },
+ "cooking.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 9663676416
+  },
+  "title": "Cooking Q&A (Seasoned Advice)",
+  "description": "Stack Exchange Q&A for professional and amateur cooking chefs"
+ },
+ "craftcms.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Craft CMS Q&A",
+  "description": "Stack Exchange Q&A for everything Craft CMS"
+ },
+ "crafts.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 8589934592
+  },
+  "title": "Arts & Crafts Q&A",
+  "description": "Stack Exchange Q&A for artists and crafters"
+ },
+ "crypto.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Cryptography Q&A",
+  "description": "Stack Exchange Q&A for everything cryptography"
+ },
+ "cs.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 6442450944
+  },
+  "title": "Computer Science Q&A",
+  "description": "Stack Exchange Q&A for everything computer science"
+ },
+ "cseducators.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Computer Science Educators Q&A",
+  "description": "Stack Exchange Q&A for those involved in the field of teaching Computer Science"
+ },
+ "cstheory.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Theoretical Computer Science",
+  "description": "Stack Exchange Q&A for theoretical computer scientists and researchers"
+ },
+ "datascience.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 10737418240
+  },
+  "title": "Data Science Q&A",
+  "description": "Stack Exchange Q&A for everything Data science and Machine Learning"
+ },
+ "dba.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 7516192768
+  },
+  "title": "Database Administrators Q&A",
+  "description": "Stack Exchange Q&A for everyting related to database administration"
+ },
+ "devops.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "DevOps Q&A",
+  "description": "Stack Exchange Q&A for everything related to DevOps software practices"
+ },
+ "diy.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 15032385536
+  },
+  "title": "Home Improvement Q&A",
+  "description": "Stack Exchange Q&A for contractors and serious DIYers"
+ },
+ "drupal.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 7516192768
+  },
+  "title": "Drupal Q&A",
+  "description": "Stack Exchange Q&A for Drupal developers and administrators"
+ },
+ "dsp.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 10737418240
+  },
+  "title": "Signal Processing Q&A",
+  "description": "Stack Exchange Q&A for practitioners of signal, image and video processing"
+ },
+ "earthscience.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 9663676416
+  },
+  "title": "Earth Science Q&A",
+  "description": "Stack Exchange Q&A for everything geology, meteorology, oceanography"
+ },
+ "ebooks.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Ebooks Q&A",
+  "description": "Stack Exchange Q&A for ebook publishers and readers"
+ },
+ "economics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 8589934592
+  },
+  "title": "Economics Q&A",
+  "description": "Stack Exchange Q&A for everything related to economics and econometrics"
+ },
+ "electronics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 12884901888
+  },
+  "title": "Electronics Q&A",
+  "description": "Stack Exchange Q&A for everything electronics and electrical engineering"
+ },
+ "elementaryos.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 9663676416
+  },
+  "title": "elementary OS Q&A",
+  "description": "Stack Exchange Q&A for developers and users of elementary OS and applications"
+ },
+ "ell.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 9663676416
+  },
+  "title": "English Language Learners Q&A",
+  "description": "Stack Exchange Q&A for speakers of other languages learning English"
+ },
+ "emacs.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 5368709120
+  },
+  "title": "Emacs Q&A",
+  "description": "Stack Exchange Q&A for those using, extending or developing Emacs"
+ },
+ "engineering.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 5368709120
+  },
+  "title": "Engineering Q&A",
+  "description": "Stack Exchange Q&A for professionals and students of engineering"
+ },
+ "english.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 7516192768
+  },
+  "title": "English Language & Usage Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of English language"
+ },
+ "eosio.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "EOS.IO Q&A",
+  "description": "Stack Exchange Q&A for users and developers of EOS.IO blockchain applications"
+ },
+ "es.stackoverflow.com_es": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 9663676416
+  },
+  "title": "Stack Overflow en espa\u00f1ol",
+  "description": "Preguntas y respuestas para programadores y profesionales de la inform\u00e1tica"
+ },
+ "esperanto.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Esperanto Language Q&A",
+  "description": "Stack Exchange Q&A for teachers and students of the Esperanto language"
+ },
+ "ethereum.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Ethereum Q&A",
+  "description": "Stack Exchange Q&A for users of Ethereum blockchain"
+ },
+ "expatriates.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Expatriates Q&A",
+  "description": "Stack Exchange Q&A for people living abroad on a long-term basis"
+ },
+ "expressionengine.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "ExpressionEngine\u00ae Q&A",
+  "description": "Stack Exchange Q&A for everything related to ExpressionEngine\u00ae CMS"
+ },
+ "fitness.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Physical Fitness Q&A",
+  "description": "Stack Exchange Q&A for everything related to physical fitness"
+ },
+ "freelancing.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Freelancing Q&A",
+  "description": "Stack Exchange Q&A for self-employed and freelance workers"
+ },
+ "french.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "French Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of the French language"
+ },
+ "gamedev.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 8589934592
+  },
+  "title": "Game Development Q&A",
+  "description": "Stack Exchange Q&A for professional and independent game developers"
+ },
+ "gaming.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 6442450944
+  },
+  "title": "Arqade Q&A",
+  "description": "StackExchange Q&A for passionate videogamers on all platforms"
+ },
+ "gardening.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 10737418240
+  },
+  "title": "Gardening & Landscaping Q&A",
+  "description": "Stack Exchange Q&A for gardeners and landscapers"
+ },
+ "genealogy.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Genealogy & Family History Q&A",
+  "description": "Stack Exchange Q&A for everything related to genealogy or family history"
+ },
+ "german.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "German Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of the German language"
+ },
+ "gis.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 10737418240
+  },
+  "title": "Geographic Information Systems",
+  "description": "Stack Exchange Q&A for cartographers, geographers and GIS professionals"
+ },
+ "graphicdesign.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 9663676416
+  },
+  "title": "Graphic Design Q&A",
+  "description": "Stack Exchange Q&A for Graphic Design professionals, students, and enthusiasts"
+ },
+ "ham.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Amateur Radio Q&A",
+  "description": "Stack Exchange Q&A for amateur radio enthusiasts"
+ },
+ "hardwarerecs.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 10737418240
+  },
+  "title": "Hardware Recommendations Q&A",
+  "description": "Stack Exchange Q&A for people seeking specific hardware recommendations"
+ },
+ "health.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Medical Sciences Q&A",
+  "description": "Stack Exchange Q&A for everything related to medicine and healthcare sciences"
+ },
+ "hermeneutics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Biblical Hermeneutics Q&A",
+  "description": "Stack Exchange Q&A for everything exegetical analysis of biblical texts"
+ },
+ "hinduism.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Hinduism Q&A",
+  "description": "Stack Exchange Q&A for everything related to the Hindu religion and Hinduism"
+ },
+ "history.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 8589934592
+  },
+  "title": "History Q&A",
+  "description": "Stack Exchange Q&A for historians and history buffs"
+ },
+ "homebrew.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Homebrewing Q&A",
+  "description": "Stack Exchange Q&A for dedicated home brewers (beer, wine\u2026) and enthusiasts"
+ },
+ "hsm.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Science and Maths History Q&A",
+  "description": "Stack Exchange Q&A related to the history and origins of science and mathematics"
+ },
+ "interpersonal.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Interpersonal Skills Q&A",
+  "description": "Stack Exchange Q&A for everything related to interpersonal communication skills"
+ },
+ "iot.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Internet of Things Q&A",
+  "description": "StackExchange Q&A for everything smart homes, automation, sensors"
+ },
+ "iota.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Iota Q&A",
+  "description": "Stack Exchange Q&A for users of Iota, the open-source cryptocurrency for IoT"
+ },
+ "islam.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Islam Q&A",
+  "description": "Stack Exchange Q&A for everything related to Islam and Muslims"
+ },
+ "italian.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Italian Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Italian language"
+ },
+ "ja.stackoverflow.com_ja": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 8589934592
+  },
+  "title": "\u30b9\u30bf\u30c3\u30af\u30fb\u30aa\u30fc\u30d0\u30fc\u30d5\u30ed\u30fc",
+  "description": "\u71b1\u72c2\u7684\u3067\u30d7\u30ed\u30d5\u30a7\u30c3\u30b7\u30e7\u30ca\u30eb\u306a\u30d7\u30ed\u30b0\u30e9\u30de\u30fc\u306e\u305f\u3081\u306eQ&A"
+ },
+ "japanese.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Japanese Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Japanese language"
+ },
+ "joomla.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Joomla Q&A",
+  "description": "Stack Exchange Q&A for Joomla! administrators, users, developers and designers"
+ },
+ "judaism.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Mi Yodeya Q&A",
+  "description": "Stack Exchange Q&A for everything related to Jewish law and tradition"
+ },
+ "korean.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Korean Language Q&A",
+  "description": "Stack Exchange Q&A for linguists, teachers and students of the Korean language"
+ },
+ "languagelearning.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Language Learning Q&A",
+  "description": "Stack Exchange Q&A for all about techniques of second-language acquisition"
+ },
+ "latin.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Latin Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of the Latin language"
+ },
+ "law.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Law Q&A",
+  "description": "Stack Exchange Q&A for everything related to law and legal matter"
+ },
+ "lifehacks.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Lifehacks Q&A",
+  "description": "Stack Exchange Q&A for bypassing life's everyday problems with simple tricks"
+ },
+ "linguistics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Linguistics Q&A",
+  "description": "Stack Exchange Q&A for everything related to linguistic research and theory"
+ },
+ "literature.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Literature Q&A",
+  "description": "Stack Exchange Q&A for scholars and enthusiasts of literature"
+ },
+ "magento.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 5368709120
+  },
+  "title": "Magento Q&A",
+  "description": "Stack Exchange Q&A for users of the Magento e-Commerce platform"
+ },
+ "martialarts.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Martial Arts Q&A",
+  "description": "Stack Exchange Q&A for students and teachers of all martial arts"
+ },
+ "math.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 42949672960,
+   "memory": 21474836480
+  },
+  "title": "Mathematics Q&A",
+  "description": "Stack Exchange Q&A for everything related to mathematics"
+ },
+ "matheducators.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Mathematics Educators Q&A",
+  "description": "Stack Exchange Q&A for those involved in the field of teaching mathematics"
+ },
+ "mathematica.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 8589934592
+  },
+  "title": "Mathematica Q&A",
+  "description": "Stack Exchange Q&A for users of Wolfram Mathematica"
+ },
+ "mathoverflow.net_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 7516192768
+  },
+  "title": "MathOverflow",
+  "description": "Stack Exchange Q&A for professional mathematicians"
+ },
+ "mechanics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 8589934592
+  },
+  "title": "Motor Vehicle Mechanics",
+  "description": "Stack Exchange Q&A for mechanics and owners of cars, trucks, and motorcycles"
+ },
+ "moderators.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Community Building Q&A",
+  "description": "Stack Exchange Q&A for community managers, administrators, and moderators"
+ },
+ "monero.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Monero Q&A",
+  "description": "Stack Exchange Q&A for developers and users of Monero cryptocurrency"
+ },
+ "money.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 10737418240
+  },
+  "title": "Personal Finance & Money Q&A",
+  "description": "Stack Exchange Q&A for people who want to be financially literate"
+ },
+ "movies.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 8589934592
+  },
+  "title": "Movies & TV Q&A",
+  "description": "Stack Exchange Q&A for movie and TV enthusiasts"
+ },
+ "music.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 5368709120
+  },
+  "title": "Music: Practice & Theory",
+  "description": "Stack Exchange Q&A for musicians, students, and enthusiasts"
+ },
+ "musicfans.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Music Fans Q&A",
+  "description": "Stack Exchange Q&A for music historians, critics, and fans"
+ },
+ "mythology.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Mythology & Folklore Q&A",
+  "description": "Stack Exchange Q&A for enthusiasts and scholars of mythology and folklore"
+ },
+ "networkengineering.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 15032385536
+  },
+  "title": "Network Engineering Q&A",
+  "description": "Stack Exchange Q&A for network engineers"
+ },
+ "opendata.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Open Data Q&A",
+  "description": "Stack Exchange Q&A for developers and researchers interested in open data"
+ },
+ "opensource.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Open Source Q&A",
+  "description": "Stack Exchange Q&A for everything related to open source development projects"
+ },
+ "or.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Operations Research Q&A",
+  "description": "Stack Exchange Q&A for everything related to operations research and analytics"
+ },
+ "outdoors.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 10737418240
+  },
+  "title": "The Great Outdoors Q&A",
+  "description": "Stack Exchange Q&A for everything being outdoors enjoying nature and wilderness"
+ },
+ "parenting.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Parenting Q&A",
+  "description": "Stack Exchange Q&A for parents, nannies and others with a parenting role"
+ },
+ "patents.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Ask Patents",
+  "description": "Stack Exchange Q&A for people interested in improving the patent system"
+ },
+ "pets.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Pets Q&A",
+  "description": "Stack Exchange Q&A for pet owners, caretakers, breeders, veterinarians, trainers"
+ },
+ "philosophy.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Philosophy Q&A",
+  "description": "Stack Exchange Q&A for the study of knowledge, reality, and existence"
+ },
+ "photo.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 7516192768
+  },
+  "title": "Photography Q&A",
+  "description": "Stack Exchange Q&A for professional, enthusiast and amateur photographers"
+ },
+ "physics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 10737418240
+  },
+  "title": "Physics Q&A",
+  "description": "Stack Exchange Q&A for active researchers, academics and students of physics"
+ },
+ "pm.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Project Management Q&A",
+  "description": "Stack Exchange Q&A for project managers"
+ },
+ "poker.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Poker Q&A",
+  "description": "Stack Exchange Q&A for serious players and enthusiasts of poker"
+ },
+ "politics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 8589934592
+  },
+  "title": "Politics Q&A",
+  "description": "Stack Exchange Q&A about governments, policies, and  political processes"
+ },
+ "portuguese.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Portuguese Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Portuguese language"
+ },
+ "pt.stackoverflow.com_pt": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 9663676416
+  },
+  "title": "Stack Overflow em Portugu\u00eas",
+  "description": "Perguntas e respostas para programadores profissionais e entusiastas"
+ },
+ "puzzling.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 15032385536
+  },
+  "title": "Puzzling Q&A",
+  "description": "Stack Exchange Q&A for those who create, solve, and study puzzles"
+ },
+ "quant.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 16106127360
+  },
+  "title": "Quantitative Finance Q&A",
+  "description": "Stack Exchange Q&A for finance professionals and academics"
+ },
+ "quantumcomputing.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Quantum Computing Q&A",
+  "description": "Stack Exchange Q&A for everything related to quantum computing"
+ },
+ "raspberrypi.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 11811160064
+  },
+  "title": "Raspberry Pi Q&A",
+  "description": "Stack Exchange Q&A for users and developers of Raspberry Pi hardware or software"
+ },
+ "retrocomputing.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 10737418240
+  },
+  "title": "Retrocomputing Q&A",
+  "description": "Stack Exchange Q&A for vintage-computer hobbyists"
+ },
+ "reverseengineering.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Reverse Engineering Q&A",
+  "description": "Stack Exchange Q&A for exploring systems through their structure, function,\u2026"
+ },
+ "robotics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 8589934592
+  },
+  "title": "Robotics Q&A",
+  "description": "Stack Exchange Q&A for everything related to robotics"
+ },
+ "rpg.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Role-playing Games Q&A",
+  "description": "Stack Exchange Q&A for gamemasters and players of role-playing games"
+ },
+ "ru.stackoverflow.com_ru": {
+  "resources": {
+   "cpu": 3,
+   "disk": 16106127360,
+   "memory": 10737418240
+  },
+  "title": "Stack Overflow \u043d\u0430 \u0440\u0443\u0441\u0441\u043a\u043e\u043c",
+  "description": "\u0412\u043e\u043f\u0440\u043e\u0441\u044b \u0438 \u043e\u0442\u0432\u0435\u0442\u044b \u0434\u043b\u044f \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0438\u0441\u0442\u043e\u0432"
+ },
+ "rus.stackexchange.com_ru": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439 \u044f\u0437\u044b\u043a",
+  "description": "C\u0430\u0439\u0442 \u0432\u043e\u043f\u0440\u043e\u0441\u043e\u0432 \u0438 \u043e\u0442\u0432\u0435\u0442\u043e\u0432 \u0434\u043b\u044f \u043b\u0438\u043d\u0433\u0432\u0438\u0441\u0442\u043e\u0432 \u0438 \u044d\u043d\u0442\u0443\u0437\u0438\u0430\u0441\u0442\u043e\u0432 \u0440\u0443\u0441\u0441\u043a\u043e\u0433\u043e \u044f\u0437\u044b\u043a\u0430"
+ },
+ "russian.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Russian Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Russian language"
+ },
+ "salesforce.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 12884901888
+  },
+  "title": "Salesforce Q&A",
+  "description": "Stack Exchange Q&A for Salesforce users"
+ },
+ "scicomp.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Computational Science Q&A",
+  "description": "Stack Exchange Q&A for scientists using computers to solve scientific problems"
+ },
+ "scifi.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 10737418240
+  },
+  "title": "Science Fiction & Fantasy Q&A",
+  "description": "Stack Exchange Q&A for science fiction and fantasy enthusiasts"
+ },
+ "security.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 7516192768
+  },
+  "title": "Information Security Q&A",
+  "description": "Stack Exchange Q&A for information security professionals"
+ },
+ "serverfault.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 10737418240
+  },
+  "title": "Server Fault",
+  "description": "Stack Exchange Q&A for system and network administrators"
+ },
+ "sharepoint.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 6442450944
+  },
+  "title": "SharePoint Q&A",
+  "description": "Stack Exchange Q&A for SharePoint enthusiasts"
+ },
+ "sitecore.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 6442450944
+  },
+  "title": "Sitecore Q&A",
+  "description": "Stack Exchange Q&A for developers and end users of the Sitecore software"
+ },
+ "skeptics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Skeptics Q&A",
+  "description": "Stack Exchange Q&A for scientific skepticism"
+ },
+ "softwareengineering.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 10737418240
+  },
+  "title": "Software Engineering Q&A",
+  "description": "Stack Exchange Q&A for anyone working within the systems development life cycle"
+ },
+ "softwarerecs.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 7516192768
+  },
+  "title": "Software Recommendations Q&A",
+  "description": "Stack Exchange Q&A for people seeking specific software recommendations"
+ },
+ "sound.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Sound Design Q&A",
+  "description": "Stack Exchange Q&A for sound engineers, producers, editors, and enthusiasts"
+ },
+ "space.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 5368709120
+  },
+  "title": "Space Exploration Q&A",
+  "description": "Stack Exchange Q&A for spacecraft operators, scientists, engineers\u2026"
+ },
+ "spanish.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Spanish Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Spanish language"
+ },
+ "sports.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Sports Q&A",
+  "description": "Stack Exchange Q&A for participants in team and individual sport activities"
+ },
+ "sqa.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 7516192768
+  },
+  "title": "Software QA & Testing",
+  "description": "Stack Exchange Q&A for software quality control experts, automation engineers\u2026"
+ },
+ "stackapps.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 5368709120
+  },
+  "title": "Stack Apps",
+  "description": "Stack Exchange Q&A for apps, scripts, and development with Stack Exchange API"
+ },
+ "stackoverflow.com_bard": {
+  "resources": {
+   "cpu": 3,
+   "disk": 268435456000,
+   "memory": 128849018880
+  },
+  "title": "Stack Overflow",
+  "description": "Q&A for professional and enthusiast informatics programmers"
+ },
+ "stackoverflow.com_en": {
+  "resources": {
+   "cpu": 6,
+   "disk": 268435456000,
+   "memory": 137438953472
+  },
+  "title": "Stack Overflow",
+  "description": "Q&A for professional and enthusiast informatics programmers"
+ },
+ "stackoverflow.com_en_nopic": {
+  "resources": {
+   "cpu": 6,
+   "disk": 268435456000,
+   "memory": 171798691840
+  },
+  "title": "Stack Overflow",
+  "description": "Q&A for professional and enthusiast informatics programmers"
+ },
+ "stats.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 10737418240,
+   "memory": 13958643712
+  },
+  "title": "Cross Validated",
+  "description": "Stack Exchange Q&A for people interested in statistics, machine learning, data\u2026"
+ },
+ "stellar.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Stellar Q&A",
+  "description": "Stack Exchange Q&A for developers and users of Stellar blockchain and Exchange"
+ },
+ "superuser.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 32212254720,
+   "memory": 21474836480
+  },
+  "title": "Super User",
+  "description": "Stack Exchange Q&A for computer enthusiasts and power users"
+ },
+ "sustainability.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Sustainable Living Q&A",
+  "description": "Stack Exchange Q&A for folks dedicated to not depleting available resources"
+ },
+ "tex.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 16106127360
+  },
+  "title": "TeX - LaTeX Q&A",
+  "description": "Stack Exchange Q&A for users of TeX, LaTeX, ConTeXt\u2026"
+ },
+ "tezos.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Tezos Q&A",
+  "description": "Stack Exchange Q&A for users, experts, and developers of the Tezos blockchain"
+ },
+ "tor.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Tor Q&A",
+  "description": "Stack Exchange Q&A for researchers, developers, and users of Tor"
+ },
+ "travel.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 9663676416
+  },
+  "title": "Travel Q&A",
+  "description": "Stack Exchange Q&A for road warriors and seasoned travelers"
+ },
+ "tridion.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Tridion Q&A",
+  "description": "Stack Exchange Q&A for Tridion developers and administrators"
+ },
+ "ukrainian.stackexchange.com_mul": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 2147483648
+  },
+  "title": "Ukrainian Language Q&A",
+  "description": "Stack Exchange Q&A for people discussing the finer points of Ukrainian language"
+ },
+ "unix.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 21474836480,
+   "memory": 10737418240
+  },
+  "title": "Unix & Linux Q&A",
+  "description": "Stack Exchange Q&A for users of Linux, FreeBSD and other Unix-like OS"
+ },
+ "ux.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 9663676416
+  },
+  "title": "User Experience Q&A",
+  "description": "Stack Exchange Q&A for user experience researchers and experts"
+ },
+ "vegetarianism.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 1073741824
+  },
+  "title": "Veganism & Vegetarianism Q&A",
+  "description": "Stack Exchange Q&A for those committed to a vegan or vegetarian lifestyle"
+ },
+ "vi.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 5368709120
+  },
+  "title": "Vi and Vim Q&A",
+  "description": "Stack Exchange Q&A for people using the vi and Vim families of text editors"
+ },
+ "webapps.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 8589934592
+  },
+  "title": "Web Applications Q&A",
+  "description": "Stack Exchange Q&A for power users of web applications"
+ },
+ "webmasters.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 5368709120,
+   "memory": 9663676416
+  },
+  "title": "Webmasters Q&A",
+  "description": "Stack Exchange Q&A for webmasters"
+ },
+ "windowsphone.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 3221225472
+  },
+  "title": "Windows Phone - Area 51 - Q&A",
+  "description": "Stack Exchange "
+ },
+ "woodworking.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 9663676416
+  },
+  "title": "Woodworking Q&A",
+  "description": "Stack Exchange Q&A for professional and amateur woodworkers"
+ },
+ "wordpress.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 8589934592
+  },
+  "title": "WordPress Development Q&A",
+  "description": "Stack Exchange Q&A for WordPress developers and administrators"
+ },
+ "workplace.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 2147483648,
+   "memory": 5368709120
+  },
+  "title": "The Workplace Q&A",
+  "description": "Stack Exchange Q&A for workforce people navigating the professional setting"
+ },
+ "worldbuilding.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 3221225472,
+   "memory": 16106127360
+  },
+  "title": "Worldbuilding Q&A",
+  "description": "Stack Exchange Q&A for writers/artists building imaginary worlds and settings"
+ },
+ "writers.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Writing Q&A",
+  "description": "Stack Exchange Q&A for the craft of any professional writing"
+ },
+ "bioacoustics.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Bioacoustics Q&A",
+  "description": "Stack Exchange Q&A for everything related to animals & sounds"
+ },
+ "cardano.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Cardano Q&A",
+  "description": "Stack Exchange Q&A for everything about Cardano cryptocurrency ecosystem"
+ },
+ "drones.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Drones and Model Aircraft Q&A",
+  "description": "Stack Exchange Q&A for for flyers, pilots, builders of drones and model aircraft"
+ },
+ "genai.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "GenAI Q&A",
+  "description": "Stack Exchange Q&A for everything related to Generative Artificial Intelligence"
+ },
+ "langdev.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Programming Language Design",
+  "description": "Stack Exchange Q&A for designers and implementers of programming languages"
+ },
+ "materials.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Matter Modeling Q&A",
+  "description": "Stack Exchange Q&A for materials modelers and data scientists"
+ },
+ "proofassistants.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Proof Assistants Q&A",
+  "description": "Stack Exchange Q&A for developer and users of mathematics proof assistants"
+ },
+ "solana.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Solana Q&A",
+  "description": "Stack Exchange Q&A for Solana software users and developers"
+ },
+ "substrate.stackexchange.com_en": {
+  "resources": {
+   "cpu": 3,
+   "disk": 1073741824,
+   "memory": 4294967296
+  },
+  "title": "Substrate and Polkadot Q&A",
+  "description": "Stack Exchange Q&A for developers building blockchains with the Substrate SDK"
+ }
+}

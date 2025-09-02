@@ -56,6 +56,8 @@ class Processor:
             import recipesauto.phet as setmodule
         elif context.kind == "gutenberg":
             import recipesauto.gutenberg as setmodule
+        elif context.kind == "stackexchange":
+            import recipesauto.stackexchange as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
