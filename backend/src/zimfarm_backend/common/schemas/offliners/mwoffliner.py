@@ -84,15 +84,19 @@ class MWOfflinerFlagsSchema(DashModel):
         description="Email of the mwoffliner user which will be put "
         "in the HTTP user-agent string",
     )
-    articleList: AnyUrl | None = OptionalField(
+    articleList: OptionalNotEmptyString = OptionalField(
         title="Article List",
-        description="URL to an UTF-8 tsv file containing article names "
-        "to include (one per line)",
+        description=(
+            "List of articles to include. Comma separated list of "
+            "titles or HTTP(S) URL to a file with one title (in UTF8) per line"
+        ),
     )
-    articleListToIgnore: AnyUrl | None = OptionalField(
+    articleListToIgnore: OptionalNotEmptyString = OptionalField(
         title="Article List to ignore",
-        description="URL to an UTF-8 tsv file containing article names "
-        "to ignore (one per line)",
+        description=(
+            "List of articles to ignore. Comma separated list of "
+            "titles or HTTP(S) URL to a file with one title (in UTF8) per line"
+        ),
     )
     customMainPage: OptionalNotEmptyString = OptionalField(
         title="Main Page",
