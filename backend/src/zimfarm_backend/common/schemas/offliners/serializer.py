@@ -6,30 +6,18 @@ from annotated_types import Ge, Le, MaxLen, MinLen
 from pydantic import AnyUrl, BaseModel, EmailStr, SecretStr
 from pydantic.fields import FieldInfo
 
-
-class Choice(BaseModel):
-    title: str
-    value: str
+from zimfarm_backend.common.schemas.offliners.models import BaseFlagSchema, Choice
 
 
-class Flag(BaseModel):
+class Flag(BaseFlagSchema):
     """
     A flag object for the offliner schema.
     """
 
     data_key: str
-    description: str
     key: str
-    label: str
-    required: bool
     type: str
     choices: list[Choice] | None = None
-    secret: bool
-    min: int | None = None
-    max: int | None = None
-    min_length: int | None = None
-    max_length: int | None = None
-    pattern: str | None = None
 
 
 def get_base_type(field_type: Any) -> Any:
@@ -217,7 +205,7 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
             data_key=field_alias,
             description=description,
             key=field_alias,
-            label=title,
+            title=title,
             required=required,
             type=field_type_str,
             secret=is_secret(field_type),

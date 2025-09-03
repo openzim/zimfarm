@@ -16,7 +16,6 @@ from zimfarm_backend.common.schemas.fields import (
 )
 from zimfarm_backend.common.schemas.offliners.mwoffliner import (
     MWOfflinerFlagsSchema,
-    MWOfflinerFormatFlavour,
 )
 from zimfarm_backend.common.schemas.offliners.serializer import (
     get_enum_choices,
@@ -39,11 +38,9 @@ from zimfarm_backend.common.schemas.offliners.serializer import (
         (OptionalZIMOutputFolder, "string"),
         (OptionalZIMSecretStr, "string"),
         (TaskStatus, "string-enum"),
-        (MWOfflinerFormatFlavour, "string-enum"),
         (list[int], "list-of-integer"),
         (list[str], "list-of-string"),
         (list[bool], "list-of-boolean"),
-        (list[MWOfflinerFormatFlavour], "list-of-string-enum"),
     ],
 )
 def test_get_field_type(field_type: Any, expected_type: str):
@@ -55,11 +52,6 @@ def test_get_field_type(field_type: Any, expected_type: str):
     (
         (TaskStatus, [choice.value for choice in TaskStatus]),
         (list[TaskStatus], [choice.value for choice in TaskStatus]),
-        (MWOfflinerFormatFlavour, [choice.value for choice in MWOfflinerFormatFlavour]),
-        (
-            list[MWOfflinerFormatFlavour],
-            [choice.value for choice in MWOfflinerFormatFlavour],
-        ),
     ),
 )
 def test_get_enum_choices(field_type: Any, expected_choices: list[str]):
