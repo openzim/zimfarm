@@ -914,6 +914,7 @@ class TaskWorker(BaseWorker):
             self.check_scraper_artifacts_upload()
 
         # make sure we submit upload status for last zim and scraper log
+        self.log_workdir_entries()
         self.handle_files()
         self.check_scraper_log_upload()
         self.check_scraper_artifacts_upload()
@@ -940,3 +941,11 @@ class TaskWorker(BaseWorker):
             "scp",
             "sftp",
         )
+
+    def log_workdir_entries(self):
+        if not self.task_workdir:
+            return
+        logger.info(f"Contents of {self.task_workdir} (recursive):")
+        for entry in self.task_workdir.rglob("*"):
+            if entry.is_file():
+                logger.info(f"  {entry.relative_to(self.task_workdir)}")
