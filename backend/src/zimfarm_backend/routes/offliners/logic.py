@@ -51,7 +51,7 @@ async def get_offliner(offliner: Annotated[Offliner, Path()]) -> JSONResponse:
 
     return JSONResponse(
         content={
-            "flags": [flag.model_dump(mode="json") for flag in flags],
+            "flags": [flag.model_dump(mode="json", by_alias=True) for flag in flags],
             "help": (  # dynamic + sourced from backend because it might be custom
                 f"https://github.com/openzim/{offliner}/wiki/Frequently-Asked-Questions"
             ),

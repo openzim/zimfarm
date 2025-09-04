@@ -18,6 +18,8 @@ def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
 
 BASE_DIR = Path(__file__).parent.parent
 
+OFFLINER_DATA_PATH = BASE_DIR / "common" / "schemas" / "offliners"
+
 DEBUG = getenv("DEBUG", default="false").lower() == "true"
 
 REFRESH_TOKEN_EXPIRY_DURATION = parse_timespan(

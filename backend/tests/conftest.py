@@ -10,7 +10,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from faker import Faker
 from faker.providers import DynamicProvider
-from pydantic import AnyUrl, SecretStr
 from pytest import FixtureRequest, Mark
 from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import generate_password_hash
@@ -290,11 +289,13 @@ def create_schedule_config() -> Callable[..., ScheduleConfigSchema]:
                 memory=memory,
                 disk=disk,
             ),
-            offliner=MWOfflinerFlagsSchema(
-                offliner_id="mwoffliner",
-                mwUrl=AnyUrl("https://en.wikipedia.org"),
-                adminEmail="test@kiwix.org",
-                mwPassword=SecretStr("test-password"),
+            offliner=MWOfflinerFlagsSchema.model_validate(
+                {
+                    "offliner_id": "mwoffliner",
+                    "mwUrl": "https://en.wikipedia.org",
+                    "adminEmail": "test@kiwix.org",
+                    "mwPassword": "test-password",
+                }
             ),
             platform=Platform.wikimedia,
             monitor=True,
