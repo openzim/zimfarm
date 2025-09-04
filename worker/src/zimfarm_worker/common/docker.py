@@ -134,10 +134,10 @@ def prune_containers(client: DockerClient, **kwargs: Any):
 
 
 @retry
-def stop_container(client: DockerClient, **kwargs: Any):
+def stop_container(client: DockerClient, container: str, **kwargs: Any):
     """container="", timeout=None"""
     return client.api.stop(
-        **kwargs
+        container, **kwargs
     )  # pyright: ignore[reportGeneralTypeIssues, reportReturnType]
 
 
@@ -595,6 +595,7 @@ def start_task_worker(
             "ZIMFARM_TASK_CPUSET": os.getenv("ZIMFARM_TASK_CPUSET"),
             "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
             "DEBUG": os.getenv("DEBUG"),
+            "ENVIRONMENT": ENVIRONMENT,
             "USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "",
             "DISABLE_IPV6": "yes" if DISABLE_IPV6 else "",
             "UPLOADER_IMAGE": UPLOADER_IMAGE,
@@ -730,9 +731,12 @@ def start_uploader(
         "mounts": mounts,
         "name": container_name,
         "remove": False,
+        "network_mode": (
+            f"container:{get_running_container_name()}"
+            if ENVIRONMENT == "development"
+            else "bridge"
+        ),
     }
-    if "DOCKER_NETWORK" in os.environ:
-        kwargs["network"] = os.getenv("DOCKER_NETWORK")
     return run_container(client, **kwargs)
 
 
