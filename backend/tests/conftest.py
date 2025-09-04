@@ -96,8 +96,8 @@ def rsa_public_key(rsa_private_key: RSAPrivateKey) -> RSAPublicKey:
 def rsa_public_key_data(rsa_private_key: RSAPrivateKey) -> bytes:
     """Serialize public key using PEM format."""
     return rsa_private_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        encoding=serialization.Encoding.OpenSSH,
+        format=serialization.PublicFormat.OpenSSH,
     )
 
 
@@ -146,7 +146,7 @@ def create_user(
 
         key = Sshkey(
             name=data_gen.word(),
-            key=rsa_public_key_data.decode("ascii"),
+            key=rsa_public_key_data.decode("ascii") + " test@localhost",
             fingerprint=get_public_key_fingerprint(rsa_public_key),
             type="RSA",
             added=getnow(),

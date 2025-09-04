@@ -42,7 +42,7 @@ PubkeyAuthentication yes
 
 #AuthorizedPrincipalsFile none
 
-FingerprintHash md5
+FingerprintHash sha256
 AuthorizedKeysCommand /usr/bin/get_zimfarm_keys %u %f
 AuthorizedKeysCommandUser nobody
 

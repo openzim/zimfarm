@@ -1,7 +1,7 @@
 import datetime
 from typing import Any
 
-from pydantic import EmailStr, Field, computed_field
+from pydantic import EmailStr, Field, computed_field, field_validator
 
 from zimfarm_backend.common.roles import RoleEnum, get_role_for
 from zimfarm_backend.common.schemas import BaseModel
@@ -79,8 +79,20 @@ class KeySchema(BaseModel):
     Schema for creating a ssh key
     """
 
-    name: NotEmptyString
     key: NotEmptyString
+
+    @field_validator("key", mode="after")
+    @classmethod
+    def validate_key(cls, value: str) -> str:
+        value = value.strip()
+        if len(value.split(" ")) != 3:  # noqa: PLR2004
+            raise ValueError("Key does not appear to be an SSH public file.")
+        return value
+
+    @computed_field
+    @property
+    def name(self) -> str:
+        return self.key.split(" ")[2]
 
 
 class PasswordUpdateSchema(BaseModel):

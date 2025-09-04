@@ -208,21 +208,13 @@ const keyFileSelected = () => {
     const parts = result.trim().split(/\s/)
     if (parts.length !== 3) {
       notificationStore.showError(
-        `File ${file.name} doesn't appear to be an RSA public file (format).`
+        `File ${file.name} doesn't appear to be an SSH public file.`
       )
       // Clear the file input on error
       keyFile.value = null
       return
     }
 
-    if (parts[0].toLowerCase().indexOf('rsa') === -1) {
-      notificationStore.showError(
-        `File ${file.name} doesn't appear to be an RSA public file (no RSA prefix).`
-      )
-      // Clear the file input on error
-      keyFile.value = null
-      return
-    }
     keyForm.value.key = result.trim()
     keyForm.value.name = parts[2].trim()
   }
