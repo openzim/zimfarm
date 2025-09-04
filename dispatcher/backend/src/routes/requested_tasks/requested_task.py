@@ -214,14 +214,6 @@ class RequestedTasksForWorkers(BaseRoute):
     def get(self, session: so.Session, token: AccessToken.Payload):
         """list of requested tasks to be retrieved by workers, auth-only"""
 
-        if not ENABLED_SCHEDULER:
-            return jsonify(
-                {
-                    "meta": {"skip": 0, "limit": 1, "count": 0},
-                    "items": [],
-                }
-            )
-
         request_args = request.args.to_dict()
         worker_name = request_args.get("worker")
         worker_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
@@ -261,6 +253,14 @@ class RequestedTasksForWorkers(BaseRoute):
                                 status_code=HTTPStatus.SERVICE_UNAVAILABLE,
                                 error="Pushing IP changes to Wasabi failed",
                             )
+
+        if not ENABLED_SCHEDULER:
+            return jsonify(
+                {
+                    "meta": {"skip": 0, "limit": 1, "count": 0},
+                    "items": [],
+                }
+            )
 
         request_args = WorkerRequestedTaskSchema().load(request_args)
 
