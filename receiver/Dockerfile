@@ -41,25 +41,16 @@ RUN chmod 777 /jail/logs
 # OpenSSH server
 COPY sshd_config /etc/ssh/sshd_config
 VOLUME /jail/zim
-VOLUME /jail/logs
 
 # Quarantine
 VOLUME /mnt/quarantine
 VOLUME /mnt/zim
-VOLUME /mnt/check_logs
 
-ENV ZIM_TOOLS_URL https://download.openzim.org/release/zim-tools/zim-tools_linux-x86_64-3.6.0.tar.gz
 ENV ZIM_SRC_DIR /jail/zim
 ENV ZIM_DST_DIR /mnt/zim
 ENV ZIM_QUAR_DIR /mnt/quarantine
-ENV VALIDATION_LOG_DIR /mnt/check_logs
-ENV ZIMCHECK_OPTION -A
 ENV ZIMCHECK_PARALLEL_JOBS 2
 
-RUN wget -nv -O zim-tools.tar.gz -q $ZIM_TOOLS_URL && \
-  tar -xzf zim-tools.tar.gz && \
-  cp zim-tools*/* /usr/local/bin/ && \
-  rm -rf zim-tools*
 COPY apps/check_zims.sh /usr/local/bin/
 COPY apps/check_zim.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/check_zim.sh /usr/local/bin/check_zims.sh
