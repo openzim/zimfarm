@@ -176,16 +176,6 @@ def get_requested_tasks_for_worker(
     ],
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
-    if not ENABLED_SCHEDULER:
-        return ListResponse(
-            meta=calculate_pagination_metadata(
-                nb_records=0,
-                skip=0,
-                limit=0,
-                page_size=0,
-            ),
-            items=[],
-        )
 
     try:
         worker = get_worker(session, worker_name=worker_name)
@@ -221,6 +211,17 @@ def get_requested_tasks_for_worker(
                 raise ServiceUnavailableError(
                     "Pushing IP changes to Wasabi failed"
                 ) from exc
+
+    if not ENABLED_SCHEDULER:
+        return ListResponse(
+            meta=calculate_pagination_metadata(
+                nb_records=0,
+                skip=0,
+                limit=0,
+                page_size=0,
+            ),
+            items=[],
+        )
 
     task = find_requested_task_for_worker(
         session=session,
