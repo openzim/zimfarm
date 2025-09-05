@@ -263,6 +263,7 @@ def test_list_user_keys(client: TestClient, users: list[User]):
         "type",
         "added",
         "pkcs8_key",
+        "has_expired",
     }
 
 

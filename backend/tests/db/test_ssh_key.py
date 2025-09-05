@@ -1,13 +1,17 @@
+import datetime
 from uuid import uuid4
 
 import pytest
+from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.db import ssh_key as db_ssh_key_module
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.ssh_key import (
     delete_ssh_key,
     get_ssh_key_by_fingerprint,
     get_ssh_key_by_fingerprint_or_none,
+    has_ssh_key_expired,
 )
 
 
@@ -69,3 +73,34 @@ def test_delete_ssh_key_wrong_user(dbsession: OrmSession, users: list[User]):
     )
     assert result is not None
     assert result.fingerprint == users[0].ssh_keys[0].fingerprint
+
+
+@pytest.mark.num_users(1)
+def test_has_ssh_key_expired(users: list[User], monkeypatch: MonkeyPatch):
+    """Test checking if an SSH key has expired."""
+    # Set the current time to 2 years in the future
+    future_time = datetime.datetime.now(datetime.UTC).replace(
+        tzinfo=None
+    ) + datetime.timedelta(days=730)
+    monkeypatch.setattr(db_ssh_key_module, "getnow", lambda: future_time)
+    for key in users[0].ssh_keys:
+        assert has_ssh_key_expired(key)
+
+
+@pytest.mark.num_users(1)
+def test_get_missing_expired_keys(
+    dbsession: OrmSession, users: list[User], monkeypatch: MonkeyPatch
+):
+    """Test getting missing expired keys."""
+    # Set the current time to 2 years in the future
+    future_time = datetime.datetime.now(datetime.UTC).replace(
+        tzinfo=None
+    ) + datetime.timedelta(days=730)
+    monkeypatch.setattr(db_ssh_key_module, "getnow", lambda: future_time)
+    assert (
+        get_ssh_key_by_fingerprint_or_none(
+            session=dbsession,
+            fingerprint=users[0].ssh_keys[0].fingerprint,
+        )
+        is None
+    )

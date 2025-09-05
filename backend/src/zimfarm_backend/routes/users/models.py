@@ -3,6 +3,8 @@ from typing import Any
 
 from pydantic import EmailStr, Field, computed_field, field_validator
 
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import SSH_KEY_EXPIRY_DURATION
 from zimfarm_backend.common.roles import RoleEnum, get_role_for
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import NotEmptyString
@@ -50,6 +52,14 @@ class SshKeyRead(BaseSshKeySchema):
     added: datetime.datetime
     fingerprint: str
     pkcs8_key: str
+
+    @computed_field
+    @property
+    def has_expired(self) -> bool:
+        """Check if the key has expired (not active)"""
+        return getnow() > self.added + datetime.timedelta(
+            seconds=SSH_KEY_EXPIRY_DURATION
+        )
 
 
 class BaseUserWithSshKeysSchema(BaseUserSchema, BaseSshKeySchema):

@@ -20,6 +20,7 @@ from zimfarm_backend.db.refresh_token import (
     expire_refresh_tokens,
     get_refresh_token,
 )
+from zimfarm_backend.db.ssh_key import has_ssh_key_expired
 from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.exceptions import PEMPublicKeyLoadError
 from zimfarm_backend.routes.auth.models import (
@@ -158,9 +159,15 @@ def authenticate_user_with_ssh_keys(
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
-    # verify signature of message with user's public keys
+    # verify signature of message with user's valid public keys
     authenticated = False
+    keys_are_active = True
     for ssh_key in db_user.ssh_keys:
+        # Skip expired keys
+        if has_ssh_key_expired(ssh_key):
+            keys_are_active = False
+            continue
+
         try:
             if verify_signed_message(
                 bytes(ssh_key.pkcs8_key, encoding="ascii"),
@@ -174,6 +181,8 @@ def authenticate_user_with_ssh_keys(
             raise ForbiddenError("Unable to load public_key") from exc
 
     if not authenticated:
+        if not keys_are_active:
+            raise UnauthorizedError("One or more keys are expired.")
         raise UnauthorizedError("Could not find matching key for signature.")
 
     return _access_token_response(db_session, db_user, response)

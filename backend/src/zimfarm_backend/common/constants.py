@@ -158,3 +158,7 @@ POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)
 WORKER_OFFLINE_DELAY_DURATION = parse_timespan(
     getenv("WORKER_OFFLINE_DELAY_DURATION", default="20m")
 )
+
+SSH_KEY_EXPIRY_DURATION = parse_timespan(
+    getenv("SSH_KEY_EXPIRY_DURATION", default="365d")
+)

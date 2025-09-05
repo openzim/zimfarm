@@ -1,3 +1,4 @@
+import datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -5,6 +6,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import SSH_KEY_EXPIRY_DURATION
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Sshkey
 
@@ -12,11 +14,15 @@ from zimfarm_backend.db.models import Sshkey
 def get_ssh_key_by_fingerprint_or_none(
     session: OrmSession, *, fingerprint: str
 ) -> Sshkey | None:
-    """Get a ssh key by fingerprint or return None if it does not exist"""
+    """Get an active ssh key by fingerprint or return None if it does not exist"""
     return session.scalars(
         select(Sshkey)
         .options(selectinload(Sshkey.user))
-        .where(Sshkey.fingerprint == fingerprint)
+        .where(
+            Sshkey.fingerprint == fingerprint,
+            Sshkey.added
+            > getnow() - datetime.timedelta(seconds=SSH_KEY_EXPIRY_DURATION),
+        )
     ).first()
 
 
@@ -52,6 +58,13 @@ def get_ssh_key_by_fingerprint(session: OrmSession, *, fingerprint: str) -> Sshk
     if ssh_key := get_ssh_key_by_fingerprint_or_none(session, fingerprint=fingerprint):
         return ssh_key
     raise RecordDoesNotExistError("SSH key not found")
+
+
+def has_ssh_key_expired(ssh_key: Sshkey) -> bool:
+    """Check if a SSH key has expired (not active)"""
+    return getnow() > ssh_key.added + datetime.timedelta(
+        seconds=SSH_KEY_EXPIRY_DURATION
+    )
 
 
 def delete_ssh_key(session: OrmSession, *, fingerprint: str, user_id: UUID) -> None:

@@ -7,12 +7,14 @@ from http import HTTPStatus
 import pytest
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refresh_tokens
+from zimfarm_backend.routes.auth import logic
 from zimfarm_backend.utils.token import generate_access_token, sign_message_with_rsa_key
 
 
@@ -159,3 +161,30 @@ def test_authentication_token(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
+
+
+def test_authenticate_user_with_expired_key(
+    client: TestClient,
+    users: list[User],
+    rsa_private_key: RSAPrivateKey,
+    monkeypatch: MonkeyPatch,
+):
+    message = f"{users[0].username}:{getnow().isoformat()}"
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message, encoding="ascii")
+    )
+    x_sshauth_signature = base64.b64encode(signature).decode()
+
+    monkeypatch.setattr(logic, "has_ssh_key_expired", lambda _: True)  # pyright: ignore
+
+    response = client.post(
+        "/v2/auth/ssh-authorize",
+        headers={
+            "Content-type": "application/json",
+            "X-SSHAuth-Message": message,
+            "X-SSHAuth-Signature": x_sshauth_signature,
+        },
+    )
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    data = response.json()
+    assert "One or more keys are expired." in data["message"]
