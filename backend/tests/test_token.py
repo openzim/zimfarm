@@ -3,9 +3,10 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 from _pytest.python_api import RaisesContext
+from cryptography.hazmat.primitives.asymmetric import dsa
 
 from zimfarm_backend.exceptions import PEMPublicKeyLoadError
-from zimfarm_backend.utils.token import load_public_key
+from zimfarm_backend.utils.token import get_public_key_type, load_public_key
 
 
 @pytest.mark.parametrize(
@@ -56,14 +57,44 @@ vMLud8dyKMud/T1up4PPavUCAwEAAQ==
             pytest.raises(PEMPublicKeyLoadError),
             id="invalid-key",
         ),
-        # Valid Ed25519 key but unsupported
+        # Valid Ed25519 key
         pytest.param(
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIId3y4Xfr6yNlJpFb1EN4w9tGf38HRJND4qYuou04ubD elf@imladris",
-            pytest.raises(PEMPublicKeyLoadError),
-            id="valid-but-unsupported",
+            does_not_raise(),
+            id="valid-ed25519",
         ),
     ],
 )
 def test_load_public_key(public_key: str, expected: RaisesContext[Exception]):
     with expected:
         load_public_key(bytes(public_key, encoding="ascii"))
+
+
+@pytest.mark.parametrize(
+    "public_key,expected",
+    [
+        pytest.param(
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIId3y4Xfr6yNlJpFb1EN4w9tGf38HRJND4qYuou04ubD elf@imladris",
+            "ED25519",
+            id="valid-ed25519",
+        ),
+        pytest.param(
+            "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBL5QqA6K6X3JZyyxlznmfnwHYFzMC4elWdY0zSorkjVAFtqllHv2nLGGSgPIQ8WpsOp0ZLbV2QTggjUfxgX9PfI= elf@imladris",
+            "ECDSA",
+            id="valid-ecdsa-openssh_key",
+        ),
+        pytest.param(
+            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCviQIFpu2khxOqyhChlIk6J7cr3K6PzJV5qYScZF3SeVYR0gdEM0ySwCCWarHAJ72BpbnMrhKj6/7vl3MjNcIngxsEiyzFda46YqG1svYQoyk0PsTUeNS1TAp3MluRCZ/tXSlaDt0lDG/YCSj7B3qS4w8s7ko73srvJe7Cml2yq7DbcnDODKCF4ovMtTyxLvEv81qN3wnWVzY1Es0NVH6Cq/rFan/2FDRyjDxEybiUS/Rn0MTf2QKNSURlzXdWPn8y9VmYrA/IwjWeMKfedUuTGdXqODwKj6b/MzMzzkCPBwP9YBMiiypucnPIFlZoGTxj1Dye9lGuyaAnWGJ2Q4SeLXB4HA3WcHFyqDJFcCfgljiUOZgnx5bl6IMiGhofVhfmOloWmrDUXygztOjkJ+0Mq1PpFarCIE2LqfYQw4L5sQZ7gzdn7Fyk0zHfKFg3tLaQLDn5J5NFyuQqXp8F1qYw7hY0x1wb7RsVTdhEq5c0iQ7i6IxruxV19D6izyj0JGtUacLYeVpjxPnw+iCqTTPAHjEDx/6D86pyZQ4z/WBPZI+In1JCSiViuIMF8J9y7NaVypB06UWuua2dY6HcSv7khgBOK5S+v6dg0YullBqAsiQ0N4GiiXsfrgnYCeNhs7ztjWPIjPO0TRcWCnzuCO68wu53x3Ioy539PW6ng89q9Q== elf@imladrisj",
+            "RSA",
+            id="valid-rsa-openssh-key",
+        ),
+    ],
+)
+def test_get_public_key_type(public_key: str, expected: RaisesContext[Exception]):
+    key = load_public_key(bytes(public_key, encoding="ascii"))
+    assert get_public_key_type(key) == expected
+
+
+def test_public_key_type_invalid_key():
+    with pytest.raises(ValueError):
+        get_public_key_type(dsa.generate_private_key(key_size=2048).public_key())
