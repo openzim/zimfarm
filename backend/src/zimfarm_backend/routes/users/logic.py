@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Annotated
 
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -55,6 +54,7 @@ from zimfarm_backend.routes.users.models import (
 )
 from zimfarm_backend.utils.token import (
     get_public_key_fingerprint,
+    get_public_key_type,
     load_public_key,
     serialize_public_key,
 )
@@ -218,7 +218,7 @@ def create_user_key(
         key=ssh_key.key,
         pkcs8_key=serialize_public_key(public_key).decode("ascii"),
         name=ssh_key.name,
-        type_="RSA" if isinstance(public_key, RSAPublicKey) else "ECDSA",
+        type_=get_public_key_type(public_key),
     )
     return SshKeyRead.model_validate(db_ssh_key)
 
