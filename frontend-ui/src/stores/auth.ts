@@ -32,9 +32,13 @@ export const useAuthStore = defineStore('auth', () => {
   // Computed properties
   const isLoggedIn = computed(() => {
     if (!token.value) return false
+    return true
+  })
+
+  const tokenExpiryDate = computed(() => {
+    if (!token.value) return null
     const jwtPayload = jwtDecode<JWTPayload>(token.value.access_token)
-    const now = Math.floor(Date.now() / 1000)
-    return jwtPayload.exp > now
+    return new Date (jwtPayload.exp*1000)
   })
 
   const username = computed(() => {
@@ -71,9 +75,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const loadTokenFromCookie = async (forceRefresh: boolean = false) => {
+  const loadTokenFromCookie = async () => {
     // already authenticated
-    if (isLoggedIn.value && !forceRefresh) return token.value?.access_token
+
+    if (tokenExpiryDate.value && tokenExpiryDate.value > new Date()) return token.value?.access_token;
 
     const cookieValue = $cookies.get(constants.TOKEN_COOKIE_NAME)
     if (!cookieValue) return null
@@ -92,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     const expiry = new Date(jwtPayload.exp * 1000)
     const now = new Date()
-    if (now > expiry || forceRefresh) {
+    if (now > expiry) {
       return await renewTokenFromRefresh(tokenData.refresh_token)
     }
 

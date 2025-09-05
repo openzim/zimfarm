@@ -10,7 +10,7 @@ import { useOfflinerStore } from '@/stores/offliner'
 import { usePlatformStore } from '@/stores/platform'
 import { useTagStore } from '@/stores/tag'
 import type { OfflinerDefinitionResponse } from '@/types/offliner'
-import { computed, onBeforeMount, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 
 // Store and router
@@ -23,13 +23,11 @@ const loadingStore = useLoadingStore()
 const offlinerStore = useOfflinerStore()
 
 const router = useRouter()
+const ready = ref(false)
 
-
-onBeforeMount(async () => {
-  await authStore.loadTokenFromCookie()
-})
 
 onMounted(async () => {
+  await authStore.loadTokenFromCookie(false)
   loadingStore.startLoading('Loading application data...')
 
   await languageStore.fetchLanguages()
@@ -45,6 +43,7 @@ onMounted(async () => {
   await Promise.all(offlinerDefinitionRequests)
 
   loadingStore.stopLoading()
+  ready.value = true
 })
 
 // Navigation items logic
@@ -110,7 +109,15 @@ const handleSignOut = () => {
 
     <v-main>
       <v-container>
-        <RouterView />
+        <RouterView v-if="ready" />
+        <div v-else class="d-flex align-center justify-center" style="height: 80vh">
+          <v-progress-circular
+            indeterminate
+            size="70"
+            width="7"
+            color="primary"
+          />
+        </div>
       </v-container>
     </v-main>
   </v-app>
