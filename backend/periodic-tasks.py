@@ -12,6 +12,7 @@ import zimfarm_backend.db.models as dbm
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import getenv
 from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.common.utils import task_cancel_requested_event_handler
 from zimfarm_backend.db import Session
 
 # constants
@@ -21,6 +22,7 @@ NAME = "periodic-tasks"
 
 # config
 HISTORY_TASK_PER_SCHEDULE = 10
+STALLED_GONE_TIMEOUT = ONE_HOUR
 # when launching worker, it sets status to `started` then start scraper and
 # change status to `scraper_started` so it's a minutes max duration
 STALLED_STARTED_TIMEOUT = 30 * ONE_MN
@@ -122,6 +124,43 @@ def status_to_cancel(
     logger.info(f"::: canceled {nb_canceled_tasks} tasks")
 
 
+def cancel_incomplete_tasks(session: OrmSession, now: datetime.datetime):
+    """Cancel incomplete tasks that have not been updated recently"""
+    logger.info(
+        f":: checking for incomplete tasks (no update for {STALLED_GONE_TIMEOUT}s)"
+    )
+    ago = now - datetime.timedelta(seconds=STALLED_GONE_TIMEOUT)
+
+    tasks = session.execute(
+        sa.select(dbm.Task)
+        .join(dbm.Worker, dbm.Worker.id == dbm.Task.worker_id)
+        .where(
+            dbm.Task.status.not_in(
+                [
+                    *TaskStatus.complete(),
+                    TaskStatus.scraper_completed,
+                    TaskStatus.cancel_requested,
+                ]
+            ),
+            dbm.Task.updated_at <= ago,
+            dbm.Worker.last_seen > ago,
+        )
+    ).scalars()
+
+    nb_gone_tasks = 0
+    for task in tasks:
+        # Prepare payload for cancel request
+        payload = {
+            "canceled_by": "periodic-task-gone",
+            "timestamp": now,
+        }
+
+        task_cancel_requested_event_handler(session, task.id, payload)
+        nb_gone_tasks += 1
+
+    logger.info(f"::: requested cancellation of {nb_gone_tasks} gone tasks")
+
+
 def staled_statuses(session: OrmSession):
     """set the status for tasks in an unfinished state"""
 
@@ -209,6 +248,8 @@ def main(session: OrmSession):
     logger.info("running periodic tasks-cleaner")
 
     history_cleanup(session)
+
+    cancel_incomplete_tasks(session, getnow())
 
     staled_statuses(session)
 
