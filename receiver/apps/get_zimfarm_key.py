@@ -53,10 +53,7 @@ def print_keys_for(username, fingerprint):
     print("\n".join(keys))
 
 
-def fetch_public_keys_for(username, raw_fingerprint):
-    # convert fingerprint to dispatcher's format
-    fingerprint = "".join(raw_fingerprint.split(":")[1:])
-
+def fetch_public_keys_for(username, fingerprint):
     req = requests.get(
         url=f"{environ['ZIMFARM_WEBAPI']}/users/-/keys/{fingerprint}",
         params={"with_permission": ["zim.upload"]},
@@ -70,16 +67,14 @@ def fetch_public_keys_for(username, raw_fingerprint):
         reason = f"HTTP {req.status_code}."
         if response and "message" in response:
             reason += f" {response['message']}"
-        logger.warning(
-            f"failed login attempt using {raw_fingerprint}/{fingerprint}: {reason}"
-        )
+        logger.warning(f"failed login attempt using {fingerprint}: {reason}")
         return
 
     logger.info(
         f"granted login for {response['username']} via {response['type']} key "
         f"{response['name']}"
     )
-    return [f"ssh-rsa {response['key']} {response['name']}"]
+    return [f"{response['key']}"]
 
 
 if __name__ == "__main__":

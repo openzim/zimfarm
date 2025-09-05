@@ -296,19 +296,20 @@ def test_create_user_key(client: TestClient, users: list[User]):
     new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = new_key.public_key()
     rsa_public_key_data = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        encoding=serialization.Encoding.OpenSSH,
+        format=serialization.PublicFormat.OpenSSH,
     )
     url = f"/v2/users/{users[0].username}/keys"
-    key_data = {"name": "test-key", "key": rsa_public_key_data.decode(encoding="ascii")}
+    # generated keys don't come with hostname but backend requires it
+    key_data = {"key": rsa_public_key_data.decode(encoding="ascii") + " test@localhost"}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
     )
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
-    assert response_json["name"] == key_data["name"]
     assert response_json["key"] == key_data["key"]
+    assert "name" in response_json
     assert "fingerprint" in response_json
     assert "type" in response_json
     assert "added" in response_json
@@ -326,7 +327,7 @@ def test_create_user_key_invalid(client: TestClient, users: list[User]):
         email=user.email,
     )
     url = f"/v2/users/{user.username}/keys"
-    key_data = {"name": "test-key", "key": "invalid-key"}
+    key_data = {"key": "invalid-key xxxxxxx test@localhost"}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
     )
@@ -345,7 +346,7 @@ def test_create_user_key_duplicate(client: TestClient, users: list[User]):
         email=user.email,
     )
     url = f"/v2/users/{users[0].username}/keys"
-    key_data = {"name": "test-key", "key": users[0].ssh_keys[0].key}
+    key_data = {"key": users[0].ssh_keys[0].key}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
     )

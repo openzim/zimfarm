@@ -124,10 +124,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const addSshKey = async (username: string, payload: { name: string; key: string }) => {
+  const addSshKey = async (username: string, payload: { key: string }) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.post<{ name: string; key: string }, SshKeyRead>(`/${username}/keys`, payload)
+      await service.post<{ key: string }, SshKeyRead>(`/${username}/keys`, payload)
       errors.value = []
       return true
     } catch (error) {

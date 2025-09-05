@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Annotated
 
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -217,6 +218,7 @@ def create_user_key(
         key=ssh_key.key,
         pkcs8_key=serialize_public_key(public_key).decode("ascii"),
         name=ssh_key.name,
+        type_="RSA" if isinstance(public_key, RSAPublicKey) else "ECDSA",
     )
     return SshKeyRead.model_validate(db_ssh_key)
 

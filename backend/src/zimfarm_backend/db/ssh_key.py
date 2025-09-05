@@ -17,7 +17,7 @@ def get_ssh_key_by_fingerprint_or_none(
         select(Sshkey)
         .options(selectinload(Sshkey.user))
         .where(Sshkey.fingerprint == fingerprint)
-    ).one_or_none()
+    ).first()
 
 
 def create_ssh_key(
@@ -28,6 +28,7 @@ def create_ssh_key(
     key: str,
     pkcs8_key: str,
     name: str,
+    type_: str,
 ) -> Sshkey:
     """Create a new ssh key"""
     ssh_key = Sshkey(
@@ -35,7 +36,7 @@ def create_ssh_key(
         key=key,
         pkcs8_key=pkcs8_key,
         name=name,
-        type="RSA",
+        type=type_,
         added=getnow(),
     )
 
