@@ -113,7 +113,7 @@ jobs:
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
         with:
-          image-name: openzim/zimfarm-dispatcher
+          image-name: openzim/zimfarm-backend
           on-master: latest
           restrict-to: openzim/zimfarm
           context: backend
