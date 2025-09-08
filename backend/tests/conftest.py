@@ -32,6 +32,7 @@ from zimfarm_backend.db.models import (
     RequestedTask,
     Schedule,
     ScheduleDuration,
+    ScheduleHistory,
     Sshkey,
     Task,
     User,
@@ -355,6 +356,22 @@ def create_schedule(
         )
         schedule_duration.worker = worker
         schedule.durations.append(schedule_duration)
+
+        history_entry = ScheduleHistory(
+            author="test",
+            created_at=getnow(),
+            comment=None,
+            config=schedule.config,
+            name=schedule.name,
+            category=schedule.category,
+            enabled=schedule.enabled,
+            language_code=schedule.language_code,
+            tags=schedule.tags,
+            periodicity=schedule.periodicity,
+            context=schedule.context,
+        )
+        schedule.history_entries.append(history_entry)
+
         dbsession.add(schedule)
         dbsession.flush()
         return schedule

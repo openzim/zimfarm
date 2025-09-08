@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.routes import (
     auth,
     contexts,
@@ -97,6 +98,14 @@ async def request_validation_error_handler(_, exc: RequestValidationError):
 async def http_exception_handler(_, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code, content={"success": False, "message": exc.detail}
+    )
+
+
+@app.exception_handler(RecordDoesNotExistError)
+async def record_does_not_exist_error_handler(_, exc: RecordDoesNotExistError):
+    return JSONResponse(
+        status_code=HTTPStatus.NOT_FOUND,
+        content={"success": False, "message": exc.message},
     )
 
 

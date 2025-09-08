@@ -44,6 +44,7 @@ class ScheduleCreateSchema(BaseModel):
     config: dict[str, Any]  # will be validated in the route
     notification: ScheduleNotificationSchema | None = None
     context: NotEmptyString | None = None
+    comment: str | None = None
 
 
 class ScheduleCreateResponseSchema(BaseModel):
@@ -66,7 +67,9 @@ class ScheduleUpdateSchema(BaseModel):
     flags: dict[str, Any] | None = None
     artifacts_globs: list[NotEmptyString] | None = None
     context: str | None = None
+    comment: str | None = None  # Optional comment for history tracking
 
 
 class CloneSchema(BaseModel):
     name: ScheduleNameField
+    comment: str | None = None

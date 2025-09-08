@@ -12,7 +12,7 @@ from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import LanguageSchema
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
-from zimfarm_backend.db.schedule import get_schedule
+from zimfarm_backend.db.schedule import get_schedule, update_schedule
 from zimfarm_backend.utils.token import generate_access_token
 
 
@@ -225,10 +225,10 @@ def test_schedule_name(
 
 
 @pytest.mark.parametrize(
-    "permission,hide_secrets,expected_status_code",
+    "permission,hide_secrets",
     [
-        pytest.param(RoleEnum.ADMIN, False, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.ADMIN, True, HTTPStatus.OK, id="admin_hide_secrets"),
+        pytest.param(RoleEnum.ADMIN, False, id="admin-no-hide-secrets"),
+        pytest.param(RoleEnum.ADMIN, True, id="admin-hide-secrets"),
     ],
 )
 def test_get_schedule(
@@ -237,10 +237,9 @@ def test_get_schedule(
     create_user: Callable[..., User],
     create_schedule: Callable[..., Schedule],
     permission: RoleEnum,
-    hide_secrets: bool,  # noqa: FBT001
-    expected_status_code: HTTPStatus,
+    *,
+    hide_secrets: bool,
 ):
-    """Test that get_schedule raises ForbiddenError without permission"""
     user = create_user(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -259,17 +258,16 @@ def test_get_schedule(
         f"/v2/schedules/{schedule.name}?hide_secrets={_hide_secrets}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == expected_status_code
-    if expected_status_code == HTTPStatus.OK:
-        data = response.json()
-        assert "config" in data
-        assert "offliner" in data["config"]
-        assert "mwPassword" in data["config"]["offliner"]
-        if hide_secrets:
-            for char in data["config"]["offliner"]["mwPassword"]:
-                assert char == "*"
-        else:
-            assert data["config"]["offliner"]["mwPassword"] == "test-password"
+    data = response.json()
+    assert "config" in data
+    assert "offliner" in data["config"]
+    assert "mwPassword" in data["config"]["offliner"]
+
+    if hide_secrets:
+        for char in data["config"]["offliner"]["mwPassword"]:
+            assert char == "*"
+    else:
+        assert data["config"]["offliner"]["mwPassword"] == "test-password"
 
 
 def test_update_schedule_unauthorized(
@@ -364,6 +362,11 @@ def test_update_schedule_unauthorized(
             },
             HTTPStatus.OK,
             id="good_mw_offliner_image_update",
+        ),
+        pytest.param(
+            {},
+            HTTPStatus.BAD_REQUEST,
+            id="no_changes",
         ),
     ],
 )
@@ -651,3 +654,95 @@ def test_update_existing_schedule_with_existing_name(
         },
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+@pytest.mark.parametrize(
+    "permission,expected_status_code",
+    [
+        pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+    ],
+)
+def test_get_schedule_history(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    permission: RoleEnum,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule = create_schedule(name="test_schedule")
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.get(
+        f"/v2/schedules/{schedule.name}/history?limit=10&skip=0",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "query_string,expected_count",
+    [
+        pytest.param("", 10, id="all"),
+        pytest.param("limit=5&skip=0", 5, id="first-page"),
+        pytest.param("limit=5&skip=5", 5, id="second-page"),
+        pytest.param("limit=10&skip=10", 0, id="third-page"),
+    ],
+)
+def test_get_schedule_history_pagination(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    query_string: str,
+    expected_count: int,
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+    schedule = create_schedule(
+        name="test_schedule",
+        category=ScheduleCategory.wikipedia,
+        language=LanguageSchema(code="eng", name="English"),
+        tags=["important"],
+    )
+
+    #  When we created a schedule, we created 1 history entry
+    for i in range(9):
+        update_schedule(
+            session=dbsession,
+            author="test",
+            schedule_name=schedule.name,
+            comment=f"test_comment_{i}",
+            tags=[*schedule.tags, f"test_tag_{i}"],
+        )
+
+    url = f"/v2/schedules/{schedule.name}/history?{query_string}"
+    response = client.get(
+        url,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert "items" in data
+    assert "meta" in data
+    assert "count" in data["meta"]
+    assert "skip" in data["meta"]
+    assert "page_size" in data["meta"]
+    assert data["meta"]["page_size"] == expected_count
