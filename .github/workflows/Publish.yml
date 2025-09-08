@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-22.04
 
     outputs:
-      dispatcher_backend: ${{ steps.filter.outputs.dispatcher_backend }}
-      dispatcher_frontend_ui: ${{ steps.filter.outputs.dispatcher_frontend_ui }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend_ui: ${{ steps.filter.outputs.frontend_ui }}
       dnscache: ${{ steps.filter.outputs.dnscache }}
       monitor: ${{ steps.filter.outputs.monitor }}
       receiver: ${{ steps.filter.outputs.receiver }}
@@ -38,10 +38,10 @@ jobs:
       id: filter
       with:
         filters: |
-          dispatcher_backend:
-            - 'dispatcher/backend/**'
-          dispatcher_frontend_ui:
-            - 'dispatcher/frontend-ui/**'
+          backend:
+            - 'backend/**'
+          frontend_ui:
+            - 'frontend-ui/**'
           dnscache:
             - 'dnscache/**'
           monitor:
@@ -53,9 +53,9 @@ jobs:
           watcher:
             - 'watcher/**'
           task_worker:
-            - 'workers/**'
+            - 'worker/**'
           worker_manager:
-            - 'workers/**'
+            - 'worker/**'
 
   dnscache:
     name: Dnscache build
@@ -101,11 +101,11 @@ jobs:
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
-  dispatcher:
-    name: Dispatcher build
+  backend:
+    name: Backend build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.dispatcher_backend == 'true' || inputs.force }}
+    if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -116,7 +116,7 @@ jobs:
           image-name: openzim/zimfarm-dispatcher
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: dispatcher/backend
+          context: backend
           registries: ghcr.io
           credentials:
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
@@ -136,11 +136,11 @@ jobs:
       #   with:
       #     args: rollout restart deployments api-deployment -n zimit
 
-  ui:
-    name: UI build
+  frontend-ui:
+    name: Frontend UI build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.dispatcher_frontend_ui == 'true' || inputs.force }}
+    if: ${{ needs.paths-filter.outputs.frontend_ui == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -151,7 +151,7 @@ jobs:
           image-name: openzim/zimfarm-ui
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: dispatcher/frontend-ui
+          context: frontend-ui
           registries: ghcr.io
           credentials:
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
@@ -214,7 +214,7 @@ jobs:
           image-name: openzim/zimfarm-task-worker
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: workers
+          context: worker
           dockerfile: task-Dockerfile
           registries: ghcr.io
           credentials:
@@ -236,7 +236,7 @@ jobs:
           image-name: openzim/zimfarm-worker-manager
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: workers
+          context: worker
           dockerfile: manager-Dockerfile
           registries: ghcr.io
           credentials:
