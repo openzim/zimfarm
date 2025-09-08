@@ -27,7 +27,7 @@ const ready = ref(false)
 
 
 onMounted(async () => {
-  await authStore.loadTokenFromCookie(false)
+  await authStore.loadTokenFromCookie()
   loadingStore.startLoading('Loading application data...')
 
   await languageStore.fetchLanguages()
