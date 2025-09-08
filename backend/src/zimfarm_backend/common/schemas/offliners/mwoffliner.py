@@ -224,6 +224,7 @@ class MWOfflinerFlagsSchema(DashModel):
         "on Parsoid backend. Otherwise `1`. Reduce on throttled Wikis.",
     )
     withoutZimFullTextIndex: bool | None = OptionalField(
+        title="Without Full Text Index",
         description="Don't include a fulltext search index to the ZIM",
     )
     verbose: MWOfflinerVerbosityValue | None = OptionalField(

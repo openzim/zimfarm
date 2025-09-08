@@ -197,7 +197,7 @@ class Schedule(Base):
     notification: Mapped[dict[str, Any] | None]
     is_valid: Mapped[bool] = mapped_column(default=True, server_default=true())
     # context that a worker must have to run this schedule
-    context: Mapped[str] = mapped_column(default="", server_default="")
+    context: Mapped[str] = mapped_column(default="", server_default="", index=True)
 
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration
@@ -224,6 +224,41 @@ class Schedule(Base):
 
     durations: Mapped[list["ScheduleDuration"]] = relationship(
         back_populates="schedule", cascade="all", init=False
+    )
+
+    history_entries: Mapped[list["ScheduleHistory"]] = relationship(
+        back_populates="schedule",
+        cascade="all, delete",
+        passive_deletes=True,
+        init=False,
+        default_factory=list,
+        # return the history entries in descending order of created_at
+        order_by="ScheduleHistory.created_at.desc()",
+    )
+
+
+class ScheduleHistory(Base):
+    __tablename__ = "schedule_history"
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    schedule_id: Mapped[UUID] = mapped_column(
+        ForeignKey("schedule.id", ondelete="CASCADE"), init=False
+    )
+    author: Mapped[str]
+    created_at: Mapped[datetime]
+    comment: Mapped[str | None]
+    name: Mapped[str]
+    category: Mapped[str]
+    config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
+    enabled: Mapped[bool]
+    language_code: Mapped[str]
+    tags: Mapped[list[str]]
+    periodicity: Mapped[str]
+    context: Mapped[str] = mapped_column(default="", server_default="")
+
+    schedule: Mapped["Schedule"] = relationship(
+        back_populates="history_entries", init=False
     )
 
 
