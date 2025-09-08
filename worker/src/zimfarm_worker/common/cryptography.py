@@ -10,6 +10,10 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
     EllipticCurvePrivateKey,
     EllipticCurvePublicKey,
 )
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.asymmetric.types import (
     PrivateKeyTypes,
@@ -36,8 +40,6 @@ class AuthMessage:
 
 def sign_message_with_rsa_key(private_key: RSAPrivateKey, message: bytes) -> bytes:
     """Sign a message using the provided RSA private key with PSS padding and SHA256."""
-    # Needed for testing purposes and to show the signature algorithm for
-    # reverse verification signature
     return private_key.sign(
         message,
         padding.PSS(
@@ -52,14 +54,19 @@ def sign_message_with_ecdsa_key(
     private_key: EllipticCurvePrivateKey, message: bytes
 ) -> bytes:
     """Sign a message using the provided ECDSA private key."""
-    # Needed for testing purposes and to show the signature algorithm for
-    # reverse verification.
     return private_key.sign(message, ec.ECDSA(hashes.SHA256()))
+
+
+def sign_message_with_ed25519_key(
+    private_key: Ed25519PrivateKey, message: bytes
+) -> bytes:
+    """Sign a message using the provided Ed25519 private key."""
+    return private_key.sign(message)
 
 
 def load_private_key_from_path(
     private_key_fpath: Path,
-) -> RSAPrivateKey | EllipticCurvePrivateKey:
+) -> RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey:
     """Load a private key from a file path
 
     Attempts to load the private key in SSH or PEM format.
@@ -78,13 +85,15 @@ def load_private_key_from_path(
     if private_key is None:
         raise ValueError("Unable to load private key")
 
-    if not isinstance(private_key, RSAPrivateKey | EllipticCurvePrivateKey):
+    if not isinstance(
+        private_key, RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey
+    ):
         raise ValueError("Key is not an RSA private key")
     return private_key
 
 
 def get_public_key_fingerprint(
-    public_key: RSAPublicKey | EllipticCurvePublicKey,
+    public_key: RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey,
 ) -> str:
     """Compute the SHA256 fingerprint of a public key."""
     # Modified from: https://github.com/paramiko/paramiko/blob/2af0dd788d8e97dff51212baed2d870abf3b38eb/paramiko/pkey.py#L357-L369
@@ -94,18 +103,23 @@ def get_public_key_fingerprint(
 
 
 def get_signature(
-    message: bytes, private_key: RSAPrivateKey | EllipticCurvePrivateKey
+    message: bytes,
+    private_key: RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey,
 ) -> str:
     """Get a base64 encoded signature for a message using the private key"""
-    if isinstance(private_key, RSAPrivateKey):
-        signature = sign_message_with_rsa_key(private_key, message)
-    else:
-        signature = sign_message_with_ecdsa_key(private_key, message)
+    match private_key:
+        case RSAPrivateKey():
+            signature = sign_message_with_rsa_key(private_key, message)
+        case EllipticCurvePrivateKey():
+            signature = sign_message_with_ecdsa_key(private_key, message)
+        case Ed25519PrivateKey():
+            signature = sign_message_with_ed25519_key(private_key, message)
     return base64.b64encode(signature).decode()
 
 
 def generate_auth_message(
-    worker_id: str, private_key: RSAPrivateKey | EllipticCurvePrivateKey
+    worker_id: str,
+    private_key: RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey,
 ) -> AuthMessage:
     """Generate an authentication message for a worker"""
     body = f"{worker_id}:{getnow().isoformat()}"

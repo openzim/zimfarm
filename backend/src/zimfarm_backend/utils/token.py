@@ -11,6 +11,10 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
     EllipticCurvePrivateKey,
     EllipticCurvePublicKey,
 )
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.asymmetric.types import PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import (
@@ -56,10 +60,15 @@ def verify_signed_message(public_key: bytes, signature: bytes, message: bytes) -
     """Verify if a message was signed with the corresponding private key."""
 
     pem_public_key = load_public_key(public_key)
-    if isinstance(pem_public_key, RSAPublicKey):
-        return verify_rsa_signed_message(pem_public_key, signature, message)
-    else:
-        return verify_ecdsa_signed_message(pem_public_key, signature, message)
+    match pem_public_key:
+        case RSAPublicKey():
+            return verify_rsa_signed_message(pem_public_key, signature, message)
+        case Ed25519PublicKey():
+            return verify_ed25519_signed_message(pem_public_key, signature, message)
+        case EllipticCurvePublicKey():
+            return verify_ecdsa_signed_message(pem_public_key, signature, message)
+        case _:
+            raise ValueError("Unsupported key type")
 
 
 def sign_message_with_rsa_key(private_key: RSAPrivateKey, message: bytes) -> bytes:
@@ -115,7 +124,29 @@ def verify_ecdsa_signed_message(
     return True
 
 
-def serialize_public_key(public_key: RSAPublicKey | EllipticCurvePublicKey) -> bytes:
+def sign_message_with_ed25519_key(
+    private_key: Ed25519PrivateKey, message: bytes
+) -> bytes:
+    """Sign a message using the provided Ed25519 private key."""
+    # Needed for testing purposes and to show the signature algorithm for
+    # reverse verification.
+    return private_key.sign(message)
+
+
+def verify_ed25519_signed_message(
+    public_key: Ed25519PublicKey, signature: bytes, message: bytes
+) -> bool:
+    """Verify a message was signed using the private key of the Ed25519 public key."""
+    try:
+        public_key.verify(signature, message)
+    except InvalidSignature:
+        return False
+    return True
+
+
+def serialize_public_key(
+    public_key: RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey,
+) -> bytes:
     """Convert a public key to PEM format."""
     return public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
@@ -124,7 +155,7 @@ def serialize_public_key(public_key: RSAPublicKey | EllipticCurvePublicKey) -> b
 
 
 def get_public_key_fingerprint(
-    public_key: RSAPublicKey | EllipticCurvePublicKey,
+    public_key: RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey,
 ) -> str:
     """Compute the SHA256 fingerprint of a public key."""
     # Modified from: https://github.com/paramiko/paramiko/blob/2af0dd788d8e97dff51212baed2d870abf3b38eb/paramiko/pkey.py#L357-L369
@@ -133,12 +164,15 @@ def get_public_key_fingerprint(
     return f"SHA256:{cleaned}"
 
 
-def load_public_key(key: bytes) -> RSAPublicKey | EllipticCurvePublicKey:
+def load_public_key(
+    key: bytes,
+) -> RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey:
     """Load SSH public key from bytes.
 
     Supported formats for SSH public keys are:
-    - RSA  (both in OpenSSH and PEM format)
-    - ECDSA (both in OpenSSH and PEM format)
+    - RSA  (OpenSSH format)
+    - ECDSA (OpenSSH format)
+    - Ed25519 (OpenSSH format)
     """
 
     public_key: SSHPublicKeyTypes | PublicKeyTypes | None = None
@@ -153,6 +187,20 @@ def load_public_key(key: bytes) -> RSAPublicKey | EllipticCurvePublicKey:
     if public_key is None:
         raise PEMPublicKeyLoadError("Unable to load public key")
 
-    if not isinstance(public_key, RSAPublicKey | EllipticCurvePublicKey):
+    if not isinstance(
+        public_key, RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey
+    ):
         raise PEMPublicKeyLoadError("Unsupported public key type.")
     return public_key
+
+
+def get_public_key_type(key: SSHPublicKeyTypes):
+    match key:
+        case RSAPublicKey():
+            return "RSA"
+        case EllipticCurvePublicKey():
+            return "ECDSA"
+        case Ed25519PublicKey():
+            return "ED25519"
+        case _:
+            raise ValueError("Unsupported key type.")
