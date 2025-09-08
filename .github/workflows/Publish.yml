@@ -7,6 +7,13 @@ on:
     tags:
       - dnscache-v*
       - uploader-v*
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force publish all components'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
 
@@ -54,7 +61,7 @@ jobs:
     name: Dnscache build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.dnscache == 'true'
+    if: ${{ needs.paths-filter.outputs.dnscache == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -76,7 +83,7 @@ jobs:
     name: Uploader build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.uploader == 'true'
+    if: ${{ needs.paths-filter.outputs.uploader == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -98,7 +105,7 @@ jobs:
     name: Dispatcher build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.dispatcher_backend == 'true'
+    if: ${{ needs.paths-filter.outputs.dispatcher_backend == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -133,7 +140,7 @@ jobs:
     name: UI build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.dispatcher_frontend_ui == 'true'
+    if: ${{ needs.paths-filter.outputs.dispatcher_frontend_ui == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -168,7 +175,7 @@ jobs:
     name: Receiver build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.receiver == 'true'
+    if: ${{ needs.paths-filter.outputs.receiver == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -196,7 +203,7 @@ jobs:
     name: Task worker build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.task_worker == 'true'
+    if: ${{ needs.paths-filter.outputs.task_worker == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -218,7 +225,7 @@ jobs:
     name: Worker manager build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.worker_manager == 'true'
+    if: ${{ needs.paths-filter.outputs.worker_manager == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -240,7 +247,7 @@ jobs:
     name: Monitor build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.monitor == 'true'
+    if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
@@ -261,7 +268,7 @@ jobs:
     name: Watcher build
     runs-on: ubuntu-22.04
     needs: paths-filter
-    if: needs.paths-filter.outputs.watcher == 'true'
+    if: ${{ needs.paths-filter.outputs.watcher == 'true' || inputs.force }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v4
