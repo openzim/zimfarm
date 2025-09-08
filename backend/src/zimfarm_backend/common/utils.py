@@ -98,6 +98,12 @@ def save_event(
         task.status = code
         task.updated_at = timestamp
 
+    # For scraper running events, we want to update the updated_at even though it is a
+    # silent event. This is because we use it in the periodic-task to determine if
+    # a task is "dead" and cancel it.
+    if code == TaskStatus.scraper_running:
+        task.updated_at = timestamp
+
     def add_to_container_if_present(
         task: Task, kwargs_key: str, container_key: str
     ) -> None:
