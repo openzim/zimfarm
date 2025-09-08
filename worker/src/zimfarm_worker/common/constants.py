@@ -11,7 +11,7 @@ from zimfarm_worker.common.utils import as_pos_int
 
 
 def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
-    value = os.getenv(key, default=default)
+    value = os.getenv(key) or default
 
     if mandatory and not value:
         raise OSError(f"Please set the {key} environment variable")
