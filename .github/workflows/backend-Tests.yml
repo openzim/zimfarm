@@ -15,10 +15,10 @@ jobs:
 
   #  steps:
   #    - name: Retrieve source code
-  #      uses: actions/checkout@v4
+  #      uses: actions/checkout@v5
 
   #    - name: Set up Python
-  #      uses: actions/setup-python@v5
+  #      uses: actions/setup-python@v6
   #      with:
   #        python-version-file: backend/pyproject.toml
   #        architecture: x64
@@ -58,10 +58,10 @@ jobs:
 
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: backend/pyproject.toml
           architecture: x64
@@ -85,7 +85,7 @@ jobs:
         run: inv coverage --args "-vvv"
 
       - name: Upload coverage report to codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           directory: backend
           fail_ci_if_error: true
