@@ -180,9 +180,10 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
     global_notifs = GlobalNotifications.entries.get(event, {})
     task_notifs = (
         task_safe.notification.model_dump(mode="json") if task_safe.notification else {}
-    )
+    ).get(event, {})
 
     # exit early if we don't have notification requests for the event
+    logger.debug(f"sending task notifications {task_notifs=}")
     if not global_notifs and not task_notifs:
         return
 
