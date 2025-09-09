@@ -1,9 +1,11 @@
 from contextlib import nullcontext as does_not_raise
+from typing import Any
 
 import pytest
 from _pytest.python_api import RaisesContext
 from pydantic import ValidationError
 
+from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas.fields import (
     ZIMFileName,
     ZIMLangCode,
@@ -355,3 +357,36 @@ def test_ted_flags_schema_links(links: str, expected: RaisesContext[Exception]):
             offliner_id="ted",
             name="ted-talks_mul_football",
         )
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("true", True),
+        ("True", True),
+        ("1", True),
+        ("yes", True),
+        ("y", True),
+        ("Y", True),
+        ("on", True),
+        ("ON", True),
+        ("false", False),
+        ("FALSE", False),
+        ("0", False),
+        ("no", False),
+        ("n", False),
+        ("off", False),
+        ("", False),
+        ("anything_else", False),
+        (True, True),
+        (False, False),
+        (1, True),
+        (0, False),
+        (None, False),
+        ([], False),
+        ({}, False),
+    ],
+)
+def test_parse_bool(value: Any, *, expected: bool):
+    """Test parse_bool function with various inputs."""
+    assert parse_bool(value) == expected

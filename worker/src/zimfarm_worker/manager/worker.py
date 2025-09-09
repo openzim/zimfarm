@@ -17,6 +17,7 @@ from zimfarm_worker.common.constants import (
     PLATFORMS_TASKS,
     SUPPORTED_OFFLINERS,
     getenv,
+    parse_bool,
 )
 from zimfarm_worker.common.docker import (
     get_label_value,
@@ -50,8 +51,8 @@ class WorkerManager(BaseWorker):
     sleep_interval = int(
         getenv("SLEEP_INTERVAL", default=5)
     )  # seconds to sleep while idle
-    selfish = (
-        getenv("SELFISH", default="false").lower() == "true"
+    selfish = parse_bool(
+        getenv("SELFISH", default="false")
     )  # whether to only accept assigned tasks
 
     def __init__(

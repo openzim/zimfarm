@@ -7,8 +7,13 @@ from humanfriendly import parse_timespan
 from zimfarm_backend.common.enums import SchedulePeriodicity
 
 
+def parse_bool(value: Any) -> bool:
+    """Parse value into boolean."""
+    return str(value).lower() in ("true", "1", "yes", "y", "on")
+
+
 def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
-    value = os.getenv(key, default=default)
+    value = os.getenv(key) or default
 
     if mandatory and not value:
         raise OSError(f"Please set the {key} environment variable")
@@ -18,7 +23,7 @@ def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
 
 BASE_DIR = Path(__file__).parent.parent
 
-DEBUG = getenv("DEBUG", default="false").lower() == "true"
+DEBUG = parse_bool(getenv("DEBUG", default="false"))
 
 REFRESH_TOKEN_EXPIRY_DURATION = parse_timespan(
     getenv("REFRESH_TOKEN_EXPIRY_DURATION", default="30d")
@@ -103,8 +108,8 @@ SECRET_REPLACEMENT = "--------"  # nosec
 # using the following, it is possible to automate
 # the update of a whitelist of workers IPs on Wasabi (S3 provider)
 # enable this feature (default is off)
-USES_WORKERS_IPS_WHITELIST = (
-    getenv("USES_WORKERS_IPS_WHITELIST", default="false").lower() == "true"
+USES_WORKERS_IPS_WHITELIST = parse_bool(
+    getenv("USES_WORKERS_IPS_WHITELIST", default="false")
 )
 MAX_WORKER_IP_CHANGES_PER_DAY = int(
     getenv("MAX_WORKER_IP_CHANGES_PER_DAY", default="4")
@@ -130,7 +135,7 @@ WASABI_MAX_WHITELIST_VERSIONS = int(
 
 
 # openZIM CMS can be called upon receival of each ZIM
-INFORM_CMS = bool(getenv("INFORM_CMS", default=False))
+INFORM_CMS = parse_bool(getenv("INFORM_CMS", default="false"))
 CMS_ENDPOINT = getenv(
     "CMS_ENDPOINT", default="https://api.cms.openzim.org/v1/books/add"
 )
@@ -140,7 +145,9 @@ CMS_ZIM_DOWNLOAD_URL = getenv(
 )
 
 # [DEBUG] prevent scraper containers from running wit extended capabilities
-DISALLOW_CAPABILITIES = bool(getenv("ZIMFARM_DISALLOW_CAPABILITIES", default=False))
+DISALLOW_CAPABILITIES = parse_bool(
+    getenv("ZIMFARM_DISALLOW_CAPABILITIES", default="false")
+)
 
 # Timeout for requests to other services
 REQ_TIMEOUT_NOTIFICATIONS = int(getenv("REQ_TIMEOUT_NOTIFICATIONS", default="5"))
@@ -150,8 +157,12 @@ REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
 REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT_DURATION", default="30s"))
 
 # OFFLINERS
-ZIMIT_USE_RELAXED_SCHEMA = bool(getenv("ZIMIT_USE_RELAXED_SCHEMA", default=False))
-NAUTILUS_USE_RELAXED_SCHEMA = bool(getenv("NAUTILUS_USE_RELAXED_SCHEMA", default=False))
+ZIMIT_USE_RELAXED_SCHEMA = parse_bool(
+    getenv("ZIMIT_USE_RELAXED_SCHEMA", default="false")
+)
+NAUTILUS_USE_RELAXED_SCHEMA = parse_bool(
+    getenv("NAUTILUS_USE_RELAXED_SCHEMA", default="false")
+)
 
 POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)
 

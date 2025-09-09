@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 import zimfarm_backend.db.models as dbm
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.constants import getenv
+from zimfarm_backend.common.constants import getenv, parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.utils import task_cancel_requested_event_handler
 from zimfarm_backend.db import Session
@@ -39,8 +39,8 @@ OLD_TASK_DELETION_THRESHOLD = datetime.timedelta(
     days=int(getenv("TASKS_OLDER_THAN", default=10))
 )
 # flag to determine whether to remove old tasks
-OLD_TASK_DELETION_ENABLED = (
-    getenv("SHOULD_REMOVE_OLD_TASKS", default="false").lower() == "true"
+OLD_TASK_DELETION_ENABLED = parse_bool(
+    getenv("SHOULD_REMOVE_OLD_TASKS", default="false")
 )
 
 
