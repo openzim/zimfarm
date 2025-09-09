@@ -7,9 +7,11 @@ from pydantic import ValidationError
 
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas.fields import (
+    GraphemeStr,
     ZIMFileName,
     ZIMLangCode,
     ZIMName,
+    ZIMTitle,
 )
 from zimfarm_backend.common.schemas.models import BaseModel
 from zimfarm_backend.common.schemas.offliners import TedFlagsSchema
@@ -32,6 +34,10 @@ class ZIMNameModel(BaseModel):
 
 class ZIMLanguageCodeModel(BaseModel):
     value: ZIMLangCode
+
+
+class ZIMTitleModel(BaseModel):
+    value: ZIMTitle
 
 
 def test_enum_validator_accepts_valid_value():
@@ -390,3 +396,69 @@ def test_ted_flags_schema_links(links: str, expected: RaisesContext[Exception]):
 def test_parse_bool(value: Any, *, expected: bool):
     """Test parse_bool function with various inputs."""
     assert parse_bool(value) == expected
+
+
+@pytest.mark.parametrize(
+    "string,expected_length",
+    [
+        ("hello", 5),
+        ("世界", 2),
+        ("🌍", 1),
+        ("👨‍👩‍👧‍👦", 1),
+        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 2),
+        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 3),
+    ],
+)
+def test_grapheme_str(string: str, expected_length: int):
+    assert len(GraphemeStr(string)) == expected_length
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("hello", does_not_raise()),
+        ("世界", does_not_raise()),
+        ("🌍" * 30, does_not_raise()),
+        ("👨‍👩‍👧‍👦" * 30, does_not_raise()),
+        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", does_not_raise()),
+        # Test strings longer than 30 characters that should fail
+        ("This is a very long title that should fail", pytest.raises(ValidationError)),
+        ("ThisIsALongTitleWithoutSpacesThatShouldFail", pytest.raises(ValidationError)),
+        ("A string with exactly 31 characters!", pytest.raises(ValidationError)),
+        (
+            "Another string that is way too long to be a valid ZIM title",
+            pytest.raises(ValidationError),
+        ),
+        ("👨‍👩‍👧‍👦" * 31, pytest.raises(ValidationError)),  # Long string of emojis
+        (
+            "世界" * 20,
+            pytest.raises(ValidationError),
+        ),  # Long string of Chinese characters
+    ],
+)
+def test_zimtitle_string(string: str, expected: RaisesContext[Exception]):
+    with expected:
+        ZIMTitleModel.model_validate({"value": string})
+
+
+@pytest.mark.parametrize(
+    "string",
+    [
+        ("hello"),
+        ("世界"),
+        ("🌍"),
+        ("👨‍👩‍👧‍👦"),
+        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"),
+        ("This is a very long title that should fail"),
+        ("ThisIsALongTitleWithoutSpacesThatShouldFail"),
+        ("A string with exactly 31 characters!"),
+        ("Another string that is way too long to be a valid ZIM title",),
+        ("👨‍👩‍👧‍👦" * 31),
+        ("世界" * 20,),
+    ],
+)
+def test_zimtitle_string_does_not_raise(string: str):
+    with does_not_raise():
+        ZIMTitleModel.model_validate(
+            {"value": string}, context={"skip_validation": True}
+        )

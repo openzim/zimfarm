@@ -2934,6 +2934,11 @@ speakingurl@^14.0.1:
   resolved "https://registry.npmjs.org/speakingurl/-/speakingurl-14.0.1.tgz"
   integrity sha512-1POYv7uv2gXoyGFpBCmpDVSNV74IfsWlDW216UPjbWufNf+bSU6GdbDsxdcxtfwb4xlI3yxzOTKClUosxARYrQ==
 
+split-by-grapheme@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/split-by-grapheme/-/split-by-grapheme-1.0.1.tgz#4d2b006b986a5fbe2c23357929e1566af7557dc1"
+  integrity sha512-aH+OtxnX+AOyWJvw2hNaQyY9wkzkG6o8URD+rRwFKWkqUduxMA+icOBJv1/aoLuKbb15f0qRHXM+rs94Q50blA==
+
 stackback@0.0.2:
   version "0.0.2"
   resolved "https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz"

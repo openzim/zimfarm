@@ -450,6 +450,7 @@ import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/sch
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
+import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
 
 interface FlagField {
@@ -782,7 +783,7 @@ const getFieldRules = (field: FlagField) => {
   if (field.min_length !== null) {
     rules.push((value: unknown) => {
       if (shouldValidate(value) && typeof value === 'string') {
-        if (value.length < field.min_length!) {
+        if (value.split(byGrapheme).length < field.min_length!) {
           return `Minimum length is ${field.min_length} characters`
         }
       }
@@ -794,7 +795,7 @@ const getFieldRules = (field: FlagField) => {
   if (field.max_length !== null) {
     rules.push((value: unknown) => {
       if (shouldValidate(value) && typeof value === 'string') {
-        if (value.length > field.max_length!) {
+        if (value.split(byGrapheme).length > field.max_length!) {
           return `Maximum length is ${field.max_length} characters`
         }
       }
