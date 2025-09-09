@@ -478,7 +478,7 @@ const monitoringUrl = computed(() => {
 })
 
 const webApiUrl = computed(() => config.ZIMFARM_WEBAPI)
-const kiwixDownloadUrl = computed(() => config.ZIM_DOWNLOAD_URL)
+const kiwixDownloadUrl = computed(() => config.ZIMFARM_ZIM_DOWNLOAD_URL)
 const zimfarmLogsUrl = computed(() => task.value ? logsUrl(task.value) : "")
 const zimfarmArtifactsUrl = computed(() => task.value ? artifactsUrl(task.value) : "")
 
