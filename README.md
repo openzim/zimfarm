@@ -14,15 +14,15 @@ ZIM files repository.
 
 The Zimfarm platform is a combination of different tools:
 
-### dispatcher
+### backend
 
-The [dispatcher](https://ghcr.io/openzim/zimfarm-dispatcher) is a central database and [API](https://api.farm.openzim.org/v1) that records *recipes* (metadata of ZIM to produce) and *tasks*. It includes a scheduler that decides when a ZIM file should be recreated (based on the recipe) and a dispatcher that creates and assigns *tasks* to *workers*.
+The [backend](https://ghcr.io/openzim/zimfarm-backend) is a central database and [API](https://api.farm.openzim.org/v2) that records _recipes_ (metadata of ZIM to produce) and _tasks_. It decides when a ZIM file should be recreated (based on the recipe), creates and assigns _tasks_ to _workers_.
 
 ### frontend
 
-The [frontend](https://ghcr.io/openzim/zimfarm-ui), available at [farm.openzim.org](https://farm.openzim.org/) is a simple consumer of the API.
+The [frontend](https://ghcr.io/openzim/zimfarm-ui), available at [farm.openzim.org](https://farm.openzim.org/) is a simple consumer of the backend API.
 
-It is used to create, clone and edit recipes, but also to monitor the evolution of tasks and *workers*.
+It is used to create, clone and edit recipes, but also to monitor the evolution of tasks and _workers_.
 
 Anybody can use it in read-only mode.
 
@@ -44,27 +44,31 @@ The task-worker's role is to start and monitor the scraper's container for the t
 
 #### uploader
 
-The [uploader](https://ghcr.io/openzim/uploader) is instantiated by the task-worker to upload, individually, each created ZIM files, as well as the scraper's container log.
+The [uploader](https://ghcr.io/openzim/zimfarm-uploader) is instantiated by the task-worker to upload, individually, each created ZIM files, as well as the scraper's container log.
 
 The uploader supports both SCP and SFTP. We are currently using SFTP for all uploads due to a slight speed gain.
 
 Uploader is very fast and convenient (can watch and resumes files) but works only off files at the moment.
 
+#### dnscache
+
+The [dnscache](https://ghcr.io/openzim/zimfarm-dnscache) is a dnsmasq server instantiated by the task-worker that ensures specific nameservers are used and caching of DNS results. This ensures that, if DNS becomes unstable, running tasks will not be affected
+
 ### receiver
 
-The [receiver](https://ghcr.io/openzim/zimfarm-receiver) is a jailed OpenSSH-server that receives scraper logs and ZIM files and pass the latter through a quarantine via the [zimcheck](https://github.com/openzim/zim-tools) tool which eventually either put them aside (invalid ZIM) or move those to the [public download server](https://download.kiwix.org/zim/).
+The [receiver](https://ghcr.io/openzim/zimfarm-receiver) is a jailed OpenSSH-server that receives scraper logs and ZIM files and either put them aside (if file is not at root of source directory) or move them to the [public download server](https://download.kiwix.org/zim/).
 
 ### scrapers
 
-Scrapers are the tools used to actually convert a *scraping request* (recorded in a Zimfarm recipe) into one or several ZIM files.
+Scrapers are the tools used to actually convert a _scraping request_ (recorded in a Zimfarm recipe) into one or several ZIM files.
 
 The most important one is the Mediawiki scraper, called [mwoffliner](https://ghcr.io/openzim/mwoffliner/) but there are many of them for Stack-Exchange, Project Gutenberg, PhET and others.
 
 Scrapers are not part of the Zimfarm. Those are completely independent projects for which the requirements to integrate into the Zimfarm are minimal:
 
-* Works completely off a docker image
-* Arguments should be set on the command line
-* ZIM output folder should be settable via an argument
+- Works completely off a docker image
+- Arguments should be set on the command line
+- ZIM output folder should be settable via an argument
 
 # How do I request a ZIM file?
 
