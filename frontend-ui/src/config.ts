@@ -5,7 +5,7 @@ import { inject } from 'vue'
 
 export interface Config {
   ZIMFARM_WEBAPI: string
-  ZIM_DOWNLOAD_URL: string
+  ZIMFARM_ZIM_DOWNLOAD_URL: string
 }
 
 export const ConfigService = {
