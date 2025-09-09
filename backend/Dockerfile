@@ -21,7 +21,7 @@ ENV MAILGUN_FROM Zimfarm <info@farm.openzim.org>
 # ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|mailgun,reg@kiwix.org
 
 # curl needed for healthcheck
-RUN apt-get update && apt-get install -y curl && \
+RUN apt-get update && apt-get install -y curl supervisor && \
     rm -rf /var/lib/apt/lists/*
 
 # prestart script (former entrypoint - database init)
@@ -38,8 +38,6 @@ RUN chmod +x /app/periodic-tasks.py
 # periodic tasks as a supervisor listenner (every minute)
 COPY supervisor-listener.py /usr/local/bin/supervisor-listener
 RUN chmod +x /usr/local/bin/supervisor-listener
-
-COPY periodic.conf /etc/supervisor/conf.d/periodic.conf
 
 COPY maint-scripts /app/maint-scripts
 
@@ -61,4 +59,6 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD curl -f http://localhost/v2/healthcheck || exit 1
 
-CMD ["uvicorn", "zimfarm_backend.main:app", "--host", "0.0.0.0", "--port", "80"]
+COPY periodic.conf /etc/supervisor/conf.d/periodic.conf
+
+CMD ["/usr/bin/supervisord", "-n", "-u", "root"]

@@ -95,7 +95,7 @@ def status_to_cancel(
                     sa.func.jsonb_path_query_first(
                         dbm.Task.timestamp,
                         sa.cast(
-                            f'$[*] ? (@[0] == "{status}")[1]."$date"',
+                            f'strict $[*] ? (@[0] == "{status}")[1]."$date"',
                             JSONPATH,
                         ),
                     ),
@@ -191,7 +191,7 @@ def staled_statuses(session: OrmSession):
                     sa.func.jsonb_path_query_first(
                         dbm.Task.timestamp,
                         sa.cast(
-                            f'$[*] ? (@[0] == "{status}")[1]."$date"',
+                            f'strict $[*] ? (@[0] == "{status}")[1]."$date"',
                             JSONPATH,
                         ),
                     ),

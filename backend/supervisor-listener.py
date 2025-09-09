@@ -52,7 +52,7 @@ def main(interval: int, command: str, args: list[str] | None = None):
         #     to_supervisor("RESULT 4\nFAIL")
 
         # transition from READY to ACKNOWLEDGED
-        to_supervisor("RESULT \nOK")
+        to_supervisor("RESULT 2\nOK")
 
 
 if __name__ == "__main__":
