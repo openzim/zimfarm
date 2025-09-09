@@ -105,7 +105,7 @@ MONITORING_KEY = getenv("MONITORING_DEST", default=None)  # {uuid}
 # dispatcher-related
 DEFAULT_WEB_API_URLS = getenv(
     "WEB_API_URIS",
-    default=getenv("WEB_API_URI", default="https://api.farm.openzim.org/v1"),
+    default=getenv("WEB_API_URI", default="https://api.farm.openzim.org/v2"),
 ).split(",")
 DEFAULT_WEB_API_URL = DEFAULT_WEB_API_URLS[0]  # used in task-worker's argparse default
 
