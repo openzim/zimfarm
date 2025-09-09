@@ -198,7 +198,7 @@
                     <td>
                       <span v-if="durationDict.single">
                         {{ formatDuration(durationDict.value) }}
-                        (<code>{{ durationDict.worker }}</code> on {{ formatDt(durationDict.on) }})
+                        (<code class="text-pink-accent-2">{{ durationDict.worker }}</code> on {{ formatDt(durationDict.on) }})
                       </span>
                       <span v-else>
                         between {{ formatDuration(durationDict.minValue || 0) }} (<code
@@ -857,7 +857,7 @@ const getStatusColor = (status: string): string => {
     case 'pending':
       return 'warning'
     default:
-      return 'grey'
+      return 'dark-grey'
   }
 }
 

@@ -128,7 +128,7 @@ export function buildScheduleDuration(duration: ScheduleDuration | null): Single
   if (minWorker == maxWorker && minWorker.worker_name) {
     return single_duration(
       duration.workers[minWorker.worker_name].value,
-      minWorker.toString(),
+      minWorker.worker_name,
       duration.workers[minWorker.worker_name].on
     );
   }
