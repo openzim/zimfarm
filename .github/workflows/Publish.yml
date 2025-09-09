@@ -69,7 +69,7 @@ jobs:
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
         with:
-          image-name: openzim/dnscache
+          image-name: openzim/zimfarm-dnscache
           on-master: latest
           tag-pattern: /^dnscache-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
@@ -91,7 +91,7 @@ jobs:
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
         with:
-          image-name: openzim/uploader
+          image-name: openzim/zimfarm-uploader
           on-master: latest
           tag-pattern: /^uploader-v([0-9.]+)$/
           restrict-to: openzim/zimfarm
