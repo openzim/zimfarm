@@ -14,6 +14,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import ValidationError
 
 from zimfarm_backend.common.constants import (
+    BASE_DIR,
     PUBLIC_URL,
     REQ_TIMEOUT_NOTIFICATIONS,
     SLACK_EMOJI,
@@ -35,7 +36,7 @@ from zimfarm_backend.db.tasks import get_task_by_id_or_none
 
 logger = logging.getLogger(__name__)
 jinja_env = Environment(
-    loader=FileSystemLoader("templates"),
+    loader=FileSystemLoader(BASE_DIR / "templates"),
     autoescape=select_autoescape(["html", "xml", "txt"]),
 )
 jinja_env.filters["short_id"] = lambda value: str(value)[:5]
