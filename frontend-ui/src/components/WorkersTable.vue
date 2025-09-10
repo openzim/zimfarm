@@ -1,13 +1,15 @@
 <template>
   <div>
-    <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
+    <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title class="d-flex align-center justify-end">
         <div class="d-flex align-center">
           <v-btn
             size="small"
             variant="outlined"
             color="primary"
-            :prepend-icon="expandedAll ? 'mdi-unfold-less-horizontal' : 'mdi-unfold-more-horizontal'"
+            :prepend-icon="
+              expandedAll ? 'mdi-unfold-less-horizontal' : 'mdi-unfold-more-horizontal'
+            "
             class="text-none"
             @click="toggleAllRows"
           >
@@ -100,9 +102,11 @@
         <template #[`item.data-table-expand`]="{ internalItem, isExpanded, toggleExpand }">
           <v-btn
             :append-icon="isExpanded(internalItem) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            :text="isExpanded(internalItem)
-              ? `Collapse (${internalItem.raw?.tasks?.length || 0})`
-              : `Running tasks (${internalItem.raw?.tasks?.length || 0})`"
+            :text="
+              isExpanded(internalItem)
+                ? `Collapse (${internalItem.raw?.tasks?.length || 0})`
+                : `Running tasks (${internalItem.raw?.tasks?.length || 0})`
+            "
             class="text-none"
             :color="isExpanded(internalItem) ? 'primary' : 'medium-emphasis'"
             size="small"
@@ -129,8 +133,16 @@
                   class="bg-grey-lighten-5"
                 >
                   <template #[`item.schedule`]="{ item: task }">
-                    <span v-if="task.schedule_name === null">{{ task.original_schedule_name }}</span>
-                    <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: task.schedule_name } }">
+                    <span v-if="task.schedule_name === null">{{
+                      task.original_schedule_name
+                    }}</span>
+                    <router-link
+                      v-else
+                      :to="{
+                        name: 'schedule-detail',
+                        params: { scheduleName: task.schedule_name },
+                      }"
+                    >
                       {{ task.schedule_name }}
                     </router-link>
                   </template>
@@ -140,8 +152,16 @@
                   <template #[`item.resources`]="{ item: task }">
                     <div class="d-flex flex-wrap flex-column flex-md-row py-1">
                       <ResourceBadge kind="cpu" :value="task.config.resources.cpu" variant="text" />
-                      <ResourceBadge kind="memory" :value="task.config.resources.memory" variant="text" />
-                      <ResourceBadge kind="disk" :value="task.config.resources.disk" variant="text" />
+                      <ResourceBadge
+                        kind="memory"
+                        :value="task.config.resources.memory"
+                        variant="text"
+                      />
+                      <ResourceBadge
+                        kind="disk"
+                        :value="task.config.resources.disk"
+                        variant="text"
+                      />
                     </div>
                   </template>
                   <template #no-data>
@@ -180,19 +200,21 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'limitChanged': [limit: number]
-  'loadData': [limit: number, skip: number]
+  limitChanged: [limit: number]
+  loadData: [limit: number, skip: number]
 }>()
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
 const expanded = ref<string[]>([])
 
-const expandedAll = computed(() => props.workers.length > 0 && props.workers.every(w => expanded.value.includes(w.name)))
+const expandedAll = computed(
+  () => props.workers.length > 0 && props.workers.every((w) => expanded.value.includes(w.name)),
+)
 
 function toggleAllRows(): void {
   const willExpandAll = !expandedAll.value
-  expanded.value = willExpandAll ? props.workers.map(w => w.name) : []
+  expanded.value = willExpandAll ? props.workers.map((w) => w.name) : []
   saveExpandAllPreference(willExpandAll)
 }
 
@@ -210,22 +232,29 @@ function saveExpandAllPreference(value: boolean): void {
 
 onMounted(() => {
   if (getExpandAllPreference()) {
-    expanded.value = props.workers.map(w => w.name)
+    expanded.value = props.workers.map((w) => w.name)
   }
 })
 
-watch(() => props.workers, (newWorkers) => {
-  if (getExpandAllPreference()) {
-    expanded.value = newWorkers.map(w => w.name)
-  }
-})
+watch(
+  () => props.workers,
+  (newWorkers) => {
+    if (getExpandAllPreference()) {
+      expanded.value = newWorkers.map((w) => w.name)
+    }
+  },
+)
 
-function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
+function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const page = options.page > 1 ? options.page - 1 : 0
   emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
 }
 
-watch(() => props.paginator, (newPaginator) => {
-  selectedLimit.value = newPaginator.limit
-}, { immediate: true })
+watch(
+  () => props.paginator,
+  (newPaginator) => {
+    selectedLimit.value = newPaginator.limit
+  },
+  { immediate: true },
+)
 </script>

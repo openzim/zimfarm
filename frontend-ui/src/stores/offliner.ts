@@ -13,7 +13,6 @@ export const useOfflinerStore = defineStore('offliner', () => {
 
   const authStore = useAuthStore()
 
-
   const fetchOffliners = async (limit: number = 100) => {
     if (offliners.value.length > 0) {
       return offliners.value

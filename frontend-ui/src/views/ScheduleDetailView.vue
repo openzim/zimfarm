@@ -43,7 +43,10 @@
       <v-tabs v-model="currentTab" class="mb-4">
         <v-tab
           value="details"
-          :to="{ name: 'schedule-detail', params: { scheduleName: scheduleName } }"
+          :to="{
+            name: 'schedule-detail',
+            params: { scheduleName: scheduleName },
+          }"
         >
           <v-icon class="mr-2">mdi-information</v-icon>
           Info
@@ -171,7 +174,7 @@
                         density="comfortable"
                         color="primary"
                         class="mr-2 mb-1 text-caption text-uppercase"
-                        >
+                      >
                         {{ schedule.context }}
                       </v-chip>
                     </td>
@@ -198,10 +201,12 @@
                     <td>
                       <span v-if="durationDict.single">
                         {{ formatDuration(durationDict.value) }}
-                        (<code class="text-pink-accent-2">{{ durationDict.worker }}</code> on {{ formatDt(durationDict.on) }})
+                        (<code class="text-pink-accent-2">{{ durationDict.worker }}</code> on
+                        {{ formatDt(durationDict.on) }})
                       </span>
                       <span v-else>
-                        between {{ formatDuration(durationDict.minValue || 0) }} (<code
+                        between
+                        {{ formatDuration(durationDict.minValue || 0) }} (<code
                           class="text-pink-accent-2"
                           v-for="worker in durationDict.minWorkers || []"
                           :key="worker.worker_name"
@@ -340,7 +345,9 @@
                   </tr>
                   <tr>
                     <th class="text-left pa-4 align-top">Config</th>
-                    <td><FlagsList :offliner="config.offliner" :secret-fields="secretFields" /></td>
+                    <td>
+                      <FlagsList :offliner="config.offliner" :secret-fields="secretFields" />
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left pa-4 align-top">
@@ -594,7 +601,9 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
       requestedTask.value = response[0]
     }
     // fetch history runs
-    const historyRunsResponse = await tasksStore.fetchTasks({ scheduleName: props.scheduleName })
+    const historyRunsResponse = await tasksStore.fetchTasks({
+      scheduleName: props.scheduleName,
+    })
     if (historyRunsResponse) {
       historyRuns.value = historyRunsResponse
     } else {
@@ -644,7 +653,11 @@ const copyCommand = async (command: string) => {
 const requestTask = async (workerName: string | null, priority?: boolean) => {
   workingText.value = 'Requesting task…'
 
-  const body: { scheduleNames: string[]; worker: string | null; priority: number | null } = {
+  const body: {
+    scheduleNames: string[]
+    worker: string | null
+    priority: number | null
+  } = {
     scheduleNames: [props.scheduleName],
     worker: workerName,
     priority: priority ? constants.DEFAULT_FIRE_PRIORITY : null,
@@ -652,7 +665,9 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
 
   const response = await requestedTasksStore.requestTasks(body)
   if (response) {
-    const msg = `Schedule <em>${props.scheduleName}</em> has been requested as <code>${shortId(response.requested[0])}</code>.`
+    const msg = `Schedule <em>${props.scheduleName}</em> has been requested as <code>${shortId(
+      response.requested[0],
+    )}</code>.`
     notificationStore.showSuccess(msg)
     workingText.value = null
     // update the requested task
@@ -783,7 +798,7 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
     }
 
     // if context was changed, fetch the new contexts
-    if (update.context !== null ||  update.context !== undefined) {
+    if (update.context !== null || update.context !== undefined) {
       const newContexts = await contextStore.fetchContexts()
       if (newContexts) {
         contexts.value = newContexts
@@ -869,7 +884,10 @@ const shortId = (id: string | null): string => {
 onMounted(async () => {
   // Redirect to details if trying to access Edit tab without permission
   if (props.selectedTab === 'edit' && !canUpdateSchedules.value) {
-    router.push({ name: 'schedule-detail', params: { scheduleName: props.scheduleName } })
+    router.push({
+      name: 'schedule-detail',
+      params: { scheduleName: props.scheduleName },
+    })
   }
 
   // just in case the data is not loaded yet rather than using

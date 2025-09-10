@@ -1,0 +1,36 @@
+name: Frontend QA
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "frontend-ui/**"
+    branches:
+      - main
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: frontend-ui/package.json
+          cache: yarn
+          cache-dependency-path: frontend-ui/yarn.lock
+
+      - name: Install dependencies
+        working-directory: frontend-ui
+        run: yarn install --frozen-lockfile
+
+      - name: Check linting
+        working-directory: frontend-ui
+        run: yarn type-check
+
+      - name: Check formatting
+        working-directory: frontend-ui
+        run: yarn format-check

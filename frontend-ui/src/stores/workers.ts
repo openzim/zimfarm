@@ -32,13 +32,15 @@ export const useWorkersStore = defineStore('workers', () => {
     const { limit = 20, skip = 0 } = params
     try {
       const service = await authStore.getApiService('workers')
-      const response = await service.get<null, ListResponse<Worker>>('', { params: { limit, skip } })
+      const response = await service.get<null, ListResponse<Worker>>('', {
+        params: { limit, skip },
+      })
 
       // Preserve existing tasks when fetching workers
-      const existingTasks = new Map(workers.value.map(w => [w.name, w.tasks || []]))
-      workers.value = response.items.map(worker => ({
+      const existingTasks = new Map(workers.value.map((w) => [w.name, w.tasks || []]))
+      workers.value = response.items.map((worker) => ({
         ...worker,
-        tasks: existingTasks.get(worker.name) || []
+        tasks: existingTasks.get(worker.name) || [],
       }))
       paginator.value = response.meta
 
@@ -52,9 +54,9 @@ export const useWorkersStore = defineStore('workers', () => {
   }
 
   const updateWorkerTasks = (tasks: TaskLight[]) => {
-    workers.value = workers.value.map(worker => ({
+    workers.value = workers.value.map((worker) => ({
       ...worker,
-      tasks: tasks.filter(task => task.worker_name === worker.name)
+      tasks: tasks.filter((task) => task.worker_name === worker.name),
     }))
   }
 
@@ -83,7 +85,6 @@ export const useWorkersStore = defineStore('workers', () => {
       return false
     }
   }
-
 
   return {
     // State

@@ -26,7 +26,7 @@ export const useScheduleStore = defineStore('schedule', () => {
   const fetchSchedule = async (
     scheduleName: string,
     forceReload: boolean = false,
-    hideSecrets: boolean = false
+    hideSecrets: boolean = false,
   ) => {
     const service = await authStore.getApiService('schedules')
     // Check if we already have the schedule and don't need to force reload
@@ -39,7 +39,9 @@ export const useScheduleStore = defineStore('schedule', () => {
       // Clear current schedule until we receive the right one
       schedule.value = null
 
-      const response = await service.get<null, Schedule>(`/${scheduleName}`, { params: { hide_secrets: hideSecrets } })
+      const response = await service.get<null, Schedule>(`/${scheduleName}`, {
+        params: { hide_secrets: hideSecrets },
+      })
       schedule.value = response
       // generate artifacts_globs_str
       schedule.value.config.artifacts_globs_str = schedule.value.config.artifacts_globs?.join('\n')
@@ -56,25 +58,24 @@ export const useScheduleStore = defineStore('schedule', () => {
     category: string[] | undefined,
     lang: string[] | undefined,
     tag: string[] | undefined,
-    name: string | undefined
+    name: string | undefined,
   ) => {
     const service = await authStore.getApiService('schedules')
     // filter out undefined values from params
     const cleanedParams = Object.fromEntries(
-      Object.entries(
-        {
-          limit,
-          skip,
-          category,
-          lang,
-          tag,
-          name,
-        }
-      )
-      .filter(([, value]) => !!value)
+      Object.entries({
+        limit,
+        skip,
+        category,
+        lang,
+        tag,
+        name,
+      }).filter(([, value]) => !!value),
     )
     try {
-      const response = await service.get<null, ListResponse<ScheduleLight>>("", { params: cleanedParams  })
+      const response = await service.get<null, ListResponse<ScheduleLight>>('', {
+        params: cleanedParams,
+      })
       schedules.value = response.items
       paginator.value = response.meta
       errors.value = []
@@ -94,7 +95,12 @@ export const useScheduleStore = defineStore('schedule', () => {
   const cloneSchedule = async (scheduleName: string, newScheduleName: string) => {
     const service = await authStore.getApiService('schedules')
     try {
-      const response = await service.post<{name: string}, {id: string}>(`/${scheduleName}/clone`, { name: newScheduleName })
+      const response = await service.post<{ name: string }, { id: string }>(
+        `/${scheduleName}/clone`,
+        {
+          name: newScheduleName,
+        },
+      )
       return response
     } catch (_error) {
       console.error('Failed to clone schedule', _error)
@@ -103,10 +109,15 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
-  const fetchScheduleImageTags = async (scheduleName: string, params: { hubName: string}) => {
+  const fetchScheduleImageTags = async (scheduleName: string, params: { hubName: string }) => {
     const service = await authStore.getApiService('schedules')
     try {
-      const response = await service.get<null, ListResponse<string>>(`/${scheduleName}/image-names`, { params: { hub_name: params.hubName } })
+      const response = await service.get<null, ListResponse<string>>(
+        `/${scheduleName}/image-names`,
+        {
+          params: { hub_name: params.hubName },
+        },
+      )
       return response.items
     } catch (_error) {
       console.error('Failed to fetch image tags', _error)
@@ -118,7 +129,10 @@ export const useScheduleStore = defineStore('schedule', () => {
   const updateSchedule = async (scheduleName: string, schedule: ScheduleUpdateSchema) => {
     const service = await authStore.getApiService('schedules')
     try {
-      const response = await service.patch<ScheduleUpdateSchema, Schedule>(`/${scheduleName}`, schedule)
+      const response = await service.patch<ScheduleUpdateSchema, Schedule>(
+        `/${scheduleName}`,
+        schedule,
+      )
       return response
     } catch (_error) {
       console.error('Failed to update schedule', _error)
@@ -145,8 +159,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     try {
       await service.get<null, null>(`/${scheduleName}/validate`)
       return true
-    }
-    catch (_error) {
+    } catch (_error) {
       console.error('Failed to validate schedule', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return false

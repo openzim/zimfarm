@@ -1,11 +1,6 @@
 <template>
   <div>
-    <v-tabs
-      v-model="activeTab"
-      color="primary"
-      slider-color="primary"
-      class="mb-4"
-    >
+    <v-tabs v-model="activeTab" color="primary" slider-color="primary" class="mb-4">
       <v-tab
         v-for="filterOption in filterOptions"
         :key="filterOption.value"
@@ -20,11 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   filter: string
-  filterOptions: { value: string, label: string }[]
+  filterOptions: { value: string; label: string }[]
 }>()
 
 defineEmits<{
@@ -34,11 +29,13 @@ defineEmits<{
 // Reactive data
 const activeTab = ref(props.filter)
 
-
 // Watch for prop changes to update active tab
-watch(() => props.filter, (newFilter) => {
-  activeTab.value = newFilter
-})
+watch(
+  () => props.filter,
+  (newFilter) => {
+    activeTab.value = newFilter
+  },
+)
 </script>
 
 <style scoped>

@@ -4,7 +4,7 @@
       <v-card-text>
         <v-row>
           <v-col cols="12" sm="6" md="3">
-            <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between ">
+            <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
               <div class="d-flex align-center">
                 <v-icon class="mr-2" color="success">mdi-server</v-icon>
                 <div>
@@ -12,11 +12,7 @@
                   <div class="text-h6">{{ onlineWorkers.length }}</div>
                 </div>
               </div>
-              <v-btn
-                variant="outlined"
-                size="x-small"
-                @click="toggleWorkersList"
-              >
+              <v-btn variant="outlined" size="x-small" @click="toggleWorkersList">
                 {{ toggleText }}
               </v-btn>
             </v-sheet>
@@ -25,7 +21,12 @@
           <v-col cols="12" sm="6" md="3">
             <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
               <div class="d-flex align-center">
-                <v-progress-circular :model-value="percentCpu" :color="colorCpu" size="44" width="4">
+                <v-progress-circular
+                  :model-value="percentCpu"
+                  :color="colorCpu"
+                  size="44"
+                  width="4"
+                >
                   <span class="text-caption">{{ percentCpu }}%</span>
                 </v-progress-circular>
                 <div class="ml-3">
@@ -39,7 +40,12 @@
           <v-col cols="12" sm="6" md="3">
             <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
               <div class="d-flex align-center">
-                <v-progress-circular :model-value="percentMemory" :color="colorMemory" size="44" width="4">
+                <v-progress-circular
+                  :model-value="percentMemory"
+                  :color="colorMemory"
+                  size="44"
+                  width="4"
+                >
                   <span class="text-caption">{{ percentMemory }}%</span>
                 </v-progress-circular>
                 <div class="ml-3">
@@ -53,7 +59,12 @@
           <v-col cols="12" sm="6" md="3">
             <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
               <div class="d-flex align-center">
-                <v-progress-circular :model-value="percentDisk" :color="colorDisk" size="44" width="4">
+                <v-progress-circular
+                  :model-value="percentDisk"
+                  :color="colorDisk"
+                  size="44"
+                  width="4"
+                >
                   <span class="text-caption">{{ percentDisk }}%</span>
                 </v-progress-circular>
                 <div class="ml-3">
@@ -81,7 +92,6 @@
 
     <ErrorMessage v-for="error in errors" :key="error" :message="error" />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -128,16 +138,19 @@ const workers = computed(() => workersStore.workers)
 const paginator = computed(() => workersStore.paginator)
 
 // Computed properties
-const onlineWorkers = computed(() => workers.value.filter(worker => worker.status === 'online'))
-const filteredWorkers = computed(() => showingAll.value ? workers.value : onlineWorkers.value)
-const visibleOnlineWorkers = computed(() => filteredWorkers.value.filter(worker => worker.status === 'online'))
-const onlineWorkerNames = computed(() => onlineWorkers.value.map(worker => worker.name))
+const onlineWorkers = computed(() => workers.value.filter((worker) => worker.status === 'online'))
+const filteredWorkers = computed(() => (showingAll.value ? workers.value : onlineWorkers.value))
+const visibleOnlineWorkers = computed(() =>
+  filteredWorkers.value.filter((worker) => worker.status === 'online'),
+)
+const onlineWorkerNames = computed(() => onlineWorkers.value.map((worker) => worker.name))
 
 const tasks = computed(() => {
   // Only include tasks assigned to online workers for computing resource usage
-  return runningTasks.value.filter(task => onlineWorkerNames.value.indexOf(task.worker_name) !== -1)
+  return runningTasks.value.filter(
+    (task) => onlineWorkerNames.value.indexOf(task.worker_name) !== -1,
+  )
 })
-
 
 const maxCpu = computed(() => {
   return visibleOnlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0)
@@ -164,11 +177,15 @@ const currentDisk = computed(() => {
 })
 
 const usageCpu = computed(() => `${currentCpu.value}/${maxCpu.value}`)
-const usageMemory = computed(() => `${formattedBytesSize(currentMemory.value)}/${formattedBytesSize(maxMemory.value)}`)
-const usageDisk = computed(() => `${formattedBytesSize(currentDisk.value)}/${formattedBytesSize(maxDisk.value)}`)
+const usageMemory = computed(
+  () => `${formattedBytesSize(currentMemory.value)}/${formattedBytesSize(maxMemory.value)}`,
+)
+const usageDisk = computed(
+  () => `${formattedBytesSize(currentDisk.value)}/${formattedBytesSize(maxDisk.value)}`,
+)
 // overallProgress no longer used in UI; kept logic via per-metric percentages
 
-const toggleText = computed(() => showingAll.value ? 'Hide Offlines' : 'Show All')
+const toggleText = computed(() => (showingAll.value ? 'Hide Offlines' : 'Show All'))
 
 // Percentages for circular stats
 const percentCpu = computed(() => {
@@ -212,14 +229,18 @@ function toggleWorkersList(): void {
 }
 
 async function loadRunningTasks(): Promise<void> {
-  const tasks = await tasksStore.fetchTasks({limit: 200, skip: 0, status: [
-    'reserved',
-    'started',
-    'scraper_started',
-    'scraper_completed',
-    'scraper_killed',
-    'cancel_requested',
-  ]})
+  const tasks = await tasksStore.fetchTasks({
+    limit: 200,
+    skip: 0,
+    status: [
+      'reserved',
+      'started',
+      'scraper_started',
+      'scraper_completed',
+      'scraper_killed',
+      'cancel_requested',
+    ],
+  })
   if (tasks) {
     runningTasks.value = tasks
     workersStore.updateWorkerTasks(tasks)

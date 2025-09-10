@@ -50,7 +50,7 @@ const headers = [
   { title: 'Language', value: 'language' },
   { title: 'Offliner', value: 'offliner' },
   { title: 'Requested', value: 'requested' },
-  { title: 'Last Task', value: 'last_task' }
+  { title: 'Last Task', value: 'last_task' },
 ]
 
 // Reactive state
@@ -65,7 +65,7 @@ const filters = ref({
   name: '',
   categories: [] as string[],
   languages: [] as string[],
-  tags: [] as string[]
+  tags: [] as string[],
 })
 const requestingText = ref<string | null>(null)
 const intervalId = ref<number | null>(null)
@@ -97,7 +97,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
     filters.value.categories.length > 0 ? filters.value.categories : undefined,
     filters.value.languages.length > 0 ? filters.value.languages : undefined,
     filters.value.tags.length > 0 ? filters.value.tags : undefined,
-    filters.value.name || undefined
+    filters.value.name || undefined,
   )
 
   schedules.value = scheduleStore.schedules
@@ -126,7 +126,7 @@ async function clearFilters() {
     name: '',
     categories: [],
     languages: [],
-    tags: []
+    tags: [],
   }
   updateUrl()
   await loadData(paginator.value.limit, 0)
@@ -142,10 +142,14 @@ async function handleFetchSchedules() {
   } else {
     const scheduleNames = schedules.value.map((schedule) => schedule.name).filter((name) => !!name)
     if (scheduleNames.length > 0) {
-      const requestedTasks = await requestedTasksStore.requestTasks({scheduleNames: scheduleNames})
+      const requestedTasks = await requestedTasksStore.requestTasks({
+        scheduleNames: scheduleNames,
+      })
       errors.value = requestedTasksStore.errors
       if (requestedTasks) {
-        notificationStore.showSuccess(`Exactly ${requestedTasks.requested.length} recipes matching your selection have been requested`)
+        notificationStore.showSuccess(
+          `Exactly ${requestedTasks.requested.length} recipes matching your selection have been requested`,
+        )
       } else {
         for (const error of errors.value) {
           notificationStore.showError(error)
@@ -185,7 +189,7 @@ function updateUrl() {
 
   router.push({
     name: 'schedules-list',
-    query: Object.keys(query).length > 0 ? query : undefined
+    query: Object.keys(query).length > 0 ? query : undefined,
   })
 }
 
@@ -210,12 +214,10 @@ function loadFiltersFromUrl() {
     const tagValue = Array.isArray(query.tag) ? query.tag : [query.tag]
     filters.value.tags = tagValue.filter((t): t is string => t !== null)
   }
-
 }
 
 // Lifecycle
 onMounted(async () => {
-
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
@@ -236,7 +238,11 @@ onBeforeUnmount(() => {
 })
 
 // Watch for route changes to update filters
-watch(() => router.currentRoute.value.query, () => {
-  loadFiltersFromUrl()
-}, { deep: true })
+watch(
+  () => router.currentRoute.value.query,
+  () => {
+    loadFiltersFromUrl()
+  },
+  { deep: true },
+)
 </script>

@@ -11,7 +11,6 @@ export const useLanguageStore = defineStore('language', () => {
   const error = ref<string[]>([])
   const authStore = useAuthStore()
 
-
   const fetchLanguages = async (limit: number = 400) => {
     if (languages.value.length > 0) {
       return languages.value

@@ -3,36 +3,12 @@ name: Backend Tests
 on:
   pull_request:
   push:
+    paths:
+      - "backend/**"
     branches:
       - main
 
 jobs:
-  # unit-tests:
-  #   runs-on: ubuntu-24.04
-  #
-  #  env:
-  #    POSTGRES_URI: nodb
-
-  #  steps:
-  #    - name: Retrieve source code
-  #      uses: actions/checkout@v5
-
-  #    - name: Set up Python
-  #      uses: actions/setup-python@v6
-  #      with:
-  #        python-version-file: backend/pyproject.toml
-  #        architecture: x64
-  #
-  #    - name: Install dependencies (and project)
-  #      working-directory: backend
-  #      run: |
-  #        pip install -U pip
-  #        pip install -e .[lint,scripts,test,check]
-  #
-  #    - name: Test with pytest
-  #      working-directory: backend
-  #      run: pytest tests/unit
-
   run-tests:
     runs-on: ubuntu-24.04
 
@@ -76,6 +52,27 @@ jobs:
         run: >-
           psql -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
           "host=localhost port=5432 dbname=zimtest user=zimfarm password=zimpass"
+
+      - name: Build backend Docker image
+        working-directory: backend
+        run: docker build -t zimfarm-backend:test .
+
+      - name: Run backend container
+        run: |
+          docker run -d --name zimfarm-backend-test \
+            -e POSTGRES_URI=$POSTGRES_URI \
+            -e JWT_SECRET=DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw \
+            -p 8000:80 \
+            zimfarm-backend:test
+          # wait for container to be ready
+          for i in {1..10}; do
+            if curl -s http://localhost:8000/v2/healthcheck > /dev/null; then
+              echo "Backend is up!"
+              break
+            fi
+            echo "Waiting for backend..."
+            sleep 3
+          done
 
       - name: Run tests
         working-directory: backend

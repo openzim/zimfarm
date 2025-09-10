@@ -14,19 +14,9 @@
 <template>
   <div v-show="visible" class="d-flex justify-end">
     <!-- Worker Selection Dropdown -->
-    <v-menu
-      v-show="canSelectWorker"
-      location="bottom end"
-      offset-y
-    >
+    <v-menu v-show="canSelectWorker" location="bottom end" offset-y>
       <template v-slot:activator="{ props }">
-        <v-btn
-          v-bind="props"
-          variant="outlined"
-          color="primary"
-          size="small"
-          class="mr-2"
-        >
+        <v-btn v-bind="props" variant="outlined" color="primary" size="small" class="mr-2">
           <v-icon size="small" class="mr-1">mdi-server</v-icon>
           {{ selectedWorker }}
         </v-btn>
@@ -39,7 +29,9 @@
           @click="changeWorker(worker.name)"
           :color="worker.status === 'online' ? 'success' : 'secondary'"
         >
-          <v-list-item-title :class="{ 'text-success': worker.status === 'online' }">{{ worker.name }}</v-list-item-title>
+          <v-list-item-title :class="{ 'text-success': worker.status === 'online' }">{{
+            worker.name
+          }}</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-menu>
@@ -55,9 +47,7 @@
       :disabled="working"
       @click="emit('request-task', cleanedSelectedWorker)"
     >
-      <v-tooltip activator="parent" location="top">
-        Request with normal priority
-      </v-tooltip>
+      <v-tooltip activator="parent" location="top"> Request with normal priority </v-tooltip>
       <v-icon size="small" class="mr-1">mdi-plus-circle</v-icon>
       Request
     </v-btn>
@@ -104,9 +94,7 @@
       :disabled="working"
       @click="emit('request-task', cleanedSelectedWorker, true)"
     >
-      <v-tooltip activator="parent" location="top">
-        Request with high priority
-      </v-tooltip>
+      <v-tooltip activator="parent" location="top"> Request with high priority </v-tooltip>
       <v-icon size="small" class="mr-1">mdi-priority-high</v-icon>
       Request
     </v-btn>
@@ -127,13 +115,7 @@
     </v-btn>
 
     <!-- Loading Button -->
-    <v-btn
-      v-if="working"
-      color="secondary"
-      variant="outlined"
-      size="small"
-      disabled
-    >
+    <v-btn v-if="working" color="secondary" variant="outlined" size="small" disabled>
       <v-icon size="small" class="mr-1" spin>mdi-loading</v-icon>
       {{ workingText }}
     </v-btn>
@@ -166,7 +148,6 @@ const emit = defineEmits<{
   (e: 'unrequest-task'): void
 }>()
 
-
 // Constants
 const ANY_WORKER_NAME = 'Any'
 
@@ -176,19 +157,30 @@ const authStore = useAuthStore()
 const selectedWorker = ref<string>(ANY_WORKER_NAME)
 
 // Computed properties
-const taskId = computed(() => props.task ? props.task.id : null)
-const visible = computed(() => props.ready && (canRequestTasks.value || canUnRequestTasks.value || canCancelTasks.value))
+const taskId = computed(() => (props.task ? props.task.id : null))
+const visible = computed(
+  () => props.ready && (canRequestTasks.value || canUnRequestTasks.value || canCancelTasks.value),
+)
 const working = computed(() => Boolean(props.workingText))
-const isRunning = computed(() => taskId.value !== null ? Boolean(taskId.value) : null)
-const isScheduled = computed(() => requestedTaskId.value === null ? null : Boolean(requestedTaskId.value))
+const isRunning = computed(() => (taskId.value !== null ? Boolean(taskId.value) : null))
+const isScheduled = computed(() =>
+  requestedTaskId.value === null ? null : Boolean(requestedTaskId.value),
+)
 const canRequest = computed(() => !working.value && !isRunning.value && !isScheduled.value)
 const canFire = computed(() => !working.value && canRequest.value)
 const canFireExisting = computed(() => !working.value && isScheduled.value)
 const canCancel = computed(() => !working.value && isRunning.value && taskId.value)
 const canUnRequest = computed(() => !working.value && isScheduled.value)
-const canSelectWorker = computed(() => (canRequest.value || canFire.value) && props.workers.length > 0)
-const allWorkers = computed(() => [{ name: ANY_WORKER_NAME, status: 'offline' as const }, ...props.workers])
-const cleanedSelectedWorker = computed(() => selectedWorker.value === ANY_WORKER_NAME ? null : selectedWorker.value)
+const canSelectWorker = computed(
+  () => (canRequest.value || canFire.value) && props.workers.length > 0,
+)
+const allWorkers = computed(() => [
+  { name: ANY_WORKER_NAME, status: 'offline' as const },
+  ...props.workers,
+])
+const cleanedSelectedWorker = computed(() =>
+  selectedWorker.value === ANY_WORKER_NAME ? null : selectedWorker.value,
+)
 const requestedTaskId = computed(() => props.requestedTask?.id || null)
 
 // Permission computed properties
@@ -200,7 +192,6 @@ const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel')
 const changeWorker = (workerName: string) => {
   selectedWorker.value = workerName
 }
-
 </script>
 
 <style scoped>

@@ -9,9 +9,7 @@
     <v-row justify="center" align="center">
       <v-col cols="12" sm="8" md="6" lg="4">
         <v-card class="elevation-12">
-          <v-card-title class="text-center text-h5 py-4">
-            Change Password
-          </v-card-title>
+          <v-card-title class="text-center text-h5 py-4"> Change Password </v-card-title>
 
           <v-card-text>
             <v-form @submit.prevent="changePassword" ref="form">
@@ -48,27 +46,12 @@
                 class="mb-3"
               />
 
-              <v-alert
-                v-if="error"
-                type="error"
-                variant="tonal"
-                class="mb-4"
-              >
+              <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
                 <div v-text="error" />
               </v-alert>
 
-              <v-alert
-                v-if="working"
-                type="warning"
-                variant="tonal"
-                class="mb-4"
-              >
-                <v-progress-circular
-                  indeterminate
-                  color="warning"
-                  size="20"
-                  class="me-2"
-                />
+              <v-alert v-if="working" type="warning" variant="tonal" class="mb-4">
+                <v-progress-circular indeterminate color="warning" size="20" class="me-2" />
                 Changing your password…
               </v-alert>
             </v-form>
@@ -89,11 +72,7 @@
           </v-card-actions>
 
           <v-card-text class="text-center pt-0">
-            <v-btn
-              variant="text"
-              color="primary"
-              :href="`mailto:${contactEmail}`"
-            >
+            <v-btn variant="text" color="primary" :href="`mailto:${contactEmail}`">
               {{ contactEmail }}
             </v-btn>
           </v-card-text>
@@ -131,7 +110,7 @@ const isFormValid = ref(false)
 // Validation rules
 const rules = {
   required: (value: string) => !!value || 'This field is required',
-  minLength: (value: string) => value.length >= 8 || 'Password must be at least 8 characters'
+  minLength: (value: string) => value.length >= 8 || 'Password must be at least 8 characters',
 }
 
 // Computed properties
@@ -143,7 +122,7 @@ const changePassword = async () => {
   if (!validation?.valid) return
 
   if (!authStore.username) {
-    error.value = "<strong>Refused</strong>: You must be signed-in to change your password…"
+    error.value = '<strong>Refused</strong>: You must be signed-in to change your password…'
     return
   }
 
@@ -152,7 +131,7 @@ const changePassword = async () => {
 
   const success = await userStore.changePassword(authStore.username, {
     current: currentPassword.value,
-    new: newPassword.value
+    new: newPassword.value,
   })
 
   if (success) {
@@ -193,5 +172,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

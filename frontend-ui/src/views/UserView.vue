@@ -17,32 +17,34 @@
         <v-col cols="12">
           <h2 class="text-h4 mb-4">
             <code>{{ username }}</code>
-            <span v-if="user"> (<code>{{ user.role }}</code>)</span>
+            <span v-if="user">
+              (<code>{{ user.role }}</code
+              >)</span
+            >
           </h2>
 
           <div v-if="!error && user">
             <!-- Tabs -->
-            <v-tabs
-              v-model="selectedTab"
-              color="primary"
-              class="mb-4"
-            >
-              <v-tab
-                value="details"
-                :to="{ name: 'user-detail', params: { username: username } }"
-              >
+            <v-tabs v-model="selectedTab" color="primary" class="mb-4">
+              <v-tab value="details" :to="{ name: 'user-detail', params: { username: username } }">
                 Profile
               </v-tab>
               <v-tab
                 value="edit"
-                :to="{ name: 'user-detail-tab', params: { username: username, selectedTab: 'edit' } }"
+                :to="{
+                  name: 'user-detail-tab',
+                  params: { username: username, selectedTab: 'edit' },
+                }"
               >
                 Edit
               </v-tab>
               <v-tab
                 v-if="canDeleteUser"
                 value="delete"
-                :to="{ name: 'user-detail-tab', params: { username: username, selectedTab: 'delete' } }"
+                :to="{
+                  name: 'user-detail-tab',
+                  params: { username: username, selectedTab: 'delete' },
+                }"
                 color="error"
               >
                 Delete
@@ -73,7 +75,11 @@
                           <thead>
                             <tr>
                               <th>Permission</th>
-                              <th v-for="header in scopeMainHeaders" :key="header" class="text-center">
+                              <th
+                                v-for="header in scopeMainHeaders"
+                                :key="header"
+                                class="text-center"
+                              >
                                 {{ header }}
                               </th>
                             </tr>
@@ -135,12 +141,23 @@
 
               <!-- Edit Tab -->
               <v-window-item value="edit">
-                <UpdateUser :user="user" v-if="user" @update-user="updateUser" @change-password="changePassword" @add-key="addKey" />
+                <UpdateUser
+                  :user="user"
+                  v-if="user"
+                  @update-user="updateUser"
+                  @change-password="changePassword"
+                  @add-key="addKey"
+                />
               </v-window-item>
 
               <!-- Delete Tab -->
               <v-window-item value="delete">
-                <DeleteItem :name="user.username" description="user account" property="username" @delete-item="deleteUser" />
+                <DeleteItem
+                  :name="user.username"
+                  description="user account"
+                  property="username"
+                  @delete-item="deleteUser"
+                />
               </v-window-item>
             </v-window>
           </div>
@@ -188,7 +205,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedTab: 'details'
+  selectedTab: 'details',
 })
 
 // Route and stores
@@ -214,17 +231,11 @@ const dataLoaded = ref(false)
 // Computed properties
 const scope = computed(() => user.value?.scope || {})
 
-const canDeleteUser = computed(() =>
-  authStore.hasPermission('users', 'delete')
-)
+const canDeleteUser = computed(() => authStore.hasPermission('users', 'delete'))
 
-const canSSHKeyUsers = computed(() =>
-  authStore.hasPermission('users', 'ssh_keys')
-)
+const canSSHKeyUsers = computed(() => authStore.hasPermission('users', 'ssh_keys'))
 
-const scopeMainHeaders = computed(() =>
-  Object.keys(scope.value)
-)
+const scopeMainHeaders = computed(() => Object.keys(scope.value))
 
 const scopeSecondaryHeaders = computed(() => {
   const headers: string[] = []
@@ -279,9 +290,7 @@ const deleteKey = async (sshKey: { name: string; fingerprint: string }) => {
   try {
     const success = await userStore.deleteSshKey(props.username, sshKey.fingerprint)
     if (success) {
-      notificationStore.showSuccess(
-        `Key Removed! SSH Key "${sshKey.name}" has been removed.`
-      )
+      notificationStore.showSuccess(`Key Removed! SSH Key "${sshKey.name}" has been removed.`)
       await loadUser()
     } else {
       for (const error of userStore.errors) {
@@ -303,7 +312,7 @@ const changePassword = async (password: string) => {
   if (success) {
     notificationStore.showSuccess(
       `Password for ${props.username} has been changed to ${password}.`,
-      10000
+      10000,
     )
   } else {
     for (const error of userStore.errors) {
@@ -319,9 +328,7 @@ const updateUser = async (payload: { role?: string; email?: string }) => {
   loadingStore.startLoading('updating user…')
   const success = await userStore.updateUser(props.username, payload)
   if (success) {
-    notificationStore.showSuccess(
-      `User account ${props.username} has been updated.`
-    )
+    notificationStore.showSuccess(`User account ${props.username} has been updated.`)
     router.push({ name: 'users-list' })
   } else {
     for (const error of userStore.errors) {
@@ -383,11 +390,15 @@ const loadUser = async () => {
 }
 
 // Watch for route changes to update selected tab
-watch(() => route.params.selectedTab, (newTab) => {
-  if (newTab && typeof newTab === 'string') {
-    selectedTab.value = newTab
-  }
-}, { immediate: true })
+watch(
+  () => route.params.selectedTab,
+  (newTab) => {
+    if (newTab && typeof newTab === 'string') {
+      selectedTab.value = newTab
+    }
+  },
+  { immediate: true },
+)
 
 // Lifecycle
 onMounted(async () => {

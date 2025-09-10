@@ -8,7 +8,7 @@
         :timeout="notification.duration"
         :color="getSnackbarColor(notification.type)"
         location="top right"
-        :style="{ top: `${12 + (index * 60)}px` }"
+        :style="{ top: `${12 + index * 60}px` }"
         @update:model-value="() => removeNotification(notification.id)"
       >
         <div class="d-flex align-center">

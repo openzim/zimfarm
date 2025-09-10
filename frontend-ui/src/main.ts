@@ -1,22 +1,22 @@
-import '@mdi/font/css/materialdesignicons.css'; // Ensure you are using css-loader
+import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
 
-import { createApp } from 'vue';
+import { createApp } from 'vue'
 // Vuetify
-import { createVuetify } from 'vuetify';
-import * as components from 'vuetify/components';
-import * as directives from 'vuetify/directives';
-import 'vuetify/styles';
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import 'vuetify/styles'
 
-import { createPinia } from 'pinia';
-import VueCookies from 'vue-cookies';
+import { createPinia } from 'pinia'
+import VueCookies from 'vue-cookies'
 
 // config
-import getConfig, { configPlugin } from '@/config';
+import getConfig, { configPlugin } from '@/config'
 
-import router from '@/router';
+import router from '@/router'
 
-import App from '@/App.vue';
-import constants from '@/constants';
+import App from '@/App.vue'
+import constants from '@/constants'
 
 const app = createApp(App)
 
