@@ -5,12 +5,12 @@ from pydantic import AnyUrl, Field
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
+    OptionalCommaSeparatedZIMLangCode,
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
-    OptionalZIMLangCode,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
@@ -41,7 +41,7 @@ class YoutubeFlagsSchema(DashModel):
         alias="id",
     )
 
-    language: OptionalZIMLangCode = OptionalField(
+    language: OptionalCommaSeparatedZIMLangCode = OptionalField(
         title="Language",
         description="ISO-639-3 (3 chars) language code of content",
     )

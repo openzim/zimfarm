@@ -6,11 +6,11 @@ from pydantic import AnyUrl, EmailStr, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
+    OptionalCommaSeparatedZIMLangCode,
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
     OptionalZIMDescription,
-    OptionalZIMLangCode,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMSecretStr,
@@ -123,7 +123,7 @@ class MWOfflinerFlagsSchema(DashModel):
         title="ZIM Tags",
         description="Semi-colon separated list of ZIM tags",
     )
-    customZimLanguage: OptionalZIMLangCode = OptionalField(
+    customZimLanguage: OptionalCommaSeparatedZIMLangCode = OptionalField(
         title="ZIM Language metadata",
         description="Custom ISO-639-3 language code for the ZIM",
     )

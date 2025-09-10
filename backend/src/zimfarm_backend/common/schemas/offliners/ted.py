@@ -12,6 +12,7 @@ from pydantic import (
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
+    OptionalCommaSeparatedZIMLangCode,
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
@@ -22,7 +23,6 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMTitle,
     ZIMName,
     enum_member,
-    validate_language_code,
 )
 
 
@@ -63,7 +63,7 @@ class TedFlagsSchema(DashModel):
         ),
     )
 
-    languages: OptionalNotEmptyString = OptionalField(
+    languages: OptionalCommaSeparatedZIMLangCode = OptionalField(
         title="Languages",
         description=(
             "Comma-separated list of ISO-639-3 language codes to filter videos. Do not "
@@ -200,16 +200,6 @@ class TedFlagsSchema(DashModel):
         ge=0,
         le=1,
     )
-
-    @field_validator("languages", mode="after")
-    @classmethod
-    def validate_languages(cls, value: str | None, info: ValidationInfo) -> str | None:
-        """Validate that comma-seperated languages are all ISO 693-3 compliant."""
-        if value is None:
-            return value
-        for code in value.split(","):
-            validate_language_code(code, info)
-        return value
 
     @field_validator("links", mode="after")
     @classmethod

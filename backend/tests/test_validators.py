@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas.fields import (
+    CommaSeparatedZIMLangCode,
     GraphemeStr,
     ZIMFileName,
     ZIMLangCode,
@@ -38,6 +39,10 @@ class ZIMLanguageCodeModel(BaseModel):
 
 class ZIMTitleModel(BaseModel):
     value: ZIMTitle
+
+
+class CommaSeparatedZIMLanguageCodeModel(BaseModel):
+    value: CommaSeparatedZIMLangCode
 
 
 def test_enum_validator_accepts_valid_value():
@@ -120,7 +125,7 @@ def test_zimfilename_skips_validation_when_context_set():
     "name,expected",
     [
         # Zim name is made of three parts {domain}_{lang}_{selection} with _ as
-        # the seperator
+        # the separator
         # Valid ZIM names
         pytest.param(
             "android.stackexchange.com_eng_all",
@@ -461,4 +466,76 @@ def test_zimtitle_string_does_not_raise(string: str):
     with does_not_raise():
         ZIMTitleModel.model_validate(
             {"value": string}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "languages,expected",
+    [
+        pytest.param("eng", does_not_raise(), id="single-valid-language-code"),
+        pytest.param("eng,fra,jpn", does_not_raise(), id="multiple-valid-languages"),
+        pytest.param(
+            "en,fr,jp",
+            pytest.raises(ValidationError),
+            id="multiple-invalid-language-codes",
+        ),
+        pytest.param(
+            "en",
+            pytest.raises(ValidationError),
+            id="single-invalid-language-code",
+        ),
+        pytest.param(
+            "eng,",
+            pytest.raises(ValidationError),
+            id="valid-language-code-with-trailing-comma",
+        ),
+        pytest.param(
+            "eng,,",
+            pytest.raises(ValidationError),
+            id="valid-language-code-with-double-trailing-comma",
+        ),
+        pytest.param(
+            "eng,fr,jpn",
+            pytest.raises(ValidationError),
+            id="multiple-valid-languages-with-one-invalid",
+        ),
+    ],
+)
+def test_comma_separated_zim_language_code_validator(
+    languages: str, expected: RaisesContext[Exception]
+):
+    with expected:
+        CommaSeparatedZIMLanguageCodeModel.model_validate({"value": languages})
+
+
+@pytest.mark.parametrize(
+    "languages,expected",
+    [
+        pytest.param("eng", does_not_raise(), id="single-valid-language-code"),
+        pytest.param("eng,fra,jpn", does_not_raise(), id="multiple-valid-languages"),
+        pytest.param(
+            "en,fr,jp", does_not_raise(), id="multiple-invalid-language-codes"
+        ),
+        pytest.param("en", does_not_raise(), id="single-invalid-language-code"),
+        pytest.param(
+            "eng,", does_not_raise(), id="valid-language-code-with-trailing-comma"
+        ),
+        pytest.param(
+            "eng,,",
+            does_not_raise(),
+            id="valid-language-code-with-double-trailing-comma",
+        ),
+        pytest.param(
+            "eng,fr,jpn",
+            does_not_raise(),
+            id="multiple-valid-languages-with-one-invalid",
+        ),
+    ],
+)
+def test_comma_separated_zim_language_code_validator_skips_validation_when_context_set(
+    languages: str, expected: RaisesContext[Exception]
+):
+    with expected:
+        CommaSeparatedZIMLanguageCodeModel.model_validate(
+            {"value": languages}, context={"skip_validation": True}
         )
