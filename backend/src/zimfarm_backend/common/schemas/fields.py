@@ -224,15 +224,15 @@ ZIMProgressFile = Annotated[
 
 OptionalZIMProgressFile = ZIMProgressFile | None
 
-ZIMCPU = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
+ZIMCPU = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
 OptionalZIMCPU = ZIMCPU | None
 
-ZIMMemory = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
+ZIMMemory = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
 OptionalZIMMemory = ZIMMemory | None
 
-ZIMDisk = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
+ZIMDisk = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
 OptionalZIMDisk = ZIMDisk | None
 
