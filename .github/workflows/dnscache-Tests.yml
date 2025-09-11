@@ -2,6 +2,8 @@ name: Dnscache Tests
 
 on:
   pull_request:
+    paths:
+      - "dnscache/**"
   push:
     paths:
       - "dnscache/**"
