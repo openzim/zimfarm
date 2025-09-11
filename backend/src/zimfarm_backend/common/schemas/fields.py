@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Annotated, Any
 
 import pycountry
+import regex
 from pydantic import (
     AfterValidator,
     AnyUrl,
@@ -13,9 +14,30 @@ from pydantic import (
     WrapSerializer,
     WrapValidator,
 )
+from pydantic_core import core_schema
 from pydantic_core.core_schema import SerializationInfo
 
 from zimfarm_backend.common.enums import Platform, WarehousePath
+
+
+class GraphemeStr(str):
+    def __len__(self) -> int:
+        # Count the number of grapheme clusters
+        return len(regex.findall(r"\X", self))
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, _):
+        return core_schema.no_info_after_validator_function(
+            cls._to_python,  # first convert to GraphemeStr
+            core_schema.str_schema(),  # base schema: accept strings
+        )
+
+    @classmethod
+    def _to_python(cls, v: Any, **_: Any):
+        # Convert input to GraphemeStr
+        if not isinstance(v, str):
+            raise TypeError("Must be a string")
+        return cls(v)
 
 
 def no_null_char(value: str) -> str:
@@ -32,6 +54,7 @@ def OptionalField(**kwargs: Any) -> Any:  # noqa N802
 
 
 NoNullCharString = Annotated[str, AfterValidator(no_null_char)]
+
 
 OptionalNoNullCharString = NoNullCharString | None
 
@@ -81,6 +104,10 @@ NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 
 OptionalNotEmptyString = NotEmptyString | None
 
+ZIMMetadataString = Annotated[
+    GraphemeStr, AfterValidator(no_null_char), AfterValidator(not_empty)
+]
+
 
 def show_secrets(value: Any, handler: Any, info: SerializationInfo) -> Any:
     """Show secret values in serialization"""
@@ -123,19 +150,25 @@ SecretUrl = Annotated[ZIMSecretStr, AfterValidator(validate_secret_url)]
 OptionalSecretUrl = SecretUrl | None
 
 ZIMLongDescription = Annotated[
-    str, Field(min_length=1, max_length=4000), WrapValidator(skip_validation)
+    ZIMMetadataString,
+    Field(min_length=1, max_length=4000),
+    WrapValidator(skip_validation),
 ]
 
 OptionalZIMLongDescription = ZIMLongDescription | None
 
 ZIMTitle = Annotated[
-    str, Field(min_length=1, max_length=30), WrapValidator(skip_validation)
+    ZIMMetadataString,
+    Field(min_length=1, max_length=30),
+    WrapValidator(skip_validation),
 ]
 
 OptionalZIMTitle = ZIMTitle | None
 
 ZIMDescription = Annotated[
-    str, Field(min_length=1, max_length=80), WrapValidator(skip_validation)
+    ZIMMetadataString,
+    Field(min_length=1, max_length=80),
+    WrapValidator(skip_validation),
 ]
 
 OptionalZIMDescription = ZIMDescription | None

@@ -22,6 +22,7 @@
     "jwt-decode": "^4.0.0",
     "luxon": "^3.6.1",
     "pinia": "^3.0.3",
+    "split-by-grapheme": "^1.0.1",
     "vite-plugin-vuetify": "^2.1.1",
     "vue": "^3.5.17",
     "vue-cookies": "^1.8.6",
