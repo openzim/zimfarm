@@ -87,8 +87,8 @@ def test_get_requested_tasks_success(
 ):
     """Test successful retrieval of requested tasks"""
     # Create some requested tasks
-    for _ in range(30):
-        create_requested_task(worker=worker)
+    for i in range(30):
+        create_requested_task(worker=worker, schedule_name=f"test_schedule_{i}")
 
     response = client.get(
         "/v2/requested-tasks?limit=5&worker_name=test-worker",

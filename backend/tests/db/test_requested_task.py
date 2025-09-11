@@ -134,7 +134,7 @@ def test_request_task_if_worker_has_no_requested_task(
             None,  # cpu
             None,  # memory
             None,  # disk
-            30,  # expected nb records
+            3,  # expected nb records
             id="no_filter",
         ),
         # Filter by worker name
@@ -158,7 +158,7 @@ def test_request_task_if_worker_has_no_requested_task(
             None,  # cpu
             None,  # memory
             None,  # disk
-            30,  # expected nb records
+            3,  # expected nb records
             id="filter_matching_offliner_mwoffliner",
         ),
         pytest.param(
@@ -180,7 +180,7 @@ def test_request_task_if_worker_has_no_requested_task(
             None,  # cpu
             None,  # memory
             None,  # disk
-            30,  # expected nb records
+            3,  # expected nb records
             id="filter_matching_offliner_youtube_mwoffliner",
         ),
         # Filter by schedule name
@@ -192,7 +192,7 @@ def test_request_task_if_worker_has_no_requested_task(
             None,  # cpu
             None,  # memory
             None,  # disk
-            10,  # expected nb records
+            1,  # expected nb records
             id="filter_schedule_name_schedule_1_mw_offliner",
         ),
         pytest.param(
@@ -203,7 +203,7 @@ def test_request_task_if_worker_has_no_requested_task(
             None,  # cpu
             None,  # memory
             None,  # disk
-            20,
+            2,
             id="filter_schedule_name_schedule_2_3_mw_offliner",
         ),
         pytest.param(
@@ -226,7 +226,7 @@ def test_request_task_if_worker_has_no_requested_task(
             None,  # cpu
             None,  # memory
             None,  # disk
-            10,  # expected nb records
+            1,  # expected nb records
             id="filter_priority_1",
         ),
         # Filter by resource keys
@@ -238,7 +238,7 @@ def test_request_task_if_worker_has_no_requested_task(
             1,  # cpu
             None,  # memory
             None,  # disk
-            20,  # expected nb records
+            2,  # expected nb records
             id="filter_resource_keys_cpu_1",
         ),
         pytest.param(
@@ -249,7 +249,7 @@ def test_request_task_if_worker_has_no_requested_task(
             2,  # cpu
             None,  # memory
             None,  # disk
-            30,  # expected nb records
+            3,  # expected nb records
             id="filter_resource_keys_cpu_2",
         ),
         pytest.param(
@@ -260,7 +260,7 @@ def test_request_task_if_worker_has_no_requested_task(
             1,
             1024,
             1024,
-            10,
+            1,
             id="filter_resource_keys_cpu_1_memory_1_disk_1_mw_offliner",
         ),
     ],
@@ -284,34 +284,27 @@ def test_get_requested_tasks(
     # name of "schedule_1"
     requested_tasks: list[RequestedTask] = []
     schedule_config = create_schedule_config(cpu=2, memory=2 * 1024, disk=2 * 1024)
-    for _ in range(10):
-        requested_tasks.append(
-            create_requested_task(
-                schedule_config=schedule_config, schedule_name="schedule_1", priority=0
-            )
+    requested_tasks.append(
+        create_requested_task(
+            schedule_config=schedule_config, schedule_name="schedule_1", priority=0
         )
+    )
 
-    # Create 10 requested tasks with cpu 1, memory 1GB, disk 1GB
-    # with schedule name of "schedule_2"
     schedule_config = create_schedule_config(cpu=1, memory=1 * 1024, disk=1 * 1024)
-    for _ in range(10):
-        requested_tasks.append(
-            create_requested_task(
-                schedule_config=schedule_config, schedule_name="schedule_2", priority=0
-            )
+    requested_tasks.append(
+        create_requested_task(
+            schedule_config=schedule_config, schedule_name="schedule_2", priority=0
         )
+    )
 
-    # Create 10 requested tasks with cpu 1, memory 1GB, disk 1GB, and priority 1
-    # with schedule name of "schedule_3"
     schedule_config = create_schedule_config(cpu=1, memory=1 * 1024, disk=1 * 1024)
-    for _ in range(10):
-        requested_tasks.append(
-            create_requested_task(
-                schedule_config=schedule_config, schedule_name="schedule_3", priority=1
-            )
+    requested_tasks.append(
+        create_requested_task(
+            schedule_config=schedule_config, schedule_name="schedule_3", priority=1
         )
+    )
 
-    limit = 5
+    limit = 2
     result = get_requested_tasks(
         session=dbsession,
         skip=0,
@@ -324,7 +317,7 @@ def test_get_requested_tasks(
         memory=memory,
         disk=disk,
     )
-    assert len(requested_tasks) == 30
+    assert len(requested_tasks) == 3
     assert result.nb_records == expeted_nb_records
     assert len(result.requested_tasks) <= limit
 
@@ -441,29 +434,21 @@ def test_delete_requested_task(dbsession: OrmSession, requested_task: RequestedT
 
 
 def test_compute_requested_task_rank_with_multiple_tasks(
-    dbsession: OrmSession, requested_task: RequestedTask
+    dbsession: OrmSession,
+    create_requested_task: Callable[..., RequestedTask],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
 ):
     """Test that compute_requested_task_rank works with multiple tasks"""
-    # Create another task with different priority
-    new_task = RequestedTask(
-        status="requested",
-        timestamp=[("requested", getnow()), ("reserved", getnow())],
-        events=[{"code": "requested", "timestamp": getnow()}],
-        requested_by="testuser2",
-        priority=requested_task.priority + 1,  # Higher priority
-        config=requested_task.config,
-        upload=requested_task.upload,
-        notification={},
-        updated_at=getnow(),
-        original_schedule_name=requested_task.schedule.name,  # pyright: ignore[reportOptionalMemberAccess]
+    # Create two tasks with different priorities
+    schedule_config = create_schedule_config(cpu=2, memory=2 * 1024, disk=2 * 1024)
+    old_task = create_requested_task(
+        schedule_config=schedule_config, schedule_name="schedule_1", priority=1
     )
-    new_task.schedule = requested_task.schedule
-    new_task.worker = requested_task.worker
-    dbsession.add(new_task)
-    dbsession.flush()
+    new_task = create_requested_task(
+        schedule_config=schedule_config, schedule_name="schedule_2", priority=2
+    )
 
-    # Original task should have rank 1 (lower priority)
-    assert compute_requested_task_rank(dbsession, requested_task.id) == 1
+    assert compute_requested_task_rank(dbsession, old_task.id) == 1
     # New task should have rank 0 (higher priority)
     assert compute_requested_task_rank(dbsession, new_task.id) == 0
 

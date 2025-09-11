@@ -8,6 +8,7 @@ from sqlalchemy.orm import Bundle
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import (
@@ -72,7 +73,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                     "warehouse_path": row.config["warehouse_path"],
                     "resources": row.config["resources"],
                     "offliner": row.config["offliner"],
-                    "monitor": row.config["monitor"],
+                    "monitor": parse_bool(row.config.get("monitor")),
                     "image": row.config["image"],
                     "mount_point": row.config["mount_point"],
                     "command": row.config["command"],

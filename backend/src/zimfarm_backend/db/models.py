@@ -280,3 +280,4 @@ class RequestedTask(Base):
     worker: Mapped["Worker | None"] = relationship(
         back_populates="requested_tasks", init=False
     )
+    __table_args__ = (UniqueConstraint("schedule_id"),)

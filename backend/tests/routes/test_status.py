@@ -31,12 +31,12 @@ def test_status_get(
     expected_reponse: str,
 ):
     for _ in range(5):
-        create_task(status=TaskStatus.requested)
-        create_task(status=TaskStatus.reserved)
-        create_task(status=TaskStatus.started)
-        create_task(status=TaskStatus.scraper_started)
-        create_task(status=TaskStatus.succeeded)
-        create_task(status=TaskStatus.failed)
+        create_task(status=TaskStatus.requested, schedule_name="schedule_1")
+        create_task(status=TaskStatus.reserved, schedule_name="schedule_2")
+        create_task(status=TaskStatus.started, schedule_name="schedule_3")
+        create_task(status=TaskStatus.scraper_started, schedule_name="schedule_4")
+        create_task(status=TaskStatus.succeeded, schedule_name="schedule_5")
+        create_task(status=TaskStatus.failed, schedule_name="schedule_6")
 
     # needed to ensure that the task is older than 1 second
     time.sleep(1)
