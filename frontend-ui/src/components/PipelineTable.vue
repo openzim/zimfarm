@@ -126,7 +126,9 @@
         </template>
 
         <template #[`item.last_run`]="{ item }">
-          <span v-if="lastRunsLoaded && item.schedule_name && schedulesLastRuns[item.schedule_name]">
+          <span
+            v-if="lastRunsLoaded && item.schedule_name && schedulesLastRuns[item.schedule_name]"
+          >
             <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
               {{ schedulesLastRuns[item.schedule_name].status }} </code
             >,

@@ -29,13 +29,7 @@
               />
             </v-col>
             <v-col cols="12" sm="6" md="4" class="d-flex align-end">
-              <v-btn
-                type="submit"
-                color="primary"
-                variant="elevated"
-                :disabled="!payload"
-                block
-              >
+              <v-btn type="submit" color="primary" variant="elevated" :disabled="!payload" block>
                 Update User
               </v-btn>
             </v-col>
@@ -133,18 +127,17 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'update-user', payload: { role: typeof constants.ROLES[number]; email?: string }): void
+  (e: 'update-user', payload: { role: (typeof constants.ROLES)[number]; email?: string }): void
   (e: 'change-password', password: string): void
   (e: 'add-key', keyPayload: { name: string; key: string }): void
 }>()
-
 
 const roles = constants.ROLES
 
 // Reactive data
 const form = ref({
   email: '',
-  role: '' as typeof constants.ROLES[number],
+  role: '' as (typeof constants.ROLES)[number],
   password: '',
 })
 
@@ -157,7 +150,9 @@ const keyFile = ref<File | null>(null)
 
 // Computed properties
 const payload = computed(() => {
-  const payload: { role: typeof constants.ROLES[number]; email?: string } = { role: form.value.role }
+  const payload: { role: (typeof constants.ROLES)[number]; email?: string } = {
+    role: form.value.role,
+  }
   if (form.value.email !== props.user.email) {
     payload.email = form.value.email
   }
@@ -171,7 +166,6 @@ const keyPayload = computed(() => {
   }
   return payload
 })
-
 
 // Simple password generator
 const genPassword = () => generatePassword(8)
@@ -188,7 +182,7 @@ const keyFileSelected = () => {
 
   if (file.size > 1024) {
     notificationStore.showError(
-      `File ${file.name} doesn't appear to be an RSA public file (too large). ${file.size}`
+      `File ${file.name} doesn't appear to be an RSA public file (too large). ${file.size}`,
     )
     // Clear the file input on error
     keyFile.value = null
@@ -197,9 +191,7 @@ const keyFileSelected = () => {
 
   const reader = new FileReader()
   reader.onerror = (evt) => {
-    notificationStore.showError(
-      `File ${file.name} failed to read: ${evt}`
-    )
+    notificationStore.showError(`File ${file.name} failed to read: ${evt}`)
     // Clear the file input on error
     keyFile.value = null
   }
@@ -207,9 +199,7 @@ const keyFileSelected = () => {
     const result = evt.target?.result as string
     const parts = result.trim().split(/\s/)
     if (parts.length !== 3) {
-      notificationStore.showError(
-        `File ${file.name} doesn't appear to be an SSH public file.`
-      )
+      notificationStore.showError(`File ${file.name} doesn't appear to be an SSH public file.`)
       // Clear the file input on error
       keyFile.value = null
       return
@@ -220,8 +210,6 @@ const keyFileSelected = () => {
   }
   reader.readAsText(file, 'UTF-8')
 }
-
-
 
 const addKey = () => {
   if (!keyPayload.value.name || !keyPayload.value.key) return
@@ -236,8 +224,8 @@ const updateUser = () => {
 // Lifecycle
 onMounted(() => {
   if (props.user) {
-    const role = constants.ROLES.includes(props.user.role as typeof constants.ROLES[number])
-      ? props.user.role as typeof constants.ROLES[number]
+    const role = constants.ROLES.includes(props.user.role as (typeof constants.ROLES)[number])
+      ? (props.user.role as (typeof constants.ROLES)[number])
       : 'editor'
 
     form.value = {

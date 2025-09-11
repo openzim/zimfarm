@@ -25,7 +25,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   tooltip: true,
-  text: null
+  text: null,
 })
 
 // Computed properties
@@ -36,5 +36,4 @@ const to = computed(() => {
 const displayText = computed(() => {
   return props.text === null ? fromNow(props.updatedAt) : props.text
 })
-
 </script>

@@ -19,7 +19,11 @@
       <!-- Tabs -->
       <v-tabs v-model="currentTab" class="mb-4">
         <v-tab :to="{ name: 'worker-detail', params: { workerName } }" value="details">Info</v-tab>
-        <v-tab :to="{ name: 'worker-detail-tab', params: { workerName, selectedTab: 'edit' } }" value="edit">Edit</v-tab>
+        <v-tab
+          :to="{ name: 'worker-detail-tab', params: { workerName, selectedTab: 'edit' } }"
+          value="edit"
+          >Edit</v-tab
+        >
       </v-tabs>
 
       <v-window v-model="currentTab">
@@ -29,7 +33,12 @@
             <v-col cols="12" sm="4">
               <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
-                  <v-progress-circular :model-value="percentCpu" :color="colorCpu" size="44" width="4">
+                  <v-progress-circular
+                    :model-value="percentCpu"
+                    :color="colorCpu"
+                    size="44"
+                    width="4"
+                  >
                     <span class="text-caption">{{ percentCpu }}%</span>
                   </v-progress-circular>
                   <div class="ml-3">
@@ -42,7 +51,12 @@
             <v-col cols="12" sm="4">
               <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
-                  <v-progress-circular :model-value="percentMemory" :color="colorMemory" size="44" width="4">
+                  <v-progress-circular
+                    :model-value="percentMemory"
+                    :color="colorMemory"
+                    size="44"
+                    width="4"
+                  >
                     <span class="text-caption">{{ percentMemory }}%</span>
                   </v-progress-circular>
                   <div class="ml-3">
@@ -55,7 +69,12 @@
             <v-col cols="12" sm="4">
               <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
-                  <v-progress-circular :model-value="percentDisk" :color="colorDisk" size="44" width="4">
+                  <v-progress-circular
+                    :model-value="percentDisk"
+                    :color="colorDisk"
+                    size="44"
+                    width="4"
+                  >
                     <span class="text-caption">{{ percentDisk }}%</span>
                   </v-progress-circular>
                   <div class="ml-3">
@@ -122,7 +141,9 @@
                   <v-icon size="small" class="mr-1">mdi-ip-network-outline</v-icon>
                   Last IP
                 </div>
-                <div><code>{{ metrics.last_ip || '-' }}</code></div>
+                <div>
+                  <code>{{ metrics.last_ip || '-' }}</code>
+                </div>
 
                 <v-divider class="my-3" />
 
@@ -183,19 +204,41 @@
                     <tr v-for="t in metrics.running_tasks" :key="t.id">
                       <td>
                         <span v-if="t.schedule_name === null">N/A</span>
-                        <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: t.schedule_name } }">
+                        <router-link
+                          v-else
+                          :to="{
+                            name: 'schedule-detail',
+                            params: { scheduleName: t.schedule_name },
+                          }"
+                        >
                           {{ t.schedule_name }}
                         </router-link>
                       </td>
                       <td>
                         <div class="d-flex flex-sm-column flex-lg-row py-1">
-                          <ResourceBadge kind="cpu" :value="t.config.resources.cpu" variant="text" />
-                          <ResourceBadge kind="memory" :value="t.config.resources.memory" variant="text" />
-                          <ResourceBadge kind="disk" :value="t.config.resources.disk" variant="text" />
+                          <ResourceBadge
+                            kind="cpu"
+                            :value="t.config.resources.cpu"
+                            variant="text"
+                          />
+                          <ResourceBadge
+                            kind="memory"
+                            :value="t.config.resources.memory"
+                            variant="text"
+                          />
+                          <ResourceBadge
+                            kind="disk"
+                            :value="t.config.resources.disk"
+                            variant="text"
+                          />
                         </div>
                       </td>
                       <td>
-                        <TaskLink v-if="t.id && t.updated_at" :id="t.id" :updated-at="t.updated_at" />
+                        <TaskLink
+                          v-if="t.id && t.updated_at"
+                          :id="t.id"
+                          :updated-at="t.updated_at"
+                        />
                         <span v-else class="text-caption">-</span>
                       </td>
                     </tr>
@@ -232,7 +275,9 @@
                 </v-row>
                 <div class="d-flex">
                   <v-spacer />
-                  <v-btn color="primary" type="submit" :loading="saving" :disabled="!hasChanges">Update Worker</v-btn>
+                  <v-btn color="primary" type="submit" :loading="saving" :disabled="!hasChanges"
+                    >Update Worker</v-btn
+                  >
                 </div>
               </v-form>
             </v-card-text>
@@ -266,7 +311,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedTab: 'details'
+  selectedTab: 'details',
 })
 
 const config = inject<Config>(constants.config)
@@ -294,9 +339,21 @@ const hasChanges = computed(() => {
 
 const workerName = computed(() => props.workerName)
 
-const usageCpu = computed(() => `${metrics.value?.current_usage.cpu ?? 0}/${metrics.value?.resources.cpu ?? 0}`)
-const usageMemory = computed(() => `${formattedBytesSize(metrics.value?.current_usage.memory ?? 0)}/${formattedBytesSize(metrics.value?.resources.memory ?? 0)}`)
-const usageDisk = computed(() => `${formattedBytesSize(metrics.value?.current_usage.disk ?? 0)}/${formattedBytesSize(metrics.value?.resources.disk ?? 0)}`)
+const usageCpu = computed(
+  () => `${metrics.value?.current_usage.cpu ?? 0}/${metrics.value?.resources.cpu ?? 0}`,
+)
+const usageMemory = computed(
+  () =>
+    `${formattedBytesSize(metrics.value?.current_usage.memory ?? 0)}/${formattedBytesSize(
+      metrics.value?.resources.memory ?? 0,
+    )}`,
+)
+const usageDisk = computed(
+  () =>
+    `${formattedBytesSize(metrics.value?.current_usage.disk ?? 0)}/${formattedBytesSize(
+      metrics.value?.resources.disk ?? 0,
+    )}`,
+)
 
 function pctColor(pct: number): string {
   if (pct >= 90) return 'error'
@@ -340,7 +397,9 @@ async function refreshData() {
 async function save() {
   if (!metrics.value) return
   saving.value = true
-  const ok = await workersStore.updateWorkerContext(workerName.value, { contexts: editContexts.value })
+  const ok = await workersStore.updateWorkerContext(workerName.value, {
+    contexts: editContexts.value,
+  })
   saving.value = false
   if (ok) {
     notificationStore.showSuccess('Worker updated')
@@ -354,8 +413,11 @@ onMounted(async () => {
   await refreshData()
 })
 
-watch(() => props.selectedTab, (newVal) => {
-  currentTab.value = newVal
-  refreshData()
-})
+watch(
+  () => props.selectedTab,
+  (newVal) => {
+    currentTab.value = newVal
+    refreshData()
+  },
+)
 </script>

@@ -1,0 +1,36 @@
+name: Frontend Tests
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "frontend-ui/**"
+    branches:
+      - main
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build frontend Docker image
+        working-directory: frontend-ui
+        run: docker build -t zimfarm-frontend:test .
+
+      - name: Run frontend container
+        run: |
+          docker run -d --name zimfarm-frontend-test \
+            -p 8080:80 \
+            zimfarm-frontend:test
+          # wait for container to be ready
+          for i in {1..10}; do
+            if curl -s http://localhost:8080/ > /dev/null; then
+              echo "Frontend is up!"
+              break
+            fi
+            echo "Waiting for frontend..."
+            sleep 3
+          done

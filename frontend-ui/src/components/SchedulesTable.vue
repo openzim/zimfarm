@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
+    <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title class="d-flex align-center justify-end flex-wrap py-2">
         <div class="d-flex align-center">
           <RequestSelectionButton
@@ -9,12 +9,7 @@
             :count="paginator.count"
             @fetch-schedules="emit('fetchSchedules')"
           />
-          <v-btn
-            size="small"
-            variant="outlined"
-            class="ml-2"
-            @click="emit('clearFilters')"
-          >
+          <v-btn size="small" variant="outlined" class="ml-2" @click="emit('clearFilters')">
             <v-icon size="small" class="mr-1">mdi-close-circle</v-icon>
             clear
           </v-btn>
@@ -37,8 +32,8 @@
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
             <v-progress-circular indeterminate size="64" />
-              <div class="mt-4 text-body-1">{{ loadingText || 'Fetching recipes...' }}</div>
-            </div>
+            <div class="mt-4 text-body-1">{{ loadingText || 'Fetching recipes...' }}</div>
+          </div>
         </template>
 
         <template #[`item.name`]="{ item }">
@@ -65,9 +60,7 @@
         </template>
 
         <template #[`item.requested`]="{ item }">
-          <v-icon v-if="item.is_requested" size="small" color="success">
-            mdi-check
-          </v-icon>
+          <v-icon v-if="item.is_requested" size="small" color="success"> mdi-check </v-icon>
         </template>
 
         <template #[`item.last_task`]="{ item }">
@@ -75,7 +68,7 @@
             <code :class="statusClass(item.most_recent_task.status)">
               {{ item.most_recent_task.status }}
             </code>
-            <br>
+            <br />
             <TaskLink
               :id="item.most_recent_task.id"
               :updated-at="item.most_recent_task.updated_at"
@@ -124,24 +117,28 @@ const props = defineProps<Props>()
 
 // Define emits
 const emit = defineEmits<{
-  'limitChanged': [limit: number]
-  'loadData': [limit: number, skip: number]
-  'clearFilters': []
-  'fetchSchedules': []
+  limitChanged: [limit: number]
+  loadData: [limit: number, skip: number]
+  clearFilters: []
+  fetchSchedules: []
 }>()
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
 
-function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
+function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   // page is 1-indexed, we need to calculate the skip for the request
   const page = options.page > 1 ? options.page - 1 : 0
   emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
 }
 
-watch(() => props.paginator, (newPaginator) => {
-  selectedLimit.value = newPaginator.limit
-}, { immediate: true })
+watch(
+  () => props.paginator,
+  (newPaginator) => {
+    selectedLimit.value = newPaginator.limit
+  },
+  { immediate: true },
+)
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'

@@ -25,7 +25,6 @@ const offlinerStore = useOfflinerStore()
 const router = useRouter()
 const ready = ref(false)
 
-
 onMounted(async () => {
   await authStore.loadTokenFromCookie()
   loadingStore.startLoading('Loading application data...')
@@ -111,12 +110,7 @@ const handleSignOut = () => {
       <v-container>
         <RouterView v-if="ready" />
         <div v-else class="d-flex align-center justify-center" style="height: 80vh">
-          <v-progress-circular
-            indeterminate
-            size="70"
-            width="7"
-            color="primary"
-          />
+          <v-progress-circular indeterminate size="70" width="7" color="primary" />
         </div>
       </v-container>
     </v-main>

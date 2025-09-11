@@ -1,23 +1,23 @@
 <template>
-    <div class="d-flex flex-column">
-      <span v-if="label" class="text-body-2">{{ label }}</span>
-      <div class="d-flex align-center">
-        <v-switch
-          :model-value="modelValue"
-          :color="color"
-          :disabled="disabled"
-          :density="density"
-          :hide-details="hideDetails"
-          @update:model-value="handleUpdate"
-        />
-        <span class="ml-2 text-body-2 text-medium-emphasis">
-          {{ modelValue ? 'Enabled' : 'Disabled' }}
-        </span>
-      </div>
+  <div class="d-flex flex-column">
+    <span v-if="label" class="text-body-2">{{ label }}</span>
+    <div class="d-flex align-center">
+      <v-switch
+        :model-value="modelValue"
+        :color="color"
+        :disabled="disabled"
+        :density="density"
+        :hide-details="hideDetails"
+        @update:model-value="handleUpdate"
+      />
+      <span class="ml-2 text-body-2 text-medium-emphasis">
+        {{ modelValue ? 'Enabled' : 'Disabled' }}
+      </span>
     </div>
-    <div v-if="details" class="mt-1 text-caption text-medium-emphasis">
-      {{ details }}
-    </div>
+  </div>
+  <div v-if="details" class="mt-1 text-caption text-medium-emphasis">
+    {{ details }}
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -39,7 +39,7 @@ withDefaults(defineProps<Props>(), {
   color: 'primary',
   disabled: false,
   density: 'default',
-  hideDetails: true
+  hideDetails: true,
 })
 
 const emit = defineEmits<Emits>()

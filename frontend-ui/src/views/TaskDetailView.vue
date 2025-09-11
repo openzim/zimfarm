@@ -26,7 +26,13 @@
         <code class="text-h6">#{{ shortId }}</code>
       </v-col>
       <v-col cols="12" sm="8" md="9" lg="10" v-if="scheduleName">
-        <router-link :to="{ name: 'schedule-detail' , params: { scheduleName: scheduleName }}" class="text-decoration-none">
+        <router-link
+          :to="{
+            name: 'schedule-detail',
+            params: { scheduleName: scheduleName },
+          }"
+          class="text-decoration-none"
+        >
           <code class="text-h6 text-primary">
             {{ scheduleName }}
           </code>
@@ -38,15 +44,15 @@
     <div v-if="!error && task">
       <!-- Tabs -->
       <v-tabs v-model="currentTab" class="mb-4">
-        <v-tab
-          value="details"
-          :to="{ name: 'task-detail', params: { id: props.id } }"
-        >
+        <v-tab value="details" :to="{ name: 'task-detail', params: { id: props.id } }">
           Info
         </v-tab>
         <v-tab
           value="debug"
-          :to="{ name: 'task-detail-tab', params: { id: props.id, selectedTab: 'debug' } }"
+          :to="{
+            name: 'task-detail-tab',
+            params: { id: props.id, selectedTab: 'debug' },
+          }"
         >
           Debug
         </v-tab>
@@ -62,7 +68,8 @@
                   <tr>
                     <th class="text-left w-20">ID</th>
                     <td>
-                      <code>{{ id }}</code>,
+                      <code>{{ id }}</code
+                      >,
                       <a target="_blank" :href="webApiUrl + '/tasks/' + id">
                         document <v-icon size="small">mdi-open-in-new</v-icon>
                       </a>
@@ -74,14 +81,22 @@
                       <span v-if="task.schedule_name === null || task.schedule_name === 'none'">
                         {{ task.original_schedule_name }}
                       </span>
-                      <router-link v-else :to="{ name: 'schedule-detail', params: { scheduleName: task.schedule_name } }">
+                      <router-link
+                        v-else
+                        :to="{
+                          name: 'schedule-detail',
+                          params: { scheduleName: task.schedule_name },
+                        }"
+                      >
                         {{ task.schedule_name }}
                       </router-link>
                     </td>
                   </tr>
                   <tr>
                     <th class="text-left w-20">Status</th>
-                    <td><code class="text-pink-accent-2">{{ task.status }}</code></td>
+                    <td>
+                      <code class="text-pink-accent-2">{{ task.status }}</code>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left w-20">Worker</th>
@@ -89,11 +104,16 @@
                   </tr>
                   <tr>
                     <th class="text-left w-20">Started On</th>
-                    <td>{{ formatDt(startedOn) }}, after <strong>{{ pipeDuration }} in pipe</strong></td>
+                    <td>
+                      {{ formatDt(startedOn) }}, after
+                      <strong>{{ pipeDuration }} in pipe</strong>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left w-20">Duration</th>
-                    <td>{{ taskDuration }}<span v-if="isRunning"> (<strong>Ongoing</strong>)</span></td>
+                    <td>
+                      {{ taskDuration }}<span v-if="isRunning"> (<strong>Ongoing</strong>)</span>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left align-top pa-4 w-20">Events</th>
@@ -101,11 +121,24 @@
                       <v-table density="compact" class="events-table">
                         <tbody>
                           <tr v-for="event in task.events" :key="event.code">
-                            <td><code class="text-pink-accent-2">{{ event.code }}</code></td>
+                            <td>
+                              <code class="text-pink-accent-2">{{ event.code }}</code>
+                            </td>
                             <td>{{ formatDt(event.timestamp) }}</td>
-                            <td v-if="event.code === 'requested'">{{ task.requested_by }}</td>
-                            <td v-else-if="event.code === 'cancel_requested' && task.status === 'cancel_requested'">{{ task.canceled_by }}</td>
-                            <td v-else-if="event.code === 'canceled'">{{ task.canceled_by }}</td>
+                            <td v-if="event.code === 'requested'">
+                              {{ task.requested_by }}
+                            </td>
+                            <td
+                              v-else-if="
+                                event.code === 'cancel_requested' &&
+                                task.status === 'cancel_requested'
+                              "
+                            >
+                              {{ task.canceled_by }}
+                            </td>
+                            <td v-else-if="event.code === 'canceled'">
+                              {{ task.canceled_by }}
+                            </td>
                             <td v-else />
                           </tr>
                         </tbody>
@@ -128,7 +161,12 @@
                         <tbody>
                           <tr v-for="file in sortedFiles" :key="file.name">
                             <td>
-                              <a target="_blank" :href="kiwixDownloadUrl + task.config.warehouse_path + '/' + file.name">
+                              <a
+                                target="_blank"
+                                :href="
+                                  kiwixDownloadUrl + task.config.warehouse_path + '/' + file.name
+                                "
+                              >
                                 {{ file.name }}
                               </a>
                             </td>
@@ -152,19 +190,25 @@
                               <code>{{ file.check_result }}</code>
                               <v-menu location="left">
                                 <template #activator="{ props }">
-                                  <v-btn
-                                    v-bind="props"
-                                    variant="text"
-                                    size="small"
-                                    class="ml-2"
-                                  >
+                                  <v-btn v-bind="props" variant="text" size="small" class="ml-2">
                                     <v-icon>mdi-eye</v-icon>
                                   </v-btn>
                                 </template>
                                 <v-card max-width="400" max-height="300">
-                                  <v-card-title class="text-subtitle-2 pa-3">zimcheck output</v-card-title>
+                                  <v-card-title class="text-subtitle-2 pa-3"
+                                    >zimcheck output</v-card-title
+                                  >
                                   <v-card-text class="pa-3">
-                                    <pre class="text-caption" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;">{{ JSON.stringify(file.check_details, null, 2) }}</pre>
+                                    <pre
+                                      class="text-caption"
+                                      style="
+                                        max-height: 200px;
+                                        overflow-y: auto;
+                                        white-space: pre-wrap;
+                                        word-break: break-word;
+                                      "
+                                      >{{ JSON.stringify(file.check_details, null, 2) }}</pre
+                                    >
                                   </v-card-text>
                                 </v-card>
                               </v-menu>
@@ -200,7 +244,9 @@
                     <td>
                       <a target="_blank" :href="imageUrl">
                         <code>{{ imageHuman }}</code>
-                      </a> (<code>{{ task.config.offliner.offliner_id }}</code>)
+                      </a>
+                      (<code>{{ task.config.offliner.offliner_id }}</code
+                      >)
                     </td>
                   </tr>
                   <tr v-if="task.config">
@@ -209,13 +255,12 @@
                       <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
                       <ResourceBadge kind="memory" :value="task.config.resources.memory" />
                       <ResourceBadge kind="disk" :value="task.config.resources.disk" />
-                      <ResourceBadge kind="shm" :value="task.config.resources.shm" v-if="task.config.resources.shm" />
-                      <v-chip
-                        v-if="task.config.monitor"
-                        color="warning"
-                        size="small"
-                        class="ml-2"
-                      >
+                      <ResourceBadge
+                        kind="shm"
+                        :value="task.config.resources.shm"
+                        v-if="task.config.resources.shm"
+                      />
+                      <v-chip v-if="task.config.monitor" color="warning" size="small" class="ml-2">
                         <a target="_blank" :href="monitoringUrl" class="text-decoration-none">
                           <v-icon size="small" class="mr-1">mdi-bug</v-icon>
                           monitored
@@ -225,29 +270,34 @@
                   </tr>
                   <tr v-if="task.config">
                     <th class="text-left w-20">Platform</th>
-                    <td>{{ task.config.platform || "-" }}</td>
+                    <td>{{ task.config.platform || '-' }}</td>
                   </tr>
                   <tr v-if="task.config">
                     <th class="text-left align-top pa-4 w-20">Config</th>
-                    <td><FlagsList :offliner="task.config.offliner" :secret-fields="secretFields" :shrink="false" /></td>
+                    <td>
+                      <FlagsList
+                        :offliner="task.config.offliner"
+                        :secret-fields="secretFields"
+                        :shrink="false"
+                      />
+                    </td>
                   </tr>
                   <tr v-if="taskContainer?.command">
                     <th class="text-left align-top pa-4 w-20">
                       Command
-                      <v-btn
-                        variant="text"
-                        size="small"
-                        class="ml-2"
-                        @click="copyCommand(command)"
-                      >
+                      <v-btn variant="text" size="small" class="ml-2" @click="copyCommand(command)">
                         <v-icon>mdi-content-copy</v-icon>
                       </v-btn>
                     </th>
-                    <td class="py-2"><code class="command text-pink-accent-2 text-wrap">{{ command }}</code></td>
+                    <td class="py-2">
+                      <code class="command text-pink-accent-2 text-wrap">{{ command }}</code>
+                    </td>
                   </tr>
                   <tr v-if="taskContainer?.exit_code != null">
                     <th class="text-left w-20">Exit-code</th>
-                    <td><code class="text-pink-accent-2">{{ taskContainer.exit_code }}</code></td>
+                    <td>
+                      <code class="text-pink-accent-2">{{ taskContainer.exit_code }}</code>
+                    </td>
                   </tr>
                   <tr v-if="maxMemory != null">
                     <th class="text-left w-20">Stats</th>
@@ -260,7 +310,10 @@
                   </tr>
                   <tr v-if="taskProgress">
                     <th class="text-left w-20">Scraper progress</th>
-                    <td>{{ taskProgress.overall }}% ({{ taskProgress.done }} / {{ taskProgress.total }})</td>
+                    <td>
+                      {{ taskProgress.overall }}% ({{ taskProgress.done }} /
+                      {{ taskProgress.total }})
+                    </td>
                   </tr>
                   <tr v-if="taskContainer?.stdout || taskContainer?.stderr || taskContainer?.log">
                     <td colspan="2">
@@ -279,7 +332,9 @@
                         <v-icon>mdi-content-copy</v-icon>
                       </v-btn>
                     </th>
-                    <td><pre class="stdout">{{ taskContainer.stdout }}</pre></td>
+                    <td>
+                      <pre class="stdout">{{ taskContainer.stdout }}</pre>
+                    </td>
                   </tr>
                   <tr v-if="taskContainer?.stderr">
                     <th class="text-left w-20">
@@ -293,17 +348,14 @@
                         <v-icon>mdi-content-copy</v-icon>
                       </v-btn>
                     </th>
-                    <td><pre class="stderr">{{ taskContainer.stderr }}</pre></td>
+                    <td>
+                      <pre class="stderr">{{ taskContainer.stderr }}</pre>
+                    </td>
                   </tr>
                   <tr v-if="taskContainer?.log">
                     <th class="text-left w-20">Scraper Log</th>
                     <td>
-                      <v-btn
-                        variant="outlined"
-                        size="small"
-                        target="_blank"
-                        :href="zimfarmLogsUrl"
-                      >
+                      <v-btn variant="outlined" size="small" target="_blank" :href="zimfarmLogsUrl">
                         Download log
                       </v-btn>
                     </td>
@@ -323,15 +375,21 @@
                   </tr>
                   <tr v-if="taskDebug.exception">
                     <th class="text-left w-20 align-top pa-4">Exception</th>
-                    <td><pre>{{ taskDebug.exception }}</pre></td>
+                    <td>
+                      <pre>{{ taskDebug.exception }}</pre>
+                    </td>
                   </tr>
                   <tr v-if="taskDebug.traceback">
                     <th class="text-left w-20 align-top pa-4">Traceback</th>
-                    <td><pre>{{ taskDebug.traceback }}</pre></td>
+                    <td>
+                      <pre>{{ taskDebug.traceback }}</pre>
+                    </td>
                   </tr>
                   <tr v-if="taskDebug.log">
                     <th class="text-left w-20 align-top pa-4">Task-worker Log</th>
-                    <td><pre>{{ taskDebug.log }}</pre></td>
+                    <td>
+                      <pre>{{ taskDebug.log }}</pre>
+                    </td>
                   </tr>
                 </tbody>
               </v-table>
@@ -359,8 +417,19 @@ import { useOfflinerStore } from '@/stores/offliner'
 import { useTasksStore } from '@/stores/tasks'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { Task, TaskFile } from '@/types/tasks'
-import { formatDt, formatDurationBetween, formattedBytesSize, getTimezoneDetails } from '@/utils/format'
-import { artifactsUrl, getSecretFields, imageHuman as imageHumanFn, imageUrl as imageUrlFn, logsUrl } from '@/utils/offliner'
+import {
+  formatDt,
+  formatDurationBetween,
+  formattedBytesSize,
+  getTimezoneDetails,
+} from '@/utils/format'
+import {
+  artifactsUrl,
+  getSecretFields,
+  imageHuman as imageHumanFn,
+  imageUrl as imageUrlFn,
+  logsUrl,
+} from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 
@@ -371,7 +440,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedTab: 'details'
+  selectedTab: 'details',
 })
 
 // Inject config
@@ -404,7 +473,7 @@ const shortId = computed(() => {
 })
 
 const isRunning = computed(() => {
-  return !["failed", "canceled", "succeeded", "cancel_requested"].includes(task.value?.status || '')
+  return !['failed', 'canceled', 'succeeded', 'cancel_requested'].includes(task.value?.status || '')
 })
 
 const scheduleName = computed(() => {
@@ -428,7 +497,7 @@ const taskDebug = computed(() => {
 const taskDuration = computed(() => {
   if (!task.value?.events) return ''
   const first = getTimestampStringForStatus(task.value?.timestamp ?? [], 'started')
-  if (!first) return "not actually started"
+  if (!first) return 'not actually started'
   if (isRunning.value) {
     return formatDurationBetween(first, new Date().toISOString())
   }
@@ -436,9 +505,18 @@ const taskDuration = computed(() => {
   return formatDurationBetween(first, last)
 })
 
-const startedOn = computed(() => getTimestampStringForStatus(task.value?.timestamp ?? [], 'started') || getTimestampStringForStatus(task.value?.timestamp ?? [], 'reserved'))
+const startedOn = computed(
+  () =>
+    getTimestampStringForStatus(task.value?.timestamp ?? [], 'started') ||
+    getTimestampStringForStatus(task.value?.timestamp ?? [], 'reserved'),
+)
 
-const pipeDuration = computed(() => formatDurationBetween(getTimestampStringForStatus(task.value?.timestamp ?? [], 'requested'), getTimestampStringForStatus(task.value?.timestamp ?? [], 'started')))
+const pipeDuration = computed(() =>
+  formatDurationBetween(
+    getTimestampStringForStatus(task.value?.timestamp ?? [], 'requested'),
+    getTimestampStringForStatus(task.value?.timestamp ?? [], 'started'),
+  ),
+)
 
 const sortedFiles = computed(() => {
   if (!task.value?.files) return []
@@ -448,16 +526,16 @@ const sortedFiles = computed(() => {
 })
 
 const command = computed(() => {
-  return taskContainer.value?.command?.join(" ") || ""
+  return taskContainer.value?.command?.join(' ') || ''
 })
 
 const imageHuman = computed(() => {
-  if (!task.value?.config) return ""
+  if (!task.value?.config) return ''
   return imageHumanFn(task.value.config)
 })
 
 const imageUrl = computed(() => {
-  if (!task.value?.config) return ""
+  if (!task.value?.config) return ''
   return imageUrlFn(task.value.config)
 })
 
@@ -474,13 +552,21 @@ const maxMemory = computed(() => {
 })
 
 const monitoringUrl = computed(() => {
-  return `http://monitoring.openzim.org/host/${scheduleName.value}_${shortId.value}.${task.value?.worker_name}/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${shortId.value}_submenu_cpu;after=${new Date(getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_started') || 0).getTime()};before=${new Date(getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_completed') || 0).getTime()};theme=slate;utc=Africa/Bamako`
+  return `http://monitoring.openzim.org/host/${scheduleName.value}_${shortId.value}.${
+    task.value?.worker_name
+  }/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${
+    shortId.value
+  }_submenu_cpu;after=${new Date(
+    getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_started') || 0,
+  ).getTime()};before=${new Date(
+    getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_completed') || 0,
+  ).getTime()};theme=slate;utc=Africa/Bamako`
 })
 
 const webApiUrl = computed(() => config.ZIMFARM_WEBAPI)
 const kiwixDownloadUrl = computed(() => config.ZIMFARM_ZIM_DOWNLOAD_URL)
-const zimfarmLogsUrl = computed(() => task.value ? logsUrl(task.value) : "")
-const zimfarmArtifactsUrl = computed(() => task.value ? artifactsUrl(task.value) : "")
+const zimfarmLogsUrl = computed(() => (task.value ? logsUrl(task.value) : ''))
+const zimfarmArtifactsUrl = computed(() => (task.value ? artifactsUrl(task.value) : ''))
 
 // Permission computed properties
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
@@ -488,7 +574,10 @@ const canCreateTasks = computed(() => authStore.hasPermission('tasks', 'create')
 
 // Methods
 const createdAfter = (file: TaskFile, taskData: Task) => {
-  return formatDurationBetween(getTimestampStringForStatus(taskData.timestamp ?? [], 'scraper_started'), file.created_timestamp)
+  return formatDurationBetween(
+    getTimestampStringForStatus(taskData.timestamp ?? [], 'scraper_started'),
+    file.created_timestamp,
+  )
 }
 
 const uploadDuration = (file: TaskFile) => {
@@ -499,9 +588,11 @@ const uploadDuration = (file: TaskFile) => {
 const copyLog = async (log: string) => {
   try {
     await navigator.clipboard.writeText(log)
-    notificationStore.showSuccess("zimcheck log copied to Clipboard!")
+    notificationStore.showSuccess('zimcheck log copied to Clipboard!')
   } catch {
-    notificationStore.showError("Unable to copy zimcheck log to clipboard 😞. Please copy it manually.")
+    notificationStore.showError(
+      'Unable to copy zimcheck log to clipboard 😞. Please copy it manually.',
+    )
   }
 }
 
@@ -516,7 +607,7 @@ const copyCommand = async (command: string) => {
   }
 }
 
-const copyOutput = async (log: string, name: string = "stdout") => {
+const copyOutput = async (log: string, name: string = 'stdout') => {
   try {
     await navigator.clipboard.writeText('```\n' + log + '\n```\n')
     notificationStore.showSuccess(`${name} copied to Clipboard!`)
@@ -534,12 +625,12 @@ const cancel = async () => {
 }
 
 const refreshData = async () => {
-  loadingStore.startLoading("Fetching task...")
+  loadingStore.startLoading('Fetching task...')
   const response = await tasksStore.fetchTask(props.id, !canCreateTasks.value)
   if (response) {
     task.value = response
   } else {
-    error.value = "Failed to fetch task"
+    error.value = 'Failed to fetch task'
     for (const error of tasksStore.errors) {
       notificationStore.showError(error)
     }
@@ -551,7 +642,9 @@ const refreshData = async () => {
 onMounted(async () => {
   refreshData()
   if (task.value) {
-    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(task.value.config.offliner.offliner_id)
+    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(
+      task.value.config.offliner.offliner_id,
+    )
     if (offlinerDefinition) {
       flagsDefinition.value = offlinerDefinition.flags
     }
@@ -559,14 +652,18 @@ onMounted(async () => {
 })
 
 // Watchers
-watch(() => props.selectedTab, (newTab) => {
-  currentTab.value = newTab
-  refreshData()
-})
+watch(
+  () => props.selectedTab,
+  (newTab) => {
+    currentTab.value = newTab
+    refreshData()
+  },
+)
 </script>
 
 <style scoped>
-.stdout, .stderr {
+.stdout,
+.stderr {
   max-height: 9rem;
   overflow: scroll;
   background-color: rgb(var(--v-theme-surface));
@@ -594,6 +691,6 @@ pre {
 }
 
 .events-table tbody tr:nth-of-type(odd) {
-  background-color: rgba(0, 0, 0, .05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 </style>

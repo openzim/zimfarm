@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card v-if="!errors.length" :class="{ 'loading': loading }" flat>
+    <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-data-table-server
         :headers="headers"
         :items="users"
@@ -17,8 +17,8 @@
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
             <v-progress-circular indeterminate size="64" />
-              <div class="mt-4 text-body-1">{{ loadingText || 'Fetching users...' }}</div>
-            </div>
+            <div class="mt-4 text-body-1">{{ loadingText || 'Fetching users...' }}</div>
+          </div>
         </template>
 
         <template #[`item.username`]="{ item }">
@@ -31,20 +31,13 @@
         </template>
 
         <template #[`item.role`]="{ item }">
-          <v-chip
-            :color="getRoleColor(item.role)"
-            size="small"
-            variant="tonal"
-          >
+          <v-chip :color="getRoleColor(item.role)" size="small" variant="tonal">
             {{ item.role }}
           </v-chip>
         </template>
 
         <template #[`item.email`]="{ item }">
-          <a
-            :href="`mailto:${item.email}`"
-            class="text-decoration-none text-primary"
-          >
+          <a :href="`mailto:${item.email}`" class="text-decoration-none text-primary">
             {{ item.email }}
           </a>
         </template>
@@ -62,10 +55,10 @@
 </template>
 
 <script setup lang="ts">
-import ErrorMessage from '@/components/ErrorMessage.vue';
-import type { Paginator } from '@/types/base';
-import type { User } from '@/types/user';
-import { ref, watch } from 'vue';
+import ErrorMessage from '@/components/ErrorMessage.vue'
+import type { Paginator } from '@/types/base'
+import type { User } from '@/types/user'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   headers: { title: string; key: string; sortable?: boolean }[]
@@ -77,22 +70,26 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'limitChanged': [limit: number]
-  'loadData': [limit: number, skip: number]
+  limitChanged: [limit: number]
+  loadData: [limit: number, skip: number]
 }>()
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
 
-function onUpdateOptions(options: { page: number, itemsPerPage: number }) {
+function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   // Calculate the skip for the request
   const page = options.page > 1 ? options.page - 1 : 0
   emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
 }
 
-watch(() => props.paginator, (newPaginator) => {
-  selectedLimit.value = newPaginator.limit
-}, { immediate: true })
+watch(
+  () => props.paginator,
+  (newPaginator) => {
+    selectedLimit.value = newPaginator.limit
+  },
+  { immediate: true },
+)
 
 const getRoleColor = (role: string): string => {
   const colorMap: Record<string, string> = {
@@ -101,7 +98,7 @@ const getRoleColor = (role: string): string => {
     'editor-requester': 'info',
     manager: 'warning',
     processor: 'success',
-    worker: 'secondary'
+    worker: 'secondary',
   }
   return colorMap[role] || 'default'
 }

@@ -20,8 +20,8 @@ const routes = [
     component: WorkerDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Worker • ${to.params.workerName}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | Worker • ${to.params.workerName}`,
+    },
   },
   {
     path: '/workers/:workerName/:selectedTab',
@@ -29,8 +29,8 @@ const routes = [
     component: WorkerDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Worker • ${to.params.workerName}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | Worker • ${to.params.workerName}`,
+    },
   },
   {
     path: '/',
@@ -41,25 +41,25 @@ const routes = [
     path: '/pipeline',
     name: 'pipeline',
     component: PipelineView,
-    meta: { title: 'Zimfarm | Pipeline' }
+    meta: { title: 'Zimfarm | Pipeline' },
   },
   {
     path: '/support-us',
     name: 'support',
     component: SupportUsView,
-    meta: { title: 'Zimfarm | Support Us' }
+    meta: { title: 'Zimfarm | Support Us' },
   },
   {
     path: '/sign-in',
     name: 'sign-in',
     component: SignInView,
-    meta: { title: 'Zimfarm | Sign In' }
+    meta: { title: 'Zimfarm | Sign In' },
   },
   {
     path: '/change-password',
     name: 'change-password',
     component: ChangePasswordView,
-    meta: { title: 'Zimfarm | Change Password' }
+    meta: { title: 'Zimfarm | Change Password' },
   },
 
   {
@@ -68,8 +68,8 @@ const routes = [
     component: TaskDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Task • ${to.params.id}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | Task • ${to.params.id}`,
+    },
   },
 
   {
@@ -78,8 +78,8 @@ const routes = [
     component: TaskDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Task • ${to.params.id}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | Task • ${to.params.id}`,
+    },
   },
 
   {
@@ -88,8 +88,8 @@ const routes = [
     component: ScheduleDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.scheduleName}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.scheduleName}`,
+    },
   },
   {
     path: '/recipes/:scheduleName/:selectedTab',
@@ -97,14 +97,14 @@ const routes = [
     component: ScheduleDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.scheduleName}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.scheduleName}`,
+    },
   },
   {
     path: '/recipes',
     name: 'schedules-list',
     component: SchedulesView,
-    meta: { title: 'Zimfarm | Recipes' }
+    meta: { title: 'Zimfarm | Recipes' },
   },
   {
     path: '/users/:username',
@@ -112,8 +112,8 @@ const routes = [
     component: UserView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.username}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.username}`,
+    },
   },
   {
     path: '/users/:username/:selectedTab',
@@ -121,26 +121,26 @@ const routes = [
     component: UserView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.username}`
-    }
+      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.username}`,
+    },
   },
   {
     path: '/users',
     name: 'users-list',
     component: UsersView,
-    meta: { title: 'Zimfarm | Users' }
+    meta: { title: 'Zimfarm | Users' },
   },
   {
     path: '/workers',
     name: 'workers',
     component: WorkersView,
-    meta: { title: 'Zimfarm | Workers' }
+    meta: { title: 'Zimfarm | Workers' },
   },
   {
     path: '/:pathMatch(.*)*',
     name: '404',
     component: NotFoundView,
-    meta: { title: 'Zimfarm | Page Not Found' }
+    meta: { title: 'Zimfarm | Page Not Found' },
   },
 ]
 

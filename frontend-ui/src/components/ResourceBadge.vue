@@ -1,15 +1,6 @@
 <template>
-  <v-chip
-    size="small"
-    :density="density"
-    :variant="variant"
-    class="mr-2"
-  >
-    <v-icon
-      :icon="icon"
-      size="small"
-      class="mr-1"
-    />
+  <v-chip size="small" :density="density" :variant="variant" class="mr-2">
+    <v-icon :icon="icon" size="small" class="mr-1" />
     {{ displayedValue }}
   </v-chip>
 </template>
@@ -30,7 +21,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   humanValue: undefined,
   density: 'default',
-  variant: 'outlined'
+  variant: 'outlined',
 })
 
 // Computed properties
@@ -46,7 +37,7 @@ const icon = computed(() => {
     cpu: 'mdi-cpu-64-bit',
     memory: 'mdi-memory',
     disk: 'mdi-harddisk',
-    shm: 'mdi-disc'
+    shm: 'mdi-disc',
   }
   return iconMap[props.kind]
 })

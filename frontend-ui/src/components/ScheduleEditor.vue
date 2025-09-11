@@ -597,7 +597,12 @@ const hasChanges = computed(() => {
   const editedContext = editSchedule.value.context
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
-    if (!((originalContext === null || originalContext === '') && (editedContext === null || editedContext === ''))) {
+    if (
+      !(
+        (originalContext === null || originalContext === '') &&
+        (editedContext === null || editedContext === '')
+      )
+    ) {
       return true
     }
   }
@@ -693,13 +698,19 @@ const flagsFields = computed(() => {
     } else if (field.type === 'list-of-string-enum') {
       component = 'multiselect'
       options =
-        field.choices?.map((choice) => ({ title: choice.title, value: choice.value })) || undefined
+        field.choices?.map((choice) => ({
+          title: choice.title,
+          value: choice.value,
+        })) || undefined
     } else if (field.type === 'boolean') {
       component = 'switch'
     } else if (field.type === 'string-enum') {
       component = 'select'
       options =
-        field.choices?.map((choice) => ({ title: choice.title, value: choice.value })) || undefined
+        field.choices?.map((choice) => ({
+          title: choice.title,
+          value: choice.value,
+        })) || undefined
     } else if (field.type === 'long-text') {
       component = 'textarea'
     }
@@ -852,30 +863,48 @@ const getFieldRules = (field: FlagField) => {
 }
 
 const languagesOptions = computed(() => {
-  return props.languages.map((language) => ({ title: language.name, value: language.code }))
+  return props.languages.map((language) => ({
+    title: language.name,
+    value: language.code,
+  }))
 })
 
 const categoriesOptions = computed(() => {
-  return constants.CATEGORIES.map((category) => ({ title: category, value: category }))
+  return constants.CATEGORIES.map((category) => ({
+    title: category,
+    value: category,
+  }))
 })
 
 const warehousePathsOptions = computed(() => {
-  return constants.WAREHOUSE_PATHS.map((path) => ({ title: path, value: path }))
+  return constants.WAREHOUSE_PATHS.map((path) => ({
+    title: path,
+    value: path,
+  }))
 })
 
 const offlinersOptions = computed(() => {
-  return props.offliners.map((offliner) => ({ title: offliner, value: offliner }))
+  return props.offliners.map((offliner) => ({
+    title: offliner,
+    value: offliner,
+  }))
 })
 
 const platformsOptions = computed(() => {
   const values: Array<{ title: string; value: string | undefined }> = props.platforms.map(
-    (platform) => ({ title: platform, value: platform }),
+    (platform) => ({
+      title: platform,
+      value: platform,
+    }),
   )
   return values
 })
 
 const periodicityOptions = computed(() => {
-  return constants.PERIODICITIES.map((periodicity) => ({ title: periodicity, value: periodicity }))
+  return constants.PERIODICITIES.map((periodicity) => ({
+    title: periodicity,
+    value: periodicity,
+  }))
 })
 
 const memoryOptions = computed(() => {
@@ -956,7 +985,12 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   const editedContext = editSchedule.value.context
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
-    if (!((originalContext === null || originalContext === '') && (editedContext === null || editedContext === ''))) {
+    if (
+      !(
+        (originalContext === null || originalContext === '') &&
+        (editedContext === null || editedContext === '')
+      )
+    ) {
       // If edited context is null (because the user cleared the field), set it to an
       // empty string as the API expects a string. Null values are considered as unset.
       payload.context = editedContext || ''

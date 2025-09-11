@@ -13,14 +13,18 @@ export interface Notification {
 export const useNotificationStore = defineStore('notification', () => {
   const notifications = ref<Notification[]>([])
 
-  const addNotification = (message: string, type: Notification['type'] = 'info', duration?: number) => {
+  const addNotification = (
+    message: string,
+    type: Notification['type'] = 'info',
+    duration?: number,
+  ) => {
     const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const notification: Notification = {
       id,
       message,
       type,
       duration: duration ?? getDefaultDuration(type),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
 
     notifications.value.push(notification)
@@ -36,7 +40,7 @@ export const useNotificationStore = defineStore('notification', () => {
   }
 
   const removeNotification = (id: string) => {
-    const index = notifications.value.findIndex(n => n.id === id)
+    const index = notifications.value.findIndex((n) => n.id === id)
     if (index > -1) {
       notifications.value.splice(index, 1)
     }
@@ -82,6 +86,6 @@ export const useNotificationStore = defineStore('notification', () => {
     showSuccess,
     showError,
     showWarning,
-    showInfo
+    showInfo,
   }
 })

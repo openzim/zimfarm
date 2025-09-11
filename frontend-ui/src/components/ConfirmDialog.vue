@@ -1,9 +1,5 @@
 <template>
-  <v-dialog
-    v-model="isOpen"
-    :max-width="maxWidth"
-    persistent
-  >
+  <v-dialog v-model="isOpen" :max-width="maxWidth" persistent>
     <v-card>
       <v-card-title class="text-h6">
         <v-icon class="mr-2" :color="iconColor">
@@ -18,18 +14,10 @@
 
       <v-card-actions class="pa-4">
         <v-spacer />
-        <v-btn
-          variant="outlined"
-          @click="handleCancel"
-        >
+        <v-btn variant="outlined" @click="handleCancel">
           {{ cancelText }}
         </v-btn>
-        <v-btn
-          :color="confirmColor"
-          variant="elevated"
-          @click="handleConfirm"
-          :loading="loading"
-        >
+        <v-btn :color="confirmColor" variant="elevated" @click="handleConfirm" :loading="loading">
           {{ confirmText }}
         </v-btn>
       </v-card-actions>
@@ -62,14 +50,14 @@ const props = withDefaults(defineProps<Props>(), {
   icon: 'mdi-alert-circle',
   iconColor: 'warning',
   maxWidth: 400,
-  loading: false
+  loading: false,
 })
 
 // Emits
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'confirm': []
-  'cancel': []
+  confirm: []
+  cancel: []
 }>()
 
 // Reactive data
@@ -81,7 +69,7 @@ const dialogValue = computed({
   set: (value: boolean) => {
     isOpen.value = value
     emit('update:modelValue', value)
-  }
+  },
 })
 
 // Methods
@@ -96,9 +84,12 @@ const handleCancel = () => {
 }
 
 // Watch for prop changes
-watch(() => props.modelValue, (newValue) => {
-  isOpen.value = newValue
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    isOpen.value = newValue
+  },
+)
 
 watch(isOpen, (newValue) => {
   emit('update:modelValue', newValue)

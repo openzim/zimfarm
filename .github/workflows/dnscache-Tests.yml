@@ -1,0 +1,39 @@
+name: Dnscache Tests
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "dnscache/**"
+    branches:
+      - main
+
+jobs:
+  test-dnscache:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build dnscache Docker image
+        working-directory: dnscache
+        run: docker build -t zimfarm-dnscache:test .
+
+      - name: Run dnscache container
+        run: |
+          docker run -d --name zimfarm-dnscache-test \
+            zimfarm-dnscache:test
+          # wait for container to be ready
+          for i in {1..10}; do
+            if docker exec zimfarm-dnscache-test pgrep dnsmasq > /dev/null; then
+              echo "DNS service is running - container is healthy!"
+              exit 0
+            fi
+            echo "Waiting for DNS service..."
+            sleep 3
+          done
+
+          echo "Container health check failed"
+          docker logs zimfarm-dnscache-test
+          exit 1

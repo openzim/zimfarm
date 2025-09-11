@@ -2,7 +2,9 @@
   <v-table class="flags-table">
     <tbody>
       <tr v-for="(value, name) in filteredOffliner" :key="name">
-        <td><code class="text-pink-accent-2">{{ name }}</code></td>
+        <td>
+          <code class="text-pink-accent-2">{{ name }}</code>
+        </td>
         <td>
           <span>{{ value }}</span>
         </td>
@@ -12,8 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import type { OfflinerFlags } from '@/types/schedule';
-import { computed } from 'vue';
+import type { OfflinerFlags } from '@/types/schedule'
+import { computed } from 'vue'
 
 interface Props {
   offliner: OfflinerFlags
@@ -23,9 +25,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   shrink: false,
-  secretFields: () => []
+  secretFields: () => [],
 })
-
 
 const filteredOffliner = computed(() => {
   const result: Record<string, unknown> = {}
@@ -41,7 +42,7 @@ const filteredOffliner = computed(() => {
   const sortedResult: Record<string, unknown> = {}
   Object.keys(result)
     .sort()
-    .forEach(key => {
+    .forEach((key) => {
       sortedResult[key] = result[key]
     })
 
@@ -51,7 +52,6 @@ const filteredOffliner = computed(() => {
 
 <style scoped>
 .flags-table tbody tr:nth-of-type(odd) {
-  background-color: rgba(0, 0, 0, .05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
-
 </style>

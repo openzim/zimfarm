@@ -129,29 +129,23 @@ const paginator = computed(() => userStore.paginator)
 const form = ref({
   username: '',
   email: '',
-  role: 'editor' as const
+  role: 'editor' as const,
 })
 
 // Computed properties
-const canReadUsers = computed(() =>
-  authStore.hasPermission('users', 'read')
-)
+const canReadUsers = computed(() => authStore.hasPermission('users', 'read'))
 
-const canCreateUsers = computed(() =>
-  authStore.hasPermission('users', 'create')
-)
+const canCreateUsers = computed(() => authStore.hasPermission('users', 'create'))
 
 const isFormValid = computed(() => {
-  return form.value.username &&
-         form.value.email &&
-         form.value.role
+  return form.value.username && form.value.email && form.value.role
 })
 
 // Table headers
 const headers = [
   { title: 'Username', key: 'username' },
   { title: 'Role', key: 'role' },
-  { title: 'Email', key: 'email' }
+  { title: 'Email', key: 'email' },
 ]
 
 // Form validation rules
@@ -162,7 +156,7 @@ const rules = {
     return pattern.test(value) || 'Please enter a valid email address'
   },
   minLength: (min: number) => (value: string) =>
-    value.length >= min || `This field must be at least ${min} characters long`
+    value.length >= min || `This field must be at least ${min} characters long`,
 }
 
 // Methods
@@ -175,20 +169,25 @@ const createUser = async () => {
 
   const password = genPassword()
 
-  const response = await userStore.createUser(form.value.username, form.value.email, form.value.role, password)
+  const response = await userStore.createUser(
+    form.value.username,
+    form.value.email,
+    form.value.role,
+    password,
+  )
 
   if (response) {
     // Show success notification
     notificationStore.showSuccess(
       `User "${response.username}" has been created with password "${password}".`,
-      8000
+      8000,
     )
 
     // Reset form
     form.value = {
       username: '',
       email: '',
-      role: 'editor' as const
+      role: 'editor' as const,
     }
     formRef.value?.reset()
 

@@ -30,7 +30,10 @@ export const useUserStore = defineStore('user', () => {
   const createUser = async (username: string, email: string, role: string, password: string) => {
     const service = await authStore.getApiService('users')
     try {
-      const response = await service.post<{ username: string; email: string; role: string; password: string }, UserWithSshKeys>('', {
+      const response = await service.post<
+        { username: string; email: string; role: string; password: string },
+        UserWithSshKeys
+      >('', {
         username,
         email,
         role,
@@ -98,10 +101,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const changePassword = async (username: string, body: { current?: string, new: string }) => {
+  const changePassword = async (username: string, body: { current?: string; new: string }) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.patch<{ current?: string, new: string }, null>(`/${username}/password`, body)
+      await service.patch<{ current?: string; new: string }, null>(`/${username}/password`, body)
       errors.value = []
       return true
     } catch (error) {

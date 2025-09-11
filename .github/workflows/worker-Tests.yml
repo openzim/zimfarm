@@ -1,0 +1,52 @@
+name: Worker Tests
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "worker/**"
+    branches:
+      - main
+
+jobs:
+  test-manager:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: worker/pyproject.toml
+          architecture: x64
+
+      - name: Build manager Docker image
+        working-directory: worker
+        run: docker build -t zimfarm-worker-manager:test -f manager-Dockerfile .
+
+      - name: Run manager container
+        run: |
+          docker run --rm zimfarm-worker-manager:test  worker-manager --help
+
+  test-task:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: worker/pyproject.toml
+          architecture: x64
+
+      - name: Build task Docker image
+        working-directory: worker
+        run: docker build -t zimfarm-worker-task:test -f task-Dockerfile .
+
+      - name: Run task container
+        run: |
+          docker run --rm zimfarm-worker-task:test task-worker --help

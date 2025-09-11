@@ -24,7 +24,6 @@ interface Props {
   count: number
 }
 
-
 const props = defineProps<Props>()
 
 // Define emits
@@ -32,13 +31,12 @@ const emit = defineEmits<{
   'fetch-schedules': []
 }>()
 
-
 const requestingText = ref<string | null>(props.requestingText)
 
 // Computed properties
 const nbSchedules = computed(() => props.count)
-const isDisabled = computed(() =>
-  nbSchedules.value < 1 || nbSchedules.value > constants.MAX_SCHEDULES_IN_SELECTION_REQUEST
+const isDisabled = computed(
+  () => nbSchedules.value < 1 || nbSchedules.value > constants.MAX_SCHEDULES_IN_SELECTION_REQUEST,
 )
 const isRequesting = computed(() => Boolean(requestingText.value))
 </script>

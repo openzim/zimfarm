@@ -1,0 +1,25 @@
+name: Uploader Tests
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "uploader/**"
+    branches:
+      - main
+
+jobs:
+  test-uploader:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build uploader Docker image
+        working-directory: uploader
+        run: docker build -t zimfarm-uploader:test .
+
+      - name: Run uploader container
+        run: |
+          docker run --rm zimfarm-uploader:test uploader --help

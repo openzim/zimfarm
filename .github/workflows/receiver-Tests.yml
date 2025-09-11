@@ -1,0 +1,38 @@
+name: Receiver Tests
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "receiver/**"
+    branches:
+      - main
+
+jobs:
+  test-receiver:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build receiver Docker image
+        working-directory: receiver
+        run: docker build -t zimfarm-receiver:test .
+
+      - name: Run receiver container
+        run: |
+          docker run -d --name zimfarm-receiver-test \
+            zimfarm-receiver:test
+          # wait for container to be ready
+          for i in {1..10}; do
+            if docker exec zimfarm-receiver-test pgrep sshd > /dev/null; then
+              echo "SSH daemon is running - container is healthy!"
+              exit 0
+            fi
+            sleep 3
+          done
+
+          echo "Container health check failed"
+          docker logs zimfarm-receiver-test
+          exit 1

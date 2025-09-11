@@ -28,12 +28,14 @@ export const useTasksStore = defineStore('tasks', () => {
     $cookies?.set('tasks-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
   }
 
-  const fetchTasks = async (params: {
-    limit?: number
-    skip?: number
-    status?: string[]
-    scheduleName?: string
-  } = {}) => {
+  const fetchTasks = async (
+    params: {
+      limit?: number
+      skip?: number
+      status?: string[]
+      scheduleName?: string
+    } = {},
+  ) => {
     const { limit = 100, skip = 0, status = [], scheduleName = null } = params
     const cleanedParams = Object.fromEntries(
       Object.entries({
@@ -41,12 +43,13 @@ export const useTasksStore = defineStore('tasks', () => {
         skip,
         status,
         schedule_name: scheduleName,
-      })
-      .filter(([, value]) => !!value)
+      }).filter(([, value]) => !!value),
     )
     try {
       const service = await authStore.getApiService('tasks')
-      const response = await service.get<null, ListResponse<TaskLight>>('', { params: cleanedParams })
+      const response = await service.get<null, ListResponse<TaskLight>>('', {
+        params: cleanedParams,
+      })
       tasks.value = response.items
       paginator.value = response.meta
       errors.value = []
@@ -73,7 +76,9 @@ export const useTasksStore = defineStore('tasks', () => {
   const fetchTask = async (id: string, hideSecrets: boolean = false) => {
     const service = await authStore.getApiService('tasks')
     try {
-      const response = await service.get<null, Task>(`/${id}`, { params: { hide_secrets: hideSecrets } })
+      const response = await service.get<null, Task>(`/${id}`, {
+        params: { hide_secrets: hideSecrets },
+      })
       task.value = response
       return task.value
     } catch (_error) {

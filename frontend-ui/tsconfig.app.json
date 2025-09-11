@@ -5,6 +5,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "types": ["vite/client"],
+    "lib": ["es2022", "dom", "esnext.intl"],
 
     "paths": {
       "@/*": ["./src/*"]

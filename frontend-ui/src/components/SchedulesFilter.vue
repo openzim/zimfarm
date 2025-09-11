@@ -84,12 +84,14 @@ const props = defineProps<Props>()
 
 // Define emits
 const emit = defineEmits<{
-  'filtersChanged': [filters: {
-    name: string
-    categories: string[]
-    languages: string[]
-    tags: string[]
-  }]
+  filtersChanged: [
+    filters: {
+      name: string
+      categories: string[]
+      languages: string[]
+      tags: string[]
+    },
+  ]
 }>()
 
 // Local filters state
@@ -97,38 +99,42 @@ const localFilters = ref({
   name: props.filters.name,
   categories: [...props.filters.categories],
   languages: [...props.filters.languages],
-  tags: [...props.filters.tags]
+  tags: [...props.filters.tags],
 })
 
 // Watch for prop changes and update local state
-watch(() => props.filters, (newFilters) => {
-  localFilters.value = {
-    name: newFilters.name,
-    categories: [...newFilters.categories],
-    languages: [...newFilters.languages],
-    tags: [...newFilters.tags]
-  }
-}, { deep: true })
+watch(
+  () => props.filters,
+  (newFilters) => {
+    localFilters.value = {
+      name: newFilters.name,
+      categories: [...newFilters.categories],
+      languages: [...newFilters.languages],
+      tags: [...newFilters.tags],
+    }
+  },
+  { deep: true },
+)
 
 // Computed properties for select options
 const categoriesOptions = computed(() => {
-  return props.categories.map(category => ({
+  return props.categories.map((category) => ({
     title: category,
-    value: category
+    value: category,
   }))
 })
 
 const languagesOptions = computed(() => {
-  return props.languages.map(language => ({
+  return props.languages.map((language) => ({
     title: language.name,
-    value: language.code
+    value: language.code,
   }))
 })
 
 const tagsOptions = computed(() => {
-  return props.tags.map(tag => ({
+  return props.tags.map((tag) => ({
     title: tag,
-    value: tag
+    value: tag,
   }))
 })
 
@@ -138,7 +144,7 @@ function emitFilters() {
     name: localFilters.value.name,
     categories: localFilters.value.categories,
     languages: localFilters.value.languages,
-    tags: localFilters.value.tags
+    tags: localFilters.value.tags,
   })
 }
 </script>

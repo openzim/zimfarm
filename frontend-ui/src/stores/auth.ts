@@ -28,7 +28,6 @@ export const useAuthStore = defineStore('auth', () => {
     baseURL: `${config.ZIMFARM_WEBAPI}/auth`,
   })
 
-
   // Computed properties
   const isLoggedIn = computed(() => {
     if (!token.value) return false
@@ -38,7 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
   const tokenExpiryDate = computed(() => {
     if (!token.value) return null
     const jwtPayload = jwtDecode<JWTPayload>(token.value.access_token)
-    return new Date (jwtPayload.exp*1000)
+    return new Date(jwtPayload.exp * 1000)
   })
 
   const username = computed(() => {
@@ -78,7 +77,8 @@ export const useAuthStore = defineStore('auth', () => {
   const loadTokenFromCookie = async () => {
     // already authenticated
 
-    if (tokenExpiryDate.value && tokenExpiryDate.value > new Date()) return token.value?.access_token;
+    if (tokenExpiryDate.value && tokenExpiryDate.value > new Date())
+      return token.value?.access_token
 
     const cookieValue = $cookies.get(constants.TOKEN_COOKIE_NAME)
     if (!cookieValue) return null
@@ -154,12 +154,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-
   const getApiService = async (baseURL: string) => {
     const token = await loadTokenFromCookie()
-    if (!token) return httpRequest({
-      baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
-    })
+    if (!token)
+      return httpRequest({
+        baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
+      })
 
     return httpRequest({
       baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,

@@ -146,7 +146,12 @@ watch(currentFilter, async (newFilter) => {
   }, 60000)
 })
 
-async function loadData(limit: number, skip: number, filter?: string, hideLoading: boolean = false) {
+async function loadData(
+  limit: number,
+  skip: number,
+  filter?: string,
+  hideLoading: boolean = false,
+) {
   if (!filter) {
     filter = currentFilter.value
   }
@@ -159,31 +164,29 @@ async function loadData(limit: number, skip: number, filter?: string, hideLoadin
 
   switch (filter) {
     case 'todo':
-      await requestedTasksStore.fetchRequestedTasks({limit, skip})
+      await requestedTasksStore.fetchRequestedTasks({ limit, skip })
       tasks.value = requestedTasksStore.requestedTasks
       errors.value = requestedTasksStore.errors
       requestedTasksStore.savePaginatorLimit(limit)
       break
     case 'doing':
-      await tasksStore.fetchTasks({limit, skip, status: [
-        'reserved',
-        'started',
-        'scraper_started',
-        'scraper_completed',
-        'cancel_requested',
-      ]})
+      await tasksStore.fetchTasks({
+        limit,
+        skip,
+        status: ['reserved', 'started', 'scraper_started', 'scraper_completed', 'cancel_requested'],
+      })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
       break
     case 'done':
-      await tasksStore.fetchTasks({limit, skip, status: ['succeeded']})
+      await tasksStore.fetchTasks({ limit, skip, status: ['succeeded'] })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
       break
     case 'failed':
-      await tasksStore.fetchTasks({limit, skip, status: ['scraper_killed', 'failed', 'canceled']})
+      await tasksStore.fetchTasks({ limit, skip, status: ['scraper_killed', 'failed', 'canceled'] })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
@@ -228,7 +231,6 @@ async function loadLastRuns() {
       await new Promise((resolve) => setTimeout(resolve, constants.TASKS_LOAD_SCHEDULES_DELAY))
     }
   }
-
 }
 
 async function handleLimitChange(newLimit: number) {

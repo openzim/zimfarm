@@ -1,10 +1,8 @@
-import type { BaseTask, ConfigWithOnlyResources, TaskStatus } from "@/types/base"
-import type { ExpandedScheduleConfig, ScheduleNotification } from "@/types/schedule"
-
-
+import type { BaseTask, ConfigWithOnlyResources, TaskStatus } from '@/types/base'
+import type { ExpandedScheduleConfig, ScheduleNotification } from '@/types/schedule'
 
 export interface TaskLight extends BaseTask {
-    config: ConfigWithOnlyResources
+  config: ConfigWithOnlyResources
 }
 
 export interface TaskEvent {
@@ -64,14 +62,14 @@ export interface TaskUpload {
 }
 
 export interface Task extends BaseTask {
-    config: ExpandedScheduleConfig
-    events: TaskEvent[]
-    debug: TaskDebug
-    requested_by: string
-    canceled_by: string | null
-    container: TaskContainer
-    priority: number
-    notification: ScheduleNotification | null
-    files: Record<string, TaskFile>
-    upload: TaskUpload
+  config: ExpandedScheduleConfig
+  events: TaskEvent[]
+  debug: TaskDebug
+  requested_by: string
+  canceled_by: string | null
+  container: TaskContainer
+  priority: number
+  notification: ScheduleNotification | null
+  files: Record<string, TaskFile>
+  upload: TaskUpload
 }

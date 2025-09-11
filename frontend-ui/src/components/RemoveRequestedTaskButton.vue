@@ -38,10 +38,10 @@
 </template>
 
 <script setup lang="ts">
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import { useAuthStore } from '@/stores/auth';
-import { useRequestedTasksStore } from '@/stores/requestedTasks';
-import { computed, ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRequestedTasksStore } from '@/stores/requestedTasks'
+import { computed, ref } from 'vue'
 
 // Props
 interface Props {

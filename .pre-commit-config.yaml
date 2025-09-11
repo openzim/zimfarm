@@ -31,3 +31,24 @@ repos:
         "types_or": [python, pyi]
         require_serial: true
         minimum_pre_commit_version: "2.9.2"
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier (system)
+        entry: prettier --write --ignore-unknown
+        language: node
+        files: frontend-ui\/.*$ # files in frontend folder
+        minimum_pre_commit_version: "2.9.2"
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.35.0
+    hooks:
+      - id: eslint
+        additional_dependencies:
+          - eslint@9.29.0
+          - eslint-plugin-vue@10.2.0
+          - jiti@2.4.2
+        types: [file]
+        files: frontend-ui\/src\/.*(?:\.[jt]sx?|\.vue)$ # *.js, *.jsx, *.ts, *.tsx, *.vue in frontend-ui/src folder
+        args:
+          - --config
+          - frontend-ui/eslint.config.ts
