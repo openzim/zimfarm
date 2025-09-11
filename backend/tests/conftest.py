@@ -513,6 +513,7 @@ def create_task(
         task.schedule_id = requested_task.schedule_id
         task.worker_id = _worker.id if worker is None else worker.id
         dbsession.add(task)
+        dbsession.delete(requested_task)
         dbsession.flush()
         return task
 

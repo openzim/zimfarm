@@ -5,6 +5,7 @@ import datetime
 import logging
 
 import sqlalchemy as sa
+from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 
 import zimfarm_backend.db.models as dbm
@@ -22,7 +23,8 @@ logger = logging.getLogger(__name__)
 def request_tasks_using_schedule(session: OrmSession):
     """create requested_tasks based on schedule's periodicity field
 
-    Expected to be ran periodically to compute what needs to be scheduled"""
+    Expected to be ran periodically to compute what needs to be scheduled
+    """
 
     requester = "period-scheduler"
     priority = 0
@@ -39,11 +41,10 @@ def request_tasks_using_schedule(session: OrmSession):
 
         # find non-requested schedules which last run started before our period start
         for schedule in session.execute(
-            sa.select(dbm.Schedule)
-            .filter(dbm.Schedule.enabled)
-            .filter(dbm.Schedule.periodicity == period)
-            .filter(
-                ~sa.exists().where(dbm.RequestedTask.schedule_id == dbm.Schedule.id)
+            sa.select(dbm.Schedule).where(
+                dbm.Schedule.enabled,
+                dbm.Schedule.periodicity == period,
+                ~sa.exists().where(dbm.RequestedTask.schedule_id == dbm.Schedule.id),
             )
         ).scalars():
             if schedule.most_recent_task_id is not None:
@@ -65,13 +66,22 @@ def request_tasks_using_schedule(session: OrmSession):
                     )
                     continue
 
-            if request_task(
-                session=session,
-                schedule_name=schedule.name,
-                requested_by=requester,
-                worker_name=worker,
-                priority=priority,
-            ):
-                logger.debug(f"requested {schedule.name}")
-            else:
-                logger.debug(f"could not request {schedule.name}")
+                # Create a nested transaction for each task request
+                with session.begin_nested():
+                    try:
+                        request_task(
+                            session=session,
+                            schedule_name=schedule.name,
+                            requested_by=requester,
+                            worker_name=worker,
+                            priority=priority,
+                        )
+                        logger.debug(f"Successfully requested {schedule.name}")
+                    except ValidationError:
+                        logger.exception(
+                            f"Validation error requesting {schedule.name}",
+                        )
+                    except Exception:
+                        logger.exception(
+                            f"Unexpected error requesting {schedule.name}",
+                        )

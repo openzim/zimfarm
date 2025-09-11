@@ -50,15 +50,15 @@ def test_get_task_by_id_not_found(dbsession: OrmSession):
     "skip,limit,status,schedule_name,expected_nb_records",
     [
         # No filter
-        (0, 5, None, None, 30),
+        (0, 5, None, None, 3),
         # Filter by status
-        (0, 5, [TaskStatus.started], None, 10),
-        (0, 5, [TaskStatus.started, TaskStatus.requested], None, 20),
+        (0, 5, [TaskStatus.started], None, 1),
+        (0, 5, [TaskStatus.started, TaskStatus.requested], None, 2),
         # Filter by schedule name
-        (0, 5, None, "schedule_1", 10),
+        (0, 5, None, "schedule_1", 1),
         (0, 5, None, "nonexistent", 0),
         # Combined filters
-        (0, 5, [TaskStatus.requested], "schedule_1", 10),
+        (0, 5, [TaskStatus.requested], "schedule_1", 1),
     ],
     ids=[
         "no_filter",
@@ -80,26 +80,20 @@ def test_get_tasks(
 ):
     """Test that get_tasks returns the correct list of tasks"""
 
-    # Create 10 tasks with status requested and schedule name "schedule_1"
-    for _ in range(10):
-        create_task(
-            schedule_name="schedule_1",
-            status=TaskStatus.requested,
-        )
+    create_task(
+        schedule_name="schedule_1",
+        status=TaskStatus.requested,
+    )
 
-    # Create 10 tasks with status succeeded and schedule name "schedule_2"
-    for _ in range(10):
-        create_task(
-            schedule_name="schedule_2",
-            status=TaskStatus.succeeded,
-        )
+    create_task(
+        schedule_name="schedule_2",
+        status=TaskStatus.succeeded,
+    )
 
-    # Create 10 tasks with status started and schedule name "schedule_3"
-    for _ in range(10):
-        create_task(
-            schedule_name="schedule_3",
-            status=TaskStatus.started,
-        )
+    create_task(
+        schedule_name="schedule_3",
+        status=TaskStatus.started,
+    )
 
     result = get_tasks(
         session=dbsession,

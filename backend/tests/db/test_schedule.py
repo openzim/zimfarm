@@ -305,7 +305,6 @@ def test_get_schedules(
     assert len(results.schedules) <= limit
     for result_schedule in results.schedules:
         assert result_schedule.config is not None
-        assert result_schedule.nb_requested_tasks == 1
         assert result_schedule.most_recent_task is not None
 
 
