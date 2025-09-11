@@ -2,6 +2,8 @@ name: Receiver Tests
 
 on:
   pull_request:
+    paths:
+      - "receiver/**"
   push:
     paths:
       - "receiver/**"

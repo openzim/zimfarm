@@ -2,6 +2,8 @@ name: Watcher Tests
 
 on:
   pull_request:
+    paths:
+      - "watcher/**"
   push:
     paths:
       - "watcher/**"

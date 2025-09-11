@@ -2,6 +2,8 @@ name: Uploader Tests
 
 on:
   pull_request:
+    paths:
+      - "uploader/**"
   push:
     paths:
       - "uploader/**"

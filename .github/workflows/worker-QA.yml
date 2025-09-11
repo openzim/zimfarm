@@ -2,6 +2,8 @@ name: Worker QA
 
 on:
   pull_request:
+    paths:
+      - "worker/**"
   push:
     paths:
       - "worker/**"
