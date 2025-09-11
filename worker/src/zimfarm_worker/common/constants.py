@@ -10,6 +10,11 @@ import psutil
 from zimfarm_worker.common.utils import as_pos_int
 
 
+def parse_bool(value: Any) -> bool:
+    """Parse value into boolean."""
+    return str(value).lower() in ("true", "1", "yes", "y", "on")
+
+
 def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
     value = os.getenv(key) or default
 
@@ -19,7 +24,7 @@ def getenv(key: str, *, mandatory: bool = False, default: Any = None) -> Any:
     return value
 
 
-DEBUG = getenv("DEBUG", default="false").lower() == "true"
+DEBUG = parse_bool(getenv("DEBUG", default="false"))
 ENVIRONMENT = getenv("ENVIRONMENT", default="production")
 
 # worker names
@@ -91,8 +96,8 @@ zimfarm_memory = as_pos_int(
 )
 ZIMFARM_MEMORY = min([zimfarm_memory, physical_mem])
 
-USE_PUBLIC_DNS = getenv("USE_PUBLIC_DNS", default="False").lower() == "true"
-DISABLE_IPV6 = getenv("DISABLE_IPV6", default="False").lower() == "true"
+USE_PUBLIC_DNS = parse_bool(getenv("USE_PUBLIC_DNS", default="False"))
+DISABLE_IPV6 = parse_bool(getenv("DISABLE_IPV6", default="False"))
 
 # docker container names
 CONTAINER_TASK_IDENT = "zimtask"
