@@ -1,0 +1,25 @@
+name: Watcher Tests
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "watcher/**"
+    branches:
+      - main
+
+jobs:
+  test-watcher:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build watcher Docker image
+        working-directory: watcher
+        run: docker build -t zimfarm-watcher:test .
+
+      - name: Run watcher container
+        run: |
+          docker run --rm zimfarm-watcher:test watcher --help

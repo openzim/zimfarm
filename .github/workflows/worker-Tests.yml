@@ -28,7 +28,7 @@ jobs:
 
       - name: Run manager container
         run: |
-          docker run -d --rm zimfarm-worker-manager:test  worker-manager --help
+          docker run --rm zimfarm-worker-manager:test  worker-manager --help
 
   test-task:
     runs-on: ubuntu-24.04
@@ -49,4 +49,4 @@ jobs:
 
       - name: Run task container
         run: |
-          docker run -d --rm zimfarm-worker-task:test task-worker --help
+          docker run --rm zimfarm-worker-task:test task-worker --help
