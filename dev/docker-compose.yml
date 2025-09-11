@@ -27,19 +27,7 @@ services:
       - ../backend/periodic-tasks.py:/app/periodic-tasks.py
       - ../backend/maint-scripts:/app/maint-scripts
       - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
-    command:
-      - uvicorn
-      - zimfarm_backend.main:app
-      - --host
-      - "0.0.0.0"
-      - --port
-      - "80"
-      - --proxy-headers
-      - --forwarded-allow-ips
-      - "*"
-      - --reload
-      - --reload-dir
-      - /usr/local/lib/python3.13/site-packages/zimfarm_backend
+      - ../backend/periodic.conf.dev:/etc/supervisor/conf.d/periodic.conf:ro
     ports:
       - 127.0.0.1:8000:80
     environment:
