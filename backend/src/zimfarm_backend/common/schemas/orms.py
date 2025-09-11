@@ -11,6 +11,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import ZIMCPU, ZIMDisk, ZIMMemory
 from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
     LanguageSchema,
@@ -34,9 +35,9 @@ class ConfigResourcesSchema(BaseModel):
     Schema for reading a config's resources
     """
 
-    cpu: int
-    disk: int
-    memory: int
+    cpu: ZIMCPU
+    disk: ZIMDisk
+    memory: ZIMMemory
 
 
 class ConfigWithOnlyResourcesSchema(BaseModel):
@@ -242,9 +243,9 @@ class Worker(BaseModel):
     id: UUID
     name: str
     offliners: list[Offliner]
-    cpu: int
-    memory: int
-    disk: int
+    cpu: ZIMCPU
+    memory: ZIMMemory
+    disk: ZIMDisk
     last_seen: datetime.datetime | None = None
     last_ip: IPv4Address | None = None
     deleted: bool
