@@ -133,28 +133,22 @@ const paginator = computed(() => workersStore.paginator)
 // Computed properties
 const onlineWorkers = computed(() => workers.value.filter((worker) => worker.status === 'online'))
 const filteredWorkers = computed(() => (showingAll.value ? workers.value : onlineWorkers.value))
-const visibleOnlineWorkers = computed(() =>
-  filteredWorkers.value.filter((worker) => worker.status === 'online'),
-)
-const onlineWorkerNames = computed(() => onlineWorkers.value.map((worker) => worker.name))
+const workerNames = computed(() => filteredWorkers.value.map((worker) => worker.name))
 
 const tasks = computed(() => {
-  // Only include tasks assigned to online workers for computing resource usage
-  return runningTasks.value.filter(
-    (task) => onlineWorkerNames.value.indexOf(task.worker_name) !== -1,
-  )
+  return runningTasks.value.filter((task) => workerNames.value.indexOf(task.worker_name) !== -1)
 })
 
 const maxCpu = computed(() => {
-  return visibleOnlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0)
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0)
 })
 
 const maxMemory = computed(() => {
-  return visibleOnlineWorkers.value.reduce((sum, worker) => sum + worker.resources.memory, 0)
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.memory, 0)
 })
 
 const maxDisk = computed(() => {
-  return visibleOnlineWorkers.value.reduce((sum, worker) => sum + worker.resources.disk, 0)
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.disk, 0)
 })
 
 const currentCpu = computed(() => {
