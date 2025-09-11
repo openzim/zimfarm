@@ -431,7 +431,7 @@ import {
   logsUrl,
 } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
 
 // Props
 interface Props {
@@ -624,11 +624,22 @@ const cancel = async () => {
   }
 }
 
+const scrollLogsToBottom = () => {
+  const logElements = document.querySelectorAll('.stdout, .stderr')
+  logElements.forEach((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+}
+
 const refreshData = async () => {
   loadingStore.startLoading('Fetching task...')
   const response = await tasksStore.fetchTask(props.id, !canCreateTasks.value)
   if (response) {
     task.value = response
+    // Use nextTick to ensure the DOM has updated before scrolling
+    nextTick(() => {
+      scrollLogsToBottom()
+    })
   } else {
     error.value = 'Failed to fetch task'
     for (const error of tasksStore.errors) {
