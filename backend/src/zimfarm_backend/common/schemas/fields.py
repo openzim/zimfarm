@@ -79,6 +79,13 @@ def validate_language_code(value: str, info: ValidationInfo) -> str:
     )
 
 
+def validate_comma_separated_zim_lang_code(value: str, info: ValidationInfo) -> str:
+    """Validate that string is a comma separated list of ISO-693-3 language codes"""
+    for lang_code in value.split(","):
+        validate_language_code(lang_code, info)
+    return value
+
+
 def enum_member(
     enum_cls: type[Enum],
 ) -> Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]:
@@ -207,6 +214,15 @@ ZIMLangCode = Annotated[
     WrapValidator(skip_validation),
     AfterValidator(validate_language_code),
 ]
+
+CommaSeparatedZIMLangCode = Annotated[
+    str,
+    Field(pattern=r"^[a-z]{3}(,[a-z]{3})*$"),
+    AfterValidator(validate_comma_separated_zim_lang_code),
+    WrapValidator(skip_validation),
+]
+
+OptionalCommaSeparatedZIMLangCode = CommaSeparatedZIMLangCode | None
 
 OptionalZIMLangCode = ZIMLangCode | None
 

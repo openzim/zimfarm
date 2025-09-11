@@ -152,8 +152,5 @@ def test_mw_offliner_schema_to_flags():
         elif key in ("customZIMLongDescription",):
             assert flag.min_length == 1
             assert flag.min_length == 4000
-        elif key in ("customZimLanguage",):
-            assert flag.min_length == 3
-            assert flag.max_length == 3
         elif key in ("outputDirectory",):
             assert flag.pattern is not None

@@ -96,6 +96,7 @@ ENV/
 *.launch
 .settings/
 *.sublime-workspace
+*.vim
 
 # compiled output
 /dist
@@ -123,6 +124,8 @@ Thumbs.db
 dispatcher/docker_data/
 dispatcher/frontend/node_modules/
 id_rsa
+id_ed25519
+*.pub
 
 worker/setting.json
 worker/dist/
