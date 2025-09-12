@@ -230,6 +230,9 @@ ZIMOutputFolder = Annotated[
     str, Field(pattern=r"^/output$"), WrapValidator(skip_validation)
 ]
 
+SkipableBool = Annotated[bool, WrapValidator(skip_validation)]
+OptionalSkipableBool = SkipableBool | None
+
 OptionalZIMOutputFolder = ZIMOutputFolder | None
 
 ZIMProgressFile = Annotated[
