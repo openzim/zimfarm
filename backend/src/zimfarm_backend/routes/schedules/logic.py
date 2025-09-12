@@ -117,10 +117,7 @@ def create_schedule(
             ]
         )
 
-    try:
-        language = get_language_from_code(schedule.language)
-    except RecordDoesNotExistError as exc:
-        raise BadRequestError(f"Language code {schedule.language} not found.") from exc
+    language = get_language_from_code(schedule.language)
 
     try:
         db_schedule = db_create_schedule(
@@ -192,10 +189,7 @@ def get_schedule(
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
-    try:
-        db_schedule = db_get_schedule(session, schedule_name=schedule_name)
-    except RecordDoesNotExistError as e:
-        raise NotFoundError(f"Schedule {schedule_name} not found") from e
+    db_schedule = db_get_schedule(session, schedule_name=schedule_name)
 
     schedule = create_schedule_full_schema(db_schedule)
     if not (
@@ -241,12 +235,9 @@ def update_schedule(
     ):
         raise UnauthorizedError("You are not allowed to update a schedule")
 
-    try:
-        schedule = create_schedule_full_schema(
-            db_get_schedule(session, schedule_name=schedule_name)
-        )
-    except RecordDoesNotExistError as e:
-        raise NotFoundError(f"Schedule {schedule_name} not found") from e
+    schedule = create_schedule_full_schema(
+        db_get_schedule(session, schedule_name=schedule_name)
+    )
 
     schedule_config = schedule.config
     # Ensure we test flags according to new offliner name if present
@@ -424,10 +415,7 @@ def delete_schedule(
     ):
         raise UnauthorizedError("You are not allowed to delete a schedule")
 
-    try:
-        db_delete_schedule(session, schedule_name=schedule_name)
-    except RecordDoesNotExistError as e:
-        raise NotFoundError(f"Schedule {schedule_name} not found") from e
+    db_delete_schedule(session, schedule_name=schedule_name)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
@@ -469,10 +457,7 @@ def clone_schedule(
     if not check_user_permission(current_user, namespace="schedules", name="create"):
         raise UnauthorizedError("You are not allowed to clone a schedule")
 
-    try:
-        schedule = db_get_schedule(session, schedule_name=schedule_name)
-    except RecordDoesNotExistError as e:
-        raise NotFoundError(f"Schedule {schedule_name} not found") from e
+    schedule = db_get_schedule(session, schedule_name=schedule_name)
 
     # Skip validation while cloning a schedule
     try:
@@ -530,10 +515,7 @@ def validate_schedule(
     if not check_user_permission(current_user, namespace="schedules", name="update"):
         raise UnauthorizedError("You are not allowed to validate a schedule")
 
-    try:
-        schedule = db_get_schedule(session, schedule_name=schedule_name)
-    except RecordDoesNotExistError as e:
-        raise NotFoundError(f"Schedule {schedule_name} not found") from e
+    schedule = db_get_schedule(session, schedule_name=schedule_name)
 
     try:
         create_schedule_full_schema(schedule, skip_validation=False)
