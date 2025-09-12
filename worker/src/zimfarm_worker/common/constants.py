@@ -1,4 +1,3 @@
-import logging
 import multiprocessing
 import os
 import re
@@ -73,14 +72,9 @@ ZIMFARM_DISK_SPACE = as_pos_int(
     humanfriendly.parse_size(getenv("ZIMFARM_DISK", default=str(2**34)))
 )
 
-physical_cpu = multiprocessing.cpu_count()
+PHYSICAL_CPU = multiprocessing.cpu_count()
 
-ZIMFARM_CPUS = as_pos_int(int(getenv("ZIMFARM_CPUS", default=physical_cpu)))
-if ZIMFARM_CPUS > physical_cpu:
-    logging.warning(
-        f"Declared CPU count {ZIMFARM_CPUS} appears to be greater than actual CPU count"
-        f"{physical_cpu}"
-    )
+ZIMFARM_CPUS = as_pos_int(int(getenv("ZIMFARM_CPUS", default=PHYSICAL_CPU)))
 
 zimfarm_task_cpus = getenv("ZIMFARM_TASK_CPUS", default="")
 ZIMFARM_TASK_CPUS = float(zimfarm_task_cpus) if zimfarm_task_cpus else None
@@ -96,16 +90,10 @@ if (
 ZIMFARM_TASK_CPUSET = zimfarm_task_cpuset
 
 
-physical_mem = psutil.virtual_memory().total
+PHYSICAL_MEMORY = psutil.virtual_memory().total
 ZIMFARM_MEMORY = as_pos_int(
-    humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=str(physical_mem)))
+    humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=str(PHYSICAL_MEMORY)))
 )
-
-if ZIMFARM_MEMORY > physical_mem:
-    logging.warning(
-        f"Declared memory {ZIMFARM_MEMORY} appears to be greater than actual memory "
-        f"{physical_mem}"
-    )
 
 USE_PUBLIC_DNS = parse_bool(getenv("USE_PUBLIC_DNS", default="False"))
 DISABLE_IPV6 = parse_bool(getenv("DISABLE_IPV6", default="False"))
