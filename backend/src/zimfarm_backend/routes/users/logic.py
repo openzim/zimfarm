@@ -12,10 +12,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.db import gen_dbsession
-from zimfarm_backend.db.exceptions import (
-    RecordAlreadyExistsError,
-    RecordDoesNotExistError,
-)
+from zimfarm_backend.db.exceptions import RecordAlreadyExistsError
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.ssh_key import (
     create_ssh_key,
@@ -144,10 +141,7 @@ def update_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Update a specific user"""
-    try:
-        user = get_user_by_username(db_session, username=username)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("User not found") from exc
+    user = get_user_by_username(db_session, username=username)
 
     if username != current_user.username:
         if not check_user_permission(current_user, namespace="users", name="update"):
@@ -169,10 +163,7 @@ def delete_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Delete a specific user"""
-    try:
-        user = get_user_by_username(db_session, username=username)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("User not found") from exc
+    user = get_user_by_username(db_session, username=username)
 
     if not check_user_permission(current_user, namespace="users", name="delete"):
         raise UnauthorizedError("You are not allowed to access this resource")
@@ -189,10 +180,7 @@ def create_user_key(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> SshKeyRead:
     """Create a new SSH key for a user"""
-    try:
-        user = get_user_by_username(db_session, username=username)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("User not found") from exc
+    user = get_user_by_username(db_session, username=username)
 
     if username != current_user.username:
         if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
@@ -234,10 +222,7 @@ def get_user_keys(
         if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
             raise UnauthorizedError("You are not allowed to access this resource")
 
-    try:
-        user = get_user_by_username(db_session, username=username, fetch_ssh_keys=True)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("User not found") from exc
+    user = get_user_by_username(db_session, username=username, fetch_ssh_keys=True)
 
     return SshKeyList(
         ssh_keys=[SshKeyRead.model_validate(ssh_key) for ssh_key in user.ssh_keys]
@@ -252,10 +237,7 @@ def update_user_password(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Update a user's password"""
-    try:
-        user = get_user_by_username(db_session, username=username)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("User not found") from exc
+    user = get_user_by_username(db_session, username=username)
 
     if current_user.username == username:
         if password_update.current is None:
@@ -284,16 +266,10 @@ def get_user_key(
     with_permission: Annotated[list[str] | None, Query()] = None,
 ) -> BaseUserWithSshKeysSchema:
     """Get a specific SSH key for a user"""
-    try:
-        db_ssh_key = get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("SSH key not found") from exc
+    db_ssh_key = get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
 
     if username != "-":
-        try:
-            get_user_by_username(db_session, username=username)
-        except RecordDoesNotExistError as exc:
-            raise NotFoundError("User not found") from exc
+        get_user_by_username(db_session, username=username)
 
     requested_permissions = with_permission or []
     for permission in requested_permissions:
@@ -323,15 +299,9 @@ def delete_user_key(
         if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
             raise UnauthorizedError("You are not allowed to access this resource")
 
-    try:
-        user = get_user_by_username(db_session, username=username)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("User not found") from exc
+    user = get_user_by_username(db_session, username=username)
 
-    try:
-        get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError("SSH key not found") from exc
+    get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
 
     delete_ssh_key(db_session, fingerprint=fingerprint, user_id=user.id)
     return Response(status_code=HTTPStatus.NO_CONTENT)
