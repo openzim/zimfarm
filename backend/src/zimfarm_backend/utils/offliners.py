@@ -2,7 +2,7 @@ import pathlib
 import shlex
 from typing import Any, NamedTuple
 
-from pydantic import AnyUrl
+from pydantic import SecretStr
 
 from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import Offliner
@@ -114,7 +114,7 @@ def command_for(
     cmd = offliner_def.cmd
 
     if isinstance(config.offliner, SotokiFlagsSchema):
-        config.offliner.mirror = config.offliner.mirror or AnyUrl(
+        config.offliner.mirror = config.offliner.mirror or SecretStr(
             "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
         )
         config.offliner.redis_url = "unix:///var/run/redis.sock"

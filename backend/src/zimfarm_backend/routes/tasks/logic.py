@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query, Response
@@ -9,8 +9,14 @@ from sqlalchemy.orm import Session
 from zimfarm_backend import logger
 from zimfarm_backend.common.constants import ENABLED_SCHEDULER
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
-from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
+from zimfarm_backend.common.schemas.fields import (
+    LimitFieldMax200,
+    SkipField,
+)
+from zimfarm_backend.common.schemas.models import (
+    ScheduleConfigSchema,
+    calculate_pagination_metadata,
+)
 from zimfarm_backend.common.schemas.orms import TaskLightSchema
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db.exceptions import (
@@ -42,6 +48,7 @@ from zimfarm_backend.routes.http_errors import (
 )
 from zimfarm_backend.routes.models import ListResponse
 from zimfarm_backend.routes.tasks.models import TaskCreateSchema, TaskUpdateSchema
+from zimfarm_backend.utils.offliners import expanded_config
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -84,19 +91,17 @@ async def get_task(
         raise NotFoundError(f"Task {task_id} not found") from exc
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="tasks", name="update")
     ):
         task.notification = None
-
-    # if the user does not have the appropriate permission, then their flag does
-    # not matter
-    if not (
-        current_user
-        and check_user_permission(current_user, namespace="tasks", name="create")
-    ):
         show_secrets = False
     else:
         show_secrets = not hide_secrets
+
+    # Rebuild the config as the one that was retrieved from the DB has secrets saved
+    task.config = expanded_config(
+        cast(ScheduleConfigSchema, task.config), show_secrets=show_secrets
+    )
 
     return JSONResponse(
         content=task.model_dump(mode="json", context={"show_secrets": show_secrets})
