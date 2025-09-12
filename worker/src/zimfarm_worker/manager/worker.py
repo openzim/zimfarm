@@ -14,8 +14,12 @@ from zimfarm_worker.common.constants import (
     CANCEL_REQUESTED,
     CANCELED,
     CANCELING,
+    PHYSICAL_CPU,
+    PHYSICAL_MEMORY,
     PLATFORMS_TASKS,
     SUPPORTED_OFFLINERS,
+    ZIMFARM_CPUS,
+    ZIMFARM_MEMORY,
     getenv,
     parse_bool,
 )
@@ -76,6 +80,17 @@ class WorkerManager(BaseWorker):
             sleep_interval=self.sleep_interval,
             selfish=self.selfish,
         )
+        if ZIMFARM_MEMORY > PHYSICAL_MEMORY:
+            logger.warning(
+                f"Declared memory {ZIMFARM_MEMORY} appears to be greater than actual "
+                f"memory {PHYSICAL_MEMORY}"
+            )
+
+        if ZIMFARM_CPUS > PHYSICAL_CPU:
+            logger.warning(
+                f"Declared CPU count {ZIMFARM_CPUS} appears to be greater than actual "
+                f"CPU count {PHYSICAL_CPU}"
+            )
 
         # set data holders
         self.tasks: dict[TaskIdent, dict[str, Any]] = {}
