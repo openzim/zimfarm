@@ -9,6 +9,7 @@ from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas.fields import (
     CommaSeparatedZIMLangCode,
     GraphemeStr,
+    SkipableBool,
     ZIMFileName,
     ZIMLangCode,
     ZIMName,
@@ -43,6 +44,10 @@ class ZIMTitleModel(BaseModel):
 
 class CommaSeparatedZIMLanguageCodeModel(BaseModel):
     value: CommaSeparatedZIMLangCode
+
+
+class SkipableBoolModel(BaseModel):
+    value: SkipableBool
 
 
 def test_enum_validator_accepts_valid_value():
@@ -538,4 +543,74 @@ def test_comma_separated_zim_language_code_validator_skips_validation_when_conte
     with expected:
         CommaSeparatedZIMLanguageCodeModel.model_validate(
             {"value": languages}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param(True, does_not_raise(), id="true"),
+        pytest.param(False, does_not_raise(), id="false"),
+        pytest.param(
+            "a random word",
+            pytest.raises(ValidationError),
+            id="string-true",
+        ),
+        pytest.param(
+            "/output",
+            pytest.raises(ValidationError),
+            id="string-false",
+        ),
+        pytest.param(
+            "",
+            pytest.raises(ValidationError),
+            id="empty-string",
+        ),
+    ],
+)
+def test_relaxed_boolean_model(
+    value: str | int | bool, expected: RaisesContext[Exception]
+):
+    with expected:
+        SkipableBoolModel.model_validate({"value": value})
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param(True, does_not_raise(), id="true"),
+        pytest.param(False, does_not_raise(), id="false"),
+        pytest.param(
+            "true",
+            does_not_raise(),
+            id="string-true",
+        ),
+        pytest.param(
+            "false",
+            does_not_raise(),
+            id="string-false",
+        ),
+        pytest.param(
+            0,
+            does_not_raise(),
+            id="integer-zero",
+        ),
+        pytest.param(
+            1,
+            does_not_raise(),
+            id="integer-1",
+        ),
+        pytest.param(
+            "",
+            does_not_raise(),
+            id="empty-string",
+        ),
+    ],
+)
+def test_relaxed_boolean_skip_validation(
+    value: str | int | bool, expected: RaisesContext[Exception]
+):
+    with expected:
+        SkipableBoolModel.model_validate(
+            {"value": value}, context={"skip_validation": True}
         )
