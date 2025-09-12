@@ -135,7 +135,7 @@ class SotokiFlagsSchema(DashModel):
         description="S3 Storage URL including credentials and bucket",
     )
 
-    mirror: AnyUrl | None = OptionalField(
+    mirror: OptionalSecretUrl = OptionalField(
         title="Mirror",
         description="URL from which to download compressed XML dumps",
     )
