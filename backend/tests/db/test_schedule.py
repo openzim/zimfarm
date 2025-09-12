@@ -2,6 +2,7 @@ import datetime
 from collections.abc import Callable
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import (
@@ -11,6 +12,7 @@ from zimfarm_backend.common.enums import (
 )
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import LanguageSchema
+from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -18,6 +20,7 @@ from zimfarm_backend.db.exceptions import (
 from zimfarm_backend.db.models import (
     RequestedTask,
     Schedule,
+    ScheduleHistory,
     Task,
     Worker,
 )
@@ -106,6 +109,7 @@ def test_create_schedule(
         session=dbsession,
         name="test_schedule",
         category=ScheduleCategory.other,
+        author="test",
         language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
         tags=["test"],
@@ -128,6 +132,7 @@ def test_create_schedule(
     assert schedule.durations[0].on == DEFAULT_SCHEDULE_DURATION.on
     assert schedule.durations[0].worker is None
     assert schedule.durations[0].default
+    assert len(schedule.history_entries) == 1
 
 
 def test_create_duplicate_schedule_with_existing_name(
@@ -139,6 +144,7 @@ def test_create_duplicate_schedule_with_existing_name(
     create_schedule(
         session=dbsession,
         name=schedule_name,
+        author="test",
         category=ScheduleCategory.other,
         language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
@@ -151,6 +157,7 @@ def test_create_duplicate_schedule_with_existing_name(
         create_schedule(
             session=dbsession,
             name=schedule_name,
+            author="test",
             category=ScheduleCategory.other,
             language=LanguageSchema(code="eng", name="English"),
             config=schedule_config,
@@ -186,6 +193,7 @@ def test_update_schedule(
     updated_schedule = create_schedule_full_schema(
         update_schedule(
             dbsession,
+            author="test",
             schedule_name=old_schedule.name,
             new_schedule_config=new_schedule_config,
             name=old_schedule.name + "_updated",
@@ -206,6 +214,14 @@ def test_delete_schedule(
     schedule = create_schedule()
     delete_schedule(dbsession, schedule_name=schedule.name)
     assert get_schedule_or_none(dbsession, schedule_name=schedule.name) is None
+    # assert that there is no schedule history entry
+    assert (
+        count_from_stmt(
+            dbsession,
+            select(ScheduleHistory).where(ScheduleHistory.schedule_id == schedule.id),
+        )
+        == 0
+    )
 
 
 def test_delete_schedule_not_found(dbsession: OrmSession):

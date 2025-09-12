@@ -142,6 +142,21 @@
       </v-col>
     </v-row>
 
+    <v-row>
+      <v-col cols="12">
+        <v-textarea
+          v-model="editComment"
+          label="Comment"
+          hint="Optional comment to describe the changes being made"
+          placeholder="Describe your changes..."
+          density="compact"
+          variant="outlined"
+          persistent-hint
+          auto-grow
+        />
+      </v-col>
+    </v-row>
+
     <v-divider class="my-4" />
 
     <v-row>
@@ -490,6 +505,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
+const editComment = ref<string>('')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(
   JSON.parse(JSON.stringify(props.schedule.config.offliner)),
@@ -935,6 +951,8 @@ const handleSubmit = () => {
   const payload = buildPayload()
   if (payload) {
     emit('submit', payload)
+    // Clear the comment after submitting
+    editComment.value = ''
   }
 }
 
@@ -942,6 +960,7 @@ const handleReset = () => {
   if (props.schedule) {
     editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
     editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
+    editComment.value = ''
   }
 }
 
@@ -995,6 +1014,11 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
       // empty string as the API expects a string. Null values are considered as unset.
       payload.context = editedContext || ''
     }
+  }
+
+  // Comment
+  if (editComment.value?.trim()) {
+    payload.comment = editComment.value.trim()
   }
 
   // Tags

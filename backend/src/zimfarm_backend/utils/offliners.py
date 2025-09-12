@@ -225,5 +225,8 @@ def expanded_config(
 
 
 def get_key_differences(d1: dict[str, Any], d2: dict[str, Any]) -> list[str]:
-    """Return the keys that are in d1 but not in d2"""
+    """Return the keys that are in d1 but not in d2.
+
+    This does not recurse into nested dictionaries.
+    """
     return list(set(d1.keys()) - set(d2.keys()))
