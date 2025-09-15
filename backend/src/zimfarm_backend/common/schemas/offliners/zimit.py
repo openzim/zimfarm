@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import AnyUrl, Field, WrapValidator
+from pydantic import Field, WrapValidator
 
 from zimfarm_backend.common.schemas import CamelModel
 from zimfarm_backend.common.schemas.fields import (
@@ -9,6 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalPercentage,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLangCode,
@@ -197,7 +198,7 @@ class ZimitFlagsFullSchema(CamelModel):
         title="Description",
         description="Description for ZIM",
     )
-    favicon: AnyUrl | None = OptionalField(
+    favicon: OptionalSkipableUrl = OptionalField(
         title="Illustration",
         description="URL for Illustration. "
         "If unspecified, will attempt to use favicon from main page.",
@@ -507,7 +508,7 @@ class ZimitFlagsFullSchema(CamelModel):
         alias="long-description",
     )
 
-    custom_css: AnyUrl | None = OptionalField(
+    custom_css: OptionalSkipableUrl = OptionalField(
         title="Custom CSS",
         description="URL to a CSS file to inject into pages",
         alias="custom-css",
@@ -566,7 +567,7 @@ class ZimitFlagsFullSchema(CamelModel):
         alias="zimit-progress-file",
     )
 
-    replay_viewer_source: AnyUrl | None = OptionalField(
+    replay_viewer_source: OptionalSkipableUrl = OptionalField(
         title="Replay Viewer Source",
         description="URL from which to load the ReplayWeb.page replay viewer from",
         alias="replay-viewer-source",

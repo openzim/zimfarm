@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMName,
@@ -40,7 +41,7 @@ class SotokiFlagsSchema(DashModel):
         description="Custom description for your ZIM. Site tagline otherwise",
     )
 
-    favicon: AnyUrl | None = OptionalField(
+    favicon: OptionalSkipableUrl = OptionalField(
         title="Favicon",
         description="URL for Favicon. Site square logo otherwise",
     )
@@ -100,7 +101,7 @@ class SotokiFlagsSchema(DashModel):
         description="Replace usernames in posts with generated ones",
     )
 
-    censor_words_list: AnyUrl | None = OptionalField(
+    censor_words_list: OptionalSkipableUrl = OptionalField(
         title="Words black list",
         description="URL to a text file "
         "containing one word per line. Each of them to be removed from all content."

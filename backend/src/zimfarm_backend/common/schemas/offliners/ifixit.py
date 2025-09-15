@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -9,6 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
     OptionalPercentage,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMName,
@@ -43,7 +44,7 @@ class IFixitFlagsSchema(DashModel):
         "iFixIt homepage description (meta) otherwise",
     )
 
-    icon: AnyUrl | None = OptionalField(
+    icon: OptionalSkipableUrl = OptionalField(
         title="Icon",
         description="Custom Icon for your ZIM (URL). iFixit square logo otherwise",
     )

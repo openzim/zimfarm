@@ -1,17 +1,19 @@
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import AnyUrl, EmailStr, Field, WrapValidator
+from pydantic import EmailStr, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
     OptionalZIMTitle,
+    SkipableUrl,
     ZIMName,
     ZIMSecretStr,
     enum_member,
@@ -29,7 +31,7 @@ VideoFormatValue = Annotated[VideoFormat, WrapValidator(enum_member(VideoFormat)
 class OpenedxFlagsSchema(DashModel):
     offliner_id: Literal["openedx"] = Field(alias="offliner_id")
 
-    course_url: AnyUrl = Field(
+    course_url: SkipableUrl = Field(
         title="Course URL",
         description="URL of the course you wnat to scrape",
     )
@@ -63,7 +65,7 @@ class OpenedxFlagsSchema(DashModel):
         ),
     )
 
-    favicon_url: AnyUrl | None = OptionalField(
+    favicon_url: OptionalSkipableUrl = OptionalField(
         title="Favicon URL",
         description=(
             "URL pointing to a favicon image. Recommended size >= (48px x 48px)"

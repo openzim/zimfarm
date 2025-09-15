@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMName,
@@ -42,7 +43,7 @@ class WikihowFlagsSchema(DashModel):
         "Wikihow homepage description (meta) otherwise",
     )
 
-    icon: AnyUrl | None = OptionalField(
+    icon: OptionalSkipableUrl = OptionalField(
         title="Icon",
         description="Custom Icon for your ZIM (URL). wikiHow square logo otherwise",
     )
@@ -75,14 +76,14 @@ class WikihowFlagsSchema(DashModel):
         "Most are copyrighted",
     )
 
-    exclude: AnyUrl | None = OptionalField(
+    exclude: OptionalSkipableUrl = OptionalField(
         title="Exclude",
         description="URL to a text file listing Article ID or "
         "`Category:` prefixed Category IDs to exclude from the scrape. "
         "Lines starting with # are ignored",
     )
 
-    only: AnyUrl | None = OptionalField(
+    only: OptionalSkipableUrl = OptionalField(
         title="Only",
         description="URL to a text file listing Article IDs. "
         "This filters out every other article. "

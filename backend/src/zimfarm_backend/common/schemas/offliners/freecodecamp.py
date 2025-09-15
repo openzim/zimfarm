@@ -1,13 +1,14 @@
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import AnyUrl, Field, WrapValidator
+from pydantic import Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
+    OptionalSkipableUrl,
     OptionalZIMFileName,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
@@ -94,7 +95,7 @@ class FreeCodeCampFlagsSchema(DashModel):
         "Include {period} to insert date period dynamically",
     )
 
-    illustration: AnyUrl | None = OptionalField(
+    illustration: OptionalSkipableUrl = OptionalField(
         title="Illustration",
         description="URL for ZIM illustration. Freecodecamp default logo if missing",
     )
