@@ -929,6 +929,17 @@ watch(
     }
   },
 )
+
+// Watch for schedule name changes (when navigating to a different schedule)
+watch(
+  () => props.scheduleName,
+  async () => {
+    // Reset the current tab to details when switching schedules
+    // Clear current data and reload the new schedule
+    schedule.value = null
+    currentTab.value = 'details'
+  },
+)
 </script>
 
 <style scoped>
