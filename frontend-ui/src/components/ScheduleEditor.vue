@@ -926,7 +926,7 @@ const diskOptions = computed(() => {
 })
 
 const imageTagOptions = computed(() => {
-  return props.imageTags.map((tag) => ({ title: tag, value: tag }))
+  return [...props.imageTags].sort().map((tag) => ({ title: tag, value: tag }))
 })
 
 const handleSubmit = () => {

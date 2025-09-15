@@ -239,7 +239,7 @@ def update_schedule(
         db_get_schedule(session, schedule_name=schedule_name)
     )
 
-    schedule_config = schedule.config
+    schedule_config = cast(ScheduleConfigSchema, schedule.config)
     # Ensure we test flags according to new offliner name if present
     if request.offliner and request.offliner != schedule_config.offliner.offliner_id:
         if request.flags is None:
@@ -359,6 +359,7 @@ def update_schedule(
     new_schedule_config.warehouse_path = (
         request.warehouse_path or schedule_config.warehouse_path
     )
+    new_schedule_config.image = request.image or schedule_config.image
     new_schedule_config.resources = request.resources or schedule_config.resources
     new_schedule_config.platform = request.platform or schedule_config.platform
     new_schedule_config.artifacts_globs = (
@@ -366,7 +367,6 @@ def update_schedule(
     )
     new_schedule_config.monitor = request.monitor or schedule_config.monitor
 
-    new_schedule_config = cast(ScheduleConfigSchema, new_schedule_config)
     if request.language:
         try:
             language = get_language_from_code(request.language)
