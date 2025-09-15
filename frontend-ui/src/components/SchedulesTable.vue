@@ -71,7 +71,9 @@
             <br />
             <TaskLink
               :id="item.most_recent_task.id"
-              :updated-at="item.most_recent_task.updated_at"
+              :updatedAt="item.most_recent_task.updated_at"
+              :status="item.most_recent_task.status"
+              :timestamp="item.most_recent_task.timestamp"
             />
           </div>
           <span v-else>-</span>

@@ -66,6 +66,7 @@ export interface MostRecentTask {
   id: string
   status: string
   updated_at: string
+  timestamp: [string, string][] // [status, datetime] tuples
 }
 export enum TaskStatus {
   requested = 'requested',

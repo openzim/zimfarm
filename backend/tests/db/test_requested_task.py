@@ -541,6 +541,7 @@ def test_does_platform_allow_worker_to_run(
         config=expanded_config(schedule_config),
         schedule_name="test_schedule",
         timestamp=[("started", getnow()), ("reserved", getnow())],
+        status="started",
         worker_name=worker.name,
         duration=ScheduleDurationSchema(
             value=3600,

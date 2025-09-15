@@ -145,6 +145,7 @@ class MostRecentTaskSchema(BaseModel):
     id: UUID
     status: str
     updated_at: MadeAwareDateTime
+    timestamp: list[tuple[str, datetime.datetime]]
 
 
 class ConfigOfflinerOnlySchema(BaseModel):
@@ -282,6 +283,7 @@ class RunningTask(BaseModel):
     updated_at: datetime.datetime
     config: ExpandedScheduleConfigSchema
     schedule_name: str | None
+    status: str
     timestamp: list[tuple[str, datetime.datetime]]
     worker_name: str
     duration: ScheduleDurationSchema

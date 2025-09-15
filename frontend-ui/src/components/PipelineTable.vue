@@ -135,6 +135,8 @@
             <TaskLink
               :id="schedulesLastRuns[item.schedule_name].id"
               :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
+              :status="schedulesLastRuns[item.schedule_name].status"
+              :timestamp="schedulesLastRuns[item.schedule_name].timestamp"
             />
           </span>
         </template>

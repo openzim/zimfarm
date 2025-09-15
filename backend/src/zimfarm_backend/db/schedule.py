@@ -235,6 +235,7 @@ def get_schedules(
             Task.id.label("task_id"),
             Task.status.label("task_status"),
             Task.updated_at.label("task_updated_at"),
+            Task.timestamp,
             func.coalesce(subquery.c.nb_requested_tasks, 0).label("nb_requested_tasks"),
             Schedule.context,
         )
@@ -267,6 +268,7 @@ def get_schedules(
         task_id,
         task_status,
         task_updated_at,
+        task_timestamp,
         nb_requested_tasks,
         context,
     ) in session.execute(stmt).all():
@@ -295,6 +297,7 @@ def get_schedules(
                         id=task_id,
                         status=task_status,
                         updated_at=task_updated_at,
+                        timestamp=task_timestamp,
                     )
                     if all([task_id, task_status, task_updated_at])
                     else None
@@ -391,6 +394,7 @@ def create_schedule_full_schema(
                 id=schedule.most_recent_task.id,
                 status=schedule.most_recent_task.status,
                 updated_at=schedule.most_recent_task.updated_at,
+                timestamp=schedule.most_recent_task.timestamp,
             )
             if schedule.most_recent_task
             else None

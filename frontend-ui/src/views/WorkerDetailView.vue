@@ -237,7 +237,9 @@
                         <TaskLink
                           v-if="t.id && t.updated_at"
                           :id="t.id"
-                          :updated-at="t.updated_at"
+                          :updatedAt="t.updated_at"
+                          :status="t.status"
+                          :timestamp="t.timestamp"
                         />
                         <span v-else class="text-caption">-</span>
                       </td>

@@ -258,6 +258,7 @@ def get_currently_running_tasks(
             timestamp=task.timestamp,
             updated_at=task.updated_at,
             worker_name=task.worker.name,
+            status=task.status,
             **compute_task_eta(session, task),
         )
         for task in session.scalars(stmt).all()
