@@ -3,30 +3,15 @@
  */
 export const DEFAULT_TIMESTAMP = new Date('1970-01-01T00:00:00.000Z')
 
-export function getTimestampForStatus(
-  timestampList: [string, string][],
-  status: string,
-  defaultTimestamp: Date = DEFAULT_TIMESTAMP,
-): Date {
-  // Filter timestamps for the given status
-  const matchingTimestamps = timestampList
-    .filter(([statusStr]) => statusStr === status)
-    .map(([, timestamp]) => new Date(timestamp))
-
-  if (matchingTimestamps.length === 0) {
-    return defaultTimestamp
-  }
-
-  // Return the most recent timestamp for this status
-  return new Date(Math.max(...matchingTimestamps.map((d) => d.getTime())))
-}
-
 export function getTimestampStringForStatus(
-  timestampList: [string, string][],
+  timestampList: [string, string][] | undefined,
   status: string,
   defaultTimestamp: string = DEFAULT_TIMESTAMP.toISOString(),
 ): string {
   // Filter timestamps for the given status
+  if (!timestampList) {
+    return defaultTimestamp
+  }
   const matchingTimestamps = timestampList
     .filter(([statusStr]) => statusStr === status)
     .map(([, timestamp]) => timestamp)
