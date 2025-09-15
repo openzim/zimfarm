@@ -190,7 +190,12 @@
                       >
                         {{ lastRun.status }}
                       </v-chip>
-                      <TaskLink :id="lastRun.id" :updated-at="lastRun.updated_at" />
+                      <TaskLink
+                        :id="lastRun.id"
+                        :updatedAt="lastRun.updated_at"
+                        :status="lastRun.status"
+                        :timestamp="lastRun.timestamp"
+                      />
                     </td>
                     <td v-else>
                       <v-chip size="small" variant="outlined" color="grey"> none 🙁 </v-chip>
@@ -264,7 +269,12 @@
                               </v-chip>
                             </td>
                             <td>
-                              <TaskLink :id="run.id" :updated-at="run.updated_at" />
+                              <TaskLink
+                                :id="run.id"
+                                :updatedAt="run.updated_at"
+                                :status="run.status"
+                                :timestamp="run.timestamp"
+                              />
                             </td>
                           </tr>
                         </tbody>

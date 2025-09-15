@@ -147,7 +147,12 @@
                     </router-link>
                   </template>
                   <template #[`item.task`]="{ item: task }">
-                    <TaskLink :id="task.id" :updated-at="task.updated_at" />
+                    <TaskLink
+                      :id="task.id"
+                      :updatedAt="task.updated_at"
+                      :status="task.status"
+                      :timestamp="task.timestamp"
+                    />
                   </template>
                   <template #[`item.resources`]="{ item: task }">
                     <div class="d-flex flex-wrap flex-column flex-md-row py-1">

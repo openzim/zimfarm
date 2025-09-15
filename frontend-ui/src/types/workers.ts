@@ -19,6 +19,7 @@ export interface RunningTask {
   config: ExpandedScheduleConfig
   schedule_name: string | null
   updated_at: string
+  status: string
   timestamp: [string, string][]
   worker_name: string
   duration: ScheduleDuration
