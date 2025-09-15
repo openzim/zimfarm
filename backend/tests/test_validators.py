@@ -9,7 +9,9 @@ from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas.fields import (
     CommaSeparatedZIMLangCode,
     GraphemeStr,
+    SecretUrl,
     SkipableBool,
+    SkipableUrl,
     ZIMFileName,
     ZIMLangCode,
     ZIMName,
@@ -48,6 +50,14 @@ class CommaSeparatedZIMLanguageCodeModel(BaseModel):
 
 class SkipableBoolModel(BaseModel):
     value: SkipableBool
+
+
+class SecretUrlModel(BaseModel):
+    value: SecretUrl
+
+
+class SkipableUrlModel(BaseModel):
+    value: SkipableUrl
 
 
 def test_enum_validator_accepts_valid_value():
@@ -612,5 +622,121 @@ def test_relaxed_boolean_skip_validation(
 ):
     with expected:
         SkipableBoolModel.model_validate(
+            {"value": value}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("https://example.com", does_not_raise(), id="true"),
+        pytest.param("a.b.cd", pytest.raises(ValidationError), id="invalid-url"),
+        pytest.param(
+            "https://example.com/path?query=value",
+            does_not_raise(),
+            id="valid-url-with-query",
+        ),
+        pytest.param(
+            "./example.com",
+            pytest.raises(ValidationError),
+            id="invalid-url-with-relative-path",
+        ),
+        pytest.param(
+            "//example.com",
+            pytest.raises(ValidationError),
+            id="invalid-url-with-protocol-relative-path",
+        ),
+    ],
+)
+def test_secret_url_model(value: str, expected: RaisesContext[Exception]):
+    with expected:
+        SecretUrlModel.model_validate({"value": value})
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("https://example.com", does_not_raise(), id="true"),
+        pytest.param("a.b.cd", does_not_raise(), id="invalid-url"),
+        pytest.param(
+            "https://example.com/path?query=value",
+            does_not_raise(),
+            id="valid-url-with-query",
+        ),
+        pytest.param(
+            "./example.com",
+            does_not_raise(),
+            id="invalid-url-with-relative-path",
+        ),
+        pytest.param(
+            "//example.com",
+            does_not_raise(),
+            id="invalid-url-with-protocol-relative-path",
+        ),
+    ],
+)
+def test_secret_url_model_skip_validation(
+    value: str, expected: RaisesContext[Exception]
+):
+    with expected:
+        SecretUrlModel.model_validate(
+            {"value": value}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("https://example.com", does_not_raise(), id="true"),
+        pytest.param("a.b.cd", pytest.raises(ValidationError), id="invalid-url"),
+        pytest.param(
+            "https://example.com/path?query=value",
+            does_not_raise(),
+            id="valid-url-with-query",
+        ),
+        pytest.param(
+            "./example.com",
+            pytest.raises(ValidationError),
+            id="invalid-url-with-relative-path",
+        ),
+        pytest.param(
+            "//example.com",
+            pytest.raises(ValidationError),
+            id="invalid-url-with-protocol-relative-path",
+        ),
+    ],
+)
+def test_skipable_url_model(value: str, expected: RaisesContext[Exception]):
+    with expected:
+        SecretUrlModel.model_validate({"value": value})
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("https://example.com", does_not_raise(), id="true"),
+        pytest.param("a.b.cd", does_not_raise(), id="invalid-url"),
+        pytest.param(
+            "https://example.com/path?query=value",
+            does_not_raise(),
+            id="valid-url-with-query",
+        ),
+        pytest.param(
+            "./example.com",
+            does_not_raise(),
+            id="invalid-url-with-relative-path",
+        ),
+        pytest.param(
+            "//example.com",
+            does_not_raise(),
+            id="invalid-url-with-protocol-relative-path",
+        ),
+    ],
+)
+def test_skipable_url_model_skip_validation(
+    value: str, expected: RaisesContext[Exception]
+):
+    with expected:
+        SecretUrlModel.model_validate(
             {"value": value}, context={"skip_validation": True}
         )

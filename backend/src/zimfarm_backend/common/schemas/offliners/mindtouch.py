@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
@@ -100,7 +101,7 @@ class MindtouchFlagsSchema(DashModel):
         "its subpages will be included in the ZIM",
     )
 
-    illustration_url: AnyUrl | None = OptionalField(
+    illustration_url: OptionalSkipableUrl = OptionalField(
         title="Illustration URL",
         description="URL to illustration to use for ZIM illustration and favicon",
     )

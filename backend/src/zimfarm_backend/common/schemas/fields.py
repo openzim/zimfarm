@@ -145,8 +145,14 @@ Percentage = Annotated[int, Field(ge=1, le=100), WrapValidator(skip_validation)]
 OptionalPercentage = Percentage | None
 
 
-def validate_secret_url(v: ZIMSecretStr | str) -> ZIMSecretStr:
+def validate_secret_url(v: ZIMSecretStr | str, info: ValidationInfo) -> ZIMSecretStr:
     url = v.get_secret_value() if isinstance(v, SecretStr) else v
+    context = info.context
+    if context and context.get("skip_validation"):
+        # even though we are not validating it, we still want it to be a secret string
+        return SecretStr(url)
+
+    # validate the URL
     AnyUrl(url)
 
     return SecretStr(url)
@@ -155,6 +161,9 @@ def validate_secret_url(v: ZIMSecretStr | str) -> ZIMSecretStr:
 SecretUrl = Annotated[ZIMSecretStr, AfterValidator(validate_secret_url)]
 
 OptionalSecretUrl = SecretUrl | None
+
+SkipableUrl = Annotated[AnyUrl, WrapValidator(skip_validation)]
+OptionalSkipableUrl = SkipableUrl | None
 
 ZIMLongDescription = Annotated[
     ZIMMetadataString,

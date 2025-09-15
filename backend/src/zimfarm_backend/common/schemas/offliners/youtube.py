@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -9,6 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLongDescription,
@@ -123,12 +124,12 @@ class YoutubeFlagsSchema(DashModel):
         description="Number of videos per page (40 otherwise)",
     )
 
-    profile: AnyUrl | None = OptionalField(
+    profile: OptionalSkipableUrl = OptionalField(
         title="Profile Image",
         description="Custom profile image. Squared. Will be resized to 100x100px",
     )
 
-    banner: AnyUrl | None = OptionalField(
+    banner: OptionalSkipableUrl = OptionalField(
         title="Banner Image",
         description="Custom banner image. Will be resized to 1060x175px",
     )

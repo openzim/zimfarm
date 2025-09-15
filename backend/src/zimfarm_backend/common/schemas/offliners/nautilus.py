@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
@@ -19,7 +20,7 @@ from zimfarm_backend.common.schemas.fields import (
 class NautilusFlagsSchema(DashModel):
     offliner_id: Literal["nautilus"] = Field(alias="offliner_id")
 
-    archive: AnyUrl | None = OptionalField(
+    archive: OptionalSkipableUrl = OptionalField(
         title="Archive",
         description="URL to a ZIP archive containing all the documents",
     )
@@ -96,16 +97,16 @@ class NautilusFlagsSchema(DashModel):
         description="List of comma-separated Tags for the ZIM file.",
     )
 
-    main_logo: AnyUrl | None = OptionalField(
+    main_logo: OptionalSkipableUrl = OptionalField(
         title="Header Logo",
         description=("Custom logo. Will be resized to 300x65px. Nautilus otherwise."),
     )
-    secondary_logo: AnyUrl | None = OptionalField(
+    secondary_logo: OptionalSkipableUrl = OptionalField(
         title="Footer logo",
         description=("Custom footer logo. Will be resized to 300x65px. None otherwise"),
     )
 
-    favicon: AnyUrl | None = OptionalField(
+    favicon: OptionalSkipableUrl = OptionalField(
         title="Favicon",
         description=("Custom favicon. Will be resized to 48x48px. Nautilus otherwise."),
     )
@@ -123,7 +124,7 @@ class NautilusFlagsSchema(DashModel):
             " primary color solarized (or #95A5A6 if no logo)."
         ),
     )
-    about: AnyUrl | None = OptionalField(
+    about: OptionalSkipableUrl = OptionalField(
         title="About page",
         description="Custom about HTML page.",
     )

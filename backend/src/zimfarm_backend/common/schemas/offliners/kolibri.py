@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import AnyUrl, Field
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -8,6 +8,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLangCode,
@@ -61,20 +62,20 @@ class KolibriFlagsSchema(DashModel):
         "too long to fit entirely in ZIM description",
     )
 
-    favicon: AnyUrl | None = OptionalField(
+    favicon: OptionalSkipableUrl = OptionalField(
         title="Favicon",
         description="URL for Favicon. Kolibri channel thumbnail otherwise "
         "or default Kolobri logo if missing",
     )
 
-    css: AnyUrl | None = OptionalField(
+    css: OptionalSkipableUrl = OptionalField(
         title="Custom CSS",
         description="URL to a single CSS file to be included in all pages "
         "(but not on kolibri-html-content ones). "
         "Inlude external resources using data URL.",
     )
 
-    about: AnyUrl | None = OptionalField(
+    about: OptionalSkipableUrl = OptionalField(
         title="Custom About",
         description="URL to a single HTML file to use as an about page. "
         "Place everythong inside `body .container` "

@@ -2,7 +2,7 @@
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import AnyUrl, EmailStr, Field, WrapValidator
+from pydantic import EmailStr, Field, WrapValidator
 
 from zimfarm_backend.common.schemas import DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -10,11 +10,13 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     OptionalNotEmptyString,
     OptionalSecretUrl,
+    OptionalSkipableUrl,
     OptionalZIMDescription,
     OptionalZIMLongDescription,
     OptionalZIMOutputFolder,
     OptionalZIMSecretStr,
     OptionalZIMTitle,
+    SkipableUrl,
     enum_member,
 )
 
@@ -75,7 +77,7 @@ MWOfflinerForceRenderValue = Annotated[
 class MWOfflinerFlagsSchema(DashModel):
     offliner_id: Literal["mwoffliner"] = Field(alias="offliner_id")
 
-    mwUrl: AnyUrl = Field(
+    mwUrl: SkipableUrl = Field(
         title="Wiki URL",
         description="The URL of the mediawiki to scrape",
     )
@@ -115,7 +117,7 @@ class MWOfflinerFlagsSchema(DashModel):
         title="ZIM Long Description",
         description=" Max length is 4000 chars",
     )
-    customZimFavicon: AnyUrl | None = OptionalField(
+    customZimFavicon: OptionalSkipableUrl = OptionalField(
         title="ZIM favicon",
         description="URL to a png to use as favicon. Will be resized to 48x48px.",
     )
