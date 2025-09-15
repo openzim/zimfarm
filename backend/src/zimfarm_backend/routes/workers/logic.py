@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.common.schemas.orms import WorkerLightSchema, WorkerMetricsSchema
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
@@ -19,7 +18,6 @@ from zimfarm_backend.db.worker import update_worker as db_update_worker
 from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
 from zimfarm_backend.routes.http_errors import (
     BadRequestError,
-    NotFoundError,
     UnauthorizedError,
 )
 from zimfarm_backend.routes.models import ListResponse
@@ -56,10 +54,7 @@ async def get_worker_metrics(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> WorkerMetricsSchema:
     """Get a single worker with full details and metrics."""
-    try:
-        return db_get_worker_metrics(session, worker_name=name)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Worker {name} not found") from exc
+    return db_get_worker_metrics(session, worker_name=name)
 
 
 @router.put("/{name}/context")
@@ -70,10 +65,7 @@ async def update_worker_context(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Update the context of a worker."""
-    try:
-        worker = db_get_worker(session, worker_name=name)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Worker {name} not found") from exc
+    worker = db_get_worker(session, worker_name=name)
 
     if not (check_user_permission(current_user, namespace="users", name="update")):
         raise UnauthorizedError("You are not allowed to access this resource")
@@ -95,10 +87,7 @@ async def check_in_worker(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Check in a worker."""
-    try:
-        worker = db_get_worker(session, worker_name=name)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Worker {name} not found") from exc
+    worker = db_get_worker(session, worker_name=name)
 
     if worker.deleted:
         raise BadRequestError("Worker has been marked as deleted")

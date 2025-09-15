@@ -29,7 +29,6 @@ from zimfarm_backend.common.schemas.orms import (
 )
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.requested_task import (
     compute_requested_task_rank,
@@ -126,12 +125,7 @@ def get_requested_tasks(
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for user."""
     if current_user and requested_task_schema.worker:
-        try:
-            update_worker(session, worker_name=requested_task_schema.worker)
-        except RecordDoesNotExistError as exc:
-            raise NotFoundError(
-                f"Worker {requested_task_schema.worker} not found"
-            ) from exc
+        update_worker(session, worker_name=requested_task_schema.worker)
 
     skip = requested_task_schema.skip or 0
     limit = requested_task_schema.limit or 20
@@ -177,10 +171,7 @@ def get_requested_tasks_for_worker(
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
 
-    try:
-        worker = get_worker(session, worker_name=worker_name)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Worker {worker_name} not found") from exc
+    worker = get_worker(session, worker_name=worker_name)
 
     fallback_ip = request.client.host if request.client else None
     x_forwarded_for = request.headers.get("X-Forwarded-For", fallback_ip)
@@ -277,10 +268,7 @@ def get_requested_task(
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
     """Get a requested task by ID."""
-    try:
-        requested_task = get_requested_task_by_id(session, requested_task_id)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Requested task {requested_task_id} not found") from exc
+    requested_task = get_requested_task_by_id(session, requested_task_id)
 
     # also fetch all requested tasks IDs to compute estimated task rank ; this is
     # only an indicator for zimit.kiwix.org where duration is unknown because
@@ -324,10 +312,7 @@ def update_requested_task(
     if not check_user_permission(current_user, namespace="tasks", name="update"):
         raise ForbiddenError("You are not allowed to update requested tasks")
 
-    try:
-        get_requested_task_by_id(session, requested_task_id)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Requested task {requested_task_id} not found") from exc
+    get_requested_task_by_id(session, requested_task_id)
 
     return update_requested_task_priority(
         session, requested_task_id, update_requested_task_schema.priority

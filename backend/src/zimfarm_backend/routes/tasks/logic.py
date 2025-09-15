@@ -21,7 +21,6 @@ from zimfarm_backend.common.schemas.orms import TaskLightSchema
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
-    RecordDoesNotExistError,
 )
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.requested_task import (
@@ -85,10 +84,7 @@ async def get_task(
     hide_secrets: Annotated[bool, Query()] = True,
 ) -> JSONResponse:
     """Get a task by ID"""
-    try:
-        task = db_get_task(db_session, task_id)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Task {task_id} not found") from exc
+    task = db_get_task(db_session, task_id)
     if not (
         current_user
         and check_user_permission(current_user, namespace="tasks", name="update")
@@ -125,17 +121,9 @@ async def create_task(
     if not check_user_permission(current_user, namespace="tasks", name="create"):
         raise ForbiddenError("You are not allowed to create tasks")
 
-    try:
-        requested_task = db_get_requested_task(db_session, requested_task_id)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Requested task {requested_task_id} not found") from exc
+    requested_task = db_get_requested_task(db_session, requested_task_id)
 
-    try:
-        worker = db_get_worker(db_session, worker_name=task_create_schema.worker_name)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(
-            f"Worker {task_create_schema.worker_name} not found"
-        ) from exc
+    worker = db_get_worker(db_session, worker_name=task_create_schema.worker_name)
 
     try:
         task = db_create_task(
@@ -173,10 +161,7 @@ async def update_task(
     if not check_user_permission(current_user, namespace="tasks", name="update"):
         raise ForbiddenError("You are not allowed to update this task")
 
-    try:
-        task = db_get_task(db_session, task_id)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Task {task_id} not found") from exc
+    task = db_get_task(db_session, task_id)
 
     try:
         task_event_handler(
@@ -199,10 +184,7 @@ async def cancel_task(
     if not check_user_permission(current_user, namespace="tasks", name="cancel"):
         raise ForbiddenError("You are not allowed to cancel this task")
 
-    try:
-        task = db_get_task(db_session, task_id)
-    except RecordDoesNotExistError as exc:
-        raise NotFoundError(f"Task {task_id} not found") from exc
+    task = db_get_task(db_session, task_id)
 
     if task.status not in TaskStatus.incomplete():
         raise NotFoundError(f"Task {task_id} not found")

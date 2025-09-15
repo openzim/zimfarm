@@ -6,7 +6,12 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
+from zimfarm_backend.db.exceptions import (
+    RecordAlreadyExistsError,
+    RecordDoesNotExistError,
+)
 from zimfarm_backend.routes import (
     auth,
     contexts,
@@ -90,6 +95,37 @@ async def request_validation_error_handler(_, exc: RequestValidationError):
             "message": "Input values failed constraints validation",
             "errors": errors,
         },
+    )
+
+
+@app.exception_handler(ValidationError)
+async def validation_error_handler(_, exc: ValidationError):
+    # transform the pydantic validation errors to a dictionary mapping
+    # the field to the list of errors
+    errors = {err["loc"][-1]: err["msg"] for err in exc.errors()}
+    return JSONResponse(
+        status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+        content={
+            "success": False,
+            "message": "Input values failed constraints validation",
+            "errors": errors,
+        },
+    )
+
+
+@app.exception_handler(RecordDoesNotExistError)
+async def record_does_not_exist_error_handler(_, exc: RecordDoesNotExistError):
+    return JSONResponse(
+        status_code=HTTPStatus.NOT_FOUND,
+        content={"success": False, "message": exc.detail},
+    )
+
+
+@app.exception_handler(RecordAlreadyExistsError)
+async def record_already_exists_error_handler(_, exc: RecordAlreadyExistsError):
+    return JSONResponse(
+        status_code=HTTPStatus.CONFLICT,
+        content={"success": False, "message": exc.detail},
     )
 
 
