@@ -43,11 +43,16 @@
     <!-- Content -->
     <div v-if="!error && task">
       <!-- Tabs -->
-      <v-tabs v-model="currentTab" class="mb-4">
-        <v-tab value="details" :to="{ name: 'task-detail', params: { id: props.id } }">
+      <v-tabs v-model="currentTab" class="mb-4" color="primary" slider-color="primary">
+        <v-tab
+          value="details"
+          :to="{ name: 'task-detail', params: { id: props.id } }"
+          base-color="primary"
+        >
           Info
         </v-tab>
         <v-tab
+          base-color="primary"
           value="debug"
           :to="{
             name: 'task-detail-tab',
