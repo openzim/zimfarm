@@ -2,6 +2,7 @@
   <div>
     <v-tabs v-model="activeTab" color="primary" slider-color="primary" class="mb-4">
       <v-tab
+        base-color="primary"
         v-for="filterOption in filterOptions"
         :key="filterOption.value"
         :value="filterOption.value"

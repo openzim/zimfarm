@@ -40,8 +40,9 @@
     <!-- Content -->
     <div v-if="ready && schedule">
       <!-- Tabs -->
-      <v-tabs v-model="currentTab" class="mb-4">
+      <v-tabs v-model="currentTab" class="mb-4" color="primary" slider-color="primary">
         <v-tab
+          base-color="primary"
           value="details"
           :to="{
             name: 'schedule-detail',
@@ -52,6 +53,7 @@
           Info
         </v-tab>
         <v-tab
+          base-color="primary"
           value="config"
           :to="{
             name: 'schedule-detail-tab',
@@ -62,6 +64,7 @@
           Config
         </v-tab>
         <v-tab
+          base-color="primary"
           v-if="canUpdateSchedules"
           value="edit"
           :to="{
@@ -73,9 +76,9 @@
           Edit
         </v-tab>
         <v-tab
+          base-color="primary"
           v-if="canCreateSchedules"
           value="clone"
-          color="info"
           :to="{
             name: 'schedule-detail-tab',
             params: { scheduleName: scheduleName, selectedTab: 'clone' },
@@ -85,9 +88,9 @@
           Clone
         </v-tab>
         <v-tab
+          base-color="primary"
           v-if="canDeleteSchedules"
           value="delete"
-          color="error"
           :to="{
             name: 'schedule-detail-tab',
             params: { scheduleName: scheduleName, selectedTab: 'delete' },
