@@ -156,6 +156,7 @@
                             <th>Created After</th>
                             <th>Upload Duration</th>
                             <th>Quality</th>
+                            <th>Info</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -187,39 +188,52 @@
                             </td>
                             <td v-else>-</td>
                             <td v-if="file.check_result !== undefined">
-                              <code>{{ file.check_result }}</code>
-                              <v-menu location="left">
+                              <div class="d-flex flex-sm-column flex-lg-row align-center">
+                                <code>{{ file.check_result }}</code>
+                                <v-menu location="left">
+                                  <template #activator="{ props }">
+                                    <v-btn v-bind="props" variant="text" size="small" class="ml-2">
+                                      <v-icon>mdi-eye</v-icon>
+                                    </v-btn>
+                                  </template>
+                                  <v-card max-width="400" max-height="300">
+                                    <v-card-title class="text-subtitle-2 pa-3"
+                                      >zimcheck output</v-card-title
+                                    >
+                                    <v-card-text class="pa-3">
+                                      <pre
+                                        class="text-caption"
+                                        style="
+                                          max-height: 200px;
+                                          overflow-y: auto;
+                                          white-space: pre-wrap;
+                                          word-break: break-word;
+                                        "
+                                        >{{ JSON.stringify(file.check_details, null, 2) }}</pre
+                                      >
+                                    </v-card-text>
+                                  </v-card>
+                                </v-menu>
+                                <v-btn
+                                  variant="text"
+                                  size="small"
+                                  class="ml-1"
+                                  @click="copyLog(JSON.stringify(file.check_details, null, 2))"
+                                >
+                                  <v-icon>mdi-content-copy</v-icon>
+                                </v-btn>
+                              </div>
+                            </td>
+                            <td v-else>-</td>
+                            <td v-if="file.info">
+                              <v-menu location="left" :close-on-content-click="false">
                                 <template #activator="{ props }">
-                                  <v-btn v-bind="props" variant="text" size="small" class="ml-2">
-                                    <v-icon>mdi-eye</v-icon>
+                                  <v-btn v-bind="props" variant="text" size="small">
+                                    <v-icon>mdi-information</v-icon>
                                   </v-btn>
                                 </template>
-                                <v-card max-width="400" max-height="300">
-                                  <v-card-title class="text-subtitle-2 pa-3"
-                                    >zimcheck output</v-card-title
-                                  >
-                                  <v-card-text class="pa-3">
-                                    <pre
-                                      class="text-caption"
-                                      style="
-                                        max-height: 200px;
-                                        overflow-y: auto;
-                                        white-space: pre-wrap;
-                                        word-break: break-word;
-                                      "
-                                      >{{ JSON.stringify(file.check_details, null, 2) }}</pre
-                                    >
-                                  </v-card-text>
-                                </v-card>
+                                <FileInfoTable :file-info="file.info" />
                               </v-menu>
-                              <v-btn
-                                variant="text"
-                                size="small"
-                                class="ml-1"
-                                @click="copyLog(JSON.stringify(file.check_details, null, 2))"
-                              >
-                                <v-icon>mdi-content-copy</v-icon>
-                              </v-btn>
                             </td>
                             <td v-else>-</td>
                           </tr>
@@ -406,6 +420,7 @@
 
 <script setup lang="ts">
 import ErrorMessage from '@/components/ErrorMessage.vue'
+import FileInfoTable from '@/components/FileInfoTable.vue'
 import FlagsList from '@/components/FlagsList.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import type { Config } from '@/config'

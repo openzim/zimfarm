@@ -10,14 +10,25 @@ export interface TaskEvent {
   timestamp: string
 }
 
+export interface TaskFileInfo {
+  id: string
+  counter: Record<string, number>
+  article_count: number
+  media_count: number
+  size: number
+  metadata: Record<string, string>
+}
+
 export interface TaskFile {
   name: string
   size: number
   created_timestamp: string
   uploaded_timestamp?: string
+  check_timestamp?: string
   status: string
   check_result?: number
   check_details?: Record<string, unknown>
+  info?: TaskFileInfo
 }
 
 export interface TaskContainer {
