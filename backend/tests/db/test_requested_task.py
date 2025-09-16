@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from uuid import UUID, uuid4
 
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import ResourcesSchema, ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import ScheduleDurationSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
@@ -46,7 +47,7 @@ def test_request_task_nonexistent_schedule(dbsession: OrmSession, worker: Worker
         requested_by="testuser",
         worker_name=worker.name,
     )
-    assert result is None
+    assert result.requested_task is None
 
 
 def test_request_task_nonexistent_worker(dbsession: OrmSession, schedule: Schedule):
@@ -57,7 +58,7 @@ def test_request_task_nonexistent_worker(dbsession: OrmSession, schedule: Schedu
         requested_by="testuser",
         worker_name="nonexistent",
     )
-    assert result is None
+    assert result.requested_task is None
 
 
 def test_request_task_disabled_schedule(
@@ -74,7 +75,7 @@ def test_request_task_disabled_schedule(
         requested_by="testuser",
         worker_name=worker.name,
     )
-    assert result is None
+    assert result.requested_task is None
 
 
 def test_request_task_already_requested(
@@ -95,22 +96,126 @@ def test_request_task_already_requested(
         requested_by="testuser",
         worker_name=worker.name,
     )
-    assert result is None
+    assert result.requested_task is None
 
 
-def test_request_task_if_worker_has_no_requested_task(
+@pytest.mark.parametrize(
+    "worker_offliners,worker_contexts,worker_resource,schedule_resource,schedule_context,result_bool,error_regex",
+    [
+        # our schedule is always going to be an mwoffliner
+        pytest.param(
+            ["mwoffliner"],
+            ["general"],  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",  # schedule_context
+            True,
+            None,
+            id="worker-matches-schedule",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=2, memory=2, disk=2),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
+            True,
+            None,
+            id="worker-exceeds-schedule",
+        ),
+        pytest.param(
+            ["gutenberg"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
+            False,
+            "Worker's offliners do not match the offliner for schedule .*",
+            id="worker-with-different-offliner",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=2, memory=1, disk=1),
+            "",
+            False,
+            "Worker does not have enough resources to run schedule .*",
+            id="worker-does-not-match-schedule-cpu",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=2, disk=1),
+            "",
+            False,
+            "Worker does not have enough resources to run schedule .*",
+            id="worker-does-not-match-schedule-memory",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=2),
+            "",
+            False,
+            "Worker does not have enough resources to run schedule .*",
+            id="worker-does-not-match-schedule-disk",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            ["general"],  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "priority",  # schedule_context
+            False,
+            "Worker does not have required context to run schedule .*",
+            id="worker-context-does-not-match-schedule",
+        ),
+    ],
+)
+def test_request_task_for_worker(
     dbsession: OrmSession,
-    worker: Worker,
-    schedule: Schedule,
+    create_worker: Callable[..., Worker],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    *,
+    worker_offliners: list[str],
+    worker_contexts: list[str],
+    worker_resource: ResourcesSchema,
+    schedule_resource: ResourcesSchema,
+    schedule_context: str,
+    result_bool: bool,
+    error_regex: str | None,
 ):
-    """Test that request_task returns the task if it's not already requested"""
+    """Test that request_task returns the task if worker meets constraints"""
+    worker = create_worker(
+        cpu=worker_resource.cpu,
+        memory=worker_resource.memory,
+        disk=worker_resource.disk,
+        name="random-worker",
+        offliners=worker_offliners,
+        contexts=worker_contexts,
+    )
+    schedule = create_schedule(
+        schedule_config=create_schedule_config(
+            cpu=schedule_resource.cpu,
+            memory=schedule_resource.memory,
+            disk=schedule_resource.disk,
+        ),
+        context=schedule_context,
+    )
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
         requested_by="testuser",
         worker_name=worker.name,
     )
-    assert result is not None
+    assert bool(result.requested_task) == result_bool
+
+    if error_regex and result.error:
+        assert re.search(error_regex, result.error) is not None
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,7 @@
 from ipaddress import IPv4Address
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
@@ -91,7 +91,7 @@ def get_active_workers(
             User.deleted.is_(False),
             Worker.deleted.is_(False),
         )
-        .order_by(Worker.name)
+        .order_by(desc(Worker.last_seen), asc(Worker.name))
         .offset(skip)
         .limit(limit)
     )

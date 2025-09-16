@@ -135,7 +135,6 @@ async function clearFilters() {
 async function handleFetchSchedules() {
   // Called by the RequestSelectionButton component
   requestingText.value = 'Requesting tasks...'
-  await loadData(paginator.value.limit, paginator.value.skip)
   if (errors.value.length > 0) {
     notificationStore.showError('Not requested!')
     notificationStore.showError(`Unable to fetch recipe names: ${errors.value.join(', ')}`)
@@ -145,13 +144,13 @@ async function handleFetchSchedules() {
       const requestedTasks = await requestedTasksStore.requestTasks({
         scheduleNames: scheduleNames,
       })
-      errors.value = requestedTasksStore.errors
       if (requestedTasks) {
         notificationStore.showSuccess(
           `Exactly ${requestedTasks.requested.length} recipes matching your selection have been requested`,
         )
+        await loadData(paginator.value.limit, paginator.value.skip)
       } else {
-        for (const error of errors.value) {
+        for (const error of requestedTasksStore.errors) {
           notificationStore.showError(error)
         }
       }

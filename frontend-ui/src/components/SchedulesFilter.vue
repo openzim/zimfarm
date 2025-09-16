@@ -64,8 +64,8 @@
 </template>
 
 <script setup lang="ts">
+import type { Language } from '@/types/language'
 import { computed, ref, watch } from 'vue'
-import type { Language } from '../types/language'
 
 // Props
 interface Props {

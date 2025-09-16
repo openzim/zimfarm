@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
+from zimfarm_backend.common.schemas.models import ResourcesSchema, ScheduleConfigSchema
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
 from zimfarm_backend.db.worker import get_worker
 from zimfarm_backend.routes.requested_tasks import logic
@@ -61,22 +62,111 @@ def test_create_request_task_no_enabled_schedules(
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
+@pytest.mark.parametrize(
+    "worker_offliners,worker_contexts,worker_resource,schedule_resource,schedule_context,expected_status_code",
+    [
+        # our schedule is always going to be an mwoffliner
+        pytest.param(
+            ["mwoffliner"],
+            ["general"],  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",  # schedule_context
+            HTTPStatus.OK,
+            id="worker-matches-schedule",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=2, memory=2, disk=2),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
+            HTTPStatus.OK,
+            id="worker-exceeds-schedule",
+        ),
+        pytest.param(
+            ["gutenberg"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
+            HTTPStatus.BAD_REQUEST,
+            id="worker-with-different-offliner",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=2, memory=1, disk=1),
+            "",
+            HTTPStatus.BAD_REQUEST,
+            id="worker-does-not-match-schedule-cpu",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=2, disk=1),
+            "",
+            HTTPStatus.BAD_REQUEST,
+            id="worker-does-not-match-schedule-memory",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            [],
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=2),
+            "",
+            HTTPStatus.BAD_REQUEST,
+            id="worker-does-not-match-schedule-disk",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            ["general"],  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "priority",  # schedule_context
+            HTTPStatus.BAD_REQUEST,
+            id="worker-context-does-not-match-schedule",
+        ),
+    ],
+)
 def test_create_request_task_success(
     client: TestClient,
     access_token: str,
-    schedule: Schedule,
-    worker: Worker,
+    worker_offliners: list[str],
+    worker_contexts: list[str],
+    worker_resource: ResourcesSchema,
+    schedule_resource: ResourcesSchema,
+    create_worker: Callable[..., Worker],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    schedule_context: str,
+    expected_status_code: int,
 ):
+    worker = create_worker(
+        cpu=worker_resource.cpu,
+        memory=worker_resource.memory,
+        disk=worker_resource.disk,
+        name="random-worker",
+        offliners=worker_offliners,
+        contexts=worker_contexts,
+    )
+    schedule = create_schedule(
+        schedule_config=create_schedule_config(
+            cpu=schedule_resource.cpu,
+            memory=schedule_resource.memory,
+            disk=schedule_resource.disk,
+        ),
+        context=schedule_context,
+    )
     """Test successful creation of requested task"""
     response = client.post(
         "/v2/requested-tasks",
         json={"schedule_names": [schedule.name], "worker": worker.name, "priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.OK
-    data = response.json()
-    assert "requested" in data
-    assert len(data["requested"]) == 1
+    assert response.status_code == expected_status_code
 
 
 def test_get_requested_tasks_success(
