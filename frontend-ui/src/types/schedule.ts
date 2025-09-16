@@ -23,6 +23,24 @@ export interface ScheduleConfig {
   offliner: OfflinerFlags
 }
 
+export interface BaseScheduleHistorySchema {
+  config: Record<string, unknown>
+  name: string
+  category: string
+  enabled: boolean
+  language_code: string
+  tags: string[]
+  periodicity: string
+  context: string
+}
+
+export interface ScheduleHistorySchema extends BaseScheduleHistorySchema {
+  id: string
+  author: string
+  created_at: string
+  comment: string | null
+}
+
 export interface Schedule {
   language: Language
   duration: ScheduleDuration
@@ -66,6 +84,7 @@ export interface ScheduleUpdateSchema {
   flags: Record<string, unknown> | null
   artifacts_globs: string[] | null
   context: string | null
+  comment: string | null
 }
 
 export interface EventNotification {

@@ -187,6 +187,28 @@ class ScheduleDurationSchema(BaseModel):
     default: bool
 
 
+class ScheduleHistorySchema(BaseModel):
+    """
+    Schema for reading a schedule history model
+    """
+
+    id: UUID
+    author: str
+    created_at: datetime.datetime
+    comment: str | None
+    name: str
+    category: str
+    enabled: bool
+    language_code: str
+    tags: list[str]
+    periodicity: str
+    context: str
+    # entries are serialized as dict[str, Any] instead of ScheduleConfigSchema
+    # because the entry is possibly outdated and would fail validation as the
+    # offliner schema evolves
+    config: dict[str, Any]
+
+
 class ScheduleFullSchema(BaseModel):
     """
     Schema for reading a schedule model with all fields

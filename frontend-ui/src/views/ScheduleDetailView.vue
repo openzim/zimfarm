@@ -66,6 +66,18 @@
         <v-tab
           base-color="primary"
           v-if="canUpdateSchedules"
+          value="history"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'history' },
+          }"
+        >
+          <v-icon class="mr-2">mdi-history</v-icon>
+          History
+        </v-tab>
+        <v-tab
+          base-color="primary"
+          v-if="canUpdateSchedules"
           value="edit"
           :to="{
             name: 'schedule-detail-tab',
@@ -293,6 +305,19 @@
           </v-card>
         </v-window-item>
 
+        <!-- History Tab -->
+        <v-window-item value="history">
+          <div v-if="canUpdateSchedules" class="pa-4">
+            <ScheduleHistory
+              :history="scheduleHistoryStore.history"
+              :has-more="canLoadMoreHistory"
+              :loading="loadingHistory"
+              :paginator="scheduleHistoryStore.paginator"
+              @load="loadHistory"
+            />
+          </div>
+        </v-window-item>
+
         <!-- Config Tab -->
         <v-window-item value="config">
           <v-card flat>
@@ -476,6 +501,7 @@ import FlagsList from '@/components/FlagsList.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import ScheduleActionButton from '@/components/ScheduleActionButton.vue'
 import ScheduleEditor from '@/components/ScheduleEditor.vue'
+import ScheduleHistory from '@/components/ScheduleHistory.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
@@ -487,6 +513,7 @@ import { useOfflinerStore } from '@/stores/offliner'
 import { usePlatformStore } from '@/stores/platform'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
+import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
 import { useTagStore } from '@/stores/tag'
 import { useTasksStore } from '@/stores/tasks'
 import { useWorkersStore } from '@/stores/workers'
@@ -524,6 +551,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const scheduleStore = useScheduleStore()
+const scheduleHistoryStore = useScheduleHistoryStore()
 const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const workersStore = useWorkersStore()
@@ -554,6 +582,7 @@ const helpUrl = ref<string>('')
 
 const ready = ref<boolean>(false)
 const schedule = ref<Schedule | null>(null)
+const loadingHistory = ref<boolean>(false)
 // existing requested task for this schedule
 const requestedTask = ref<RequestedTaskLight | null>(null)
 // existing running task for this schedule
@@ -586,6 +615,12 @@ const canRequestTasks = computed(() => authStore.hasPermission('tasks', 'request
 const canUpdateSchedules = computed(() => authStore.hasPermission('schedules', 'update'))
 const canCreateSchedules = computed(() => authStore.hasPermission('schedules', 'create'))
 const canDeleteSchedules = computed(() => authStore.hasPermission('schedules', 'delete'))
+
+// History-related computed properties
+const canLoadMoreHistory = computed(() => {
+  const { skip, limit, count } = scheduleHistoryStore.paginator
+  return skip + limit < count
+})
 
 // Methods
 const fetchWorkers = async () => {
@@ -837,6 +872,21 @@ const validateSchedule = async () => {
   }
 }
 
+// History-related methods
+const loadHistory = async ({ limit, skip }: { limit: number; skip: number }) => {
+  if (skip > 0 && !canLoadMoreHistory.value) return
+
+  loadingHistory.value = true
+  try {
+    await scheduleHistoryStore.fetchHistory(props.scheduleName, limit, skip)
+  } catch (error) {
+    console.error('Failed to load history items', error)
+    notificationStore.showError(`Failed to ${skip > 0 ? 'load more' : 'load'} history items`)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
 const deleteSchedule = async () => {
   const response = await scheduleStore.deleteSchedule(props.scheduleName)
   if (response) {
@@ -849,28 +899,34 @@ const deleteSchedule = async () => {
   }
 }
 
-const refreshData = async (forceReload: boolean = false) => {
+const refreshData = async (forceReload: boolean = false, fetchHistory: boolean = false) => {
   // Only set ready to false if we don't have any data yet
   if (!schedule.value) {
     ready.value = false
   }
 
-  // Load schedule data (force reload and show secrets on edit tab or explicitly requested)
+  // Load schedule data (force reload on edit tab or explicitly requested)
   const response = await scheduleStore.fetchSchedule(
     props.scheduleName,
     currentTab.value === 'edit' || forceReload,
   )
   if (response) {
     schedule.value = response
+  } else {
+    error.value = 'Failed to load schedule data'
+  }
+
+  if (schedule.value) {
     if (schedule.value.enabled) {
       await fetchWorkers()
     }
     await fetchScheduleTasks()
-    if (schedule.value) {
-      ready.value = true
+
+    if (fetchHistory) {
+      scheduleHistoryStore.clearHistory()
+      await loadHistory({ limit: scheduleHistoryStore.paginator.limit, skip: 0 })
     }
-  } else {
-    error.value = 'Failed to load schedule data'
+    ready.value = true
   }
 }
 
@@ -895,12 +951,12 @@ const shortId = (id: string | null): string => {
 
 // Lifecycle
 onMounted(async () => {
-  // Redirect to details if trying to access Edit tab without permission
-  if (props.selectedTab === 'edit' && !canUpdateSchedules.value) {
-    router.push({
-      name: 'schedule-detail',
-      params: { scheduleName: props.scheduleName },
-    })
+  // Redirect to details if trying to access restricted tabs without permission
+  if (
+    (props.selectedTab === 'edit' || props.selectedTab === 'history') &&
+    !canUpdateSchedules.value
+  ) {
+    router.push({ name: 'schedule-detail', params: { scheduleName: props.scheduleName } })
   }
 
   // just in case the data is not loaded yet rather than using
@@ -914,7 +970,7 @@ onMounted(async () => {
   offliners.value = (await offlinerStore.fetchOffliners()) || []
   platforms.value = (await platformStore.fetchPlatforms()) || []
   // after fectching the all the data, we can fetch the offliner definition
-  await refreshData(true)
+  await refreshData(true, props.selectedTab === 'history')
   if (schedule.value) {
     const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(
       schedule.value.config.offliner.offliner_id as string,
@@ -936,9 +992,9 @@ watch(
   () => props.selectedTab,
   async (newTab) => {
     currentTab.value = newTab
-    // Only refresh data if we don't have any data yet, or if switching to edit tab
-    if (!schedule.value || newTab === 'edit') {
-      await refreshData(newTab === 'edit')
+    // Only refresh data if we don't have any data yet, or if not cloning or deleting
+    if (!schedule.value || !['clone', 'delete'].includes(newTab)) {
+      await refreshData(newTab === 'edit', newTab === 'history')
     }
   },
 )

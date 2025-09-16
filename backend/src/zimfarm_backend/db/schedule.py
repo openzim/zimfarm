@@ -26,6 +26,7 @@ from zimfarm_backend.common.schemas.orms import (
     MostRecentTaskSchema,
     ScheduleDurationSchema,
     ScheduleFullSchema,
+    ScheduleHistorySchema,
     ScheduleLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
@@ -38,6 +39,7 @@ from zimfarm_backend.db.models import (
     RequestedTask,
     Schedule,
     ScheduleDuration,
+    ScheduleHistory,
     Task,
     Worker,
 )
@@ -57,6 +59,11 @@ DEFAULT_SCHEDULE_DURATION = ScheduleDurationSchema(
 class ScheduleListResult(BaseModel):
     nb_records: int
     schedules: list[ScheduleLightSchema | ScheduleFullSchema]
+
+
+class ScheduleHistoryListResult(BaseModel):
+    nb_records: int
+    history_entries: list[ScheduleHistorySchema]
 
 
 def count_enabled_schedules(session: OrmSession, schedule_names: list[str]) -> int:
@@ -312,6 +319,7 @@ def get_schedules(
 
 def create_schedule(
     session: OrmSession,
+    author: str,
     *,
     name: str,
     category: ScheduleCategory,
@@ -322,6 +330,7 @@ def create_schedule(
     notification: ScheduleNotificationSchema | None,
     periodicity: SchedulePeriodicity,
     context: str | None = None,
+    comment: str | None = None,
 ) -> Schedule:
     """Create a new schedule"""
     schedule = Schedule(
@@ -341,6 +350,22 @@ def create_schedule(
         default=True,
     )
     schedule.durations.append(schedule_duration)
+
+    history_entry = ScheduleHistory(
+        author=author,
+        created_at=getnow(),
+        comment=comment,
+        config=config.model_dump(mode="json"),
+        name=schedule.name,
+        category=schedule.category,
+        enabled=schedule.enabled,
+        language_code=schedule.language_code,
+        tags=schedule.tags,
+        periodicity=schedule.periodicity,
+        context=schedule.context,
+    )
+    schedule.history_entries.append(history_entry)
+
     session.add(schedule)
     try:
         session.flush()
@@ -420,6 +445,7 @@ def get_all_schedules(session: OrmSession) -> ScheduleListResult:
 
 def update_schedule(
     session: OrmSession,
+    author: str,
     *,
     schedule_name: str,
     new_schedule_config: ScheduleConfigSchema | None = None,
@@ -431,6 +457,7 @@ def update_schedule(
     enabled: bool | None = None,
     periodicity: SchedulePeriodicity | None = None,
     context: str | None = None,
+    comment: str | None = None,
 ) -> Schedule:
     """Update a schedule with the given values that are set."""
 
@@ -452,6 +479,21 @@ def update_schedule(
 
     schedule.context = context if context is not None else schedule.context
 
+    history_entry = ScheduleHistory(
+        author=author,
+        created_at=getnow(),
+        comment=comment,
+        config=schedule.config,
+        name=schedule.name,
+        category=schedule.category,
+        enabled=schedule.enabled,
+        language_code=schedule.language_code,
+        tags=schedule.tags,
+        periodicity=schedule.periodicity,
+        context=schedule.context,
+    )
+    schedule.history_entries.append(history_entry)
+
     session.add(schedule)
     try:
         session.flush()
@@ -472,3 +514,39 @@ def delete_schedule(session: OrmSession, *, schedule_name: str) -> None:
     schedule.most_recent_task = None
     session.delete(schedule)
     session.flush()
+
+
+def get_schedule_history(
+    session: OrmSession, *, schedule_id: UUID, skip: int, limit: int
+) -> ScheduleHistoryListResult:
+    """Get a schedule's history"""
+    stmt = (
+        select(
+            func.count().over().label("nb_records"),
+            ScheduleHistory,
+        )
+        .where(ScheduleHistory.schedule_id == schedule_id)
+        .order_by(ScheduleHistory.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    results = ScheduleHistoryListResult(nb_records=0, history_entries=[])
+    for nb_records, history_entry in session.execute(stmt).all():
+        results.nb_records = nb_records
+        results.history_entries.append(
+            ScheduleHistorySchema(
+                id=history_entry.id,
+                author=history_entry.author,
+                created_at=history_entry.created_at,
+                comment=history_entry.comment,
+                name=history_entry.name,
+                category=history_entry.category,
+                enabled=history_entry.enabled,
+                language_code=history_entry.language_code,
+                tags=history_entry.tags,
+                periodicity=history_entry.periodicity,
+                context=history_entry.context,
+                config=history_entry.config,
+            )
+        )
+    return results

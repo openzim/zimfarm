@@ -9,7 +9,11 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import Offliner, ScheduleCategory, SchedulePeriodicity
-from zimfarm_backend.common.schemas.fields import ScheduleNameField
+from zimfarm_backend.common.schemas.fields import (
+    LimitFieldMax200,
+    ScheduleNameField,
+    SkipField,
+)
 from zimfarm_backend.common.schemas.models import (
     LanguageSchema,
     ScheduleNotificationSchema,
@@ -18,6 +22,7 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.orms import (
     ScheduleConfigSchema,
     ScheduleFullSchema,
+    ScheduleHistorySchema,
     ScheduleLightSchema,
 )
 from zimfarm_backend.db.exceptions import (
@@ -30,6 +35,7 @@ from zimfarm_backend.db.schedule import create_schedule as db_create_schedule
 from zimfarm_backend.db.schedule import create_schedule_full_schema, get_all_schedules
 from zimfarm_backend.db.schedule import delete_schedule as db_delete_schedule
 from zimfarm_backend.db.schedule import get_schedule as db_get_schedule
+from zimfarm_backend.db.schedule import get_schedule_history as db_get_schedule_history
 from zimfarm_backend.db.schedule import get_schedules as db_get_schedules
 from zimfarm_backend.db.schedule import update_schedule as db_update_schedule
 from zimfarm_backend.db.user import check_user_permission
@@ -122,6 +128,7 @@ def create_schedule(
     try:
         db_schedule = db_create_schedule(
             session,
+            author=current_user.username,
             name=schedule.name,
             category=ScheduleCategory(schedule.category),
             language=language,
@@ -130,6 +137,7 @@ def create_schedule(
             enabled=schedule.enabled,
             notification=schedule.notification,
             periodicity=schedule.periodicity,
+            comment=schedule.comment,
         )
     except RecordAlreadyExistsError as exc:
         raise BadRequestError(f"Schedule {schedule.name} already exists") from exc
@@ -240,6 +248,11 @@ def update_schedule(
     )
 
     schedule_config = cast(ScheduleConfigSchema, schedule.config)
+    if not request.model_dump(exclude_unset=True):
+        raise BadRequestError(
+            "No changes were made to the schedule due to no fields being set"
+        )
+
     # Ensure we test flags according to new offliner name if present
     if request.offliner and request.offliner != schedule_config.offliner.offliner_id:
         if request.flags is None:
@@ -381,6 +394,8 @@ def update_schedule(
         schedule = db_update_schedule(
             session,
             schedule_name=schedule_name,
+            author=current_user.username,
+            comment=request.comment,
             new_schedule_config=new_schedule_config,
             language=language,
             name=request.name,
@@ -471,6 +486,8 @@ def clone_schedule(
     try:
         new_schedule = db_create_schedule(
             session,
+            author=current_user.username,
+            comment=request.comment,
             name=request.name,
             category=ScheduleCategory(schedule.category),
             config=ScheduleConfigSchema.model_validate(
@@ -498,6 +515,7 @@ def clone_schedule(
         db_update_schedule(
             session,
             schedule_name=new_schedule.name,
+            author=current_user.username,
             is_valid=False,
         )
 
@@ -523,3 +541,30 @@ def validate_schedule(
         raise RequestValidationError(exc.errors()) from exc
 
     return JSONResponse(content={"message": "Schedule validated with success"})
+
+
+@router.get("/{schedule_name}/history")
+def get_schedule_history(
+    schedule_name: Annotated[ScheduleNameField, Path()],
+    session: OrmSession = Depends(gen_dbsession),
+    current_user: User = Depends(get_current_user),
+    skip: Annotated[SkipField, Query()] = 0,
+    limit: Annotated[LimitFieldMax200, Query()] = 200,
+) -> ListResponse[ScheduleHistorySchema]:
+    if not check_user_permission(current_user, namespace="schedules", name="update"):
+        raise UnauthorizedError("You are not allowed to view a schedule's history")
+
+    schedule = db_get_schedule(session, schedule_name=schedule_name)
+
+    results = db_get_schedule_history(
+        session, schedule_id=schedule.id, skip=skip, limit=limit
+    )
+    return ListResponse(
+        items=results.history_entries,
+        meta=calculate_pagination_metadata(
+            nb_records=results.nb_records,
+            skip=skip,
+            limit=limit,
+            page_size=len(results.history_entries),
+        ),
+    )
