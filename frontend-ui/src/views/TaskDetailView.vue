@@ -496,8 +496,8 @@ const taskDebug = computed(() => {
 
 const taskDuration = computed(() => {
   if (!task.value?.events) return ''
-  const first = getTimestampStringForStatus(task.value?.timestamp ?? [], 'started')
-  if (!first) return 'not actually started'
+  const first = getTimestampStringForStatus(task.value?.timestamp, 'started', '')
+  if (!first) return 'Not actually started ⌛'
   if (isRunning.value) {
     return formatDurationBetween(first, new Date().toISOString())
   }
@@ -505,16 +505,22 @@ const taskDuration = computed(() => {
   return formatDurationBetween(first, last)
 })
 
-const startedOn = computed(
-  () =>
-    getTimestampStringForStatus(task.value?.timestamp ?? [], 'started') ||
-    getTimestampStringForStatus(task.value?.timestamp ?? [], 'reserved'),
+const startedOn = computed(() =>
+  getTimestampStringForStatus(
+    task.value?.timestamp,
+    'started',
+    getTimestampStringForStatus(task.value?.timestamp, 'reserved'),
+  ),
 )
 
 const pipeDuration = computed(() =>
   formatDurationBetween(
-    getTimestampStringForStatus(task.value?.timestamp ?? [], 'requested'),
-    getTimestampStringForStatus(task.value?.timestamp ?? [], 'started'),
+    getTimestampStringForStatus(task.value?.timestamp, 'requested'),
+    getTimestampStringForStatus(
+      task.value?.timestamp,
+      'started',
+      getTimestampStringForStatus(task.value?.timestamp, 'reserved'),
+    ),
   ),
 )
 
@@ -557,9 +563,9 @@ const monitoringUrl = computed(() => {
   }/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${
     shortId.value
   }_submenu_cpu;after=${new Date(
-    getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_started') || 0,
+    getTimestampStringForStatus(task.value?.timestamp, 'scraper_started', '') || 0,
   ).getTime()};before=${new Date(
-    getTimestampStringForStatus(task.value?.timestamp ?? [], 'scraper_completed') || 0,
+    getTimestampStringForStatus(task.value?.timestamp, 'scraper_completed', '') || 0,
   ).getTime()};theme=slate;utc=Africa/Bamako`
 })
 
@@ -575,7 +581,7 @@ const canCreateTasks = computed(() => authStore.hasPermission('tasks', 'create')
 // Methods
 const createdAfter = (file: TaskFile, taskData: Task) => {
   return formatDurationBetween(
-    getTimestampStringForStatus(taskData.timestamp ?? [], 'scraper_started'),
+    getTimestampStringForStatus(taskData.timestamp, 'scraper_started'),
     file.created_timestamp,
   )
 }
