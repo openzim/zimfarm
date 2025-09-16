@@ -1,6 +1,7 @@
 import datetime
 from uuid import UUID
 
+from humanfriendly import format_size
 from pydantic import Field
 from sqlalchemy import BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
@@ -20,6 +21,7 @@ from zimfarm_backend.common.enums import Offliner, Platform, TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
+    ResourcesSchema,
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
 )
@@ -50,6 +52,35 @@ class RequestedTaskListResult(BaseModel):
     requested_tasks: list[RequestedTaskLightSchema]
 
 
+class RequestTaskResult(BaseModel):
+    requested_task: RequestedTaskFullSchema | None
+    error: str | None
+
+
+def _resource_mismatch_message(
+    worker: Worker, schedule_resource: ResourcesSchema
+) -> list[str]:
+    mismatched_message: list[str] = []
+    if worker.cpu < schedule_resource.cpu:
+        mismatched_message.append(
+            f"cpu: required={format_size(schedule_resource.cpu)}, "
+            f"available={format_size(worker.cpu)}"
+        )
+
+    if worker.disk < schedule_resource.disk:
+        mismatched_message.append(
+            f"disk: required={format_size(schedule_resource.disk)}, "
+            f"available={format_size(worker.disk)}"
+        )
+
+    if worker.memory < schedule_resource.memory:
+        mismatched_message.append(
+            f"memory: required={format_size(schedule_resource.memory)}, "
+            f"available={format_size(worker.memory)}"
+        )
+    return mismatched_message
+
+
 def request_task(
     session: OrmSession,
     *,
@@ -57,7 +88,7 @@ def request_task(
     requested_by: str,
     worker_name: str | None = None,
     priority: int = 0,
-) -> RequestedTaskFullSchema | None:
+) -> RequestTaskResult:
     """Request a task for the given schedule name if possible else None
 
     Schedule can't be requested if already requested on same worker.
@@ -82,22 +113,62 @@ def request_task(
 
     # If the worker has a requested task for this schedule, return None
     if count_from_stmt(session, query) > 0:
-        return None
+        return RequestTaskResult(
+            requested_task=None, error=f"Schedule '{schedule_name}' already requested"
+        )
 
     schedule = get_schedule_or_none(session, schedule_name=schedule_name)
 
     if schedule is None or not schedule.enabled:
-        return None
+        return RequestTaskResult(
+            requested_task=None,
+            error=f"Schedule '{schedule_name}' not found or disabled",
+        )
 
     worker = None
     if worker_name is not None:
         worker = get_worker_or_none(session, worker_name=worker_name)
         if worker is None:
-            return None
+            return RequestTaskResult(
+                requested_task=None, error=f"Worker '{worker_name}' not found"
+            )
 
     # Check if worker is allowed to be assigned a task from this recipe
     if worker and schedule.context and schedule.context not in worker.contexts:
-        return None
+        return RequestTaskResult(
+            requested_task=None,
+            error=(
+                "Worker does not have required context to run schedule "
+                f"'{schedule_name}'."
+            ),
+        )
+
+    # check if worker can run the scraper for the offliner
+    if worker and schedule.config["offliner"]["offliner_id"] not in worker.offliners:
+        return RequestTaskResult(
+            requested_task=None,
+            error=(
+                f"Worker's offliners do not match the offliner for schedule "
+                f"'{schedule_name}'."
+            ),
+        )
+
+    # Check if worker has enough resource to run a task from this recipe
+    schedule_resource = ResourcesSchema.model_validate(schedule.config["resources"])
+    if worker and (
+        worker.cpu < schedule_resource.cpu
+        or worker.memory < schedule_resource.memory
+        or worker.disk < schedule_resource.disk
+    ):
+        # build up an error message showing which resource(s) are mismatched
+        mismatched_message = _resource_mismatch_message(worker, schedule_resource)
+        return RequestTaskResult(
+            requested_task=None,
+            error=(
+                "Worker does not have enough resources to run schedule "
+                f"'{schedule_name}'. Insufficient: {'; '.join(mismatched_message)}"
+            ),
+        )
 
     # Otherwise, create a new requested task
     now = getnow()
@@ -139,7 +210,10 @@ def request_task(
     session.add(requested_task)
     session.flush()
 
-    return _create_requested_task_full_schema(session, requested_task)
+    return RequestTaskResult(
+        requested_task=_create_requested_task_full_schema(session, requested_task),
+        error=None,
+    )
 
 
 def get_requested_tasks(

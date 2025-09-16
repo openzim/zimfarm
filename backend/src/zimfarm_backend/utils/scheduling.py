@@ -69,14 +69,21 @@ def request_tasks_using_schedule(session: OrmSession):
                 # Create a nested transaction for each task request
                 with session.begin_nested():
                     try:
-                        request_task(
+                        result = request_task(
                             session=session,
                             schedule_name=schedule.name,
                             requested_by=requester,
                             worker_name=worker,
                             priority=priority,
                         )
-                        logger.debug(f"Successfully requested {schedule.name}")
+                        if result.requested_task:
+                            logger.debug(f"Successfully requested {schedule.name}")
+
+                        if result.error:
+                            logger.warning(
+                                "Could not request task due to the following reason: "
+                                f"{result.error}"
+                            )
                     except ValidationError:
                         logger.exception(
                             f"Validation error requesting {schedule.name}",

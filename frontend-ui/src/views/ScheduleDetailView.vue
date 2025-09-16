@@ -729,6 +729,7 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
       notificationStore.showError(error)
     }
   }
+  workingText.value = null
 }
 
 const fireExistingTask = async () => {

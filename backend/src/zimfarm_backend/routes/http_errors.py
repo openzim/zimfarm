@@ -4,9 +4,13 @@ from fastapi import HTTPException, status
 
 
 class BadRequestError(HTTPException):
-    def __init__(self, message: Any = None) -> None:
+    def __init__(
+        self, message: Any = None, errors: dict[str, str] | None = None
+    ) -> None:
         if message is None:
             message = "Invalid request body"
+
+        self.errors = errors
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
 

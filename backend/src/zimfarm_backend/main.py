@@ -27,6 +27,7 @@ from zimfarm_backend.routes import (
     users,
     workers,
 )
+from zimfarm_backend.routes.http_errors import BadRequestError
 from zimfarm_backend.utils.database import (
     create_initial_user,
     upgrade_db_schema,
@@ -126,6 +127,14 @@ async def record_already_exists_error_handler(_, exc: RecordAlreadyExistsError):
     return JSONResponse(
         status_code=HTTPStatus.CONFLICT,
         content={"success": False, "message": exc.detail},
+    )
+
+
+@app.exception_handler(BadRequestError)
+async def bad_request_error_handler(_, exc: BadRequestError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "message": exc.detail, "errors": exc.errors},
     )
 
 

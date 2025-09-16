@@ -92,9 +92,16 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
             f" total: {total}"
         )
 
-        request_task(
+        result = request_task(
             session=session, schedule_name=schedule_name, requested_by="benoit"
         )
+        if result.requested_task:
+            logger.debug(f"Successfully requested {schedule_name}")
+
+        if result.error:
+            logger.warning(
+                f"Could not request task due to the following reason: {result.error}"
+            )
 
 
 if __name__ == "__main__":

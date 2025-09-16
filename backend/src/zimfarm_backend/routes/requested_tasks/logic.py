@@ -52,6 +52,7 @@ from zimfarm_backend.routes.dependencies import (
     get_current_user_or_none_with_session,
 )
 from zimfarm_backend.routes.http_errors import (
+    BadRequestError,
     ForbiddenError,
     NotFoundError,
     ServiceUnavailableError,
@@ -98,15 +99,23 @@ def create_request_task(
         )
 
     requested_tasks: list[RequestedTaskFullSchema] = []
+    errors: dict[str, str] = {}
     for schedule_name in new_requested_task.schedule_names:
-        if requested_task := request_task(
+        result = request_task(
             session,
             schedule_name=schedule_name,
             requested_by=current_user.username,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
-        ):
-            requested_tasks.append(requested_task)
+        )
+        if result.error:
+            errors[schedule_name] = result.error
+
+        if result.requested_task:
+            requested_tasks.append(result.requested_task)
+
+    if errors:
+        raise BadRequestError(message="Unable to request tasks", errors=errors)
 
     # trigger event handlers
     for requested_task in requested_tasks:
