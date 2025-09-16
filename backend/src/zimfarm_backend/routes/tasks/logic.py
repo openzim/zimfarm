@@ -81,13 +81,13 @@ async def get_task(
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
     *,
-    hide_secrets: Annotated[bool, Query()] = True,
+    hide_secrets: Annotated[bool, Query()] = False,
 ) -> JSONResponse:
     """Get a task by ID"""
     task = db_get_task(db_session, task_id)
     if not (
         current_user
-        and check_user_permission(current_user, namespace="tasks", name="update")
+        and check_user_permission(current_user, namespace="tasks", name="create")
     ):
         task.notification = None
         show_secrets = False
