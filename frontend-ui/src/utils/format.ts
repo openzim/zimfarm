@@ -50,12 +50,12 @@ export function formatDuration(value: number) {
   return dur.toHuman({ maximumSignificantDigits: 1 })
 }
 
-export function formatDt(value?: string) {
-  // display a datetime in a standard format
+export function formatDt(value?: string, format: string = 'fff') {
+  // display a datetime in the provided format (defaults to 'fff')
   if (!value) return ''
   const dt = DateTime.fromISO(value)
   if (!dt.isValid) return value
-  return dt.toFormat('fff')
+  return dt.toFormat(format)
 }
 
 export function formatDurationBetween(start: string, end: string) {
