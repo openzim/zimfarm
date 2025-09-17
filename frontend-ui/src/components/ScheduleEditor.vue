@@ -142,21 +142,6 @@
       </v-col>
     </v-row>
 
-    <v-row>
-      <v-col cols="12">
-        <v-textarea
-          v-model="editComment"
-          label="Comment"
-          hint="Optional comment to describe the changes being made"
-          placeholder="Describe your changes..."
-          density="compact"
-          variant="outlined"
-          persistent-hint
-          auto-grow
-        />
-      </v-col>
-    </v-row>
-
     <v-divider class="my-4" />
 
     <v-row>
@@ -453,9 +438,55 @@
     </div>
   </v-form>
   <p v-else>Loading…</p>
+
+  <!-- Schedule Update Confirmation Dialog -->
+  <ConfirmDialog
+    v-model="showConfirmDialog"
+    title="Confirm Schedule Update"
+    confirm-text="Save Changes"
+    cancel-text="Cancel"
+    confirm-color="primary"
+    icon="mdi-pencil"
+    icon-color="primary"
+    :max-width="800"
+    :loading="isSubmitting"
+    @confirm="handleConfirmUpdate"
+    @cancel="handleCancelUpdate"
+  >
+    <template #content>
+      <div class="mb-4">
+        <h3 class="text-h6 mb-2">Changes Summary</h3>
+        <p class="text-body-2 text-medium-emphasis mb-3">
+          Please review the changes below and optionally add a comment describing what you've
+          modified.
+        </p>
+      </div>
+
+      <!-- Diff Viewer -->
+      <div class="mb-4">
+        <DiffViewer :differences="scheduleDifferences" />
+      </div>
+
+      <!-- Comment Input -->
+      <div>
+        <v-textarea
+          v-model="pendingComment"
+          label="Comment (optional)"
+          hint="Describe the changes you made to help track modifications"
+          placeholder="e.g., Updated memory allocation, changed offliner version, etc."
+          variant="outlined"
+          auto-grow
+          rows="3"
+          persistent-hint
+        />
+      </div>
+    </template>
+  </ConfirmDialog>
 </template>
 
 <script setup lang="ts">
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DiffViewer from '@/components/DiffViewer.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import constants from '@/constants'
 import type { Resources } from '@/types/base'
@@ -505,11 +536,15 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
-const editComment = ref<string>('')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(
   JSON.parse(JSON.stringify(props.schedule.config.offliner)),
 )
+
+// Confirmation dialog state
+const showConfirmDialog = ref(false)
+const isSubmitting = ref(false)
+const pendingComment = ref('')
 
 // Debounced image name change handler
 let imageNameChangeTimeout: number | null = null
@@ -597,6 +632,21 @@ const areAllFieldsValid = computed(() => {
   }
 
   return true
+})
+
+// Generate differences for the diff viewer
+const scheduleDifferences = computed(() => {
+  if (!(props.schedule && editSchedule.value)) return undefined
+
+  // Create a copy of the current schedule with the edited flags
+  const currentSchedule = JSON.parse(JSON.stringify(props.schedule))
+  const editedSchedule = JSON.parse(JSON.stringify(editSchedule.value))
+
+  // Update the offliner config with the edited flags
+  editedSchedule.config.offliner = JSON.parse(JSON.stringify(editFlags.value))
+
+  // Generate diff
+  return diff(currentSchedule, editedSchedule)
 })
 
 const hasChanges = computed(() => {
@@ -948,20 +998,37 @@ const imageTagOptions = computed(() => {
 const handleSubmit = () => {
   if (!hasChanges.value) return
 
-  const payload = buildPayload()
-  if (payload) {
-    emit('submit', payload)
-    // Clear the comment after submitting
-    editComment.value = ''
-  }
+  // Show confirmation dialog instead of directly submitting
+  showConfirmDialog.value = true
 }
 
 const handleReset = () => {
   if (props.schedule) {
     editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
     editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
-    editComment.value = ''
   }
+}
+
+const handleConfirmUpdate = async () => {
+  if (isSubmitting.value) return
+
+  isSubmitting.value = true
+
+  try {
+    const payload = buildPayload()
+    if (payload) {
+      emit('submit', payload)
+    }
+  } finally {
+    isSubmitting.value = false
+    showConfirmDialog.value = false
+    pendingComment.value = ''
+  }
+}
+
+const handleCancelUpdate = () => {
+  showConfirmDialog.value = false
+  pendingComment.value = ''
 }
 
 const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] => {
@@ -1017,8 +1084,8 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   }
 
   // Comment
-  if (editComment.value?.trim()) {
-    payload.comment = editComment.value.trim()
+  if (pendingComment.value?.trim()) {
+    payload.comment = pendingComment.value.trim()
   }
 
   // Tags
