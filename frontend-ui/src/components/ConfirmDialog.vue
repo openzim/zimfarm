@@ -9,7 +9,9 @@
       </v-card-title>
 
       <v-card-text class="text-body-1">
-        {{ message }}
+        <slot name="content">
+          <span v-if="message">{{ message }}</span>
+        </slot>
       </v-card-text>
 
       <v-card-actions class="pa-4">
@@ -32,7 +34,7 @@ import { computed, ref, watch } from 'vue'
 interface Props {
   modelValue: boolean
   title?: string
-  message: string
+  message?: string
   confirmText?: string
   cancelText?: string
   confirmColor?: string
@@ -44,6 +46,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   title: 'Please Confirm',
+  message: '',
   confirmText: 'YES',
   cancelText: 'NO',
   confirmColor: 'error',
