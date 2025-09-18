@@ -5,23 +5,30 @@
         <v-card-text class="pa-0">
           <div class="diff-content">
             <div v-for="(diff, index) in flattenedDiffs" :key="index" class="diff-line">
-              <div
-                :class="getDiffLineClass(diff.type)"
-                class="d-flex align-center pa-2 font-monospace text-body-2"
-              >
-                <div class="diff-symbol mr-3">{{ getDiffSymbol(diff.type) }}</div>
-                <div class="diff-path mr-4 text-caption">{{ diff.path }}</div>
-                <div class="diff-value flex-grow-1">
-                  <template v-if="diff.type === 'modified' && diff.oldValue">
-                    <span class="text-error">{{ diff.oldValue }}</span>
-                    <span class="mx-2 text-medium-emphasis">→</span>
-                    <span class="text-success">{{ diff.value }}</span>
-                  </template>
-                  <template v-else>
-                    {{ diff.value }}
-                  </template>
-                </div>
-              </div>
+              <v-card :class="getDiffLineClass(diff.type)" flat class="mb-1">
+                <v-card-text class="pa-1 font-monospace">
+                  <div class="d-flex flex-column flex-sm-row mb-1 align-items-sm-center">
+                    <div style="min-width: 150px">
+                      <span class="diff-symbol text-center mr-1 font-weight-bold">{{
+                        getDiffSymbol(diff.type)
+                      }}</span>
+                      <span class="text-caption text-high-emphasis mr-4 text-break">{{
+                        diff.path
+                      }}</span>
+                    </div>
+                    <div class="text-body-2 text-break flex-grow-1">
+                      <template v-if="diff.type === 'modified' && diff.oldValue">
+                        <span class="text-error">{{ diff.oldValue }}</span>
+                        <span class="mx-2 text-medium-emphasis">→</span>
+                        <span class="text-success">{{ diff.value }}</span>
+                      </template>
+                      <template v-else>
+                        {{ diff.value }}
+                      </template>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
             </div>
           </div>
         </v-card-text>
@@ -178,12 +185,11 @@ const getDiffLineClass = (type: string): string => {
   overflow-y: auto;
 }
 
-.diff-line {
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.diff-line:last-child {
-  border-bottom: none;
+.diff-symbol {
+  width: 20px;
+  min-width: 20px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .diff-line-added {
@@ -201,12 +207,6 @@ const getDiffLineClass = (type: string): string => {
   border-left: 3px solid #fbbc05;
 }
 
-.diff-symbol {
-  width: 20px;
-  font-weight: bold;
-  text-align: center;
-}
-
 .diff-line-added .diff-symbol {
   color: #2ea043;
 }
@@ -217,15 +217,5 @@ const getDiffLineClass = (type: string): string => {
 
 .diff-line-modified .diff-symbol {
   color: #fbbc05;
-}
-
-.diff-path {
-  min-width: 200px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-size: 0.75rem;
-}
-
-.diff-value {
-  word-break: break-all;
 }
 </style>
