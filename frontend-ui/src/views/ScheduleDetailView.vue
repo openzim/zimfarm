@@ -313,6 +313,7 @@
               :has-more="canLoadMoreHistory"
               :loading="loadingHistory"
               :paginator="scheduleHistoryStore.paginator"
+              :schedule-name="scheduleName"
               @load="loadHistory"
             />
           </div>
@@ -491,7 +492,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import CloneSchedule from '@/components/CloneSchedule.vue'
@@ -986,6 +987,11 @@ onMounted(async () => {
       await validateSchedule()
     }
   }
+})
+
+onUnmounted(() => {
+  // Clear schedule history to prevent accumulation of history items
+  scheduleHistoryStore.clearHistory()
 })
 
 // Watch for tab changes

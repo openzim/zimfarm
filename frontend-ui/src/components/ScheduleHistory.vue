@@ -101,23 +101,32 @@
 
 <script setup lang="ts">
 import DiffViewer from '@/components/DiffViewer.vue'
+import { useNotificationStore } from '@/stores/notification'
+import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
 import type { Paginator } from '@/types/base'
 import type { ScheduleHistorySchema } from '@/types/schedule'
 import { formatDt } from '@/utils/format'
 import type * as DeepDiff from 'deep-diff'
 import { diff } from 'deep-diff'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps<{
   history: ScheduleHistorySchema[]
   hasMore: boolean
   loading: boolean
   paginator: Paginator
+  scheduleName: string
 }>()
 
 const emit = defineEmits<{
   load: [{ limit: number; skip: number }]
 }>()
+
+const route = useRoute()
+const router = useRouter()
+const scheduleHistoryStore = useScheduleHistoryStore()
+const notificationStore = useNotificationStore()
 
 // New state for multi-selection
 const selectedItems = ref<Set<number>>(new Set())
@@ -178,15 +187,116 @@ const toggleHistoryItemSelection = (item: ScheduleHistorySchema, index: number) 
       showDiffViewer.value = true
     }
   }
+
+  updateUrlQueryParams()
+}
+
+const updateUrlQueryParams = () => {
+  const orderedIds = Array.from(selectedItems.value)
+    .map((index) => props.history[index])
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .map((item) => item.id)
+
+  if (orderedIds.length === 2) {
+    router.replace({
+      query: {
+        ...route.query,
+        // Encode as oldest...newest
+        compare: orderedIds.join('...'),
+      },
+    })
+  } else {
+    // Remove compare parameter if not exactly 2 items selected
+    const newQuery = { ...route.query }
+    delete (newQuery as Record<string, unknown>).compare
+    router.replace({ query: newQuery })
+  }
+}
+
+const selectHistoryEntriesFromUrl = async () => {
+  const compareParam = route.query.compare as string
+  if (!compareParam) return
+
+  const historyIds = compareParam.split('...')
+  if (historyIds.length !== 2) return
+
+  const [id1, id2] = historyIds
+
+  const index1 = props.history.findIndex((item) => item.id === id1)
+  const index2 = props.history.findIndex((item) => item.id === id2)
+
+  // If both entries are found in the current history, select them
+  if (index1 !== -1 && index2 !== -1) {
+    selectedItems.value = new Set([index1, index2])
+    showDiffViewer.value = true
+    return
+  }
+
+  const missingIds = []
+  if (index1 === -1) missingIds.push(id1)
+  if (index2 === -1) missingIds.push(id2)
+
+  if (missingIds.length > 0) {
+    try {
+      // Fetch missing entries in parallel
+      const fetchPromises = missingIds.map((id) =>
+        scheduleHistoryStore.fetchHistoryEntry(props.scheduleName, id),
+      )
+
+      await Promise.all(fetchPromises)
+
+      // After fetching, find the indices again
+      const newIndex1 = scheduleHistoryStore.history.findIndex(
+        (item: ScheduleHistorySchema) => item.id === id1,
+      )
+      const newIndex2 = scheduleHistoryStore.history.findIndex(
+        (item: ScheduleHistorySchema) => item.id === id2,
+      )
+
+      if (newIndex1 !== -1 && newIndex2 !== -1) {
+        selectedItems.value = new Set([newIndex1, newIndex2])
+        showDiffViewer.value = true
+      } else {
+        notificationStore.showError('Failed to find history entries after fetching')
+      }
+    } catch (error) {
+      console.error('Failed to fetch history entries from URL', error)
+      notificationStore.showError('Failed to load history entries for comparison')
+    }
+  }
 }
 
 const backToHistoryList = () => {
   showDiffViewer.value = false
   selectedItems.value.clear()
+  updateUrlQueryParams()
 }
 
 // Load more history items
 const loadMore = () => {
   emit('load', { limit: props.paginator.limit, skip: props.history.length })
 }
+
+// Watch for changes in history array to re-select entries from URL
+watch(
+  () => props.history,
+  () => {
+    selectHistoryEntriesFromUrl()
+  },
+  { deep: true },
+)
+
+// Watch for changes in route query parameters
+watch(
+  () => route.query.compare,
+  () => {
+    selectHistoryEntriesFromUrl()
+  },
+)
+
+// Initialize selection from URL on mount
+onMounted(() => {
+  selectHistoryEntriesFromUrl()
+})
 </script>

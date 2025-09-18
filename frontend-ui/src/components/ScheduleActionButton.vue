@@ -12,7 +12,7 @@
   - displays result as an AlertFeedback -->
 
 <template>
-  <div v-show="visible" class="d-flex justify-end">
+  <div v-if="visible" class="d-flex justify-end">
     <!-- Worker Selection Dropdown -->
     <v-menu v-show="canSelectWorker" location="bottom end" offset-y>
       <template v-slot:activator="{ props }">

@@ -516,6 +516,25 @@ def delete_schedule(session: OrmSession, *, schedule_name: str) -> None:
     session.flush()
 
 
+def create_schedule_history_schema(
+    history_entry: ScheduleHistory,
+) -> ScheduleHistorySchema:
+    return ScheduleHistorySchema(
+        id=history_entry.id,
+        author=history_entry.author,
+        created_at=history_entry.created_at,
+        comment=history_entry.comment,
+        name=history_entry.name,
+        category=history_entry.category,
+        enabled=history_entry.enabled,
+        language_code=history_entry.language_code,
+        tags=history_entry.tags,
+        periodicity=history_entry.periodicity,
+        context=history_entry.context,
+        config=history_entry.config,
+    )
+
+
 def get_schedule_history(
     session: OrmSession, *, schedule_id: UUID, skip: int, limit: int
 ) -> ScheduleHistoryListResult:
@@ -533,20 +552,30 @@ def get_schedule_history(
     results = ScheduleHistoryListResult(nb_records=0, history_entries=[])
     for nb_records, history_entry in session.execute(stmt).all():
         results.nb_records = nb_records
-        results.history_entries.append(
-            ScheduleHistorySchema(
-                id=history_entry.id,
-                author=history_entry.author,
-                created_at=history_entry.created_at,
-                comment=history_entry.comment,
-                name=history_entry.name,
-                category=history_entry.category,
-                enabled=history_entry.enabled,
-                language_code=history_entry.language_code,
-                tags=history_entry.tags,
-                periodicity=history_entry.periodicity,
-                context=history_entry.context,
-                config=history_entry.config,
-            )
-        )
+        results.history_entries.append(create_schedule_history_schema(history_entry))
     return results
+
+
+def get_schedule_history_entry_or_none(
+    session: OrmSession, *, schedule_name: str, history_id: UUID
+) -> ScheduleHistory | None:
+    """Get a schedule's history entry or None if it does not exist"""
+    schedule = get_schedule(session, schedule_name=schedule_name)
+    return session.scalars(
+        select(ScheduleHistory).where(
+            ScheduleHistory.id == history_id, ScheduleHistory.schedule_id == schedule.id
+        )
+    ).one_or_none()
+
+
+def get_schedule_history_entry(
+    session: OrmSession, *, schedule_name: str, history_id: UUID
+) -> ScheduleHistory:
+    """Get a schedule's history entry"""
+    if history_entry := get_schedule_history_entry_or_none(
+        session, schedule_name=schedule_name, history_id=history_id
+    ):
+        return history_entry
+    raise RecordDoesNotExistError(
+        f"Schedule '{schedule_name}' does not have a history entry with id {history_id}"
+    )
