@@ -57,7 +57,7 @@ contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
 - [Docker CE server](https://docs.docker.com/engine/install/) running.
 - Fast internet connexion (downstream and upstream).
 - A Zimfarm user account (with appropriate `worker` role).
-- A 2048b RSA private key with its public key uploaded to the user account.
+- An SSH private key with its public key uploaded to the user account (we now recommend an `ed25519` key).
 - The clock must be synchronized, e.g. using ntp.
 
 **Note**: SSH access to your host for our developers is handy but not required.
