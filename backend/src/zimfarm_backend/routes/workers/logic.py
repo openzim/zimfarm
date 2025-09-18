@@ -12,8 +12,13 @@ from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
 from zimfarm_backend.db.worker import get_active_workers as db_get_active_workers
-from zimfarm_backend.db.worker import get_worker as db_get_worker
+from zimfarm_backend.db.worker import (
+    get_worker as db_get_worker,
+)
 from zimfarm_backend.db.worker import get_worker_metrics as db_get_worker_metrics
+from zimfarm_backend.db.worker import (
+    get_worker_or_none as db_get_worker_or_none,
+)
 from zimfarm_backend.db.worker import update_worker as db_update_worker
 from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
 from zimfarm_backend.routes.http_errors import (
@@ -87,13 +92,15 @@ async def check_in_worker(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Check in a worker."""
-    worker = db_get_worker(session, worker_name=name)
+    worker = db_get_worker_or_none(session, worker_name=name)
 
-    if worker.deleted:
-        raise BadRequestError("Worker has been marked as deleted")
+    if worker is not None:
+        if worker.deleted:
+            raise BadRequestError("Worker has been marked as deleted")
 
-    # if worker.user_id != current_user.id:
-    #     raise BadRequestError("Worker is not associated with the current user")
+        if worker.user_id != current_user.id:
+            raise BadRequestError("Worker is not associated with the current user")
+
     db_check_in_worker(
         session,
         worker_name=name,

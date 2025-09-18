@@ -38,9 +38,9 @@ def test_check_in_worker_not_found(
     client: TestClient,
     access_token: str,
 ):
-    """Test that check_in_worker raises NotFoundError for non-existent worker"""
+    """Test that check_in_worker creates new worker when it does not exists"""
     response = client.put(
-        "/v2/workers/non-existent/check-in",
+        "/v2/workers/a-new-worker/check-in",
         json={
             "selfish": True,
             "cpu": 1,
@@ -51,7 +51,7 @@ def test_check_in_worker_not_found(
         },
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.status_code == HTTPStatus.NO_CONTENT
 
 
 def test_check_in_worker_deleted(
