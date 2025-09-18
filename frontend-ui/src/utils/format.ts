@@ -75,7 +75,7 @@ export function fromNow(value: string) {
 }
 
 export function formattedBytesSize(value: number) {
-  return filesize(value, { base: 2, standard: 'iec', precision: 3 }) // precision 3, display in KiB, MiB,... instead of KB, MB,...
+  return filesize(value, { base: 2, standard: 'iec' }) // display in KiB, MiB,... instead of KB, MB,...
 }
 
 export function getTimezoneDetails() {
