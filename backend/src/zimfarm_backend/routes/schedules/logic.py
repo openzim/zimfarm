@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Annotated, Any, cast
+from uuid import UUID
 
 import requests
 from fastapi import APIRouter, Depends, Path, Query, Response
@@ -32,10 +33,17 @@ from zimfarm_backend.db.exceptions import (
 from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.schedule import create_schedule as db_create_schedule
-from zimfarm_backend.db.schedule import create_schedule_full_schema, get_all_schedules
+from zimfarm_backend.db.schedule import (
+    create_schedule_full_schema,
+    create_schedule_history_schema,
+    get_all_schedules,
+)
 from zimfarm_backend.db.schedule import delete_schedule as db_delete_schedule
 from zimfarm_backend.db.schedule import get_schedule as db_get_schedule
 from zimfarm_backend.db.schedule import get_schedule_history as db_get_schedule_history
+from zimfarm_backend.db.schedule import (
+    get_schedule_history_entry as db_get_schedule_history_entry,
+)
 from zimfarm_backend.db.schedule import get_schedules as db_get_schedules
 from zimfarm_backend.db.schedule import update_schedule as db_update_schedule
 from zimfarm_backend.db.user import check_user_permission
@@ -568,3 +576,19 @@ def get_schedule_history(
             page_size=len(results.history_entries),
         ),
     )
+
+
+@router.get("/{schedule_name}/history/{history_id}")
+def get_schedule_history_entry(
+    schedule_name: Annotated[ScheduleNameField, Path()],
+    history_id: Annotated[UUID, Path()],
+    session: OrmSession = Depends(gen_dbsession),
+    current_user: User = Depends(get_current_user),
+) -> ScheduleHistorySchema:
+    if not check_user_permission(current_user, namespace="schedules", name="update"):
+        raise UnauthorizedError("You are not allowed to view a schedule's history")
+
+    history_entry = db_get_schedule_history_entry(
+        session, schedule_name=schedule_name, history_id=history_id
+    )
+    return create_schedule_history_schema(history_entry)

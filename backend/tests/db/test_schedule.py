@@ -1,5 +1,6 @@
 import datetime
 from collections.abc import Callable
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import select
@@ -33,6 +34,8 @@ from zimfarm_backend.db.schedule import (
     get_all_schedules,
     get_schedule,
     get_schedule_duration,
+    get_schedule_history_entry,
+    get_schedule_history_entry_or_none,
     get_schedule_or_none,
     get_schedules,
     update_schedule,
@@ -480,3 +483,30 @@ def test_update_schedule_duration_multiple_workers(
         (d for d in updated_schedule.durations if d.worker_id == worker2.id), None
     )
     assert worker2_duration is not None
+
+
+def test_get_schedule_history_entry_or_none_not_found(
+    dbsession: OrmSession, schedule: Schedule
+):
+    history_entry = get_schedule_history_entry_or_none(
+        dbsession, schedule_name=schedule.name, history_id=uuid4()
+    )
+    assert history_entry is None
+
+
+def test_get_schedule_history_entry_or_none(dbsession: OrmSession, schedule: Schedule):
+    history_entry = get_schedule_history_entry_or_none(
+        dbsession,
+        schedule_name=schedule.name,
+        history_id=schedule.history_entries[0].id,
+    )
+    assert history_entry is not None
+
+
+def test_get_schedule_history_entry(dbsession: OrmSession, schedule: Schedule):
+    with pytest.raises(RecordDoesNotExistError):
+        get_schedule_history_entry(
+            dbsession,
+            schedule_name=schedule.name,
+            history_id=uuid4(),
+        )
