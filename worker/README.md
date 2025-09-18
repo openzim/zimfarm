@@ -134,6 +134,11 @@ If you like to control everything, you can run it manually setting the
 appropriate options. Otherwise, use our handy bash script.
 
 ```bash
+sudo wget -O /usr/local/bin/zimfarm \
+  https://raw.githubusercontent.com/openzim/zimfarm/master/worker/contrib/zimfarm.sh && \
+  sudo chmod +x /usr/local/bin/zimfarm && \
+  sudo wget -O /etc/zimfarm.config \
+  https://raw.githubusercontent.com/openzim/zimfarm/master/worker/contrib/zimfarm.config.example
 ```
 
 Now read and edit `/etc/zimfarm.config`. The **bare-minimal** is setting:
