@@ -220,7 +220,7 @@
                     <th class="text-left">Duration</th>
                     <td>
                       <span v-if="durationDict.single">
-                        {{ formatDuration(durationDict.value) }}
+                        {{ durationDict.formattedDuration }}
                         (<router-link
                           :to="{
                             name: 'worker-detail',
@@ -234,24 +234,34 @@
                       </span>
                       <span v-else>
                         between
-                        {{ formatDuration(durationDict.minValue || 0) }} (<router-link
-                          v-for="worker in durationDict.minWorkers || []"
+                        {{ durationDict.formattedMinDuration }} (<template
+                          v-for="(worker, index) in durationDict.minWorkers || []"
                           :key="worker.worker_name"
-                          :to="{
-                            name: 'worker-detail',
-                            params: { workerName: worker.worker_name },
-                          }"
                         >
-                          {{ worker.worker_name }} </router-link
-                        >) and {{ formatDuration(durationDict.maxValue || 0) }} (<router-link
-                          v-for="worker in durationDict.maxWorkers || []"
+                          <router-link
+                            :to="{
+                              name: 'worker-detail',
+                              params: { workerName: worker.worker_name },
+                            }"
+                          >
+                            {{ worker.worker_name }} </router-link
+                          ><span v-if="index < (durationDict.minWorkers?.length || 0) - 1"
+                            >,
+                          </span> </template
+                        >) and {{ durationDict.formattedMaxDuration }} (<template
+                          v-for="(worker, index) in durationDict.maxWorkers || []"
                           :key="worker.worker_name"
-                          :to="{
-                            name: 'worker-detail',
-                            params: { workerName: worker.worker_name },
-                          }"
                         >
-                          {{ worker.worker_name }} </router-link
+                          <router-link
+                            :to="{
+                              name: 'worker-detail',
+                              params: { workerName: worker.worker_name },
+                            }"
+                          >
+                            {{ worker.worker_name }} </router-link
+                          ><span v-if="index < (durationDict.maxWorkers?.length || 0) - 1"
+                            >,
+                          </span> </template
                         >)
                       </span>
                     </td>
@@ -562,7 +572,7 @@ import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { ExpandedScheduleConfig, Schedule, ScheduleUpdateSchema } from '@/types/schedule'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
-import { formatDt, formatDuration, formatDurationBetween, fromNow } from '@/utils/format'
+import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import {
   buildCommandWithout,
   buildDockerCommand,
@@ -646,7 +656,7 @@ const secretFields = computed(() => getSecretFields(flagsDefinition.value))
 const command = computed(() => buildDockerCommand(schedule.value?.name || '', config.value))
 const offlinerCommand = computed(() => buildCommandWithout(config.value))
 const durationDict = computed(() => {
-  return buildScheduleDuration(schedule.value?.duration || null)
+  return buildScheduleDuration(historyRuns.value)
 })
 
 // Permission computed properties
