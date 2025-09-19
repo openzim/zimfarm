@@ -1,4 +1,3 @@
-from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
@@ -16,7 +15,7 @@ class WorkerCheckInSchema(BaseModel):
     cpu: ZIMCPU
     memory: ZIMMemory
     disk: ZIMDisk
-    offliners: list[Offliner]
+    offliners: list[str]
     platforms: dict[str, int] | None = None  # mapping of platforms to max tasks
 
 

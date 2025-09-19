@@ -55,6 +55,8 @@ export interface Schedule {
   is_requested: boolean
   is_valid: boolean
   context: string
+  version: string
+  offliner: string
 }
 
 export interface ScheduleLight {
@@ -85,6 +87,7 @@ export interface ScheduleUpdateSchema {
   artifacts_globs: string[] | null
   context: string | null
   comment: string | null
+  version: string
 }
 
 export interface EventNotification {

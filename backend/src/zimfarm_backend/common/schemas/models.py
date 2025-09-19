@@ -1,17 +1,16 @@
 import pathlib
 import re
-from typing import Union
 
 from pydantic import (
+    BaseModel,
     EmailStr,
     Field,
     HttpUrl,
+    SerializeAsAny,
     field_validator,
 )
 
-from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import DockerImageName
-from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     NotEmptyString,
@@ -21,25 +20,6 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMDisk,
     ZIMLangCode,
     ZIMMemory,
-)
-from zimfarm_backend.common.schemas.offliners import (
-    DevDocsFlagsSchema,
-    FreeCodeCampFlagsSchema,
-    GutenbergFlagsSchema,
-    IFixitFlagsSchema,
-    KolibriFlagsSchema,
-    MindtouchFlagsSchema,
-    MWOfflinerFlagsSchema,
-    NautilusFlagsSchema,
-    NautilusFlagsSchemaRelaxed,
-    OpenedxFlagsSchema,
-    PhetFlagsSchema,
-    SotokiFlagsSchema,
-    TedFlagsSchema,
-    WikihowFlagsSchema,
-    YoutubeFlagsSchema,
-    ZimitFlagsSchema,
-    ZimitFlagsSchemaRelaxed,
 )
 
 
@@ -69,33 +49,10 @@ class DockerImageSchema(BaseModel):
         return re.sub(r"^ghcr.io/", "", v)
 
 
-OfflinerSchema = Union[  # noqa: UP007
-    MWOfflinerFlagsSchema,
-    YoutubeFlagsSchema,
-    GutenbergFlagsSchema,
-    PhetFlagsSchema,
-    SotokiFlagsSchema,
-    KolibriFlagsSchema,
-    WikihowFlagsSchema,
-    IFixitFlagsSchema,
-    FreeCodeCampFlagsSchema,
-    DevDocsFlagsSchema,
-    MindtouchFlagsSchema,
-    OpenedxFlagsSchema,
-    TedFlagsSchema,
-    ZimitFlagsSchemaRelaxed if constants.ZIMIT_USE_RELAXED_SCHEMA else ZimitFlagsSchema,
-    (
-        NautilusFlagsSchemaRelaxed
-        if constants.NAUTILUS_USE_RELAXED_SCHEMA
-        else NautilusFlagsSchema
-    ),
-]
-
-
 class BaseScheduleConfigSchema(BaseModel):
     warehouse_path: WarehousePathField
     resources: ResourcesSchema
-    offliner: OfflinerSchema = Field(discriminator="offliner_id")
+    offliner: SerializeAsAny[BaseModel]
     platform: PlatformField | None = None
     artifacts_globs: list[NotEmptyString] = Field(default_factory=list)
     monitor: bool

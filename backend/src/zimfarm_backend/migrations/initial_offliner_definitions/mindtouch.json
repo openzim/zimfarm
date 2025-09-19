@@ -1,0 +1,152 @@
+{
+  "offliner_id": "mindtouch",
+  "stdOutput": true,
+  "stdStats": true,
+  "flags": {
+    "library_url": {
+      "type": "url",
+      "required": true,
+      "title": "Library URL",
+      "description": "URL of the Mindtouch / Nice CXone Expert instance (must NOT contain trailing slash), e.g. for LibreTexts Geosciences it is https://geo.libretexts.org"
+    },
+    "creator": {
+      "type": "string",
+      "required": true,
+      "title": "Creator",
+      "description": "Name of content creator"
+    },
+    "publisher": {
+      "type": "string",
+      "required": false,
+      "title": "Publisher",
+      "isPublisher": true,
+      "description": "Custom publisher name (ZIM metadata). openZIM otherwise"
+    },
+    "file_name": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM filename",
+      "description": "ZIM filename. Do not input trailing `.zim`, it will be automatically added. Defaults to {name}_{period}"
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "title": "ZIM name",
+      "description": "Name of the ZIM.",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$"
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "title": "ZIM title",
+      "description": "Title of the ZIM.",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "description": {
+      "type": "string",
+      "required": true,
+      "title": "ZIM description",
+      "description": "Description of the ZIM.",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "long_description": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM long description",
+      "description": "Long description of the ZIM.",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "tags": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Tags",
+      "description": "A semicolon (;) delimited list of tags to add to the ZIM."
+    },
+    "secondary_color": {
+      "type": "string",
+      "required": false,
+      "title": "Secondary color",
+      "description": "Secondary (background) color of ZIM UI. Default: '#FFFFFF'"
+    },
+    "page_id_include": {
+      "type": "string",
+      "required": false,
+      "title": "Page ID include",
+      "description": "CSV of page ids to include. Parent pages will be included as well for proper navigation, up to root (or subroot if --root-page-id set). Can be combined with --page-title-include (pages with matching title or id will be included)"
+    },
+    "page_title_include": {
+      "type": "string",
+      "required": false,
+      "title": "Page title include regex",
+      "description": "Includes only pages with title matching the given regular expression, and their parent pages for proper navigation, up to root (or subroot if --root-page-id set). Can be combined with --page-id-include (pages with matching title or id will be included)"
+    },
+    "page_title_exclude": {
+      "type": "string",
+      "required": false,
+      "title": "Page title exclude regex",
+      "description": "Excludes pages with title matching the given regular expression"
+    },
+    "root_page_id": {
+      "type": "string",
+      "required": false,
+      "title": "Root page ID",
+      "description": "ID of the root page to include in ZIM. Only this page and its subpages will be included in the ZIM"
+    },
+    "illustration_url": {
+      "type": "url",
+      "required": false,
+      "title": "Illustration URL",
+      "description": "URL to illustration to use for ZIM illustration and favicon"
+    },
+    "optimization_cache": {
+      "type": "url",
+      "secret": true,
+      "required": false,
+      "title": "Optimization Cache URL",
+      "description": "S3 Storage URL including credentials and bucket"
+    },
+    "assets_workers": {
+      "type": "integer",
+      "required": false,
+      "title": "Asset workers",
+      "description": "Number of parallel workers for asset processing. Default: 10",
+      "min": 1
+    },
+    "debug": {
+      "type": "boolean",
+      "required": false,
+      "title": "Debug",
+      "description": "Enable verbose output"
+    },
+    "bad_assets_regex": {
+      "type": "string",
+      "required": false,
+      "title": "Bad assets regex",
+      "description": "Regular expression of asset URLs known to not be available. Case insensitive."
+    },
+    "bad_assets_threshold": {
+      "type": "integer",
+      "required": false,
+      "title": "Bad assets threshold",
+      "description": "[dev] Number of assets allowed to fail to download before failing the scraper. Assets already excluded with --bad-assets-regex are not counted for this threshold. Defaults to 10 assets.",
+      "min": 1
+    },
+    "stats_filename": {
+      "type": "string",
+      "required": false,
+      "title": "Stats filename",
+      "description": "Scraping progress file. Leave it as `/output/task_progress.json`",
+      "pattern": "^/output/task_progress\\.json$"
+    },
+    "output": {
+      "type": "string",
+      "required": false,
+      "title": "Output folder",
+      "description": "Output folder for ZIM file(s). Leave it as `/output`",
+      "pattern": "^/output$"
+    }
+  }
+}

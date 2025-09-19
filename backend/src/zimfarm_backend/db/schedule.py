@@ -7,6 +7,7 @@ from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import JSONPATH, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
+from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
 from zimfarm_backend.common import constants, getnow
@@ -24,6 +25,7 @@ from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
     LanguageSchema,
     MostRecentTaskSchema,
+    OfflinerSchema,
     ScheduleDurationSchema,
     ScheduleFullSchema,
     ScheduleHistorySchema,
@@ -36,6 +38,7 @@ from zimfarm_backend.db.exceptions import (
 )
 from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import (
+    OfflinerDefinition,
     RequestedTask,
     Schedule,
     ScheduleDuration,
@@ -43,6 +46,8 @@ from zimfarm_backend.db.models import (
     Task,
     Worker,
 )
+from zimfarm_backend.db.offliner import get_offliner
+from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -81,7 +86,9 @@ def count_enabled_schedules(session: OrmSession, schedule_names: list[str]) -> i
 def get_schedule_or_none(session: OrmSession, *, schedule_name: str) -> Schedule | None:
     """Get a schedule for the given schedule name if possible else None"""
     return session.scalars(
-        select(Schedule).where(Schedule.name == schedule_name)
+        select(Schedule)
+        .where(Schedule.name == schedule_name)
+        .options(selectinload(Schedule.offliner_definition))
     ).one_or_none()
 
 
@@ -238,7 +245,7 @@ def get_schedules(
             Schedule.category,
             Schedule.enabled,
             Schedule.language_code,
-            Schedule.config,
+            OfflinerDefinition.offliner.label("offliner"),
             Task.id.label("task_id"),
             Task.status.label("task_status"),
             Task.updated_at.label("task_updated_at"),
@@ -246,6 +253,7 @@ def get_schedules(
             func.coalesce(subquery.c.nb_requested_tasks, 0).label("nb_requested_tasks"),
             Schedule.context,
         )
+        .join(OfflinerDefinition, Schedule.offliner_definition)
         .join(Task, Schedule.most_recent_task, isouter=True)
         .join(subquery, subquery.c.schedule_id == Schedule.id, isouter=True)
         .order_by(Schedule.name)
@@ -271,7 +279,7 @@ def get_schedules(
         category,
         enabled,
         language_code,
-        config,
+        offliner,
         task_id,
         task_status,
         task_updated_at,
@@ -297,7 +305,7 @@ def get_schedules(
                 enabled=enabled,
                 language=language,
                 config=ConfigOfflinerOnlySchema(
-                    offliner=config["offliner"]["offliner_id"],
+                    offliner=offliner,
                 ),
                 most_recent_task=(
                     MostRecentTaskSchema(
@@ -325,6 +333,7 @@ def create_schedule(
     category: ScheduleCategory,
     language: LanguageSchema,
     config: ScheduleConfigSchema,
+    offliner_definition_id: UUID,
     tags: list[str],
     enabled: bool,
     notification: ScheduleNotificationSchema | None,
@@ -344,6 +353,8 @@ def create_schedule(
         periodicity=periodicity,
         context=context or "",
     )
+    schedule.offliner_definition_id = offliner_definition_id
+
     schedule_duration = ScheduleDuration(
         value=DEFAULT_SCHEDULE_DURATION.value,
         on=DEFAULT_SCHEDULE_DURATION.on,
@@ -380,7 +391,7 @@ def create_schedule(
 
 
 def create_schedule_full_schema(
-    schedule: Schedule, *, skip_validation: bool = True
+    schedule: Schedule, offliner: OfflinerSchema, *, skip_validation: bool = True
 ) -> ScheduleFullSchema:
     """Create a full schedule schema"""
     try:
@@ -404,7 +415,16 @@ def create_schedule_full_schema(
         name=schedule.name,
         category=schedule.category,
         config=ScheduleConfigSchema.model_validate(
-            schedule.config, context={"skip_validation": skip_validation}
+            {
+                **schedule.config,
+                "offliner": create_offliner_instance(
+                    offliner=offliner,
+                    offliner_definition=schedule.offliner_definition,
+                    data=schedule.config["offliner"],
+                    skip_validation=skip_validation,
+                ),
+            },
+            context={"skip_validation": skip_validation},
         ),
         enabled=schedule.enabled,
         tags=schedule.tags,
@@ -427,6 +447,9 @@ def create_schedule_full_schema(
         nb_requested_tasks=len(schedule.requested_tasks),
         is_valid=schedule.is_valid,
         context=schedule.context,
+        offliner_definition_id=schedule.offliner_definition_id,
+        version=schedule.offliner_definition.version,
+        offliner=schedule.offliner_definition.offliner,
     )
 
 
@@ -435,7 +458,10 @@ def get_all_schedules(session: OrmSession) -> ScheduleListResult:
     return ScheduleListResult(
         nb_records=len(session.scalars(select(Schedule).order_by(Schedule.name)).all()),
         schedules=[
-            create_schedule_full_schema(schedule)
+            create_schedule_full_schema(
+                schedule,
+                get_offliner(session, schedule.config["offliner"]["offliner_id"]),
+            )
             for schedule in session.scalars(
                 select(Schedule).order_by(Schedule.name)
             ).all()
@@ -448,6 +474,7 @@ def update_schedule(
     author: str,
     *,
     schedule_name: str,
+    offliner_definition_id: UUID,
     new_schedule_config: ScheduleConfigSchema | None = None,
     language: LanguageSchema | None = None,
     name: str | None = None,
@@ -464,6 +491,8 @@ def update_schedule(
     schedule = get_schedule(session, schedule_name=schedule_name)
     if language:
         schedule.language_code = language.code
+
+    schedule.offliner_definition_id = offliner_definition_id
     schedule.name = name if name is not None else schedule.name
     schedule.category = category if category is not None else schedule.category
     schedule.tags = tags if tags is not None else schedule.tags
@@ -504,6 +533,7 @@ def update_schedule(
             ) from exc
         logger.exception("Unknown exception encountered while updating schedule")
         raise
+    session.refresh(schedule)
     return schedule
 
 

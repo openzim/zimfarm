@@ -9,6 +9,7 @@ from zimfarm_backend.common.constants import BASE_DIR, getenv
 from zimfarm_backend.common.roles import ROLES
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import User
+from zimfarm_backend.db.offliner import get_all_offliners
 
 
 def check_if_schema_is_up_to_date():
@@ -53,3 +54,8 @@ def upgrade_db_schema():
     """Checks if Alembic schema has been applied to the DB"""
     logger.info(f"Upgrading database schema with config in {BASE_DIR}")
     subprocess.check_output(args=["alembic", "upgrade", "head"], cwd=BASE_DIR)
+
+
+def load_offliners():
+    with Session.begin() as session:
+        get_all_offliners(session)

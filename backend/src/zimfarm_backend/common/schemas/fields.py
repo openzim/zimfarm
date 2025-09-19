@@ -14,7 +14,6 @@ from pydantic import (
     WrapSerializer,
     WrapValidator,
 )
-from pydantic_core import core_schema
 from pydantic_core.core_schema import SerializationInfo
 
 from zimfarm_backend.common.enums import Platform, WarehousePath
@@ -25,19 +24,9 @@ class GraphemeStr(str):
         # Count the number of grapheme clusters
         return len(regex.findall(r"\X", self))
 
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, _):
-        return core_schema.no_info_after_validator_function(
-            cls._to_python,  # first convert to GraphemeStr
-            core_schema.str_schema(),  # base schema: accept strings
-        )
 
-    @classmethod
-    def _to_python(cls, v: Any, **_: Any):
-        # Convert input to GraphemeStr
-        if not isinstance(v, str):
-            raise TypeError("Must be a string")
-        return cls(v)
+def to_grapheme_str(value: str):
+    return GraphemeStr(value)
 
 
 def no_null_char(value: str) -> str:
@@ -53,7 +42,9 @@ def OptionalField(**kwargs: Any) -> Any:  # noqa N802
     return Field(**kwargs)
 
 
-NoNullCharString = Annotated[str, AfterValidator(no_null_char)]
+NoNullCharString = Annotated[
+    str, AfterValidator(no_null_char), AfterValidator(to_grapheme_str)
+]
 
 
 OptionalNoNullCharString = NoNullCharString | None
@@ -67,8 +58,10 @@ def not_empty(value: str) -> str:
     return value
 
 
-def validate_language_code(value: str, info: ValidationInfo) -> str:
+def validate_language_code(value: str | None, info: ValidationInfo) -> str | None:
     """Validate that string is a valid ISO-693-3 language code"""
+    if value is None:
+        return value
     context = info.context
     if context and context.get("skip_validation"):
         return value
@@ -79,8 +72,12 @@ def validate_language_code(value: str, info: ValidationInfo) -> str:
     )
 
 
-def validate_comma_separated_zim_lang_code(value: str, info: ValidationInfo) -> str:
+def validate_comma_separated_zim_lang_code(
+    value: str | None, info: ValidationInfo
+) -> str | None:
     """Validate that string is a comma separated list of ISO-693-3 language codes"""
+    if value is None:
+        return value
     for lang_code in value.split(","):
         validate_language_code(lang_code, info)
     return value
@@ -112,7 +109,10 @@ NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 OptionalNotEmptyString = NotEmptyString | None
 
 ZIMMetadataString = Annotated[
-    GraphemeStr, AfterValidator(no_null_char), AfterValidator(not_empty)
+    str,
+    AfterValidator(no_null_char),
+    AfterValidator(not_empty),
+    AfterValidator(to_grapheme_str),
 ]
 
 

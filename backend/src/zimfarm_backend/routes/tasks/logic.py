@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, Path, Query, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from zimfarm_backend import logger
 from zimfarm_backend.common.constants import ENABLED_SCHEDULER
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.fields import (
@@ -19,10 +18,11 @@ from zimfarm_backend.common.schemas.models import (
 )
 from zimfarm_backend.common.schemas.orms import TaskLightSchema
 from zimfarm_backend.common.utils import task_event_handler
-from zimfarm_backend.db.exceptions import (
-    RecordAlreadyExistsError,
-)
 from zimfarm_backend.db.models import User
+from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
+from zimfarm_backend.db.offliner_definition import (
+    get_offliner_definition_by_id as db_get_offliner_definition_by_id,
+)
 from zimfarm_backend.db.requested_task import (
     delete_requested_task as db_delete_requested_task,
 )
@@ -40,7 +40,6 @@ from zimfarm_backend.routes.dependencies import (
     get_current_user_or_none,
 )
 from zimfarm_backend.routes.http_errors import (
-    ConflictError,
     ForbiddenError,
     NotFoundError,
     ServerError,
@@ -93,10 +92,17 @@ async def get_task(
         show_secrets = False
     else:
         show_secrets = not hide_secrets
+    offliner_definition = db_get_offliner_definition_by_id(
+        db_session, task.offliner_definition_id
+    )
+    offliner = db_get_offliner(db_session, offliner_definition.offliner)
 
     # Rebuild the config as the one that was retrieved from the DB has secrets saved
     task.config = expanded_config(
-        cast(ScheduleConfigSchema, task.config), show_secrets=show_secrets
+        cast(ScheduleConfigSchema, task.config),
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        show_secrets=show_secrets,
     )
 
     return JSONResponse(
@@ -125,22 +131,16 @@ async def create_task(
 
     worker = db_get_worker(db_session, worker_name=task_create_schema.worker_name)
 
-    try:
-        task = db_create_task(
-            db_session, requested_task=requested_task, worker_id=worker.id
-        )
-    except RecordAlreadyExistsError as exc:
-        raise ConflictError(f"Task {requested_task_id} already exists") from exc
+    task = db_create_task(
+        db_session, requested_task=requested_task, worker_id=worker.id
+    )
 
-    try:
-        task_event_handler(
-            db_session,
-            task.id,
-            TaskStatus.reserved,
-            {"worker": task_create_schema.worker_name},
-        )
-    except Exception as exc:
-        raise ServerError("Unable to create task.") from exc
+    task_event_handler(
+        db_session,
+        task.id,
+        TaskStatus.reserved,
+        {"worker": task_create_schema.worker_name},
+    )
 
     db_delete_requested_task(db_session, requested_task_id)
 
@@ -163,13 +163,9 @@ async def update_task(
 
     task = db_get_task(db_session, task_id)
 
-    try:
-        task_event_handler(
-            db_session, task.id, task_update_schema.event, task_update_schema.payload
-        )
-    except Exception as exc:
-        logger.exception("Unexpected error while updating task.")
-        raise ServerError("Unable to update task.") from exc
+    task_event_handler(
+        db_session, task.id, task_update_schema.event, task_update_schema.payload
+    )
 
     return Response(status_code=HTTPStatus.NO_CONTENT)
 

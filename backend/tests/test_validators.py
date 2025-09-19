@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+# ruff: noqa: E501
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
@@ -12,21 +14,12 @@ from zimfarm_backend.common.schemas.fields import (
     SecretUrl,
     SkipableBool,
     SkipableUrl,
-    SlugString,
     ZIMFileName,
     ZIMLangCode,
     ZIMName,
     ZIMTitle,
 )
 from zimfarm_backend.common.schemas.models import BaseModel
-from zimfarm_backend.common.schemas.offliners import TedFlagsSchema
-from zimfarm_backend.common.schemas.offliners.freecodecamp import (
-    FCCLanguageValue,
-)
-
-
-class FCCLanguageModel(BaseModel):
-    value: FCCLanguageValue
 
 
 class ZIMFileNameModel(BaseModel):
@@ -59,27 +52,6 @@ class SecretUrlModel(BaseModel):
 
 class SkipableUrlModel(BaseModel):
     value: SkipableUrl
-
-
-class SlugStringModel(BaseModel):
-    value: SlugString
-
-
-def test_enum_validator_accepts_valid_value():
-    with does_not_raise():
-        FCCLanguageModel.model_validate({"value": "eng"})
-
-
-def test_enum_validator_rejects_invalid_value():
-    with pytest.raises(ValidationError):
-        FCCLanguageModel.model_validate({"value": "jp"})
-
-
-def test_enum_validator_skips_validation_when_context_set():
-    with does_not_raise():
-        FCCLanguageModel.model_validate(
-            {"value": "invalid"}, context={"skip_validation": True}
-        )
 
 
 @pytest.mark.parametrize(
@@ -242,7 +214,8 @@ def test_zimname_skips_validation_when_context_set():
     ],
 )
 def test_language_code_validator(
-    language_code: str, expected: RaisesContext[Exception]
+    language_code: str,
+    expected: RaisesContext[Exception],
 ):
     """Test language code validator with various inputs."""
     with expected:
@@ -266,9 +239,13 @@ def test_language_code_validator_skips_validation_when_context_set():
         ),
     ],
 )
-def test_ted_flags_schema(languages: str, expected: RaisesContext[Exception]):
+def test_ted_flags_schema(
+    ted_flags_schema_cls: type[BaseModel],
+    languages: str,
+    expected: RaisesContext[Exception],
+):
     with expected:
-        TedFlagsSchema(
+        ted_flags_schema_cls(
             name="ted-talks_mul_football",
             offliner_id="ted",
             languages=languages,
@@ -276,9 +253,11 @@ def test_ted_flags_schema(languages: str, expected: RaisesContext[Exception]):
         )
 
 
-def test_ted_flags_schema_skips_validation_when_context_set():
+def test_ted_flags_schema_skips_validation_when_context_set(
+    ted_flags_schema_cls: type[BaseModel],
+):
     with does_not_raise():
-        TedFlagsSchema.model_validate(
+        ted_flags_schema_cls.model_validate(
             {
                 "name": "ted-talks_mul_football",
                 "offliner_id": "ted",
@@ -344,10 +323,14 @@ def test_ted_flags_schema_skips_validation_when_context_set():
     ],
 )
 def test_ted_flags_schema_fields_exclusivity(
-    links: str, topics: str, playlists: str, expected: RaisesContext[Exception]
+    ted_flags_schema_cls: type[BaseModel],
+    links: str,
+    topics: str,
+    playlists: str,
+    expected: RaisesContext[Exception],
 ):
     with expected:
-        TedFlagsSchema(
+        ted_flags_schema_cls(
             links=links,
             topics=topics,
             playlists=playlists,
@@ -381,9 +364,13 @@ def test_ted_flags_schema_fields_exclusivity(
         ),
     ],
 )
-def test_ted_flags_schema_links(links: str, expected: RaisesContext[Exception]):
+def test_ted_flags_schema_links(
+    ted_flags_schema_cls: type[BaseModel],
+    links: str,
+    expected: RaisesContext[Exception],
+):
     with expected:
-        TedFlagsSchema(
+        ted_flags_schema_cls(
             links=links,
             offliner_id="ted",
             name="ted-talks_mul_football",
@@ -743,74 +730,5 @@ def test_skipable_url_model_skip_validation(
 ):
     with expected:
         SecretUrlModel.model_validate(
-            {"value": value}, context={"skip_validation": True}
-        )
-
-
-@pytest.mark.parametrize(
-    "value,expected",
-    [
-        pytest.param("hello", does_not_raise(), id="valid-slug"),
-        pytest.param("hello-world", does_not_raise(), id="valid-slug-with-hyphen"),
-        pytest.param("hello_world", does_not_raise(), id="valid-slug-with-underscore"),
-        pytest.param("hello.world", does_not_raise(), id="valid-slug-with-dot"),
-        pytest.param("hello.world.zim", does_not_raise(), id="valid-slug-with-dot-zim"),
-        pytest.param(
-            "hello world", pytest.raises(ValidationError), id="invalid-slug-with-space"
-        ),
-        pytest.param(
-            "hello&world",
-            pytest.raises(ValidationError),
-            id="invalid-slug-with-special-character",
-        ),
-        pytest.param(
-            "hello(world",
-            pytest.raises(ValidationError),
-            id="invalid-slug-with-open-parenthesis",
-        ),
-    ],
-)
-def test_slug_string_model(value: str, expected: RaisesContext[Exception]):
-    with expected:
-        SlugStringModel.model_validate({"value": value})
-
-
-@pytest.mark.parametrize(
-    "value,expected",
-    [
-        pytest.param("hello", does_not_raise(), id="valid-slug"),
-        pytest.param("hello-world", does_not_raise(), id="valid-slug-with-hyphen"),
-        pytest.param("hello_world", does_not_raise(), id="valid-slug-with-underscore"),
-        pytest.param("hello.world", does_not_raise(), id="valid-slug-with-dot"),
-        pytest.param("hello.world.zim", does_not_raise(), id="valid-slug-with-dot-zim"),
-        pytest.param("hello world", does_not_raise(), id="invalid-slug-with-space"),
-        pytest.param("hello@world", does_not_raise(), id="invalid-slug-with-at"),
-        pytest.param(
-            "hello&world",
-            does_not_raise(),
-            id="invalid-slug-with-ampersand",
-        ),
-        pytest.param(
-            "hello*world",
-            does_not_raise(),
-            id="invalid-slug-with-asterisk",
-        ),
-        pytest.param(
-            "hello(world",
-            does_not_raise(),
-            id="invalid-slug-with-open-parenthesis",
-        ),
-        pytest.param(
-            "hello)world",
-            does_not_raise(),
-            id="invalid-slug-with-close-parenthesis",
-        ),
-    ],
-)
-def test_slug_string_model_skip_validation(
-    value: str, expected: RaisesContext[Exception]
-):
-    with expected:
-        SlugStringModel.model_validate(
             {"value": value}, context={"skip_validation": True}
         )

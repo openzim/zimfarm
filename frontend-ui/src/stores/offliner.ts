@@ -30,17 +30,33 @@ export const useOfflinerStore = defineStore('offliner', () => {
     }
   }
 
-  const fetchOfflinerDefinition = async (offliner: string) => {
-    if (offlinerDefinitions.value[offliner]) {
-      return offlinerDefinitions.value[offliner]
+  const fetchOfflinerVersions = async (offliner: string, limit: number = 100) => {
+    try {
+      const service = await authStore.getApiService('offliners')
+      const response = await service.get<null, ListResponse<string>>(`/${offliner}/versions`, {
+        params: { limit },
+      })
+      return response.items
+    } catch (_error) {
+      console.error('Failed to fetch offliner versions', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return null
+    }
+  }
+
+  const fetchOfflinerDefinitionByVersion = async (offliner: string, version: string) => {
+    if (offlinerDefinitions.value[`${offliner}-${version}`]) {
+      return offlinerDefinitions.value[`${offliner}-${version}`]
     }
 
     try {
       const service = await authStore.getApiService('offliners')
-      const response = await service.get<null, OfflinerDefinitionResponse>(`/${offliner}`)
-      offlinerDefinitions.value[offliner] = response
+      const response = await service.get<null, OfflinerDefinitionResponse>(
+        `/${offliner}/${version}`,
+      )
+      offlinerDefinitions.value[`${offliner}-${version}`] = response
       errors.value = []
-      return offlinerDefinitions.value[offliner]
+      return offlinerDefinitions.value[`${offliner}-${version}`]
     } catch (_error) {
       console.error('Failed to fetch offliner definition', _error)
       errors.value = translateErrors(_error as ErrorResponse)
@@ -55,6 +71,7 @@ export const useOfflinerStore = defineStore('offliner', () => {
     offlinerDefinitions,
     // actions
     fetchOffliners,
-    fetchOfflinerDefinition,
+    fetchOfflinerVersions,
+    fetchOfflinerDefinitionByVersion,
   }
 })
