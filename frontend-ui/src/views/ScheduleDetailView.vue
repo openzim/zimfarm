@@ -213,31 +213,55 @@
                       />
                     </td>
                     <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey"> none 🙁 </v-chip>
+                      <v-chip size="small" variant="outlined" color="grey"> None 🙁 </v-chip>
                     </td>
                   </tr>
                   <tr v-if="durationDict">
                     <th class="text-left">Duration</th>
                     <td>
                       <span v-if="durationDict.single">
-                        {{ formatDuration(durationDict.value) }}
-                        (<code class="text-pink-accent-2">{{ durationDict.worker }}</code> on
+                        {{ durationDict.formattedDuration }}
+                        (<router-link
+                          :to="{
+                            name: 'worker-detail',
+                            params: { workerName: durationDict.worker },
+                          }"
+                        >
+                          {{ durationDict.worker }}
+                        </router-link>
+                        on
                         {{ formatDt(durationDict.on) }})
                       </span>
                       <span v-else>
                         between
-                        {{ formatDuration(durationDict.minValue || 0) }} (<code
-                          class="text-pink-accent-2"
-                          v-for="worker in durationDict.minWorkers || []"
+                        {{ durationDict.formattedMinDuration }} (<template
+                          v-for="(worker, index) in durationDict.minWorkers || []"
                           :key="worker.worker_name"
                         >
-                          {{ worker.worker_name }} </code
-                        >) and {{ formatDuration(durationDict.maxValue || 0) }} (<code
-                          class="text-pink-accent-2"
-                          v-for="worker in durationDict.maxWorkers || []"
+                          <router-link
+                            :to="{
+                              name: 'worker-detail',
+                              params: { workerName: worker.worker_name },
+                            }"
+                          >
+                            {{ worker.worker_name }} </router-link
+                          ><span v-if="index < (durationDict.minWorkers?.length || 0) - 1"
+                            >,
+                          </span> </template
+                        >) and {{ durationDict.formattedMaxDuration }} (<template
+                          v-for="(worker, index) in durationDict.maxWorkers || []"
                           :key="worker.worker_name"
                         >
-                          {{ worker.worker_name }} </code
+                          <router-link
+                            :to="{
+                              name: 'worker-detail',
+                              params: { workerName: worker.worker_name },
+                            }"
+                          >
+                            {{ worker.worker_name }} </router-link
+                          ><span v-if="index < (durationDict.maxWorkers?.length || 0) - 1"
+                            >,
+                          </span> </template
                         >)
                       </span>
                     </td>
@@ -265,15 +289,34 @@
                       </v-chip>
                     </td>
                     <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey"> no </v-chip>
+                      <v-chip size="small" variant="outlined" color="grey"> No </v-chip>
                     </td>
                   </tr>
                   <tr>
                     <th class="text-left align-top pa-4">History</th>
                     <td v-if="historyRuns.length">
                       <v-table density="compact">
+                        <thead>
+                          <tr>
+                            <th class="text-left">Worker</th>
+                            <th class="text-left">Status</th>
+                            <th class="text-left">Task</th>
+                            <th class="text-left">Duration</th>
+                          </tr>
+                        </thead>
                         <tbody>
                           <tr v-for="run in historyRuns" :key="run.id">
+                            <td>
+                              <router-link
+                                :to="{
+                                  name: 'worker-detail',
+                                  params: { workerName: run.worker_name },
+                                }"
+                                class="text-decoration-none"
+                              >
+                                {{ run.worker_name }}
+                              </router-link>
+                            </td>
                             <td>
                               <v-chip
                                 :color="getStatusColor(run.status)"
@@ -284,19 +327,24 @@
                               </v-chip>
                             </td>
                             <td>
-                              <TaskLink
-                                :id="run.id"
-                                :updatedAt="run.updated_at"
-                                :status="run.status"
-                                :timestamp="run.timestamp"
-                              />
+                              <span class="text-no-wrap">
+                                <TaskLink
+                                  :id="run.id"
+                                  :updatedAt="run.updated_at"
+                                  :status="run.status"
+                                  :timestamp="run.timestamp"
+                                />
+                              </span>
+                            </td>
+                            <td>
+                              <span>{{ calculateTaskDuration(run) }}</span>
                             </td>
                           </tr>
                         </tbody>
                       </v-table>
                     </td>
                     <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey"> none 🙁 </v-chip>
+                      <v-chip size="small" variant="outlined" color="grey"> None 🙁 </v-chip>
                     </td>
                   </tr>
                 </tbody>
@@ -524,7 +572,7 @@ import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { ExpandedScheduleConfig, Schedule, ScheduleUpdateSchema } from '@/types/schedule'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
-import { formatDt, formatDuration, fromNow } from '@/utils/format'
+import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import {
   buildCommandWithout,
   buildDockerCommand,
@@ -608,7 +656,7 @@ const secretFields = computed(() => getSecretFields(flagsDefinition.value))
 const command = computed(() => buildDockerCommand(schedule.value?.name || '', config.value))
 const offlinerCommand = computed(() => buildCommandWithout(config.value))
 const durationDict = computed(() => {
-  return buildScheduleDuration(schedule.value?.duration || null)
+  return buildScheduleDuration(historyRuns.value)
 })
 
 // Permission computed properties
@@ -949,6 +997,14 @@ const getStatusColor = (status: string): string => {
 
 const shortId = (id: string | null): string => {
   return id ? id.substring(0, 8) : ''
+}
+
+const calculateTaskDuration = (task: TaskLight): string => {
+  if (!task.timestamp) return ''
+  const first = getTimestampStringForStatus(task.timestamp, 'started', '')
+  if (!first) return 'Not actually started ⌛'
+  const last = task.updated_at
+  return formatDurationBetween(first, last)
 }
 
 // Lifecycle

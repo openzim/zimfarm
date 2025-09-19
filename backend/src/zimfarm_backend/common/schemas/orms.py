@@ -69,6 +69,7 @@ class BaseTaskSchema(BaseModel):
     updated_at: datetime.datetime
     original_schedule_name: str
     context: str
+    priority: int
 
 
 class TaskLightSchema(BaseTaskSchema):
