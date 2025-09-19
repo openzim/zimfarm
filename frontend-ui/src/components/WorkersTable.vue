@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="table-responsive">
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title class="d-flex align-center justify-end">
         <div class="d-flex align-center">
@@ -20,17 +20,17 @@
 
       <v-data-table-server
         :headers="workerHeaders"
-        :items="workers"
+        :items="combinedItems"
         :loading="loading"
         :items-per-page="selectedLimit"
         :items-length="props.paginator.count"
         :items-per-page-options="limits"
-        class="elevation-1"
-        hover
-        item-key="name"
+        class="elevation-1 combined-table"
+        item-key="id"
         item-value="name"
         v-model:expanded="expanded"
         show-expand
+        :row-props="getRowProps"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
@@ -43,52 +43,97 @@
         </template>
 
         <template #[`item.name`]="{ item }">
-          <router-link :to="{ name: 'worker-detail', params: { workerName: item.name } }">
-            <code>{{ item.name }}</code>
-          </router-link>
+          <template v-if="item.kind === 'worker'">
+            <router-link :to="{ name: 'worker-detail', params: { workerName: item.name } }">
+              <code>{{ item.name }}</code>
+            </router-link>
+          </template>
+          <template v-else>
+            <v-icon size="x-small" color="primary" class="mr-1">mdi-clipboard-text-outline</v-icon>
+            <span v-if="item.task.schedule_name === null">{{
+              item.task.original_schedule_name
+            }}</span>
+            <router-link
+              v-else
+              :to="{ name: 'schedule-detail', params: { scheduleName: item.task.schedule_name } }"
+            >
+              {{ item.task.schedule_name }}
+            </router-link>
+          </template>
         </template>
 
         <template #[`item.status`]="{ item }">
-          <v-chip
-            :color="item.status === 'online' ? 'success' : 'dark-grey'"
-            size="small"
-            variant="tonal"
-            :prepend-icon="item.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
-          >
-            {{ item.status }}
-          </v-chip>
+          <template v-if="item.kind === 'worker'">
+            <v-chip
+              :color="item.status === 'online' ? 'success' : 'dark-grey'"
+              size="small"
+              variant="tonal"
+              :prepend-icon="item.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
+            >
+              {{ item.status }}
+            </v-chip>
+          </template>
+          <template v-else>
+            <!-- Empty cell for tasks -->
+          </template>
         </template>
 
         <template #[`item.last_seen`]="{ item }">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <span v-bind="props">{{ fromNow(item.last_seen) }}</span>
-            </template>
-            <span>{{ formatDt(item.last_seen) }}</span>
-          </v-tooltip>
+          <template v-if="item.kind === 'worker'">
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <span v-bind="props" class="text-no-wrap">{{ fromNow(item.last_seen) }}</span>
+              </template>
+              <span>{{ formatDt(item.last_seen) }}</span>
+            </v-tooltip>
+          </template>
+          <template v-else>
+            <TaskLink
+              :id="item.task.id"
+              :updatedAt="item.task.updated_at"
+              :status="item.task.status"
+              :timestamp="item.task.timestamp"
+            />
+          </template>
         </template>
 
         <template #[`item.resources`]="{ item }">
           <div class="d-flex flex-column flex-md-row py-1">
-            <ResourceBadge kind="cpu" :value="item.resources.cpu" variant="text" />
-            <ResourceBadge kind="memory" :value="item.resources.memory" variant="text" />
-            <ResourceBadge kind="disk" :value="item.resources.disk" variant="text" />
+            <template v-if="item.kind === 'worker'">
+              <ResourceBadge kind="cpu" :value="item.resources.cpu" variant="text" />
+              <ResourceBadge kind="memory" :value="item.resources.memory" variant="text" />
+              <ResourceBadge kind="disk" :value="item.resources.disk" variant="text" />
+            </template>
+            <template v-else>
+              <ResourceBadge kind="cpu" :value="item.task.config.resources.cpu" variant="text" />
+              <ResourceBadge
+                kind="memory"
+                :value="item.task.config.resources.memory"
+                variant="text"
+              />
+              <ResourceBadge kind="disk" :value="item.task.config.resources.disk" variant="text" />
+            </template>
           </div>
         </template>
 
         <template #[`item.contexts`]="{ item }">
           <div class="d-flex flex-wrap ga-1 py-1">
-            <v-chip
-              v-for="ctx in item.contexts"
-              :key="ctx"
-              size="x-small"
-              color="primary"
-              variant="outlined"
-              density="comfortable"
-              class="mr-1 mb-1 text-caption text-uppercase"
-            >
-              {{ ctx }}
-            </v-chip>
+            <template v-if="item.kind === 'worker'">
+              <v-chip
+                v-for="ctx in item.contexts"
+                :key="ctx"
+                size="x-small"
+                color="primary"
+                variant="outlined"
+                density="comfortable"
+                class="mr-1 mb-1 text-caption text-uppercase"
+              >
+                {{ ctx }}
+              </v-chip>
+            </template>
+            <template v-else>
+              <!-- Empty for tasks -->
+            </template>
           </div>
         </template>
 
@@ -99,83 +144,34 @@
           </div>
         </template>
 
-        <template #[`item.data-table-expand`]="{ internalItem, isExpanded, toggleExpand }">
-          <v-btn
-            :append-icon="isExpanded(internalItem) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            :text="
-              isExpanded(internalItem)
-                ? `Collapse (${internalItem.raw?.tasks?.length || 0})`
-                : `Running tasks (${internalItem.raw?.tasks?.length || 0})`
-            "
-            class="text-none"
-            :color="isExpanded(internalItem) ? 'primary' : 'medium-emphasis'"
-            size="small"
-            :variant="isExpanded(internalItem) ? 'tonal' : 'text'"
-            width="140"
-            border
-            slim
-            @click="toggleExpand(internalItem)"
-          />
-        </template>
+        <template #[`item.data-table-expand`]="{ item }">
+          <template v-if="item.kind === 'worker'">
+            <v-btn
+              class="text-none"
+              :color="expanded.includes(item.name) ? 'primary' : 'medium-emphasis'"
+              size="small"
+              :variant="expanded.includes(item.name) ? 'tonal' : 'text'"
+              border
+              slim
+              @click="toggleWorkerRow(item.name)"
+            >
+              <span class="d-none d-md-inline">
+                {{
+                  expanded.includes(item.name)
+                    ? `Collapse (${item.tasks?.length || 0})`
+                    : `Running tasks (${item.tasks?.length || 0})`
+                }}
+              </span>
 
-        <template #expanded-row="{ columns, item }">
-          <tr>
-            <td :colspan="columns.length" class="py-2">
-              <v-sheet rounded elevation="1">
-                <v-data-table
-                  :headers="taskHeaders"
-                  :items="item.tasks || []"
-                  density="compact"
-                  hide-default-footer
-                  hover
-                  item-value="id"
-                  hide-default-header
-                  class="bg-grey-lighten-5"
-                >
-                  <template #[`item.schedule`]="{ item: task }">
-                    <span v-if="task.schedule_name === null">{{
-                      task.original_schedule_name
-                    }}</span>
-                    <router-link
-                      v-else
-                      :to="{
-                        name: 'schedule-detail',
-                        params: { scheduleName: task.schedule_name },
-                      }"
-                    >
-                      {{ task.schedule_name }}
-                    </router-link>
-                  </template>
-                  <template #[`item.task`]="{ item: task }">
-                    <TaskLink
-                      :id="task.id"
-                      :updatedAt="task.updated_at"
-                      :status="task.status"
-                      :timestamp="task.timestamp"
-                    />
-                  </template>
-                  <template #[`item.resources`]="{ item: task }">
-                    <div class="d-flex flex-wrap flex-column flex-md-row py-1">
-                      <ResourceBadge kind="cpu" :value="task.config.resources.cpu" variant="text" />
-                      <ResourceBadge
-                        kind="memory"
-                        :value="task.config.resources.memory"
-                        variant="text"
-                      />
-                      <ResourceBadge
-                        kind="disk"
-                        :value="task.config.resources.disk"
-                        variant="text"
-                      />
-                    </div>
-                  </template>
-                  <template #no-data>
-                    <div class="text-center py-4 text-grey">No running tasks</div>
-                  </template>
-                </v-data-table>
-              </v-sheet>
-            </td>
-          </tr>
+              <!-- Icon always visible -->
+              <v-icon size="small" class="mr-1">
+                {{ expanded.includes(item.name) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+              </v-icon>
+            </v-btn>
+          </template>
+          <template v-else>
+            <!-- Empty cell for tasks -->
+          </template>
         </template>
       </v-data-table-server>
       <ErrorMessage v-for="error in errors" :key="error" :message="error" />
@@ -189,6 +185,7 @@ import ResourceBadge from '@/components/ResourceBadge.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import constants from '@/constants'
 import type { Paginator } from '@/types/base'
+import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, fromNow } from '@/utils/format'
 import { computed, inject, onMounted, ref, watch } from 'vue'
@@ -196,7 +193,6 @@ import type { VueCookies } from 'vue-cookies'
 
 const props = defineProps<{
   workerHeaders: { title: string; value: string }[]
-  taskHeaders: { title: string; value: string }[]
   workers: Worker[]
   paginator: Paginator
   loading: boolean
@@ -221,6 +217,15 @@ function toggleAllRows(): void {
   const willExpandAll = !expandedAll.value
   expanded.value = willExpandAll ? props.workers.map((w) => w.name) : []
   saveExpandAllPreference(willExpandAll)
+}
+
+function toggleWorkerRow(workerName: string): void {
+  const index = expanded.value.indexOf(workerName)
+  if (index !== -1) {
+    expanded.value.splice(index, 1)
+  } else {
+    expanded.value.push(workerName)
+  }
 }
 
 // Persist expand/collapse-all preference
@@ -262,4 +267,55 @@ watch(
   },
   { immediate: true },
 )
+
+// Build a combined flat list of rows (workers and their tasks) with a `kind` discriminator
+type CombinedWorkerItem = Worker & { kind: 'worker'; id: string }
+type CombinedTaskItem = { kind: 'task'; id: string; task: TaskLight; worker_name: string }
+type CombinedRow = CombinedWorkerItem | CombinedTaskItem
+
+const combinedItems = computed<CombinedRow[]>(() => {
+  const rows: CombinedRow[] = []
+  for (const worker of props.workers) {
+    rows.push({
+      kind: 'worker',
+      id: `worker:${worker.name}`,
+      ...worker,
+    })
+    if (expanded.value.includes(worker.name)) {
+      const tasks = worker.tasks || []
+      for (const task of tasks) {
+        rows.push({
+          kind: 'task',
+          id: `task:${task.id}`,
+          task,
+          worker_name: worker.name,
+        })
+      }
+    }
+  }
+  return rows
+})
+
+type RowProps = { class?: string | string[]; style?: string | Record<string, string> }
+
+function getRowProps({
+  internalItem,
+  item,
+}: {
+  internalItem?: { raw?: CombinedRow }
+  item?: CombinedRow
+}): RowProps {
+  const row = internalItem?.raw ?? item
+  if (row?.kind === 'task') {
+    return { class: 'bg-grey-lighten-4' }
+  }
+  return {}
+}
 </script>
+
+<style scoped>
+.table-responsive {
+  width: 100%;
+  overflow-x: auto; /* allows horizontal scroll */
+}
+</style>

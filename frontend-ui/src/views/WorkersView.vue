@@ -80,7 +80,6 @@
 
     <WorkersTable
       :worker-headers="workerHeaders"
-      :task-headers="taskHeaders"
       :workers="filteredWorkers"
       :paginator="paginator"
       :loading="loadingStore.isLoading"
@@ -129,11 +128,6 @@ const workerHeaders = [
   { title: 'Contexts', value: 'contexts' },
 ]
 
-const taskHeaders = [
-  { title: 'Schedule', value: 'schedule' },
-  { title: 'Task', value: 'task' },
-  { title: 'Resources', value: 'resources' },
-]
 const workers = computed(() => workersStore.workers)
 const paginator = computed(() => workersStore.paginator)
 
