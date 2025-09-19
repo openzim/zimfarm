@@ -68,7 +68,7 @@
         <template #[`item.completed`]="{ item }">
           <v-tooltip location="bottom">
             <template #activator="{ props }">
-              <span v-bind="props">
+              <span v-bind="props" class="text-no-wrap">
                 <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
                   {{ fromNow(item.updated_at) }}
                 </router-link>
@@ -81,7 +81,7 @@
         <template #[`item.stopped`]="{ item }">
           <v-tooltip location="bottom">
             <template #activator="{ props }">
-              <span v-bind="props">
+              <span v-bind="props" class="text-no-wrap">
                 <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
                   {{ fromNow(item.updated_at) }}
                 </router-link>
@@ -100,7 +100,13 @@
         </template>
 
         <template #[`item.worker`]="{ item }">
-          <code class="text-pink-accent-2" v-if="item.worker_name">{{ item.worker_name }}</code>
+          <router-link
+            v-if="item.worker_name"
+            :to="{ name: 'worker-detail', params: { workerName: item.worker_name } }"
+            class="text-decoration-none"
+          >
+            {{ item.worker_name }}
+          </router-link>
           <span v-else>n/a</span>
         </template>
 

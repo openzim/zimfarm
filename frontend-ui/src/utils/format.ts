@@ -11,43 +11,16 @@ function getUnits(interval: Interval<true>) {
   return units
 }
 
-function toDurationObj(milliseconds: number) {
-  const items: Record<string, number> = {
-    years: 0,
-    months: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    milliseconds: milliseconds,
-  }
-
-  function toObj() {
-    const o: Record<string, number> = {}
-    Object.entries(items).forEach((item) => {
-      const [key, value] = item
-      if (value >= 1 && key != 'milliseconds') o[key] = value
-    })
-    return o
-  }
-
-  function shift(lower: string, upper: string, num: number) {
-    items[upper] = items[lower] / num
-    items[lower] = items[lower] % num
-    return items[upper] < 1
-  }
-  if (shift('milliseconds', 'seconds', 1000)) return toObj()
-  if (shift('seconds', 'minutes', 60)) return toObj()
-  if (shift('minutes', 'hours', 60)) return toObj()
-  if (shift('hours', 'days', 24)) return toObj()
-  if (shift('days', 'months', 30)) return toObj()
-  shift('months', 'years', 12)
-  return toObj()
-}
-
 export function formatDuration(value: number) {
-  const dur = Duration.fromObject(toDurationObj(value))
-  return dur.toHuman({ maximumSignificantDigits: 1 })
+  const dur = Duration.fromMillis(value).shiftTo('days', 'hours', 'minutes')
+  // Filter out zero units
+  const clean = Duration.fromObject(
+    Object.fromEntries(
+      Object.entries(dur.toObject()).filter((entry) => entry[1] && entry[1] !== 0),
+    ),
+  )
+
+  return clean.toHuman({ maximumSignificantDigits: 1 })
 }
 
 export function formatDt(value?: string, format: string = 'fff') {

@@ -96,6 +96,6 @@ export interface BaseTask {
   updated_at: string
   requested_by: string
   original_schedule_name: string
-  duration?: string
+  context: string
   priority: number
 }

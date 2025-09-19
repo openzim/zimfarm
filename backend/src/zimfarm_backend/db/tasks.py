@@ -122,6 +122,7 @@ def get_tasks(
             Task.timestamp,
             Task.original_schedule_name,
             Task.context,
+            Task.priority,
             Bundle(  # pyright: ignore[reportUnknownArgumentType]
                 "config",
                 Task.config["resources"].label("resources"),
@@ -150,6 +151,7 @@ def get_tasks(
         timestamp,
         original_schedule_name,
         context,
+        priority,
         config,
         updated_at,
         requested_by,
@@ -166,6 +168,7 @@ def get_tasks(
                 timestamp=timestamp,
                 original_schedule_name=original_schedule_name,
                 context=context,
+                priority=priority,
                 config=ConfigWithOnlyResourcesSchema(
                     resources=ConfigResourcesSchema(
                         cpu=config.resources["cpu"],

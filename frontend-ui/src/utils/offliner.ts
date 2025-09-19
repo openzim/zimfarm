@@ -2,7 +2,10 @@ import constants from '@/constants'
 import type { ScheduleDuration, WorkerScheduleDuration } from '@/types/base'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { ExpandedScheduleConfig, ScheduleConfig } from '@/types/schedule'
-import type { Task } from '@/types/tasks'
+import type { Task, TaskLight } from '@/types/tasks'
+import { formatDuration, formatDurationBetween } from '@/utils/format'
+import { DateTime } from 'luxon'
+import { getTimestampStringForStatus } from './timestamp'
 
 export function getSecretFields(offlinerDefinition: OfflinerDefinition[] | null) {
   if (offlinerDefinition === null) return []
@@ -66,65 +69,41 @@ export function buildCommandWithout(config: ExpandedScheduleConfig) {
 }
 
 interface SingleScheduleDuration {
-  single: boolean
+  single: true
   value: number
+  formattedDuration: string
   worker: string
   on: string
-  minValue: null
-  maxValue: null
-  minWorkers: null
-  maxWorkers: null
 }
 
 interface MultipleScheduleDuration {
   single: false
-  minValue: number
-  maxValue: number
+  formattedMinDuration: string
+  formattedMaxDuration: string
   minWorkers: WorkerScheduleDuration[]
   maxWorkers: WorkerScheduleDuration[]
+}
+export function single_duration(value: number, worker: string, on: string): SingleScheduleDuration {
+  return {
+    single: true,
+    value: value,
+    formattedDuration: formatDuration(value * 1000),
+    worker: worker,
+    on: on,
+  }
 }
 
 export function buildScheduleDuration(
   duration: ScheduleDuration | null,
 ): SingleScheduleDuration | MultipleScheduleDuration | null {
   if (!duration) return null
-  function single_duration(value: number, worker: string, on: string): SingleScheduleDuration {
-    return {
-      single: true,
-      value: value,
-      worker: worker,
-      on: on,
-      minValue: null,
-      maxValue: null,
-      minWorkers: null,
-      maxWorkers: null,
-    }
-  }
-
-  function multipleDurations(
-    minValue: number,
-    maxValue: number,
-    workers: Record<string, WorkerScheduleDuration>,
-  ): MultipleScheduleDuration {
-    const minWorkers = Object.values(workers).filter(function (item) {
-      return item.value == minValue
-    })
-    const maxWorkers = Object.values(workers).filter(function (item) {
-      return item.value == maxValue
-    })
-    return {
-      single: false,
-      minValue: minValue * 1000,
-      maxValue: maxValue * 1000,
-      minWorkers: minWorkers,
-      maxWorkers: maxWorkers,
-    }
-  }
 
   if (!duration.available && duration.default) {
     return single_duration(duration.default.value, 'default', duration.default.on)
   }
+
   if (!duration.workers) return null
+
   const workersArray = Object.values(duration.workers)
   const minWorker = workersArray.reduce(
     (min, worker) => (worker.value < min.value ? worker : min),
@@ -142,9 +121,139 @@ export function buildScheduleDuration(
       duration.workers[minWorker.worker_name].on,
     )
   }
-  const minValue = duration.workers[minWorker.worker_name || 'default'].value
-  const maxValue = duration.workers[maxWorker.worker_name || 'default'].value
-  return multipleDurations(minValue, maxValue, duration.workers)
+
+  // Group workers by duration for min/max, ensuring no duplicate workers
+  const minWorkerMap = new Map<
+    string,
+    { value: number; on: string; worker_name: string; default: boolean; formattedDuration: string }
+  >()
+  const maxWorkerMap = new Map<
+    string,
+    { value: number; on: string; worker_name: string; default: boolean; formattedDuration: string }
+  >()
+
+  workersArray.forEach((worker) => {
+    if (worker.value == minWorker.value) {
+      minWorkerMap.set(worker.worker_name || 'default', {
+        value: worker.value,
+        on: worker.on,
+        worker_name: worker.worker_name || 'default',
+        default: worker.default,
+        formattedDuration: formatDuration(worker.value * 1000),
+      })
+    }
+    if (worker.value == maxWorker.value) {
+      maxWorkerMap.set(worker.worker_name || 'default', {
+        value: worker.value,
+        on: worker.on,
+        worker_name: worker.worker_name || 'default',
+        default: worker.default,
+        formattedDuration: formatDuration(worker.value * 1000),
+      })
+    }
+  })
+
+  const minWorkers = Array.from(minWorkerMap.values())
+  const maxWorkers = Array.from(maxWorkerMap.values())
+
+  return {
+    single: false,
+    formattedMinDuration: minWorkers[0].formattedDuration,
+    formattedMaxDuration: maxWorkers[0].formattedDuration,
+    minWorkers: minWorkers,
+    maxWorkers: maxWorkers,
+  }
+}
+
+export function buildTotalDurationDict(
+  historyRuns: TaskLight[],
+): SingleScheduleDuration | MultipleScheduleDuration | null {
+  // compute the total duration of each task from started to completed
+  if (!historyRuns || historyRuns.length === 0) return null
+
+  // Calculate duration for each task
+  const taskDurations: Array<{
+    duration: number
+    formattedDuration: string
+    worker: string
+    on: string
+    task: TaskLight
+  }> = []
+
+  for (const task of historyRuns) {
+    if (!task.timestamp) continue
+
+    const started = getTimestampStringForStatus(task.timestamp, 'started', '')
+    if (!started) continue
+
+    const succeeded = getTimestampStringForStatus(task.timestamp, 'succeeded', '')
+    if (!succeeded) continue
+
+    const startTime = DateTime.fromISO(started).toMillis()
+    const endTime = DateTime.fromISO(succeeded).toMillis()
+
+    taskDurations.push({
+      duration: endTime - startTime,
+      formattedDuration: formatDurationBetween(started, succeeded),
+      worker: task.worker_name,
+      on: task.updated_at,
+      task,
+    })
+  }
+  if (taskDurations.length === 0) return null
+
+  // Find min and max durations from started to succeeded
+  const minTask = taskDurations.reduce(
+    (min, current) => (current.duration < min.duration ? current : min),
+    taskDurations[0],
+  )
+  const maxTask = taskDurations.reduce(
+    (max, current) => (current.duration > max.duration ? current : max),
+    taskDurations[0],
+  )
+
+  // If all tasks have the same duration, return single duration
+  if (minTask.duration === maxTask.duration) {
+    return single_duration(minTask.duration, minTask.worker, minTask.on)
+  }
+
+  // Group workers by duration for min/max, ensuring no duplicate workers
+  const minWorkerMap = new Map<
+    string,
+    { value: number; on: string; worker_name: string; default: boolean; formattedDuration: string }
+  >()
+  const maxWorkerMap = new Map<
+    string,
+    { value: number; on: string; worker_name: string; default: boolean; formattedDuration: string }
+  >()
+
+  taskDurations.forEach((t) => {
+    if (t.duration === minTask.duration) {
+      minWorkerMap.set(t.worker, {
+        value: t.duration,
+        formattedDuration: t.formattedDuration,
+        on: t.on,
+        worker_name: t.worker,
+        default: false,
+      })
+    }
+    if (t.duration === maxTask.duration) {
+      maxWorkerMap.set(t.worker, {
+        value: t.duration,
+        formattedDuration: t.formattedDuration,
+        on: t.on,
+        worker_name: t.worker,
+        default: false,
+      })
+    }
+  })
+  return {
+    single: false,
+    formattedMinDuration: minTask.formattedDuration,
+    formattedMaxDuration: maxTask.formattedDuration,
+    minWorkers: Array.from(minWorkerMap.values()),
+    maxWorkers: Array.from(maxWorkerMap.values()),
+  }
 }
 
 export function logsUrl(task: Task) {
