@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM node:24-alpine3.22 AS builder
 
 RUN apk --no-cache add yarn
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY public /app/public
 COPY src /app/src
 RUN NODE_ENV=production yarn build
 
-FROM library/nginx:mainline-alpine
+FROM nginx:1.28-alpine3.21
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 

@@ -1,4 +1,4 @@
-FROM python:3.13-alpine
+FROM python:3.13-alpine3.22
 
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
