@@ -9,7 +9,11 @@
     @click="emit('fetch-schedules')"
   >
     <v-icon size="small" class="mr-1">mdi-plus</v-icon>
-    {{ isRequesting ? requestingText : `Request those ${nbSchedules} recipes` }}
+    {{
+      isRequesting
+        ? requestingText
+        : `Request ${nbSchedules} selected recipe${nbSchedules !== 1 ? 's' : ''}`
+    }}
   </v-btn>
 </template>
 
