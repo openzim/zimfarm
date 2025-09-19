@@ -1,15 +1,17 @@
-from typing import Annotated, get_args
+from typing import Annotated
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Depends, Path
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas.models import (
-    OfflinerSchema,
     calculate_pagination_metadata,
 )
+from zimfarm_backend.common.schemas.offliners import create_offliner_schema
 from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
-from zimfarm_backend.routes.http_errors import NotFoundError
+from zimfarm_backend.db.offliner_definition import get_offliner_definition
+from zimfarm_backend.routes.dependencies import gen_dbsession
 from zimfarm_backend.routes.models import ListResponse
 
 router = APIRouter(prefix="/offliners", tags=["offliners"])
@@ -30,28 +32,25 @@ async def get_offliners():
     )
 
 
-@router.get("/{offliner}")
-async def get_offliner(offliner: Annotated[Offliner, Path()]) -> JSONResponse:
+@router.get("/{offliner}/{version}")
+async def get_offliner(
+    offliner: Annotated[Offliner, Path()],
+    version: Annotated[str, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> JSONResponse:
     """Get a specific offliner"""
 
     # find the schema class that matches the offliner
-    schema_cls = next(
-        (
-            schema_cls
-            for schema_cls in get_args(OfflinerSchema)
-            if get_args(schema_cls.model_fields["offliner_id"].annotation)[0]
-            == offliner
-        ),
-        None,
+    offliner_definition = get_offliner_definition(
+        session, offliner_id=offliner, version=version
     )
-    if schema_cls is None:
-        raise NotFoundError(f"Offliner {offliner} not found")
+    schema_cls = create_offliner_schema(offliner, offliner_definition.definition)
 
     flags = schema_to_flags(schema_cls)
 
     return JSONResponse(
         content={
-            "flags": [flag.model_dump(mode="json") for flag in flags],
+            "flags": [flag.model_dump(mode="json", by_alias=True) for flag in flags],
             "help": (  # dynamic + sourced from backend because it might be custom
                 f"https://github.com/openzim/{offliner}/wiki/Frequently-Asked-Questions"
             ),

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query
@@ -246,7 +246,10 @@ def get_requested_tasks_for_worker(
                     status=task.status,
                     schedule_name=task.schedule_name,
                     config=ConfigWithOnlyOfflinerAndResourcesSchema(
-                        offliner=task.config.offliner.offliner_id,
+                        offliner=cast(
+                            str,
+                            task.config.offliner.offliner_id,  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+                        ),
                         resources=ConfigResourcesSchema(
                             cpu=task.config.resources.cpu,
                             memory=task.config.resources.memory,

@@ -18,6 +18,7 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
 )
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -136,6 +137,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     rank: int | None = None
     schedule_id: UUID | None = Field(exclude=True)
     context: str
+    offliner_definition_id: UUID = Field(exclude=True)
 
 
 class MostRecentTaskSchema(BaseModel):
@@ -228,6 +230,7 @@ class ScheduleFullSchema(BaseModel):
     nb_requested_tasks: int = Field(exclude=True)
     is_valid: bool
     context: str
+    offliner_definition_id: UUID = Field(exclude=True)
 
     @computed_field
     @property
@@ -340,3 +343,15 @@ class WorkerMetricsSchema(WorkerLightSchema):
             memory=total_memory,
             disk=total_disk,
         )
+
+
+class OfflinerDefinitionSchema(BaseModel):
+    """
+    Schema for reading a offliner definition model
+    """
+
+    id: UUID = Field(exclude=True)
+    offliner: str
+    version: str
+    created_at: datetime.datetime
+    definition: OfflinerFlagSchema

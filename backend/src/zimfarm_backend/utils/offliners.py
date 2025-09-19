@@ -1,6 +1,6 @@
 import pathlib
 import shlex
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 from pydantic import SecretStr
 
@@ -10,13 +10,6 @@ from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
     ResourcesSchema,
     ScheduleConfigSchema,
-)
-from zimfarm_backend.common.schemas.offliners.gutenberg import GutenbergFlagsSchema
-from zimfarm_backend.common.schemas.offliners.phet import PhetFlagsSchema
-from zimfarm_backend.common.schemas.offliners.sotoki import SotokiFlagsSchema
-from zimfarm_backend.common.schemas.offliners.zimit import (
-    ZimitFlagsSchema,
-    ZimitFlagsSchemaRelaxed,
 )
 
 
@@ -112,20 +105,33 @@ def command_for(
     """Command list to be passed to docker run."""
     offliner_def = OFFLINER_DEFS[offliner]
     cmd = offliner_def.cmd
+    offliner_id = cast(
+        Offliner,
+        config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+    )
 
-    if isinstance(config.offliner, SotokiFlagsSchema):
-        config.offliner.mirror = config.offliner.mirror or SecretStr(
-            "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
+    if offliner_id == Offliner.sotoki:
+        config.offliner.mirror = (  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            config.offliner.mirror  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            or SecretStr("https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange")
         )
-        config.offliner.redis_url = "unix:///var/run/redis.sock"
-        config.offliner.keep_redis = True
+        config.offliner.redis_url = "unix:///var/run/redis.sock"  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        config.offliner.keep_redis = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            True
+        )
 
-    if isinstance(config.offliner, ZimitFlagsSchema | ZimitFlagsSchemaRelaxed):
-        if config.offliner.admin_email is None:
-            config.offliner.admin_email = "contact+zimfarm@kiwix.org"
-        if config.offliner.keep is None:
+    if offliner_id == Offliner.zimit:
+        if (
+            config.offliner.admin_email  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            is None
+        ):
+            config.offliner.admin_email = "contact+zimfarm@kiwix.org"  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        if (
+            config.offliner.keep  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            is None
+        ):
             # always keep temporary files, they will be deleted anyway
-            config.offliner.keep = True
+            config.offliner.keep = True  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
     # Set default publisher. The "publisher" flag is set if a default is provided in the
     # local environment and if it is not already set manually. For a scraper to be
@@ -133,11 +139,13 @@ def command_for(
     # and named like this.
 
     if (
-        not isinstance(config.offliner, PhetFlagsSchema)
+        not offliner_id == Offliner.phet
         and constants.DEFAULT_PUBLISHER
-        and not config.offliner.publisher
+        and not config.offliner.publisher  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
     ):
-        config.offliner.publisher = constants.DEFAULT_PUBLISHER
+        config.offliner.publisher = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            constants.DEFAULT_PUBLISHER
+        )
 
     offliner_flags = config.offliner.model_dump(
         mode="json", context={"show_secrets": show_secrets}
@@ -161,11 +169,16 @@ def command_for(
             )
         ] = str(mount_point_for(offliner) / "task_progress.json")
 
-    if isinstance(config.offliner, GutenbergFlagsSchema):
+    if offliner_id == Offliner.gutenberg:
         # multiple ZIM expects a directory
-        if config.offliner.one_language_one_zim:
+        if (
+            config.offliner.one_language_one_zim  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        ):
             offliner_flags["one-language-one-zim"] = str(mount_point)
-        if config.offliner.one_language_one_zim is False:
+        if (
+            config.offliner.one_language_one_zim  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            is False
+        ):
             del offliner_flags["one-language-one-zim"]
     # compute the flag options
     return [cmd, *compute_flags(offliner_flags)]
@@ -188,7 +201,9 @@ def expanded_config(
             dev_shm = config_resources.memory
         return dev_shm
 
-    offliner_id = Offliner(config.offliner.offliner_id)
+    offliner_id = Offliner(
+        config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+    )
     # offliners can specify additional docker options (capabilities)
 
     new_resources = docker_config_for(offliner_id, config.resources)

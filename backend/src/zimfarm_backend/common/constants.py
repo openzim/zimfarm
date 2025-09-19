@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).parent.parent
 
 DEBUG = parse_bool(getenv("DEBUG", default="false"))
 
+
 REFRESH_TOKEN_EXPIRY_DURATION = parse_timespan(
     getenv("REFRESH_TOKEN_EXPIRY_DURATION", default="30d")
 )

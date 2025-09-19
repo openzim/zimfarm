@@ -1,10 +1,12 @@
 import datetime
+from typing import cast
 from uuid import UUID
 
 from humanfriendly import format_size
 from pydantic import Field
 from sqlalchemy import BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
+from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
 from zimfarm_backend.common import getnow
@@ -35,6 +37,7 @@ from zimfarm_backend.common.schemas.orms import (
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
+from zimfarm_backend.db.offliner_definition import create_offliner
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
 from zimfarm_backend.db.worker import get_worker_or_none
@@ -179,7 +182,16 @@ def request_task(
         requested_by=requested_by,
         priority=priority,
         config=expanded_config(
-            ScheduleConfigSchema.model_validate(schedule.config)
+            ScheduleConfigSchema.model_validate(
+                {
+                    **schedule.config,
+                    "offliner": create_offliner(
+                        offliner_definition=schedule.offliner_definition,
+                        data=schedule.config["offliner"],
+                        skip_validation=False,
+                    ),
+                }
+            )
         ).model_dump(mode="json", context={"show_secrets": True}),
         upload={
             "zim": {
@@ -206,6 +218,7 @@ def request_task(
     requested_task.schedule = schedule
     if worker:
         requested_task.worker = worker
+    requested_task.offliner_definition = schedule.offliner_definition
 
     session.add(requested_task)
     session.flush()
@@ -361,20 +374,27 @@ def get_tasks_doable_by_worker(
     - duration (longest first)
     - requested_at (oldest first)
     """
-    query = select(RequestedTask).where(
-        RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger) <= worker.cpu,
-        RequestedTask.config["resources"]["memory"].astext.cast(BigInteger)
-        <= worker.memory,
-        RequestedTask.config["resources"]["disk"].astext.cast(BigInteger)
-        <= worker.disk,
-        RequestedTask.config["offliner"]["offliner_id"].astext.in_(worker.offliners),
-        # if requested task has a context, worker must have that context
-        or_(
-            # if a task has a context set to empty string, it should be
-            # considered
-            RequestedTask.context == "",
-            RequestedTask.context.in_(worker.contexts),
-        ),
+    query = (
+        select(RequestedTask)
+        .options(selectinload(RequestedTask.offliner_definition))
+        .where(
+            RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger)
+            <= worker.cpu,
+            RequestedTask.config["resources"]["memory"].astext.cast(BigInteger)
+            <= worker.memory,
+            RequestedTask.config["resources"]["disk"].astext.cast(BigInteger)
+            <= worker.disk,
+            RequestedTask.config["offliner"]["offliner_id"].astext.in_(
+                worker.offliners
+            ),
+            # if requested task has a context, worker must have that context
+            or_(
+                # if a task has a context set to empty string, it should be
+                # considered
+                RequestedTask.context == "",
+                RequestedTask.context.in_(worker.contexts),
+            ),
+        )
     )
     if worker.selfish:
         query = query.where(RequestedTask.worker_id == worker.id)
@@ -393,7 +413,15 @@ def get_tasks_doable_by_worker(
                 schedule_name=task.schedule.name if task.schedule else None,
                 original_schedule_name=task.original_schedule_name,
                 config=ExpandedScheduleConfigSchema.model_validate(
-                    task.config, context={"skip_validation": True}
+                    {
+                        **task.config,
+                        "offliner": create_offliner(
+                            offliner_definition=task.offliner_definition,
+                            data=task.config["offliner"],
+                            skip_validation=True,
+                        ),
+                    },
+                    context={"skip_validation": True},
                 ),
                 timestamp=task.timestamp,
                 requested_by=task.requested_by,
@@ -421,7 +449,10 @@ def does_platform_allow_worker_to_run(
     task: RequestedTaskWithDuration,
 ) -> bool:
     """check if a worker can run a task based on its platform limitations"""
-    platform = task.config.offliner.offliner_id
+    platform = cast(
+        str,
+        task.config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+    )
     if not platform:
         return True
 
@@ -432,7 +463,8 @@ def does_platform_allow_worker_to_run(
             [
                 1
                 for running_task in all_running_tasks
-                if running_task.config.offliner.offliner_id == platform
+                if running_task.config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                == platform
             ]
         )
         if nb_platform_running >= platform_overall_limit:
@@ -449,7 +481,8 @@ def does_platform_allow_worker_to_run(
         [
             1
             for running_task in running_tasks
-            if running_task.config.offliner.offliner_id == platform
+            if running_task.config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            == platform
         ]
     )
     return nb_worker_running < worker_limit
@@ -598,7 +631,15 @@ def _create_requested_task_full_schema(
         id=requested_task.id,
         status=requested_task.status,
         config=ExpandedScheduleConfigSchema.model_validate(
-            requested_task.config, context={"skip_validation": True}
+            {
+                **requested_task.config,
+                "offliner": create_offliner(
+                    offliner_definition=requested_task.offliner_definition,
+                    data=requested_task.config["offliner"],
+                    skip_validation=True,
+                ),
+            },
+            context={"skip_validation": True},
         ),
         timestamp=requested_task.timestamp,
         requested_by=requested_task.requested_by,
@@ -619,6 +660,7 @@ def _create_requested_task_full_schema(
         rank=compute_requested_task_rank(session, requested_task.id),
         updated_at=requested_task.updated_at,
         schedule_id=requested_task.schedule_id,
+        offliner_definition_id=requested_task.offliner_definition_id,
     )
 
 
@@ -626,7 +668,9 @@ def get_requested_task_by_id_or_none(
     session: OrmSession, requested_task_id: UUID
 ) -> RequestedTaskFullSchema | None:
     requested_task = session.scalars(
-        select(RequestedTask).where(RequestedTask.id == requested_task_id)
+        select(RequestedTask)
+        .options(selectinload(RequestedTask.offliner_definition))
+        .where(RequestedTask.id == requested_task_id)
     ).one_or_none()
     if requested_task is None:
         return None
