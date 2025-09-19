@@ -248,3 +248,8 @@ class MWOfflinerFlagsSchema(DashModel):
         title="Insecure",
         description="Skip HTTPS server authenticity verification step",
     )
+    langVariant: OptionalNotEmptyString = OptionalField(
+        title="Language Variant",
+        description="Use a specific language variant, only for wikis supporting "
+        "language conversion",
+    )
