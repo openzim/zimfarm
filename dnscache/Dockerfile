@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.22
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
