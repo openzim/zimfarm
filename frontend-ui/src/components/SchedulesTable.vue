@@ -1,19 +1,34 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
-      <v-card-title class="d-flex align-center justify-end flex-wrap py-2">
-        <div class="d-flex align-center">
-          <RequestSelectionButton
-            :can-request-tasks="canRequestTasks"
-            :requesting-text="requestingText"
-            :count="paginator.count"
-            @fetch-schedules="emit('fetchSchedules')"
-          />
-          <v-btn size="small" variant="outlined" class="ml-2" @click="emit('clearFilters')">
-            <v-icon size="small" class="mr-1">mdi-close-circle</v-icon>
-            clear
-          </v-btn>
-        </div>
+      <v-card-title
+        class="d-flex flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
+      >
+        <RequestSelectionButton
+          :can-request-tasks="canRequestTasks"
+          :requesting-text="requestingText"
+          :count="selectedSchedules.length"
+          @fetch-schedules="emit('fetchSchedules', selectedSchedules)"
+        />
+        <v-btn
+          size="small"
+          variant="elevated"
+          color="warning"
+          :disabled="selectedSchedules.length === 0"
+          @click="clearSelections"
+        >
+          <v-icon size="small" class="mr-1">mdi-checkbox-multiple-blank-outline</v-icon>
+          clear selections
+        </v-btn>
+        <v-btn
+          size="small"
+          variant="outlined"
+          :disabled="!hasActiveFilters"
+          @click="emit('clearFilters')"
+        >
+          <v-icon size="small" class="mr-1">mdi-close-circle</v-icon>
+          clear filters
+        </v-btn>
       </v-card-title>
 
       <v-data-table-server
@@ -24,7 +39,9 @@
         :items-length="paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
-        item-key="name"
+        item-value="name"
+        show-select
+        v-model="selectedSchedules"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
@@ -95,7 +112,7 @@ import RequestSelectionButton from '@/components/RequestSelectionButton.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 // Props
 interface Props {
@@ -122,11 +139,22 @@ const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
   clearFilters: []
-  fetchSchedules: []
+  fetchSchedules: [selectedSchedules: string[]]
 }>()
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
+const selectedSchedules = ref<string[]>([])
+
+// Check if any filters are active
+const hasActiveFilters = computed(() => {
+  return (
+    props.filters.name.length > 0 ||
+    props.filters.categories.length > 0 ||
+    props.filters.languages.length > 0 ||
+    props.filters.tags.length > 0
+  )
+})
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   // page is 1-indexed, we need to calculate the skip for the request
@@ -141,6 +169,10 @@ watch(
   },
   { immediate: true },
 )
+
+function clearSelections() {
+  selectedSchedules.value = []
+}
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'

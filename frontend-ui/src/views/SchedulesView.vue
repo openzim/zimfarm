@@ -132,21 +132,21 @@ async function clearFilters() {
   await loadData(paginator.value.limit, 0)
 }
 
-async function handleFetchSchedules() {
+async function handleFetchSchedules(selectedSchedules: string[]) {
   // Called by the RequestSelectionButton component
   requestingText.value = 'Requesting tasks...'
   if (errors.value.length > 0) {
     notificationStore.showError('Not requested!')
     notificationStore.showError(`Unable to fetch recipe names: ${errors.value.join(', ')}`)
   } else {
-    const scheduleNames = schedules.value.map((schedule) => schedule.name).filter((name) => !!name)
+    const scheduleNames = selectedSchedules.filter((name) => !!name)
     if (scheduleNames.length > 0) {
       const requestedTasks = await requestedTasksStore.requestTasks({
         scheduleNames: scheduleNames,
       })
       if (requestedTasks) {
         notificationStore.showSuccess(
-          `Exactly ${requestedTasks.requested.length} recipes matching your selection have been requested`,
+          `Exactly ${requestedTasks.requested.length} selected recipe${requestedTasks.requested.length !== 1 ? 's' : ''} have been requested`,
         )
         await loadData(paginator.value.limit, paginator.value.skip)
       } else {
