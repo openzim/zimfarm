@@ -3,6 +3,7 @@ import type { ExpandedScheduleConfig, ScheduleNotification } from '@/types/sched
 
 export interface RequestedTaskLight extends BaseTask {
   config: ConfigWithOnlyOfflinerAndResources
+  requested_by: string
 }
 
 export interface NewRequestedTaskSchemaResponse {

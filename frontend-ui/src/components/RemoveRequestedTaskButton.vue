@@ -40,6 +40,7 @@
 <script setup lang="ts">
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { computed, ref } from 'vue'
 
@@ -57,6 +58,7 @@ const emit = defineEmits<{
 
 const requestedTasksStore = useRequestedTasksStore()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 const isRemoving = ref(false)
 const showDialog = ref(false)
@@ -80,9 +82,7 @@ const removeTask = async () => {
     const success = await requestedTasksStore.removeRequestedTask(props.id)
 
     if (success) {
-      // Emit event to parent component
-      // TODO: Set parent.working to false, not sure what this means
-      // TODO: parent.alertSuccess
+      notificationStore.showSuccess('Requested task removed')
       emit('requested-task-removed', props.id)
     }
   } catch (error) {
