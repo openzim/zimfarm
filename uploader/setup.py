@@ -34,7 +34,7 @@ setup(
         if not line.strip().startswith("#")
     ],
     extras_require={
-        "all": ["humanfriendly>=8.0"],
+        "all": ["humanfriendly==10.0"],
     },
     entry_points={
         "console_scripts": [
@@ -45,8 +45,8 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     ],
-    python_requires=">=3.12,<3.13",
+    python_requires=">=3.13,<3.14",
 )
