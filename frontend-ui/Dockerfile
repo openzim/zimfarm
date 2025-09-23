@@ -19,11 +19,8 @@ RUN apk --no-cache add python3
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx-default.conf /etc/nginx/conf.d/default.conf
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v2
-ENV ENVIRON_PATH /usr/share/nginx/html/config.json
 EXPOSE 80
 
-ENTRYPOINT ["entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
