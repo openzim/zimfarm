@@ -9,6 +9,7 @@ import * as directives from 'vuetify/directives'
 import 'vuetify/styles'
 
 import { createPinia } from 'pinia'
+import VueMatomo from 'vue-matomo'
 import VueCookies from 'vue-cookies'
 
 // config
@@ -33,6 +34,16 @@ Promise.all([getConfig()]).then(([config]) => {
   app.use(pinia)
   app.use(router)
   app.use(VueCookies)
+
+  // activate matomo stats
+  if (config.MATOMO_ENABLED) {
+    app.use(VueMatomo, {
+      host: config.MATOMO_HOST,
+      siteId: config.MATOMO_SITE_ID,
+      trackerFileName: config.MATOMO_TRACKER_FILE_NAME,
+      router: router,
+    })
+  }
 
   // provide config app-wide
   app.provide(constants.config, config)

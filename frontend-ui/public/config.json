@@ -1,4 +1,8 @@
 {
   "ZIMFARM_WEBAPI": "https://api.farm.openzim.org/v2",
-  "ZIMFARM_ZIM_DOWNLOAD_URL": "https://download.kiwix.org/zim"
+  "ZIMFARM_ZIM_DOWNLOAD_URL": "https://download.kiwix.org/zim",
+  "MATOMO_ENABLED": false,
+  "MATOMO_HOST": "https://stats.kiwix.org",
+  "MATOMO_SITE_ID": 8,
+  "MATOMO_TRACKER_FILE_NAME": "matomo"
 }
