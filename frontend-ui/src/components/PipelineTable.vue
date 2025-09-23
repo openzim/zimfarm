@@ -55,7 +55,7 @@
         <template #[`item.started`]="{ item }">
           <v-tooltip location="bottom">
             <template #activator="{ props }">
-              <span v-bind="props">
+              <span v-bind="props" class="text-no-wrap">
                 <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
                   {{ fromNow(getTimestampStringForStatus(item.timestamp, 'reserved')) }}
                 </router-link>
@@ -112,6 +112,14 @@
           />
         </template>
 
+        <template #[`item.cancel`]="{ item }">
+          <CancelTaskButton
+            v-if="canCancelTasks"
+            :id="item.id"
+            @task-canceled="emit('loadData', selectedLimit, 0)"
+          />
+        </template>
+
         <template #[`item.duration`]="{ item }">
           {{
             formatDurationBetween(
@@ -142,7 +150,7 @@
         </template>
 
         <template #[`item.requested_by`]="{ item }">
-          {{ (item as any).requested_by }}
+          {{ (item as TaskLight | RequestedTaskLight).requested_by }}
         </template>
       </v-data-table-server>
       <ErrorMessage v-for="error in errors" :key="error" :message="error" />
@@ -151,6 +159,7 @@
 </template>
 
 <script setup lang="ts">
+import CancelTaskButton from '@/components/CancelTaskButton.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
@@ -165,6 +174,7 @@ import { ref, watch } from 'vue'
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
   canUnRequestTasks: boolean // whether the user can unrequest tasks
+  canCancelTasks: boolean // whether the user can cancel tasks
   loading: boolean // whether the table is loading
   loadingText: string // the text to display when the table is loading
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display

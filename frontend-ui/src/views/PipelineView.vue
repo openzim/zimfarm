@@ -14,6 +14,7 @@
     :loading-text="loadingStore.loadingText"
     :errors="errors"
     :canUnRequestTasks="canUnRequestTasks"
+    :canCancelTasks="canCancelTasks"
     :lastRunsLoaded="lastRunsLoaded"
     :schedulesLastRuns="schedulesLastRuns"
     @limit-changed="handleLimitChange"
@@ -60,8 +61,11 @@ const headers = computed(() => {
       return [
         { title: 'Schedule', value: 'schedule_name' },
         { title: 'Started', value: 'started' },
+        { title: 'By', value: 'requested_by' },
+        { title: 'Resources', value: 'resources' },
         { title: 'Worker', value: 'worker' },
-      ]
+        canUnRequestTasks.value ? { title: 'Cancel', value: 'cancel' } : null,
+      ].filter(Boolean) as { title: string; value: string }[]
     case 'done':
       return [
         { title: 'Schedule', value: 'schedule_name' },
@@ -122,6 +126,7 @@ const scheduleStore = useScheduleStore()
 const notificationStore = useNotificationStore()
 
 const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
+const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
 
 const handleFilterChange = (newFilter: string) => {
   currentFilter.value = newFilter

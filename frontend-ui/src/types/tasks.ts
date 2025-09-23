@@ -76,7 +76,6 @@ export interface Task extends BaseTask {
   config: ExpandedScheduleConfig
   events: TaskEvent[]
   debug: TaskDebug
-  requested_by: string
   canceled_by: string | null
   container: TaskContainer
   priority: number

@@ -127,6 +127,7 @@ def get_tasks(
                 Task.config["resources"].label("resources"),
             ),
             Task.updated_at,
+            Task.requested_by,
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
@@ -151,6 +152,7 @@ def get_tasks(
         context,
         config,
         updated_at,
+        requested_by,
         _schedule_name,
         worker_name,
     ) in session.execute(
@@ -172,6 +174,7 @@ def get_tasks(
                     ),
                 ),
                 updated_at=updated_at,
+                requested_by=requested_by,
                 schedule_name=_schedule_name,
                 worker_name=worker_name,
             )

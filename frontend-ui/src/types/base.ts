@@ -94,6 +94,7 @@ export interface BaseTask {
   schedule_name: string | null
   worker_name: string
   updated_at: string
+  requested_by: string
   original_schedule_name: string
   duration?: string
   priority: number

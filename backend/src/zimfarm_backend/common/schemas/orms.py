@@ -67,6 +67,7 @@ class BaseTaskSchema(BaseModel):
     schedule_name: str | None
     worker_name: str
     updated_at: datetime.datetime
+    requested_by: str
     original_schedule_name: str
     context: str
 
@@ -87,7 +88,6 @@ class TaskFullSchema(BaseTaskSchema):
     config: ExpandedScheduleConfigSchema
     events: list[dict[str, str | datetime.datetime]]
     debug: dict[str, Any]
-    requested_by: str
     canceled_by: str | None
     container: dict[str, Any]
     priority: int
