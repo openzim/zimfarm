@@ -199,6 +199,16 @@ ZIMFileName = Annotated[
 
 OptionalZIMFileName = ZIMFileName | None
 
+SlugString = Annotated[
+    str,
+    Field(
+        pattern=r"^[A-Za-z0-9._-]+$",
+    ),
+    WrapValidator(skip_validation),
+]
+
+OptionalSlugString = SlugString | None
+
 ZIMName = Annotated[
     str,
     Field(pattern=r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+)$"),

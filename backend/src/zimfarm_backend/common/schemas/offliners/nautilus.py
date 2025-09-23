@@ -9,6 +9,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalNotEmptyString,
     OptionalSecretUrl,
     OptionalSkipableUrl,
+    OptionalSlugString,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMOutputFolder,
@@ -142,7 +143,7 @@ class NautilusFlagsSchemaRelaxed(NautilusFlagsSchema):
     Typically used for nautilus.kiwix.org
     """
 
-    zim_file: OptionalNotEmptyString = OptionalField(
+    zim_file: OptionalSlugString = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
     )

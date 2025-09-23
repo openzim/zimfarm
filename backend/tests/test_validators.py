@@ -12,6 +12,7 @@ from zimfarm_backend.common.schemas.fields import (
     SecretUrl,
     SkipableBool,
     SkipableUrl,
+    SlugString,
     ZIMFileName,
     ZIMLangCode,
     ZIMName,
@@ -58,6 +59,10 @@ class SecretUrlModel(BaseModel):
 
 class SkipableUrlModel(BaseModel):
     value: SkipableUrl
+
+
+class SlugStringModel(BaseModel):
+    value: SlugString
 
 
 def test_enum_validator_accepts_valid_value():
@@ -738,5 +743,74 @@ def test_skipable_url_model_skip_validation(
 ):
     with expected:
         SecretUrlModel.model_validate(
+            {"value": value}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("hello", does_not_raise(), id="valid-slug"),
+        pytest.param("hello-world", does_not_raise(), id="valid-slug-with-hyphen"),
+        pytest.param("hello_world", does_not_raise(), id="valid-slug-with-underscore"),
+        pytest.param("hello.world", does_not_raise(), id="valid-slug-with-dot"),
+        pytest.param("hello.world.zim", does_not_raise(), id="valid-slug-with-dot-zim"),
+        pytest.param(
+            "hello world", pytest.raises(ValidationError), id="invalid-slug-with-space"
+        ),
+        pytest.param(
+            "hello&world",
+            pytest.raises(ValidationError),
+            id="invalid-slug-with-special-character",
+        ),
+        pytest.param(
+            "hello(world",
+            pytest.raises(ValidationError),
+            id="invalid-slug-with-open-parenthesis",
+        ),
+    ],
+)
+def test_slug_string_model(value: str, expected: RaisesContext[Exception]):
+    with expected:
+        SlugStringModel.model_validate({"value": value})
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param("hello", does_not_raise(), id="valid-slug"),
+        pytest.param("hello-world", does_not_raise(), id="valid-slug-with-hyphen"),
+        pytest.param("hello_world", does_not_raise(), id="valid-slug-with-underscore"),
+        pytest.param("hello.world", does_not_raise(), id="valid-slug-with-dot"),
+        pytest.param("hello.world.zim", does_not_raise(), id="valid-slug-with-dot-zim"),
+        pytest.param("hello world", does_not_raise(), id="invalid-slug-with-space"),
+        pytest.param("hello@world", does_not_raise(), id="invalid-slug-with-at"),
+        pytest.param(
+            "hello&world",
+            does_not_raise(),
+            id="invalid-slug-with-ampersand",
+        ),
+        pytest.param(
+            "hello*world",
+            does_not_raise(),
+            id="invalid-slug-with-asterisk",
+        ),
+        pytest.param(
+            "hello(world",
+            does_not_raise(),
+            id="invalid-slug-with-open-parenthesis",
+        ),
+        pytest.param(
+            "hello)world",
+            does_not_raise(),
+            id="invalid-slug-with-close-parenthesis",
+        ),
+    ],
+)
+def test_slug_string_model_skip_validation(
+    value: str, expected: RaisesContext[Exception]
+):
+    with expected:
+        SlugStringModel.model_validate(
             {"value": value}, context={"skip_validation": True}
         )
