@@ -5,11 +5,11 @@ from pydantic import Field, WrapValidator
 
 from zimfarm_backend.common.schemas import CamelModel
 from zimfarm_backend.common.schemas.fields import (
-    NotEmptyString,
     OptionalField,
     OptionalNotEmptyString,
     OptionalPercentage,
     OptionalSkipableUrl,
+    OptionalSlugString,
     OptionalZIMDescription,
     OptionalZIMFileName,
     OptionalZIMLangCode,
@@ -17,6 +17,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMOutputFolder,
     OptionalZIMProgressFile,
     OptionalZIMTitle,
+    SlugString,
     ZIMName,
     enum_member,
 )
@@ -596,12 +597,12 @@ class ZimitFlagsSchemaRelaxed(ZimitFlagsFullSchema):
     """
 
     offliner_id: Literal["zimit"] = Field(alias="offliner_id")
-    zim_file: OptionalNotEmptyString = OptionalField(
+    zim_file: OptionalSlugString = OptionalField(
         title="ZIM filename",
         description="ZIM file name (based on --name if not provided).",
         alias="zim-file",
     )
-    name: NotEmptyString = Field(
+    name: SlugString = Field(
         title="Name",
         description="Name of the ZIM. "
         "Used to compose filename if not otherwise defined",
