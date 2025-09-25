@@ -105,7 +105,14 @@
                   </tr>
                   <tr>
                     <th class="text-left w-20">Worker</th>
-                    <td>{{ task.worker_name }}</td>
+                    <td>
+                      <router-link
+                        :to="{ name: 'worker-detail', params: { workerName: task.worker_name } }"
+                        class="text-decoration-none"
+                      >
+                        {{ task.worker_name }}
+                      </router-link>
+                    </td>
                   </tr>
                   <tr>
                     <th class="text-left w-20">Started On</th>

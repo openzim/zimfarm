@@ -70,6 +70,7 @@ class BaseTaskSchema(BaseModel):
     requested_by: str
     original_schedule_name: str
     context: str
+    priority: int
 
 
 class TaskLightSchema(BaseTaskSchema):

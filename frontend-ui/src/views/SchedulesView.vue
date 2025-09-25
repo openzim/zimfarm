@@ -3,6 +3,7 @@
 <template>
   <div>
     <SchedulesFilter
+      v-if="ready"
       :filters="filters"
       :categories="categories"
       :languages="languages"
@@ -10,6 +11,7 @@
       @filters-changed="handleFiltersChange"
     />
     <SchedulesTable
+      v-if="ready"
       :requesting-text="requestingText"
       :headers="headers"
       :schedules="schedules"
@@ -24,6 +26,9 @@
       @clear-filters="clearFilters"
       @fetch-schedules="handleFetchSchedules"
     />
+    <div v-else class="d-flex align-center justify-center" style="height: 60vh">
+      <v-progress-circular indeterminate size="70" width="7" color="primary" />
+    </div>
   </div>
 </template>
 
@@ -58,6 +63,7 @@ const schedules = ref<ScheduleLight[]>([])
 const paginator = computed(() => scheduleStore.paginator)
 
 const blockUrlUpdates = ref<boolean>(false)
+const ready = ref<boolean>(false)
 
 const errors = ref<string[]>([])
 
@@ -228,6 +234,9 @@ onMounted(async () => {
   intervalId.value = window.setInterval(async () => {
     await loadData(paginator.value.limit, paginator.value.skip, true)
   }, 60000)
+
+  // Mark as ready to show content - the table will handle initial load via updateOptions
+  ready.value = true
 })
 
 onBeforeUnmount(() => {
@@ -242,6 +251,6 @@ watch(
   () => {
     loadFiltersFromUrl()
   },
-  { deep: true },
+  { deep: true, immediate: true },
 )
 </script>

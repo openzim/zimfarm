@@ -78,7 +78,6 @@ export interface Task extends BaseTask {
   debug: TaskDebug
   canceled_by: string | null
   container: TaskContainer
-  priority: number
   notification: ScheduleNotification | null
   files: Record<string, TaskFile>
   upload: TaskUpload
