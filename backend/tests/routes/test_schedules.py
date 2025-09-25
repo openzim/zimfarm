@@ -428,16 +428,26 @@ def test_update_schedule_unauthorized(
         pytest.param(
             {
                 "offliner": "youtube",
-                "flags": {},
+                "flags": {"mwUrl": "http://fr.wikipedia.org"},
             },
             HTTPStatus.BAD_REQUEST,
             id="different_offliner_version_unset",
         ),
         pytest.param(
+            {"offliner": "youtube", "flags": {}, "version": "initial"},
+            HTTPStatus.BAD_REQUEST,
+            id="different_offliner_flags_empty",
+        ),
+        pytest.param(
+            {"offliner": "youtube", "version": "initial"},
+            HTTPStatus.BAD_REQUEST,
+            id="different_offliner_flags_unset",
+        ),
+        pytest.param(
             {
                 "offliner": "youtube",
-                "flags": {},
-                "version": "",
+                "flags": {"mwUrl": "http://fr.wikipedia.org"},
+                "version": "initial",
             },
             HTTPStatus.BAD_REQUEST,
             id="different_offliner_image_unset",
@@ -445,8 +455,8 @@ def test_update_schedule_unauthorized(
         pytest.param(
             {
                 "offliner": "youtube",
-                "flags": {},
-                "version": "",
+                "flags": {"mwUrl": "http://fr.wikipedia.org"},
+                "version": "doesnotexist",
                 "image": {"name": "openzim/mwoffliner", "tag": "latest"},
             },
             HTTPStatus.NOT_FOUND,

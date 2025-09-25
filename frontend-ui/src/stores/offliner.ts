@@ -30,17 +30,39 @@ export const useOfflinerStore = defineStore('offliner', () => {
     }
   }
 
-  const fetchOfflinerDefinition = async (offliner: string) => {
-    if (offlinerDefinitions.value[offliner]) {
-      return offlinerDefinitions.value[offliner]
+  const fetchOfflinerDefinition = async (offlinerDefinitionId: string) => {
+    if (offlinerDefinitions.value[offlinerDefinitionId]) {
+      return offlinerDefinitions.value[offlinerDefinitionId]
     }
 
     try {
       const service = await authStore.getApiService('offliners')
-      const response = await service.get<null, OfflinerDefinitionResponse>(`/${offliner}`)
-      offlinerDefinitions.value[offliner] = response
+      const response = await service.get<null, OfflinerDefinitionResponse>(
+        `/definition/${offlinerDefinitionId}`,
+      )
+      offlinerDefinitions.value[offlinerDefinitionId] = response
       errors.value = []
-      return offlinerDefinitions.value[offliner]
+      return offlinerDefinitions.value[offlinerDefinitionId]
+    } catch (_error) {
+      console.error('Failed to fetch offliner definition', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return null
+    }
+  }
+
+  const fetchOfflinerDefinitionByVersion = async (offliner: string, version: string) => {
+    if (offlinerDefinitions.value[`${offliner}-${version}`]) {
+      return offlinerDefinitions.value[`${offliner}-${version}`]
+    }
+
+    try {
+      const service = await authStore.getApiService('offliners')
+      const response = await service.get<null, OfflinerDefinitionResponse>(
+        `/${offliner}/${version}`,
+      )
+      offlinerDefinitions.value[`${offliner}-${version}`] = response
+      errors.value = []
+      return offlinerDefinitions.value[`${offliner}-${version}`]
     } catch (_error) {
       console.error('Failed to fetch offliner definition', _error)
       errors.value = translateErrors(_error as ErrorResponse)
@@ -56,5 +78,6 @@ export const useOfflinerStore = defineStore('offliner', () => {
     // actions
     fetchOffliners,
     fetchOfflinerDefinition,
+    fetchOfflinerDefinitionByVersion,
   }
 })

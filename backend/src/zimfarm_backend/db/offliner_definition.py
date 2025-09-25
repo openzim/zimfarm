@@ -31,7 +31,7 @@ def create_offliner_definition_schema(
     """Create the offliner definition schema"""
     return OfflinerDefinitionSchema(
         id=offliner_definition.id,
-        offliner=offliner_definition.offliner,
+        offliner=Offliner(offliner_definition.offliner),
         version=offliner_definition.version,
         created_at=offliner_definition.created_at,
         definition=OfflinerFlagSchema.model_validate(offliner_definition.definition),

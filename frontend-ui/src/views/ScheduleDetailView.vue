@@ -560,6 +560,7 @@
               :image-tags="imageTags"
               @submit="updateSchedule"
               @image-name-change="fetchScheduleImageTags"
+              @offliner-change="fetchOfflinerDefinitionByVersion"
             />
           </div>
         </v-window-item>
@@ -1068,6 +1069,24 @@ const calculateTaskDuration = (task: TaskLight): string => {
   return formatDurationBetween(started, completed)
 }
 
+const fetchOfflinerDefinitionByVersion = async (offliner: string, version: string) => {
+  try {
+    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinitionByVersion(
+      offliner,
+      version,
+    )
+    if (offlinerDefinition) {
+      flagsDefinition.value = offlinerDefinition.flags
+    } else {
+      for (const error of offlinerStore.errors) {
+        notificationStore.showError(error)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch offliner definition', error)
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   // Redirect to details if trying to access restricted tabs without permission
@@ -1092,7 +1111,7 @@ onMounted(async () => {
   await refreshData(true, props.selectedTab === 'history')
   if (schedule.value) {
     const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(
-      schedule.value.config.offliner.offliner_id as string,
+      schedule.value.offliner_definition_id,
     )
     if (offlinerDefinition) {
       helpUrl.value = offlinerDefinition.help

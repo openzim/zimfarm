@@ -293,14 +293,16 @@ def update_schedule(
         != schedule_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
     ):
         # Case 1: Attempting to change the offliner
-        if request.flags is None:
-            raise BadRequestError("Flags are required when changing offliner")
+        if not request.flags:
+            raise BadRequestError("New flags must be set when changing offliner")
 
         if request.image is None:
-            raise BadRequestError("Image is required when changing offliner")
+            raise BadRequestError("New image must be set when changing offliner")
 
         if request.version is None:
-            raise BadRequestError("Version is required when changing offliner")
+            raise BadRequestError(
+                "Flags definition version must be set when changing offliner"
+            )
 
         offliner_definition = get_offliner_definition(
             session, request.offliner, request.version
@@ -372,7 +374,7 @@ def update_schedule(
                 ),
                 "offliner": create_offliner(
                     offliner_definition=offliner_definition,
-                    data=request.flags,
+                    data={**request.flags, "offliner_id": offliner_definition.offliner},
                     skip_validation=False,
                 ),
             }

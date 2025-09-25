@@ -113,6 +113,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             schedule_name=row.schedule_name,
             worker_name=row.worker_name,
             context=row.context,
+            offliner_definition_id=row.offliner_definition_id,
         )
     return None
 

@@ -96,6 +96,7 @@ class TaskFullSchema(BaseTaskSchema):
     notification: ScheduleNotificationSchema | None
     files: dict[str, Any]
     upload: dict[str, Any]
+    offliner_definition_id: UUID
 
 
 class ScheduleAwareTaskFullSchema(TaskFullSchema):
@@ -137,7 +138,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     rank: int | None = None
     schedule_id: UUID | None = Field(exclude=True)
     context: str
-    offliner_definition_id: UUID = Field(exclude=True)
+    offliner_definition_id: UUID
 
 
 class MostRecentTaskSchema(BaseModel):
@@ -230,7 +231,7 @@ class ScheduleFullSchema(BaseModel):
     nb_requested_tasks: int = Field(exclude=True)
     is_valid: bool
     context: str
-    offliner_definition_id: UUID = Field(exclude=True)
+    offliner_definition_id: UUID
 
     @computed_field
     @property
@@ -351,7 +352,7 @@ class OfflinerDefinitionSchema(BaseModel):
     """
 
     id: UUID = Field(exclude=True)
-    offliner: str
+    offliner: Offliner
     version: str
     created_at: datetime.datetime
     definition: OfflinerFlagSchema
