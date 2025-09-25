@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas.offliners import create_offliner_schema
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -34,19 +34,19 @@ def create_offliner_definition_schema(
         offliner=Offliner(offliner_definition.offliner),
         version=offliner_definition.version,
         created_at=offliner_definition.created_at,
-        definition=OfflinerFlagSchema.model_validate(offliner_definition.definition),
+        schema_=OfflinerSchema.model_validate(offliner_definition.schema),
     )
 
 
 def create_offliner_definition(
     session: Session,
-    definition: OfflinerFlagSchema,
+    schema: OfflinerSchema,
     offliner: Offliner,
     version: str,
 ) -> OfflinerDefinitionSchema:
     """Create an offliner definition in the database"""
     offliner_definition = OfflinerDefinition(
-        definition=definition.model_dump(mode="json"),
+        schema=schema.model_dump(mode="json"),
         version=version,
         created_at=getnow(),
         offliner=offliner,
@@ -72,7 +72,7 @@ def create_offliner(
         offliner_definition = create_offliner_definition_schema(offliner_definition)
     return create_offliner_schema(
         Offliner(offliner_definition.offliner),
-        offliner_definition.definition,
+        offliner_definition.schema_,
     ).model_validate(data, context={"skip_validation": skip_validation})
 
 

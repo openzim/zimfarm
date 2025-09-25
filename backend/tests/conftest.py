@@ -27,7 +27,7 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
 )
 from zimfarm_backend.common.schemas.offliners import create_offliner_schema
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import (
@@ -133,8 +133,8 @@ def access_token(user: User) -> str:
 
 
 @pytest.fixture
-def mwoffliner_flags() -> OfflinerFlagSchema:
-    return OfflinerFlagSchema.model_validate_json(
+def mwoffliner_flags() -> OfflinerSchema:
+    return OfflinerSchema.model_validate_json(
         r"""
 {
   "flags": {
@@ -417,13 +417,13 @@ def mwoffliner_flags() -> OfflinerFlagSchema:
 
 @pytest.fixture
 def mwoffliner_definition(
-    dbsession: OrmSession, mwoffliner_flags: OfflinerFlagSchema
+    dbsession: OrmSession, mwoffliner_flags: OfflinerSchema
 ) -> OfflinerDefinitionSchema:
     """Create an mwoffliner definition in the database."""
     definition = OfflinerDefinition(
         offliner="mwoffliner",
         version="initial",
-        definition=mwoffliner_flags.model_dump(mode="json"),
+        schema=mwoffliner_flags.model_dump(mode="json"),
         created_at=getnow(),
     )
     dbsession.add(definition)
@@ -432,13 +432,13 @@ def mwoffliner_definition(
 
 
 @pytest.fixture
-def mwoffliner_schema_cls(mwoffliner_flags: OfflinerFlagSchema):
+def mwoffliner_schema_cls(mwoffliner_flags: OfflinerSchema):
     return create_offliner_schema(Offliner.mwoffliner, mwoffliner_flags)
 
 
 @pytest.fixture
-def ted_flags() -> OfflinerFlagSchema:
-    return OfflinerFlagSchema.model_validate_json(
+def ted_flags() -> OfflinerSchema:
+    return OfflinerSchema.model_validate_json(
         r"""
 {
   "flags": {
@@ -617,19 +617,19 @@ def ted_flags() -> OfflinerFlagSchema:
 
 
 @pytest.fixture
-def ted_flags_schema_cls(ted_flags: OfflinerFlagSchema):
+def ted_flags_schema_cls(ted_flags: OfflinerSchema):
     return create_offliner_schema(Offliner.ted, ted_flags)
 
 
 @pytest.fixture
 def tedoffliner_definition(
-    dbsession: OrmSession, ted_flags: OfflinerFlagSchema
+    dbsession: OrmSession, ted_flags: OfflinerSchema
 ) -> OfflinerDefinitionSchema:
     """Create an offliner definition in the database."""
     definition = OfflinerDefinition(
         offliner="ted",
         version="initial",
-        definition=ted_flags.model_dump(mode="json"),
+        schema=ted_flags.model_dump(mode="json"),
         created_at=getnow(),
     )
     dbsession.add(definition)

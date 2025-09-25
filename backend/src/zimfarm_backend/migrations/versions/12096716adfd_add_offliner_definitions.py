@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task
 from zimfarm_backend.db.offliner_definition import create_offliner_definition
 
@@ -38,7 +38,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("offliner", sa.String(), nullable=False),
-        sa.Column("definition", postgresql.JSON(astext_type=sa.Text()), nullable=False),
+        sa.Column("schema", postgresql.JSON(astext_type=sa.Text()), nullable=False),
         sa.Column("version", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_offliner_definition")),
@@ -81,7 +81,7 @@ def upgrade() -> None:
         ["id"],
     )
 
-    data_dir = Path(__file__).parent.parent / "seed"
+    data_dir = Path(__file__).parent.parent / "initial_offliner_definitions"
 
     bind = op.get_bind()
     session = Session(bind=bind)
@@ -92,7 +92,7 @@ def upgrade() -> None:
         offliner_definition = create_offliner_definition(
             session,
             offliner=Offliner(data["offliner_id"]),
-            definition=OfflinerFlagSchema.model_validate(data),
+            schema=OfflinerSchema.model_validate(data),
             version="initial",
         )
         # Make all the schedules point to the initial version

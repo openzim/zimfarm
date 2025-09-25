@@ -18,7 +18,7 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
 )
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -355,4 +355,5 @@ class OfflinerDefinitionSchema(BaseModel):
     offliner: Offliner
     version: str
     created_at: datetime.datetime
-    definition: OfflinerFlagSchema
+    # schema overshadows Pydantic's schema method, so, use schema_ instead
+    schema_: OfflinerSchema = Field(serialization_alias="schema")

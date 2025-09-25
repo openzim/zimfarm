@@ -48,7 +48,7 @@ class FlagSchema(BaseFlagSchema):
     alias: str | None = None
 
 
-class OfflinerFlagSchema(CamelModel):
+class OfflinerSchema(CamelModel):
     flags: dict[str, FlagSchema]
 
 
@@ -142,7 +142,7 @@ def build_offliner_model(
     *,
     model_name: str,
     offliner_id: str,
-    schema: OfflinerFlagSchema,
+    schema: OfflinerSchema,
     base_model_cls: type[BaseModel] | type[DashModel] | type[CamelModel],
     validators: dict[str, Callable[[Any, ValidationInfo], Any]] | None = None,
 ):

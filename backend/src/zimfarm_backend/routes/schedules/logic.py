@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend import logger
 from zimfarm_backend.common.enums import Offliner, ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
@@ -231,7 +232,12 @@ def get_schedule(
 ) -> JSONResponse:
     db_schedule = db_get_schedule(session, schedule_name=schedule_name)
 
-    schedule = create_schedule_full_schema(db_schedule)
+    try:
+        schedule = create_schedule_full_schema(db_schedule)
+    except Exception as exc:
+        logger.exception("error retrieving schedule")
+        raise exc
+
     if not (
         current_user
         and check_user_permission(current_user, namespace="schedules", name="update")

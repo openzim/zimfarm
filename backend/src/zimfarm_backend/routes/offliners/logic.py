@@ -46,7 +46,7 @@ async def get_offliner_definition_by_id(
     # find the schema class that matches the offliner
     offliner_definition = db_get_offliner_definition_by_id(session, definition_id)
     offliner = offliner_definition.offliner
-    schema_cls = create_offliner_schema(offliner, offliner_definition.definition)
+    schema_cls = create_offliner_schema(offliner, offliner_definition.schema_)
 
     flags = schema_to_flags(schema_cls)
 
@@ -72,7 +72,7 @@ async def get_offliner(
     offliner_definition = get_offliner_definition(
         session, offliner_id=offliner, version=version
     )
-    schema_cls = create_offliner_schema(offliner, offliner_definition.definition)
+    schema_cls = create_offliner_schema(offliner, offliner_definition.schema_)
 
     flags = schema_to_flags(schema_cls)
 

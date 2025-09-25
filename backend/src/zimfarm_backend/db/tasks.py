@@ -11,6 +11,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
@@ -60,7 +61,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             Task.context,
             OfflinerDefinition.id.label("offliner_definition_id"),
             OfflinerDefinition.offliner.label("offliner"),
-            OfflinerDefinition.definition.label("offliner_definition"),
+            OfflinerDefinition.schema.label("offliner_schema"),
             OfflinerDefinition.version.label("offliner_version"),
             OfflinerDefinition.created_at.label("offliner_definition_created_at"),
             Schedule.name.label("schedule_name"),
@@ -86,7 +87,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                             version=row.offliner_version,
                             created_at=row.offliner_definition_created_at,
                             offliner=row.offliner,
-                            definition=row.offliner_definition,
+                            schema_=OfflinerSchema.model_validate(row.offliner_schema),
                         ),
                         data=row.config["offliner"],
                         skip_validation=True,

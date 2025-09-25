@@ -9,7 +9,7 @@ class Choice(BaseModel):
 
 
 class BaseFlagSchema(BaseModel):
-    title: str = Field(serialization_alias="label")
+    title: str = Field(alias="label")
     description: str
     required: bool = False
     secret: bool = False

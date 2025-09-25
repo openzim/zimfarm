@@ -5,7 +5,7 @@ from zimfarm_backend.common.constants import (
     ZIMIT_USE_RELAXED_SCHEMA,
 )
 from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.common.schemas.offliners.devdocs import devdocs_schema_creator
 from zimfarm_backend.common.schemas.offliners.freecodecamp import (
     freecodecamp_schema_creator,
@@ -48,7 +48,7 @@ _slug_regex = "^[A-Za-z0-9._-]+$"
 
 
 def create_offliner_schema(
-    offliner: Offliner, schema: OfflinerFlagSchema
+    offliner: Offliner, schema: OfflinerSchema
 ) -> type[BaseModel]:
     match offliner:
         case Offliner.nautilus:

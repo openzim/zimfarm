@@ -212,7 +212,7 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
             data_key=field_alias,
             description=description,
             key=field_alias,
-            title=capitalize_words(title),
+            label=capitalize_words(title),
             required=required,
             type=field_type_str,
             secret=is_secret(field_type),

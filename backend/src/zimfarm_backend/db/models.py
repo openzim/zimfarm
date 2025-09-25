@@ -340,7 +340,7 @@ class OfflinerDefinition(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     offliner: Mapped[str]
-    definition: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
+    schema: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     version: Mapped[str]
     created_at: Mapped[datetime]
 

@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerFlagSchema
+from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -48,7 +48,7 @@ def test_get_offliner_definition_by_id_exists(
 
 
 def test_create_offliner_definition(
-    dbsession: OrmSession, mwoffliner_flags: OfflinerFlagSchema
+    dbsession: OrmSession, mwoffliner_flags: OfflinerSchema
 ):
     with does_not_raise():
         create_offliner_definition(
@@ -58,7 +58,7 @@ def test_create_offliner_definition(
 
 def test_create_offliner_definition_with_duplicate_version(
     dbsession: OrmSession,
-    mwoffliner_flags: OfflinerFlagSchema,
+    mwoffliner_flags: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 (needed for side effect)
 ):
     with pytest.raises(RecordAlreadyExistsError):
@@ -69,7 +69,7 @@ def test_create_offliner_definition_with_duplicate_version(
 
 def test_create_offliner_definition_with_different_version(
     dbsession: OrmSession,
-    mwoffliner_flags: OfflinerFlagSchema,
+    mwoffliner_flags: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 (needed for side effect)
 ):
     with does_not_raise():
