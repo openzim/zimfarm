@@ -83,20 +83,21 @@ interface MultipleScheduleDuration {
   minWorkers: WorkerScheduleDuration[]
   maxWorkers: WorkerScheduleDuration[]
 }
-export function single_duration(value: number, worker: string, on: string): SingleScheduleDuration {
-  return {
-    single: true,
-    value: value,
-    formattedDuration: formatDuration(value * 1000),
-    worker: worker,
-    on: on,
-  }
-}
 
 export function buildScheduleDuration(
   duration: ScheduleDuration | null,
 ): SingleScheduleDuration | MultipleScheduleDuration | null {
   if (!duration) return null
+
+  function single_duration(value: number, worker: string, on: string): SingleScheduleDuration {
+    return {
+      single: true,
+      value: value,
+      formattedDuration: formatDuration(value * 1000),
+      worker: worker,
+      on: on,
+    }
+  }
 
   if (!duration.available && duration.default) {
     return single_duration(duration.default.value, 'default', duration.default.on)
@@ -214,7 +215,13 @@ export function buildTotalDurationDict(
 
   // If all tasks have the same duration, return single duration
   if (minTask.duration === maxTask.duration) {
-    return single_duration(minTask.duration, minTask.worker, minTask.on)
+    return {
+      single: true,
+      value: minTask.duration,
+      formattedDuration: formatDuration(minTask.duration),
+      worker: minTask.worker,
+      on: minTask.on,
+    }
   }
 
   // Group workers by duration for min/max, ensuring no duplicate workers
