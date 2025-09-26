@@ -12,7 +12,11 @@ from zimfarm_backend.common.enums import (
     TaskStatus,
 )
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import LanguageSchema, OfflinerDefinitionSchema
+from zimfarm_backend.common.schemas.orms import (
+    LanguageSchema,
+    OfflinerDefinitionSchema,
+    OfflinerSchema,
+)
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -193,10 +197,11 @@ def test_update_schedule(
     dbsession: OrmSession,
     create_schedule: Callable[..., Schedule],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that update_schedule updates a schedule"""
-    old_schedule = create_schedule_full_schema(create_schedule())
+    old_schedule = create_schedule_full_schema(create_schedule(), mwoffliner)
     new_schedule_config = create_schedule_config(
         cpu=old_schedule.config.resources.cpu * 2,
         memory=old_schedule.config.resources.memory * 2,
@@ -210,7 +215,8 @@ def test_update_schedule(
             new_schedule_config=new_schedule_config,
             name=old_schedule.name + "_updated",
             offliner_definition_id=mwoffliner_definition.id,
-        )
+        ),
+        mwoffliner,
     )
     assert updated_schedule.config.resources.cpu != old_schedule.config.resources.cpu
     assert (

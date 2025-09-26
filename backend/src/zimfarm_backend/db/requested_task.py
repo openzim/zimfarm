@@ -19,7 +19,7 @@ from zimfarm_backend.common.constants import (
     ZIM_UPLOAD_URI,
     ZIMCHECK_OPTION,
 )
-from zimfarm_backend.common.enums import Offliner, Platform, TaskStatus
+from zimfarm_backend.common.enums import Platform, TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
@@ -37,7 +37,11 @@ from zimfarm_backend.common.schemas.orms import (
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
-from zimfarm_backend.db.offliner_definition import create_offliner
+from zimfarm_backend.db.offliner import get_offliner
+from zimfarm_backend.db.offliner_definition import (
+    create_offliner_instance,
+    get_offliner_definition_by_id,
+)
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
 from zimfarm_backend.db.worker import get_worker_or_none
@@ -173,6 +177,11 @@ def request_task(
             ),
         )
 
+    offliner_definition = get_offliner_definition_by_id(
+        session, schedule.offliner_definition_id
+    )
+    offliner = get_offliner(session, offliner_definition.offliner)
+
     # Otherwise, create a new requested task
     now = getnow()
     requested_task = RequestedTask(
@@ -182,16 +191,19 @@ def request_task(
         requested_by=requested_by,
         priority=priority,
         config=expanded_config(
-            ScheduleConfigSchema.model_validate(
+            offliner=offliner,
+            offliner_definition=offliner_definition,
+            config=ScheduleConfigSchema.model_validate(
                 {
                     **schedule.config,
-                    "offliner": create_offliner(
-                        offliner_definition=schedule.offliner_definition,
+                    "offliner": create_offliner_instance(
+                        offliner=offliner,
+                        offliner_definition=offliner_definition,
                         data=schedule.config["offliner"],
                         skip_validation=False,
                     ),
                 }
-            )
+            ),
         ).model_dump(mode="json", context={"show_secrets": True}),
         upload={
             "zim": {
@@ -248,11 +260,6 @@ def get_requested_tasks(
     requested timestamp.
     """
     # Set reasonable defaults if a client omits a param
-    offliners = (
-        matching_offliners
-        if matching_offliners
-        else [offliner.value for offliner in Offliner]
-    )
     priority = priority or 0
     cpu = cpu if cpu is not None else MAX_BIG_INT_VAL
     memory = memory if memory is not None else MAX_BIG_INT_VAL
@@ -288,7 +295,12 @@ def get_requested_tasks(
                 <= memory
             ),
             (RequestedTask.config["resources"]["disk"].astext.cast(BigInteger) <= disk),
-            (RequestedTask.config["offliner"]["offliner_id"].astext.in_(offliners)),
+            (
+                RequestedTask.config["offliner"]["offliner_id"].astext.in_(
+                    matching_offliners or []
+                )
+                | (matching_offliners is None)
+            ),
             (Worker.name == worker_name)
             | (
                 RequestedTask.worker is None
@@ -415,7 +427,10 @@ def get_tasks_doable_by_worker(
                 config=ExpandedScheduleConfigSchema.model_validate(
                     {
                         **task.config,
-                        "offliner": create_offliner(
+                        "offliner": create_offliner_instance(
+                            offliner=get_offliner(
+                                session, task.offliner_definition.offliner
+                            ),
                             offliner_definition=task.offliner_definition,
                             data=task.config["offliner"],
                             skip_validation=True,
@@ -633,7 +648,10 @@ def _create_requested_task_full_schema(
         config=ExpandedScheduleConfigSchema.model_validate(
             {
                 **requested_task.config,
-                "offliner": create_offliner(
+                "offliner": create_offliner_instance(
+                    offliner=get_offliner(
+                        session, requested_task.offliner_definition.offliner
+                    ),
                     offliner_definition=requested_task.offliner_definition,
                     data=requested_task.config["offliner"],
                     skip_validation=True,

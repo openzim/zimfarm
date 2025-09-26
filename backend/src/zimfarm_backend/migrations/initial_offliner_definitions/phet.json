@@ -1,5 +1,7 @@
 {
-    "offliner_id": "phet",
+  "offliner_id": "phet",
+  "stdOutput": "false",
+  "stdStats": "false",
   "flags": {
     "includedLanguages": {
       "type": "string",

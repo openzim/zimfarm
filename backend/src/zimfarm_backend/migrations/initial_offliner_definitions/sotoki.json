@@ -1,5 +1,7 @@
 {
   "offliner_id": "sotoki",
+  "stdOutput": "true",
+  "stdStats": "true",
   "flags": {
     "domain": {
       "type": "string",
@@ -46,6 +48,7 @@
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": true,
       "description": "Custom publisher name (ZIM metadata). openZIM otherwise"
     },
     "tag": {

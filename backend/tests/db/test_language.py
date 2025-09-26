@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
+from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.language import get_language_from_code, get_languages
 from zimfarm_backend.db.models import Schedule
@@ -173,6 +173,7 @@ def test_get_schedule_with_invalid_language_from_db(
     dbsession: OrmSession,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
+    mwoffliner: OfflinerSchema,
     code: str,
 ):
     # Create test schedule with invalid language code
@@ -192,7 +193,7 @@ def test_get_schedule_with_invalid_language_from_db(
     # assert we can read schedules with invalid codes from db
     schedule = get_schedule(dbsession, schedule_name="test1")
     assert schedule.language_code == code
-    schedule_schema = create_schedule_full_schema(schedule)
+    schedule_schema = create_schedule_full_schema(schedule, mwoffliner)
     # for unknown languages, the code and name should be the same
     assert schedule_schema.language.code == code
     assert schedule_schema.language.name == code

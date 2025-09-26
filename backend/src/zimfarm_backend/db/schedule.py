@@ -25,6 +25,7 @@ from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
     LanguageSchema,
     MostRecentTaskSchema,
+    OfflinerSchema,
     ScheduleDurationSchema,
     ScheduleFullSchema,
     ScheduleHistorySchema,
@@ -45,9 +46,8 @@ from zimfarm_backend.db.models import (
     Task,
     Worker,
 )
-from zimfarm_backend.db.offliner_definition import (
-    create_offliner,
-)
+from zimfarm_backend.db.offliner import get_offliner
+from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -391,7 +391,7 @@ def create_schedule(
 
 
 def create_schedule_full_schema(
-    schedule: Schedule, *, skip_validation: bool = True
+    schedule: Schedule, offliner: OfflinerSchema, *, skip_validation: bool = True
 ) -> ScheduleFullSchema:
     """Create a full schedule schema"""
     try:
@@ -417,7 +417,8 @@ def create_schedule_full_schema(
         config=ScheduleConfigSchema.model_validate(
             {
                 **schedule.config,
-                "offliner": create_offliner(
+                "offliner": create_offliner_instance(
+                    offliner=offliner,
                     offliner_definition=schedule.offliner_definition,
                     data=schedule.config["offliner"],
                     skip_validation=skip_validation,
@@ -455,7 +456,10 @@ def get_all_schedules(session: OrmSession) -> ScheduleListResult:
     return ScheduleListResult(
         nb_records=len(session.scalars(select(Schedule).order_by(Schedule.name)).all()),
         schedules=[
-            create_schedule_full_schema(schedule)
+            create_schedule_full_schema(
+                schedule,
+                get_offliner(session, schedule.config["offliner"]["offliner_id"]),
+            )
             for schedule in session.scalars(
                 select(Schedule).order_by(Schedule.name)
             ).all()

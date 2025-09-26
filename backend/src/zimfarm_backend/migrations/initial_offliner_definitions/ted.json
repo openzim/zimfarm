@@ -1,5 +1,7 @@
 {
   "offliner_id": "ted",
+  "stdOutput": "true",
+  "stdStats": "false",
   "flags": {
     "topics": {
       "type": "string",
@@ -103,6 +105,7 @@
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": true,
       "description": "Custom publisher name (ZIM metadata). \"openZIM\" otherwise"
     },
     "tags": {

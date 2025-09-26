@@ -10,7 +10,11 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import LanguageSchema, OfflinerDefinitionSchema
+from zimfarm_backend.common.schemas.orms import (
+    LanguageSchema,
+    OfflinerDefinitionSchema,
+    OfflinerSchema,
+)
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
 from zimfarm_backend.db.schedule import get_schedule, update_schedule
 from zimfarm_backend.utils.token import generate_access_token
@@ -508,8 +512,10 @@ def test_update_schedule(
     dbsession: OrmSession,
     create_user: Callable[..., User],
     create_schedule: Callable[..., Schedule],
+    mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
     tedoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
+    ted_offliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     payload: dict[str, Any],
     expected_status_code: HTTPStatus,
 ):

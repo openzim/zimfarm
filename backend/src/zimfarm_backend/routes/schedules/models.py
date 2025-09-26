@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import Field
 
 from zimfarm_backend.common.enums import (
-    Offliner,
     ScheduleCategory,
     SchedulePeriodicity,
 )
@@ -59,7 +58,7 @@ class ScheduleUpdateSchema(BaseModel):
     periodicity: SchedulePeriodicity | None = None
     tags: list[NotEmptyString] | None = None
     enabled: bool | None = None
-    offliner: Offliner | None = None
+    offliner: str | None = None
     warehouse_path: WarehousePathField | None = None
     image: DockerImageSchema | None = None
     platform: PlatformField | None = None

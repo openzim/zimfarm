@@ -11,7 +11,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
+from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
@@ -27,7 +27,8 @@ from zimfarm_backend.db.exceptions import (
     RecordDoesNotExistError,
 )
 from zimfarm_backend.db.models import OfflinerDefinition, Schedule, Task, Worker
-from zimfarm_backend.db.offliner_definition import create_offliner
+from zimfarm_backend.db.offliner import get_offliner
+from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import get_schedule_duration
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
@@ -81,13 +82,16 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                 {
                     "warehouse_path": row.config["warehouse_path"],
                     "resources": row.config["resources"],
-                    "offliner": create_offliner(
+                    "offliner": create_offliner_instance(
+                        offliner=get_offliner(session, row.offliner),
                         offliner_definition=OfflinerDefinitionSchema(
                             id=row.offliner_definition_id,
                             version=row.offliner_version,
                             created_at=row.offliner_definition_created_at,
                             offliner=row.offliner,
-                            schema_=OfflinerSchema.model_validate(row.offliner_schema),
+                            schema_=OfflinerSpecSchema.model_validate(
+                                row.offliner_schema
+                            ),
                         ),
                         data=row.config["offliner"],
                         skip_validation=True,
@@ -281,7 +285,10 @@ def get_currently_running_tasks(
             config=ExpandedScheduleConfigSchema.model_validate(
                 {
                     **task.config,
-                    "offliner": create_offliner(
+                    "offliner": create_offliner_instance(
+                        offliner=get_offliner(
+                            session, task.offliner_definition.offliner
+                        ),
                         offliner_definition=task.offliner_definition,
                         data=task.config["offliner"],
                         skip_validation=True,

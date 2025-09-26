@@ -17,18 +17,19 @@ from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import generate_password_hash
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import Offliner, Platform, TaskStatus, WarehousePath
+from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
 from zimfarm_backend.common.roles import ROLES, RoleEnum
 from zimfarm_backend.common.schemas.models import (
-    DockerImageName,
     DockerImageSchema,
     LanguageSchema,
     ResourcesSchema,
     ScheduleConfigSchema,
 )
-from zimfarm_backend.common.schemas.offliners import create_offliner_schema
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
-from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
+from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
+from zimfarm_backend.common.schemas.offliners.models import (
+    OfflinerSpecSchema,
+)
+from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import (
     Base,
@@ -42,6 +43,7 @@ from zimfarm_backend.db.models import (
     User,
     Worker,
 )
+from zimfarm_backend.db.offliner import create_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
 from zimfarm_backend.utils.offliners import expanded_config
@@ -133,8 +135,8 @@ def access_token(user: User) -> str:
 
 
 @pytest.fixture
-def mwoffliner_flags() -> OfflinerSchema:
-    return OfflinerSchema.model_validate_json(
+def mwoffliner_flags() -> OfflinerSpecSchema:
+    return OfflinerSpecSchema.model_validate_json(
         r"""
 {
   "flags": {
@@ -215,6 +217,7 @@ def mwoffliner_flags() -> OfflinerSchema:
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": "true",
       "description": "ZIM publisher metadata. `openZIM` otherwise."
     },
     "filenamePrefix": {
@@ -416,8 +419,20 @@ def mwoffliner_flags() -> OfflinerSchema:
 
 
 @pytest.fixture
+def mwoffliner(dbsession: OrmSession) -> OfflinerSchema:
+    return create_offliner(
+        dbsession,
+        offliner_id="mwoffliner",
+        base_model="DashModel",
+        docker_image_name="openzim/mwoffliner",
+        command_name="mwoffliner",
+    )
+
+
+@pytest.fixture
 def mwoffliner_definition(
-    dbsession: OrmSession, mwoffliner_flags: OfflinerSchema
+    dbsession: OrmSession,
+    mwoffliner_flags: OfflinerSchema,
 ) -> OfflinerDefinitionSchema:
     """Create an mwoffliner definition in the database."""
     definition = OfflinerDefinition(
@@ -432,13 +447,15 @@ def mwoffliner_definition(
 
 
 @pytest.fixture
-def mwoffliner_schema_cls(mwoffliner_flags: OfflinerSchema):
-    return create_offliner_schema(Offliner.mwoffliner, mwoffliner_flags)
+def mwoffliner_schema_cls(
+    mwoffliner_flags: OfflinerSpecSchema, mwoffliner: OfflinerSchema
+):
+    return build_offliner_model(mwoffliner, mwoffliner_flags)
 
 
 @pytest.fixture
-def ted_flags() -> OfflinerSchema:
-    return OfflinerSchema.model_validate_json(
+def ted_flags() -> OfflinerSpecSchema:
+    return OfflinerSpecSchema.model_validate_json(
         r"""
 {
   "flags": {
@@ -544,6 +561,7 @@ def ted_flags() -> OfflinerSchema:
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": "true",
       "description": "Custom publisher name (ZIM metadata). \"openZIM\" otherwise"
     },
     "tags": {
@@ -625,8 +643,19 @@ def ted_flags() -> OfflinerSchema:
 
 
 @pytest.fixture
-def ted_flags_schema_cls(ted_flags: OfflinerSchema):
-    return create_offliner_schema(Offliner.ted, ted_flags)
+def ted_offliner(dbsession: OrmSession) -> OfflinerSchema:
+    return create_offliner(
+        dbsession,
+        offliner_id="ted",
+        base_model="DashModel",
+        docker_image_name="openzim/ted",
+        command_name="ted2zim",
+    )
+
+
+@pytest.fixture
+def ted_flags_schema_cls(ted_flags: OfflinerSpecSchema, ted_offliner: OfflinerSchema):
+    return build_offliner_model(ted_offliner, ted_flags)
 
 
 @pytest.fixture
@@ -796,6 +825,7 @@ def language() -> LanguageSchema:
 @pytest.fixture
 def create_schedule_config(
     mwoffliner_schema_cls: type[BaseModel],
+    mwoffliner: OfflinerSchema,
 ) -> Callable[..., ScheduleConfigSchema]:
     def _create_schedule_config(
         cpu: int = 2, memory: int = 2**30, disk: int = 2**30
@@ -803,7 +833,7 @@ def create_schedule_config(
         return ScheduleConfigSchema(
             warehouse_path=WarehousePath.videos,
             image=DockerImageSchema(
-                name=DockerImageName.mwoffliner,
+                name=mwoffliner.docker_image_name,
                 tag="latest",
             ),
             resources=ResourcesSchema(
@@ -813,7 +843,7 @@ def create_schedule_config(
             ),
             offliner=mwoffliner_schema_cls.model_validate(
                 {
-                    "offliner_id": "mwoffliner",
+                    "offliner_id": mwoffliner.id,
                     "mwUrl": "https://en.wikipedia.org",
                     "adminEmail": "test@kiwix.org",
                     "mwPassword": "test-password",
@@ -926,6 +956,8 @@ def create_requested_task(
     worker: Worker,
     create_event: Callable[..., Any],
     schedule_config: ScheduleConfigSchema,
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     _schedule_config = schedule_config
     _worker = worker
@@ -966,9 +998,9 @@ def create_requested_task(
             events=events,
             requested_by=requested_by,
             priority=priority,
-            config=expanded_config(schedule_config).model_dump(
-                mode="json", context={"show_secrets": True}
-            ),
+            config=expanded_config(
+                schedule_config, mwoffliner, mwoffliner_definition
+            ).model_dump(mode="json", context={"show_secrets": True}),
             upload={},
             notification={},
             original_schedule_name=schedule_name,

@@ -1,5 +1,7 @@
 {
   "offliner_id": "freecodecamp",
+  "stdOutput": "true",
+  "stdStats": "false",
   "flags": {
     "course": {
       "type": "string",
@@ -88,6 +90,7 @@
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": true,
       "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise"
     },
     "debug": {

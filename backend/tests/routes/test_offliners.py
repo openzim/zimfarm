@@ -2,7 +2,6 @@ from http import HTTPStatus
 
 from fastapi.testclient import TestClient
 
-from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
 
 
@@ -12,8 +11,6 @@ def test_get_offliners(client: TestClient):
     data = response.json()
     assert "meta" in data
     assert "items" in data
-    for item in Offliner.all():
-        assert item in data["items"]
 
 
 def test_get_offliner_missing(

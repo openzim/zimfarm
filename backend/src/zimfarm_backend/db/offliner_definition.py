@@ -7,10 +7,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas.offliners import create_offliner_schema
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
-from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
+from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
+from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
+from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -31,17 +30,17 @@ def create_offliner_definition_schema(
     """Create the offliner definition schema"""
     return OfflinerDefinitionSchema(
         id=offliner_definition.id,
-        offliner=Offliner(offliner_definition.offliner),
+        offliner=offliner_definition.offliner,
         version=offliner_definition.version,
         created_at=offliner_definition.created_at,
-        schema_=OfflinerSchema.model_validate(offliner_definition.schema),
+        schema_=OfflinerSpecSchema.model_validate(offliner_definition.schema),
     )
 
 
 def create_offliner_definition(
     session: Session,
-    schema: OfflinerSchema,
-    offliner: Offliner,
+    schema: OfflinerSpecSchema,
+    offliner: str,
     version: str,
 ) -> OfflinerDefinitionSchema:
     """Create an offliner definition in the database"""
@@ -61,8 +60,9 @@ def create_offliner_definition(
     return create_offliner_definition_schema(offliner_definition)
 
 
-def create_offliner(
+def create_offliner_instance(
     *,
+    offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema | OfflinerDefinition,
     data: dict[str, Any],
     skip_validation: bool = True,
@@ -70,15 +70,15 @@ def create_offliner(
     """Create the offliner instance from the offliner definition and data"""
     if isinstance(offliner_definition, OfflinerDefinition):
         offliner_definition = create_offliner_definition_schema(offliner_definition)
-    return create_offliner_schema(
-        Offliner(offliner_definition.offliner),
+    return build_offliner_model(
+        offliner,
         offliner_definition.schema_,
     ).model_validate(data, context={"skip_validation": skip_validation})
 
 
 def get_offliner_definition_or_none(
     session: Session,
-    offliner_id: Offliner,
+    offliner_id: str,
     version: str,
 ) -> OfflinerDefinitionSchema | None:
     """Get the offliner definition or None using the offliner and version"""
@@ -94,7 +94,7 @@ def get_offliner_definition_or_none(
 
 def get_offliner_definition(
     session: Session,
-    offliner_id: Offliner,
+    offliner_id: str,
     version: str,
 ) -> OfflinerDefinitionSchema:
     """Get the offliner definition using the offliner and version"""
@@ -142,7 +142,7 @@ def get_offliner_definition_by_id(
 
 def get_offliner_versions(
     session: Session,
-    offliner_id: Offliner,
+    offliner_id: str,
     *,
     skip: int,
     limit: int,

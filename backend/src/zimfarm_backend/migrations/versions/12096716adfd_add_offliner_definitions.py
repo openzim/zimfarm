@@ -15,8 +15,7 @@ from sqlalchemy import update
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
-from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
+from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task
 from zimfarm_backend.db.offliner_definition import create_offliner_definition
 
@@ -91,8 +90,8 @@ def upgrade() -> None:
 
         offliner_definition = create_offliner_definition(
             session,
-            offliner=Offliner(data["offliner_id"]),
-            schema=OfflinerSchema.model_validate(data),
+            offliner=data["offliner_id"],
+            schema=OfflinerSpecSchema.model_validate(data),
             version="initial",
         )
         # Make all the schedules point to the initial version

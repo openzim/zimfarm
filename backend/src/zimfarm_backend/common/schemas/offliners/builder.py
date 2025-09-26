@@ -1,10 +1,9 @@
 # ruff: noqa: UP007
 from collections.abc import Callable
 from enum import Enum, StrEnum
-from typing import Annotated, Any, Literal, Optional, Self, cast
+from typing import Annotated, Any, Literal, Optional, cast
 
 from pydantic import (
-    ConfigDict,
     EmailStr,
     Field,
     WrapValidator,
@@ -13,9 +12,8 @@ from pydantic import (
     model_validator,
 )
 
-from zimfarm_backend.common.constants import OFFLINERS_WITH_RELAXED_SCHEMAS, parse_bool
-from zimfarm_backend.common.enums import Offliner
-from zimfarm_backend.common.schemas import BaseModel, CamelModel, DashModel
+from zimfarm_backend.common.constants import getenv, parse_bool
+from zimfarm_backend.common.schemas import CamelModel, DashModel
 from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     OptionalField,
@@ -28,76 +26,15 @@ from zimfarm_backend.common.schemas.fields import (
     validate_comma_separated_zim_lang_code,
 )
 from zimfarm_backend.common.schemas.offliners.models import (
-    BaseFlagSchema,
     Choice,
+    FlagSchema,
+    OfflinerSpecSchema,
 )
 from zimfarm_backend.common.schemas.offliners.validators import (
     check_exclusive_fields,
     validate_ted_links,
 )
-
-
-class FlagSchema(BaseFlagSchema):
-    type: Literal[
-        "string",
-        "boolean",
-        "float",
-        "integer",
-        "url",
-        "email",
-        "string-enum",
-        "list-of-integer",
-        "list-of-string",
-        "list-of-boolean",
-        "list-of-string-enum",
-        "list-of-url",
-        "list-of-email",
-    ]
-    choices: list[str] | list[Choice] | None = None
-    alias: str | None = None
-    relaxed_pattern: str | None = Field(validation_alias="relaxedPattern", default=None)
-    relaxed_min: int | None = Field(validation_alias="relaxedMin", default=None)
-    relaxed_max: int | None = Field(validation_alias="relaxedMax", default=None)
-    relaxed_min_length: int | None = Field(
-        validation_alias="relaxedMinLength", default=None
-    )
-    relaxed_max_length: int | None = Field(
-        validation_alias="relaxedMaxLength", default=None
-    )
-    custom_validator: str | None = Field(
-        validation_alias="customValidator", default=None
-    )
-    default: str | None = None
-    frozen: bool | None = None
-
-    @model_validator(mode="after")
-    def check_frozen_fields(self) -> Self:
-        """Validate that a frozen field has a default"""
-        if self.frozen and not self.default:
-            raise ValueError("Frozen fields should have a default")
-
-        return self
-
-    # disallow extra fields so that we fail early validation time. Helps with cases
-    # where we mistype a value in the schema rather than the field being omitted which
-    # is a harder issue to track
-    model_config = ConfigDict(extra="forbid")
-
-
-class ModelValidatorSchema(CamelModel):
-    """Schema for defining the validators that should apply at the model level"""
-
-    name: str  # name of the validator function
-    fields: list[str]  # list of field names to call the function with
-    model_config = ConfigDict(extra="forbid")
-
-
-class OfflinerSchema(CamelModel):
-    flags: dict[str, FlagSchema]
-    model_validators: list[ModelValidatorSchema] = Field(  # pyright: ignore
-        default_factory=list,
-    )
-
+from zimfarm_backend.common.schemas.orms import OfflinerSchema
 
 # These are simple types that don't need any special handling
 TYPE_MAP = {
@@ -130,37 +67,42 @@ def get_model_validator(validator_name: str):
             raise ValueError(f"No validator functions registered for '{validator_name}")
 
 
-def generate_field_type(offliner: Offliner, flag: FlagSchema, label: str):
+def get_base_model_cls(base_model: str) -> type[CamelModel] | type[DashModel]:
+    match base_model:
+        case "DashModel":
+            return DashModel
+        case "CamelModel":
+            return CamelModel
+        case _:
+            raise ValueError(f"'{base_model}' is not a known model")
+
+
+def generate_field_type(offliner: str, flag: FlagSchema, label: str):
     """Generate the type for a flag with necessary metadata in annotations"""
     # Build up the pydantic field with necessary metadata
+    use_relaxed_schema = parse_bool(
+        getenv(f"{offliner.upper()}_USE_RELAXED_SCHEMA", default="false")
+    )
     pydantic_field_cls = Field if flag.required else OptionalField
     pydantic_field = pydantic_field_cls(
         title=flag.title,
         description=flag.description,
         alias=flag.alias,
-        ge=(
-            flag.relaxed_min
-            if flag.relaxed_min and offliner in OFFLINERS_WITH_RELAXED_SCHEMAS
-            else flag.min
-        ),
-        le=(
-            flag.relaxed_max
-            if flag.relaxed_max and offliner in OFFLINERS_WITH_RELAXED_SCHEMAS
-            else flag.max
-        ),
+        ge=(flag.relaxed_min if flag.relaxed_min and use_relaxed_schema else flag.min),
+        le=(flag.relaxed_max if flag.relaxed_max and use_relaxed_schema else flag.max),
         pattern=(
             flag.relaxed_pattern
-            if flag.relaxed_pattern and offliner in OFFLINERS_WITH_RELAXED_SCHEMAS
+            if flag.relaxed_pattern and use_relaxed_schema
             else flag.pattern
         ),
         min_length=(
             flag.relaxed_min_length
-            if flag.relaxed_min_length and offliner in OFFLINERS_WITH_RELAXED_SCHEMAS
+            if flag.relaxed_min_length and use_relaxed_schema
             else flag.min_length
         ),
         max_length=(
             flag.relaxed_max_length
-            if flag.relaxed_max_length and offliner in OFFLINERS_WITH_RELAXED_SCHEMAS
+            if flag.relaxed_max_length and use_relaxed_schema
             else flag.max_length
         ),
         # if a field is required and no default is specified, use ellipsis ...
@@ -228,15 +170,12 @@ def generate_field_type(offliner: Offliner, flag: FlagSchema, label: str):
 
 
 def build_offliner_model(
-    *,
-    model_name: str,
-    offliner_id: Offliner,
-    schema: OfflinerSchema,
-    base_model_cls: type[BaseModel] | type[DashModel] | type[CamelModel],
+    offliner: OfflinerSchema,
+    schema: OfflinerSpecSchema,
 ):
     fields: dict[str, Annotated[Any, Any]] = {}
     for flag_name, flag_schema in schema.flags.items():
-        fields[flag_name] = generate_field_type(offliner_id, flag_schema, flag_name)
+        fields[flag_name] = generate_field_type(offliner.id, flag_schema, flag_name)
     # Add the offliner_id field to the model with the base model class which
     # typically defines the alias generators and necessary config for the model
     field_validators = {
@@ -255,9 +194,9 @@ def build_offliner_model(
         }
     )
     return create_model(
-        model_name,
-        offliner_id=(Literal[offliner_id], Field(alias="offliner_id")),
-        __base__=base_model_cls,
+        f"{offliner.id}FlagsSchema",
+        offliner_id=(Literal[offliner.id], Field(alias="offliner_id")),
+        __base__=get_base_model_cls(offliner.base_model),
         __validators__={**field_validators, **model_validators},
         **fields,
     )

@@ -145,7 +145,7 @@ def get_requested_tasks(
         skip=skip,
         limit=limit,
         matching_offliners=(
-            [offliner.value for offliner in requested_task_schema.matching_offliners]
+            requested_task_schema.matching_offliners
             if requested_task_schema.matching_offliners is not None
             else None
         ),

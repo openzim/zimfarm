@@ -1,5 +1,7 @@
 {
-    "offliner_id": "wikihow",
+  "offliner_id": "wikihow",
+  "stdOutput": "true",
+  "stdStats": "true",
   "flags": {
     "language": {
       "type": "string",
@@ -46,6 +48,7 @@
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": true,
       "description": "Custom publisher name (ZIM metadata). \"openZIM\" otherwise"
     },
     "tag": {

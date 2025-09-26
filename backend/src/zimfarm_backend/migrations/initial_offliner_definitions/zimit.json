@@ -1,5 +1,7 @@
 {
   "offliner_id": "zimit",
+  "stdOutput": "true",
+  "stdStats": "zimit-progress-file",
   "flags": {
     "seeds": {
       "type": "string",
@@ -57,6 +59,7 @@
       "type": "string",
       "required": false,
       "title": "Publisher",
+      "isPublisher": true,
       "description": "Custom publisher name (ZIM metadata). openZIM otherwise"
     },
     "source": {

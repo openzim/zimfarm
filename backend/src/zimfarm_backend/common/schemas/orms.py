@@ -9,7 +9,7 @@ from pydantic import AfterValidator, Field, computed_field
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
-from zimfarm_backend.common.enums import Offliner
+from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import ZIMCPU, ZIMDisk, ZIMMemory
 from zimfarm_backend.common.schemas.models import (
@@ -18,7 +18,7 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
 )
-from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
+from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -270,7 +270,7 @@ class Worker(BaseModel):
 
     id: UUID
     name: str
-    offliners: list[Offliner]
+    offliners: list[str]
     cpu: ZIMCPU
     memory: ZIMMemory
     disk: ZIMDisk
@@ -352,8 +352,19 @@ class OfflinerDefinitionSchema(BaseModel):
     """
 
     id: UUID = Field(exclude=True)
-    offliner: Offliner
+    offliner: str
     version: str
     created_at: datetime.datetime
     # schema overshadows Pydantic's schema method, so, use schema_ instead
-    schema_: OfflinerSchema = Field(serialization_alias="schema")
+    schema_: OfflinerSpecSchema = Field(serialization_alias="schema")
+
+
+class OfflinerSchema(BaseModel):
+    """
+    Schema for reading a offliner model
+    """
+
+    id: str
+    base_model: str
+    docker_image_name: DockerImageName
+    command_name: str

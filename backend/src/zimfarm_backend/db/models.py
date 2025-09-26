@@ -345,3 +345,11 @@ class OfflinerDefinition(Base):
     created_at: Mapped[datetime]
 
     __table_args__ = (UniqueConstraint("offliner", "version"),)
+
+
+class Offliner(Base):
+    __tablename__ = "offliner"
+    id: Mapped[str] = mapped_column(primary_key=True)
+    base_model: Mapped[str]
+    docker_image_name: Mapped[str]
+    command_name: Mapped[str]

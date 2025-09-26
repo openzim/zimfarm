@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
-from zimfarm_backend.common.enums import Offliner, ScheduleCategory, SchedulePeriodicity
+from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     ScheduleNameField,
@@ -22,6 +22,7 @@ from zimfarm_backend.common.schemas.models import (
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.orms import (
+    OfflinerDefinitionSchema,
     ScheduleConfigSchema,
     ScheduleFullSchema,
     ScheduleHistorySchema,
@@ -32,9 +33,10 @@ from zimfarm_backend.db.exceptions import (
 )
 from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import User
+from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
-    create_offliner,
     create_offliner_definition_schema,
+    create_offliner_instance,
     get_offliner_definition,
     get_offliner_definition_by_id,
 )
@@ -133,7 +135,8 @@ def create_schedule(
     config = ScheduleConfigSchema.model_validate(
         {
             **request.config,
-            "offliner": create_offliner(
+            "offliner": create_offliner_instance(
+                offliner=get_offliner(session, offliner_definition.offliner),
                 offliner_definition=offliner_definition,
                 data=request.config["offliner"],
                 skip_validation=False,
@@ -231,12 +234,16 @@ def get_schedule(
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
     db_schedule = db_get_schedule(session, schedule_name=schedule_name)
+    offliner = get_offliner(session, db_schedule.config["offliner"]["offliner_id"])
 
     try:
-        schedule = create_schedule_full_schema(db_schedule)
+        schedule = create_schedule_full_schema(db_schedule, offliner)
     except Exception as exc:
         logger.exception("error retrieving schedule")
         raise exc
+    offliner_definition = get_offliner_definition_by_id(
+        session, db_schedule.offliner_definition_id
+    )
 
     if not (
         current_user
@@ -255,12 +262,15 @@ def get_schedule(
     # validity field in DB might not reflect the actual validity of the schedule
     # as constraints evolve
     try:
-        create_schedule_full_schema(db_schedule, skip_validation=False)
+        create_schedule_full_schema(db_schedule, offliner, skip_validation=False)
     except ValidationError:
         schedule.is_valid = False
 
     schedule.config = expanded_config(
-        cast(ScheduleConfigSchema, schedule.config), show_secrets=show_secrets
+        cast(ScheduleConfigSchema, schedule.config),
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        show_secrets=show_secrets,
     )
 
     return JSONResponse(
@@ -281,9 +291,9 @@ def update_schedule(
     ):
         raise UnauthorizedError("You are not allowed to update a schedule")
 
-    schedule = create_schedule_full_schema(
-        db_get_schedule(session, schedule_name=schedule_name)
-    )
+    db_schedule = db_get_schedule(session, schedule_name=schedule_name)
+    offliner = get_offliner(session, db_schedule.config["offliner"]["offliner_id"])
+    schedule = create_schedule_full_schema(db_schedule, offliner)
 
     schedule_config = cast(ScheduleConfigSchema, schedule.config)
     if not request.model_dump(exclude_unset=True):
@@ -292,6 +302,7 @@ def update_schedule(
         )
     # track the defintion id to be used for updating the schedule
     offliner_definition_id: UUID
+    offliner_definition: OfflinerDefinitionSchema
 
     if (
         request.offliner
@@ -309,6 +320,7 @@ def update_schedule(
             raise BadRequestError(
                 "Flags definition version must be set when changing offliner"
             )
+        offliner = get_offliner(session, request.offliner)
 
         offliner_definition = get_offliner_definition(
             session, request.offliner, request.version
@@ -328,7 +340,8 @@ def update_schedule(
                     "name": request.image.name,
                     "tag": request.image.tag,
                 },
-                "offliner": create_offliner(
+                "offliner": create_offliner_instance(
+                    offliner=offliner,
                     offliner_definition=offliner_definition,
                     data={**request.flags, "offliner_id": request.offliner},
                     skip_validation=False,
@@ -353,14 +366,18 @@ def update_schedule(
             )
     elif request.flags is not None:
         # Case 2: Attempting to change some flags but keep the offliner unchanged
+        offliner = get_offliner(
+            session,
+            cast(
+                str,
+                schedule_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            ),
+        )
         if request.version:
             # Create the new config based on new version
             offliner_definition = get_offliner_definition(
                 session,
-                cast(
-                    Offliner,
-                    schedule_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-                ),
+                offliner.id,
                 request.version,
             )
         else:
@@ -378,7 +395,8 @@ def update_schedule(
                     exclude={"offliner"},
                     context={"show_secrets": True},
                 ),
-                "offliner": create_offliner(
+                "offliner": create_offliner_instance(
+                    offliner=offliner,
                     offliner_definition=offliner_definition,
                     data={**request.flags, "offliner_id": offliner_definition.offliner},
                     skip_validation=False,
@@ -405,16 +423,15 @@ def update_schedule(
         # Case 3: Attempting to change a top level configuration that doesn't
         # affect the offliner
         new_schedule_config = schedule_config
+        offliner_definition = get_offliner_definition_by_id(
+            session, schedule.offliner_definition_id
+        )
         offliner_definition_id = schedule.offliner_definition_id
 
     if request.image is not None:
         # Ensure the image for the offliner is a valid preset
-        new_offliner_name = Offliner(
-            new_schedule_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-        )
-        if Offliner.get_image_prefix(
-            new_offliner_name
-        ) + request.image.name != Offliner.get_image_name(new_offliner_name):
+
+        if request.image.name != offliner.docker_image_name:
             raise BadRequestError("Image name must match selected offliner")
 
     # update the top-level schedule config with attributes from the request
@@ -457,8 +474,13 @@ def update_schedule(
         offliner_definition_id=offliner_definition_id,
     )
 
-    schedule = create_schedule_full_schema(schedule)
-    schedule.config = expanded_config(cast(ScheduleConfigSchema, schedule.config))
+    schedule = create_schedule_full_schema(schedule, offliner)
+    schedule.config = expanded_config(
+        cast(ScheduleConfigSchema, schedule.config),
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        show_secrets=True,
+    )
     return JSONResponse(
         content=schedule.model_dump(mode="json", context={"show_secrets": True})
     )
@@ -530,6 +552,7 @@ def clone_schedule(
             {"code": schedule.language_code, "name": schedule.language_code},
             context={"skip_validation": True},
         )
+    offliner = get_offliner(session, schedule.config["offliner"]["offliner_id"])
 
     new_schedule = db_create_schedule(
         session,
@@ -540,7 +563,8 @@ def clone_schedule(
         config=ScheduleConfigSchema.model_validate(
             {
                 **schedule.config,
-                "offliner": create_offliner(
+                "offliner": create_offliner_instance(
+                    offliner=offliner,
                     offliner_definition=create_offliner_definition_schema(
                         schedule.offliner_definition
                     ),
@@ -566,7 +590,7 @@ def clone_schedule(
     # validate the new schedule as we skipped validation to allow users clone
     # an invalid schedule. If validation fails, mark as invalid
     try:
-        create_schedule_full_schema(new_schedule, skip_validation=False)
+        create_schedule_full_schema(new_schedule, offliner, skip_validation=False)
     except ValidationError:
         db_update_schedule(
             session,
@@ -591,9 +615,10 @@ def validate_schedule(
         raise UnauthorizedError("You are not allowed to validate a schedule")
 
     schedule = db_get_schedule(session, schedule_name=schedule_name)
+    offliner = get_offliner(session, schedule.config["offliner"]["offliner_id"])
 
     try:
-        create_schedule_full_schema(schedule, skip_validation=False)
+        create_schedule_full_schema(schedule, offliner, skip_validation=False)
     except ValidationError as exc:
         raise RequestValidationError(exc.errors()) from exc
 
