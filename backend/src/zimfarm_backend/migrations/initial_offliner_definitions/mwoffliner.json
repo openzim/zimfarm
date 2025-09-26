@@ -72,7 +72,8 @@
       "required": false,
       "title": "ZIM Language Metadata",
       "description": "Custom ISO-639-3 language code for the ZIM",
-      "pattern": "^[a-z]{3}(,[a-z]{3})*$"
+      "pattern": "^[a-z]{3}(,[a-z]{3})*$",
+      "customValidator": "language_code"
     },
     "publisher": {
       "type": "string",

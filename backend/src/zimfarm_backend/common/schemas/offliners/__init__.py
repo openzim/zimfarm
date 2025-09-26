@@ -1,9 +1,5 @@
 from pydantic import BaseModel
 
-from zimfarm_backend.common.constants import (
-    NAUTILUS_USE_RELAXED_SCHEMA,
-    ZIMIT_USE_RELAXED_SCHEMA,
-)
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas.offliners.builder import OfflinerSchema
 from zimfarm_backend.common.schemas.offliners.devdocs import devdocs_schema_creator
@@ -44,21 +40,8 @@ _registry = {
     Offliner.ifixit: ifixit_schema_creator,
 }
 
-_slug_regex = "^[A-Za-z0-9._-]+$"
-
 
 def create_offliner_schema(
     offliner: Offliner, schema: OfflinerSchema
 ) -> type[BaseModel]:
-    match offliner:
-        case Offliner.nautilus:
-            if NAUTILUS_USE_RELAXED_SCHEMA:
-                schema.flags["zim_file"].pattern = _slug_regex
-            return nautilus_schema_creator(schema=schema)
-        case Offliner.zimit:
-            if ZIMIT_USE_RELAXED_SCHEMA:
-                schema.flags["zim_file"].pattern = _slug_regex
-                schema.flags["name"].pattern = _slug_regex
-            return zimit_schema_creator(schema=schema)
-        case _:
-            return _registry[offliner](schema=schema)
+    return _registry[offliner](schema=schema)

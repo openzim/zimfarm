@@ -4,7 +4,7 @@ from typing import Any
 
 from humanfriendly import parse_timespan
 
-from zimfarm_backend.common.enums import SchedulePeriodicity
+from zimfarm_backend.common.enums import Offliner, SchedulePeriodicity
 
 
 def parse_bool(value: Any) -> bool:
@@ -157,13 +157,12 @@ REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
 
 REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT_DURATION", default="30s"))
 
-# OFFLINERS
-ZIMIT_USE_RELAXED_SCHEMA = parse_bool(
-    getenv("ZIMIT_USE_RELAXED_SCHEMA", default="false")
-)
-NAUTILUS_USE_RELAXED_SCHEMA = parse_bool(
-    getenv("NAUTILUS_USE_RELAXED_SCHEMA", default="false")
-)
+# OFFLINERS WITH RELAXED SCHEMAS
+OFFLINERS_WITH_RELAXED_SCHEMAS = [
+    offliner
+    for offliner in list(Offliner)
+    if parse_bool(getenv(f"{offliner.upper()}_USE_RELAXED_SCHEMA", default="false"))
+]
 
 POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)
 

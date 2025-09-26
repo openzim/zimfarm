@@ -2,8 +2,6 @@ import pathlib
 import shlex
 from typing import Any, NamedTuple, cast
 
-from pydantic import SecretStr
-
 from zimfarm_backend.common import constants
 from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas.models import (
@@ -109,29 +107,6 @@ def command_for(
         Offliner,
         config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
     )
-
-    if offliner_id == Offliner.sotoki:
-        config.offliner.mirror = (  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-            config.offliner.mirror  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-            or SecretStr("https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange")
-        )
-        config.offliner.redis_url = "unix:///var/run/redis.sock"  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-        config.offliner.keep_redis = (  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-            True
-        )
-
-    if offliner_id == Offliner.zimit:
-        if (
-            config.offliner.admin_email  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-            is None
-        ):
-            config.offliner.admin_email = "contact+zimfarm@kiwix.org"  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-        if (
-            config.offliner.keep  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
-            is None
-        ):
-            # always keep temporary files, they will be deleted anyway
-            config.offliner.keep = True  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
     # Set default publisher. The "publisher" flag is set if a default is provided in the
     # local environment and if it is not already set manually. For a scraper to be

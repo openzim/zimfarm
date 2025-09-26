@@ -1,5 +1,5 @@
 {
-    "offliner_id": "sotoki",
+  "offliner_id": "sotoki",
   "flags": {
     "domain": {
       "type": "string",
@@ -142,7 +142,8 @@
       "required": false,
       "title": "Mirror",
       "description": "URL from which to download compressed XML dumps",
-      "secret": true
+      "secret": true,
+      "default": "https://s3.us-west-1.wasabisys.com/org-kiwix-stackexchange"
     },
     "stats_filename": {
       "type": "string",
@@ -155,7 +156,9 @@
       "type": "string",
       "required": false,
       "title": "Redis URL",
-      "description": "Redis URL to use as database. Keep it as unix:///var/run/redis.sock"
+      "description": "Redis URL to use as database. Keep it as unix:///var/run/redis.sock",
+      "frozen": true,
+      "default": "unix:///var/run/redis.sock"
     },
     "defrag_redis": {
       "type": "string",
@@ -173,7 +176,9 @@
       "type": "boolean",
       "required": false,
       "title": "Keep redis",
-      "description": "Don't flush redis DB on exit. Keep it enabled."
+      "description": "Don't flush redis DB on exit. Keep it enabled.",
+      "frozen": true,
+      "default": "true"
     }
   }
 }

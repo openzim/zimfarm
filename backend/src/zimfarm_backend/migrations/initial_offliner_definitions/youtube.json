@@ -27,7 +27,8 @@
       "required": false,
       "title": "Language",
       "description": "ISO-639-3 (3 chars) language code of content",
-      "pattern": "^[a-z]{3}(,[a-z]{3})*$"
+      "pattern": "^[a-z]{3}(,[a-z]{3})*$",
+      "customValidator": "language_code"
     },
     "name": {
       "type": "string",

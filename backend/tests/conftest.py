@@ -458,14 +458,16 @@ def ted_flags() -> OfflinerSchema:
       "type": "string",
       "required": false,
       "title": "Links",
-      "description": "Comma-separated TED talk URLs to scrape, each in the format: https://www.ted.com/talks/<talk_slug>. Exclusive with topics and playlists, only one must set."
+      "description": "Comma-separated TED talk URLs to scrape, each in the format: https://www.ted.com/talks/<talk_slug>. Exclusive with topics and playlists, only one must set.",
+      "customValidator": "validate_ted_links"
     },
     "languages": {
       "type": "string",
       "required": false,
       "title": "Languages",
       "description": "Comma-separated list of ISO-639-3 language codes to filter videos. Do not pass this parameter for all languages",
-      "pattern": "^[a-z]{3}(,[a-z]{3})*$"
+      "pattern": "^[a-z]{3}(,[a-z]{3})*$",
+      "customValidator": "language_code"
     },
     "subtitles_enough": {
       "type": "boolean",
@@ -610,7 +612,13 @@ def ted_flags() -> OfflinerSchema:
       "min": 0,
       "max": 1
     }
-  }
+  },
+  "modelValidators": [
+    {
+      "name": "check_exclusive_fields",
+      "fields": ["links", "topics", "playlists"]
+    }
+  ]
 }
 """
     )

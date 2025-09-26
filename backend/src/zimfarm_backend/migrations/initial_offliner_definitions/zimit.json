@@ -1,5 +1,5 @@
 {
-    "offliner_id": "zimit",
+  "offliner_id": "zimit",
   "flags": {
     "seeds": {
       "type": "string",
@@ -830,7 +830,8 @@
       "type": "boolean",
       "required": false,
       "title": "Keep",
-      "description": "Should be True. Developer option: must be True if we want to keep the WARC files for artifacts archiving."
+      "description": "Should be True. Developer option: must be True if we want to keep the WARC files for artifacts archiving.",
+      "default": "true"
     },
     "output": {
       "type": "string",
@@ -843,7 +844,8 @@
       "type": "email",
       "required": false,
       "title": "Admin Email",
-      "description": "Admin Email for crawler: used in UserAgent so website admin can contact us"
+      "description": "Admin Email for crawler: used in UserAgent so website admin can contact us",
+      "default": "contact+zimfarm@kiwix.org"
     },
     "profile": {
       "type": "string",
@@ -869,7 +871,8 @@
       "required": false,
       "title": "ZIM Language",
       "description": "Language metadata of ZIM (warc2zim --lang param). ISO-639-3 code. Retrieved from homepage if found, fallback to `eng`",
-      "alias": "zim-lang"
+      "alias": "zim-lang",
+      "customValidator": "language_code"
     },
     "long_description": {
       "type": "string",
@@ -951,7 +954,8 @@
       "title": "ZIM filename",
       "description": "ZIM file name (based on --name if not provided). Include {period} to insert date period dynamically",
       "alias": "zim-file",
-      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+_)([a-z0-9\\-\\.]+_|)([\\d]{4}-[\\d]{2}|\\{period\\}).zim$"
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+_)([a-z0-9\\-\\.]+_|)([\\d]{4}-[\\d]{2}|\\{period\\}).zim$",
+      "relaxedPattern": "^[A-Za-z0-9._-]+$"
     },
     "name": {
       "type": "string",
@@ -959,7 +963,8 @@
       "title": "ZIM name",
       "description": "Name of the ZIM.",
       "alias": "name",
-      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$"
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$",
+      "relaxedPattern": "^[A-Za-z0-9._-]+$"
     }
   }
 }
