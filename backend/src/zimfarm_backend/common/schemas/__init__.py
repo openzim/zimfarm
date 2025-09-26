@@ -18,6 +18,7 @@ class BaseModel(pydantic.BaseModel):
         from_attributes=True,
         populate_by_name=True,
         json_encoders={datetime.datetime: serialize_datetime},
+        serialize_by_alias=True,
     )
 
 

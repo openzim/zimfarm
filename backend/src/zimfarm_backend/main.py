@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
@@ -87,7 +88,11 @@ app = create_app()
 async def request_validation_error_handler(_, exc: RequestValidationError):
     # transform the pydantic validation errors to a dictionary mapping
     # the field to the list of errors
-    errors = {err["loc"][-1]: err["msg"] for err in exc.errors()}
+    errors: dict[str | int, list[str]] = defaultdict(list)
+    for err in exc.errors():
+        loc = err["loc"]
+        key = loc[-1] if loc else "root"  # fallback for model level errors
+        errors[key].append(err["msg"])
 
     return JSONResponse(
         status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -103,7 +108,11 @@ async def request_validation_error_handler(_, exc: RequestValidationError):
 async def validation_error_handler(_, exc: ValidationError):
     # transform the pydantic validation errors to a dictionary mapping
     # the field to the list of errors
-    errors = {err["loc"][-1]: err["msg"] for err in exc.errors()}
+    errors: dict[str | int, list[str]] = defaultdict(list)
+    for err in exc.errors():
+        loc = err["loc"]
+        key = loc[-1] if loc else "root"  # fallback for model level errors
+        errors[key].append(err["msg"])
     return JSONResponse(
         status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
         content={

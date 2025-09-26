@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.language import get_language_from_code, get_languages
 from zimfarm_backend.db.models import Schedule
@@ -18,7 +19,9 @@ def test_get_languages_empty(dbsession: OrmSession):
 
 
 @pytest.fixture
-def english_schedule(dbsession: OrmSession):
+def english_schedule(
+    dbsession: OrmSession, mwoffliner_definition: OfflinerDefinitionSchema
+):
     """Create a test schedule with English language code."""
     schedule = Schedule(
         language_code="eng",
@@ -30,6 +33,7 @@ def english_schedule(dbsession: OrmSession):
         periodicity="test",
         notification={"test": "test"},
     )
+    schedule.offliner_definition_id = mwoffliner_definition.id
     dbsession.add(schedule)
     dbsession.flush()
     return schedule
@@ -46,7 +50,9 @@ def test_get_languages_single(dbsession: OrmSession, english_schedule: Schedule)
     assert results.languages[0].name == "English"
 
 
-def test_get_languages_pagination(dbsession: OrmSession):
+def test_get_languages_pagination(
+    dbsession: OrmSession, mwoffliner_definition: OfflinerDefinitionSchema
+):
     """Test getting languages with pagination."""
     # Create test schedules with valid language codes
     schedules = [
@@ -101,6 +107,8 @@ def test_get_languages_pagination(dbsession: OrmSession):
             notification={"test": "test"},
         ),
     ]
+    for schedule in schedules:
+        schedule.offliner_definition_id = mwoffliner_definition.id
     dbsession.add_all(schedules)
     dbsession.flush()
 
@@ -109,7 +117,9 @@ def test_get_languages_pagination(dbsession: OrmSession):
     assert len(results.languages) == 2
 
 
-def test_get_invalid_languages(dbsession: OrmSession):
+def test_get_invalid_languages(
+    dbsession: OrmSession, mwoffliner_definition: OfflinerDefinitionSchema
+):
     """Test getting languages with invalid codes"""
     schedules = [
         Schedule(
@@ -143,6 +153,8 @@ def test_get_invalid_languages(dbsession: OrmSession):
             notification={"test": "test"},
         ),
     ]
+    for schedule in schedules:
+        schedule.offliner_definition_id = mwoffliner_definition.id
     dbsession.add_all(schedules)
     dbsession.flush()
 
@@ -160,26 +172,28 @@ def test_get_invalid_languages(dbsession: OrmSession):
 def test_get_schedule_with_invalid_language_from_db(
     dbsession: OrmSession,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    mwoffliner: OfflinerSchema,
     code: str,
 ):
     # Create test schedule with invalid language code
-    dbsession.add(
-        Schedule(
-            language_code=code,
-            name="test1",
-            category="test",
-            config=create_schedule_config().model_dump(mode="json"),
-            enabled=True,
-            tags=["test"],
-            periodicity="test",
-            notification={"test": "test"},
-        )
+    schedule = Schedule(
+        language_code=code,
+        name="test1",
+        category="test",
+        config=create_schedule_config().model_dump(mode="json"),
+        enabled=True,
+        tags=["test"],
+        periodicity="test",
+        notification={"test": "test"},
     )
+    schedule.offliner_definition_id = mwoffliner_definition.id
+    dbsession.add(schedule)
     dbsession.flush()
     # assert we can read schedules with invalid codes from db
     schedule = get_schedule(dbsession, schedule_name="test1")
     assert schedule.language_code == code
-    schedule_schema = create_schedule_full_schema(schedule)
+    schedule_schema = create_schedule_full_schema(schedule, mwoffliner)
     # for unknown languages, the code and name should be the same
     assert schedule_schema.language.code == code
     assert schedule_schema.language.name == code

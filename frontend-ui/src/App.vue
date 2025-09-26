@@ -9,7 +9,6 @@ import { useLoadingStore } from '@/stores/loading'
 import { useOfflinerStore } from '@/stores/offliner'
 import { usePlatformStore } from '@/stores/platform'
 import { useTagStore } from '@/stores/tag'
-import type { OfflinerDefinitionResponse } from '@/types/offliner'
 import { computed, onMounted, ref } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 
@@ -33,13 +32,7 @@ onMounted(async () => {
   await tagStore.fetchTags()
   await contextStore.fetchContexts()
   await platformStore.fetchPlatforms()
-  // load offliners and their definitions
-  let offlinerDefinitionRequests: Promise<OfflinerDefinitionResponse | null>[] = []
   await offlinerStore.fetchOffliners()
-  offlinerDefinitionRequests = offlinerStore.offliners.map(async (offliner) => {
-    return offlinerStore.fetchOfflinerDefinition(offliner)
-  })
-  await Promise.all(offlinerDefinitionRequests)
 
   loadingStore.stopLoading()
   ready.value = true

@@ -12,7 +12,11 @@ from zimfarm_backend.common.enums import (
     TaskStatus,
 )
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import LanguageSchema
+from zimfarm_backend.common.schemas.orms import (
+    LanguageSchema,
+    OfflinerDefinitionSchema,
+    OfflinerSchema,
+)
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -104,7 +108,9 @@ def test_get_schedule_duration_with_worker(
 
 
 def test_create_schedule(
-    dbsession: OrmSession, create_schedule_config: Callable[..., ScheduleConfigSchema]
+    dbsession: OrmSession,
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that create_schedule creates a schedule with the correct duration"""
     schedule_config = create_schedule_config(cpu=1, memory=2**10, disk=2**10)
@@ -119,7 +125,9 @@ def test_create_schedule(
         enabled=True,
         notification=None,
         periodicity=SchedulePeriodicity.manually,
+        offliner_definition_id=mwoffliner_definition.id,
     )
+
     assert schedule.name == "test_schedule"
     assert schedule.category == ScheduleCategory.other
     assert schedule.language_code == "eng"
@@ -139,7 +147,9 @@ def test_create_schedule(
 
 
 def test_create_duplicate_schedule_with_existing_name(
-    dbsession: OrmSession, create_schedule_config: Callable[..., ScheduleConfigSchema]
+    dbsession: OrmSession,
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that create_schedule creates a schedule with the correct duration"""
     schedule_config = create_schedule_config(cpu=1, memory=2**10, disk=2**10)
@@ -155,6 +165,7 @@ def test_create_duplicate_schedule_with_existing_name(
         enabled=True,
         notification=None,
         periodicity=SchedulePeriodicity.manually,
+        offliner_definition_id=mwoffliner_definition.id,
     )
     with pytest.raises(RecordAlreadyExistsError):
         create_schedule(
@@ -168,6 +179,7 @@ def test_create_duplicate_schedule_with_existing_name(
             enabled=True,
             notification=None,
             periodicity=SchedulePeriodicity.manually,
+            offliner_definition_id=mwoffliner_definition.id,
         )
 
 
@@ -185,9 +197,11 @@ def test_update_schedule(
     dbsession: OrmSession,
     create_schedule: Callable[..., Schedule],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that update_schedule updates a schedule"""
-    old_schedule = create_schedule_full_schema(create_schedule())
+    old_schedule = create_schedule_full_schema(create_schedule(), mwoffliner)
     new_schedule_config = create_schedule_config(
         cpu=old_schedule.config.resources.cpu * 2,
         memory=old_schedule.config.resources.memory * 2,
@@ -200,7 +214,9 @@ def test_update_schedule(
             schedule_name=old_schedule.name,
             new_schedule_config=new_schedule_config,
             name=old_schedule.name + "_updated",
-        )
+            offliner_definition_id=mwoffliner_definition.id,
+        ),
+        mwoffliner,
     )
     assert updated_schedule.config.resources.cpu != old_schedule.config.resources.cpu
     assert (

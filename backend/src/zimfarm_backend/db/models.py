@@ -180,6 +180,12 @@ class Task(Base):
 
     worker: Mapped["Worker"] = relationship(back_populates="tasks", init=False)
 
+    # the exact offliner definition that was used to create the task
+    offliner_definition_id: Mapped[UUID] = mapped_column(
+        ForeignKey("offliner_definition.id"), init=False
+    )
+    offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
+
 
 class Schedule(Base):
     __tablename__ = "schedule"
@@ -188,7 +194,7 @@ class Schedule(Base):
     )
     name: Mapped[str] = mapped_column(unique=True, index=True)
     category: Mapped[str] = mapped_column(index=True)
-    # config must be JSON instead of JSONB so that we can query on dict item value
+    # config must be JSON instead of JSONB so that we can query on dict item value.
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str] = mapped_column(index=True)
@@ -208,6 +214,11 @@ class Schedule(Base):
     most_recent_task: Mapped[Optional["Task"]] = relationship(
         init=False, foreign_keys=[most_recent_task_id]
     )
+
+    offliner_definition_id: Mapped[UUID] = mapped_column(
+        ForeignKey("offliner_definition.id"), init=False
+    )
+    offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
 
     tasks: Mapped[list["Task"]] = relationship(
         back_populates="schedule",
@@ -315,4 +326,30 @@ class RequestedTask(Base):
     worker: Mapped["Worker | None"] = relationship(
         back_populates="requested_tasks", init=False
     )
+    # the exact offliner definition that was used to create the requested task
+    offliner_definition_id: Mapped[UUID] = mapped_column(
+        ForeignKey("offliner_definition.id"), init=False
+    )
+    offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
     __table_args__ = (UniqueConstraint("schedule_id"),)
+
+
+class OfflinerDefinition(Base):
+    __tablename__ = "offliner_definition"
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    offliner: Mapped[str]
+    schema: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
+    version: Mapped[str]
+    created_at: Mapped[datetime]
+
+    __table_args__ = (UniqueConstraint("offliner", "version"),)
+
+
+class Offliner(Base):
+    __tablename__ = "offliner"
+    id: Mapped[str] = mapped_column(primary_key=True)
+    base_model: Mapped[str]
+    docker_image_name: Mapped[str]
+    command_name: Mapped[str]

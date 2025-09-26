@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import Offliner, TaskStatus
+from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
@@ -149,7 +149,7 @@ def check_in_worker(
     memory: int,
     disk: int,
     selfish: bool,
-    offliners: list[Offliner],
+    offliners: list[str],
     platforms: dict[str, int] | None = None,
     user_id: UUID,
 ) -> None:

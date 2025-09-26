@@ -10,7 +10,11 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import LanguageSchema
+from zimfarm_backend.common.schemas.orms import (
+    LanguageSchema,
+    OfflinerDefinitionSchema,
+    OfflinerSchema,
+)
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
 from zimfarm_backend.db.schedule import get_schedule, update_schedule
 from zimfarm_backend.utils.token import generate_access_token
@@ -85,9 +89,146 @@ def test_get_schedules(
     assert len(data["items"]) <= 5
 
 
-def test_create_schedule_invald_config(
+@pytest.mark.parametrize(
+    "payload,expected_status_code",
+    [
+        pytest.param(
+            {
+                "name": "test_schedule",
+                "category": ScheduleCategory.wikipedia.value,
+                "language": "eng",
+                "tags": ["important"],
+                "config": {
+                    "warehouse_path": "/videos",
+                    "image": {
+                        "name": "openzim/mwoffliner",
+                        "tag": "latest",
+                    },
+                    "resources": {
+                        "cpu": 4,
+                        "memory": 2**30,
+                        "disk": 2**30,
+                    },
+                    "offliner": {
+                        "mwUrl": "https://en.wikipedia.org",
+                        "adminEmail": "test@kiwix.org",
+                        "mwPassword": "test-password",
+                    },
+                    "platform": "wikimedia",
+                    "monitor": True,
+                },
+                "enabled": True,
+                "periodicity": SchedulePeriodicity.manually.value,
+            },
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="invalid-config-missing-offliner-id",
+        ),
+        pytest.param(
+            {
+                "name": "test_schedule",
+                "category": ScheduleCategory.wikipedia.value,
+                "language": "eng",
+                "tags": ["important"],
+                "config": {
+                    "warehouse_path": "/videos",
+                    "image": {
+                        "name": "openzim/mwoffliner",
+                        "tag": "latest",
+                    },
+                    "resources": {
+                        "cpu": 4,
+                        "memory": 2**30,
+                        "disk": 2**30,
+                    },
+                    "offliner": {
+                        "offliner_id": "mwoffliner",
+                        "mwUrl": "https://en.wikipedia.org",
+                        "adminEmail": "test@kiwix.org",
+                        "mwPassword": "test-password",
+                        "extra_key": "extra",
+                    },
+                    "platform": "wikimedia",
+                    "monitor": True,
+                },
+                "enabled": True,
+                "periodicity": SchedulePeriodicity.manually.value,
+            },
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="invalid-config-extra-keys",
+        ),
+        pytest.param(
+            {
+                "name": "test_schedule",
+                "category": ScheduleCategory.wikipedia.value,
+                "language": "eng",
+                "tags": ["important"],
+                "config": {
+                    "warehouse_path": "/videos",
+                    "image": {
+                        "name": "openzim/mwoffliner",
+                        "tag": "latest",
+                    },
+                    "resources": {
+                        "cpu": 4,
+                        "memory": 2**30,
+                        "disk": 2**30,
+                    },
+                    "offliner": {
+                        "offliner_id": "mwoffliner",
+                        "mwUrl": "https://en.wikipedia.org",
+                        "adminEmail": "test@kiwix.org",
+                        "mwPassword": "test-password",
+                    },
+                    "platform": "wikimedia",
+                    "monitor": True,
+                },
+                "enabled": True,
+                "periodicity": SchedulePeriodicity.manually.value,
+                "version": "notfound",
+            },
+            HTTPStatus.NOT_FOUND,
+            id="valid-config-offliner-version-does-not-exist",
+        ),
+        pytest.param(
+            {
+                "name": "test_schedule",
+                "category": ScheduleCategory.wikipedia.value,
+                "language": "eng",
+                "tags": ["important"],
+                "config": {
+                    "warehouse_path": "/videos",
+                    "image": {
+                        "name": "openzim/mwoffliner",
+                        "tag": "latest",
+                    },
+                    "resources": {
+                        "cpu": 4,
+                        "memory": 2**30,
+                        "disk": 2**30,
+                    },
+                    "offliner": {
+                        "offliner_id": "mwoffliner",
+                        "mwUrl": "https://en.wikipedia.org",
+                        "adminEmail": "test@kiwix.org",
+                        "mwPassword": "test-password",
+                    },
+                    "platform": "wikimedia",
+                    "monitor": True,
+                },
+                "enabled": True,
+                "periodicity": SchedulePeriodicity.manually.value,
+            },
+            HTTPStatus.OK,
+            id="valid-config",
+        ),
+    ],
+)
+def test_create_schedule(
     client: TestClient,
     create_user: Callable[..., User],
+    mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001
+    payload: dict[str, Any],
+    expected_status_code: HTTPStatus,
 ):
     """Test that create_schedule raises Unprocessable Entity with invalid config"""
     user = create_user(permission=RoleEnum.ADMIN)
@@ -102,23 +243,9 @@ def test_create_schedule_invald_config(
     response = client.post(
         "/v2/schedules",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={
-            "name": "test_schedule",
-            "category": ScheduleCategory.wikipedia.value,
-            "language": "eng",
-            "tags": ["important"],
-            "config": {
-                "offliner": {
-                    "mwUrl": "https://en.wikipedia.org",
-                    "mwUsername": "test",
-                    "mwPassword": "test",
-                },
-            },
-            "enabled": True,
-            "periodicity": SchedulePeriodicity.manually.value,
-        },
+        json=payload,
     )
-    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert response.status_code == expected_status_code
 
 
 @pytest.mark.parametrize(
@@ -128,10 +255,11 @@ def test_create_schedule_invald_config(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_create_schedule(
+def test_create_schedule_with_permssions(
     client: TestClient,
     create_user: Callable[..., User],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner_definition: OfflinerDefinitionSchema,
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -160,6 +288,7 @@ def test_create_schedule(
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,
+            "version": mwoffliner_definition.version,
         },
     )
     assert response.status_code == expected_status_code
@@ -191,6 +320,7 @@ def test_schedule_name(
     client: TestClient,
     create_user: Callable[..., User],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner_definition: OfflinerDefinitionSchema,
     schedule_name: str,
     expected_status_code: int,
 ):
@@ -219,6 +349,7 @@ def test_schedule_name(
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,
+            "version": mwoffliner_definition.version,
         },
     )
     assert response.status_code == expected_status_code
@@ -298,64 +429,70 @@ def test_update_schedule_unauthorized(
 @pytest.mark.parametrize(
     "payload,expected_status_code",
     [
-        # cannot change only offliner, image must be changed as well
         pytest.param(
             {
                 "offliner": "youtube",
-                "flags": {},
-            },
-            HTTPStatus.BAD_REQUEST,
-            id="different_offliner_flags_missing",
-        ),
-        # cannot change only image name, offliner must be changed as well
-        pytest.param(
-            {
-                "image": {"name": "openzim/phet", "tag": "latest"},
-                "flags": {},
-            },
-            HTTPStatus.BAD_REQUEST,
-            id="different_image_flags_missing",
-        ),
-        # image name must be aligned with offliner name
-        pytest.param(
-            {
-                "image": {"name": "openzim/phet", "tag": "latest"},
-                "offliner": "gutenberg",
-                "flags": {},
-            },
-            HTTPStatus.BAD_REQUEST,
-            id="different_image_name",
-        ),
-        # wrong flags for offliner
-        pytest.param(
-            {
-                "offliner": "phet",
                 "flags": {"mwUrl": "http://fr.wikipedia.org"},
+            },
+            HTTPStatus.BAD_REQUEST,
+            id="different_offliner_version_unset",
+        ),
+        pytest.param(
+            {"offliner": "youtube", "flags": {}, "version": "initial"},
+            HTTPStatus.BAD_REQUEST,
+            id="different_offliner_flags_empty",
+        ),
+        pytest.param(
+            {"offliner": "youtube", "version": "initial"},
+            HTTPStatus.BAD_REQUEST,
+            id="different_offliner_flags_unset",
+        ),
+        pytest.param(
+            {
+                "offliner": "youtube",
+                "flags": {"mwUrl": "http://fr.wikipedia.org"},
+                "version": "initial",
+            },
+            HTTPStatus.BAD_REQUEST,
+            id="different_offliner_image_unset",
+        ),
+        pytest.param(
+            {
+                "offliner": "youtube",
+                "flags": {"mwUrl": "http://fr.wikipedia.org"},
+                "version": "doesnotexist",
+                "image": {"name": "openzim/mwoffliner", "tag": "latest"},
+            },
+            HTTPStatus.NOT_FOUND,
+            id="different_offliner_but_definition_does_not_exist",
+        ),
+        pytest.param(
+            {
                 "image": {"name": "openzim/phet", "tag": "latest"},
+            },
+            HTTPStatus.BAD_REQUEST,
+            id="same_offliner_different_image",
+        ),
+        pytest.param(
+            {
+                "offliner": "ted",
+                "flags": {"mwUrl": "http://fr.wikipedia.org"},
+                "image": {"name": "openzim/ted", "tag": "latest"},
+                "version": "initial",
             },
             HTTPStatus.UNPROCESSABLE_ENTITY,
-            id="wrong_flags",
+            id="different_offliner_wrong_flags",
         ),
         pytest.param(
             {
-                "offliner": "gutenberg",
-                "flags": {},
-                "image": {"name": "openzim/gutenberg", "tag": "latest"},
+                "offliner": "ted",
+                "flags": {"name": "ted-talks_eng_football", "topics": "football"},
+                "image": {"name": "openzim/ted", "tag": "latest"},
+                "version": "initial",
             },
             HTTPStatus.OK,
-            id="good_gutenberg_update",
+            id="different_offliner_good_update",
         ),
-        pytest.param(
-            {
-                "offliner": "phet",
-                "flags": {"createMul": True, "mulOnly": True},
-                "image": {"name": "openzim/phet", "tag": "latest"},
-                "artifacts_globs": ["**/*.json"],
-            },
-            HTTPStatus.OK,
-            id="good_phet_update",
-        ),
-        # update image name only
         pytest.param(
             {
                 "image": {"name": "openzim/mwoffliner", "tag": "1.12.2"},
@@ -375,6 +512,10 @@ def test_update_schedule(
     dbsession: OrmSession,
     create_user: Callable[..., User],
     create_schedule: Callable[..., Schedule],
+    mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
+    mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
+    tedoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
+    ted_offliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     payload: dict[str, Any],
     expected_status_code: HTTPStatus,
 ):
@@ -588,10 +729,10 @@ def test_create_duplicate_schedule(
             "periodicity": SchedulePeriodicity.manually.value,
         },
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.CONFLICT
 
 
-def test_clone_existing_schedule(
+def test_clone_existing_schedule_with_name_unchanged(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
@@ -617,7 +758,7 @@ def test_clone_existing_schedule(
         headers={"Authorization": f"Bearer {access_token}"},
         json={"name": "test_schedule"},
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.CONFLICT
 
 
 def test_update_existing_schedule_with_existing_name(
@@ -653,7 +794,7 @@ def test_update_existing_schedule_with_existing_name(
             "name": "test_schedule_2",
         },
     )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.CONFLICT
 
 
 @pytest.mark.parametrize(
@@ -731,6 +872,7 @@ def test_get_schedule_history_pagination(
             schedule_name=schedule.name,
             comment=f"test_comment_{i}",
             tags=[*schedule.tags, f"test_tag_{i}"],
+            offliner_definition_id=schedule.offliner_definition_id,
         )
 
     url = f"/v2/schedules/{schedule.name}/history?{query_string}"
@@ -781,3 +923,28 @@ def test_get_schedule_history_entry(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
+
+
+def test_get_schedule_backups(
+    client: TestClient,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    create_schedule(schedule_config=create_schedule_config())
+
+    response = client.get(
+        "/v2/schedules/backup",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK

@@ -530,6 +530,7 @@ export interface Props {
 interface Emits {
   (e: 'submit', payload: ScheduleUpdateSchema): void
   (e: 'image-name-change', imageName: string): void
+  (e: 'offliner-change', offliner: string, version: string): void
 }
 
 const props = defineProps<Props>()
@@ -591,6 +592,20 @@ watch(
     }
   },
   { deep: true, immediate: true },
+)
+
+// when flags change, (typically from offliner change), reset the flags
+watch(
+  () => props.flagsDefinition,
+  () => {
+    // assume flags are different, so reset edit schedule flags
+    if (
+      editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id
+    ) {
+      editFlags.value = {}
+    }
+  },
+  { deep: true },
 )
 
 // Cleanup timeout on component unmount
@@ -1040,9 +1055,10 @@ const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] 
     : []
 }
 
-const handleOfflinerChange = () => {
-  // assume flags are different, so reset edit schedule flags
-  editFlags.value = {}
+const handleOfflinerChange = (offliner: string) => {
+  // load the offliner definition
+  // TODO: determine which version to load
+  emit('offliner-change', offliner, 'initial')
 }
 
 const buildPayload = (): ScheduleUpdateSchema | null => {

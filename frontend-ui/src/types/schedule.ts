@@ -55,6 +55,7 @@ export interface Schedule {
   is_requested: boolean
   is_valid: boolean
   context: string
+  offliner_definition_id: string
 }
 
 export interface ScheduleLight {

@@ -23,6 +23,10 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
 )
 from zimfarm_backend.db.models import User
+from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
+from zimfarm_backend.db.offliner_definition import (
+    get_offliner_definition_by_id as db_get_offliner_definition_by_id,
+)
 from zimfarm_backend.db.requested_task import (
     delete_requested_task as db_delete_requested_task,
 )
@@ -93,10 +97,17 @@ async def get_task(
         show_secrets = False
     else:
         show_secrets = not hide_secrets
+    offliner_definition = db_get_offliner_definition_by_id(
+        db_session, task.offliner_definition_id
+    )
+    offliner = db_get_offliner(db_session, offliner_definition.offliner)
 
     # Rebuild the config as the one that was retrieved from the DB has secrets saved
     task.config = expanded_config(
-        cast(ScheduleConfigSchema, task.config), show_secrets=show_secrets
+        cast(ScheduleConfigSchema, task.config),
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        show_secrets=show_secrets,
     )
 
     return JSONResponse(

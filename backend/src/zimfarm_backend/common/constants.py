@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).parent.parent
 
 DEBUG = parse_bool(getenv("DEBUG", default="false"))
 
+
 REFRESH_TOKEN_EXPIRY_DURATION = parse_timespan(
     getenv("REFRESH_TOKEN_EXPIRY_DURATION", default="30d")
 )
@@ -156,13 +157,6 @@ REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
 
 REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT_DURATION", default="30s"))
 
-# OFFLINERS
-ZIMIT_USE_RELAXED_SCHEMA = parse_bool(
-    getenv("ZIMIT_USE_RELAXED_SCHEMA", default="false")
-)
-NAUTILUS_USE_RELAXED_SCHEMA = parse_bool(
-    getenv("NAUTILUS_USE_RELAXED_SCHEMA", default="false")
-)
 
 POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)
 
