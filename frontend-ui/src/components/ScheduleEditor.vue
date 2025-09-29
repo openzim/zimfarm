@@ -312,6 +312,8 @@
               v-if="field.component === 'switch'"
               v-model="editFlags[field.dataKey]"
               density="compact"
+              :details="field.description ?? undefined"
+              persistent-hint
             />
             <v-select
               v-else-if="field.component === 'multiselect'"
@@ -326,6 +328,8 @@
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'eager blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-select
               v-else-if="field.component === 'select'"
@@ -338,6 +342,8 @@
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-text-field
               v-else-if="field.component === 'number'"
@@ -351,6 +357,8 @@
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-text-field
               v-else-if="field.component === 'url'"
@@ -363,6 +371,8 @@
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-text-field
               v-else-if="field.component === 'email'"
@@ -375,6 +385,8 @@
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-text-field
               v-else-if="field.component === 'color'"
@@ -387,6 +399,8 @@
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-textarea
               v-else-if="field.component === 'textarea'"
@@ -395,10 +409,15 @@
               variant="outlined"
               :placeholder="field.placeholder"
               :required="field.required"
+              :counter="field.max_length ? true : undefined"
+              :maxlength="field.max_length ? field.max_length : undefined"
+              :persistent-counter="field.max_length ? true : undefined"
               auto-grow
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
             <v-text-field
               v-else
@@ -407,11 +426,14 @@
               variant="outlined"
               :placeholder="field.placeholder"
               :required="field.required"
+              :counter="field.max_length ? true : undefined"
+              :maxlength="field.max_length ? field.max_length : undefined"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
+              :hint="field.description ?? undefined"
+              persistent-hint
             />
-            <v-text class="text-caption">{{ field.description }}</v-text>
           </td>
         </tr>
       </tbody>
