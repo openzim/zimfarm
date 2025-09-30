@@ -21,7 +21,7 @@ from zimfarm_backend.db.refresh_token import (
     get_refresh_token,
 )
 from zimfarm_backend.db.user import get_user_by_username
-from zimfarm_backend.exceptions import PEMPublicKeyLoadError
+from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.routes.auth.models import (
     CredentialsIn,
     OAuth2CredentialsWithPassword,
@@ -169,7 +169,7 @@ def authenticate_user_with_ssh_keys(
             ):
                 authenticated = True
                 break
-        except PEMPublicKeyLoadError as exc:
+        except PublicKeyLoadError as exc:
             logger.exception("error while verifying message using public key")
             raise ForbiddenError("Unable to load public_key") from exc
 

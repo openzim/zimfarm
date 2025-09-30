@@ -43,7 +43,7 @@
       <v-card-text>
         <v-form @submit.prevent="emit('change-password', form.password)">
           <v-row>
-            <v-col cols="8" sm="8" md="6">
+            <v-col cols="12" sm="8" md="6">
               <v-text-field
                 v-model="form.password"
                 label="Password (generated)"
@@ -75,8 +75,19 @@
       <v-card-text>
         <v-form @submit.prevent="addKey">
           <v-row>
-            <v-col cols="8" sm="8" md="6">
+            <v-col cols="12">
+              <v-tabs v-model="keyInputMode" color="primary" align-tabs="start">
+                <v-tab value="file">Upload File</v-tab>
+                <v-tab value="text">Enter Text</v-tab>
+              </v-tabs>
+            </v-col>
+          </v-row>
+
+          <v-row>
+            <v-col cols="12" sm="8" md="6">
+              <!-- File Upload Mode -->
               <v-file-input
+                v-if="keyInputMode === 'file'"
                 v-model="keyFile"
                 label="RSA Public Key"
                 placeholder="Select an RSA public key file (.pub)"
@@ -85,6 +96,25 @@
                 variant="outlined"
                 density="compact"
                 @update:model-value="keyFileSelected"
+              />
+
+              <!-- Text Input Mode -->
+              <v-textarea
+                v-else
+                v-model="keyForm.key"
+                label="SSH Public Key"
+                placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... user@hostname"
+                :hint="
+                  keyForm.key && !validateSSHKey(keyForm.key)
+                    ? 'Invalid SSH key format'
+                    : 'Paste your complete SSH public key here (including the name at the end)'
+                "
+                :error="!!(keyForm.key && !validateSSHKey(keyForm.key))"
+                variant="outlined"
+                density="compact"
+                rows="3"
+                auto-grow
+                @update:model-value="keyTextChanged"
               />
             </v-col>
             <v-col>
@@ -106,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import constants from '@/constants'
 import { useNotificationStore } from '@/stores/notification'
@@ -147,6 +177,7 @@ const keyForm = ref({
 })
 
 const keyFile = ref<File | null>(null)
+const keyInputMode = ref<'file' | 'text'>('file')
 
 // Computed properties
 const payload = computed(() => {
@@ -170,7 +201,33 @@ const keyPayload = computed(() => {
 // Simple password generator
 const genPassword = () => generatePassword(8)
 
+// Watchers
+watch(keyInputMode, (newMode) => {
+  if (newMode === 'file') {
+    // Clear text form when switching to file mode
+    keyForm.value.name = ''
+    keyForm.value.key = ''
+  } else {
+    // Clear file when switching to text mode
+    keyFile.value = null
+  }
+})
+
 // Methods
+const keyTextChanged = () => {
+  if (!keyForm.value.key) {
+    keyForm.value.name = ''
+    return
+  }
+
+  const parts = keyForm.value.key.trim().split(/\s/)
+  if (parts.length >= 3) {
+    keyForm.value.name = parts[2].trim()
+  } else {
+    keyForm.value.name = ''
+  }
+}
+
 const keyFileSelected = () => {
   keyForm.value.key = ''
   keyForm.value.name = ''
@@ -211,8 +268,26 @@ const keyFileSelected = () => {
   reader.readAsText(file, 'UTF-8')
 }
 
+const validateSSHKey = (key: string): boolean => {
+  if (!key.trim()) return false
+
+  const parts = key.trim().split(/\s/)
+  if (parts.length !== 3) return false
+
+  return true
+}
+
 const addKey = () => {
   if (!keyPayload.value.name || !keyPayload.value.key) return
+
+  // Validate SSH key format for text input
+  if (keyInputMode.value === 'text' && !validateSSHKey(keyForm.value.key)) {
+    notificationStore.showError(
+      'Invalid SSH key format. Please ensure it starts with a valid key type (ssh-rsa, ssh-ed25519, etc.)',
+    )
+    return
+  }
+
   emit('add-key', keyPayload.value)
 }
 

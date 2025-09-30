@@ -16,10 +16,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from cryptography.hazmat.primitives.asymmetric.types import PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import (
     SSHPublicKeyTypes,
-    load_pem_public_key,
     load_ssh_public_key,
 )
 
@@ -28,7 +26,7 @@ from zimfarm_backend.common.constants import (
     JWT_TOKEN_EXPIRY_DURATION,
     JWT_TOKEN_ISSUER,
 )
-from zimfarm_backend.exceptions import PEMPublicKeyLoadError
+from zimfarm_backend.exceptions import PublicKeyLoadError
 
 
 def generate_access_token(
@@ -175,22 +173,19 @@ def load_public_key(
     - Ed25519 (OpenSSH format)
     """
 
-    public_key: SSHPublicKeyTypes | PublicKeyTypes | None = None
+    public_key: SSHPublicKeyTypes | None = None
     try:
         public_key = load_ssh_public_key(key)
     except (ValueError, UnsupportedAlgorithm):
-        try:
-            public_key = load_pem_public_key(key)
-        except (ValueError, UnsupportedAlgorithm):
-            pass
+        pass
 
     if public_key is None:
-        raise PEMPublicKeyLoadError("Unable to load public key")
+        raise PublicKeyLoadError("Unable to load public key")
 
     if not isinstance(
         public_key, RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey
     ):
-        raise PEMPublicKeyLoadError("Unsupported public key type.")
+        raise PublicKeyLoadError("Unsupported public key type.")
     return public_key
 
 

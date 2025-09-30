@@ -5,7 +5,7 @@ import pytest
 from _pytest.python_api import RaisesContext
 from cryptography.hazmat.primitives.asymmetric import dsa
 
-from zimfarm_backend.exceptions import PEMPublicKeyLoadError
+from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.utils.token import get_public_key_type, load_public_key
 
 
@@ -42,19 +42,13 @@ wB4xA8f+g/OqcmUOM/1gT2SPiJ9SQkolYriDBfCfcuzWlcqQdOlFrrmtnWOh3Er+
 vMLud8dyKMud/T1up4PPavUCAwEAAQ==
 -----END PUBLIC KEY-----
 """,
-            does_not_raise(),
-            id="valid-rsa-pem_key",
-        ),
-        # Valid public ECDSA key in PEM format
-        pytest.param(
-            "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEPgktY6fr6OHPZbZLypwrk511Lg7Z6S6B\nNSTqVYl/9oyxDLCW4sfIffpfVLQyfeOTMSG9NiAqonEwC+jPOsHNwRQIKWzXOScl\nT8Jc8Ikt4K/lLVGO0oRH7Gl2Mbzbr8z5\n-----END PUBLIC KEY-----\n",
-            does_not_raise(),
-            id="valid-rsa-pem-key",
+            pytest.raises(PublicKeyLoadError),
+            id="valid-rsa-but-in-pem-format",
         ),
         # Invalid key
         pytest.param(
             "ssh-rsa NOTAREALBASE64 user@example.com",
-            pytest.raises(PEMPublicKeyLoadError),
+            pytest.raises(PublicKeyLoadError),
             id="invalid-key",
         ),
         # Valid Ed25519 key

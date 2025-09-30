@@ -82,7 +82,7 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 
 - FastAPI dependency injection for authentication
 - Uses `cryptography` library for cryptographic functions
-- Supports SSH keys in RSA and PEM formats
+- Supports SSH keys generated with RSA, ECDSA and Ed25519 algorithms
 - Token payload `expires_in` renamed to `expires_time` and is a datetime isoformat string
 
 ### 7. Models

@@ -30,7 +30,7 @@ from zimfarm_backend.db.user import delete_user as db_delete_user
 from zimfarm_backend.db.user import get_users as db_get_users
 from zimfarm_backend.db.user import update_user as db_update_user
 from zimfarm_backend.db.user import update_user_password as db_update_user_password
-from zimfarm_backend.exceptions import PEMPublicKeyLoadError
+from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.routes.dependencies import get_current_user
 from zimfarm_backend.routes.http_errors import (
     BadRequestError,
@@ -188,7 +188,7 @@ def create_user_key(
 
     try:
         public_key = load_public_key(bytes(ssh_key.key, encoding="ascii"))
-    except PEMPublicKeyLoadError as e:
+    except PublicKeyLoadError as e:
         raise BadRequestError("Invalid public key") from e
 
     fingerprint = get_public_key_fingerprint(public_key)
