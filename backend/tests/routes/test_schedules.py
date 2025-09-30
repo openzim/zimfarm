@@ -798,6 +798,138 @@ def test_update_existing_schedule_with_existing_name(
 
 
 @pytest.mark.parametrize(
+    "payload,check_attrs,expected_status_code",
+    [
+        pytest.param(
+            {
+                "platform": "shamela",
+                "resources": {
+                    "cpu": 1,
+                    "memory": 1024,
+                    "disk": 1024,
+                },
+                "monitor": True,
+                "artifacts_globs": ["**/*.json"],
+            },
+            {"platform", "resources", "monitor", "artifacts_globs"},
+            HTTPStatus.OK,
+            id="platform-resources-monitor-artifacts_globs",
+        ),
+        pytest.param(
+            {
+                "platform": None,
+                "monitor": False,
+                "artifacts_globs": [],
+            },
+            {"platform", "monitor", "artifacts_globs"},
+            HTTPStatus.OK,
+            id="platform-monitor-artifacts_globs",
+        ),
+        pytest.param(
+            {
+                "platform": "",
+                "monitor": False,
+                "artifacts_globs": [],
+            },
+            {"platform", "monitor", "artifacts_globs"},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="invalid-platform-empty-string",
+        ),
+        pytest.param(
+            {
+                "platform": None,
+                "monitor": False,
+                "artifacts_globs": None,
+            },
+            {"platform", "monitor", "artifacts_globs"},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            # artifact_globs should not be None but platform can be None at config level
+            id="platform-none-artifacts_globs-none",
+        ),
+        pytest.param(
+            {
+                "resources": {
+                    "cpu": 1,
+                    "memory": 1024,
+                    "disk": 1024,
+                },
+            },
+            {"resources"},
+            HTTPStatus.OK,
+            id="resources-only-update",
+        ),
+        pytest.param(
+            {
+                "resources": None,
+            },
+            {"resources"},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            # resources explicitly set to None but cannot be None at config level
+            id="resources-none",
+        ),
+        pytest.param(
+            {
+                "monitor": None,
+            },
+            {"monitor"},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            # monitor explicitly set to None but cannot be None at config level
+            id="monitor-none",
+        ),
+        pytest.param(
+            {
+                "artifacts_globs": None,
+            },
+            {"artifacts_globs"},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            # artifacts_globs should not be None but can be None at config level
+            id="artifacts_globs-none",
+        ),
+    ],
+)
+def test_update_schedule_config_top_level_attributes(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    payload: dict[str, Any],
+    check_attrs: set[str],
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule = create_schedule(name="test_schedule")
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.patch(
+        f"/v2/schedules/{schedule.name}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json=payload,
+    )
+    assert response.status_code == expected_status_code
+    if response.status_code == HTTPStatus.OK:
+        data = response.json()
+        for attr in check_attrs:
+            if isinstance(data["config"][attr], dict):
+                # check that the values we set are in the nested dict as
+                # response sometimes contains extra fields that are not in
+                # the request payload. e.g resources response contains
+                # cap_add, cap_drop and shm which are not in the request payload
+                for key in payload[attr]:
+                    assert data["config"][attr][key] == payload[attr][key]
+            else:
+                assert data["config"][attr] == payload[attr]
+
+
+@pytest.mark.parametrize(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),

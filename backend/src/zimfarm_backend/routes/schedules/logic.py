@@ -454,17 +454,20 @@ def update_schedule(
         ):
             raise BadRequestError("Image name must match selected offliner")
 
-    # update the top-level schedule config with attributes from the request
-    new_schedule_config.warehouse_path = (
-        request.warehouse_path or schedule_config.warehouse_path
+    # update the top-level schedule config attributes from the request but
+    # exclude offliner as it means different things in request payload and config
+    update_data = request.model_dump(
+        exclude_unset=True,
+        include={
+            "warehouse_path",
+            "image",
+            "platform",
+            "artifacts_globs",
+            "monitor",
+            "resources",
+        },
     )
-    new_schedule_config.image = request.image or schedule_config.image
-    new_schedule_config.resources = request.resources or schedule_config.resources
-    new_schedule_config.platform = request.platform or schedule_config.platform
-    new_schedule_config.artifacts_globs = (
-        request.artifacts_globs or schedule_config.artifacts_globs
-    )
-    new_schedule_config.monitor = request.monitor or schedule_config.monitor
+    new_schedule_config = new_schedule_config.model_copy(update=update_data)
 
     if request.language:
         try:
