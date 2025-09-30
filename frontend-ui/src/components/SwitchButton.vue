@@ -9,6 +9,8 @@
         :density="density"
         :hide-details="hideDetails"
         @update:model-value="handleUpdate"
+        :hint="hint"
+        :persistent-hint="persistentHint"
       />
       <span class="ml-2 text-body-2 text-medium-emphasis">
         {{ modelValue ? 'Enabled' : 'Disabled' }}
@@ -28,7 +30,9 @@ interface Props {
   color?: string
   disabled?: boolean
   density?: 'default' | 'compact' | 'comfortable'
-  hideDetails?: boolean
+  hideDetails?: boolean | 'auto'
+  hint?: string
+  persistentHint?: boolean
 }
 
 interface Emits {
