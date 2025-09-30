@@ -404,36 +404,41 @@
             />
             <v-textarea
               v-else-if="field.component === 'textarea'"
-              v-model="editFlags[field.dataKey]"
+              :model-value="editFlags[field.dataKey]"
+              @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
               density="compact"
               variant="outlined"
               :placeholder="field.placeholder"
               :required="field.required"
-              :counter="field.max_length ? true : undefined"
-              :maxlength="field.max_length ? field.max_length : undefined"
-              :persistent-counter="field.max_length ? true : undefined"
               auto-grow
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
               :hint="field.description ?? undefined"
               persistent-hint
-            />
+            >
+              <template v-if="field.max_length" #counter>
+                {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
+              </template>
+            </v-textarea>
             <v-text-field
               v-else
-              v-model="editFlags[field.dataKey]"
+              :model-value="editFlags[field.dataKey]"
+              @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
               density="compact"
               variant="outlined"
               :placeholder="field.placeholder"
               :required="field.required"
-              :counter="field.max_length ? true : undefined"
-              :maxlength="field.max_length ? field.max_length : undefined"
               :rules="getFieldRules(field)"
               :hide-details="'auto'"
               :validate-on="'blur'"
               :hint="field.description ?? undefined"
               persistent-hint
-            />
+            >
+              <template v-if="field.max_length" #counter>
+                {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
+              </template>
+            </v-text-field>
           </td>
         </tr>
       </tbody>
@@ -948,6 +953,30 @@ const getFieldRules = (field: FlagField) => {
   }
 
   return rules
+}
+
+const getGraphemeCount = (value: unknown): number => {
+  if (typeof value === 'string') {
+    return value.split(byGrapheme).length
+  }
+  return 0
+}
+
+const truncateToMaxGraphemes = (value: string, maxLength: number): string => {
+  const graphemes = value.split(byGrapheme)
+  if (graphemes.length <= maxLength) {
+    return value
+  }
+  return graphemes.slice(0, maxLength).join('')
+}
+
+const handleInputWithGraphemeLimit = (field: FlagField, value: string) => {
+  if (field.max_length && typeof value === 'string') {
+    const truncatedValue = truncateToMaxGraphemes(value, field.max_length)
+    editFlags.value[field.dataKey] = truncatedValue
+  } else {
+    editFlags.value[field.dataKey] = value
+  }
 }
 
 const languagesOptions = computed(() => {
