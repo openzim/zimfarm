@@ -1,4 +1,4 @@
-class PEMPublicKeyLoadError(Exception):
-    """Unable to deserialize a public key from PEM encoded data"""
+class PublicKeyLoadError(Exception):
+    """Unable to load a public key from data"""
 
     pass
