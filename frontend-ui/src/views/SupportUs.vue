@@ -58,7 +58,7 @@
                   Another way to help is by <strong>donating a worker</strong>: if you have a
                   GNU/Linux system with at least 4 cores, 2GB of RAM and a fixed public IP,
                   <a
-                    href="https://github.com/openzim/zimfarm/blob/master/workers/README.md"
+                    href="https://github.com/openzim/zimfarm/blob/master/worker/README.md"
                     target="_blank"
                     class="text-primary text-decoration-none"
                   >
