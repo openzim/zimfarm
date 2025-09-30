@@ -16,8 +16,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
+from cryptography.hazmat.primitives.asymmetric.types import PublicKeyTypes
 from cryptography.hazmat.primitives.serialization import (
     SSHPublicKeyTypes,
+    load_pem_public_key,
     load_ssh_public_key,
 )
 
@@ -173,11 +175,14 @@ def load_public_key(
     - Ed25519 (OpenSSH format)
     """
 
-    public_key: SSHPublicKeyTypes | None = None
+    public_key: SSHPublicKeyTypes | PublicKeyTypes | None = None
     try:
         public_key = load_ssh_public_key(key)
     except (ValueError, UnsupportedAlgorithm):
-        pass
+        try:
+            public_key = load_pem_public_key(key)
+        except (ValueError, UnsupportedAlgorithm):
+            pass
 
     if public_key is None:
         raise PublicKeyLoadError("Unable to load public key")
