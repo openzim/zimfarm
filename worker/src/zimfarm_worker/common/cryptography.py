@@ -15,9 +15,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from cryptography.hazmat.primitives.asymmetric.types import (
-    PrivateKeyTypes,
-)
 from cryptography.hazmat.primitives.serialization import (
     SSHPrivateKeyTypes,
 )
@@ -73,14 +70,11 @@ def load_private_key_from_path(
     """
 
     content = private_key_fpath.read_bytes()
-    private_key: SSHPrivateKeyTypes | PrivateKeyTypes | None = None
+    private_key: SSHPrivateKeyTypes | None = None
     try:
         private_key = serialization.load_ssh_private_key(content, password=None)
     except (ValueError, UnsupportedAlgorithm):
-        try:
-            private_key = serialization.load_pem_private_key(content, password=None)
-        except (ValueError, UnsupportedAlgorithm):
-            pass
+        pass
 
     if private_key is None:
         raise ValueError("Unable to load private key")

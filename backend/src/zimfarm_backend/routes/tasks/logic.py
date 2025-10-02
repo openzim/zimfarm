@@ -42,7 +42,6 @@ from zimfarm_backend.routes.dependencies import (
 from zimfarm_backend.routes.http_errors import (
     ForbiddenError,
     NotFoundError,
-    ServerError,
 )
 from zimfarm_backend.routes.models import ListResponse
 from zimfarm_backend.routes.tasks.models import TaskCreateSchema, TaskUpdateSchema
@@ -185,14 +184,11 @@ async def cancel_task(
     if task.status not in TaskStatus.incomplete():
         raise NotFoundError(f"Task {task_id} not found")
 
-    try:
-        task_event_handler(
-            db_session,
-            task.id,
-            TaskStatus.cancel_requested,
-            {"canceled_by": current_user.username},
-        )
-    except Exception as exc:
-        raise ServerError("Unable to cancel task.") from exc
+    task_event_handler(
+        db_session,
+        task.id,
+        TaskStatus.cancel_requested,
+        {"canceled_by": current_user.username},
+    )
 
     return Response(status_code=HTTPStatus.NO_CONTENT)

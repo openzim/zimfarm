@@ -53,7 +53,6 @@ from zimfarm_backend.utils.token import (
     get_public_key_fingerprint,
     get_public_key_type,
     load_public_key,
-    serialize_public_key,
 )
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -204,7 +203,6 @@ def create_user_key(
         fingerprint=fingerprint,
         user_id=user.id,
         key=ssh_key.key,
-        pkcs8_key=serialize_public_key(public_key).decode("ascii"),
         name=ssh_key.name,
         type_=get_public_key_type(public_key),
     )

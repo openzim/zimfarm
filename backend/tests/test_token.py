@@ -42,7 +42,7 @@ wB4xA8f+g/OqcmUOM/1gT2SPiJ9SQkolYriDBfCfcuzWlcqQdOlFrrmtnWOh3Er+
 vMLud8dyKMud/T1up4PPavUCAwEAAQ==
 -----END PUBLIC KEY-----
 """,
-            does_not_raise(),
+            pytest.raises(PublicKeyLoadError),
             id="valid-rsa-in-pem-format",
         ),
         # Invalid key

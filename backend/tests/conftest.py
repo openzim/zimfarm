@@ -686,8 +686,6 @@ def create_user(
     data_gen: Faker,
 ) -> Callable[..., User]:
     def _create_user(*, permission: RoleEnum = RoleEnum.ADMIN):
-        pubkey_pkcs8 = rsa_public_key_data.decode("ascii")
-
         user = User(
             username=data_gen.first_name(),
             password_hash=generate_password_hash("testpassword"),
@@ -702,7 +700,6 @@ def create_user(
             fingerprint=get_public_key_fingerprint(rsa_public_key),
             type="RSA",
             added=getnow(),
-            pkcs8_key=pubkey_pkcs8,
         )
         key.user = user
 
