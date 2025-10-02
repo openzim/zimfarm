@@ -9,8 +9,14 @@ from pathlib import Path
 import requests
 from dateutil.relativedelta import relativedelta
 
-from zimfarm_backend.common import getnow
-from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
+# custom values / functions so this script is standalone
+REQUESTS_TIMEOUT = 30
+
+
+def getnow():
+    """naive UTC now"""
+    return datetime.datetime.now(datetime.UTC)
+
 
 # url of the zimfarm API to request
 url = os.getenv("ZF_URI", "https://api.farm.zimit.kiwix.org/v2")
@@ -20,6 +26,16 @@ file_prefix = os.getenv("FILE_PREFIX", "zimfarm_tasks_")
 
 # list of offliners to include
 offliners = os.getenv("OFFLINERS", "zimit").split(",")
+
+
+def get_event_value(events, code, default=None):
+    matching_events = [event for event in events if event["code"] == code]
+    if matching_events:
+        return matching_events[0]["timestamp"]
+    elif default:
+        return default
+    else:
+        raise Exception(f"Impossible to find code '{code}' event in events")
 
 
 def main():
@@ -61,22 +77,22 @@ def main():
                     break
 
                 response = requests.get(
-                    f"{url}/tasks/{item['_id']}", timeout=REQUESTS_TIMEOUT
+                    f"{url}/tasks/{item['id']}", timeout=REQUESTS_TIMEOUT
                 )
                 response.raise_for_status()
                 task = response.json()
-                offliner = task["config"]["task_name"]
+                offliner = task["config"]["offliner"]["offliner_id"]
                 if "all" not in offliners and offliner not in offliners:
                     continue
                 csvwriter.writerow(
                     [
-                        task["_id"],
-                        task["config"]["flags"].get("url")
-                        or task["config"]["flags"]["seeds"],
+                        task["id"],
+                        task["config"]["offliner"].get("url")
+                        or task["config"]["offliner"]["seeds"],
                         task["status"],
-                        task["timestamp"]["requested"],
-                        task["timestamp"].get("started", "-"),
-                        task["updated_at"],
+                        get_event_value(task["events"], "requested"),
+                        get_event_value(task["events"], "started", "-"),
+                        get_event_value(task["events"], "succeeded", "-"),
                     ]
                 )
             current_page += 1
