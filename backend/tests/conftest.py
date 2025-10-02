@@ -428,6 +428,7 @@ def mwoffliner(dbsession: OrmSession) -> OfflinerSchema:
         base_model="DashModel",
         docker_image_name="openzim/mwoffliner",
         command_name="mwoffliner",
+        ci_secret_hash=generate_password_hash("1234567890"),
     )
 
 
@@ -654,6 +655,7 @@ def ted_offliner(dbsession: OrmSession) -> OfflinerSchema:
         base_model="DashModel",
         docker_image_name="openzim/ted",
         command_name="ted2zim",
+        ci_secret_hash=generate_password_hash("1234567890"),
     )
 
 

@@ -1,11 +1,13 @@
+from copy import deepcopy
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from zimfarm_backend import logger
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
@@ -161,3 +163,75 @@ def get_offliner_versions(
         results.nb_records = nb_records
         results.versions.append(version)
     return results
+
+
+def update_offliner_flags(
+    *,
+    offliner: OfflinerSchema,
+    offliner_definition: OfflinerDefinitionSchema,
+    data: dict[str, Any],
+    name_mappings: dict[str, str],
+) -> dict[str, Any]:
+    """Generate new data to conform to the new offliner definition flags.
+
+    name_mappings specifies a dictionary of names in the old spec to the
+    names in the new spec.
+
+    Validation errors will be raised if the data does not conform to the new spec.
+    """
+    new_data = deepcopy(data)
+
+    # The cases for the updates are:
+    # - Remove the field with name from data
+    # - Add a new field to data with default of None
+    # - Update the field with name to the new name
+
+    for old_name, new_name in name_mappings.items():
+        if old_name == "+":
+            # Add the new name to the data with a default of None
+            new_data[new_name] = None
+            continue
+
+        if old_name not in data:
+            # Sometimes, the old name does not exist in the DB probably because
+            # it was a nullable field and got validated regardless
+            logger.warning(f"Key '{old_name}' not found in data. Skipping...")
+            continue
+
+        if new_name == "-":
+            del new_data[old_name]
+        elif new_name != old_name:
+            new_data[new_name] = data[old_name]
+            del new_data[old_name]
+
+    # validate the new data and return it
+    return create_offliner_instance(
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        data=new_data,
+        skip_validation=True,
+    ).model_dump(mode="json")
+
+
+def update_offliner_definition(
+    session: Session,
+    offliner_id: str,
+    version: str,
+    spec: OfflinerSpecSchema,
+) -> OfflinerDefinitionSchema:
+    """Update the offliner definition using the offliner and version"""
+    stmt = (
+        update(OfflinerDefinition)
+        .where(
+            OfflinerDefinition.offliner == offliner_id,
+            OfflinerDefinition.version == version,
+        )
+        .values(schema=spec.model_dump(mode="json"))
+    )
+    result = session.execute(stmt)
+    if result.rowcount == 0:
+        raise RecordDoesNotExistError(
+            f"Offliner definition for offliner {offliner_id} with version "
+            f"{version} does not exist"
+        )
+    return get_offliner_definition(session, offliner_id, version)

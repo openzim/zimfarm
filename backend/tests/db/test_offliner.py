@@ -127,6 +127,7 @@ class TestOfflinerCache:
                     "base_model": ted_offliner.base_model,
                     "docker_image_name": ted_offliner.docker_image_name,
                     "command_name": ted_offliner.command_name,
+                    "ci_secret_hash": ted_offliner.ci_secret_hash,
                 },
             )()
             mock_scalars.return_value.all.return_value = [mock_offliner]

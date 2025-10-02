@@ -1,8 +1,10 @@
+from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Body, Depends, Path, Query, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
+from werkzeug.security import check_password_hash
 
 from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
 from zimfarm_backend.common.schemas.models import (
@@ -12,12 +14,19 @@ from zimfarm_backend.common.schemas.offliners.builder import build_offliner_mode
 from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
 from zimfarm_backend.db.offliner import get_all_offliners
 from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
-from zimfarm_backend.db.offliner_definition import get_offliner_definition
+from zimfarm_backend.db.offliner_definition import (
+    create_offliner_definition as db_create_offliner_definition,
+)
+from zimfarm_backend.db.offliner_definition import (
+    get_offliner_definition as db_get_offliner_definition,
+)
 from zimfarm_backend.db.offliner_definition import (
     get_offliner_versions as db_get_offliner_versions,
 )
 from zimfarm_backend.routes.dependencies import gen_dbsession
+from zimfarm_backend.routes.http_errors import UnauthorizedError
 from zimfarm_backend.routes.models import ListResponse
+from zimfarm_backend.routes.offliners.models import OfflinerDefinitionCreateSchema
 
 router = APIRouter(prefix="/offliners", tags=["offliners"])
 
@@ -48,7 +57,7 @@ async def get_initial_offliner_version(
 
     # find the schema class that matches the offliner
     offliner = db_get_offliner(session, offliner_id)
-    offliner_definition = get_offliner_definition(
+    offliner_definition = db_get_offliner_definition(
         session, offliner_id=offliner_id, version="initial"
     )
     schema_cls = build_offliner_model(offliner, offliner_definition.schema_)
@@ -87,6 +96,26 @@ async def get_offliner_versions(
     )
 
 
+@router.post("/{offliner_id}/versions")
+async def create_offliner_version(
+    offliner_id: Annotated[str, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    request: Annotated[OfflinerDefinitionCreateSchema, Body()],
+) -> Response:
+    """Create a new version for a specific offliner"""
+    offliner = db_get_offliner(session, offliner_id)
+    if offliner.ci_secret_hash is None:
+        raise UnauthorizedError("CI secret is missing for offliner")
+
+    if not check_password_hash(offliner.ci_secret_hash, request.ci_secret):
+        raise UnauthorizedError(
+            "You are not authorized to create a new version for this offliner"
+        )
+
+    db_create_offliner_definition(session, request.spec, offliner_id, request.version)
+    return Response(status_code=HTTPStatus.CREATED)
+
+
 @router.get("/{offliner_id}/{version}")
 async def get_offliner(
     offliner_id: Annotated[str, Path()],
@@ -97,7 +126,7 @@ async def get_offliner(
 
     # find the schema class that matches the offliner
     offliner = db_get_offliner(session, offliner_id)
-    offliner_definition = get_offliner_definition(
+    offliner_definition = db_get_offliner_definition(
         session, offliner_id=offliner_id, version=version
     )
     schema_cls = build_offliner_model(offliner, offliner_definition.schema_)
