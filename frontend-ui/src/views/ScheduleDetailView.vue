@@ -430,13 +430,19 @@
                     </td>
                   </tr>
                   <tr>
+                    <th class="text-left">Offliner Definition</th>
+                    <td>
+                      <code>{{ schedule.version }}</code>
+                    </td>
+                  </tr>
+                  <tr>
                     <th class="text-left">Platform</th>
                     <td>
                       <code>{{ platform || '-' }}</code>
                     </td>
                   </tr>
                   <tr>
-                    <th class="text-left">Warehouse path</th>
+                    <th class="text-left">Warehouse Path</th>
                     <td>
                       <code>{{ warehousePath }}</code>
                     </td>
