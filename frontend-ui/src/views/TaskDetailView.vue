@@ -276,6 +276,12 @@
                     </td>
                   </tr>
                   <tr v-if="task.config">
+                    <th class="text-left w-20">Offliner Definition</th>
+                    <td>
+                      <code>{{ task.version }}</code>
+                    </td>
+                  </tr>
+                  <tr v-if="task.config">
                     <th class="text-left w-20">Resources</th>
                     <td>
                       <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
