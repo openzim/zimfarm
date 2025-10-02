@@ -557,9 +557,12 @@
               :contexts="contexts"
               :flags-definition="flagsDefinition"
               :help-url="helpUrl"
+              :offliner-versions="offlinerVersions"
               :image-tags="imageTags"
               @submit="updateSchedule"
               @image-name-change="fetchScheduleImageTags"
+              @offliner-change="handleOfflinerChange"
+              @offliner-version-change="handleOfflinerVersionChange"
             />
           </div>
         </v-window-item>
@@ -676,6 +679,7 @@ const tags = ref<string[]>([])
 const contexts = ref<string[]>([])
 const languages = ref<Language[]>([])
 const offliners = ref<string[]>([])
+const offlinerVersions = ref<string[]>([])
 const platforms = ref<string[]>([])
 const flagsDefinition = ref<OfflinerDefinition[]>([])
 const helpUrl = ref<string>('')
@@ -1030,6 +1034,10 @@ const refreshData = async (forceReload: boolean = false, fetchHistory: boolean =
       scheduleHistoryStore.clearHistory()
       await loadHistory({ limit: scheduleHistoryStore.paginator.limit, skip: 0 })
     }
+    if (forceReload) {
+      offlinerVersions.value =
+        (await offlinerStore.fetchOfflinerVersions(schedule.value.offliner)) || []
+    }
     ready.value = true
   }
 }
@@ -1068,6 +1076,33 @@ const calculateTaskDuration = (task: TaskLight): string => {
   return formatDurationBetween(started, completed)
 }
 
+const handleOfflinerChange = async (offliner: string) => {
+  // fetch all the offliner versions
+  const response = (await offlinerStore.fetchOfflinerVersions(offliner)) || []
+  if (response) {
+    offlinerVersions.value = response
+  } else {
+    for (const error of offlinerStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+  // Child component will choose a default version (if needed) and emit
+  // @offliner-version-change, which we handle via handleOfflinerVersionChange.
+}
+
+const handleOfflinerVersionChange = async (offliner: string, version: string) => {
+  // fetch the offliner definition
+  const response = await offlinerStore.fetchOfflinerDefinitionByVersion(offliner, version)
+  if (response) {
+    flagsDefinition.value = response.flags
+    helpUrl.value = response.help
+  } else {
+    for (const error of offlinerStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   // Redirect to details if trying to access restricted tabs without permission
@@ -1091,8 +1126,9 @@ onMounted(async () => {
   // after fectching the all the data, we can fetch the offliner definition
   await refreshData(true, props.selectedTab === 'history')
   if (schedule.value) {
-    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(
-      schedule.value.config.offliner.offliner_id as string,
+    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinitionByVersion(
+      schedule.value.offliner,
+      schedule.value.version,
     )
     if (offlinerDefinition) {
       helpUrl.value = offlinerDefinition.help

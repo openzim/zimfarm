@@ -686,8 +686,9 @@ const refreshData = async () => {
 onMounted(async () => {
   refreshData()
   if (task.value) {
-    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinition(
-      task.value.config.offliner.offliner_id,
+    const offlinerDefinition = await offlinerStore.fetchOfflinerDefinitionByVersion(
+      task.value.offliner,
+      task.value.version,
     )
     if (offlinerDefinition) {
       flagsDefinition.value = offlinerDefinition.flags

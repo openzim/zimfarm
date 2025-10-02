@@ -1,0 +1,162 @@
+{
+  "offliner_id": "kolibri",
+  "stdOutput": true,
+  "stdStats": false,
+  "flags": {
+    "channel_id": {
+      "type": "string",
+      "required": true,
+      "title": "Channel ID",
+      "description": "The Kolibri channel ID that you want to scrape"
+    },
+    "root_id": {
+      "type": "string",
+      "required": false,
+      "title": "Root ID",
+      "description": "The node ID (usually Topic) from where to start the scraper. Defaults to the root of the channel."
+    },
+    "lang": {
+      "type": "string",
+      "required": false,
+      "title": "Language",
+      "description": "ISO-639-3 (3 chars) language code of content. If unspecified, will attempt to detect from main page, or use 'eng'",
+      "minLength": 3,
+      "maxLength": 3,
+      "customValidator": "language_code"
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "title": "Name",
+      "description": "ZIM name. Used as identifier and filename (date will be appended)",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$"
+    },
+    "title": {
+      "type": "string",
+      "required": false,
+      "title": "Title",
+      "description": "Custom title for your ZIM. Kolibri channel name otherwise",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "description": {
+      "type": "string",
+      "required": false,
+      "title": "Description",
+      "description": "Custom description for your ZIM. Kolibri channel description otherwise",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "long_description": {
+      "type": "string",
+      "required": false,
+      "title": "Long description",
+      "description": "Custom long description for your ZIM. Kolibri channel description otherwise",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "favicon": {
+      "type": "url",
+      "required": false,
+      "title": "Favicon",
+      "description": "Custom Favicon for your ZIM. Kolibri channel thumbnail otherwise"
+    },
+    "css": {
+      "type": "url",
+      "required": false,
+      "title": "Custom CSS",
+      "description": "URL to a single CSS file to be included in all pages (but not on kolibri-html-content ones). Inlude external resources using data URL."
+    },
+    "about": {
+      "type": "url",
+      "required": false,
+      "title": "Custom About",
+      "description": "URL to a single HTML file to use as an about page. Place everythong inside `body .container` (including stylesheets and scripts) as only this and your <title> will be merged into the actual about page. Remember to include images inline using data URL."
+    },
+    "creator": {
+      "type": "string",
+      "required": false,
+      "title": "Content Creator",
+      "description": "Name of content creator. Kolibri channel author or 'Kolibri' otherwise"
+    },
+    "publisher": {
+      "type": "string",
+      "required": false,
+      "title": "Publisher",
+      "isPublisher": true,
+      "description": "Custom publisher name (ZIM metadata). 'openZIM' otherwise"
+    },
+    "tags": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Tags",
+      "description": "List of comma-separated Tags for the ZIM file. 'category:other, kolibri, and _videos:yes' added automatically"
+    },
+    "use_webm": {
+      "type": "boolean",
+      "required": false,
+      "title": "Use WebM",
+      "description": "Kolibri videos are in mp4. Choosing webm will require videos to be re-encoded. Result will be slightly smaller and of lower quality. WebM support is bundled in the ZIM so videos will be playable on every platform."
+    },
+    "low_quality": {
+      "type": "boolean",
+      "required": false,
+      "title": "Low quality",
+      "description": "Uses only the 'low_res' version of videos if available. If not, recompresses using agressive compression."
+    },
+    "autoplay": {
+      "type": "boolean",
+      "required": false,
+      "title": "Autoplay",
+      "description": "Enable autoplay on video and audio articles. Behavior differs on platforms/browsers."
+    },
+    "output": {
+      "type": "string",
+      "required": false,
+      "title": "Output folder",
+      "description": "Output folder for ZIM file(s). Leave it as '/output'",
+      "pattern": "^/output$"
+    },
+    "tmp_dir": {
+      "type": "string",
+      "required": false,
+      "title": "Temp folder",
+      "description": "Where to create temporay build folder. Leave it as '/output'",
+      "pattern": "^/output$"
+    },
+    "zim_file": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM filename",
+      "description": "ZIM file name (based on --name if not provided). Include {period} to insert date period dynamically",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+_)([a-z0-9\\-\\.]+_|)([\\d]{4}-[\\d]{2}|\\{period\\}).zim$"
+    },
+    "threads": {
+      "type": "integer",
+      "required": false,
+      "title": "Threads",
+      "description": "Number of threads to use to handle nodes concurrently. Increase to speed-up I/O operations (disk, network). Default: 1",
+      "min": 1
+    },
+    "processes": {
+      "type": "integer",
+      "required": false,
+      "title": "Processes",
+      "description": "Number of processes to dedicate to media optimizations. Default: 1",
+      "min": 1
+    },
+    "optimization_cache": {
+      "type": "url",
+      "secret": true,
+      "required": false,
+      "title": "Optimization Cache URL",
+      "description": "S3 Storage URL including credentials and bucket"
+    },
+    "debug": {
+      "type": "boolean",
+      "required": false,
+      "title": "Debug",
+      "description": "Enable verbose output"
+    }
+  }
+}

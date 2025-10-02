@@ -4,7 +4,7 @@ from ipaddress import IPv4Address
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.enums import Offliner
+from zimfarm_backend.common.schemas.orms import OfflinerSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User, Worker
 from zimfarm_backend.db.worker import (
@@ -84,7 +84,9 @@ def test_get_active_workers(
     assert len(result.workers) == limit
 
 
-def test_check_in_new_worker(dbsession: OrmSession, user: User):
+def test_check_in_new_worker(
+    dbsession: OrmSession, user: User, mwoffliner: OfflinerSchema
+):
     """Test that check_in_worker creates a new worker"""
     worker_name = "newworker"
     check_in_worker(
@@ -94,7 +96,7 @@ def test_check_in_new_worker(dbsession: OrmSession, user: User):
         memory=2048,
         disk=2048,
         selfish=True,
-        offliners=[Offliner.mwoffliner],
+        offliners=[mwoffliner.id],
         user_id=user.id,
     )
 
@@ -111,7 +113,12 @@ def test_check_in_new_worker(dbsession: OrmSession, user: User):
     assert worker.last_ip is None
 
 
-def test_check_in_worker_update(dbsession: OrmSession, worker: Worker):
+def test_check_in_worker_update(
+    dbsession: OrmSession,
+    worker: Worker,
+    mwoffliner: OfflinerSchema,
+    ted_offliner: OfflinerSchema,
+):
     """Test that check_in_worker updates an existing worker"""
 
     check_in_worker(
@@ -121,7 +128,7 @@ def test_check_in_worker_update(dbsession: OrmSession, worker: Worker):
         memory=4096,
         disk=4096,
         selfish=True,
-        offliners=[Offliner.mwoffliner, Offliner.youtube],
+        offliners=[mwoffliner.id, ted_offliner.id],
         platforms=worker.platforms,
         user_id=worker.user_id,
     )
@@ -139,7 +146,7 @@ def test_check_in_worker_update(dbsession: OrmSession, worker: Worker):
     assert updated_worker.memory == 4096
     assert updated_worker.disk == 4096
     assert updated_worker.selfish is True
-    assert updated_worker.offliners == [Offliner.mwoffliner, Offliner.youtube]
+    assert updated_worker.offliners == [mwoffliner.id, ted_offliner.id]
     assert updated_worker.platforms == worker.platforms
     assert updated_worker.user_id == original_user_id
     assert updated_worker.last_seen is not None

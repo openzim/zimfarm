@@ -1,6 +1,5 @@
 from uuid import UUID
 
-from zimfarm_backend.common.enums import Offliner
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
@@ -26,7 +25,7 @@ class RequestedTaskSchema(BaseModel):
     matching_cpu: ZIMCPU | None = None
     matching_memory: ZIMMemory | None = None
     matching_disk: ZIMDisk | None = None
-    matching_offliners: list[Offliner] | None = None
+    matching_offliners: list[str] | None = None
 
 
 class NewRequestedTaskSchema(BaseModel):

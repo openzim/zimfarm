@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from pydantic import AnyUrl, EmailStr, SecretStr
+from pydantic import AnyUrl, BaseModel, EmailStr, SecretStr
 
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.fields import (
@@ -13,10 +13,6 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalZIMSecretStr,
     OptionalZIMTitle,
     SecretUrl,
-)
-from zimfarm_backend.common.schemas.offliners.mwoffliner import (
-    MWOfflinerFlagsSchema,
-    MWOfflinerFormatFlavour,
 )
 from zimfarm_backend.common.schemas.offliners.serializer import (
     get_enum_choices,
@@ -39,11 +35,9 @@ from zimfarm_backend.common.schemas.offliners.serializer import (
         (OptionalZIMOutputFolder, "string"),
         (OptionalZIMSecretStr, "string"),
         (TaskStatus, "string-enum"),
-        (MWOfflinerFormatFlavour, "string-enum"),
         (list[int], "list-of-integer"),
         (list[str], "list-of-string"),
         (list[bool], "list-of-boolean"),
-        (list[MWOfflinerFormatFlavour], "list-of-string-enum"),
     ],
 )
 def test_get_field_type(field_type: Any, expected_type: str):
@@ -55,11 +49,6 @@ def test_get_field_type(field_type: Any, expected_type: str):
     (
         (TaskStatus, [choice.value for choice in TaskStatus]),
         (list[TaskStatus], [choice.value for choice in TaskStatus]),
-        (MWOfflinerFormatFlavour, [choice.value for choice in MWOfflinerFormatFlavour]),
-        (
-            list[MWOfflinerFormatFlavour],
-            [choice.value for choice in MWOfflinerFormatFlavour],
-        ),
     ),
 )
 def test_get_enum_choices(field_type: Any, expected_choices: list[str]):
@@ -90,8 +79,8 @@ def test_is_secret(field: Any, *, is_secret_field: bool):
     assert is_secret(field) == is_secret_field
 
 
-def test_mw_offliner_schema_to_flags():
-    flags = schema_to_flags(MWOfflinerFlagsSchema)
+def test_mw_offliner_schema_to_flags(mwoffliner_schema_cls: type[BaseModel]):
+    flags = schema_to_flags(mwoffliner_schema_cls)
     for flag in flags:
         key = flag.key
 

@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.models import ResourcesSchema, ScheduleConfigSchema
-from zimfarm_backend.common.schemas.orms import ScheduleDurationSchema
+from zimfarm_backend.common.schemas.orms import (
+    OfflinerDefinitionSchema,
+    OfflinerSchema,
+    ScheduleDurationSchema,
+)
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
 from zimfarm_backend.db.requested_task import (
@@ -573,6 +577,8 @@ def test_get_tasks_doable_by_worker(
     dbsession: OrmSession,
     worker: Worker,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that get_tasks_doable_by_worker returns correct list of tasks"""
     # Create a task that matches worker's capabilities
@@ -585,14 +591,15 @@ def test_get_tasks_doable_by_worker(
         events=[{"code": TaskStatus.requested, "timestamp": getnow()}],
         requested_by=worker.user.username,
         priority=0,
-        config=expanded_config(schedule_config).model_dump(
-            mode="json", context={"show_secrets": True}
-        ),
+        config=expanded_config(
+            schedule_config, mwoffliner, mwoffliner_definition
+        ).model_dump(mode="json", context={"show_secrets": True}),
         upload={},
         notification={},
         updated_at=getnow(),
         original_schedule_name="test_schedule",
     )
+    task.offliner_definition_id = mwoffliner_definition.id
     task.worker = worker
     dbsession.add(task)
     dbsession.flush()
@@ -605,6 +612,8 @@ def test_get_tasks_doable_by_worker(
 def test_does_platform_allow_worker_to_run(
     worker: Worker,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test to check that platform correctly validates platform constraints"""
     # Create a task with platform constraints
@@ -614,7 +623,7 @@ def test_does_platform_allow_worker_to_run(
     task = RequestedTaskWithDuration(
         id=uuid4(),
         status=TaskStatus.requested,
-        config=expanded_config(schedule_config),
+        config=expanded_config(schedule_config, mwoffliner, mwoffliner_definition),
         timestamp=[("requested", getnow()), ("reserved", getnow())],
         requested_by=worker.user.username,
         priority=0,
@@ -643,7 +652,7 @@ def test_does_platform_allow_worker_to_run(
     running_task = RunningTask(
         id=task.id,
         updated_at=task.updated_at,
-        config=expanded_config(schedule_config),
+        config=expanded_config(schedule_config, mwoffliner, mwoffliner_definition),
         schedule_name="test_schedule",
         timestamp=[("started", getnow()), ("reserved", getnow())],
         status="started",
@@ -671,6 +680,8 @@ def test_find_requested_task_for_worker(
     worker: Worker,
     user: User,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that find_requested_task_for_worker finds the optimal task for a worker"""
 
@@ -684,14 +695,15 @@ def test_find_requested_task_for_worker(
         events=[{"code": "requested", "timestamp": getnow()}],
         requested_by=worker.user.username,
         priority=0,
-        config=expanded_config(schedule_config).model_dump(
-            mode="json", context={"show_secrets": True}
-        ),
+        config=expanded_config(
+            schedule_config, mwoffliner, mwoffliner_definition
+        ).model_dump(mode="json", context={"show_secrets": True}),
         upload={},
         notification={},
         updated_at=getnow(),
         original_schedule_name="test_schedule",
     )
+    task.offliner_definition_id = mwoffliner_definition.id
     task.worker = worker
     dbsession.add(task)
     dbsession.flush()
@@ -781,6 +793,8 @@ def test_find_requested_task_for_worker_with_schedule_(
     worker: Worker,
     user: User,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
     schedule_context: str,
     worker_contexts: list[str],
     *,
@@ -797,15 +811,16 @@ def test_find_requested_task_for_worker_with_schedule_(
         events=[{"code": "requested", "timestamp": getnow()}],
         requested_by=worker.user.username,
         priority=0,
-        config=expanded_config(schedule_config).model_dump(
-            mode="json", context={"show_secrets": True}
-        ),
+        config=expanded_config(
+            schedule_config, mwoffliner, mwoffliner_definition
+        ).model_dump(mode="json", context={"show_secrets": True}),
         upload={},
         notification={},
         updated_at=getnow(),
         original_schedule_name="test_schedule",
         context=schedule_context,
     )
+    task.offliner_definition_id = mwoffliner_definition.id
     worker.contexts = worker_contexts
     task.worker = worker
     dbsession.add(task)

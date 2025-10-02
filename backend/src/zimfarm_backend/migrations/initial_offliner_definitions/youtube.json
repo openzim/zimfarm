@@ -1,0 +1,192 @@
+{
+  "offliner_id": "youtube",
+  "stdOutput": true,
+  "stdStats": true,
+  "flags": {
+    "optimization_cache": {
+      "type": "url",
+      "required": false,
+      "title": "Optimization Cache URL",
+      "description": "S3 Storage URL including credentials and bucket",
+      "secret": true
+    },
+    "api_key": {
+      "type": "string",
+      "required": true,
+      "title": "API Key",
+      "description": "Youtube API Token",
+      "secret": true
+    },
+    "ident": {
+      "type": "string",
+      "required": true,
+      "title": "Youtube ID(s)",
+      "description": "Youtube ID(s) of the handle, channel, user, or playlist(s) to ZIM (depending on the Type chosen below). Only playlist Type support multiple Youtube IDs and they must be separated by commas.",
+      "alias": "id"
+    },
+    "language": {
+      "type": "string",
+      "required": false,
+      "title": "Language",
+      "description": "ISO-639-3 (3 chars) language code of content",
+      "pattern": "^[a-z]{3}(,[a-z]{3})*$",
+      "customValidator": "language_code"
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "title": "ZIM Name",
+      "description": "Used as identifier and filename (date will be appended)",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$"
+    },
+    "zim_file": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Filename",
+      "description": "ZIM file name (optional, based on ZIM Name if not provided). Include {period} to insert date period dynamically",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+_)([a-z0-9\\-\\.]+_|)([\\d]{4}-[\\d]{2}|\\{period\\}).zim$"
+    },
+    "title": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Title",
+      "description": "Custom title for your ZIM. Default to Channel name (of first video if playlists)",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "description": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Description",
+      "description": "Description (up to 80 chars) for ZIM",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "long_description": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Long Description",
+      "description": "Long description (up to 4000 chars) for ZIM",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "creator": {
+      "type": "string",
+      "required": false,
+      "title": "Content Creator",
+      "description": "Name of content creator. Defaults to Channel name or \"Youtube Channels\""
+    },
+    "publisher": {
+      "type": "string",
+      "required": false,
+      "title": "Publisher",
+      "isPublisher": true,
+      "description": "Custom publisher name (ZIM metadata). \"openZIM\" otherwise"
+    },
+    "tags": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Tags",
+      "description": "List of comma-separated Tags for the ZIM file. _videos:yes added automatically"
+    },
+    "dateafter": {
+      "type": "string",
+      "required": false,
+      "title": "Only after date",
+      "description": "Custom filter to download videos uploaded on or after specified date. Format: YYYYMMDD or (now|today)[+-][0-9](day|week|month|year)(s)?"
+    },
+    "video_format": {
+      "type": "string-enum",
+      "required": false,
+      "title": "Video format",
+      "description": "Format to download/transcode video to. webm is smaller",
+      "choices": [
+        { "title": "WEBM", "value": "webm" },
+        { "title": "MP4", "value": "mp4" }
+      ]
+    },
+    "low_quality": {
+      "type": "boolean",
+      "required": false,
+      "title": "Low Quality",
+      "description": "Re-encode video using stronger compression"
+    },
+    "use_any_optimized_version": {
+      "type": "boolean",
+      "required": false,
+      "title": "Use any optimized version",
+      "description": "Use the cached files if present, whatever the version"
+    },
+    "all_subtitles": {
+      "type": "boolean",
+      "required": false,
+      "title": "All Subtitles",
+      "description": "Include auto-generated subtitles"
+    },
+    "pagination": {
+      "type": "integer",
+      "required": false,
+      "title": "Pagination",
+      "description": "Number of videos per page (40 otherwise)",
+      "min": 1
+    },
+    "profile": {
+      "type": "url",
+      "required": false,
+      "title": "Profile Image",
+      "description": "Custom profile image. Squared. Will be resized to 100x100px"
+    },
+    "banner": {
+      "type": "url",
+      "required": false,
+      "title": "Banner Image",
+      "description": "Custom banner image. Will be resized to 1060x175px"
+    },
+    "main_color": {
+      "type": "string",
+      "required": false,
+      "title": "Main Color",
+      "description": "Custom color. Hex/HTML syntax (#DEDEDE). Default to main color of profile image."
+    },
+    "secondary_color": {
+      "type": "string",
+      "required": false,
+      "title": "Secondary Color",
+      "description": "Custom secondary color. Hex/HTML syntax (#DEDEDE). Default to secondary color of profile image."
+    },
+    "debug": {
+      "type": "boolean",
+      "required": false,
+      "title": "Debug",
+      "description": "Enable verbose output"
+    },
+    "concurrency": {
+      "type": "integer",
+      "required": false,
+      "title": "Concurrency",
+      "description": "Expert flag: Number of concurrent threads to use",
+      "min": 1
+    },
+    "output": {
+      "type": "string",
+      "required": false,
+      "title": "Output folder",
+      "description": "Output folder for ZIM file(s). Leave it as `/output`",
+      "pattern": "^/output$"
+    },
+    "stats_filename": {
+      "type": "string",
+      "required": false,
+      "title": "Stats filename",
+      "description": "Scraping progress file. Leave it as `/output/task_progress.json`",
+      "pattern": "^/output/task_progress\\.json$"
+    },
+    "tmp_dir": {
+      "type": "string",
+      "required": false,
+      "title": "Temp folder",
+      "description": "Where to create temporay build folder. Leave it as `/output`",
+      "pattern": "^/output$"
+    }
+  }
+}

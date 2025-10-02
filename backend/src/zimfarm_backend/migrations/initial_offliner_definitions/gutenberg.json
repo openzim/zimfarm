@@ -1,0 +1,106 @@
+{
+  "offliner_id": "gutenberg",
+  "stdOutput": false,
+  "stdStats": true,
+  "flags": {
+    "languages": {
+      "type": "string",
+      "required": false,
+      "title": "Languages",
+      "description": "Comma-separated list of lang codes to filter export to (preferably ISO 639-1, else ISO 639-3) Defaults to all"
+    },
+    "formats": {
+      "type": "string",
+      "required": false,
+      "title": "Formats",
+      "description": "Comma-separated list of formats to filter export to (epub, html, pdf, all) Defaults to all"
+    },
+    "zim_title": {
+      "type": "string",
+      "required": false,
+      "title": "Title",
+      "description": "Custom title for your project and ZIM.",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "zim_desc": {
+      "type": "string",
+      "required": false,
+      "title": "Description",
+      "description": "Description for ZIM",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "books": {
+      "type": "string",
+      "required": false,
+      "title": "Books",
+      "description": "Filter to only specific books ; separated by commas, or dashes for intervals. Defaults to all"
+    },
+    "concurrency": {
+      "type": "integer",
+      "required": false,
+      "title": "Concurrency",
+      "description": "Number of concurrent threads to use",
+      "min": 1
+    },
+    "dlc": {
+      "type": "integer",
+      "required": false,
+      "title": "Download Concurrency",
+      "description": "Number of parallel downloads to run (overrides concurrency)",
+      "min": 1
+    },
+    "one_language_one_zim": {
+      "type": "boolean",
+      "required": false,
+      "title": "Multiple ZIMs",
+      "description": "Create one ZIM per language"
+    },
+    "no_index": {
+      "type": "boolean",
+      "required": false,
+      "title": "No Index",
+      "description": "Do not create full-text index within ZIM file"
+    },
+    "title_search": {
+      "type": "boolean",
+      "required": false,
+      "title": "Title search",
+      "description": "Search by title feature (⚠️ does not scale)"
+    },
+    "bookshelves": {
+      "type": "boolean",
+      "required": false,
+      "title": "Bookshelves",
+      "description": "Browse by bookshelves feature"
+    },
+    "optimization_cache": {
+      "type": "url",
+      "required": false,
+      "secret": true,
+      "title": "Optimization Cache URL",
+      "description": "S3 Storage URL including credentials and bucket"
+    },
+    "use_any_optimized_version": {
+      "type": "boolean",
+      "required": false,
+      "title": "Use any optimized version",
+      "description": "Use any optimized version"
+    },
+    "publisher": {
+      "type": "string",
+      "required": false,
+      "title": "Publisher",
+      "isPublisher": true,
+      "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise"
+    },
+    "stats_filename": {
+      "type": "string",
+      "required": false,
+      "title": "Stats filename",
+      "description": "Scraping progress file. Leave it as `/output/task_progress.json`",
+      "pattern": "^/output/task_progress\\.json$"
+    }
+  }
+}

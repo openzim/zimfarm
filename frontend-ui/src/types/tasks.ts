@@ -81,4 +81,6 @@ export interface Task extends BaseTask {
   notification: ScheduleNotification | null
   files: Record<string, TaskFile>
   upload: TaskUpload
+  version: string
+  offliner: string
 }

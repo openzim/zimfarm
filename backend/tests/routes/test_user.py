@@ -427,3 +427,51 @@ def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+@pytest.mark.num_users(2, permission="editor")
+def test_update_user_password(client: TestClient, users: list[User]):
+    """Test updating a user's password without permission"""
+    user = users[0]
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        scope=user.scope,
+        email=user.email,
+    )
+    response = client.patch(
+        f"/v2/users/{users[1].username}/password",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"current": "test", "new": "test2"},
+    )
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+@pytest.mark.parametrize(
+    "current,new,expected",
+    [
+        ("invalid", "test2", HTTPStatus.BAD_REQUEST),
+        (None, "test2", HTTPStatus.BAD_REQUEST),
+        ("testpassword", "test2", HTTPStatus.NO_CONTENT),
+    ],
+)
+@pytest.mark.num_users(1, permission="editor")
+def test_update_user_password_invalid(
+    client: TestClient, users: list[User], current: str, new: str, expected: HTTPStatus
+):
+    """Test updating a user's password with an invalid current password"""
+    user = users[0]
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        scope=user.scope,
+        email=user.email,
+    )
+    response = client.patch(
+        f"/v2/users/{user.username}/password",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"current": current, "new": new},
+    )
+    assert response.status_code == expected

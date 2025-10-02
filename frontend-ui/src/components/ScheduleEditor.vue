@@ -2,9 +2,9 @@
   <v-form @submit.prevent="handleSubmit" v-if="schedule">
     <div class="d-flex flex-column flex-sm-row justify-end ga-2">
       <v-btn
-        :disabled="!hasChanges"
+        :disabled="!canSubmit"
         type="submit"
-        :color="hasChanges ? 'primary' : 'secondary'"
+        :color="canSubmit ? 'primary' : 'secondary'"
         variant="elevated"
       >
         Update Offliner details
@@ -161,7 +161,7 @@
     </v-row>
 
     <v-row>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.config.offliner.offliner_id"
           :items="offlinersOptions"
@@ -173,15 +173,34 @@
           persistent-hint
         />
       </v-col>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.config.platform"
           :items="platformsOptions"
           label="Platform"
           hint="The platform targetted by the offliner"
+          clearable
           density="compact"
           variant="outlined"
           persistent-hint
+        />
+      </v-col>
+      <v-col cols="12" sm="4">
+        <v-select
+          v-model="editSchedule.version"
+          :items="offlinerVersions"
+          label="Offliner Definition"
+          hint="Version of the offliner definition flags to use"
+          placeholder="Version"
+          density="compact"
+          variant="outlined"
+          persistent-hint
+          @update:model-value="
+            handleOfflinerVersionChange(
+              editSchedule.config.offliner.offliner_id,
+              editSchedule.version,
+            )
+          "
         />
       </v-col>
     </v-row>
@@ -446,9 +465,9 @@
 
     <div class="d-flex flex-column flex-sm-row justify-end ga-2">
       <v-btn
-        :disabled="!hasChanges"
+        :disabled="!canSubmit"
         type="submit"
-        :color="hasChanges ? 'primary' : 'secondary'"
+        :color="canSubmit ? 'primary' : 'secondary'"
         variant="elevated"
       >
         Update Offliner details
@@ -549,6 +568,7 @@ export interface Props {
   contexts: string[]
   offliners: string[]
   platforms: string[]
+  offlinerVersions: string[]
   flagsDefinition: OfflinerDefinition[]
   helpUrl: string
   imageTags: string[]
@@ -557,6 +577,8 @@ export interface Props {
 interface Emits {
   (e: 'submit', payload: ScheduleUpdateSchema): void
   (e: 'image-name-change', imageName: string): void
+  (e: 'offliner-change', offliner: string): void
+  (e: 'offliner-version-change', offliner: string, version: string): void
 }
 
 const props = defineProps<Props>()
@@ -620,6 +642,80 @@ watch(
   { deep: true, immediate: true },
 )
 
+watch(
+  () => props.flagsDefinition,
+  () => {
+    const validDataKeys = new Set(props.flagsDefinition.map((field) => field.data_key))
+    const sourceFlags: Record<string, unknown> = props.schedule.config.offliner
+    const updatedFlags: Record<string, unknown> = {
+      offliner_id: editSchedule.value.config.offliner.offliner_id,
+    }
+
+    for (const [key, value] of Object.entries(sourceFlags)) {
+      if (validDataKeys.has(key)) {
+        updatedFlags[key] = value
+      }
+    }
+    editFlags.value = updatedFlags
+  },
+  { deep: true },
+)
+
+const handleOfflinerChange = (offliner: string) => {
+  emit('offliner-change', offliner)
+}
+
+const handleOfflinerVersionChange = (offliner: string, version: string) => {
+  if (version) {
+    emit('offliner-version-change', offliner, version)
+  }
+}
+
+// When parent provides new offliner versions, pick a default and emit version change
+watch(
+  () => props.offlinerVersions,
+  (versions) => {
+    if (!versions || !versions.length) return
+    // offliner versions are updated when the offliner changes or the version dropdown
+    // is changed
+    if (
+      editSchedule.value.config.offliner.offliner_id == props.schedule.config.offliner.offliner_id
+    ) {
+      // offliner is changed, revert back to the original version
+      editSchedule.value.version = props.schedule.version
+    } else {
+      // offliner is different, set the preferred version as the image tag
+      // or the original version the schedule had. If none exist in new versions,
+      // use the most recent version. This allows one to change from a different offliner
+      // to the original and be on the same version as the original schedule.
+      const preferred = versions.includes(editSchedule.value.config.image.tag)
+        ? editSchedule.value.config.image.tag
+        : props.schedule.version
+
+      // if the preferred version is not in the new versions, use the most recent version
+      editSchedule.value.version = versions.includes(preferred) ? preferred : versions[0]
+    }
+    handleOfflinerVersionChange(
+      editSchedule.value.config.offliner.offliner_id,
+      editSchedule.value.version,
+    )
+  },
+  { deep: true },
+)
+
+// when the image tag changes, update the version if the schedule has the version
+watch(
+  () => editSchedule.value.config.image.tag,
+  (newImageTag) => {
+    if (
+      newImageTag !== editSchedule.value.version &&
+      props.offlinerVersions.includes(newImageTag)
+    ) {
+      editSchedule.value.version = newImageTag
+      handleOfflinerVersionChange(editSchedule.value.config.offliner.offliner_id, newImageTag)
+    }
+  },
+)
 // Cleanup timeout on component unmount
 onUnmounted(() => {
   if (imageNameChangeTimeout) {
@@ -676,6 +772,10 @@ const scheduleDifferences = computed(() => {
   return diff(currentSchedule, editedSchedule)
 })
 
+const canSubmit = computed(() => {
+  return hasChanges.value && areAllFieldsValid.value
+})
+
 const hasChanges = computed(() => {
   if (!(props.schedule && editSchedule.value)) return false
 
@@ -684,6 +784,14 @@ const hasChanges = computed(() => {
   for (const prop of basicProps) {
     if (editSchedule.value[prop] !== props.schedule[prop]) return true
   }
+
+  // Check version
+  if (
+    editSchedule.value.version &&
+    props.schedule.version &&
+    editSchedule.value.version !== props.schedule.version
+  )
+    return true
 
   // Check context with null/empty string equivalence
   const originalContext = props.schedule.context
@@ -761,11 +869,7 @@ const hasChanges = computed(() => {
     }
     return true
   })
-
-  const hasActualChanges = changes.length > 0
-
-  // Return true only if there are changes AND all fields are valid
-  return hasActualChanges && areAllFieldsValid.value
+  return changes.length > 0
 })
 
 const flagsFields = computed(() => {
@@ -1047,7 +1151,7 @@ const imageTagOptions = computed(() => {
 })
 
 const handleSubmit = () => {
-  if (!hasChanges.value) return
+  if (!canSubmit.value) return
 
   // Show confirmation dialog instead of directly submitting
   showConfirmDialog.value = true
@@ -1056,7 +1160,8 @@ const handleSubmit = () => {
 const handleReset = () => {
   if (props.schedule) {
     editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
-    editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
+    // reset the flags and fields
+    handleOfflinerVersionChange(props.schedule.config.offliner.offliner_id, props.schedule.version)
   }
 }
 
@@ -1089,11 +1194,6 @@ const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] 
         .map((line) => line.trim())
         .filter((line) => line !== '')
     : []
-}
-
-const handleOfflinerChange = () => {
-  // assume flags are different, so reset edit schedule flags
-  editFlags.value = {}
 }
 
 const buildPayload = (): ScheduleUpdateSchema | null => {
@@ -1206,6 +1306,9 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   if (Object.keys(payload).length === 0) {
     return null
   }
+
+  // Version
+  payload.version = editSchedule.value.version
 
   return payload as ScheduleUpdateSchema
 }

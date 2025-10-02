@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import Field
 
 from zimfarm_backend.common.enums import (
-    Offliner,
     ScheduleCategory,
     SchedulePeriodicity,
 )
@@ -41,6 +40,7 @@ class ScheduleCreateSchema(BaseModel):
     periodicity: SchedulePeriodicity
     tags: list[NotEmptyString] = Field(default_factory=list)
     enabled: bool
+    version: str = "initial"  # version of offliner to use for validation
     config: dict[str, Any]  # will be validated in the route
     notification: ScheduleNotificationSchema | None = None
     context: NotEmptyString | None = None
@@ -58,7 +58,7 @@ class ScheduleUpdateSchema(BaseModel):
     periodicity: SchedulePeriodicity | None = None
     tags: list[NotEmptyString] | None = None
     enabled: bool | None = None
-    offliner: Offliner | None = None
+    offliner: str | None = None
     warehouse_path: WarehousePathField | None = None
     image: DockerImageSchema | None = None
     platform: PlatformField | None = None
@@ -67,6 +67,7 @@ class ScheduleUpdateSchema(BaseModel):
     flags: dict[str, Any] | None = None
     artifacts_globs: list[NotEmptyString] | None = None
     context: str | None = None
+    version: str | None = None
     comment: str | None = None  # Optional comment for history tracking
 
 

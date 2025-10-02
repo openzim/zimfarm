@@ -1,0 +1,123 @@
+{
+  "offliner_id": "freecodecamp",
+  "stdOutput": true,
+  "stdStats": false,
+  "flags": {
+    "course": {
+      "type": "string",
+      "required": true,
+      "title": "Course(s)",
+      "description": "Course or course list (separated by commas)"
+    },
+    "language": {
+      "type": "string-enum",
+      "required": true,
+      "title": "Language",
+      "description": "Language of zim file and curriculum.",
+      "choices": [
+        {
+          "title": "ENGLISH",
+          "value": "eng"
+        },
+        {
+          "title": "ESPANOL",
+          "value": "spa"
+        },
+        {
+          "title": "GERMAN",
+          "value": "deu"
+        },
+        {
+          "title": "ITALIAN",
+          "value": "ita"
+        },
+        {
+          "title": "JAPANESE",
+          "value": "jpn"
+        },
+        {
+          "title": "PORTOGUESE",
+          "value": "por"
+        },
+        {
+          "title": "UKRAINIAN",
+          "value": "ukr"
+        },
+        {
+          "title": "SWAHILI",
+          "value": "swa"
+        }
+      ]
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "title": "Name",
+      "description": "ZIM name",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$"
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "title": "Title",
+      "description": "ZIM title",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "description": {
+      "type": "string",
+      "required": true,
+      "title": "Description",
+      "description": "ZIM description",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "long_description": {
+      "type": "string",
+      "required": false,
+      "title": "Long description",
+      "description": "ZIM long description",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "creator": {
+      "type": "string",
+      "required": false,
+      "title": "Creator",
+      "description": "Name of content creator. “freeCodeCamp” otherwise"
+    },
+    "publisher": {
+      "type": "string",
+      "required": false,
+      "title": "Publisher",
+      "isPublisher": true,
+      "description": "Custom publisher name (ZIM metadata). “openZIM” otherwise"
+    },
+    "debug": {
+      "type": "boolean",
+      "required": false,
+      "title": "Debug",
+      "description": "Enable verbose output"
+    },
+    "output": {
+      "type": "string",
+      "required": false,
+      "title": "Output folder",
+      "description": "Output folder for ZIM file(s). Leave it as `/output`",
+      "pattern": "^/output$"
+    },
+    "zim_file": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM filename",
+      "description": "ZIM file name (based on --name if not provided). Include {period} to insert date period dynamically",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+_)([a-z0-9\\-\\.]+_|)([\\d]{4}-[\\d]{2}|\\{period\\}).zim$"
+    },
+    "illustration": {
+      "type": "url",
+      "required": false,
+      "title": "Illustration",
+      "description": "URL for ZIM illustration. Freecodecamp default logo if missing"
+    }
+  }
+}

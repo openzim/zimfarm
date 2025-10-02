@@ -11,10 +11,12 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
     ExpandedScheduleConfigSchema,
+    OfflinerDefinitionSchema,
     RequestedTaskFullSchema,
     RunningTask,
     TaskFullSchema,
@@ -24,7 +26,9 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
-from zimfarm_backend.db.models import Schedule, Task, Worker
+from zimfarm_backend.db.models import OfflinerDefinition, Schedule, Task, Worker
+from zimfarm_backend.db.offliner import get_offliner
+from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import get_schedule_duration
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
@@ -56,9 +60,15 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             Task.updated_at,
             Task.original_schedule_name,
             Task.context,
+            OfflinerDefinition.id.label("offliner_definition_id"),
+            OfflinerDefinition.offliner.label("offliner"),
+            OfflinerDefinition.schema.label("offliner_schema"),
+            OfflinerDefinition.version.label("offliner_version"),
+            OfflinerDefinition.created_at.label("offliner_definition_created_at"),
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
+        .join(OfflinerDefinition, Task.offliner_definition)
         .join(Schedule, Task.schedule, isouter=True)
         .join(Worker, Task.worker, isouter=True)
         .where(Task.id == task_id)
@@ -72,7 +82,20 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                 {
                     "warehouse_path": row.config["warehouse_path"],
                     "resources": row.config["resources"],
-                    "offliner": row.config["offliner"],
+                    "offliner": create_offliner_instance(
+                        offliner=get_offliner(session, row.offliner),
+                        offliner_definition=OfflinerDefinitionSchema(
+                            id=row.offliner_definition_id,
+                            version=row.offliner_version,
+                            created_at=row.offliner_definition_created_at,
+                            offliner=row.offliner,
+                            schema_=OfflinerSpecSchema.model_validate(
+                                row.offliner_schema
+                            ),
+                        ),
+                        data=row.config["offliner"],
+                        skip_validation=True,
+                    ),
                     "monitor": parse_bool(row.config.get("monitor")),
                     "image": row.config["image"],
                     "mount_point": row.config["mount_point"],
@@ -95,6 +118,9 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             schedule_name=row.schedule_name,
             worker_name=row.worker_name,
             context=row.context,
+            offliner_definition_id=row.offliner_definition_id,
+            version=row.offliner_version,
+            offliner=row.offliner,
         )
     return None
 
@@ -217,6 +243,7 @@ def create_task(
     task.id = requested_task.id
     task.schedule_id = requested_task.schedule_id
     task.worker_id = worker_id
+    task.offliner_definition_id = requested_task.offliner_definition_id
     session.add(task)
     try:
         session.flush()
@@ -258,7 +285,18 @@ def get_currently_running_tasks(
         RunningTask(
             id=task.id,
             config=ExpandedScheduleConfigSchema.model_validate(
-                task.config, context={"skip_validation": True}
+                {
+                    **task.config,
+                    "offliner": create_offliner_instance(
+                        offliner=get_offliner(
+                            session, task.offliner_definition.offliner
+                        ),
+                        offliner_definition=task.offliner_definition,
+                        data=task.config["offliner"],
+                        skip_validation=True,
+                    ),
+                },
+                context={"skip_validation": True},
             ),
             schedule_name=task.schedule.name if task.schedule else None,
             timestamp=task.timestamp,

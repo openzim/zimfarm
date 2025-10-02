@@ -1,0 +1,194 @@
+{
+  "offliner_id": "openedx",
+  "stdOutput": true,
+  "stdStats": false,
+  "flags": {
+    "course_url": {
+      "type": "url",
+      "required": true,
+      "title": "Course URL",
+      "description": "URL of the course you wnat to scrape"
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "title": "Registered e-mail",
+      "description": "The registered e-mail ID on the openedx instance"
+    },
+    "password": {
+      "type": "string",
+      "required": true,
+      "secret": true,
+      "title": "Password",
+      "description": "Password to the account registered on the openedx instance"
+    },
+    "instance_login_page": {
+      "type": "string",
+      "required": false,
+      "title": "Login page path",
+      "description": "The login path in the instance. Must start with /",
+      "pattern": "^/"
+    },
+    "instance_course_page": {
+      "type": "string",
+      "required": false,
+      "title": "Course page path",
+      "description": "The path to the course page after the course ID. Must start with /",
+      "pattern": "^/"
+    },
+    "instance_course_prefix": {
+      "type": "string",
+      "required": false,
+      "title": "Course prefix path",
+      "description": "The prefix in the path before the course ID. Must start and end with /",
+      "pattern": "^/"
+    },
+    "favicon_url": {
+      "type": "url",
+      "required": false,
+      "title": "Favicon URL",
+      "description": "URL pointing to a favicon image. Recommended size >= (48px x 48px)"
+    },
+    "ignore_missing_xblocks": {
+      "type": "boolean",
+      "required": false,
+      "title": "Ignore unsupported xblocks",
+      "description": "Ignore unsupported content (xblock(s))"
+    },
+    "add_wiki": {
+      "type": "boolean",
+      "required": false,
+      "title": "Include wiki",
+      "description": "Add wiki (if available) to the ZIM"
+    },
+    "add_forum": {
+      "type": "boolean",
+      "required": false,
+      "title": "Include forum",
+      "description": "Add forum/discussion (if available) to the ZIM"
+    },
+    "remove_seq_nav": {
+      "type": "boolean",
+      "required": false,
+      "title": "No top sequential navigation",
+      "description": "Remove the top sequential navigation bar in the ZIM"
+    },
+    "video_format": {
+      "type": "string-enum",
+      "required": false,
+      "title": "Video format",
+      "description": "Format to download/transcode video to. webm is smaller",
+      "choices": [
+        { "title": "WEBM", "value": "webm" },
+        { "title": "MP4", "value": "mp4" }
+      ]
+    },
+    "low_quality": {
+      "type": "boolean",
+      "required": false,
+      "title": "Low Quality",
+      "description": "Re-encode video using stronger compression"
+    },
+    "autoplay": {
+      "type": "boolean",
+      "required": false,
+      "title": "Autoplay videos",
+      "description": "Enable autoplay on videos. Behavior differs on platforms/browsers"
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "title": "Name",
+      "description": "ZIM name. Used as identifier and filename (date will be appended)",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$"
+    },
+    "title": {
+      "type": "string",
+      "required": false,
+      "title": "Title",
+      "description": "Custom title for your ZIM. Based on MOOC otherwise",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "description": {
+      "type": "string",
+      "required": false,
+      "title": "Description",
+      "description": "Custom description for your ZIM. Based on MOOC otherwise",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "creator": {
+      "type": "string",
+      "required": false,
+      "title": "Content Creator",
+      "description": "Name of content creator. Defaults to edX"
+    },
+    "publisher": {
+      "type": "string",
+      "required": false,
+      "title": "Publisher",
+      "isPublisher": true,
+      "description": "Custom publisher name (ZIM metadata). openZIM otherwise"
+    },
+    "tags": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM Tags",
+      "description": "List of comma-separated Tags for the ZIM file. category:other, and openedx added automatically"
+    },
+    "optimization_cache": {
+      "type": "url",
+      "secret": true,
+      "required": false,
+      "title": "Optimization Cache URL",
+      "description": "URL with credentials and bucket name to S3 Optimization Cache"
+    },
+    "use_any_optimized_version": {
+      "type": "boolean",
+      "required": false,
+      "title": "Use any optimized version",
+      "description": "Use the cached files if present, whatever the version"
+    },
+    "output": {
+      "type": "string",
+      "required": false,
+      "title": "Output folder",
+      "description": "Output folder for ZIM file(s). Leave it as `/output`",
+      "pattern": "^/output$"
+    },
+    "tmp_dir": {
+      "type": "string",
+      "required": false,
+      "title": "Temp folder",
+      "description": "Where to create temporay build folder. Leave it as `/output`",
+      "pattern": "^/output$"
+    },
+    "zim_file": {
+      "type": "string",
+      "required": false,
+      "title": "ZIM filename",
+      "description": "ZIM file name (based on --name if not provided)",
+      "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+_)([a-z0-9\\-\\.]+_|)([\\d]{4}-[\\d]{2}|\\{period\\}).zim$"
+    },
+    "debug": {
+      "type": "boolean",
+      "required": false,
+      "title": "Debug",
+      "description": "Enable verbose output"
+    },
+    "threads": {
+      "type": "integer",
+      "required": false,
+      "title": "Threads",
+      "description": "Number of parallel threads to use while downloading",
+      "min": 1
+    },
+    "locale": {
+      "type": "string",
+      "required": false,
+      "title": "Locale",
+      "description": "The locale to use for the translations in ZIM"
+    }
+  }
+}

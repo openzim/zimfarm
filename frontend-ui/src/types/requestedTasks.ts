@@ -17,4 +17,6 @@ export interface RequestedTaskFullSchema {
   notification: ScheduleNotification | null
   rank: number | null
   schedule_name: string | null
+  version: string
+  offliner: string
 }

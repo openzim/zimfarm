@@ -1,0 +1,37 @@
+{
+  "offliner_id": "phet",
+  "stdOutput": false,
+  "stdStats": false,
+  "flags": {
+    "includedLanguages": {
+      "type": "string",
+      "required": false,
+      "title": "Include languages",
+      "description": "Spoken languages to ZIM, one ZIM per language and/or all in a `mul` ZIM."
+    },
+    "excludeLanguages": {
+      "type": "string",
+      "required": false,
+      "title": "Exclude Languages",
+      "description": "Spoken languages to not ZIM."
+    },
+    "withoutLanguageVariants": {
+      "type": "boolean",
+      "title": "Without Language Variants",
+      "description": "Exclude languages with Country variant. For example `en_CA` will not be ZIMed with this argument.",
+      "required": false
+    },
+    "createMul": {
+      "type": "boolean",
+      "title": "Create `mul` ZIM",
+      "description": "Create a ZIM file with all languages (by default, scraper creates only one ZIM per language)",
+      "required": false
+    },
+    "mulOnly": {
+      "type": "boolean",
+      "required": false,
+      "title": "Only `mul` ZIM",
+      "description": "Create only `mul` ZIM, skip ZIM files for individual languages"
+    }
+  }
+}
