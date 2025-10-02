@@ -138,16 +138,6 @@
             <v-col cols="12" sm="3">
               <v-sheet rounded border class="pa-3">
                 <div class="text-subtitle-2 mb-2 d-flex align-center">
-                  <v-icon size="small" class="mr-1">mdi-ip-network-outline</v-icon>
-                  Last IP
-                </div>
-                <div>
-                  <code>{{ metrics.last_ip || '-' }}</code>
-                </div>
-
-                <v-divider class="my-3" />
-
-                <div class="text-subtitle-2 mb-2 d-flex align-center">
                   <v-icon size="small" class="mr-1">mdi-shape</v-icon>
                   Contexts
                 </div>
