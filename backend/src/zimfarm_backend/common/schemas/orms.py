@@ -293,7 +293,6 @@ class WorkerLightSchema(BaseModel):
 
     last_seen: datetime.datetime | None
     name: str
-    last_ip: IPv4Address | None
     resources: ConfigResourcesSchema
     username: str
     offliners: list[str]

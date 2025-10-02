@@ -6,7 +6,6 @@ export interface Worker {
   name: string
   status: 'online' | 'offline'
   last_seen: string
-  last_ip: string | null
   resources: Resources
   tasks: TaskLight[] // Will be populated with running tasks
   offliners: string[]
@@ -31,7 +30,6 @@ export interface WorkerMetrics {
   name: string
   status: 'online' | 'offline'
   last_seen: string | null
-  last_ip: string | null
   resources: Resources
   offliners: string[]
   username: string

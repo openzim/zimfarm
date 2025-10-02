@@ -45,7 +45,6 @@ def create_worker_schema(worker: Worker) -> WorkerLightSchema:
         last_seen=worker.last_seen,
         name=worker.name,
         offliners=worker.offliners,
-        last_ip=worker.last_ip,
         resources=ConfigResourcesSchema(
             cpu=worker.cpu,
             disk=worker.disk,
@@ -124,7 +123,6 @@ def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetric
     return WorkerMetricsSchema(
         name=worker.name,
         last_seen=worker.last_seen,
-        last_ip=worker.last_ip,
         username=worker.user.username,
         resources=ConfigResourcesSchema(
             cpu=worker.cpu,
