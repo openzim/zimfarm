@@ -163,7 +163,7 @@ def authenticate_user_with_ssh_keys(
     for ssh_key in db_user.ssh_keys:
         try:
             if verify_signed_message(
-                bytes(ssh_key.pkcs8_key, encoding="ascii"),
+                bytes(ssh_key.key, encoding="ascii"),
                 signature,
                 bytes(x_sshauth_message, encoding="ascii"),
             ):

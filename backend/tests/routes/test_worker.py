@@ -77,6 +77,30 @@ def test_check_in_worker_deleted(
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
+def test_check_in_worker_impersonate_user(
+    client: TestClient,
+    access_token: str,
+    create_worker: Callable[..., Worker],
+    create_user: Callable[..., User],
+):
+    """Test that check_in_worker raises BadRequestError for deleted worker"""
+    worker = create_worker(user=create_user())
+
+    response = client.put(
+        f"/v2/workers/{worker.name}/check-in",
+        json={
+            "selfish": True,
+            "cpu": 1,
+            "memory": 1024,
+            "disk": 2048,
+            "offliners": ["mwoffliner"],
+            "platforms": None,
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
 def test_check_in_worker_success(
     client: TestClient,
     access_token: str,

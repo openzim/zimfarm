@@ -49,7 +49,6 @@ class SshKeyRead(BaseSshKeySchema):
 
     added: datetime.datetime
     fingerprint: str
-    pkcs8_key: str
 
 
 class BaseUserWithSshKeysSchema(BaseUserSchema, BaseSshKeySchema):

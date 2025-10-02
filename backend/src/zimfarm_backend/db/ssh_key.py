@@ -26,7 +26,6 @@ def create_ssh_key(
     fingerprint: str,
     user_id: UUID,
     key: str,
-    pkcs8_key: str,
     name: str,
     type_: str,
 ) -> Sshkey:
@@ -34,7 +33,6 @@ def create_ssh_key(
     ssh_key = Sshkey(
         fingerprint=fingerprint,
         key=key,
-        pkcs8_key=pkcs8_key,
         name=name,
         type=type_,
         added=getnow(),

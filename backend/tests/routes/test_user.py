@@ -262,7 +262,6 @@ def test_list_user_keys(client: TestClient, users: list[User]):
         "key",
         "type",
         "added",
-        "pkcs8_key",
     }
 
 

@@ -34,7 +34,6 @@ export interface BaseSshKey {
 export interface SshKeyRead extends BaseSshKey {
   added: string
   fingerprint: string
-  pkcs8_key: string
 }
 
 export interface BaseUserWithSshKeys extends BaseUser, BaseSshKey {}
