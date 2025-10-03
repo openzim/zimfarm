@@ -265,7 +265,7 @@ def get_schedules(
             (Schedule.category.in_(categories or []) | (categories is None)),
             (Schedule.language_code.in_(lang or []) | (lang is None)),
             (Schedule.tags.contains(tags or []) | (tags is None)),
-            (Schedule.name.ilike(f"%{name}%") | (name is None)),
+            (Schedule.name.ilike(f"{name}%") | (name is None)),
         )
         .offset(skip)
         .limit(limit)
