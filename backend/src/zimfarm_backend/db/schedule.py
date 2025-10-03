@@ -77,7 +77,9 @@ def count_enabled_schedules(session: OrmSession, schedule_names: list[str]) -> i
         session,
         (
             select(Schedule).where(
-                Schedule.enabled.is_(True), Schedule.name.in_(schedule_names)
+                Schedule.enabled.is_(True),
+                Schedule.archived.is_(False),
+                Schedule.name.in_(schedule_names),
             )
         ),
     )
@@ -227,6 +229,7 @@ def get_schedules(
     lang: list[str] | None = None,
     categories: list[ScheduleCategory] | None = None,
     tags: list[str] | None = None,
+    archived: bool | None = None,
 ) -> ScheduleListResult:
     """Get a list of schedules"""
     subquery = (
@@ -251,6 +254,7 @@ def get_schedules(
             Task.updated_at.label("task_updated_at"),
             Task.timestamp,
             func.coalesce(subquery.c.nb_requested_tasks, 0).label("nb_requested_tasks"),
+            Schedule.archived,
             Schedule.context,
         )
         .join(OfflinerDefinition, Schedule.offliner_definition)
@@ -262,6 +266,7 @@ def get_schedules(
             # we compare the corresponding model field against the argument,
             # otherwise, we compare the argument to its default which translates
             # to a SQL true i.e we don't filter based on this argument.
+            (Schedule.archived == archived) | (archived is None),
             (Schedule.category.in_(categories or []) | (categories is None)),
             (Schedule.language_code.in_(lang or []) | (lang is None)),
             (Schedule.tags.contains(tags or []) | (tags is None)),
@@ -285,6 +290,7 @@ def get_schedules(
         task_updated_at,
         task_timestamp,
         nb_requested_tasks,
+        _archived,
         context,
     ) in session.execute(stmt).all():
         # Because the SQL window function returns the total_records
@@ -319,6 +325,7 @@ def get_schedules(
                 ),
                 nb_requested_tasks=nb_requested_tasks,
                 context=context,
+                archived=_archived,
             )
         )
 
@@ -450,23 +457,66 @@ def create_schedule_full_schema(
         offliner_definition_id=schedule.offliner_definition_id,
         version=schedule.offliner_definition.version,
         offliner=schedule.offliner_definition.offliner,
+        archived=schedule.archived,
     )
 
 
-def get_all_schedules(session: OrmSession) -> ScheduleListResult:
+def get_all_schedules(
+    session: OrmSession, *, archived: bool = False
+) -> ScheduleListResult:
     """Get all schedules"""
-    return ScheduleListResult(
-        nb_records=len(session.scalars(select(Schedule).order_by(Schedule.name)).all()),
-        schedules=[
+    result = ScheduleListResult(nb_records=0, schedules=[])
+    for schedule in session.scalars(
+        select(Schedule).where(Schedule.archived == archived).order_by(Schedule.name)
+    ).all():
+        result.schedules.append(
             create_schedule_full_schema(
                 schedule,
                 get_offliner(session, schedule.config["offliner"]["offliner_id"]),
             )
-            for schedule in session.scalars(
-                select(Schedule).order_by(Schedule.name)
-            ).all()
-        ],
+        )
+    result.nb_records = len(result.schedules)
+    return result
+
+
+def toggle_archive_status(
+    session: OrmSession,
+    *,
+    actor: str,
+    schedule_name: str,
+    archived: bool,
+    comment: str | None = None,
+) -> Schedule:
+    """Toggle the archive status of a schedule"""
+    # Rather than using the update_schedule function, we use this one
+    # because we don't want to create a history entry
+
+    # Since we are toggling the archive status, the schedule in question must
+    # be the opposite of the current archive status
+    schedule = get_schedule(session, schedule_name=schedule_name)
+    if schedule.archived == archived:
+        raise RecordAlreadyExistsError(
+            f"Schedule with name {schedule_name} already has archive status {archived}"
+        )
+    schedule.archived = archived
+    history_entry = ScheduleHistory(
+        author=actor,
+        created_at=getnow(),
+        comment=comment,
+        config=schedule.config,
+        name=schedule.name,
+        category=schedule.category,
+        enabled=schedule.enabled,
+        language_code=schedule.language_code,
+        tags=schedule.tags,
+        periodicity=schedule.periodicity,
+        context=schedule.context,
+        archived=schedule.archived,
     )
+    schedule.history_entries.append(history_entry)
+    session.add(schedule)
+    session.flush()
+    return schedule
 
 
 def update_schedule(
@@ -487,8 +537,10 @@ def update_schedule(
     comment: str | None = None,
 ) -> Schedule:
     """Update a schedule with the given values that are set."""
-
     schedule = get_schedule(session, schedule_name=schedule_name)
+
+    if schedule.archived:
+        raise RecordDoesNotExistError(f"Schedule with name {schedule_name} is archived")
     if language:
         schedule.language_code = language.code
 
@@ -520,6 +572,7 @@ def update_schedule(
         tags=schedule.tags,
         periodicity=schedule.periodicity,
         context=schedule.context,
+        archived=schedule.archived,
     )
     schedule.history_entries.append(history_entry)
 
@@ -562,6 +615,7 @@ def create_schedule_history_schema(
         periodicity=history_entry.periodicity,
         context=history_entry.context,
         config=history_entry.config,
+        archived=history_entry.archived,
     )
 
 
@@ -609,3 +663,21 @@ def get_schedule_history_entry(
     raise RecordDoesNotExistError(
         f"Schedule '{schedule_name}' does not have a history entry with id {history_id}"
     )
+
+
+def restore_schedules(
+    session: OrmSession,
+    *,
+    actor: str,
+    schedule_names: list[str],
+    comment: str | None = None,
+) -> None:
+    """Restore a list of archived schedules"""
+    for schedule_name in schedule_names:
+        toggle_archive_status(
+            session,
+            actor=actor,
+            schedule_name=schedule_name,
+            archived=False,
+            comment=comment,
+        )

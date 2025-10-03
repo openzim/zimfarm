@@ -494,7 +494,7 @@
     confirm-color="primary"
     icon="mdi-pencil"
     icon-color="primary"
-    :max-width="800"
+    :max-width="600"
     :loading="isSubmitting"
     @confirm="handleConfirmUpdate"
     @cancel="handleCancelUpdate"

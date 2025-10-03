@@ -5,7 +5,7 @@
 <template>
   <v-container>
     <!-- Action Button Row -->
-    <v-row v-if="schedule && schedule.enabled">
+    <v-row v-if="schedule && schedule.enabled && !schedule.archived">
       <v-col>
         <ScheduleActionButton
           :name="scheduleName"
@@ -77,7 +77,7 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canUpdateSchedules"
+          v-if="canUpdateSchedules && !schedule?.archived"
           value="edit"
           :to="{
             name: 'schedule-detail-tab',
@@ -89,7 +89,7 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canCreateSchedules"
+          v-if="canCreateSchedules && !schedule?.archived"
           value="clone"
           :to="{
             name: 'schedule-detail-tab',
@@ -102,6 +102,21 @@
         <v-tab
           base-color="primary"
           v-if="canDeleteSchedules"
+          value="archive"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'archive' },
+          }"
+        >
+          <v-icon class="mr-2">{{
+            schedule?.archived ? 'mdi-archive-arrow-up' : 'mdi-archive'
+          }}</v-icon>
+          {{ schedule?.archived ? 'Restore' : 'Archive' }}
+        </v-tab>
+
+        <v-tab
+          base-color="error"
+          v-if="canDeleteSchedules && schedule?.archived"
           value="delete"
           :to="{
             name: 'schedule-detail-tab',
@@ -155,6 +170,12 @@
                       >
                         {{ schedule?.enabled }}
                       </v-chip>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Archived</th>
+                    <td>
+                      {{ schedule?.archived ? 'Yes' : 'No' }}
                     </td>
                   </tr>
                   <tr>
@@ -547,7 +568,7 @@
                 <v-icon :icon="schedule.is_valid ? 'mdi-check-circle' : 'mdi-alert-circle'" />
               </template>
               <strong>{{
-                schedule.is_valid ? 'Schedule is valid' : 'Schedule has validation errors'
+                schedule.is_valid ? 'Recipe is valid' : 'Recipe has validation errors'
               }}</strong>
               <div v-if="!schedule.is_valid" class="mt-2">
                 Please fix the configuration issues below.
@@ -580,12 +601,24 @@
           </div>
         </v-window-item>
 
+        <!-- Archive Tab -->
+        <v-window-item value="archive">
+          <div v-if="canDeleteSchedules" class="pa-4">
+            <ArchiveItem
+              :name="scheduleName"
+              :is-archived="schedule?.archived || false"
+              @archive-item="archiveSchedule"
+              @restore-item="restoreSchedule"
+            />
+          </div>
+        </v-window-item>
+
         <!-- Delete Tab -->
         <v-window-item value="delete">
           <div v-if="canDeleteSchedules" class="pa-4">
             <DeleteItem
               :name="scheduleName"
-              description="schedule"
+              description="recipe"
               property="name"
               @delete-item="deleteSchedule"
             />
@@ -602,6 +635,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import ArchiveItem from '@/components/ArchiveItem.vue'
 import CloneSchedule from '@/components/CloneSchedule.vue'
 import DeleteItem from '@/components/DeleteItem.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
@@ -826,7 +860,7 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
 
   const response = await requestedTasksStore.requestTasks(body)
   if (response) {
-    const msg = `Schedule <em>${props.scheduleName}</em> has been requested as <code>${shortId(
+    const msg = `Recipe <em>${props.scheduleName}</em> has been requested as <code>${shortId(
       response.requested[0],
     )}</code>.`
     notificationStore.showSuccess(msg)
@@ -938,7 +972,7 @@ const fetchScheduleImageTags = async (imageName: string) => {
 const updateSchedule = async (update: ScheduleUpdateSchema) => {
   const response = await scheduleStore.updateSchedule(props.scheduleName, update)
   if (response) {
-    notificationStore.showSuccess('Schedule updated successfully')
+    notificationStore.showSuccess('Recipe updated successfully')
     // if name changed, redirect to the new schedule
     if (update.name) {
       router.push({
@@ -1004,8 +1038,38 @@ const loadHistory = async ({ limit, skip }: { limit: number; skip: number }) => 
 const deleteSchedule = async () => {
   const response = await scheduleStore.deleteSchedule(props.scheduleName)
   if (response) {
-    notificationStore.showSuccess(`Schedule <code>${props.scheduleName}</code> has been deleted.`)
+    notificationStore.showSuccess(`Recipe <code>${props.scheduleName}</code> has been deleted.`)
     router.push({ name: 'schedules-list' })
+  } else {
+    for (const error of scheduleStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+}
+
+const archiveSchedule = async (comment?: string) => {
+  const response = await scheduleStore.archiveSchedule(props.scheduleName, comment)
+  if (response) {
+    notificationStore.showSuccess(`Recipe <code>${props.scheduleName}</code> has been archived.`)
+    // Refresh the schedule data to update the archive status
+    await refreshData(true)
+    // Switch to info tab after archiving
+    currentTab.value = 'details'
+  } else {
+    for (const error of scheduleStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+}
+
+const restoreSchedule = async (comment?: string) => {
+  const response = await scheduleStore.restoreSchedule(props.scheduleName, comment)
+  if (response) {
+    notificationStore.showSuccess(`Recipe <code>${props.scheduleName}</code> has been restored.`)
+    // Refresh the schedule data to update the archive status
+    await refreshData(true)
+    // Switch to info tab after restoring
+    currentTab.value = 'details'
   } else {
     for (const error of scheduleStore.errors) {
       notificationStore.showError(error)
@@ -1158,8 +1222,8 @@ watch(
   () => props.selectedTab,
   async (newTab) => {
     currentTab.value = newTab
-    // Only refresh data if we don't have any data yet, or if not cloning or deleting
-    if (!schedule.value || !['clone', 'delete'].includes(newTab)) {
+    // Only refresh data if we don't have any data yet, or if not cloning or archiving
+    if (!schedule.value || !['clone', 'archive', 'delete'].includes(newTab)) {
       await refreshData(newTab === 'edit', newTab === 'history')
     }
   },

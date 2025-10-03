@@ -203,6 +203,7 @@ class Schedule(Base):
     is_valid: Mapped[bool] = mapped_column(default=True, server_default=true())
     # context that a worker must have to run this schedule
     context: Mapped[str] = mapped_column(default="", server_default="", index=True)
+    archived: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration
@@ -266,6 +267,7 @@ class ScheduleHistory(Base):
     tags: Mapped[list[str]]
     periodicity: Mapped[str]
     context: Mapped[str] = mapped_column(default="", server_default="")
+    archived: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     schedule: Mapped["Schedule"] = relationship(
         back_populates="history_entries", init=False

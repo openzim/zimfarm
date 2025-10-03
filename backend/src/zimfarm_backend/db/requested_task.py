@@ -132,6 +132,12 @@ def request_task(
             error=f"Schedule '{schedule_name}' not found or disabled",
         )
 
+    if schedule.archived:
+        return RequestTaskResult(
+            requested_task=None,
+            error=f"Schedule '{schedule_name}' is archived",
+        )
+
     worker = None
     if worker_name is not None:
         worker = get_worker_or_none(session, worker_name=worker_name)

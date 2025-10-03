@@ -175,6 +175,7 @@ class ScheduleLightSchema(BaseModel):
     config: ConfigOfflinerOnlySchema
     language: LanguageSchema
     enabled: bool
+    archived: bool
     nb_requested_tasks: int = Field(exclude=True)
     context: str
 
@@ -211,6 +212,7 @@ class ScheduleHistorySchema(BaseModel):
     tags: list[str]
     periodicity: str
     context: str
+    archived: bool
     # entries are serialized as dict[str, Any] instead of ScheduleConfigSchema
     # because the entry is possibly outdated and would fail validation as the
     # offliner schema evolves
@@ -234,6 +236,7 @@ class ScheduleFullSchema(BaseModel):
     most_recent_task: MostRecentTaskSchema | None
     nb_requested_tasks: int = Field(exclude=True)
     is_valid: bool
+    archived: bool
     context: str
     offliner_definition_id: UUID = Field(exclude=True)
     offliner: str

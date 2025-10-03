@@ -1080,3 +1080,102 @@ def test_get_schedule_backups(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
+
+
+@pytest.mark.parametrize(
+    "permission,expected_status_code",
+    [
+        pytest.param(RoleEnum.ADMIN, HTTPStatus.NO_CONTENT, id="admin"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+    ],
+)
+def test_restore_schedules(
+    client: TestClient,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    permission: RoleEnum,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule = create_schedule(name="test_schedule", archived=True)
+
+    response = client.post(
+        "/v2/schedules/restore",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"schedule_names": [schedule.name]},
+    )
+    assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "permission,expected_status_code",
+    [
+        pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+    ],
+)
+def test_archive_schedule(
+    client: TestClient,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    permission: RoleEnum,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule = create_schedule(name="test_schedule")
+
+    response = client.patch(
+        f"/v2/schedules/{schedule.name}/archive",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={},
+    )
+    assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "permission,expected_status_code",
+    [
+        pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+    ],
+)
+def test_restore_schedule(
+    client: TestClient,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    permission: RoleEnum,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule = create_schedule(name="test_schedule", archived=True)
+
+    response = client.patch(
+        f"/v2/schedules/{schedule.name}/restore",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={},
+    )
+    assert response.status_code == expected_status_code
