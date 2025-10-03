@@ -24,6 +24,7 @@ def create_offliner_schema(
         base_model=offliner.base_model,
         docker_image_name=DockerImageName(offliner.docker_image_name),
         command_name=offliner.command_name,
+        ci_secret_hash=offliner.ci_secret_hash,
     )
 
 
@@ -33,6 +34,7 @@ def create_offliner(
     base_model: str,
     docker_image_name: str,
     command_name: str,
+    ci_secret_hash: str | None = None,
 ) -> OfflinerSchema:
     """Create an offliner in the database"""
     offliner = Offliner(
@@ -40,6 +42,7 @@ def create_offliner(
         base_model=base_model,
         docker_image_name=docker_image_name,
         command_name=command_name,
+        ci_secret_hash=ci_secret_hash,
     )
     session.add(offliner)
     try:

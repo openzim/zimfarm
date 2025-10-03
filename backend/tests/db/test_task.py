@@ -11,7 +11,7 @@ from zimfarm_backend.db.exceptions import (
 )
 from zimfarm_backend.db.models import RequestedTask, Task, Worker
 from zimfarm_backend.db.requested_task import (
-    _create_requested_task_full_schema,  # pyright: ignore[reportPrivateUsage]
+    create_requested_task_full_schema,  # pyright: ignore[reportPrivateUsage]
 )
 from zimfarm_backend.db.tasks import (
     create_task,
@@ -113,7 +113,7 @@ def test_create_task(
 ):
     """Test that create_task creates a task correctly"""
 
-    requested_task = _create_requested_task_full_schema(
+    requested_task = create_requested_task_full_schema(
         dbsession, create_requested_task()
     )
     task = create_task(
@@ -135,7 +135,7 @@ def test_create_task_already_exists(
     create_requested_task: Callable[..., RequestedTask],
 ):
     """Test that create_task raises an exception if task already exists"""
-    requested_task = _create_requested_task_full_schema(
+    requested_task = create_requested_task_full_schema(
         dbsession, create_requested_task()
     )
 

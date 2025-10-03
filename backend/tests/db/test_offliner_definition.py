@@ -1,9 +1,12 @@
 from contextlib import nullcontext as does_not_raise
+from typing import Any
 from uuid import uuid4
 
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db.exceptions import (
@@ -15,6 +18,8 @@ from zimfarm_backend.db.offliner_definition import (
     get_offliner_definition,
     get_offliner_definition_by_id,
     get_offliner_versions,
+    update_offliner_definition,
+    update_offliner_flags,
 )
 
 
@@ -85,6 +90,29 @@ def test_create_offliner_definition_with_different_version(
         )
 
 
+def test_update_offliner_definition(
+    dbsession: OrmSession,
+    mwoffliner_flags: OfflinerSpecSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    mwoffliner: OfflinerSchema,
+):
+    with does_not_raise():
+        update_offliner_definition(
+            dbsession, mwoffliner.id, mwoffliner_definition.version, mwoffliner_flags
+        )
+
+
+def test_update_offliner_definition_error(
+    dbsession: OrmSession,
+    mwoffliner_flags: OfflinerSpecSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+):
+    with pytest.raises(RecordDoesNotExistError):
+        update_offliner_definition(
+            dbsession, "ted", mwoffliner_definition.version, mwoffliner_flags
+        )
+
+
 @pytest.mark.parametrize(
     "offliner_id, limit, skip, expected_nb_records, expected_versions",
     [
@@ -109,3 +137,190 @@ def test_get_offliner_versions(
     results = get_offliner_versions(dbsession, offliner_id, skip=skip, limit=limit)
     assert results.nb_records == expected_nb_records
     assert results.versions == expected_versions
+
+
+@pytest.mark.parametrize(
+    "new_spec, data, name_mappings, expected_data",
+    [
+        pytest.param(
+            """{
+            "offliner_id": "mwoffliner",
+            "stdOutput": false,
+            "stdStats": false,
+            "flags": {
+                "mwUrl": {
+                "type": "url",
+                "required": true,
+                "title": "Wiki URL",
+                "description": "The URL of the mediawiki to scrape"
+                },
+                "adminEmail": {
+                "type": "email",
+                "required": true,
+                "title": "Admin Email",
+                "description": "Email"
+                },
+                "articleList": {
+                "type": "string",
+                "required": false,
+                "title": "Article List",
+                "description": "List of articles to include"
+                },
+                "articleListToIgnore": {
+                "type": "string",
+                "required": false,
+                "title": "Article List to ignore",
+                "description": "List of articles to ignore"
+                }
+            }
+        }""",
+            {
+                "offliner_id": "mwoffliner",
+                "mwUrl": "https://en.wikipedia.org/",
+                "adminEmail": "test@example.com",
+                "articleList": "Article1,Article2",
+            },
+            {"+": "articleListToIgnore"},
+            {
+                "offliner_id": "mwoffliner",
+                "mwUrl": "https://en.wikipedia.org/",
+                "adminEmail": "test@example.com",
+                "articleList": "Article1,Article2",
+                "articleListToIgnore": None,
+            },
+            id="add-new-field-with-default-none",
+        ),
+        pytest.param(
+            """{
+            "offliner_id": "mwoffliner",
+            "stdOutput": false,
+            "stdStats": false,
+            "flags": {
+                "adminEmail": {
+                "type": "email",
+                "required": true,
+                "title": "Admin Email",
+                "description": "Email"
+                },
+                "articleList": {
+                "type": "string",
+                "required": false,
+                "title": "Article List",
+                "description": "List of articles to include"
+                }
+            }
+        }""",
+            {
+                "offliner_id": "mwoffliner",
+                "mwUrl": "https://en.wikipedia.org/",
+                "adminEmail": "test@example.com",
+                "articleList": "Article1,Article2",
+            },
+            {"mwUrl": "-"},
+            {
+                "offliner_id": "mwoffliner",
+                "adminEmail": "test@example.com",
+                "articleList": "Article1,Article2",
+            },
+            id="remove-field",
+        ),
+        pytest.param(
+            """{
+            "offliner_id": "mwoffliner",
+            "stdOutput": false,
+            "stdStats": false,
+            "flags": {
+                "mwUrl": {
+                "type": "url",
+                "required": true,
+                "title": "Wiki URL",
+                "description": "The URL of the mediawiki to scrape"
+                },
+                "Email": {
+                "type": "email",
+                "required": true,
+                "title": "Admin Email",
+                "description": "Email"
+                },
+                "articleList": {
+                "type": "string",
+                "required": false,
+                "title": "Article List",
+                "description": "List of articles to include"
+                }
+            }
+        }""",
+            {
+                "offliner_id": "mwoffliner",
+                "mwUrl": "https://en.wikipedia.org/",
+                "adminEmail": "test@example.com",
+                "articleList": "Article1,Article2",
+            },
+            {"adminEmail": "Email"},
+            {
+                "offliner_id": "mwoffliner",
+                "mwUrl": "https://en.wikipedia.org/",
+                "email": "test@example.com",
+                "articleList": "Article1,Article2",
+            },
+            id="rename-field",
+        ),
+    ],
+)
+def test_update_offliner_flags(
+    new_spec: str,
+    data: dict[str, Any],
+    name_mappings: dict[str, str],
+    expected_data: dict[str, Any],
+):
+    # This is the old spec that we are updating
+    OfflinerSpecSchema.model_validate_json(
+        """{
+            "offliner_id": "mwoffliner",
+            "stdOutput": false,
+            "stdStats": false,
+            "flags": {
+                "mwUrl": {
+                "type": "url",
+                "required": true,
+                "title": "Wiki URL",
+                "description": "The URL of the mediawiki to scrape"
+                },
+                "adminEmail": {
+                "type": "email",
+                "required": true,
+                "title": "Admin Email",
+                "description": "Email"
+                },
+                "articleList": {
+                "type": "string",
+                "required": false,
+                "title": "Article List",
+                "description": "List of articles to include"
+                }
+            }
+        }"""
+    )
+
+    schema = OfflinerSpecSchema.model_validate_json(new_spec)
+    offliner = OfflinerSchema(
+        id="mwoffliner",
+        base_model="CamelModel",
+        docker_image_name=DockerImageName.mwoffliner,
+        command_name="mwoffliner",
+        ci_secret_hash=None,
+    )
+    new_definition = OfflinerDefinitionSchema(
+        id=uuid4(),
+        offliner=offliner.id,
+        version="initial",
+        schema_=schema,
+        created_at=getnow(),
+    )
+    updated_data = update_offliner_flags(
+        offliner=offliner,
+        offliner_definition=new_definition,
+        data=data,
+        name_mappings=name_mappings,
+    )
+    assert updated_data == expected_data

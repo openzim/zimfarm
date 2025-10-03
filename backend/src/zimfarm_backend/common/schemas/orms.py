@@ -373,3 +373,4 @@ class OfflinerSchema(BaseModel):
     base_model: str
     docker_image_name: DockerImageName
     command_name: str
+    ci_secret_hash: str | None = Field(exclude=True)

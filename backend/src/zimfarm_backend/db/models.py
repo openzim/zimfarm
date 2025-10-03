@@ -352,3 +352,4 @@ class Offliner(Base):
     base_model: Mapped[str]
     docker_image_name: Mapped[str]
     command_name: Mapped[str]
+    ci_secret_hash: Mapped[str | None]

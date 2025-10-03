@@ -236,7 +236,7 @@ def request_task(
     session.flush()
 
     return RequestTaskResult(
-        requested_task=_create_requested_task_full_schema(session, requested_task),
+        requested_task=create_requested_task_full_schema(session, requested_task),
         error=None,
     )
 
@@ -639,7 +639,7 @@ def find_requested_task_for_worker(
     return None
 
 
-def _create_requested_task_full_schema(
+def create_requested_task_full_schema(
     session: OrmSession, requested_task: RequestedTask
 ) -> RequestedTaskFullSchema:
     return RequestedTaskFullSchema(
@@ -694,7 +694,7 @@ def get_requested_task_by_id_or_none(
     ).one_or_none()
     if requested_task is None:
         return None
-    return _create_requested_task_full_schema(session, requested_task)
+    return create_requested_task_full_schema(session, requested_task)
 
 
 def get_requested_task_by_id(
@@ -724,7 +724,7 @@ def update_requested_task_priority(
         .values(priority=priority)
         .returning(RequestedTask)
     ).one()
-    return _create_requested_task_full_schema(session, requested_task)
+    return create_requested_task_full_schema(session, requested_task)
 
 
 def delete_requested_task(session: OrmSession, requested_task_id: UUID) -> None:
