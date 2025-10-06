@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy import func, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from zimfarm_backend import logger
@@ -12,10 +12,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
-from zimfarm_backend.db.exceptions import (
-    RecordAlreadyExistsError,
-    RecordDoesNotExistError,
-)
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import OfflinerDefinition
 
 
@@ -46,20 +43,20 @@ def create_offliner_definition(
     version: str,
 ) -> OfflinerDefinitionSchema:
     """Create an offliner definition in the database"""
-    offliner_definition = OfflinerDefinition(
+    insert_stmt = insert(OfflinerDefinition).values(
         schema=schema.model_dump(mode="json"),
         version=version,
         created_at=getnow(),
         offliner=offliner,
     )
-    session.add(offliner_definition)
-    try:
-        session.flush()
-    except IntegrityError as exc:
-        raise RecordAlreadyExistsError(
-            f"Offliner '{offliner} with version '{version} already exists"
-        ) from exc
-    return create_offliner_definition_schema(offliner_definition)
+    insert_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=[OfflinerDefinition.offliner, OfflinerDefinition.version],
+        set_={
+            OfflinerDefinition.schema: schema.model_dump(mode="json"),
+        },
+    )
+    session.execute(insert_stmt)
+    return get_offliner_definition(session, offliner, version)
 
 
 def create_offliner_instance(
