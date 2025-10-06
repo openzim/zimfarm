@@ -331,8 +331,11 @@ class WatcherRunner:
             logger.error(f"Can't get `{domain}` schedules from zimfarm")
             return True
 
+        # filter by recipe name exactly starting with domain name, since API call
+        # search for the domain "anywhere" in the recipe name
         return [
-            recipe["name"] for recipe in payload.get("items", []) if recipe["enabled"]
+            recipe["name"] for recipe in payload.get("items", [])
+            if recipe["enabled"] and recipe["name"].startswith(f"{domain}_")
         ]
 
     def blocked_by_zimfarm(self, domain):
