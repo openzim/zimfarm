@@ -2,7 +2,16 @@
   <div class="table-responsive">
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title class="d-flex align-center justify-end">
-        <div class="d-flex align-center">
+        <div class="d-flex align-center ga-2">
+          <v-btn
+            size="small"
+            variant="outlined"
+            color="secondary"
+            class="text-none"
+            @click="$emit('toggleWorkersList')"
+          >
+            {{ toggleText }}
+          </v-btn>
           <v-btn
             size="small"
             variant="outlined"
@@ -198,11 +207,13 @@ const props = defineProps<{
   loading: boolean
   errors: string[]
   loadingText: string
+  toggleText: string
 }>()
 
 const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
+  toggleWorkersList: []
 }>()
 
 const limits = [10, 20, 50, 100]

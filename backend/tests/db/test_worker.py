@@ -1,17 +1,21 @@
+import datetime
 from collections.abc import Callable
 from ipaddress import IPv4Address
 
 import pytest
+from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import getnow
 from zimfarm_backend.common.schemas.orms import OfflinerSchema
+from zimfarm_backend.db import worker as worker_module
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User, Worker
 from zimfarm_backend.db.worker import (
     check_in_worker,
-    get_active_workers,
     get_worker,
     get_worker_or_none,
+    get_workers,
     update_worker,
 )
 
@@ -59,17 +63,16 @@ def test_update_worker(dbsession: OrmSession, worker: Worker):
     assert updated_worker.last_ip != original_last_ip
 
 
-def test_get_active_workers_empty(dbsession: OrmSession):
-    """Test that get_active_workers returns empty list when no workers exist"""
-    result = get_active_workers(dbsession, skip=0, limit=10)
+def test_get_workers_empty(dbsession: OrmSession):
+    """Test that get_workers returns empty list when no workers exist"""
+    result = get_workers(dbsession, skip=0, limit=10)
     assert result.nb_records == 0
     assert len(result.workers) == 0
 
 
-def test_get_active_workers(
+def test_get_workers_pagination(
     dbsession: OrmSession, create_worker: Callable[..., Worker]
 ):
-    """Test that get_active_workers returns a single worker"""
     # create 30 workers
     workers = [create_worker(name=f"worker-{i}") for i in range(30)]
     # disable 10 workers
@@ -79,9 +82,40 @@ def test_get_active_workers(
     dbsession.flush()
 
     limit = 10
-    result = get_active_workers(dbsession, skip=0, limit=limit)
+    result = get_workers(dbsession, skip=0, limit=limit)
     assert result.nb_records == 20
     assert len(result.workers) == limit
+
+
+@pytest.mark.parametrize("hide_offlines,nb_records", [(True, 20), (False, 30)])
+def test_get_workers_hide_offlines(
+    dbsession: OrmSession,
+    create_worker: Callable[..., Worker],
+    monkeypatch: MonkeyPatch,
+    *,
+    hide_offlines: bool,
+    nb_records: int,
+):
+    "Test that only online workers are returned."
+    # create 30 workers that are currently active
+    workers = [create_worker(name=f"worker-{i}") for i in range(30)]
+    # change the last seen of the last 10 workers to 1 hour ago
+    for worker in workers[:10]:
+        worker.last_seen = getnow() - datetime.timedelta(hours=1)
+        dbsession.add(worker)
+    dbsession.flush()
+
+    # set last seen duration to 30 minutes
+    monkeypatch.setattr(worker_module, "WORKER_OFFLINE_DELAY_DURATION", 60 * 30)
+
+    result = get_workers(dbsession, skip=0, limit=1000, hide_offlines=hide_offlines)
+    assert result.nb_records == nb_records
+    if hide_offlines:
+        for worker in result.workers:
+            assert worker.status == "online"
+    else:
+        for worker in result.workers:
+            assert worker.status in ["online", "offline"]
 
 
 def test_check_in_new_worker(
