@@ -28,12 +28,14 @@ export const useWorkersStore = defineStore('workers', () => {
     $cookies?.set('workers-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
   }
 
-  const fetchWorkers = async (params: { limit?: number; skip?: number } = {}) => {
-    const { limit = 20, skip = 0 } = params
+  const fetchWorkers = async (
+    params: { limit?: number; skip?: number; hide_offlines?: boolean } = {},
+  ) => {
+    const { limit = 20, skip = 0, hide_offlines = true } = params
     try {
       const service = await authStore.getApiService('workers')
       const response = await service.get<null, ListResponse<Worker>>('', {
-        params: { limit, skip },
+        params: { limit, skip, hide_offlines },
       })
 
       // Preserve existing tasks when fetching workers

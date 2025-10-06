@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import (
@@ -18,7 +19,7 @@ from zimfarm_backend.db.models import Task, User, Worker
 from zimfarm_backend.db.tasks import get_currently_running_tasks
 
 
-class ActiveWorkersListResult(BaseModel):
+class WorkersListResult(BaseModel):
     nb_records: int
     workers: list[WorkerLightSchema]
 
@@ -76,10 +77,10 @@ def update_worker(
     return worker
 
 
-def get_active_workers(
-    session: OrmSession, *, skip: int, limit: int
-) -> ActiveWorkersListResult:
-    """Get a list of active workers."""
+def get_workers(
+    session: OrmSession, *, skip: int, limit: int, hide_offlines: bool = False
+) -> WorkersListResult:
+    """Get a list of workers."""
     stmt = (
         select(
             func.count().over().label("nb_records"),
@@ -89,12 +90,19 @@ def get_active_workers(
         .where(
             User.deleted.is_(False),
             Worker.deleted.is_(False),
+            # if hide_offlines is False, then, the second condition will always
+            # translate to a SQL true and include all workers
+            (
+                func.extract("epoch", func.now() - Worker.last_seen)
+                < WORKER_OFFLINE_DELAY_DURATION
+            )
+            | (hide_offlines is False),
         )
         .order_by(desc(Worker.last_seen), asc(Worker.name))
         .offset(skip)
         .limit(limit)
     )
-    results = ActiveWorkersListResult(nb_records=0, workers=[])
+    results = WorkersListResult(nb_records=0, workers=[])
     for nb_records, worker in session.execute(stmt).all():
         results.nb_records = nb_records
         results.workers.append(create_worker_schema(worker))

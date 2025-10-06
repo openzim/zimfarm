@@ -11,7 +11,6 @@ from zimfarm_backend.common.schemas.orms import WorkerLightSchema, WorkerMetrics
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
-from zimfarm_backend.db.worker import get_active_workers as db_get_active_workers
 from zimfarm_backend.db.worker import (
     get_worker as db_get_worker,
 )
@@ -19,6 +18,7 @@ from zimfarm_backend.db.worker import get_worker_metrics as db_get_worker_metric
 from zimfarm_backend.db.worker import (
     get_worker_or_none as db_get_worker_or_none,
 )
+from zimfarm_backend.db.worker import get_workers as db_get_workers
 from zimfarm_backend.db.worker import update_worker as db_update_worker
 from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
 from zimfarm_backend.routes.http_errors import (
@@ -35,13 +35,17 @@ router = APIRouter(prefix="/workers", tags=["workers"])
 
 
 @router.get("")
-async def get_active_workers(
+async def get_workers(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 20,
+    *,
+    hide_offlines: Annotated[bool, Query()] = False,
 ) -> ListResponse[WorkerLightSchema]:
-    """Get a list of active workers."""
-    results = db_get_active_workers(session, skip=skip, limit=limit)
+    """Get a list of workers."""
+    results = db_get_workers(
+        session, skip=skip, limit=limit, hide_offlines=hide_offlines
+    )
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,

@@ -4,7 +4,7 @@
       <v-card-text>
         <v-row>
           <v-col cols="12" sm="6" md="3">
-            <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
+            <v-sheet rounded border class="pa-2 d-flex align-center">
               <div class="d-flex align-center">
                 <v-icon class="mr-2" color="success">mdi-server</v-icon>
                 <div>
@@ -12,9 +12,6 @@
                   <div class="text-h6">{{ onlineWorkers.length }}</div>
                 </div>
               </div>
-              <v-btn variant="outlined" size="x-small" @click="toggleWorkersList">
-                {{ toggleText }}
-              </v-btn>
             </v-sheet>
           </v-col>
 
@@ -85,8 +82,10 @@
       :loading="loadingStore.isLoading"
       :loading-text="loadingStore.loadingText"
       :errors="errors"
+      :toggle-text="toggleText"
       @limit-changed="handleLimitChange"
       @load-data="loadData"
+      @toggle-workers-list="toggleWorkersList"
     />
 
     <ErrorMessage v-for="error in errors" :key="error" :message="error" />
@@ -220,6 +219,7 @@ function saveOnlinesOnlyPreference(value: boolean): void {
 function toggleWorkersList(): void {
   showingAll.value = !showingAll.value
   saveOnlinesOnlyPreference(!showingAll.value)
+  loadData(paginator.value.limit, paginator.value.skip, false)
 }
 
 async function loadRunningTasks(): Promise<void> {
@@ -252,7 +252,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   if (!hideLoading) {
     loadingStore.startLoading('Fetching workers...')
   }
-  await workersStore.fetchWorkers({ limit, skip })
+  await workersStore.fetchWorkers({ limit, skip, hide_offlines: !showingAll.value })
   workersStore.savePaginatorLimit(limit)
   errors.value = workersStore.errors
   for (const error of errors.value) {
