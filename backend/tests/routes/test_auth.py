@@ -106,7 +106,9 @@ def test_refresh_access_token_expired_token(
             [],
         ),
         (
-            getnow().isoformat(),
+            # Before CI fully sets up, default timer has expired, so, add
+            # additional 5 minutes
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(),
             HTTPStatus.OK,
             ["access_token", "token_type", "expires_time"],
         ),

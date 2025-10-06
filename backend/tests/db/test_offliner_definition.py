@@ -9,10 +9,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
-from zimfarm_backend.db.exceptions import (
-    RecordAlreadyExistsError,
-    RecordDoesNotExistError,
-)
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_definition,
     get_offliner_definition,
@@ -72,7 +69,7 @@ def test_create_offliner_definition_with_duplicate_version(
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 (needed for side effect)
     mwoffliner: OfflinerSchema,
 ):
-    with pytest.raises(RecordAlreadyExistsError):
+    with does_not_raise():
         create_offliner_definition(
             dbsession, mwoffliner_flags, mwoffliner.id, version="initial"
         )

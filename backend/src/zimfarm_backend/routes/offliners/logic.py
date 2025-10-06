@@ -26,7 +26,9 @@ from zimfarm_backend.db.offliner_definition import (
 from zimfarm_backend.routes.dependencies import gen_dbsession
 from zimfarm_backend.routes.http_errors import UnauthorizedError
 from zimfarm_backend.routes.models import ListResponse
-from zimfarm_backend.routes.offliners.models import OfflinerDefinitionCreateSchema
+from zimfarm_backend.routes.offliners.models import (
+    OfflinerDefinitionCreateSchema,
+)
 
 router = APIRouter(prefix="/offliners", tags=["offliners"])
 
