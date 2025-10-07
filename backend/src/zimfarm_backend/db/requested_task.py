@@ -30,6 +30,8 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyOfflinerAndResourcesSchema,
+    OfflinerDefinitionSchema,
+    OfflinerSchema,
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
     ScheduleDurationSchema,
@@ -86,6 +88,71 @@ def _resource_mismatch_message(
             f"available={format_size(worker.memory)}"
         )
     return mismatched_message
+
+
+def _create_new_requested_task(
+    session: OrmSession,
+    *,
+    requested_by: str,
+    schedule: Schedule,
+    offliner: OfflinerSchema,
+    offliner_definition: OfflinerDefinitionSchema,
+    worker: Worker | None,
+    priority: int = 0,
+):
+    """Create a new requested task."""
+    now = getnow()
+    requested_task = RequestedTask(
+        status=TaskStatus.requested,
+        timestamp=[(TaskStatus.requested.value, now)],
+        events=[{"code": TaskStatus.requested, "timestamp": now}],
+        requested_by=requested_by,
+        priority=priority,
+        config=expanded_config(
+            offliner=offliner,
+            offliner_definition=offliner_definition,
+            config=ScheduleConfigSchema.model_validate(
+                {
+                    **schedule.config,
+                    "offliner": create_offliner_instance(
+                        offliner=offliner,
+                        offliner_definition=offliner_definition,
+                        data=schedule.config["offliner"],
+                        skip_validation=False,
+                    ),
+                }
+            ),
+        ).model_dump(mode="json", context={"show_secrets": True}),
+        upload={
+            "zim": {
+                "upload_uri": ZIM_UPLOAD_URI,
+                "expiration": ZIM_EXPIRATION,
+                "zimcheck": ZIMCHECK_OPTION,
+            },
+            "logs": {
+                "upload_uri": LOGS_UPLOAD_URI,
+                "expiration": LOGS_EXPIRATION,
+            },
+            "artifacts": {
+                "upload_uri": ARTIFACTS_UPLOAD_URI,
+                "expiration": ARTIFACTS_EXPIRATION,
+            },
+        },
+        notification=schedule.notification if schedule.notification else {},
+        updated_at=now,
+        original_schedule_name=schedule.name,
+        # Track the worker context requirement for this schedule (from the schedule)
+        # as schedule might be deleted from DB
+        context=schedule.context,
+    )
+    requested_task.schedule = schedule
+    if worker:
+        requested_task.worker = worker
+    requested_task.offliner_definition = schedule.offliner_definition
+
+    session.add(requested_task)
+    session.flush()
+    return requested_task
 
 
 def request_task(
@@ -200,57 +267,15 @@ def request_task(
     offliner = get_offliner(session, offliner_definition.offliner)
 
     # Otherwise, create a new requested task
-    now = getnow()
-    requested_task = RequestedTask(
-        status=TaskStatus.requested,
-        timestamp=[(TaskStatus.requested.value, now)],
-        events=[{"code": TaskStatus.requested, "timestamp": now}],
+    requested_task = _create_new_requested_task(
+        session,
         requested_by=requested_by,
+        schedule=schedule,
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        worker=worker,
         priority=priority,
-        config=expanded_config(
-            offliner=offliner,
-            offliner_definition=offliner_definition,
-            config=ScheduleConfigSchema.model_validate(
-                {
-                    **schedule.config,
-                    "offliner": create_offliner_instance(
-                        offliner=offliner,
-                        offliner_definition=offliner_definition,
-                        data=schedule.config["offliner"],
-                        skip_validation=False,
-                    ),
-                }
-            ),
-        ).model_dump(mode="json", context={"show_secrets": True}),
-        upload={
-            "zim": {
-                "upload_uri": ZIM_UPLOAD_URI,
-                "expiration": ZIM_EXPIRATION,
-                "zimcheck": ZIMCHECK_OPTION,
-            },
-            "logs": {
-                "upload_uri": LOGS_UPLOAD_URI,
-                "expiration": LOGS_EXPIRATION,
-            },
-            "artifacts": {
-                "upload_uri": ARTIFACTS_UPLOAD_URI,
-                "expiration": ARTIFACTS_EXPIRATION,
-            },
-        },
-        notification=schedule.notification if schedule.notification else {},
-        updated_at=now,
-        original_schedule_name=schedule.name,
-        # Track the worker context requirement for this schedule (from the schedule)
-        # as schedule might be deleted from DB
-        context=schedule.context,
     )
-    requested_task.schedule = schedule
-    if worker:
-        requested_task.worker = worker
-    requested_task.offliner_definition = schedule.offliner_definition
-
-    session.add(requested_task)
-    session.flush()
 
     return RequestTaskResult(
         requested_task=create_requested_task_full_schema(session, requested_task),
