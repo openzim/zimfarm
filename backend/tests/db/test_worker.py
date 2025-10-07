@@ -193,6 +193,6 @@ def test_update_worker_context(dbsession: OrmSession, worker: Worker):
     """Test that update_worker_context updates the worker's context"""
 
     updated_worker = update_worker(
-        dbsession, worker_name=worker.name, contexts=["priority", "general"]
+        dbsession, worker_name=worker.name, contexts={"priority": None, "general": None}
     )
-    assert updated_worker.contexts == ["priority", "general"]
+    assert list(updated_worker.contexts.keys()) == ["priority", "general"]

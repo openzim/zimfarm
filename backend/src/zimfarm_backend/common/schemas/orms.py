@@ -1,6 +1,6 @@
 import datetime
 from collections import defaultdict
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -299,7 +299,7 @@ class WorkerLightSchema(BaseModel):
     resources: ConfigResourcesSchema
     username: str
     offliners: list[str]
-    contexts: list[str]
+    contexts: dict[str, IPv4Address | IPv6Address | None]
 
     @computed_field
     @property

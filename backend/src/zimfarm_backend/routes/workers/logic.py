@@ -82,8 +82,16 @@ async def update_worker_context(
     if worker.deleted:
         raise BadRequestError("Worker has been marked as deleted")
 
+    if not request.model_dump(exclude_unset=True):
+        raise BadRequestError(
+            "No changes made to worker context because nothing was set."
+        )
+
     db_update_worker(
-        session, worker_name=name, contexts=request.contexts, update_last_seen=False
+        session,
+        worker_name=name,
+        contexts=request.contexts if request.contexts is not None else {},
+        update_last_seen=False,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
