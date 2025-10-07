@@ -1,8 +1,10 @@
 import datetime
 from collections.abc import Callable
+from contextlib import nullcontext as does_not_raise
 from uuid import uuid4
 
 import pytest
+from _pytest.python_api import RaisesContext
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
@@ -27,6 +29,7 @@ from zimfarm_backend.db.models import (
     Schedule,
     ScheduleHistory,
     Task,
+    User,
     Worker,
 )
 from zimfarm_backend.db.schedule import (
@@ -42,6 +45,8 @@ from zimfarm_backend.db.schedule import (
     get_schedule_history_entry_or_none,
     get_schedule_or_none,
     get_schedules,
+    restore_schedules,
+    toggle_archive_status,
     update_schedule,
     update_schedule_duration,
 )
@@ -526,3 +531,56 @@ def test_get_schedule_history_entry(dbsession: OrmSession, schedule: Schedule):
             schedule_name=schedule.name,
             history_id=uuid4(),
         )
+
+
+@pytest.mark.parametrize(
+    "archived,new_archive_status,expected",
+    [
+        pytest.param(False, True, does_not_raise()),
+        pytest.param(False, False, pytest.raises(RecordAlreadyExistsError)),
+        pytest.param(True, True, pytest.raises(RecordAlreadyExistsError)),
+        pytest.param(True, False, does_not_raise()),
+    ],
+)
+def test_toggle_schedule_archive_status(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    create_user: Callable[..., User],
+    *,
+    archived: bool,
+    new_archive_status: bool,
+    expected: RaisesContext[Exception],
+):
+    user = create_user()
+    with expected:
+        schedule = create_schedule(archived=archived)
+        toggle_archive_status(
+            dbsession,
+            schedule_name=schedule.name,
+            archived=new_archive_status,
+            actor=user.username,
+        )
+
+
+@pytest.mark.parametrize(
+    "schedule_names,expected",
+    [
+        pytest.param(["nonexistent"], pytest.raises(RecordDoesNotExistError)),
+        pytest.param(["testschedule"], does_not_raise()),
+        pytest.param(
+            ["testschedule", "nonexistent"], pytest.raises(RecordDoesNotExistError)
+        ),
+    ],
+)
+def test_restore_schedules(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    create_user: Callable[..., User],
+    schedule_names: list[str],
+    expected: RaisesContext[Exception],
+):
+    user = create_user()
+    create_schedule(name="testschedule", archived=True)
+
+    with expected:
+        restore_schedules(dbsession, schedule_names=schedule_names, actor=user.username)

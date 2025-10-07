@@ -4,12 +4,7 @@
       <v-card-title
         class="d-flex flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
       >
-        <RequestSelectionButton
-          :can-request-tasks="canRequestTasks"
-          :requesting-text="requestingText"
-          :count="selectedSchedules.length"
-          @fetch-schedules="emit('fetchSchedules', selectedSchedules)"
-        />
+        <slot name="actions" />
         <v-btn
           size="small"
           variant="elevated"
@@ -41,7 +36,8 @@
         class="elevation-1"
         item-value="name"
         show-select
-        v-model="selectedSchedules"
+        :model-value="selectedSchedules"
+        @update:model-value="emit('selectionChanged', $event)"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
@@ -108,7 +104,6 @@
 </template>
 
 <script setup lang="ts">
-import RequestSelectionButton from '@/components/RequestSelectionButton.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
@@ -116,20 +111,19 @@ import { computed, ref, watch } from 'vue'
 
 // Props
 interface Props {
-  requestingText: string | null
   headers: { title: string; value: string }[]
   schedules: ScheduleLight[]
   paginator: Paginator
   loading: boolean
   errors: string[]
   loadingText: string
-  canRequestTasks: boolean
   filters: {
     name: string
     categories: string[]
     languages: string[]
     tags: string[]
   }
+  selectedSchedules: string[]
 }
 
 const props = defineProps<Props>()
@@ -139,12 +133,13 @@ const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
   clearFilters: []
-  fetchSchedules: [selectedSchedules: string[]]
+  selectionChanged: [selectedSchedules: string[]]
 }>()
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
-const selectedSchedules = ref<string[]>([])
+
+const selectedSchedules = computed(() => props.selectedSchedules)
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
@@ -171,7 +166,7 @@ watch(
 )
 
 function clearSelections() {
-  selectedSchedules.value = []
+  emit('selectionChanged', [])
 }
 
 function statusClass(status: string) {

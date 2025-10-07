@@ -82,6 +82,23 @@ def test_request_task_disabled_schedule(
     assert result.requested_task is None
 
 
+def test_request_task_archived_schedule(
+    dbsession: OrmSession, schedule: Schedule, worker: Worker
+):
+    """Test that request_task returns None for archived schedule"""
+    schedule.archived = True
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    result = request_task(
+        session=dbsession,
+        schedule_name=schedule.name,
+        requested_by="testuser",
+        worker_name=worker.name,
+    )
+    assert result.requested_task is None
+
+
 def test_request_task_already_requested(
     dbsession: OrmSession,
     create_requested_task: Callable[..., RequestedTask],

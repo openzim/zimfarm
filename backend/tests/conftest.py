@@ -887,6 +887,7 @@ def create_schedule(
         context: str | None = None,
         schedule_config: ScheduleConfigSchema | None = None,
         worker: Worker | None = None,
+        archived: bool = False,
     ) -> Schedule:
         language = _language if language is None else language
         schedule_config = (
@@ -904,6 +905,7 @@ def create_schedule(
             periodicity=periodicity,
             notification=notification,
             context=context or "",
+            archived=archived,
         )
         schedule.offliner_definition_id = mwoffliner_definition.id
 

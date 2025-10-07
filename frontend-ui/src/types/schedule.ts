@@ -32,6 +32,7 @@ export interface BaseScheduleHistorySchema {
   tags: string[]
   periodicity: string
   context: string
+  archived: boolean
 }
 
 export interface ScheduleHistorySchema extends BaseScheduleHistorySchema {
@@ -53,6 +54,7 @@ export interface Schedule {
   notification: ScheduleNotification | null
   most_recent_task: MostRecentTask | null
   is_requested: boolean
+  archived: boolean
   is_valid: boolean
   context: string
   version: string
@@ -67,6 +69,7 @@ export interface ScheduleLight {
   language: Language
   enabled: boolean
   is_requested: boolean
+  archived: boolean
   context: string
 }
 

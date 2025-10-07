@@ -25,12 +25,13 @@ from zimfarm_backend.common.schemas.models import (
 
 
 class SchedulesGetSchema(BaseModel):
-    skip: SkipField | None = None
-    limit: LimitFieldMax200 | None = None
+    skip: SkipField = 0
+    limit: LimitFieldMax200 = 20
     category: list[ScheduleCategory] | None = None
     tag: list[NotEmptyString] | None = None
     lang: list[NotEmptyString] | None = None
     name: ScheduleNameField | None = None
+    archived: bool = False
 
 
 class ScheduleCreateSchema(BaseModel):
@@ -73,4 +74,13 @@ class ScheduleUpdateSchema(BaseModel):
 
 class CloneSchema(BaseModel):
     name: ScheduleNameField
+    comment: str | None = None
+
+
+class RestoreSchedulesSchema(BaseModel):
+    schedule_names: list[ScheduleNameField]
+    comment: str | None = None
+
+
+class ToggleArchiveStatusSchema(BaseModel):
     comment: str | None = None

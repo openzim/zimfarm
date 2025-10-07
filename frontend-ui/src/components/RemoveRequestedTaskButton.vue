@@ -18,14 +18,14 @@
       @click="showConfirmDialog"
     >
       <v-icon size="small" class="mr-1">mdi-delete</v-icon>
-      {{ isRemoving ? 'Removing...' : 'Remove' }}
+      {{ isRemoving ? 'Deleting...' : 'Delete' }}
     </v-btn>
 
     <ConfirmDialog
       v-model="showDialog"
-      title="Remove Requested Task"
-      message="Are you sure you want to remove this requested task?"
-      confirm-text="Remove"
+      title="Delete Requested Task"
+      message="Are you sure you want to delete this requested task?"
+      confirm-text="Delete"
       cancel-text="Cancel"
       confirm-color="error"
       icon="mdi-delete"
@@ -82,11 +82,11 @@ const removeTask = async () => {
     const success = await requestedTasksStore.removeRequestedTask(props.id)
 
     if (success) {
-      notificationStore.showSuccess('Requested task removed')
+      notificationStore.showSuccess('Requested task deleted')
       emit('requested-task-removed', props.id)
     }
   } catch (error) {
-    console.error('Failed to remove requested task:', error)
+    console.error('Failed to delete requested task:', error)
   } finally {
     isRemoving.value = false
     hideConfirmDialog()

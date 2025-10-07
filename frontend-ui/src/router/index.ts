@@ -1,3 +1,4 @@
+import ArchivedSchedulesView from '@/views/ArchivedSchedulesView.vue'
 import ChangePasswordView from '@/views/ChangePasswordView.vue'
 import NotFoundView from '@/views/NotFound.vue'
 import PipelineView from '@/views/PipelineView.vue'
@@ -105,6 +106,12 @@ const routes = [
     name: 'schedules-list',
     component: SchedulesView,
     meta: { title: 'Zimfarm | Recipes' },
+  },
+  {
+    path: '/recipes/archives',
+    name: 'archived-schedules',
+    component: ArchivedSchedulesView,
+    meta: { title: 'Zimfarm | Archived Recipes' },
   },
   {
     path: '/users/:username',

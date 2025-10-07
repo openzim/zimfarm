@@ -57,6 +57,12 @@ from zimfarm_backend.db.schedule import (
     get_schedule_history_entry as db_get_schedule_history_entry,
 )
 from zimfarm_backend.db.schedule import get_schedules as db_get_schedules
+from zimfarm_backend.db.schedule import (
+    restore_schedules as db_restore_schedules,
+)
+from zimfarm_backend.db.schedule import (
+    toggle_archive_status as db_toggle_archive_status,
+)
 from zimfarm_backend.db.schedule import update_schedule as db_update_schedule
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.routes.dependencies import (
@@ -73,10 +79,12 @@ from zimfarm_backend.routes.http_errors import (
 from zimfarm_backend.routes.models import ListResponse
 from zimfarm_backend.routes.schedules.models import (
     CloneSchema,
+    RestoreSchedulesSchema,
     ScheduleCreateResponseSchema,
     ScheduleCreateSchema,
     SchedulesGetSchema,
     ScheduleUpdateSchema,
+    ToggleArchiveStatusSchema,
 )
 from zimfarm_backend.routes.utils import get_schedule_image_tags
 from zimfarm_backend.utils.offliners import (
@@ -94,22 +102,21 @@ def get_schedules(
     params: Annotated[SchedulesGetSchema, Query()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[ScheduleLightSchema]:
-    skip = params.skip if params.skip else 0
-    limit = params.limit if params.limit else 20
     results = db_get_schedules(
         session,
-        skip=skip,
-        limit=limit,
+        skip=params.skip,
+        limit=params.limit,
         lang=params.lang,
         categories=params.category,
         tags=params.tag,
         name=params.name,
+        archived=params.archived,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
-            skip=skip,
-            limit=limit,
+            skip=params.skip,
+            limit=params.limit,
             page_size=len(results.schedules),
         ),
         items=cast(list[ScheduleLightSchema], results.schedules),
@@ -200,6 +207,7 @@ def get_schedules_backup(
     current_user: User | None = Depends(get_current_user_or_none),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
+    archived: Annotated[bool, Query()] = False,
 ) -> JSONResponse:
     """Get a list of schedules"""
     if not (
@@ -220,7 +228,7 @@ def get_schedules_backup(
     else:
         show_secrets = not hide_secrets
 
-    results = get_all_schedules(session)
+    results = get_all_schedules(session, archived=archived)
     schedules = cast(list[ScheduleFullSchema], results.schedules)
     content: list[dict[str, Any]] = []
     for schedule in schedules:
@@ -234,6 +242,27 @@ def get_schedules_backup(
     return JSONResponse(content=content)
 
 
+@router.post("/restore")
+def restore_archived_schedules(
+    request: RestoreSchedulesSchema,
+    session: OrmSession = Depends(gen_dbsession),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="update")
+    ):
+        raise UnauthorizedError("You are not allowed to restore schedules")
+
+    db_restore_schedules(
+        session,
+        schedule_names=request.schedule_names,
+        actor=current_user.username,
+        comment=request.comment,
+    )
+    return Response(status_code=HTTPStatus.NO_CONTENT)
+
+
 @router.get("/{schedule_name}")
 def get_schedule(
     schedule_name: Annotated[ScheduleNameField, Path()],
@@ -243,6 +272,12 @@ def get_schedule(
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
     db_schedule = db_get_schedule(session, schedule_name=schedule_name)
+
+    if current_user is None and db_schedule.archived:
+        raise UnauthorizedError(
+            "You do not have permissions to view an archived schedule."
+        )
+
     offliner = get_offliner(session, db_schedule.config["offliner"]["offliner_id"])
 
     try:
@@ -301,6 +336,8 @@ def update_schedule(
         raise UnauthorizedError("You are not allowed to update a schedule")
 
     db_schedule = db_get_schedule(session, schedule_name=schedule_name)
+    if db_schedule.archived:
+        raise BadRequestError("Cannot update an archived schedule")
     offliner = get_offliner(session, db_schedule.config["offliner"]["offliner_id"])
     schedule = create_schedule_full_schema(db_schedule, offliner)
 
@@ -566,6 +603,8 @@ def clone_schedule(
         raise UnauthorizedError("You are not allowed to clone a schedule")
 
     schedule = db_get_schedule(session, schedule_name=schedule_name)
+    if schedule.archived:
+        raise BadRequestError("You cannot clone an archived schedule.")
 
     # Skip validation while cloning a schedule
     try:
@@ -625,6 +664,60 @@ def clone_schedule(
 
     return ScheduleCreateResponseSchema(
         id=new_schedule.id,
+    )
+
+
+@router.patch("/{schedule_name}/archive")
+def archive_schedule(
+    schedule_name: Annotated[ScheduleNameField, Path()],
+    request: ToggleArchiveStatusSchema,
+    session: OrmSession = Depends(gen_dbsession),
+    current_user: User = Depends(get_current_user),
+) -> JSONResponse:
+    """Archive a schedule"""
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="delete")
+    ):
+        raise UnauthorizedError("You are not allowed to archive a schedule")
+
+    db_toggle_archive_status(
+        session,
+        schedule_name=schedule_name,
+        archived=True,
+        actor=current_user.username,
+        comment=request.comment,
+    )
+    return JSONResponse(
+        content={"message": f"Schedule '{schedule_name}' has been archived"},
+        status_code=HTTPStatus.OK,
+    )
+
+
+@router.patch("/{schedule_name}/restore")
+def restore_archived_schedule(
+    schedule_name: Annotated[ScheduleNameField, Path()],
+    request: ToggleArchiveStatusSchema,
+    session: OrmSession = Depends(gen_dbsession),
+    current_user: User = Depends(get_current_user),
+) -> JSONResponse:
+    """Restore an archived schedule"""
+    if not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="delete")
+    ):
+        raise UnauthorizedError("You are not allowed to restore a schedule")
+
+    db_toggle_archive_status(
+        session,
+        schedule_name=schedule_name,
+        archived=False,
+        actor=current_user.username,
+        comment=request.comment,
+    )
+    return JSONResponse(
+        content={"message": f"Schedule '{schedule_name}' has been restored"},
+        status_code=HTTPStatus.OK,
     )
 
 

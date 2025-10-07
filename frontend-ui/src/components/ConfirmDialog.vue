@@ -52,7 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   confirmColor: 'error',
   icon: 'mdi-alert-circle',
   iconColor: 'warning',
-  maxWidth: 400,
+  maxWidth: 600,
   loading: false,
 })
 

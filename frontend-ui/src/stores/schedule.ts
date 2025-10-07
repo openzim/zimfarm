@@ -65,6 +65,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     lang: string[] | undefined,
     tag: string[] | undefined,
     name: string | undefined,
+    archived: boolean | undefined,
   ) => {
     const service = await authStore.getApiService('schedules')
     // filter out undefined values from params
@@ -76,6 +77,7 @@ export const useScheduleStore = defineStore('schedule', () => {
         lang,
         tag,
         name,
+        archived,
       }).filter(([, value]) => !!value),
     )
     try {
@@ -182,6 +184,49 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  const archiveSchedule = async (scheduleName: string, comment?: string) => {
+    const service = await authStore.getApiService('schedules')
+    try {
+      await service.patch<{ comment?: string }, { message: string }>(`/${scheduleName}/archive`, {
+        comment,
+      })
+      return true
+    } catch (_error) {
+      console.error('Failed to archive schedule', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
+  const restoreSchedule = async (scheduleName: string, comment?: string) => {
+    const service = await authStore.getApiService('schedules')
+    try {
+      await service.patch<{ comment?: string }, { message: string }>(`/${scheduleName}/restore`, {
+        comment,
+      })
+      return true
+    } catch (_error) {
+      console.error('Failed to restore schedule', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
+  const restoreSchedules = async (scheduleNames: string[], comment?: string) => {
+    const service = await authStore.getApiService('schedules')
+    try {
+      await service.post<{ schedule_names: string[]; comment?: string }, null>('/restore', {
+        schedule_names: scheduleNames,
+        comment,
+      })
+      return true
+    } catch (_error) {
+      console.error('Failed to restore schedules', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
   const validateSchedule = async (scheduleName: string) => {
     const service = await authStore.getApiService('schedules')
     errors.value = []
@@ -214,6 +259,9 @@ export const useScheduleStore = defineStore('schedule', () => {
     fetchScheduleImageTags,
     updateSchedule,
     deleteSchedule,
+    archiveSchedule,
+    restoreSchedule,
+    restoreSchedules,
     validateSchedule,
     fetchScheduleHistory,
     savePaginatorLimit,
