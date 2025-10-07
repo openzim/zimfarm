@@ -155,6 +155,76 @@ def _create_new_requested_task(
     return requested_task
 
 
+def _validate_schedule_request_uniqueness(
+    session: OrmSession, *, schedule_name: str, worker_name: str | None
+):
+    query = (
+        select(RequestedTask, Schedule)
+        .join(Schedule, RequestedTask.schedule)
+        .where(Schedule.name == schedule_name)
+    )
+    if worker_name is not None:
+        query = query.join(Worker, RequestedTask.worker).where(
+            Worker.name == worker_name
+        )
+
+    if count_from_stmt(session, query) > 0:
+        return f"Schedule '{schedule_name}' already requested"
+    return None
+
+
+def _validate_schedule_state(
+    session: OrmSession, schedule_name: str
+) -> tuple[Schedule | None, str | None]:
+    schedule = get_schedule_or_none(session, schedule_name=schedule_name)
+    if schedule is None or not schedule.enabled:
+        return None, f"Schedule '{schedule_name}' not found or disabled"
+    if schedule.archived:
+        return None, f"Schedule '{schedule_name}' is archived"
+    return schedule, None
+
+
+def _validate_worker_context(worker: Worker, schedule: Schedule) -> str | None:
+    if not schedule.context:
+        return None
+    if schedule.context not in worker.contexts:
+        return (
+            f"Worker does not have required context to run schedule '{schedule.name}'."
+        )
+
+    allowed_ip = worker.contexts[schedule.context]
+    if allowed_ip is not None and allowed_ip != str(worker.last_ip):
+        return (
+            "Worker has required context but IP is not whitelisted to run "
+            f"schedule '{schedule.name}'."
+        )
+    return None
+
+
+def _validate_worker_offliner(worker: Worker, schedule: Schedule) -> str | None:
+    if schedule.config["offliner"]["offliner_id"] not in worker.offliners:
+        return (
+            f"Worker's offliners do not match the offliner for schedule "
+            f"'{schedule.name}'."
+        )
+    return None
+
+
+def _validate_worker_resources(worker: Worker, schedule: Schedule) -> str | None:
+    schedule_resource = ResourcesSchema.model_validate(schedule.config["resources"])
+    if (
+        worker.cpu < schedule_resource.cpu
+        or worker.memory < schedule_resource.memory
+        or worker.disk < schedule_resource.disk
+    ):
+        mismatched_message = _resource_mismatch_message(worker, schedule_resource)
+        return (
+            "Worker does not have enough resources to run schedule "
+            f"'{schedule.name}'. Insufficient: {'; '.join(mismatched_message)}"
+        )
+    return None
+
+
 def request_task(
     session: OrmSession,
     *,
@@ -170,40 +240,14 @@ def request_task(
     Schedule can't be requested if worker does not have appropriate context.
     """
 
-    query = (
-        select(
-            RequestedTask,
-            Schedule,
-        )
-        .join(Schedule, RequestedTask.schedule)
-        .where(
-            Schedule.name == schedule_name,
-        )
-    )
-    if worker_name is not None:
-        query = query.join(Worker, RequestedTask.worker).where(
-            Worker.name == worker_name
-        )
+    if error := _validate_schedule_request_uniqueness(
+        session, schedule_name=schedule_name, worker_name=worker_name
+    ):
+        return RequestTaskResult(requested_task=None, error=error)
 
-    # If the worker has a requested task for this schedule, return None
-    if count_from_stmt(session, query) > 0:
-        return RequestTaskResult(
-            requested_task=None, error=f"Schedule '{schedule_name}' already requested"
-        )
-
-    schedule = get_schedule_or_none(session, schedule_name=schedule_name)
-
-    if schedule is None or not schedule.enabled:
-        return RequestTaskResult(
-            requested_task=None,
-            error=f"Schedule '{schedule_name}' not found or disabled",
-        )
-
-    if schedule.archived:
-        return RequestTaskResult(
-            requested_task=None,
-            error=f"Schedule '{schedule_name}' is archived",
-        )
+    schedule, error = _validate_schedule_state(session, schedule_name)
+    if schedule is None:
+        return RequestTaskResult(requested_task=None, error=error)
 
     worker = None
     if worker_name is not None:
@@ -212,54 +256,13 @@ def request_task(
             return RequestTaskResult(
                 requested_task=None, error=f"Worker '{worker_name}' not found"
             )
-
-    # Check if worker is allowed to be assigned a task from this recipe
-    if worker and schedule.context:
-        if schedule.context not in worker.contexts:
-            return RequestTaskResult(
-                requested_task=None,
-                error=(
-                    "Worker does not have required context to run schedule "
-                    f"'{schedule_name}'."
-                ),
-            )
-
-        if (
-            allowed_ip := worker.contexts[schedule.context]
-        ) is not None and allowed_ip != str(worker.last_ip):
-            return RequestTaskResult(
-                requested_task=None,
-                error=(
-                    "Worker has required context but IP is not whitelisted to run "
-                    f"schedule '{schedule_name}'."
-                ),
-            )
-    # check if worker can run the scraper for the offliner
-    if worker and schedule.config["offliner"]["offliner_id"] not in worker.offliners:
-        return RequestTaskResult(
-            requested_task=None,
-            error=(
-                f"Worker's offliners do not match the offliner for schedule "
-                f"'{schedule_name}'."
-            ),
-        )
-
-    # Check if worker has enough resource to run a task from this recipe
-    schedule_resource = ResourcesSchema.model_validate(schedule.config["resources"])
-    if worker and (
-        worker.cpu < schedule_resource.cpu
-        or worker.memory < schedule_resource.memory
-        or worker.disk < schedule_resource.disk
-    ):
-        # build up an error message showing which resource(s) are mismatched
-        mismatched_message = _resource_mismatch_message(worker, schedule_resource)
-        return RequestTaskResult(
-            requested_task=None,
-            error=(
-                "Worker does not have enough resources to run schedule "
-                f"'{schedule_name}'. Insufficient: {'; '.join(mismatched_message)}"
-            ),
-        )
+        for validator in (
+            _validate_worker_context,
+            _validate_worker_offliner,
+            _validate_worker_resources,
+        ):
+            if error := validator(worker, schedule):
+                return RequestTaskResult(requested_task=None, error=error)
 
     offliner_definition = get_offliner_definition_by_id(
         session, schedule.offliner_definition_id
