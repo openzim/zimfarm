@@ -1,4 +1,4 @@
-from sqlalchemy import func, select, union
+from sqlalchemy import func, select, text, union
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas import BaseModel
@@ -19,9 +19,9 @@ def get_contexts(session: OrmSession, skip: int, limit: int) -> ContextListResul
     )
 
     # Get contexts from workers (unnest the contexts array)
-    worker_contexts = select(func.unnest(Worker.contexts).label("context")).where(
-        Worker.contexts != []
-    )
+    worker_contexts = select(
+        func.jsonb_object_keys(Worker.contexts).label("context")
+    ).where(Worker.contexts != text("'{}'::jsonb"))
 
     # Union both queries to get all unique contexts.
     # UNION filters out duplicates in PostgreSQL.

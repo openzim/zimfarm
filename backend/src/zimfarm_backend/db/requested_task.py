@@ -147,15 +147,26 @@ def request_task(
             )
 
     # Check if worker is allowed to be assigned a task from this recipe
-    if worker and schedule.context and schedule.context not in worker.contexts:
-        return RequestTaskResult(
-            requested_task=None,
-            error=(
-                "Worker does not have required context to run schedule "
-                f"'{schedule_name}'."
-            ),
-        )
+    if worker and schedule.context:
+        if schedule.context not in worker.contexts:
+            return RequestTaskResult(
+                requested_task=None,
+                error=(
+                    "Worker does not have required context to run schedule "
+                    f"'{schedule_name}'."
+                ),
+            )
 
+        if (
+            allowed_ip := worker.contexts[schedule.context]
+        ) is not None and allowed_ip != str(worker.last_ip):
+            return RequestTaskResult(
+                requested_task=None,
+                error=(
+                    "Worker has required context but IP is not whitelisted to run "
+                    f"schedule '{schedule_name}'."
+                ),
+            )
     # check if worker can run the scraper for the offliner
     if worker and schedule.config["offliner"]["offliner_id"] not in worker.offliners:
         return RequestTaskResult(
@@ -410,7 +421,7 @@ def get_tasks_doable_by_worker(
                 # if a task has a context set to empty string, it should be
                 # considered
                 RequestedTask.context == "",
-                RequestedTask.context.in_(worker.contexts),
+                RequestedTask.context.in_(worker.contexts.keys()),
             ),
         )
     )

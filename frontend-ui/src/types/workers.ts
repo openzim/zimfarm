@@ -10,7 +10,7 @@ export interface Worker {
   tasks: TaskLight[] // Will be populated with running tasks
   offliners: string[]
   username: string
-  contexts: string[]
+  contexts: Record<string, string | null>
 }
 
 export interface RunningTask {
@@ -33,7 +33,7 @@ export interface WorkerMetrics {
   resources: Resources
   offliners: string[]
   username: string
-  contexts: string[]
+  contexts: Record<string, string | null>
   running_tasks: RunningTask[]
   nb_tasks_total: number
   nb_tasks_completed: number
@@ -43,5 +43,5 @@ export interface WorkerMetrics {
 }
 
 export interface WorkerUpdateSchema {
-  contexts: string[]
+  contexts: Record<string, string | null>
 }

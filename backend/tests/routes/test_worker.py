@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from http import HTTPStatus
+from ipaddress import IPv4Address, IPv6Address
 
 import pytest
 from fastapi.testclient import TestClient
@@ -174,9 +175,19 @@ def test_get_worker_metrics_with_tasks(
 @pytest.mark.parametrize(
     "permission,contexts,deleted,expected_status",
     [
-        [RoleEnum.ADMIN, ["priority", "general"], False, HTTPStatus.NO_CONTENT],
-        [RoleEnum.PROCESSOR, ["general"], False, HTTPStatus.UNAUTHORIZED],
-        [RoleEnum.ADMIN, ["priority", "general"], True, HTTPStatus.BAD_REQUEST],
+        [
+            RoleEnum.ADMIN,
+            {"priority": "127.0.0.1", "general": None},
+            False,
+            HTTPStatus.NO_CONTENT,
+        ],
+        [RoleEnum.PROCESSOR, {"general": None}, False, HTTPStatus.UNAUTHORIZED],
+        [
+            RoleEnum.ADMIN,
+            {"priority": "127.0.0.1", "general": None},
+            True,
+            HTTPStatus.BAD_REQUEST,
+        ],
     ],
 )
 def test_update_worker_context(
@@ -185,7 +196,7 @@ def test_update_worker_context(
     create_user: Callable[..., User],
     *,
     permission: RoleEnum,
-    contexts: list[str],
+    contexts: dict[str, IPv4Address | IPv6Address | None],
     expected_status: HTTPStatus,
     deleted: bool,
 ):
@@ -214,7 +225,6 @@ def test_update_worker_context_not_found(
     create_worker: Callable[..., Worker],
     create_user: Callable[..., User],
 ):
-    """Test successful update of a worker's context"""
     user = create_user(permission=RoleEnum.ADMIN)
     create_worker(user=user, deleted=False)
 
@@ -228,7 +238,31 @@ def test_update_worker_context_not_found(
 
     response = client.put(
         "/v2/workers/non-existent/context",
-        json={"contexts": ["priority", "general"]},
+        json={"contexts": {"priority": "127.0.0.1", "general": None}},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_update_worker_context_no_payload(
+    client: TestClient,
+    create_worker: Callable[..., Worker],
+    create_user: Callable[..., User],
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    worker = create_worker(user=user, deleted=False)
+
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    response = client.put(
+        f"/v2/workers/{worker.name}/context",
+        json={},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST

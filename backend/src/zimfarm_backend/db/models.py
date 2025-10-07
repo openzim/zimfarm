@@ -128,8 +128,8 @@ class Worker(Base):
     last_seen: Mapped[datetime | None]
     last_ip: Mapped[IPv4Address | None]
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
-    contexts: Mapped[list[str]] = mapped_column(
-        server_default="{}", default_factory=list
+    contexts: Mapped[dict[str, Any]] = mapped_column(
+        default_factory=dict, server_default="{}"
     )
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
