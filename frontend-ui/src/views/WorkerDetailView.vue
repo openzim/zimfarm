@@ -2,16 +2,40 @@
   <v-container>
     <!-- Header -->
     <v-row class="mb-4">
-      <v-col cols="12" class="d-flex align-center">
+      <v-col cols="12" class="d-flex flex-column flex-sm-row ga-2">
         <code class="text-h6 mr-2">{{ workerName }}</code>
-        <v-chip
-          :color="metrics?.status === 'online' ? 'success' : 'dark'"
-          size="small"
-          variant="tonal"
-          :prepend-icon="metrics?.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
-        >
-          {{ metrics?.status || 'offline' }}
-        </v-chip>
+        <div class="d-flex flex-align-center ga-2">
+          <v-chip
+            :color="metrics?.status === 'online' ? 'success' : 'dark'"
+            size="small"
+            variant="tonal"
+            :prepend-icon="metrics?.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
+          >
+            {{ metrics?.status || 'offline' }}
+          </v-chip>
+
+          <!-- Local scheduling status -->
+          <v-chip
+            v-if="metrics?.cordoned"
+            color="info"
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-pause-circle"
+          >
+            Cordoned
+          </v-chip>
+
+          <!-- Admin scheduling status -->
+          <v-chip
+            v-if="metrics?.admin_disabled"
+            color="error"
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-shield-alert"
+          >
+            Disabled
+          </v-chip>
+        </div>
       </v-col>
     </v-row>
 
@@ -246,6 +270,19 @@
           <v-card v-if="canUpdateWorkers">
             <v-card-text>
               <v-form @submit.prevent="save">
+                <!-- Worker Status Toggle -->
+                <SwitchButton
+                  :model-value="workerEnabled"
+                  @update:model-value="updateWorkerEnabled"
+                  label="Worker Status"
+                  :details="
+                    adminDisabled
+                      ? 'Worker is disabled and will not receive new tasks'
+                      : 'Worker is enabled and can receive new tasks'
+                  "
+                  density="compact"
+                />
+                <v-divider class="my-2" />
                 <v-row>
                   <v-col cols="12">
                     <p class="text-body-2 text-medium-emphasis">
@@ -381,6 +418,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
+import SwitchButton from '@/components/SwitchButton.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
@@ -434,7 +472,10 @@ const hasChanges = computed(() => {
   const originalContexts = metrics.value.contexts || {}
   const editedContexts = convertToContextRecord(editContexts.value)
 
-  const changes = diff(originalContexts, editedContexts)
+  const changes = diff(
+    { contexts: originalContexts, admin_disabled: metrics.value.admin_disabled },
+    { contexts: editedContexts, admin_disabled: adminDisabled.value },
+  )
   return changes && changes.length > 0
 })
 
@@ -445,7 +486,10 @@ const workerDifferences = computed(() => {
   const originalContexts = metrics.value.contexts || {}
   const editedContexts = convertToContextRecord(editContexts.value)
 
-  return diff(originalContexts, editedContexts)
+  return diff(
+    { contexts: originalContexts, admin_disabled: metrics.value.admin_disabled },
+    { contexts: editedContexts, admin_disabled: adminDisabled.value },
+  )
 })
 
 // Check for duplicate context names
@@ -467,6 +511,14 @@ const addContext = () => {
 
 const removeContext = (index: number) => {
   editContexts.value.splice(index, 1)
+}
+
+const adminDisabled = ref(false)
+
+const workerEnabled = computed(() => !adminDisabled.value)
+
+const updateWorkerEnabled = (value: boolean) => {
+  adminDisabled.value = !value
 }
 
 const convertToContextRecord = (
@@ -548,6 +600,7 @@ async function refreshData() {
   if (res) {
     metrics.value = res
     editContexts.value = convertFromContextRecord(res.contexts || {})
+    adminDisabled.value = res.admin_disabled
     error.value = null
   } else {
     error.value = workersStore.errors[0] || 'Failed to fetch worker'
@@ -572,8 +625,9 @@ const handleConfirmUpdate = async () => {
     // Convert form data to the expected schema
     const contextsPayload = convertToContextRecord(editContexts.value)
 
-    const ok = await workersStore.updateWorkerContext(workerName.value, {
+    const ok = await workersStore.updateWorker(workerName.value, {
       contexts: contextsPayload,
+      admin_disabled: adminDisabled.value,
     })
 
     if (ok) {

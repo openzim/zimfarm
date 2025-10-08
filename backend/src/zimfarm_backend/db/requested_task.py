@@ -347,9 +347,7 @@ def get_requested_tasks(
                 | (matching_offliners is None)
             ),
             (Worker.name == worker_name)
-            | (
-                RequestedTask.worker is None
-            )  # pyright: ignore[reportUnnecessaryComparison]
+            | (RequestedTask.worker is None)  # pyright: ignore[reportUnnecessaryComparison]
             | (worker_name is None),
         )
         .order_by(

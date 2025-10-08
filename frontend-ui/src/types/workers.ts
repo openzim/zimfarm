@@ -2,15 +2,20 @@ import type { Resources, ScheduleDuration } from '@/types/base'
 import type { ExpandedScheduleConfig } from '@/types/schedule'
 import type { TaskLight } from '@/types/tasks'
 
-export interface Worker {
+interface BaseWorker {
   name: string
-  status: 'online' | 'offline'
+  offliners: string[]
   last_seen: string
+  cordoned: boolean
+  admin_disabled: boolean
+  contexts: Record<string, string | null>
+}
+
+export interface Worker extends BaseWorker {
+  status: 'online' | 'offline'
   resources: Resources
   tasks: TaskLight[] // Will be populated with running tasks
-  offliners: string[]
   username: string
-  contexts: Record<string, string | null>
 }
 
 export interface RunningTask {
@@ -26,14 +31,10 @@ export interface RunningTask {
   eta: string
 }
 
-export interface WorkerMetrics {
-  name: string
+export interface WorkerMetrics extends BaseWorker {
   status: 'online' | 'offline'
-  last_seen: string | null
   resources: Resources
-  offliners: string[]
   username: string
-  contexts: Record<string, string | null>
   running_tasks: RunningTask[]
   nb_tasks_total: number
   nb_tasks_completed: number
@@ -44,4 +45,5 @@ export interface WorkerMetrics {
 
 export interface WorkerUpdateSchema {
   contexts: Record<string, string | null>
+  admin_disabled: boolean | null
 }

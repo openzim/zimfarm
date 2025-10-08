@@ -272,34 +272,36 @@ class ScheduleFullSchema(BaseModel):
         }
 
 
-class Worker(BaseModel):
+class BaseWorkerSchema(BaseModel):
+    name: str
+    offliners: list[str]
+    last_seen: datetime.datetime | None = None
+    cordoned: bool
+    admin_disabled: bool
+    contexts: dict[str, IPv4Address | IPv6Address | None]
+
+
+class Worker(BaseWorkerSchema):
     """
     Schema for reading a worker model
     """
 
     id: UUID
-    name: str
-    offliners: list[str]
     cpu: ZIMCPU
     memory: ZIMMemory
     disk: ZIMDisk
-    last_seen: datetime.datetime | None = None
     last_ip: IPv4Address | None = None
     deleted: bool
     user_id: UUID
 
 
-class WorkerLightSchema(BaseModel):
+class WorkerLightSchema(BaseWorkerSchema):
     """
     Schema for reading a worker model with some fields
     """
 
-    last_seen: datetime.datetime | None
-    name: str
     resources: ConfigResourcesSchema
     username: str
-    offliners: list[str]
-    contexts: dict[str, IPv4Address | IPv6Address | None]
 
     @computed_field
     @property

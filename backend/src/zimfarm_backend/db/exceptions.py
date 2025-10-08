@@ -12,3 +12,11 @@ class RecordAlreadyExistsError(Exception):
     def __init__(self, message: str, *args: object) -> None:
         super().__init__(message, *args)
         self.detail = message
+
+
+class RecordDisabledError(Exception):
+    """Raised when a record is disabled"""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args)
+        self.detail = message

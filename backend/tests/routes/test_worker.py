@@ -213,7 +213,7 @@ def test_update_worker_context(
     )
 
     response = client.put(
-        f"/v2/workers/{worker.name}/context",
+        f"/v2/workers/{worker.name}",
         json={"contexts": contexts},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -237,7 +237,7 @@ def test_update_worker_context_not_found(
     )
 
     response = client.put(
-        "/v2/workers/non-existent/context",
+        "/v2/workers/non-existent",
         json={"contexts": {"priority": "127.0.0.1", "general": None}},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -261,7 +261,7 @@ def test_update_worker_context_no_payload(
     )
 
     response = client.put(
-        f"/v2/workers/{worker.name}/context",
+        f"/v2/workers/{worker.name}",
         json={},
         headers={"Authorization": f"Bearer {access_token}"},
     )

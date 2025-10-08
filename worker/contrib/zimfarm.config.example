@@ -61,6 +61,9 @@ USE_PUBLIC_DNS=""
 # might help with some online website or DNS servers
 DISABLE_IPV6=""
 
+# Set to `"y"` to disable scheduling for this worker.
+ZIMFARM_SCHEDULING_DISABLED=""
+
 # change default maximum nb of tasks for your worker over a specific platform
 # PLATFORM_wikimedia_MAX_TASKS=2
 # PLATFORM_youtube_MAX_TASKS=2
