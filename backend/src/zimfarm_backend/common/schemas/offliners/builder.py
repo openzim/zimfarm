@@ -1,6 +1,7 @@
 # ruff: noqa: UP007
 from collections.abc import Callable
 from enum import Enum, StrEnum
+from itertools import chain
 from typing import Annotated, Any, Literal, Optional, cast
 
 from pydantic import (
@@ -12,6 +13,7 @@ from pydantic import (
     model_validator,
 )
 
+from zimfarm_backend import logger
 from zimfarm_backend.common.constants import getenv, parse_bool
 from zimfarm_backend.common.schemas import CamelModel, DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -30,6 +32,7 @@ from zimfarm_backend.common.schemas.offliners.models import (
     FlagSchema,
     OfflinerSpecSchema,
 )
+from zimfarm_backend.common.schemas.offliners.transformers import transform_data
 from zimfarm_backend.common.schemas.offliners.validators import (
     check_exclusive_fields,
     validate_ted_links,
@@ -167,6 +170,34 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
         return Annotated[py_type, pydantic_field]
     else:
         return Annotated[py_type, pydantic_field, WrapValidator(skip_validation)]
+
+
+def generate_similarity_data(
+    flags: dict[str, Any], offliner: OfflinerSchema, spec: OfflinerSpecSchema
+) -> list[str]:
+    """Generate the similarity list of flags data."""
+    schema_cls = build_offliner_model(offliner, spec)
+    result: list[list[str]] = []
+    for similarity_data in spec.similarity_data:
+        # find the pydantic field info from the schema class
+        field_info = schema_cls.model_fields[similarity_data.flag]
+        # find the value of the flag in the data. This is typically at the alias of the
+        # field given we always dump with aliases. Sometimes, it turns out to be at the
+        # name of the python identifier because we originally dumped without aliases.
+        value: Any | None = None
+        if field_info.alias:
+            value = flags.get(field_info.alias, flags.get(similarity_data.flag))
+        else:
+            value = flags.get(similarity_data.flag)
+
+        if value is None:
+            logger.warning(
+                f"Could not find value in data that matched the keys: "
+                f"'{field_info.alias}', '{similarity_data.flag}'"
+            )
+            continue
+        result.append(transform_data([value], similarity_data.transformers))
+    return list(set(chain.from_iterable(result)))
 
 
 def build_offliner_model(

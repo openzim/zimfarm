@@ -54,6 +54,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend import logger
+from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import RequestedTask, Schedule
@@ -119,7 +120,10 @@ def update_entries(
                 )
                 flag_modified(obj, "config")
             obj.offliner_definition_id = offliner_definition.id
-
+            if isinstance(obj, Schedule):
+                obj.similarity_data = generate_similarity_data(
+                    obj.config["offliner"], offliner, offliner_definition.schema_
+                )
         # Just needed to ensure our model still works
         if isinstance(obj, Schedule):
             create_schedule_full_schema(obj, offliner)
