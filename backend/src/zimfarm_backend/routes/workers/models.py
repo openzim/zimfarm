@@ -19,6 +19,7 @@ class WorkerCheckInSchema(BaseModel):
     disk: ZIMDisk
     offliners: list[str]
     platforms: dict[str, int] | None = None  # mapping of platforms to max tasks
+    cordoned: bool | None = None
 
 
 class WorkerUpdateSchema(BaseModel):
@@ -27,3 +28,4 @@ class WorkerUpdateSchema(BaseModel):
     """
 
     contexts: dict[str, IPv4Address | IPv6Address | None] | None = None
+    admin_disabled: bool | None = None

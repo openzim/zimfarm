@@ -766,6 +766,8 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
         last_ip: IPv4Address | None = None,
         user: User | None = None,
         deleted: bool = False,
+        cordoned: bool = False,
+        admin_disabled: bool = False,
     ) -> Worker:
         user = _user if user is None else user
 
@@ -792,6 +794,8 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
             last_seen=last_seen or getnow(),
             last_ip=_ip,
             deleted=deleted,
+            cordoned=cordoned,
+            admin_disabled=admin_disabled,
         )
         worker.user_id = user.id
         dbsession.add(worker)

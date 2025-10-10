@@ -127,7 +127,7 @@ def test_check_in_worker_success(
 
 def test_get_worker_metrics_no_tasks(client: TestClient, worker: Worker):
     """Worker metrics should be zero when no tasks exist."""
-    response = client.get(f"/v2/workers/{worker.name}/metrics")
+    response = client.get(f"/v2/workers/{worker.name}")
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert data["name"] == worker.name
@@ -157,7 +157,7 @@ def test_get_worker_metrics_with_tasks(
     for _ in range(1):
         create_task(status=TaskStatus.requested)
 
-    response = client.get(f"/v2/workers/{worker.name}/metrics")
+    response = client.get(f"/v2/workers/{worker.name}")
     assert response.status_code == HTTPStatus.OK
     data = response.json()
 
@@ -213,7 +213,7 @@ def test_update_worker_context(
     )
 
     response = client.put(
-        f"/v2/workers/{worker.name}/context",
+        f"/v2/workers/{worker.name}",
         json={"contexts": contexts},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -237,7 +237,7 @@ def test_update_worker_context_not_found(
     )
 
     response = client.put(
-        "/v2/workers/non-existent/context",
+        "/v2/workers/non-existent",
         json={"contexts": {"priority": "127.0.0.1", "general": None}},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -261,7 +261,7 @@ def test_update_worker_context_no_payload(
     )
 
     response = client.put(
-        f"/v2/workers/{worker.name}/context",
+        f"/v2/workers/{worker.name}",
         json={},
         headers={"Authorization": f"Bearer {access_token}"},
     )

@@ -73,6 +73,8 @@ def create_worker_schema(worker: Worker) -> WorkerLightSchema:
         ),
         username=worker.user.username,
         contexts=_deserialize_worker_context(worker.contexts),
+        cordoned=worker.cordoned,
+        admin_disabled=worker.admin_disabled,
     )
 
 
@@ -83,6 +85,7 @@ def update_worker(
     ip_address: str | None = None,
     contexts: dict[str, IPv4Address | IPv6Address | None] | None = None,
     update_last_seen: bool = True,
+    admin_disabled: bool | None = None,
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
     worker = get_worker(session, worker_name=worker_name)
@@ -92,6 +95,8 @@ def update_worker(
         worker.last_ip = IPv4Address(ip_address)
     if contexts is not None:
         worker.contexts = _serialize_worker_context(contexts)
+    if admin_disabled is not None:
+        worker.admin_disabled = admin_disabled
     session.add(worker)
     session.flush()
     return worker
@@ -164,6 +169,8 @@ def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetric
         nb_tasks_completed=nb_completed or 0,
         nb_tasks_succeeded=nb_succeeded or 0,
         nb_tasks_failed=nb_failed or 0,
+        cordoned=worker.cordoned,
+        admin_disabled=worker.admin_disabled,
     )
 
 
@@ -176,6 +183,7 @@ def check_in_worker(
     disk: int,
     selfish: bool,
     offliners: list[str],
+    cordoned: bool,
     platforms: dict[str, int] | None = None,
     user_id: UUID,
 ) -> None:
@@ -188,6 +196,7 @@ def check_in_worker(
         disk=disk,
         offliners=offliners,
         platforms=platforms if platforms is not None else {},
+        cordoned=cordoned,
         last_ip=None,
         last_seen=getnow(),
         user_id=user_id,
@@ -201,6 +210,7 @@ def check_in_worker(
             Worker.disk: stmt.excluded.disk,
             Worker.offliners: stmt.excluded.offliners,
             Worker.platforms: stmt.excluded.platforms,
+            Worker.cordoned: stmt.excluded.cordoned,
             Worker.last_seen: stmt.excluded.last_seen,
         },
     )

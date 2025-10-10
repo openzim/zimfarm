@@ -73,14 +73,37 @@
 
         <template #[`item.status`]="{ item }">
           <template v-if="item.kind === 'worker'">
-            <v-chip
-              :color="item.status === 'online' ? 'success' : 'dark-grey'"
-              size="small"
-              variant="tonal"
-              :prepend-icon="item.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
-            >
-              {{ item.status }}
-            </v-chip>
+            <div class="d-flex flex-column flex-sm-row flex-wrap ga-1 py-1">
+              <v-chip
+                :color="item.status === 'online' ? 'success' : 'dark-grey'"
+                size="x-small"
+                variant="tonal"
+                :prepend-icon="item.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
+              >
+                {{ item.status }}
+              </v-chip>
+              <!-- Local scheduling status -->
+              <v-chip
+                v-if="item.cordoned"
+                color="info"
+                size="x-small"
+                variant="tonal"
+                prepend-icon="mdi-pause-circle"
+              >
+                Cordoned by worker owner
+              </v-chip>
+
+              <!-- Admin scheduling status -->
+              <v-chip
+                v-if="item.admin_disabled"
+                color="error"
+                size="x-small"
+                variant="tonal"
+                prepend-icon="mdi-shield-alert"
+              >
+                Disabled by Zimfarm Administrator
+              </v-chip>
+            </div>
           </template>
           <template v-else>
             <!-- Empty cell for tasks -->

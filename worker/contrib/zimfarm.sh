@@ -36,7 +36,8 @@ MONITORING_KEY=""  # UUID
 #########################
 SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm-manager"
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.0.1"
+CORDONED=""
 
 function die() {
     echo $1
@@ -193,6 +194,7 @@ function restart() {
         --env DISABLE_IPV6=$DISABLE_IPV6 \
         --env OFFLINERS=$ZIMFARM_OFFLINERS \
         --env TASK_WORKER_IMAGE=$TASK_WORKER_IMAGE \
+        --env CORDONED=$CORDONED \
         --env PLATFORM_wikimedia_MAX_TASKS=$PLATFORM_wikimedia_MAX_TASKS \
         --env PLATFORM_youtube_MAX_TASKS=$PLATFORM_youtube_MAX_TASKS \
         --env PLATFORM_wikihow_MAX_TASKS=$PLATFORM_wikihow_MAX_TASKS \

@@ -57,23 +57,14 @@ async def get_workers(
     )
 
 
-@router.get("/{name}/metrics")
-async def get_worker_metrics(
-    name: Annotated[str, Path()],
-    session: Annotated[OrmSession, Depends(gen_dbsession)],
-) -> WorkerMetricsSchema:
-    """Get a single worker with full details and metrics."""
-    return db_get_worker_metrics(session, worker_name=name)
-
-
-@router.put("/{name}/context")
-async def update_worker_context(
+@router.put("/{name}")
+async def update_worker(
     name: Annotated[str, Path()],
     request: WorkerUpdateSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
-    """Update the context of a worker."""
+    """Update a worker."""
     worker = db_get_worker(session, worker_name=name)
 
     if not (check_user_permission(current_user, namespace="users", name="update")):
@@ -83,17 +74,25 @@ async def update_worker_context(
         raise BadRequestError("Worker has been marked as deleted")
 
     if not request.model_dump(exclude_unset=True):
-        raise BadRequestError(
-            "No changes made to worker context because nothing was set."
-        )
+        raise BadRequestError("No changes made to worker because nothing was set.")
 
     db_update_worker(
         session,
         worker_name=name,
         contexts=request.contexts if request.contexts is not None else {},
+        admin_disabled=request.admin_disabled,
         update_last_seen=False,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
+
+
+@router.get("/{name}")
+async def get_worker(
+    name: Annotated[str, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> WorkerMetricsSchema:
+    """Get a single worker with full details and metrics."""
+    return db_get_worker_metrics(session, worker_name=name)
 
 
 @router.put("/{name}/check-in")
@@ -122,6 +121,7 @@ async def check_in_worker(
         selfish=worker_checkin.selfish or False,
         offliners=worker_checkin.offliners,
         platforms=worker_checkin.platforms,
+        cordoned=worker_checkin.cordoned or False,
         user_id=current_user.id,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)

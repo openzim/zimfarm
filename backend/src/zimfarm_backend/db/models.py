@@ -131,6 +131,10 @@ class Worker(Base):
     contexts: Mapped[dict[str, Any]] = mapped_column(
         default_factory=dict, server_default="{}"
     )
+    # worker voluntarily cordoned itself from requesting new tasks
+    cordoned: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # admin disabled the worker from requesting new tasks
+    admin_disabled: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 
