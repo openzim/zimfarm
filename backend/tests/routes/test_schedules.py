@@ -16,6 +16,7 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerSchema,
 )
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
+from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 from zimfarm_backend.db.schedule import get_schedule, update_schedule
 from zimfarm_backend.utils.token import generate_access_token
 
@@ -38,6 +39,21 @@ from zimfarm_backend.utils.token import generate_access_token
             "&name=wiki&lang=eng&category=wikipedia&tag=important",
             10,
             id="wiki_eng_important",
+        ),
+        pytest.param(
+            "&name=hello",
+            10,
+            id="search-by-similarity-data-i",
+        ),
+        pytest.param(
+            "&name=world",
+            10,
+            id="search-by-similarity-data-ii",
+        ),
+        pytest.param(
+            "&name=hello world",
+            10,
+            id="search-by-similarity-data-iii",
         ),
     ],
 )
@@ -71,6 +87,7 @@ def test_get_schedules(
         requested_task = create_requested_task(schedule_name=schedule.name)
         task = create_task(requested_task=requested_task)
         schedule.most_recent_task = task
+        schedule.similarity_data = ["hello", "world"]
         dbsession.add(schedule)
         dbsession.flush()
 
@@ -1004,7 +1021,9 @@ def test_get_schedule_history_pagination(
             schedule_name=schedule.name,
             comment=f"test_comment_{i}",
             tags=[*schedule.tags, f"test_tag_{i}"],
-            offliner_definition_id=schedule.offliner_definition_id,
+            offliner_definition=create_offliner_definition_schema(
+                schedule.offliner_definition
+            ),
         )
 
     url = f"/v2/schedules/{schedule.name}/history?{query_string}"
