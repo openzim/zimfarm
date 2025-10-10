@@ -38,7 +38,11 @@ def transform_data(data: list[str], transformers: list[TransformerSchema]) -> li
             chain.from_iterable(
                 # apply the transformer function to each entry in the list
                 # and feed the new list as input to the next transformer function
-                [get_transformer_function(head)(entry) for entry in data]
+                [
+                    get_transformer_function(head)(entry)
+                    for entry in data
+                    if entry.strip()
+                ]
             )
         ),
         tail,

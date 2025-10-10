@@ -13,6 +13,7 @@ from pydantic import (
     model_validator,
 )
 
+from zimfarm_backend import logger
 from zimfarm_backend.common.constants import getenv, parse_bool
 from zimfarm_backend.common.schemas import CamelModel, DashModel
 from zimfarm_backend.common.schemas.fields import (
@@ -190,10 +191,11 @@ def generate_similarity_data(
             value = flags.get(similarity_data.flag)
 
         if value is None:
-            raise ValueError(
+            logger.warning(
                 f"Could not find value in data that matched the keys: "
                 f"'{field_info.alias}', '{similarity_data.flag}'"
             )
+            continue
         result.append(transform_data([value], similarity_data.transformers))
     return list(set(chain.from_iterable(result)))
 
