@@ -14,13 +14,13 @@ from zimfarm_worker.common.constants import (
     CANCEL_REQUESTED,
     CANCELED,
     CANCELING,
+    CORDONED,
     PHYSICAL_CPU,
     PHYSICAL_MEMORY,
     PLATFORMS_TASKS,
     SUPPORTED_OFFLINERS,
     ZIMFARM_CPUS,
     ZIMFARM_MEMORY,
-    ZIMFARM_SCHEDULING_DISABLED,
     getenv,
     parse_bool,
 )
@@ -248,7 +248,7 @@ class WorkerManager(BaseWorker):
                 "disk": host_stats.disk.total,
                 "offliners": SUPPORTED_OFFLINERS,
                 "platforms": PLATFORMS_TASKS,
-                "cordoned": ZIMFARM_SCHEDULING_DISABLED,
+                "cordoned": CORDONED,
             },
             webapi_uri=webapi_uri,
         )

@@ -73,7 +73,7 @@
 
         <template #[`item.status`]="{ item }">
           <template v-if="item.kind === 'worker'">
-            <div class="d-flex flex-wrap ga-1 py-1">
+            <div class="d-flex flex-column flex-sm-row flex-wrap ga-1 py-1">
               <v-chip
                 :color="item.status === 'online' ? 'success' : 'dark-grey'"
                 size="x-small"
@@ -90,7 +90,7 @@
                 variant="tonal"
                 prepend-icon="mdi-pause-circle"
               >
-                Cordoned
+                Cordoned by worker owner
               </v-chip>
 
               <!-- Admin scheduling status -->
@@ -101,7 +101,7 @@
                 variant="tonal"
                 prepend-icon="mdi-shield-alert"
               >
-                Disabled
+                Disabled by Zimfarm Administrator
               </v-chip>
             </div>
           </template>

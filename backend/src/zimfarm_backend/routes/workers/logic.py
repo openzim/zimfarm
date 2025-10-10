@@ -86,8 +86,8 @@ async def update_worker(
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{name}/metrics")
-async def get_worker_metrics(
+@router.get("/{name}")
+async def get_worker(
     name: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> WorkerMetricsSchema:

@@ -65,7 +65,7 @@ export const useWorkersStore = defineStore('workers', () => {
   const fetchWorkerMetrics = async (name: string) => {
     try {
       const service = await authStore.getApiService('workers')
-      const response = await service.get<null, WorkerMetrics>(`/${name}/metrics`)
+      const response = await service.get<null, WorkerMetrics>(`/${name}`)
       errors.value = []
       return response
     } catch (_error) {
