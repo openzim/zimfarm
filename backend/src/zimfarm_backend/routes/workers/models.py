@@ -1,3 +1,5 @@
+from ipaddress import IPv4Address, IPv6Address
+
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
@@ -24,4 +26,4 @@ class WorkerUpdateSchema(BaseModel):
     Schema for updating a worker.
     """
 
-    contexts: list[str] | None = None
+    contexts: dict[str, IPv4Address | IPv6Address | None] | None = None

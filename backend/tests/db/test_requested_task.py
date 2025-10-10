@@ -1,5 +1,6 @@
 import re
 from collections.abc import Callable
+from ipaddress import IPv4Address, IPv6Address
 from uuid import UUID, uuid4
 
 import pytest
@@ -126,7 +127,7 @@ def test_request_task_already_requested(
         # our schedule is always going to be an mwoffliner
         pytest.param(
             ["mwoffliner"],
-            ["general"],  # worker context
+            {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",  # schedule_context
@@ -136,7 +137,7 @@ def test_request_task_already_requested(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=2, memory=2, disk=2),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
@@ -146,7 +147,7 @@ def test_request_task_already_requested(
         ),
         pytest.param(
             ["gutenberg"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
@@ -156,7 +157,7 @@ def test_request_task_already_requested(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
@@ -166,7 +167,7 @@ def test_request_task_already_requested(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
@@ -176,7 +177,7 @@ def test_request_task_already_requested(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
@@ -186,13 +187,43 @@ def test_request_task_already_requested(
         ),
         pytest.param(
             ["mwoffliner"],
-            ["general"],  # worker context
+            {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "priority",  # schedule_context
             False,
             "Worker does not have required context to run schedule .*",
             id="worker-context-does-not-match-schedule",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": IPv4Address("192.168.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            False,
+            "Worker has required context but IP is not whitelisted to run",
+            id="worker-whitelisted-context-ip-does-not-match-last-seen",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": IPv4Address("127.0.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            True,
+            None,
+            id="worker-whitelisted-context-ip-matches-last-seen",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": None},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            True,
+            None,
+            id="context-has-no-ip",
         ),
     ],
 )
@@ -219,6 +250,7 @@ def test_request_task_for_worker(
         offliners=worker_offliners,
         contexts=worker_contexts,
     )
+    worker.last_ip = IPv4Address("127.0.0.1")
     schedule = create_schedule(
         schedule_config=create_schedule_config(
             cpu=schedule_resource.cpu,
@@ -590,18 +622,132 @@ def test_get_currently_running_tasks(
     assert running_tasks[0].worker_name == worker.name
 
 
+@pytest.mark.parametrize(
+    "worker_offliners,worker_contexts,worker_resource,schedule_resource,schedule_context,found",
+    [
+        # our schedule is always going to be an mwoffliner
+        pytest.param(
+            ["mwoffliner"],
+            {"general": None},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",  # schedule_context
+            True,
+            id="worker-matches-schedule",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=2, memory=2, disk=2),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
+            True,
+            id="worker-exceeds-schedule",
+        ),
+        pytest.param(
+            ["gutenberg"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
+            False,
+            id="worker-with-different-offliner",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=2, memory=1, disk=1),
+            "",
+            False,
+            id="worker-does-not-match-schedule-cpu",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=2, disk=1),
+            "",
+            False,
+            id="worker-does-not-match-schedule-memory",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=2),
+            "",
+            False,
+            id="worker-does-not-match-schedule-disk",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": None},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "priority",  # schedule_context
+            False,
+            id="worker-context-does-not-match-schedule",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": IPv4Address("192.168.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            False,
+            id="worker-whitelisted-context-ip-does-not-match-last-seen",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": IPv4Address("127.0.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            True,
+            id="worker-whitelisted-context-ip-matches-last-seen",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": None},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            True,
+            id="context-has-no-ip",
+        ),
+    ],
+)
 def test_get_tasks_doable_by_worker(
     dbsession: OrmSession,
-    worker: Worker,
+    create_worker: Callable[..., Worker],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
+    *,
+    worker_offliners: list[str],
+    worker_contexts: list[str],
+    worker_resource: ResourcesSchema,
+    schedule_resource: ResourcesSchema,
+    schedule_context: str,
+    found: bool,
 ):
-    """Test that get_tasks_doable_by_worker returns correct list of tasks"""
-    # Create a task that matches worker's capabilities
-    schedule_config = create_schedule_config(
-        cpu=worker.cpu, memory=worker.memory, disk=worker.disk
+    worker = create_worker(
+        cpu=worker_resource.cpu,
+        memory=worker_resource.memory,
+        disk=worker_resource.disk,
+        name="random-worker",
+        offliners=worker_offliners,
+        contexts=worker_contexts,
+        last_ip=IPv4Address("127.0.0.1"),
     )
+
+    schedule_config = create_schedule_config(
+        cpu=schedule_resource.cpu,
+        memory=schedule_resource.memory,
+        disk=schedule_resource.disk,
+    )
+
     task = RequestedTask(
         status=TaskStatus.requested,
         timestamp=[("requested", getnow()), ("reserved", getnow())],
@@ -615,15 +761,14 @@ def test_get_tasks_doable_by_worker(
         notification={},
         updated_at=getnow(),
         original_schedule_name="test_schedule",
+        context=schedule_context,
     )
     task.offliner_definition_id = mwoffliner_definition.id
-    task.worker = worker
     dbsession.add(task)
     dbsession.flush()
 
     doable_tasks = get_tasks_doable_by_worker(dbsession, worker)
-    assert len(doable_tasks) == 1
-    assert doable_tasks[0].worker_name == worker.name
+    assert bool(doable_tasks) == found
 
 
 def test_does_platform_allow_worker_to_run(
@@ -767,7 +912,7 @@ def test_find_requested_task_for_worker(
         # so the task should be assigned to worker
         pytest.param(
             "priority",
-            ["priority", "general"],
+            {"priority": None, "general": None},
             True,
             id="schedule-priority-worker-priority-general",
         ),
@@ -775,7 +920,7 @@ def test_find_requested_task_for_worker(
         # so the task should not be assigned to worker
         pytest.param(
             "priority",
-            ["general"],
+            {"general": None},
             False,
             id="schedule-priority-worker-general",
         ),
@@ -783,7 +928,7 @@ def test_find_requested_task_for_worker(
         # be assigned to the task
         pytest.param(
             "",
-            ["priority", "general"],
+            {"priority": None, "general": None},
             True,
             id="schedule-no-context-worker-priority-general",
         ),
@@ -791,7 +936,7 @@ def test_find_requested_task_for_worker(
         # not be assigned to the task
         pytest.param(
             "priority",
-            [],
+            {},
             False,
             id="schedule-priority-worker-no-context",
         ),
@@ -799,7 +944,7 @@ def test_find_requested_task_for_worker(
         # to worker
         pytest.param(
             "",
-            [],
+            {},
             True,
             id="schedule-no-context-worker-no-context",
         ),
@@ -813,7 +958,7 @@ def test_find_requested_task_for_worker_with_schedule_(
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     schedule_context: str,
-    worker_contexts: list[str],
+    worker_contexts: dict[str, IPv4Address | IPv6Address | None],
     *,
     found: bool,
 ):

@@ -1,3 +1,4 @@
+import ipaddress
 from collections.abc import Callable
 from http import HTTPStatus
 
@@ -32,8 +33,11 @@ def test_get_contexts(
     create_schedule(name="schedule2", context="general")
 
     # Create workers with contexts (some overlapping)
-    create_worker(name="worker1", contexts=["priority", "fast"])
-    create_worker(name="worker2", contexts=["general", "slow"])
+    create_worker(
+        name="worker1",
+        contexts={"priority": ipaddress.ip_address("127.0.0.1"), "fast": None},
+    )
+    create_worker(name="worker2", contexts={"general": None, "slow": None})
 
     response = client.get("/v2/contexts?skip=0&limit=10")
     assert response.status_code == HTTPStatus.OK
@@ -64,8 +68,8 @@ def test_get_contexts_pagination(
     # Create schedules and workers with contexts
     create_schedule(name="schedule1", context="context1")
     create_schedule(name="schedule2", context="context2")
-    create_worker(name="worker1", contexts=["context3", "context4"])
-    create_worker(name="worker2", contexts=["context5", "context6"])
+    create_worker(name="worker1", contexts={"context3": None, "context4": None})
+    create_worker(name="worker2", contexts={"context5": None, "context6": None})
 
     # Test first page
     response = client.get(f"/v2/contexts?skip={skip}&limit={limit}")

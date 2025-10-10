@@ -2,7 +2,7 @@
 import base64
 import datetime
 from collections.abc import Callable, Generator
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv6Address
 from typing import Any, cast
 
 import pytest
@@ -761,7 +761,7 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
         disk: int = 1024,
         offliners: list[str] | None = None,
         platforms: dict[str, int] | None = None,
-        contexts: list[str] | None = None,
+        contexts: dict[str, IPv4Address | IPv6Address | None] | None = None,
         last_seen: datetime.datetime | None = None,
         last_ip: IPv4Address | None = None,
         user: User | None = None,
@@ -784,7 +784,11 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
             disk=disk,
             offliners=offliners or ["mwoffliner", "youtube"],
             platforms=_platforms,
-            contexts=contexts or [],
+            contexts=(
+                {context: str(ip) if ip else None for context, ip in contexts.items()}
+                if contexts
+                else {}
+            ),
             last_seen=last_seen or getnow(),
             last_ip=_ip,
             deleted=deleted,

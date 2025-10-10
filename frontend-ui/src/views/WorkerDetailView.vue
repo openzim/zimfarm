@@ -143,7 +143,7 @@
                 </div>
                 <div class="d-flex flex-wrap ga-1 py-1">
                   <v-chip
-                    v-for="ctx in metrics.contexts"
+                    v-for="(ip, ctx) in metrics.contexts"
                     :key="ctx"
                     size="x-small"
                     color="primary"
@@ -243,35 +243,100 @@
 
         <!-- Edit Tab -->
         <v-window-item value="edit">
-          <v-card>
+          <v-card v-if="canUpdateWorkers">
             <v-card-text>
               <v-form @submit.prevent="save">
                 <v-row>
                   <v-col cols="12">
+                    <p class="text-body-2 text-medium-emphasis">
+                      Configure the contexts and IP addresses for this worker.
+                    </p>
+                  </v-col>
+                </v-row>
+
+                <!-- Context Form Entries -->
+                <v-row v-for="(context, index) in editContexts" :key="index">
+                  <v-col cols="12" sm="6">
                     <v-combobox
-                      v-model="editContexts"
+                      v-model="context.name"
                       density="compact"
                       variant="outlined"
                       label="Select a context or create a new one"
                       hint="Execute tasks that are associated with these contexts"
                       persistent-hint
                       :items="contexts"
-                      multiple
-                      chips
-                      closable-chips
-                      :clearable="!!editContexts.length"
                       :menu-props="{ maxHeight: '200px' }"
                       :custom-filter="(value, query) => fuzzyFilter(value, query, contexts)"
+                      :rules="[
+                        (v) => !!v || 'Context name is required',
+                        (v) => !isDuplicateContextName(v, index) || 'Context name must be unique',
+                      ]"
+                      required
                     />
                   </v-col>
+                  <v-col cols="12" sm="5">
+                    <v-text-field
+                      v-model="context.ip"
+                      label="IP address for this context"
+                      hint="IP address that the context will be associated with"
+                      density="compact"
+                      variant="outlined"
+                      persistent-hint
+                      placeholder="192.168.1.1"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="1">
+                    <div>
+                      <v-btn
+                        icon="mdi-delete"
+                        variant="elevated"
+                        color="error"
+                        size="small"
+                        class="d-none d-sm-block"
+                        @click="removeContext(index)"
+                      />
+                    </div>
+
+                    <v-btn
+                      variant="outlined"
+                      color="error"
+                      size="large"
+                      class="d-flex d-sm-none w-100"
+                      @click="removeContext(index)"
+                    >
+                      <v-icon size="large" class="mr-1">mdi-delete</v-icon>
+                      Delete context
+                    </v-btn>
+                  </v-col>
                 </v-row>
-                <div class="d-flex">
-                  <v-spacer />
-                  <v-btn color="primary" type="submit" :loading="saving" :disabled="!hasChanges"
-                    >Update Worker</v-btn
+
+                <v-divider class="my-4" />
+
+                <!-- Add Context Button -->
+                <div class="d-flex flex-column flex-sm-row justify-end ga-2">
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    prepend-icon="mdi-plus"
+                    :disabled="!canAddContext"
+                    @click="addContext"
                   >
+                    Add Context
+                  </v-btn>
+                  <v-btn color="primary" type="submit" :loading="saving" :disabled="!canSubmit">
+                    Update Worker
+                  </v-btn>
                 </div>
               </v-form>
+            </v-card-text>
+          </v-card>
+          <v-card v-else>
+            <v-card-text class="text-center">
+              <v-icon size="64" color="error">mdi-lock</v-icon>
+              <h3 class="text-h6 mt-4">Access Denied</h3>
+              <p class="text-body-2 text-medium-emphasis">
+                You don't have permission to edit worker contexts.
+              </p>
             </v-card-text>
           </v-card>
         </v-window-item>
@@ -279,22 +344,55 @@
     </div>
 
     <ErrorMessage v-if="error" :message="error" />
+
+    <!-- Worker Update Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showConfirmDialog"
+      title="Confirm Contexts Update"
+      confirm-text="Save Changes"
+      cancel-text="Cancel"
+      confirm-color="primary"
+      icon="mdi-pencil"
+      icon-color="primary"
+      :max-width="600"
+      :loading="saving"
+      @confirm="handleConfirmUpdate"
+      @cancel="handleCancelUpdate"
+    >
+      <template #content>
+        <div class="mb-4">
+          <h3 class="text-h6 mb-2">Changes Summary</h3>
+          <p class="text-body-2 text-medium-emphasis mb-3">
+            Please review the changes below before confirming the update.
+          </p>
+        </div>
+
+        <!-- Diff Viewer -->
+        <div class="mb-4">
+          <DiffViewer :differences="workerDifferences" />
+        </div>
+      </template>
+    </ConfirmDialog>
   </v-container>
 </template>
 
 <script setup lang="ts">
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DiffViewer from '@/components/DiffViewer.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 import { useContextStore } from '@/stores/context'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useWorkersStore } from '@/stores/workers'
 import type { WorkerMetrics } from '@/types/workers'
-import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
+import { fuzzyFilter } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
+import diff from 'deep-diff'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 
 interface Props {
@@ -311,6 +409,7 @@ if (!config) {
   throw new Error('Config is not defined')
 }
 
+const authStore = useAuthStore()
 const workersStore = useWorkersStore()
 const contextStore = useContextStore()
 const loadingStore = useLoadingStore()
@@ -322,12 +421,83 @@ const contexts = ref<string[]>([])
 const currentTab = ref(props.selectedTab)
 const saving = ref(false)
 
-const editContexts = ref<string[]>([])
+const editContexts = ref<Array<{ name: string; ip: string | null }>>([])
+
+// Confirmation dialog state
+const showConfirmDialog = ref(false)
+
+const canUpdateWorkers = computed(() => authStore.hasPermission('users', 'update'))
 
 const hasChanges = computed(() => {
-  const original = metrics.value?.contexts || []
-  return !stringArrayEqual(editContexts.value, original)
+  if (!metrics.value) return false
+
+  const originalContexts = metrics.value.contexts || {}
+  const editedContexts = convertToContextRecord(editContexts.value)
+
+  const changes = diff(originalContexts, editedContexts)
+  return changes && changes.length > 0
 })
+
+// Generate differences for the diff viewer
+const workerDifferences = computed(() => {
+  if (!metrics.value) return undefined
+
+  const originalContexts = metrics.value.contexts || {}
+  const editedContexts = convertToContextRecord(editContexts.value)
+
+  return diff(originalContexts, editedContexts)
+})
+
+// Check for duplicate context names
+const hasDuplicateContextNames = computed(() => {
+  const names = editContexts.value
+    .map((context) => context.name?.trim())
+    .filter((name) => name !== '')
+  return names.length !== new Set(names).size
+})
+
+// Check if add context button should be disabled
+const canAddContext = computed(() => {
+  return !hasDuplicateContextNames.value
+})
+
+const addContext = () => {
+  editContexts.value.push({ name: '', ip: null })
+}
+
+const removeContext = (index: number) => {
+  editContexts.value.splice(index, 1)
+}
+
+const convertToContextRecord = (
+  contexts: Array<{ name: string; ip: string | null }>,
+): Record<string, string | null> => {
+  const record: Record<string, string | null> = {}
+  contexts.forEach((context) => {
+    if (context.name.trim()) {
+      record[context.name.trim()] = context.ip?.trim() || null
+    }
+  })
+  return record
+}
+
+const convertFromContextRecord = (
+  contexts: Record<string, string | null>,
+): Array<{ name: string; ip: string | null }> => {
+  const entries = Object.entries(contexts)
+  if (entries.length === 0) {
+    return []
+  }
+  return entries.map(([name, ip]) => ({ name, ip }))
+}
+
+const isDuplicateContextName = (name: string, currentIndex: number): boolean => {
+  if (!name.trim()) return false
+
+  return editContexts.value.some(
+    (context, index) => index !== currentIndex && context.name.trim() === name.trim(),
+  )
+}
 
 const workerName = computed(() => props.workerName)
 
@@ -377,7 +547,7 @@ async function refreshData() {
   const res = await workersStore.fetchWorkerMetrics(workerName.value)
   if (res) {
     metrics.value = res
-    editContexts.value = res.contexts || []
+    editContexts.value = convertFromContextRecord(res.contexts || {})
     error.value = null
   } else {
     error.value = workersStore.errors[0] || 'Failed to fetch worker'
@@ -386,19 +556,49 @@ async function refreshData() {
   loadingStore.stopLoading()
 }
 
-async function save() {
-  if (!metrics.value) return
+const save = () => {
+  if (!canSubmit.value) return
+
+  // Show confirmation dialog instead of directly submitting
+  showConfirmDialog.value = true
+}
+
+const handleConfirmUpdate = async () => {
+  if (saving.value) return
+
   saving.value = true
-  const ok = await workersStore.updateWorkerContext(workerName.value, {
-    contexts: editContexts.value,
-  })
-  saving.value = false
-  if (ok) {
-    notificationStore.showSuccess('Worker updated')
-    await refreshData()
-    contexts.value = (await contextStore.fetchContexts()) || []
+
+  try {
+    // Convert form data to the expected schema
+    const contextsPayload = convertToContextRecord(editContexts.value)
+
+    const ok = await workersStore.updateWorkerContext(workerName.value, {
+      contexts: contextsPayload,
+    })
+
+    if (ok) {
+      notificationStore.showSuccess('Worker updated')
+      await refreshData()
+      contexts.value = (await contextStore.fetchContexts()) || []
+      currentTab.value = 'details'
+    } else {
+      for (const error of workersStore.errors) {
+        notificationStore.showError(error)
+      }
+    }
+  } finally {
+    saving.value = false
+    showConfirmDialog.value = false
   }
 }
+
+const handleCancelUpdate = () => {
+  showConfirmDialog.value = false
+}
+
+const canSubmit = computed(() => {
+  return hasChanges.value && !hasDuplicateContextNames.value
+})
 
 onMounted(async () => {
   contexts.value = (await contextStore.fetchContexts()) || []
@@ -411,5 +611,16 @@ watch(
     currentTab.value = newVal
     refreshData()
   },
+)
+
+// Redirect to details tab if no permission to edit
+watch(
+  () => currentTab.value,
+  (newTab) => {
+    if (newTab === 'edit' && !canUpdateWorkers.value) {
+      currentTab.value = 'details'
+    }
+  },
+  { immediate: true },
 )
 </script>

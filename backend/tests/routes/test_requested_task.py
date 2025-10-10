@@ -68,7 +68,7 @@ def test_create_request_task_no_enabled_schedules(
         # our schedule is always going to be an mwoffliner
         pytest.param(
             ["mwoffliner"],
-            ["general"],  # worker context
+            {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",  # schedule_context
@@ -77,7 +77,7 @@ def test_create_request_task_no_enabled_schedules(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=2, memory=2, disk=2),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
@@ -86,7 +86,7 @@ def test_create_request_task_no_enabled_schedules(
         ),
         pytest.param(
             ["gutenberg"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
@@ -95,7 +95,7 @@ def test_create_request_task_no_enabled_schedules(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
@@ -104,7 +104,7 @@ def test_create_request_task_no_enabled_schedules(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
@@ -113,7 +113,7 @@ def test_create_request_task_no_enabled_schedules(
         ),
         pytest.param(
             ["mwoffliner"],
-            [],
+            {},
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
@@ -122,12 +122,21 @@ def test_create_request_task_no_enabled_schedules(
         ),
         pytest.param(
             ["mwoffliner"],
-            ["general"],  # worker context
+            {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "priority",  # schedule_context
             HTTPStatus.BAD_REQUEST,
             id="worker-context-does-not-match-schedule",
+        ),
+        pytest.param(
+            ["mwoffliner"],
+            {"general": IPv4Address("192.168.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            HTTPStatus.BAD_REQUEST,
+            id="worker-whitelisted-context-ip-does-not-match-last-seen",
         ),
     ],
 )
