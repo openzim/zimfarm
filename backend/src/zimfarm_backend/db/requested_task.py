@@ -431,6 +431,18 @@ def get_tasks_doable_by_worker(
     - duration (longest first)
     - requested_at (oldest first)
     """
+
+    def filter_req_task_for_ip_issues(task: RequestedTask):
+        """Filter out tasks where worker IP doesn't match the context requirement"""
+        return bool(
+            # task has no context
+            task.context == ""
+            # context is not requiring a specific worker IP
+            or worker.contexts.get(task.context) is None
+            # worker IP is still matching the IP whitelisted for this context
+            or worker.contexts[task.context] == str(worker.last_ip)
+        )
+
     query = (
         select(RequestedTask)
         .options(selectinload(RequestedTask.offliner_definition))
@@ -462,20 +474,6 @@ def get_tasks_doable_by_worker(
                 RequestedTask.worker_id.is_(None),
             )
         )
-    tasks = session.scalars(query).all()
-
-    # Filter out tasks where IP doesn't match the context requirement
-    filtered_tasks: list[RequestedTask] = []
-    for task in tasks:
-        if not task.context:
-            filtered_tasks.append(task)
-            continue
-
-        # If task has a context, check IP requirement
-        if task.context in worker.contexts:
-            allowed_ip = worker.contexts[task.context]
-            if allowed_ip is None or str(worker.last_ip) == allowed_ip:
-                filtered_tasks.append(task)
 
     return sorted(
         [
@@ -510,7 +508,7 @@ def get_tasks_doable_by_worker(
                 ),
                 updated_at=task.updated_at,
             )
-            for task in filtered_tasks
+            for task in filter(filter_req_task_for_ip_issues, session.scalars(query))
         ],
         key=lambda x: (-x.priority, -x.duration.value, x.updated_at),
     )
