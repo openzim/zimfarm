@@ -17,7 +17,7 @@ from zimfarm_backend.common.enums import (
 )
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
-    ScheduleNameField,
+    NotEmptyString,
     SkipField,
 )
 from zimfarm_backend.common.schemas.models import (
@@ -265,7 +265,7 @@ def restore_archived_schedules(
 
 @router.get("/{schedule_name}")
 def get_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User | None = Depends(get_current_user_or_none),
     *,
@@ -324,7 +324,7 @@ def get_schedule(
 
 @router.patch("/{schedule_name}")
 def update_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     request: ScheduleUpdateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
@@ -548,7 +548,7 @@ def update_schedule(
 
 @router.delete("/{schedule_name}")
 def delete_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> Response:
@@ -565,7 +565,7 @@ def delete_schedule(
 
 @router.get("/{schedule_name}/image-names")
 def get_schedule_image_names(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     hub_name: Annotated[str, Query()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[Any]:
@@ -594,7 +594,7 @@ def get_schedule_image_names(
 
 @router.post("/{schedule_name}/clone")
 def clone_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     request: CloneSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
@@ -669,7 +669,7 @@ def clone_schedule(
 
 @router.patch("/{schedule_name}/archive")
 def archive_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
@@ -696,7 +696,7 @@ def archive_schedule(
 
 @router.patch("/{schedule_name}/restore")
 def restore_archived_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
@@ -723,7 +723,7 @@ def restore_archived_schedule(
 
 @router.get("/{schedule_name}/validate")
 def validate_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> JSONResponse:
@@ -743,7 +743,7 @@ def validate_schedule(
 
 @router.get("/{schedule_name}/history")
 def get_schedule_history(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
     skip: Annotated[SkipField, Query()] = 0,
@@ -770,7 +770,7 @@ def get_schedule_history(
 
 @router.get("/{schedule_name}/history/{history_id}")
 def get_schedule_history_entry(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
