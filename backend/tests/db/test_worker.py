@@ -132,6 +132,7 @@ def test_check_in_new_worker(
         selfish=True,
         offliners=[mwoffliner.id],
         user_id=user.id,
+        cordoned=False,
     )
 
     worker = get_worker(dbsession, worker_name=worker_name)
@@ -145,6 +146,8 @@ def test_check_in_new_worker(
     assert worker.user_id == user.id
     assert worker.last_seen is not None
     assert worker.last_ip is None
+    assert worker.cordoned is False
+    assert worker.admin_disabled is False
 
 
 def test_check_in_worker_update(
@@ -154,6 +157,11 @@ def test_check_in_worker_update(
     ted_offliner: OfflinerSchema,
 ):
     """Test that check_in_worker updates an existing worker"""
+
+    original_last_seen = worker.last_seen
+    original_last_ip = worker.last_ip
+    original_user_id = worker.user_id
+    original_worker_name = worker.name
 
     check_in_worker(
         session=dbsession,
@@ -165,11 +173,8 @@ def test_check_in_worker_update(
         offliners=[mwoffliner.id, ted_offliner.id],
         platforms=worker.platforms,
         user_id=worker.user_id,
+        cordoned=True,
     )
-    original_last_seen = worker.last_seen
-    original_last_ip = worker.last_ip
-    original_user_id = worker.user_id
-    original_worker_name = worker.name
 
     # Expire the worker to force a reload of the worker
     dbsession.expire(worker)
@@ -187,6 +192,7 @@ def test_check_in_worker_update(
     assert original_last_seen is not None
     assert updated_worker.last_seen > original_last_seen
     assert updated_worker.last_ip == original_last_ip
+    assert updated_worker.cordoned is True
 
 
 def test_update_worker_context(dbsession: OrmSession, worker: Worker):
@@ -196,3 +202,24 @@ def test_update_worker_context(dbsession: OrmSession, worker: Worker):
         dbsession, worker_name=worker.name, contexts={"priority": None, "general": None}
     )
     assert list(updated_worker.contexts.keys()) == ["priority", "general"]
+
+
+@pytest.mark.parametrize(
+    "admin_disabled, expected_admin_disabled",
+    [
+        pytest.param(True, True, id="True"),
+        pytest.param(False, False, id="False"),
+        pytest.param(None, False, id="None"),
+    ],
+)
+def test_update_worker_scheduling_disabled(
+    dbsession: OrmSession,
+    worker: Worker,
+    *,
+    admin_disabled: bool | None,
+    expected_admin_disabled: bool,
+):
+    updated_worker = update_worker(
+        dbsession, worker_name=worker.name, admin_disabled=admin_disabled
+    )
+    assert updated_worker.admin_disabled is expected_admin_disabled

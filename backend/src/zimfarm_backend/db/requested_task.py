@@ -37,7 +37,7 @@ from zimfarm_backend.common.schemas.orms import (
     ScheduleDurationSchema,
 )
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
+from zimfarm_backend.db.exceptions import RecordDisabledError, RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
@@ -256,6 +256,11 @@ def request_task(
             return RequestTaskResult(
                 requested_task=None, error=f"Worker '{worker_name}' not found"
             )
+        if worker.cordoned or worker.admin_disabled:
+            return RequestTaskResult(
+                requested_task=None,
+                error=f"Worker '{worker_name}' is disabled from requesting new tasks",
+            )
         for validator in (
             _validate_worker_context,
             _validate_worker_offliner,
@@ -431,6 +436,9 @@ def get_tasks_doable_by_worker(
     - duration (longest first)
     - requested_at (oldest first)
     """
+
+    if worker.cordoned or worker.admin_disabled:
+        return []
 
     def filter_req_task_for_ip_issues(task: RequestedTask):
         """Filter out tasks where worker IP doesn't match the context requirement"""
@@ -616,6 +624,11 @@ def find_requested_task_for_worker(
 
     if worker is None:
         raise RecordDoesNotExistError(f"Worker {worker_name} not found")
+
+    if worker.cordoned or worker.admin_disabled:
+        raise RecordDisabledError(
+            f"Worker '{worker.name}' is disabled from running tasks."
+        )
 
     # retrieve list of all running tasks with associated resources
     all_running_tasks = get_currently_running_tasks(session, worker)

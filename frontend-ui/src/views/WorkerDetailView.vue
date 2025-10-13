@@ -2,20 +2,44 @@
   <v-container>
     <!-- Header -->
     <v-row class="mb-4">
-      <v-col cols="12" class="d-flex align-center">
+      <v-col cols="12" class="d-flex flex-column flex-sm-row ga-2">
         <code class="text-h6 mr-2">{{ workerName }}</code>
-        <v-chip
-          :color="metrics?.status === 'online' ? 'success' : 'dark'"
-          size="small"
-          variant="tonal"
-          :prepend-icon="metrics?.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
-        >
-          {{ metrics?.status || 'offline' }}
-        </v-chip>
+        <div class="d-flex flex-wrap flex-align-center ga-2">
+          <v-chip
+            :color="worker?.status === 'online' ? 'success' : 'dark'"
+            size="small"
+            variant="tonal"
+            :prepend-icon="worker?.status === 'online' ? 'mdi-server' : 'mdi-skull-crossbones'"
+          >
+            {{ worker?.status || 'offline' }}
+          </v-chip>
+
+          <!-- Local scheduling status -->
+          <v-chip
+            v-if="worker?.cordoned"
+            color="info"
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-pause-circle"
+          >
+            Cordoned by worker owner
+          </v-chip>
+
+          <!-- Admin scheduling status -->
+          <v-chip
+            v-if="worker?.admin_disabled"
+            color="error"
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-shield-alert"
+          >
+            Disabled by Zimfarm Administrator
+          </v-chip>
+        </div>
       </v-col>
     </v-row>
 
-    <div v-if="!error && metrics">
+    <div v-if="!error && worker">
       <!-- Tabs -->
       <v-tabs v-model="currentTab" class="mb-4">
         <v-tab :to="{ name: 'worker-detail', params: { workerName } }" value="details">Info</v-tab>
@@ -94,7 +118,7 @@
                   <v-icon class="mr-2" color="primary">mdi-format-list-bulleted</v-icon>
                   <div>
                     <div class="text-caption text-medium-emphasis">Total tasks</div>
-                    <div class="text-h6">{{ metrics.nb_tasks_total }}</div>
+                    <div class="text-h6">{{ worker.nb_tasks_total }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -105,7 +129,7 @@
                   <v-icon class="mr-2" color="info">mdi-flag-checkered</v-icon>
                   <div>
                     <div class="text-caption text-medium-emphasis">Completed</div>
-                    <div class="text-h6">{{ metrics.nb_tasks_completed }}</div>
+                    <div class="text-h6">{{ worker.nb_tasks_completed }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -116,7 +140,7 @@
                   <v-icon class="mr-2" color="success">mdi-check-circle</v-icon>
                   <div>
                     <div class="text-caption text-medium-emphasis">Succeeded</div>
-                    <div class="text-h6">{{ metrics.nb_tasks_succeeded }}</div>
+                    <div class="text-h6">{{ worker.nb_tasks_succeeded }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -127,7 +151,7 @@
                   <v-icon class="mr-2" color="error">mdi-close-circle</v-icon>
                   <div>
                     <div class="text-caption text-medium-emphasis">Failed</div>
-                    <div class="text-h6">{{ metrics.nb_tasks_failed }}</div>
+                    <div class="text-h6">{{ worker.nb_tasks_failed }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -143,7 +167,7 @@
                 </div>
                 <div class="d-flex flex-wrap ga-1 py-1">
                   <v-chip
-                    v-for="(ip, ctx) in metrics.contexts"
+                    v-for="(ip, ctx) in worker.contexts"
                     :key="ctx"
                     size="x-small"
                     color="primary"
@@ -163,7 +187,7 @@
                 </div>
                 <div class="d-flex flex-wrap ga-1 py-1">
                   <v-chip
-                    v-for="off in metrics.offliners"
+                    v-for="off in worker.offliners"
                     :key="off"
                     size="x-small"
                     color="secondary"
@@ -188,10 +212,10 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-if="metrics.running_tasks.length === 0">
+                    <tr v-if="worker.running_tasks.length === 0">
                       <td colspan="3" class="text-medium-emphasis">No running tasks</td>
                     </tr>
-                    <tr v-for="t in metrics.running_tasks" :key="t.id">
+                    <tr v-for="t in worker.running_tasks" :key="t.id">
                       <td>
                         <span v-if="t.schedule_name === null">N/A</span>
                         <router-link
@@ -246,6 +270,19 @@
           <v-card v-if="canUpdateWorkers">
             <v-card-text>
               <v-form @submit.prevent="save">
+                <!-- Worker Status Toggle -->
+                <SwitchButton
+                  :model-value="workerEnabled"
+                  @update:model-value="updateWorkerEnabled"
+                  label="Worker Status"
+                  :details="
+                    adminDisabled
+                      ? 'Worker is disabled and will not receive new tasks'
+                      : 'Worker is enabled and can receive new tasks'
+                  "
+                  density="compact"
+                />
+                <v-divider class="my-2" />
                 <v-row>
                   <v-col cols="12">
                     <p class="text-body-2 text-medium-emphasis">
@@ -381,6 +418,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
+import SwitchButton from '@/components/SwitchButton.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
@@ -416,7 +454,7 @@ const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
 
 const error = ref<string | null>(null)
-const metrics = ref<WorkerMetrics | null>(null)
+const worker = ref<WorkerMetrics | null>(null)
 const contexts = ref<string[]>([])
 const currentTab = ref(props.selectedTab)
 const saving = ref(false)
@@ -429,23 +467,29 @@ const showConfirmDialog = ref(false)
 const canUpdateWorkers = computed(() => authStore.hasPermission('users', 'update'))
 
 const hasChanges = computed(() => {
-  if (!metrics.value) return false
+  if (!worker.value) return false
 
-  const originalContexts = metrics.value.contexts || {}
+  const originalContexts = worker.value.contexts || {}
   const editedContexts = convertToContextRecord(editContexts.value)
 
-  const changes = diff(originalContexts, editedContexts)
+  const changes = diff(
+    { contexts: originalContexts, admin_disabled: worker.value.admin_disabled },
+    { contexts: editedContexts, admin_disabled: adminDisabled.value },
+  )
   return changes && changes.length > 0
 })
 
 // Generate differences for the diff viewer
 const workerDifferences = computed(() => {
-  if (!metrics.value) return undefined
+  if (!worker.value) return undefined
 
-  const originalContexts = metrics.value.contexts || {}
+  const originalContexts = worker.value.contexts || {}
   const editedContexts = convertToContextRecord(editContexts.value)
 
-  return diff(originalContexts, editedContexts)
+  return diff(
+    { contexts: originalContexts, admin_disabled: worker.value.admin_disabled },
+    { contexts: editedContexts, admin_disabled: adminDisabled.value },
+  )
 })
 
 // Check for duplicate context names
@@ -467,6 +511,14 @@ const addContext = () => {
 
 const removeContext = (index: number) => {
   editContexts.value.splice(index, 1)
+}
+
+const adminDisabled = ref(false)
+
+const workerEnabled = computed(() => !adminDisabled.value)
+
+const updateWorkerEnabled = (value: boolean) => {
+  adminDisabled.value = !value
 }
 
 const convertToContextRecord = (
@@ -502,18 +554,18 @@ const isDuplicateContextName = (name: string, currentIndex: number): boolean => 
 const workerName = computed(() => props.workerName)
 
 const usageCpu = computed(
-  () => `${metrics.value?.current_usage.cpu ?? 0}/${metrics.value?.resources.cpu ?? 0}`,
+  () => `${worker.value?.current_usage.cpu ?? 0}/${worker.value?.resources.cpu ?? 0}`,
 )
 const usageMemory = computed(
   () =>
-    `${formattedBytesSize(metrics.value?.current_usage.memory ?? 0)}/${formattedBytesSize(
-      metrics.value?.resources.memory ?? 0,
+    `${formattedBytesSize(worker.value?.current_usage.memory ?? 0)}/${formattedBytesSize(
+      worker.value?.resources.memory ?? 0,
     )}`,
 )
 const usageDisk = computed(
   () =>
-    `${formattedBytesSize(metrics.value?.current_usage.disk ?? 0)}/${formattedBytesSize(
-      metrics.value?.resources.disk ?? 0,
+    `${formattedBytesSize(worker.value?.current_usage.disk ?? 0)}/${formattedBytesSize(
+      worker.value?.resources.disk ?? 0,
     )}`,
 )
 
@@ -524,18 +576,18 @@ function pctColor(pct: number): string {
 }
 
 const percentCpu = computed(() => {
-  const max = metrics.value?.resources.cpu ?? 0
-  const cur = metrics.value?.current_usage.cpu ?? 0
+  const max = worker.value?.resources.cpu ?? 0
+  const cur = worker.value?.current_usage.cpu ?? 0
   return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
 })
 const percentMemory = computed(() => {
-  const max = metrics.value?.resources.memory ?? 0
-  const cur = metrics.value?.current_usage.memory ?? 0
+  const max = worker.value?.resources.memory ?? 0
+  const cur = worker.value?.current_usage.memory ?? 0
   return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
 })
 const percentDisk = computed(() => {
-  const max = metrics.value?.resources.disk ?? 0
-  const cur = metrics.value?.current_usage.disk ?? 0
+  const max = worker.value?.resources.disk ?? 0
+  const cur = worker.value?.current_usage.disk ?? 0
   return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
 })
 const colorCpu = computed(() => pctColor(percentCpu.value))
@@ -546,8 +598,9 @@ async function refreshData() {
   loadingStore.startLoading('Fetching worker...')
   const res = await workersStore.fetchWorkerMetrics(workerName.value)
   if (res) {
-    metrics.value = res
+    worker.value = res
     editContexts.value = convertFromContextRecord(res.contexts || {})
+    adminDisabled.value = res.admin_disabled
     error.value = null
   } else {
     error.value = workersStore.errors[0] || 'Failed to fetch worker'
@@ -572,8 +625,9 @@ const handleConfirmUpdate = async () => {
     // Convert form data to the expected schema
     const contextsPayload = convertToContextRecord(editContexts.value)
 
-    const ok = await workersStore.updateWorkerContext(workerName.value, {
+    const ok = await workersStore.updateWorker(workerName.value, {
       contexts: contextsPayload,
+      admin_disabled: adminDisabled.value,
     })
 
     if (ok) {
