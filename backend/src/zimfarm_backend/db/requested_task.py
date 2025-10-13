@@ -72,20 +72,20 @@ def _resource_mismatch_message(
     mismatched_message: list[str] = []
     if worker.cpu < schedule_resource.cpu:
         mismatched_message.append(
-            f"cpu: required={format_size(schedule_resource.cpu)}, "
-            f"available={format_size(worker.cpu)}"
+            f"cpu: required={format_size(schedule_resource.cpu, binary=True)}, "
+            f"available={format_size(worker.cpu, binary=True)}"
         )
 
     if worker.disk < schedule_resource.disk:
         mismatched_message.append(
-            f"disk: required={format_size(schedule_resource.disk)}, "
-            f"available={format_size(worker.disk)}"
+            f"disk: required={format_size(schedule_resource.disk, binary=True)}, "
+            f"available={format_size(worker.disk, binary=True)}"
         )
 
     if worker.memory < schedule_resource.memory:
         mismatched_message.append(
-            f"memory: required={format_size(schedule_resource.memory)}, "
-            f"available={format_size(worker.memory)}"
+            f"memory: required={format_size(schedule_resource.memory, binary=True)}, "
+            f"available={format_size(worker.memory, binary=True)}"
         )
     return mismatched_message
 
