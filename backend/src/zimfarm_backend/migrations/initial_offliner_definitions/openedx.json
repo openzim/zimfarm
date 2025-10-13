@@ -190,5 +190,11 @@
       "title": "Locale",
       "description": "The locale to use for the translations in ZIM"
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "course_url",
+      "transformers": [{ "name": "hostname", "operand": null }]
+    }
+  ]
 }

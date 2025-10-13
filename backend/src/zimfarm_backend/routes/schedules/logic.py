@@ -183,7 +183,7 @@ def create_schedule(
         session,
         author=current_user.username,
         name=request.name,
-        offliner_definition_id=offliner_definition.id,
+        offliner_definition=offliner_definition,
         category=ScheduleCategory(request.category),
         language=language,
         config=config,
@@ -322,6 +322,35 @@ def get_schedule(
     )
 
 
+@router.get("/{schedule_name}/similar")
+def get_similar_schedule(
+    schedule_name: Annotated[NotEmptyString, Path()],
+    params: Annotated[SchedulesGetSchema, Query()],
+    session: OrmSession = Depends(gen_dbsession),
+) -> ListResponse[ScheduleLightSchema]:
+    schedule = db_get_schedule(session, schedule_name=schedule_name)
+    results = db_get_schedules(
+        session,
+        skip=params.skip,
+        limit=params.limit,
+        lang=params.lang,
+        categories=params.category,
+        tags=params.tag,
+        archived=params.archived,
+        similarity_data=schedule.similarity_data,
+        omit_names=[schedule.name],
+    )
+    return ListResponse(
+        meta=calculate_pagination_metadata(
+            nb_records=results.nb_records,
+            skip=params.skip,
+            limit=params.limit,
+            page_size=len(results.schedules),
+        ),
+        items=cast(list[ScheduleLightSchema], results.schedules),
+    )
+
+
 @router.patch("/{schedule_name}")
 def update_schedule(
     schedule_name: Annotated[NotEmptyString, Path()],
@@ -346,8 +375,7 @@ def update_schedule(
         raise BadRequestError(
             "No changes were made to the schedule because no fields being set"
         )
-    # track the defintion id to be used for updating the schedule
-    offliner_definition_id: UUID
+    # track the defintion to be used for updating the schedule
     offliner_definition: OfflinerDefinitionSchema
 
     if (
@@ -371,7 +399,6 @@ def update_schedule(
         offliner_definition = get_offliner_definition(
             session, request.offliner, request.version
         )
-        offliner_definition_id = offliner_definition.id
 
         # create a new schedule config for the new offliner validating the new flags
         new_schedule_config = ScheduleConfigSchema.model_validate(
@@ -432,8 +459,6 @@ def update_schedule(
                 session, schedule.offliner_definition_id
             )
 
-        offliner_definition_id = offliner_definition.id
-
         new_schedule_config = ScheduleConfigSchema.model_validate(
             {
                 **schedule_config.model_dump(
@@ -472,7 +497,6 @@ def update_schedule(
         offliner_definition = get_offliner_definition_by_id(
             session, schedule.offliner_definition_id
         )
-        offliner_definition_id = schedule.offliner_definition_id
 
     if request.image is not None:
         # Ensure the image for the offliner is a valid preset
@@ -531,7 +555,7 @@ def update_schedule(
         # schedule must be valid if it has not failed validation yet
         is_valid=True,
         context=request.context,
-        offliner_definition_id=offliner_definition_id,
+        offliner_definition=offliner_definition,
     )
 
     schedule = create_schedule_full_schema(schedule, offliner)
@@ -646,7 +670,9 @@ def clone_schedule(
         periodicity=SchedulePeriodicity(schedule.periodicity),
         language=language,
         context=schedule.context,
-        offliner_definition_id=schedule.offliner_definition_id,
+        offliner_definition=create_offliner_definition_schema(
+            schedule.offliner_definition
+        ),
     )
 
     # validate the new schedule as we skipped validation to allow users clone
@@ -659,7 +685,9 @@ def clone_schedule(
             schedule_name=new_schedule.name,
             author=current_user.username,
             is_valid=False,
-            offliner_definition_id=new_schedule.offliner_definition_id,
+            offliner_definition=create_offliner_definition_schema(
+                new_schedule.offliner_definition
+            ),
         )
 
     return ScheduleCreateResponseSchema(

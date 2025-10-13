@@ -188,5 +188,11 @@
       "description": "Where to create temporay build folder. Leave it as `/output`",
       "pattern": "^/output$"
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "ident",
+      "transformers": [{ "name": "split", "operand": "," }]
+    }
+  ]
 }

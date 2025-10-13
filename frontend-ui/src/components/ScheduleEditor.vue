@@ -508,6 +508,25 @@
         </p>
       </div>
 
+      <!-- Similar Recipes Information -->
+      <div v-if="loadingSimilarRecipes" class="mb-4">
+        <v-alert type="info" variant="tonal" density="compact">
+          <template #prepend>
+            <v-progress-circular indeterminate size="16" />
+          </template>
+          Checking for similar recipes...
+        </v-alert>
+      </div>
+
+      <div v-else-if="similarRecipesCount !== null && similarRecipesCount > 0" class="mb-4">
+        <v-alert type="warning" variant="tonal" density="compact">
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          There are {{ similarRecipesCount }} similar recipe(s) to this recipe.
+        </v-alert>
+      </div>
+
       <!-- Diff Viewer -->
       <div class="mb-4">
         <DiffViewer :differences="scheduleDifferences" />
@@ -535,6 +554,8 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import constants from '@/constants'
+import { useNotificationStore } from '@/stores/notification'
+import { useScheduleStore } from '@/stores/schedule'
 import type { Resources } from '@/types/base'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
@@ -584,6 +605,10 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// Stores
+const scheduleStore = useScheduleStore()
+const notificationStore = useNotificationStore()
+
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(
@@ -594,6 +619,8 @@ const editFlags = ref<Record<string, any>>(
 const showConfirmDialog = ref(false)
 const isSubmitting = ref(false)
 const pendingComment = ref('')
+const similarRecipesCount = ref<number | null>(null)
+const loadingSimilarRecipes = ref(false)
 
 // Debounced image name change handler
 let imageNameChangeTimeout: number | null = null
@@ -1150,8 +1177,39 @@ const imageTagOptions = computed(() => {
   return [...props.imageTags].sort().map((tag) => ({ title: tag, value: tag }))
 })
 
-const handleSubmit = () => {
+const fetchSimilarRecipesCount = async () => {
+  if (!props.schedule) return
+
+  loadingSimilarRecipes.value = true
+  similarRecipesCount.value = null
+
+  try {
+    const response = await scheduleStore.fetchSimilarSchedules(props.schedule.name, {
+      limit: 1, // We only need the count
+      skip: 0,
+      archived: false,
+    })
+
+    if (response) {
+      similarRecipesCount.value = response.meta.count
+    }
+  } catch (error) {
+    console.error('Failed to fetch similar recipes count:', error)
+    similarRecipesCount.value = 0
+    for (const error of scheduleStore.errors) {
+      notificationStore.showError(error)
+    }
+  } finally {
+    loadingSimilarRecipes.value = false
+  }
+}
+
+const handleSubmit = async () => {
   if (!canSubmit.value) return
+
+  // Fetch similar recipes count before showing confirmation dialog
+  await fetchSimilarRecipesCount()
+  console.log('similarRecipesCount', similarRecipesCount.value)
 
   // Show confirmation dialog instead of directly submitting
   showConfirmDialog.value = true
@@ -1179,12 +1237,16 @@ const handleConfirmUpdate = async () => {
     isSubmitting.value = false
     showConfirmDialog.value = false
     pendingComment.value = ''
+    similarRecipesCount.value = null
+    loadingSimilarRecipes.value = false
   }
 }
 
 const handleCancelUpdate = () => {
   showConfirmDialog.value = false
   pendingComment.value = ''
+  similarRecipesCount.value = null
+  loadingSimilarRecipes.value = false
 }
 
 const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] => {

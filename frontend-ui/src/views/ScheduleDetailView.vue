@@ -115,6 +115,18 @@
         </v-tab>
 
         <v-tab
+          base-color="primary"
+          value="similar"
+          :to="{
+            name: 'schedule-detail-tab',
+            params: { scheduleName: scheduleName, selectedTab: 'similar' },
+          }"
+        >
+          <v-icon class="mr-2">mdi-creation</v-icon>
+          Similar
+        </v-tab>
+
+        <v-tab
           base-color="error"
           v-if="canDeleteSchedules && schedule?.archived"
           value="delete"
@@ -624,6 +636,29 @@
             />
           </div>
         </v-window-item>
+
+        <!-- Similar Tab -->
+        <v-window-item value="similar">
+          <v-card flat>
+            <v-card-text>
+              <div class="mb-4 text-body-1">
+                Recipes similar to <code>{{ scheduleName }}</code>
+              </div>
+              <SchedulesTable
+                :headers="similarHeaders"
+                :schedules="schedules"
+                :paginator="scheduleStore.paginator"
+                :loading="loadingSimilar"
+                :errors="scheduleStore.errors"
+                :loading-text="'Fetching similar recipes...'"
+                :show-selection="false"
+                :show-filters="false"
+                @load-data="loadSimilar"
+                @limit-changed="handleLimitChange"
+              />
+            </v-card-text>
+          </v-card>
+        </v-window-item>
       </v-window>
     </div>
 
@@ -644,6 +679,7 @@ import ResourceBadge from '@/components/ResourceBadge.vue'
 import ScheduleActionButton from '@/components/ScheduleActionButton.vue'
 import ScheduleEditor from '@/components/ScheduleEditor.vue'
 import ScheduleHistory from '@/components/ScheduleHistory.vue'
+import SchedulesTable from '@/components/SchedulesTable.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
@@ -662,7 +698,12 @@ import { useWorkersStore } from '@/stores/workers'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
-import type { ExpandedScheduleConfig, Schedule, ScheduleUpdateSchema } from '@/types/schedule'
+import type {
+  ExpandedScheduleConfig,
+  Schedule,
+  ScheduleLight,
+  ScheduleUpdateSchema,
+} from '@/types/schedule'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
@@ -738,6 +779,16 @@ const currentTab = ref(props.selectedTab)
 // active workers
 const workers = ref<Worker[]>([])
 
+// Similar schedules state
+const schedules = ref<ScheduleLight[]>([])
+const loadingSimilar = ref(false)
+const similarHeaders = [
+  { title: 'Name', value: 'name' },
+  { title: 'Category', value: 'category' },
+  { title: 'Language', value: 'language' },
+  { title: 'Offliner', value: 'offliner' },
+]
+
 // Computed properties
 const webApiUrl = computed(() => appConfig.ZIMFARM_WEBAPI)
 const lastRun = computed(() => schedule.value?.most_recent_task || null)
@@ -768,6 +819,30 @@ const canLoadMoreHistory = computed(() => {
   const { skip, limit, count } = scheduleHistoryStore.paginator
   return skip + limit < count
 })
+
+const loadSimilar = async (limit: number, skip: number) => {
+  if (!schedule.value) return
+  loadingSimilar.value = true
+  const response = await scheduleStore.fetchSimilarSchedules(schedule.value.name, {
+    limit,
+    skip,
+    archived: false,
+  })
+  if (response) {
+    schedules.value = response.items
+    scheduleStore.paginator = response.meta
+  } else {
+    schedules.value = []
+    for (const error of scheduleStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+  loadingSimilar.value = false
+}
+
+async function handleLimitChange(newLimit: number) {
+  scheduleStore.savePaginatorLimit(newLimit)
+}
 
 // Methods
 const fetchWorkers = async () => {
@@ -1225,6 +1300,9 @@ watch(
     // Only refresh data if we don't have any data yet, or if not cloning or archiving
     if (!schedule.value || !['clone', 'archive', 'delete'].includes(newTab)) {
       await refreshData(newTab === 'edit', newTab === 'history')
+    }
+    if (newTab === 'similar' && schedule.value) {
+      await loadSimilar(scheduleStore.paginator.limit, scheduleStore.paginator.skip)
     }
   },
 )

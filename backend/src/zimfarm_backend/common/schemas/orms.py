@@ -239,6 +239,7 @@ class ScheduleFullSchema(BaseModel):
     archived: bool
     context: str
     offliner_definition_id: UUID = Field(exclude=True)
+    similarity_data: list[str] = Field(exclude=True)
     offliner: str
     version: str
 

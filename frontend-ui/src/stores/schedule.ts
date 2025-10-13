@@ -2,12 +2,7 @@ import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
-import type {
-  Schedule,
-  ScheduleHistorySchema,
-  ScheduleLight,
-  ScheduleUpdateSchema,
-} from '@/types/schedule'
+import type { Schedule, ScheduleLight, ScheduleUpdateSchema } from '@/types/schedule'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { inject, ref } from 'vue'
@@ -27,7 +22,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     count: 0,
   })
   const authStore = useAuthStore()
-  const history = ref<ScheduleHistorySchema[]>([])
 
   const fetchSchedule = async (
     scheduleName: string,
@@ -95,24 +89,33 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
-  const fetchScheduleHistory = async (scheduleName: string, limit: number, skip: number) => {
+  const fetchSimilarSchedules = async (
+    scheduleName: string,
+    params: {
+      limit: number
+      skip: number
+      category?: string[]
+      lang?: string[]
+      tag?: string[]
+      name?: string
+      archived?: boolean
+    },
+  ) => {
     const service = await authStore.getApiService('schedules')
+    const cleanedParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null),
+    )
     try {
-      const response = await service.get<null, ListResponse<ScheduleHistorySchema>>(
-        `/${scheduleName}/history`,
-        { params: { limit, skip } },
+      const response = await service.get<null, ListResponse<ScheduleLight>>(
+        `/${scheduleName}/similar`,
+        {
+          params: cleanedParams,
+        },
       )
-      // Add the items to the history if they are not already in it
-      response.items.forEach((item) => {
-        if (!history.value.some((h) => h.id === item.id)) {
-          history.value.push(item)
-        }
-      })
-      paginator.value = response.meta
       errors.value = []
-      return history.value
+      return response
     } catch (_error) {
-      console.error('Failed to fetch schedule history', _error)
+      console.error('Failed to fetch similar schedules', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return null
     }
@@ -254,6 +257,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     // Actions
     fetchSchedule,
     fetchSchedules,
+    fetchSimilarSchedules,
     clearSchedule,
     cloneSchedule,
     fetchScheduleImageTags,
@@ -263,7 +267,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     restoreSchedule,
     restoreSchedules,
     validateSchedule,
-    fetchScheduleHistory,
     savePaginatorLimit,
   }
 })

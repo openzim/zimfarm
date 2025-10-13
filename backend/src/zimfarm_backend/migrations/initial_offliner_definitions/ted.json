@@ -180,5 +180,19 @@
       "name": "check_exclusive_fields",
       "fields": ["links", "topics", "playlists"]
     }
+  ],
+  "similarityData": [
+    {
+      "flag": "topics",
+      "transformers": [{ "name": "split", "operand": "," }]
+    },
+    {
+      "flag": "playlists",
+      "transformers": [{ "name": "split", "operand": "," }]
+    },
+    {
+      "flag": "links",
+      "transformers": [{ "name": "split", "operand": "," }]
+    }
   ]
 }

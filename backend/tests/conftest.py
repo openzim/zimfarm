@@ -435,11 +435,12 @@ def mwoffliner(dbsession: OrmSession) -> OfflinerSchema:
 @pytest.fixture
 def mwoffliner_definition(
     dbsession: OrmSession,
+    mwoffliner: OfflinerSchema,
     mwoffliner_flags: OfflinerSpecSchema,
 ) -> OfflinerDefinitionSchema:
     """Create an mwoffliner definition in the database."""
     definition = OfflinerDefinition(
-        offliner="mwoffliner",
+        offliner=mwoffliner.id,
         version="initial",
         schema=mwoffliner_flags.model_dump(mode="json"),
         created_at=getnow(),
