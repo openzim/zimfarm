@@ -18,6 +18,8 @@
       :errors="errors"
       :filters="filters"
       :selected-schedules="selectedSchedules"
+      :show-selection="true"
+      :show-filters="true"
       @limit-changed="handleLimitChange"
       @load-data="loadData"
       @clear-filters="clearFilters"

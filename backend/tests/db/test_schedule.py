@@ -278,11 +278,6 @@ def test_delete_schedule_not_found(dbsession: OrmSession):
             10,
             id="schedule_eng_other_test",
         ),
-        pytest.param("hello", None, None, None, 10, id="similarity-data-i"),
-        pytest.param("world", None, None, None, 10, id="similarity-data-ii"),
-        pytest.param("foo bar", None, None, None, 10, id="similarity-data-iii"),
-        pytest.param("hello world", None, None, None, 20, id="similarity-data-iv"),
-        pytest.param("foo world", None, None, None, 20, id="similarity-data-v"),
     ],
 )
 def test_get_schedules(

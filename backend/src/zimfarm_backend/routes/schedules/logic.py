@@ -322,6 +322,35 @@ def get_schedule(
     )
 
 
+@router.get("/{schedule_name}/similar")
+def get_similar_schedule(
+    schedule_name: Annotated[ScheduleNameField, Path()],
+    params: Annotated[SchedulesGetSchema, Query()],
+    session: OrmSession = Depends(gen_dbsession),
+) -> ListResponse[ScheduleLightSchema]:
+    schedule = db_get_schedule(session, schedule_name=schedule_name)
+    results = db_get_schedules(
+        session,
+        skip=params.skip,
+        limit=params.limit,
+        lang=params.lang,
+        categories=params.category,
+        tags=params.tag,
+        archived=params.archived,
+        similarity_data=schedule.similarity_data,
+        omit_names=[schedule.name],
+    )
+    return ListResponse(
+        meta=calculate_pagination_metadata(
+            nb_records=results.nb_records,
+            skip=params.skip,
+            limit=params.limit,
+            page_size=len(results.schedules),
+        ),
+        items=cast(list[ScheduleLightSchema], results.schedules),
+    )
+
+
 @router.patch("/{schedule_name}")
 def update_schedule(
     schedule_name: Annotated[NotEmptyString, Path()],

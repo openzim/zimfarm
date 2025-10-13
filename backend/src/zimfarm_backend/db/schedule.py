@@ -232,6 +232,8 @@ def get_schedules(
     categories: list[ScheduleCategory] | None = None,
     tags: list[str] | None = None,
     archived: bool | None = None,
+    omit_names: list[str] | None = None,
+    similarity_data: list[str] | None = None,
 ) -> ScheduleListResult:
     """Get a list of schedules"""
     subquery = (
@@ -273,14 +275,14 @@ def get_schedules(
             (Schedule.language_code.in_(lang or []) | (lang is None)),
             (Schedule.tags.contains(tags or []) | (tags is None)),
             (
+                Schedule.similarity_data.overlap(similarity_data or [])
+                | (similarity_data is None)
+            ),
+            (
                 Schedule.name.ilike(f"%{name if name is not None else ''}%")
-                | (
-                    Schedule.similarity_data.overlap(
-                        name.split() if name is not None else []
-                    )
-                )
                 | (name is None)
             ),
+            (Schedule.name.not_in(omit_names or []) | (omit_names is None)),
         )
         .offset(skip)
         .limit(limit)

@@ -40,21 +40,6 @@ from zimfarm_backend.utils.token import generate_access_token
             10,
             id="wiki_eng_important",
         ),
-        pytest.param(
-            "&name=hello",
-            10,
-            id="search-by-similarity-data-i",
-        ),
-        pytest.param(
-            "&name=world",
-            10,
-            id="search-by-similarity-data-ii",
-        ),
-        pytest.param(
-            "&name=hello world",
-            10,
-            id="search-by-similarity-data-iii",
-        ),
     ],
 )
 def test_get_schedules(
@@ -67,7 +52,6 @@ def test_get_schedules(
     query_string: str,
     expected_count: int,
 ):
-    """Test that get_schedules raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -103,6 +87,54 @@ def test_get_schedules(
     assert "count" in data["meta"]
     assert "skip" in data["meta"]
     assert data["meta"]["count"] == expected_count
+    assert len(data["items"]) <= 5
+
+
+def test_get_similar_schedules(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_requested_task: Callable[..., RequestedTask],
+    create_task: Callable[..., Task],
+):
+    user = create_user(permission=RoleEnum.PROCESSOR)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    for i in range(10):
+        schedule = create_schedule(
+            name=f"wiki_eng_{i}",
+            category=ScheduleCategory.wikipedia,
+            language=LanguageSchema(code="eng", name="English"),
+            tags=["important"],
+        )
+        requested_task = create_requested_task(schedule_name=schedule.name)
+        task = create_task(requested_task=requested_task)
+        schedule.most_recent_task = task
+        schedule.similarity_data = ["hello", "world"]
+        dbsession.add(schedule)
+        dbsession.flush()
+
+    url = "/v2/schedules/wiki_eng_0/similar?skip=0&limit=5"
+    response = client.get(
+        url,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert "items" in data
+    assert "meta" in data
+    assert "count" in data["meta"]
+    assert "skip" in data["meta"]
+    for item in data["items"]:
+        assert item["name"] != "wiki_eng_0"
+    assert data["meta"]["count"] == 9  # schedule itself is not included
     assert len(data["items"]) <= 5
 
 

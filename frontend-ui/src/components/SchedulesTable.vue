@@ -2,10 +2,12 @@
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title
+        v-if="showSelection || showFilters || $slots.actions"
         class="d-flex flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
       >
         <slot name="actions" />
         <v-btn
+          v-if="showSelection"
           size="small"
           variant="elevated"
           color="warning"
@@ -16,10 +18,11 @@
           clear selections
         </v-btn>
         <v-btn
+          v-if="showFilters"
           size="small"
           variant="outlined"
           :disabled="!hasActiveFilters"
-          @click="emit('clearFilters')"
+          @click="handleClearFilters"
         >
           <v-icon size="small" class="mr-1">mdi-close-circle</v-icon>
           clear filters
@@ -35,9 +38,9 @@
         :items-per-page-options="limits"
         class="elevation-1"
         item-value="name"
-        show-select
+        :show-select="showSelection"
         :model-value="selectedSchedules"
-        @update:model-value="emit('selectionChanged', $event)"
+        @update:model-value="handleSelectionChange"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
@@ -117,16 +120,23 @@ interface Props {
   loading: boolean
   errors: string[]
   loadingText: string
-  filters: {
+  filters?: {
     name: string
     categories: string[]
     languages: string[]
     tags: string[]
   }
-  selectedSchedules: string[]
+  selectedSchedules?: string[]
+  showSelection?: boolean
+  showFilters?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  filters: () => ({ name: '', categories: [], languages: [], tags: [] }),
+  selectedSchedules: () => [],
+  showSelection: true,
+  showFilters: true,
+})
 
 // Define emits
 const emit = defineEmits<{
@@ -165,8 +175,16 @@ watch(
   { immediate: true },
 )
 
+function handleSelectionChange(selection: string[]) {
+  emit('selectionChanged', selection)
+}
+
 function clearSelections() {
   emit('selectionChanged', [])
+}
+
+function handleClearFilters() {
+  emit('clearFilters')
 }
 
 function statusClass(status: string) {

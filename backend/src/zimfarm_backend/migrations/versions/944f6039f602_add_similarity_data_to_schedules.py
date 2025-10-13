@@ -33,6 +33,7 @@ def upgrade() -> None:
         "schedule",
         ["similarity_data"],
         unique=False,
+        postgresql_using="gin",
     )
     # ### end Alembic commands ###
 
