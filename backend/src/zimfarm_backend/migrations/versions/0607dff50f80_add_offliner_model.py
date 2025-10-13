@@ -8,9 +8,6 @@ Create Date: 2025-09-26 10:17:05.551330
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.orm import Session
-
-from zimfarm_backend.db.offliner import create_offliner
 
 # revision identifiers, used by Alembic.
 revision = "0607dff50f80"
@@ -28,112 +25,6 @@ def upgrade() -> None:
         sa.Column("docker_image_name", sa.String(), nullable=False),
         sa.Column("command_name", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_offliner")),
-    )
-    session = Session(bind=op.get_bind())
-    create_offliner(
-        session,
-        offliner_id="devdocs",
-        base_model="DashModel",
-        docker_image_name="openzim/devdocs",
-        command_name="devdocs2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="freecodecamp",
-        base_model="DashModel",
-        docker_image_name="openzim/freecodecamp",
-        command_name="freecodecamp2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="gutenberg",
-        base_model="DashModel",
-        docker_image_name="openzim/gutenberg",
-        command_name="gutenberg2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="sotoki",
-        base_model="DashModel",
-        docker_image_name="openzim/sotoki",
-        command_name="sotoki2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="wikihow",
-        base_model="DashModel",
-        docker_image_name="openzim/wikihow",
-        command_name="wikihow2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="ifixit",
-        base_model="DashModel",
-        docker_image_name="openzim/ifixit",
-        command_name="ifixit2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="mwoffliner",
-        base_model="DashModel",
-        docker_image_name="openzim/mwoffliner",
-        command_name="mwoffliner",
-    )
-    create_offliner(
-        session,
-        offliner_id="youtube",
-        base_model="DashModel",
-        docker_image_name="openzim/youtube",
-        command_name="youtube2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="ted",
-        base_model="DashModel",
-        docker_image_name="openzim/ted",
-        command_name="ted2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="openedx",
-        base_model="DashModel",
-        docker_image_name="openzim/openedx",
-        command_name="openedx2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="nautilus",
-        base_model="DashModel",
-        docker_image_name="openzim/nautilus",
-        command_name="nautiluszim",
-    )
-    create_offliner(
-        session,
-        offliner_id="zimit",
-        base_model="CamelModel",
-        docker_image_name="openzim/zimit",
-        command_name="zimit",
-    )
-    create_offliner(
-        session,
-        offliner_id="kolibri",
-        base_model="DashModel",
-        docker_image_name="openzim/kolibri",
-        command_name="kolibri2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="mindtouch",
-        base_model="DashModel",
-        docker_image_name="openzim/mindtouch",
-        command_name="mindtouch2zim",
-    )
-    create_offliner(
-        session,
-        offliner_id="phet",
-        base_model="DashModel",
-        docker_image_name="openzim/phet",
-        command_name="phet2zim",
     )
     # ### end Alembic commands ###
 
