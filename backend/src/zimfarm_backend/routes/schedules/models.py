@@ -30,7 +30,7 @@ class SchedulesGetSchema(BaseModel):
     category: list[ScheduleCategory] | None = None
     tag: list[NotEmptyString] | None = None
     lang: list[NotEmptyString] | None = None
-    name: ScheduleNameField | None = None
+    name: NotEmptyString | None = None
     archived: bool = False
 
 
