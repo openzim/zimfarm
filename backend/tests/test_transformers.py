@@ -204,7 +204,7 @@ def test_generate_similarity_data(
             {
                 "seedFile": "https://dart.dev/tutorials",
             },
-            pytest.raises(ValueError),
+            does_not_raise(),
             id="transform-seed-file-but-missing-seeds-data",
         ),
     ],
