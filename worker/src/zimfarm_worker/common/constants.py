@@ -94,6 +94,7 @@ PHYSICAL_MEMORY = psutil.virtual_memory().total
 ZIMFARM_MEMORY = as_pos_int(
     humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=str(PHYSICAL_MEMORY)))
 )
+CORDONED = parse_bool(getenv("CORDONED", default="False"))
 
 USE_PUBLIC_DNS = parse_bool(getenv("USE_PUBLIC_DNS", default="False"))
 DISABLE_IPV6 = parse_bool(getenv("DISABLE_IPV6", default="False"))

@@ -65,7 +65,7 @@ export const useWorkersStore = defineStore('workers', () => {
   const fetchWorkerMetrics = async (name: string) => {
     try {
       const service = await authStore.getApiService('workers')
-      const response = await service.get<null, WorkerMetrics>(`/${name}/metrics`)
+      const response = await service.get<null, WorkerMetrics>(`/${name}`)
       errors.value = []
       return response
     } catch (_error) {
@@ -75,14 +75,18 @@ export const useWorkersStore = defineStore('workers', () => {
     }
   }
 
-  const updateWorkerContext = async (name: string, payload: WorkerUpdateSchema) => {
+  const updateWorker = async (name: string, payload: WorkerUpdateSchema) => {
+    // Remove null values from the payload
+    const cleanedPayload = Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== null),
+    )
     try {
       const service = await authStore.getApiService('workers')
-      await service.put(`/${name}/context`, payload)
+      await service.put(`/${name}`, cleanedPayload)
       errors.value = []
       return true
     } catch (_error) {
-      console.error('Failed to update worker context', _error)
+      console.error('Failed to update worker', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return false
     }
@@ -99,6 +103,6 @@ export const useWorkersStore = defineStore('workers', () => {
     updateWorkerTasks,
     savePaginatorLimit,
     fetchWorkerMetrics,
-    updateWorkerContext,
+    updateWorker,
   }
 })
