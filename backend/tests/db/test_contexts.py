@@ -34,10 +34,10 @@ def test_get_contexts_from_workers(
 ):
     """Test that get_contexts returns contexts from workers"""
     # Create workers with different contexts
-    create_worker(name="worker1", contexts=["priority", "fast"])
-    create_worker(name="worker2", contexts=["general", "slow"])
-    create_worker(name="worker3", contexts=["priority"])  # duplicate
-    create_worker(name="worker4", contexts=[])  # empty contexts should be ignored
+    create_worker(name="worker1", contexts={"priority": None, "fast": None})
+    create_worker(name="worker2", contexts={"general": None, "slow": None})
+    create_worker(name="worker3", contexts={"priority": None})  # duplicate
+    create_worker(name="worker4", contexts={})  # empty contexts should be ignored
 
     result = get_contexts(dbsession, skip=0, limit=10)
     assert result.nb_records == 4
@@ -55,8 +55,8 @@ def test_get_contexts_combined(
     create_schedule(name="schedule2", context="general")
 
     # Create workers with contexts (some overlapping)
-    create_worker(name="worker1", contexts=["priority", "fast"])
-    create_worker(name="worker2", contexts=["general", "slow"])
+    create_worker(name="worker1", contexts={"priority": None, "fast": None})
+    create_worker(name="worker2", contexts={"general": None, "slow": None})
 
     result = get_contexts(dbsession, skip=0, limit=10)
     assert result.nb_records == 4
@@ -85,8 +85,8 @@ def test_get_contexts_pagination(
     # Create schedules and workers with contexts
     create_schedule(name="schedule1", context="context1")
     create_schedule(name="schedule2", context="context2")
-    create_worker(name="worker1", contexts=["context3", "context4"])
-    create_worker(name="worker2", contexts=["context5", "context6"])
+    create_worker(name="worker1", contexts={"context3": None, "context4": None})
+    create_worker(name="worker2", contexts={"context5": None, "context6": None})
 
     # Test first page
     result = get_contexts(dbsession, skip=skip, limit=limit)

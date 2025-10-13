@@ -1,4 +1,6 @@
-from ipaddress import IPv4Address
+import ipaddress
+from ipaddress import IPv4Address, IPv6Address
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import asc, desc, func, select
@@ -41,6 +43,24 @@ def get_worker(session: OrmSession, *, worker_name: str) -> Worker:
     return worker
 
 
+def _deserialize_worker_context(
+    worker_contexts: dict[str, Any],
+) -> dict[str, IPv4Address | IPv6Address | None]:
+    return {
+        context: ipaddress.ip_address(ip_address) if ip_address else None
+        for context, ip_address in worker_contexts.items()
+    }
+
+
+def _serialize_worker_context(
+    worker_contexts: dict[str, IPv4Address | IPv6Address | None],
+) -> dict[str, Any]:
+    return {
+        context: str(ip_address) if ip_address else None
+        for context, ip_address in worker_contexts.items()
+    }
+
+
 def create_worker_schema(worker: Worker) -> WorkerLightSchema:
     return WorkerLightSchema(
         last_seen=worker.last_seen,
@@ -52,7 +72,7 @@ def create_worker_schema(worker: Worker) -> WorkerLightSchema:
             memory=worker.memory,
         ),
         username=worker.user.username,
-        contexts=worker.contexts,
+        contexts=_deserialize_worker_context(worker.contexts),
     )
 
 
@@ -61,7 +81,7 @@ def update_worker(
     *,
     worker_name: str,
     ip_address: str | None = None,
-    contexts: list[str] | None = None,
+    contexts: dict[str, IPv4Address | IPv6Address | None] | None = None,
     update_last_seen: bool = True,
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
@@ -71,7 +91,7 @@ def update_worker(
     if ip_address is not None:
         worker.last_ip = IPv4Address(ip_address)
     if contexts is not None:
-        worker.contexts = contexts
+        worker.contexts = _serialize_worker_context(contexts)
     session.add(worker)
     session.flush()
     return worker
@@ -138,7 +158,7 @@ def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetric
             memory=worker.memory,
         ),
         offliners=worker.offliners,
-        contexts=worker.contexts,
+        contexts=_deserialize_worker_context(worker.contexts),
         running_tasks=get_currently_running_tasks(session, worker),
         nb_tasks_total=nb_total or 0,
         nb_tasks_completed=nb_completed or 0,

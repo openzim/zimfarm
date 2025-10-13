@@ -129,7 +129,7 @@
           <div class="d-flex flex-wrap ga-1 py-1">
             <template v-if="item.kind === 'worker'">
               <v-chip
-                v-for="ctx in item.contexts"
+                v-for="(ip, ctx) in item.contexts"
                 :key="ctx"
                 size="x-small"
                 color="primary"
