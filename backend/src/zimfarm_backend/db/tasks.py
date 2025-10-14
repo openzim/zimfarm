@@ -19,6 +19,7 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     RequestedTaskFullSchema,
     RunningTask,
+    TaskFileSchema,
     TaskFullSchema,
     TaskLightSchema,
 )
@@ -111,7 +112,10 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             container=row.container,
             priority=row.priority,
             notification=row.notification or None,
-            files=row.files,
+            files={
+                key: TaskFileSchema.model_validate(value)
+                for key, value in row.files.items()
+            },
             upload=row.upload,
             updated_at=row.updated_at,
             original_schedule_name=row.original_schedule_name,
