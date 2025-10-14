@@ -26,7 +26,11 @@ from zimfarm_backend.common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
-from zimfarm_backend.common.schemas.orms import TaskFullSchema
+from zimfarm_backend.common.schemas.orms import (
+    CMSFileSchema,
+    TaskFileSchema,
+    TaskFullSchema,
+)
 from zimfarm_backend.db import dbsession
 from zimfarm_backend.db.tasks import get_task_by_id
 
@@ -184,20 +188,20 @@ def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
     file_data = task.files[file_name]
 
     # skip if already advertised to CMS
-    if file_data.get("cms"):
+    if file_data.cms:
         # cms query already succeeded
-        if file_data["cms"].get("succeeded"):
+        if file_data.cms.succeeded:
             return
 
     # prepare payload and submit request to CMS
     download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
-    file_data["cms"] = {
-        "status_code": -1,
-        "succeeded": False,
-        "on": getnow(),
-        "book_id": None,
-        "title_ident": None,
-    }
+    file_data.cms = CMSFileSchema(
+        status_code=-1,
+        succeeded=False,
+        on=getnow(),
+        book_id=None,
+        title_ident=None,
+    )
     try:
         resp = requests.post(
             CMS_ENDPOINT,
@@ -209,20 +213,20 @@ def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
         logger.exception(exc)
     else:
         status_code = HTTPStatus(resp.status_code)
-        file_data["cms"]["status_code"] = status_code.value
-        file_data["cms"]["succeeded"] = status_code == HTTPStatus.CREATED
+        file_data.cms.status_code = status_code.value
+        file_data.cms.succeeded = status_code == HTTPStatus.CREATED
         if status_code.is_success:
             try:
                 data = resp.json()
-                file_data["cms"]["book_id"] = data.get("uuid")
-                file_data["cms"]["title_ident"] = data.get("title")
+                file_data.cms.book_id = data.get("uuid")
+                file_data.cms.title_ident = data.get("title")
             except Exception as exc:
                 logger.error(f"Unable to parse CMS response: {exc}")
                 logger.exception(exc)
         else:
             logger.error(
                 f"CMS returned an error {resp.status_code} for book"
-                f"{file_data['info']['id']}"
+                f"{file_data.info['id']}"
             )
 
     # record request result
@@ -230,17 +234,17 @@ def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
 
 
 def get_openzimcms_payload(
-    file: dict[str, typing.Any], download_prefix: str
+    file: TaskFileSchema, download_prefix: str
 ) -> dict[str, typing.Any]:
     payload = {
-        "id": file["info"]["id"],
-        "period": file["info"].get("metadata", {}).get("Date"),
-        "counter": file["info"].get("counter"),
-        "article_count": file["info"].get("article_count"),
-        "media_count": file["info"].get("media_count"),
-        "size": file["info"].get("size"),
-        "metadata": file["info"].get("metadata"),
-        "url": f"{download_prefix}/{file['name']}",
-        "zimcheck": file.get("check_details", {}),
+        "id": file.info["id"],
+        "period": file.info.get("metadata", {}).get("Date"),
+        "counter": file.info.get("counter"),
+        "article_count": file.info.get("article_count"),
+        "media_count": file.info.get("media_count"),
+        "size": file.info.get("size"),
+        "metadata": file.info.get("metadata"),
+        "url": f"{download_prefix}/{file.name}",
+        "zimcheck": file.check_details or {},
     }
     return payload
