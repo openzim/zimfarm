@@ -212,7 +212,7 @@ def get_schedules_backup(
     """Get a list of schedules"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="schedules", name="secrets")
     ):
         exclude_notifications = True
     else:
@@ -222,7 +222,7 @@ def get_schedules_backup(
     # does not matter
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="schedules", name="secrets")
     ):
         show_secrets = False
     else:
@@ -250,7 +250,7 @@ def restore_archived_schedules(
 ) -> Response:
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="schedules", name="archive")
     ):
         raise UnauthorizedError("You are not allowed to restore schedules")
 
@@ -291,13 +291,13 @@ def get_schedule(
 
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="schedules", name="secrets")
     ):
         schedule.notification = None
 
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="schedules", name="secrets")
     ):
         show_secrets = False
     else:
@@ -677,7 +677,7 @@ def archive_schedule(
     """Archive a schedule"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="delete")
+        and check_user_permission(current_user, namespace="schedules", name="archive")
     ):
         raise UnauthorizedError("You are not allowed to archive a schedule")
 
@@ -704,7 +704,7 @@ def restore_archived_schedule(
     """Restore an archived schedule"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="delete")
+        and check_user_permission(current_user, namespace="schedules", name="archive")
     ):
         raise UnauthorizedError("You are not allowed to restore a schedule")
 
@@ -749,7 +749,7 @@ def get_schedule_history(
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,
 ) -> ListResponse[ScheduleHistorySchema]:
-    if not check_user_permission(current_user, namespace="schedules", name="update"):
+    if not check_user_permission(current_user, namespace="schedules", name="secrets"):
         raise UnauthorizedError("You are not allowed to view a schedule's history")
 
     schedule = db_get_schedule(session, schedule_name=schedule_name)
@@ -775,7 +775,7 @@ def get_schedule_history_entry(
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> ScheduleHistorySchema:
-    if not check_user_permission(current_user, namespace="schedules", name="update"):
+    if not check_user_permission(current_user, namespace="schedules", name="secrets"):
         raise UnauthorizedError("You are not allowed to view a schedule's history")
 
     history_entry = db_get_schedule_history_entry(

@@ -245,7 +245,9 @@ def update_user_password(
             current_user.password_hash or "", password_update.current
         ):
             raise BadRequestError()
-    elif not check_user_permission(current_user, namespace="users", name="ssh_keys"):
+    elif not check_user_permission(
+        current_user, namespace="users", name="change_password"
+    ):
         raise UnauthorizedError("You are not allowed to access this resource")
 
     db_update_user_password(
