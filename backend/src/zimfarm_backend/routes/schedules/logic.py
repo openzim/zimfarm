@@ -324,7 +324,7 @@ def get_schedule(
 
 @router.get("/{schedule_name}/similar")
 def get_similar_schedule(
-    schedule_name: Annotated[ScheduleNameField, Path()],
+    schedule_name: Annotated[NotEmptyString, Path()],
     params: Annotated[SchedulesGetSchema, Query()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[ScheduleLightSchema]:
