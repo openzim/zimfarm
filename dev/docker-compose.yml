@@ -70,19 +70,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-  backend-tools:
-    build:
-      dockerfile: ../dev/backend-tools-tests/Dockerfile
-      context: ../backend
-    container_name: zf_backend-tools
-    command: tail -f /dev/null
-    volumes:
-      - ../backend/src:/app/src
-    environment:
-      JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
-    depends_on:
-      - postgresdb
   backend-tests:
     build:
       dockerfile: ../dev/backend-tools-tests/Dockerfile
