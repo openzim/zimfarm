@@ -6,18 +6,9 @@ Create Date: 2025-09-25 00:45:04.365564
 
 """
 
-import json
-from pathlib import Path
-
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import update
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import Session
-
-from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task
-from zimfarm_backend.db.offliner_definition import create_offliner_definition
 
 # revision identifiers, used by Alembic.
 revision = "12096716adfd"
@@ -79,42 +70,6 @@ def upgrade() -> None:
         ["offliner_definition_id"],
         ["id"],
     )
-
-    data_dir = Path(__file__).parent.parent / "initial_offliner_definitions"
-
-    bind = op.get_bind()
-    session = Session(bind=bind)
-
-    for file in data_dir.glob("*.json"):
-        data = json.loads(file.read_text())
-
-        offliner_definition = create_offliner_definition(
-            session,
-            offliner=data["offliner_id"],
-            schema=OfflinerSpecSchema.model_validate(data),
-            version="initial",
-        )
-        # Make all the schedules point to the initial version
-        session.execute(
-            update(Schedule)
-            .where(
-                Schedule.config["offliner"]["offliner_id"].astext == data["offliner_id"]
-            )
-            .values({"offliner_definition_id": offliner_definition.id})
-        )
-        session.execute(
-            update(Task)
-            .where(Task.config["offliner"]["offliner_id"].astext == data["offliner_id"])
-            .values({"offliner_definition_id": offliner_definition.id})
-        )
-        session.execute(
-            update(RequestedTask)
-            .where(
-                RequestedTask.config["offliner"]["offliner_id"].astext
-                == data["offliner_id"]
-            )
-            .values({"offliner_definition_id": offliner_definition.id})
-        )
 
     # Reset the foreign keys to be non-nullable
     op.alter_column(
