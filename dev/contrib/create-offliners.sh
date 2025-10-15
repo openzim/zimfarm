@@ -156,7 +156,7 @@ ZF_ADMIN_TOKEN="$(curl -s -X 'POST' \
     'http://localhost:8000/v2/auth/authorize' \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
-    -d '{"username": "admin", "password": "admin_pass"}' \
+    -d '{"username": "admin", "password": "admin"}' \
     | jq -r '.access_token')"
 
 if [ -z "$ZF_ADMIN_TOKEN" ] || [ "$ZF_ADMIN_TOKEN" = "null" ]; then
