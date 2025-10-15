@@ -41,6 +41,9 @@ services:
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       ZIMCHECK_OPTION: --all
       ALLOWED_ORIGINS: http://localhost:8001,http://localhost:8002
+      # username and password of admin user
+      INIT_USERNAME: admin
+      INIT_PASSWORD: admin
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -67,19 +70,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-  backend-tools:
-    build:
-      dockerfile: ../dev/backend-tools-tests/Dockerfile
-      context: ../backend
-    container_name: zf_backend-tools
-    command: tail -f /dev/null
-    volumes:
-      - ../backend/src:/app/src
-    environment:
-      JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
-    depends_on:
-      - postgresdb
   backend-tests:
     build:
       dockerfile: ../dev/backend-tools-tests/Dockerfile
@@ -120,7 +110,7 @@ services:
   #   depends_on:
   #     - backend
 
-  # uncomment this only if you want to run a worker manager
+  # uncomment this and the task_worker only if you want to run a worker manager
   # worker_mgr:
   #   build:
   #     context: ../worker
@@ -138,10 +128,9 @@ services:
   #     - ENVIRONMENT=development
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
+  #     - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
 
-  # uncomment this only if you want to run a 'standalone' task worker
-  # you have to modify the command
+  # you have to modify the command if you want to run a standalone worker
   # task_worker:
   #   build:
   #     context: ../worker
@@ -153,7 +142,7 @@ services:
   #   command: task-worker --help
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ./test_worker-identity/id_rsa:/etc/ssh/keys/zimfarm
+  #     - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
   #   environment:
   #     - DEBUG=true
   #     - ENVIRONMENT=development
