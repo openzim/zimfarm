@@ -20,7 +20,7 @@ declare -A offliner_configs
 setup_offliner_configs() {
     # DashModel offliners
     offliner_configs["devdocs"]='{"base_model":"DashModel","docker_image_name":"openzim/devdocs","command_name":"devdocs2zim"}'
-    offliner_configs["freecodecamp"]='{"base_model":"DashModel","docker_image_name":"openzim/freecodecamp","command_name":"freecodecamp2zim"}'
+    offliner_configs["freecodecamp"]='{"base_model":"DashModel","docker_image_name":"openzim/freecodecamp","command_name":"fcc2zim"}'
     offliner_configs["gutenberg"]='{"base_model":"DashModel","docker_image_name":"openzim/gutenberg","command_name":"gutenberg2zim"}'
     offliner_configs["sotoki"]='{"base_model":"DashModel","docker_image_name":"openzim/sotoki","command_name":"sotoki2zim"}'
     offliner_configs["wikihow"]='{"base_model":"DashModel","docker_image_name":"openzim/wikihow","command_name":"wikihow2zim"}'
