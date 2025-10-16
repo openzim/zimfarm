@@ -43,7 +43,6 @@ from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
     get_offliner_definition,
     get_offliner_definition_by_id,
-    get_offliner_versions,
 )
 from zimfarm_backend.db.schedule import create_schedule as db_create_schedule
 from zimfarm_backend.db.schedule import (
@@ -135,20 +134,9 @@ def create_schedule(
         raise UnauthorizedError("You are not allowed to create a schedule")
 
     if offliner_id := request.config.get("offliner", {}).get("offliner_id"):
-        if request.version:
-            offliner_definition = get_offliner_definition(
-                session, offliner_id, request.version
-            )
-        else:
-            # get the most recent offliner definition
-            results = get_offliner_versions(session, offliner_id, limit=1, skip=0)
-            if not results.versions:
-                raise RecordDoesNotExistError(
-                    f"No offliner definitions found for {offliner_id}"
-                )
-            offliner_definition = get_offliner_definition(
-                session, offliner_id, results.versions[0]
-            )
+        offliner_definition = get_offliner_definition(
+            session, offliner_id, request.version
+        )
     else:
         raise RequestValidationError(
             [
