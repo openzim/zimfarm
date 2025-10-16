@@ -188,11 +188,11 @@ That's it!
 
 ### Youtube offliner
 
-Youtube offliner is a bit special because it does require manual IP whitelisting by Zimfarm admins. It is hence not enabled by default. And we really wanna avoid having to fix this manual configuration too often if your IP changes every year for instance.
+Youtube offliner is a bit special because it does require manual IP whitelisting by Zimfarm admins. It is hence not enabled by default. And we really want to avoid having to fix this manual configuration too often if your IP changes every year for instance.
 
 We also do recommend to avoid running Youtube tasks on Internet connections also used by regular "browsing" users since we cannot guarantee it will not have some adverse effects on the rest of the Youtube usage.
 
-If you feel like you wanna meet these expectations, feel free to tell Zimfarm Admins about this, we will appreciate.
+If you feel like you want to meet these expectations, feel free to tell Zimfarm Admins about this, we will appreciate.
 
 ## Worker commands
 
