@@ -1,9 +1,11 @@
 import datetime
 from dataclasses import dataclass
+from json import JSONDecodeError
 from typing import Any
 
 import requests
 
+from zimfarm_worker.common import logger
 from zimfarm_worker.common.cryptography import AuthMessage
 
 
@@ -71,8 +73,14 @@ def query_api(
     }.get(method.upper(), requests.get)
 
     resp = func(url, headers=req_headers, json=payload, params=params)
-    return Response(
-        status_code=resp.status_code,
-        success=resp.ok,
-        json=resp.json() if resp.text else {},
-    )
+    try:
+        return Response(
+            status_code=resp.status_code,
+            success=resp.ok,
+            json=resp.json() if resp.text else {},
+        )
+    except (JSONDecodeError, Exception):
+        logger.exception(
+            f"unexpected error while decoding server response: {resp.text}"
+        )
+        raise
