@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Script to update schedules and requested tasks with new image tags or offliner
 definitions.
@@ -10,6 +11,26 @@ EXAMPLES:
 
 2. Update recipe and requested tasks to a new offliner definition version:
    ./update_scraper_version.py -o mwoffliner -d 2.1.0
+3. Update the similarity data for all offliner definitions. This updates the recipes
+   similarity data too. Input can be a JSON file or sent via stdin.
+   ./update_scraper_version.py -o mwoffliner -s simialrity_data.in
+   To update via stdin:
+   echo '[
+      {
+        "flag": "mwUrl",
+        "transformers": [
+          {
+            "name": "hostname",
+            "operator": null
+          }
+        ]
+      }
+    ]' \
+    | ./update_scraper_version.py \
+      -o mwoffliner \
+      -s
+
+
 
 In cases where you want to add, remove, or rename fields in the recipe and requested
 tasks flags, probably, to make the flags conform to the new offliner definition,
@@ -48,18 +69,26 @@ database. If you must use the -n flag, here are some examples:
 """
 
 import argparse
+import json
+import sys
 
 import sqlalchemy as sa
+from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend import logger
 from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
+from zimfarm_backend.common.schemas.offliners.models import (
+    OfflinerSpecSchema,
+    SimilarityDataSchema,
+)
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import RequestedTask, Schedule
+from zimfarm_backend.db.models import OfflinerDefinition, RequestedTask, Schedule
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
+    create_offliner_definition_schema,
     get_offliner_definition,
     update_offliner_flags,
 )
@@ -104,13 +133,19 @@ def update_entries(
             model.config["offliner"]["offliner_id"].astext == offliner.id
         )
     ).scalars():
+        obj_name = getattr(obj, "name", obj.id)
         if image_tag:
-            logger.info(f"setting {offliner.id} image tag to {args.image_tag}...")
+            logger.info(
+                f"setting {offliner.id} image tag for {model.__tablename__} {obj_name} "
+                f"to {args.image_tag}..."
+            )
             obj.config["image"]["tag"] = image_tag
             flag_modified(obj, "config")
 
         if offliner_definition:
-            logger.info(f"setting offliner defintion for {model.__tablename__}...")
+            logger.info(
+                f"setting offliner defintion for {model.__tablename__} {obj_name} ..."
+            )
             if name_mappings:
                 obj.config["offliner"] = update_offliner_flags(
                     offliner=offliner,
@@ -118,12 +153,12 @@ def update_entries(
                     data=obj.config["offliner"],
                     name_mappings=name_mappings,
                 )
-                flag_modified(obj, "config")
             obj.offliner_definition_id = offliner_definition.id
             if isinstance(obj, Schedule):
                 obj.similarity_data = generate_similarity_data(
                     obj.config["offliner"], offliner, offliner_definition.schema_
                 )
+            flag_modified(obj, "config")
         # Just needed to ensure our model still works
         if isinstance(obj, Schedule):
             create_schedule_full_schema(obj, offliner)
@@ -153,6 +188,19 @@ if __name__ == "__main__":
         metavar="VERSION",
         help="Offliner definition version to update",
     )
+    parser.add_argument(
+        "-s",
+        "--similarity-data",
+        metavar="SIMILARITY DATA",
+        type=argparse.FileType("r", encoding="utf-8"),
+        const=sys.stdin,
+        nargs="?",
+        help=(
+            "List of similarity data transformers to apply to all definitions of the "
+            "offliner. This updates the similarity data array of the recipes "
+            "associated with the definitions too."
+        ),
+    )
 
     parser.add_argument(
         "-n",
@@ -178,24 +226,56 @@ if __name__ == "__main__":
         else:
             offliner_definition = None
 
-        nb_schedules_modified = update_entries(
-            session,
-            model=Schedule,
-            offliner=offliner,
-            offliner_definition=offliner_definition,
-            image_tag=args.image_tag,
-            name_mappings=args.name_mappings,
-        )
-        logger.info(f"updated {nb_schedules_modified} schedule(s) ")
+        if args.offliner_definition_version or args.image_tag or args.name_mappings:
+            nb_schedules_modified = update_entries(
+                session,
+                model=Schedule,
+                offliner=offliner,
+                offliner_definition=offliner_definition,
+                image_tag=args.image_tag,
+                name_mappings=args.name_mappings,
+            )
+            logger.info(f"updated {nb_schedules_modified} schedule(s) ")
 
-        nb_requested_tasks_modified = update_entries(
-            session,
-            model=RequestedTask,
-            offliner=offliner,
-            offliner_definition=offliner_definition,
-            image_tag=args.image_tag,
-            name_mappings=args.name_mappings,
-        )
-        logger.info(f"updated {nb_requested_tasks_modified} requested tasks ")
+            nb_requested_tasks_modified = update_entries(
+                session,
+                model=RequestedTask,
+                offliner=offliner,
+                offliner_definition=offliner_definition,
+                image_tag=args.image_tag,
+                name_mappings=args.name_mappings,
+            )
+            logger.info(f"updated {nb_requested_tasks_modified} requested tasks ")
+
+        if args.similarity_data:
+            logger.info("Updating simlarity data")
+            similarity_data = [
+                SimilarityDataSchema.model_validate(data)
+                for data in json.loads(args.similarity_data.read())
+            ]
+            for offliner_definition in session.scalars(
+                select(OfflinerDefinition).where(
+                    OfflinerDefinition.offliner == args.offliner
+                )
+            ):
+                # update the spec for the offliner definition to use the new
+                # similarity data transformers list
+                offliner_spec = OfflinerSpecSchema.model_validate(
+                    offliner_definition.schema
+                )
+                offliner_spec.similarity_data = similarity_data
+                # update the db offliner definition and all of its associated recipes
+                offliner_definition.schema = offliner_spec.model_dump(mode="json")
+                nb_schedules_modified = update_entries(
+                    session,
+                    model=Schedule,
+                    offliner=offliner,
+                    offliner_definition=create_offliner_definition_schema(
+                        offliner_definition
+                    ),
+                    image_tag=None,
+                    name_mappings={},
+                )
+                logger.info(f"updated {nb_schedules_modified} schedule(s) ")
 
     logger.info("FINISH!")
