@@ -45,22 +45,27 @@ network intensively.
 
 # Run a worker
 
-If you are willing to run a Zimfarm worker, the first step is to get a
-worker account on the Zimfarm. Please contact one of the developers on
-Github or [send an email to
-contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org).
+If you are willing to run a Zimfarm worker, the first step is to understand wether you machine matches requirements below.
 
 ## Requirements
 
-- A GNU/Linux host (works on macOS) with at least:
+- A reliable GNU/Linux host (works on macOS) with at least:
 - 2GB of RAM and 3 cores available.
 - [Docker CE server](https://docs.docker.com/engine/install/) running.
-- Fast internet connexion (downstream and upstream).
-- A Zimfarm user account (with appropriate `worker` role).
-- An SSH private key with its public key uploaded to the user account (we now recommend an `ed25519` key).
+- Fast and reliable internet connexion (both downstream and upstream, biggest Zimfarm recipes handles about 100G first in download then in upload ; the fastest, the best).
+- A fixed public IP (we do not mind about NAT, this is what most of our workers are doing, it is transparent for us ; we do not mind about IPs changing few times per year ; more regular IP changes are going to be a problem).
 - The clock must be synchronized, e.g. using ntp.
+- The machine should be available for significant amount of time (at least 6 months)
 
-**Note**: SSH access to your host for our developers is handy but not required.
+SSH access to your host for our developers is handy but not required. We do use bastion(s) to connect to our machines, so you could open SSH only to these few machines (only 2 ATM).
+
+Reliable internet means that we do expect your Internet connection to not drop every now and then. We do not mind about very small interuption of few seconds, but anything in the range of 1 minute or more will be cause most scrapers to fail, becoming an issue.
+
+Reliable machine means that we do expect your machine to be reasonably "always-on". We do not mind about regular scheduled downtime once a month or so, but we need you let ongoing tasks complete before doing such maintenance. We do understand that you need to bring the machine down for OS updates, and our system will allow to do this in a planned and organized manner.
+
+We do not mind about one or two unexpected Internet or machine downtimes per year but anything happening more often is a pain for us. We mostly do not mind at all about the duration of the downtimes, especially if planned in advance.
+
+## Setup
 
 ### Docker configuration
 
@@ -95,7 +100,7 @@ mkdir ~/zimfarm
 cd ~/zimfarm
 ```
 
-### Uploading your public key
+### Create a public key for your worker
 
 This is for reference only, you'd probably want to send your public
 RSA key file to us when requesting a worker account (Admins can upload it via UI)
@@ -112,21 +117,25 @@ ssh-keygen -t rsa -b 2048 -f id_rsa
 ```
 
 ```bash
-# Display your public key (you'll upload this part)
+# Display your public key (you'll share this part with Zimfarm admins)
 # The public key is typically of the form <algorithm> <key> <name>
 # You can change the <name> part of the key to whatever you want to different a key
 # from another
 cat id_ed25519.pub
-
-# Upload the public key. Token can be copied from
-# the Zimfarm user interface (top right corner on the profile button).
-curl -X POST https://api.farm.openzim.org/v2/users/<username>/keys \
-    -H 'Authorization: Bearer <token>' \
-    -H 'Content-Type: application/json; charset=utf-8' \
-    -d $'{"key": "<key-content>"}'
 ```
 
-## Setup
+We do recommend to rotate this SSH key once a year. Zimfarm allows to have multiple SSH keys per worker, allowing a transition without downtime (you generate the key somewhere, we add this new key, you reconfigure Zimfarm worker to use the new key, wait for ongoing tasks to complete (they use the old key), we delete the old key).
+
+### Create worker account on the Zimfarm
+
+Send your worker information to to Zimfarm Admins via mail [contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org) or on Slack:
+- worker name (only lowercase letter, see already in-use worker names at https://farm.openzim.org/workers, avoid generic names like "cloud-vm", "zimfarm-worker", ...) 
+- your email (should we need to contact you, send goodies, ...) 
+- the SSH public key
+
+Zimfarm Admin will create and configure your worker account.
+
+### Management script
 
 A Zimfarm worker is just a Docker container spawning other containers.
 
@@ -176,6 +185,14 @@ zimfarm restart
 ```
 
 That's it!
+
+### Youtube offliner
+
+Youtube offliner is a bit special because it does require manual IP whitelisting by Zimfarm admins. It is hence not enabled by default. And we really want to avoid having to fix this manual configuration too often if your IP changes every year for instance.
+
+We also do recommend to avoid running Youtube tasks on Internet connections also used by regular "browsing" users since we cannot guarantee it will not have some adverse effects on the rest of the Youtube usage.
+
+If you feel like you want to meet these expectations, feel free to tell Zimfarm Admins about this, we will appreciate.
 
 ## Worker commands
 
