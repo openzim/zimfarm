@@ -894,6 +894,7 @@ def create_schedule(
         tags: list[str] | None = None,
         context: str | None = None,
         schedule_config: ScheduleConfigSchema | None = None,
+        raw_schedule_config: dict[str, Any] | None = None,
         worker: Worker | None = None,
         archived: bool = False,
     ) -> Schedule:
@@ -905,8 +906,12 @@ def create_schedule(
             name=name,
             tags=tags or ["nopic"],
             category=category,
-            config=schedule_config.model_dump(
-                mode="json", context={"show_secrets": True}
+            config=(
+                raw_schedule_config
+                if raw_schedule_config
+                else schedule_config.model_dump(
+                    mode="json", context={"show_secrets": True}
+                )
             ),
             enabled=True,
             language_code=language.code,
