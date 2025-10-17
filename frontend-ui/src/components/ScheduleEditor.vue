@@ -523,10 +523,7 @@
           <template #prepend>
             <v-icon>mdi-information</v-icon>
           </template>
-          There are {{ similarRecipesCount }} similar recipe{{
-            similarRecipesCount !== 1 ? 's' : ''
-          }}
-          to this recipe.
+          There are {{ similarRecipesCount }} similar recipe(s) to this recipe.
         </v-alert>
       </div>
 

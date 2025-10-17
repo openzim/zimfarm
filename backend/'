@@ -12,6 +12,8 @@ EXAMPLES:
 2. Update recipe and requested tasks to a new offliner definition version:
    ./update_scraper_version.py -o mwoffliner -d 2.1.0
 
+
+
 In cases where you want to add, remove, or rename fields in the recipe and requested
 tasks flags, probably, to make the flags conform to the new offliner definition,
 you can use the -n flag to add, remove, or rename fields. The names you specify
@@ -49,6 +51,7 @@ database. If you must use the -n flag, here are some examples:
 """
 
 import argparse
+import sys
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Session as OrmSession
@@ -58,9 +61,10 @@ from zimfarm_backend import logger
 from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import RequestedTask, Schedule
+from zimfarm_backend.db.models import OfflinerDefinition, RequestedTask, Schedule
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
+    create_offliner_definition_schema,
     get_offliner_definition,
     update_offliner_flags,
 )
@@ -159,6 +163,19 @@ if __name__ == "__main__":
         "--offliner-definition-version",
         metavar="VERSION",
         help="Offliner definition version to update",
+    )
+    parser.add_argument(
+        "-s",
+        "--similarity-data",
+        metavar="SIMILARITY DATA",
+        type=argparse.FileType("r", encoding="utf-8"),
+        const=sys.stdin,
+        nargs="?",
+        help=(
+            "List of similarity data transformers to apply to all definitions of the "
+            "offliner. This updates the similarity data array of the recipes "
+            "associated with the definitions too."
+        ),
     )
 
     parser.add_argument(

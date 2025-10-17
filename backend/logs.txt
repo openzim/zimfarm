@@ -1,0 +1,541 @@
+[2025-10-16 20:19:09,678: ERROR] unexpected exception while getting task: 0142b40d-a3c0-4ca9-bbc3-7ae3026860cd, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:13,247: ERROR] unexpected exception while getting task: 0373d656-b247-4aa8-86f1-4aae6f5fed89, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:16,963: ERROR] unexpected exception while getting task: 05b27c16-6363-4ea0-b5b0-5a3bf9379dee, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:26,547: ERROR] unexpected exception while getting task: 0bd80f57-9c0e-46f0-bc5e-c96c3e0dc979, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:31,383: ERROR] unexpected exception while getting task: 0f444825-a576-419b-b7ff-1b5b965643df, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:32,153: ERROR] unexpected exception while getting task: 0fb060c7-f0f6-4d67-81d2-8405ef4c47aa, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:35,140: ERROR] unexpected exception while getting task: 11df13ec-09ef-4d73-8f88-54771465e8b1, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:37,947: ERROR] unexpected exception while getting task: 13a3caa9-c406-48cc-a6f1-00b0b5192b75, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:19:40,336: ERROR] unexpected exception while getting task: 155de50d-b2ce-49ad-8edf-6c459b33e8e5, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:19:49,860: ERROR] unexpected exception while getting task: 1bd6b6bc-45e3-4049-9d6b-1b52b82a5018, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:52,700: ERROR] unexpected exception while getting task: 1da36209-5a31-471d-a7d4-615b6c756708, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:53,877: ERROR] unexpected exception while getting task: 1e674729-7377-4141-a5c2-4f3a86182e2a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1...n Academy en français'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:55,082: ERROR] unexpected exception while getting task: 1ee3861f-4abe-4e31-be5d-471b0fd3f6a6, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLmQc6HNAtCsoHGzl...oud_hi_{slug}_{period}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:19:57,385: ERROR] unexpected exception while getting task: 20327d8a-d47d-47d3-9473-7140534bef72, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:20:02,984: ERROR] unexpected exception while getting task: 237097f2-85a0-4fef-87da-ff04fdcc3bcc, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLrei6UENqoSoVzBB...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:15,638: ERROR] unexpected exception while getting task: 2a14a53d-0f8a-4326-8ed3-869ecfbc4087, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:15,683: ERROR] unexpected exception while getting task: 2a1e0423-2532-40b7-a27b-a4ed8ed24e46, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:16,003: ERROR] unexpected exception while getting task: 2a5fd338-3ea0-4b66-9ea6-4d399c9e1221, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:19,772: ERROR] unexpected exception while getting task: 2cc08bc4-cf22-4d95-96a5-123cb1771460, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:20:26,715: ERROR] unexpected exception while getting task: 30e87fc0-4561-4fd8-9b5b-b4d8a2aac050, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:31,092: ERROR] unexpected exception while getting task: 33c1f945-66b7-497a-bb93-9838f62c35e7, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLmQc6HNAtCsoHGzl...oud_hi_{slug}_{period}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:35,359: ERROR] unexpected exception while getting task: 3660c158-fbbe-4e25-a1eb-f037456861a1, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...cademy Youtube Channel'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:35,700: ERROR] unexpected exception while getting task: 369dd668-09d3-401c-8b16-5cf3dc3927a5, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'Madrasa', 'type':...أينما كانوا.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:38,245: ERROR] unexpected exception while getting task: 380373a6-65b7-4329-8e06-4631b9116aa0, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:20:42,133: ERROR] unexpected exception while getting task: 3a7af285-ee88-4ac3-b637-68f56fb4058f, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:45,132: ERROR] unexpected exception while getting task: 3bbffe97-2bec-4fde-bab3-271fdae99020, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...cademy Youtube Channel'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:45,831: ERROR] unexpected exception while getting task: 3c31c41d-c0db-4e0d-8ee0-8fca0ba725e6, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:54,090: ERROR] unexpected exception while getting task: 40bd89f8-b615-4391-86d9-a5f79d4b6347, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:54,674: ERROR] unexpected exception while getting task: 40eaa886-30d9-4960-b419-af533be779a2, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:57,606: ERROR] unexpected exception while getting task: 42242829-cf58-426d-b353-ed69dec190cd, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:20:59,540: ERROR] unexpected exception while getting task: 439afa02-042c-43ff-b291-7aea4235251b, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLC35FDJiECFQxajo...r emergency situations'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:04,903: ERROR] unexpected exception while getting task: 46ceaa14-316a-4865-ac18-2191abe30c52, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:06,894: ERROR] unexpected exception while getting task: 480ab413-caf6-470a-829d-367bbd656032, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:06,913: ERROR] unexpected exception while getting task: 480cba67-fd76-4a68-9a9a-c50f00547289, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:10,162: ERROR] unexpected exception while getting task: 49dc780f-5328-403c-81f1-a3b0a4c7331a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...eos_en_{slug}_{period}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:15,346: ERROR] unexpected exception while getting task: 4d0901cf-2acb-43f1-bff3-f35217efe57d, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:16,289: ERROR] unexpected exception while getting task: 4d944f24-8ef8-4a37-8e5f-c0d5ec5dd97e, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:17,202: ERROR] unexpected exception while getting task: 4e1d1706-3db4-44db-b901-2484d75838db, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:25,441: ERROR] unexpected exception while getting task: 521b7a68-053f-42cc-a12b-f5251afb78bb, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:26,551: ERROR] unexpected exception while getting task: 52ac31d9-b4d3-48b4-92e4-e36a967ff7d9, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...videos by Khan Academy'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:29,732: ERROR] unexpected exception while getting task: 5448ee9a-e24c-4fc6-bc67-bce586e1446f, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:30,950: ERROR] unexpected exception while getting task: 54f6c089-42fa-48d0-ba3e-76a045d45018, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1... Academy en français!'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:31,079: ERROR] unexpected exception while getting task: 55065e7a-9e11-42b2-bb36-5c41eb36a73c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1...n Academy en français'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:34,902: ERROR] unexpected exception while getting task: 56c9552c-9147-4cb8-ba6b-a6f380e3c31c, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:21:38,880: ERROR] unexpected exception while getting task: 58e8528b-c26c-4ed4-bbd0-27894c74a39c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:44,686: ERROR] unexpected exception while getting task: 5c7e1419-b026-4a93-ac9e-b718af19241d, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1...n Academy en français'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:51,427: ERROR] unexpected exception while getting task: 60265199-957e-43ed-b800-ae273c5f6c61, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...eos_en_{slug}_{period}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:51,810: ERROR] unexpected exception while getting task: 6063ff44-116e-495c-aef3-98cebb7c7437, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:52,996: ERROR] unexpected exception while getting task: 61555442-9b51-468f-a29d-65fb2a8db1dd, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:21:55,575: ERROR] unexpected exception while getting task: 63043b23-3d8f-4361-b224-550a70a42814, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:21:57,992: ERROR] unexpected exception while getting task: 64cd2a8b-a117-493e-b331-80ab1fa06cfe, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:06,198: ERROR] unexpected exception while getting task: 6af287ed-9766-4899-a3b2-19ad85bf39fb, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:15,148: ERROR] unexpected exception while getting task: 708199f1-c468-4e1e-b8a1-c651aa155e41, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:20,288: ERROR] unexpected exception while getting task: 737322c5-12e8-4490-a0b1-25bca847f19c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLC35FDJiECFQxajo...r emergency situations'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:24,496: ERROR] unexpected exception while getting task: 75cc2d63-728c-495b-80d3-fbfe30cc1bce, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1... Academy en français!'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:26,981: ERROR] unexpected exception while getting task: 7729be05-e225-4d9c-96be-85d0362e75f3, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1... Academy en français!'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:27,965: ERROR] unexpected exception while getting task: 77e5af4e-203e-40aa-8213-461380c21194, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLC35FDJiECFQxajo...r emergency situations'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:33,741: ERROR] unexpected exception while getting task: 7b81ff54-e7e1-49c9-9c21-b616524e4750, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:22:35,736: ERROR] unexpected exception while getting task: 7cbe6694-53e6-47c0-bc69-0c68894827c4, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:41,070: ERROR] unexpected exception while getting task: 7fb8f1e7-c004-44dc-ad0d-8150fbf28a48, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1... Academy en français!'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:45,160: ERROR] unexpected exception while getting task: 8225fbb9-724c-49c5-87b6-3b9101a1b5f3, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:48,664: ERROR] unexpected exception while getting task: 83f7db66-13ca-4518-a7f7-f7abdf65d961, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:50,897: ERROR] unexpected exception while getting task: 851998f0-8b7e-4c44-96ac-a638a1910bf0, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:57,662: ERROR] unexpected exception while getting task: 88ffb8b0-5185-4921-8e59-270eeb1d6c20, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:22:58,988: ERROR] unexpected exception while getting task: 89f73aa4-7497-449f-b0b6-73f3e7da35ef, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:22:59,116: ERROR] unexpected exception while getting task: 8a07fc66-a0c8-4881-baa8-c41098a0f384, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:00,593: ERROR] unexpected exception while getting task: 8ae4669f-ba87-4db4-b8e6-7de2b392112e, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:01,426: ERROR] unexpected exception while getting task: 8ba6d15e-32c6-426e-98c7-eaf72160532d, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:23:07,091: ERROR] unexpected exception while getting task: 8fc1145e-c3f8-4727-bc93-d8836926100b, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:08,572: ERROR] unexpected exception while getting task: 90b116a9-6887-41a6-b397-397283afcef7, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'Madrasa', 'type':...أينما كانوا.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:10,594: ERROR] unexpected exception while getting task: 91b62464-f945-42e7-b3bb-57ac43f44279, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:18,474: ERROR] unexpected exception while getting task: 962ec902-98e4-40cd-8ced-92cc5b62dfcd, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...cademy Youtube Channel'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:18,987: ERROR] unexpected exception while getting task: 96832b6b-3b47-451b-8a23-54e390cc7151, 2 validation errors for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:23:24,157: ERROR] unexpected exception while getting task: 98d4ec9a-3750-49e1-8a67-b5c6b1dc13a7, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:24,355: ERROR] unexpected exception while getting task: 98f70efe-dcd7-486e-b438-9afe232bbb42, 2 validation errors for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:23:25,002: ERROR] unexpected exception while getting task: 9942ac8b-d49b-4d7d-9573-fc6fea714576, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:23:25,379: ERROR] unexpected exception while getting task: 999599ac-b0d5-475f-844f-3b26cf25039a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:25,909: ERROR] unexpected exception while getting task: 9a0233e9-4576-4c69-8433-69d15d18561d, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:28,477: ERROR] unexpected exception while getting task: 9b2fa147-7dcc-4c30-a0a1-d32708a774b1, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:29,049: ERROR] unexpected exception while getting task: 9b7b50ee-7418-4e01-996b-72d6efba96dc, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:35,646: ERROR] unexpected exception while getting task: 9fde5150-258f-4c52-89ac-c782de6c3522, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...eos_en_{slug}_{period}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:38,075: ERROR] unexpected exception while getting task: a1032f59-344f-4e98-933f-bc57e5e05e3a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:39,976: ERROR] unexpected exception while getting task: a2499c4d-f8f8-4050-8555-4fa9c116e727, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:41,464: ERROR] unexpected exception while getting task: a352339f-6ada-49ab-b64c-8937f8036a1a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'Madrasa', 'type':...أينما كانوا.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:44,295: ERROR] unexpected exception while getting task: a4f75fea-f287-42cc-b78e-13e8210de009, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:23:46,061: ERROR] unexpected exception while getting task: a5ac683d-97d7-4900-aaed-9da06e2d841d, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:23:52,382: ERROR] unexpected exception while getting task: a945ec05-db8b-4da4-9546-dbcdba1ff849, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:01,600: ERROR] unexpected exception while getting task: afb39089-387a-4339-93eb-8a4d0b0cf98c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:05,542: ERROR] unexpected exception while getting task: b1802f21-e01b-4eec-9d9a-6757effeea9a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1...n Academy en français'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:09,782: ERROR] unexpected exception while getting task: b36bd54f-9999-48f4-a5fc-72119af75c0b, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:10,340: ERROR] unexpected exception while getting task: b3c5f39b-cb8a-46c2-955d-9c442ed11d8c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'Madrasa', 'type':...أينما كانوا.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:16,698: ERROR] unexpected exception while getting task: b7c7ddd7-a88f-40c7-8469-aaa9a9d0d109, 2 validation errors for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:24:18,192: ERROR] unexpected exception while getting task: b89ec475-1a69-4d4d-8ed4-8b8b497ec9ce, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1... Academy en français!'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:19,417: ERROR] unexpected exception while getting task: b9b75b13-a31a-4d58-aa60-6e304353f300, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:20,606: ERROR] unexpected exception while getting task: baaf6fc1-196b-435f-be8e-038fe9afb4cd, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:24,557: ERROR] unexpected exception while getting task: bcf43443-0a2c-40f9-bae4-8e7391f93837, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:24,618: ERROR] unexpected exception while getting task: bd06cda4-1509-4a90-96b6-81d56e4c888a, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:24:29,268: ERROR] unexpected exception while getting task: bf88ea19-82b4-4bc0-87ce-ee7020e29e1e, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:24:31,815: ERROR] unexpected exception while getting task: c0d9d133-25dd-436e-a2ef-7be8139a629e, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:33,175: ERROR] unexpected exception while getting task: c1e58290-d7be-4e28-8b09-0fd82728b494, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:24:36,770: ERROR] unexpected exception while getting task: c44e52a4-3400-4025-a3c2-ba29029f11b2, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:40,032: ERROR] unexpected exception while getting task: c64648ae-9cb4-4036-9894-28a3b97bfe46, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:40,311: ERROR] unexpected exception while getting task: c682641a-9011-438f-8292-600f31e49836, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCfF2dJcCCXm6sVT-...لغة العربية.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:41,377: ERROR] unexpected exception while getting task: c70c9ccd-49aa-4df8-9c03-eda3bc1cb287, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:41,749: ERROR] unexpected exception while getting task: c724b8cc-a86d-4128-a60d-1447fb077c5c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLl8Rc2313eD6Tqnv...ntribusi di Wikipedia.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:42,491: ERROR] unexpected exception while getting task: c79f63af-2736-4281-807b-611db9489fba, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...eos_en_{slug}_{period}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:24:48,372: ERROR] unexpected exception while getting task: cb650c6f-c93c-40cb-886b-96ee392a7fae, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:00,014: ERROR] unexpected exception while getting task: d2998dcc-bf87-46b4-9fe5-08d4d27781e7, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:25:01,907: ERROR] unexpected exception while getting task: d3aa621e-e054-40a8-9706-e664ff226837, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:07,355: ERROR] unexpected exception while getting task: d6b9f9ed-9449-4fd4-a2de-122a2427d708, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:07,659: ERROR] unexpected exception while getting task: d6fb7f6b-2b52-4100-8849-26fa04d28472, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:13,365: ERROR] unexpected exception while getting task: d9eb33c4-ce01-4b0a-9815-517c188a23a0, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:25:15,128: ERROR] unexpected exception while getting task: db57c5fa-500d-4d36-b0b7-ec2741f876fd, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:25:22,439: ERROR] unexpected exception while getting task: df9e2bae-5e20-4a8c-ba4b-a8697142c7dc, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:25,145: ERROR] unexpected exception while getting task: e12045c1-8966-41d6-bff3-447cd22c35f1, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCK_veTewS819extd...ল ইউটিউব'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:27,770: ERROR] unexpected exception while getting task: e27ef666-3a11-443b-8bf1-e7b1ad174713, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCGQO3uUEXBLwDjNS...na en cualquier lugar.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:29,972: ERROR] unexpected exception while getting task: e3f76bef-ca66-4f8d-9870-af2805ffc3de, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:25:35,360: ERROR] unexpected exception while getting task: e7625aaa-690f-4c6b-b375-74012faa6a6a, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...cademy Youtube Channel'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:35,398: ERROR] unexpected exception while getting task: e76fb11c-8591-45ea-99b8-57e9a27781cc, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:37,711: ERROR] unexpected exception while getting task: e8bf3878-1a3a-4879-8835-9176664c1461, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLrei6UENqoSoVzBB...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:38,079: ERROR] unexpected exception while getting task: e8fc5b55-e5ff-45bc-9165-cab767c8ef33, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC4a-Gbdw7vOaccHm...cademy Youtube Channel'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:39,741: ERROR] unexpected exception while getting task: e9ba07e5-1f83-4c34-8fb7-15ecf84e155c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLl8Rc2313eD6Tqnv...ntribusi di Wikipedia.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:39,824: ERROR] unexpected exception while getting task: e9cd0569-d67a-46bc-a165-a032cf0c9795, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:49,929: ERROR] unexpected exception while getting task: eed04570-85a3-4271-96db-f4b67c914c62, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:50,459: ERROR] unexpected exception while getting task: eefedc7a-e312-455d-8867-661ec0fe05c5, 1 validation error for TaskFullSchema
+debug
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:25:50,803: ERROR] unexpected exception while getting task: ef4f2bec-0176-4f72-b018-89a2dc50aea5, 1 validation error for tedFlagsSchema
+name
+  Field required [type=missing, input_value={'debug': True, 'format':...cketName=org-kiwix-ted'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:52,179: ERROR] unexpected exception while getting task: f0355596-4892-403e-ac37-3d71bcc38fa9, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCPFc7-vFol1QBMZx...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:25:59,521: ERROR] unexpected exception while getting task: f4b4915b-4f95-423e-8dfe-ad9a593ef80d, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:26:01,336: ERROR] unexpected exception while getting task: f5a46161-3b1a-48a[I9-8283-413972c34b6c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCxJOha9_0qZHuGf1...n Academy en français'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:26:01,901: ERROR] unexpected exception while getting task: f6076daa-34ac-4215-b253-f526461c1d8c, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UC8hgx5hCiyDmO3Ue...için Youtube kanalı."}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:26:04,097: ERROR] unexpected exception while getting task: f72bd42b-d634-4244-b3b1-031888177f4f, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'UCbc1RY0McnikiEMD...Name=org-kiwix-youtube'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+[2025-10-16 20:26:12,456: ERROR] unexpected exception while getting task: fbf804b6-d0f7-4763-907b-b27ff137f3af, 1 validation error for TaskFullSchema
+container
+  Input should be a valid dictionary [type=dict_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+[2025-10-16 20:26:15,056: ERROR] unexpected exception while getting task: fd3e15ae-ff4a-41ff-8ac6-71682372852d, 1 validation error for youtubeFlagsSchema
+name
+  Field required [type=missing, input_value={'id': 'PLr5n3ojAJWjSVnG_...e school for ages 8-18'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
