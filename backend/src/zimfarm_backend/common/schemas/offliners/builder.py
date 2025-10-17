@@ -5,6 +5,7 @@ from itertools import chain
 from typing import Annotated, Any, Literal, Optional, cast
 
 from pydantic import (
+    ConfigDict,
     EmailStr,
     Field,
     WrapValidator,
@@ -203,6 +204,8 @@ def generate_similarity_data(
 def build_offliner_model(
     offliner: OfflinerSchema,
     schema: OfflinerSpecSchema,
+    *,
+    extra: Literal["allow", "ignore", "forbid"] = "allow",
 ):
     fields: dict[str, Annotated[Any, Any]] = {}
     for flag_name, flag_schema in schema.flags.items():
@@ -229,5 +232,6 @@ def build_offliner_model(
         offliner_id=(Literal[offliner.id], Field(alias="offliner_id")),
         __base__=get_base_model_cls(offliner.base_model),
         __validators__={**field_validators, **model_validators},
+        __config__=ConfigDict(extra=extra),
         **fields,
     )

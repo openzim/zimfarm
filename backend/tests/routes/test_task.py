@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
@@ -84,6 +85,41 @@ def test_get_task_with_auth(
             assert char == "*"
     else:
         assert config["offliner"]["mwPassword"] == "test-password"
+
+
+def test_get_obsolete_task(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_task: Callable[..., Task],
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+    task = create_task()
+    task.config["offliner"]["mwUrl"] = None  # Unset mandatory field
+    task.config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
+    flag_modified(task, "config")
+    dbsession.add(task)
+    dbsession.flush()
+
+    response = client.get(
+        f"/v2/tasks/{task.id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    task_data = response.json()
+    assert "config" in task_data
+    assert "offliner" in task_data["config"]
+    assert "mwUrl" in task_data["config"]["offliner"]
+    assert task_data["config"]["offliner"]["mwUrl"] is None
+    assert "oldFlag" in task_data["config"]["offliner"]
+    assert task_data["config"]["offliner"]["oldFlag"] == "anyValue"
 
 
 def test_create_task_no_permission(

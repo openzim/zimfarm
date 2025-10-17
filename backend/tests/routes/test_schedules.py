@@ -450,6 +450,97 @@ def test_get_schedule(
         assert data["config"]["offliner"]["mwPassword"] == "test-password"
 
 
+def test_get_obsolete_schedule(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
+    mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule_config = create_schedule_config()
+    raw_schedule_config = schedule_config.model_dump(
+        mode="json", context={"show_secrets": True}
+    )
+    raw_schedule_config["offliner"]["mwUrl"] = None  # Unset mandatory field
+    raw_schedule_config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
+    schedule = create_schedule(
+        name="test_schedule", raw_schedule_config=raw_schedule_config
+    )
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.get(
+        f"/v2/schedules/{schedule.name}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    schedule_data = response.json()
+    assert "config" in schedule_data
+    assert "offliner" in schedule_data["config"]
+    assert "mwUrl" in schedule_data["config"]["offliner"]
+    assert schedule_data["config"]["offliner"]["mwUrl"] is None
+    assert "oldFlag" in schedule_data["config"]["offliner"]
+    assert schedule_data["config"]["offliner"]["oldFlag"] == "anyValue"
+
+
+def test_patch_obsolete_schedule(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
+    mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
+):
+    user = create_user(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+
+    schedule_config = create_schedule_config()
+    raw_schedule_config = schedule_config.model_dump(
+        mode="json", context={"show_secrets": True}
+    )
+    raw_schedule_config["offliner"]["mwUrl"] = None  # Unset mandatory field
+    raw_schedule_config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
+    schedule = create_schedule(
+        name="test_schedule", raw_schedule_config=raw_schedule_config
+    )
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    response = client.patch(
+        f"/v2/schedules/{schedule.name}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "flags": {"mwUrl": "http://fr.wikipedia.org", "adminEmail": "bob@acme.com"},
+        },
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    schedule_data = response.json()
+    assert "config" in schedule_data
+    assert "offliner" in schedule_data["config"]
+    assert "mwUrl" in schedule_data["config"]["offliner"]
+    assert schedule_data["config"]["offliner"]["mwUrl"] == "http://fr.wikipedia.org/"
+    assert "oldFlag" not in schedule_data["config"]["offliner"]
+
+
 def test_update_schedule_unauthorized(
     client: TestClient,
     create_user: Callable[..., User],

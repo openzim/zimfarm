@@ -156,6 +156,7 @@ def create_schedule(
                 offliner_definition=offliner_definition,
                 data=request.config["offliner"],
                 skip_validation=False,
+                extra="ignore",
             ),
         }
     )
@@ -418,6 +419,7 @@ def update_schedule(
                     offliner_definition=offliner_definition,
                     data={**request.flags, "offliner_id": request.offliner},
                     skip_validation=False,
+                    extra="ignore",
                 ),
             }
         )
@@ -471,6 +473,7 @@ def update_schedule(
                     offliner_definition=offliner_definition,
                     data={**request.flags, "offliner_id": offliner_definition.offliner},
                     skip_validation=False,
+                    extra="ignore",
                 ),
             }
         )
