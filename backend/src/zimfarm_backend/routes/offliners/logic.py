@@ -4,14 +4,20 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, Path, Query, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
+from zimfarm_backend.common.roles import RoleEnum, get_role_for
+from zimfarm_backend.common.schemas.fields import (
+    LimitFieldMax200,
+    SkipField,
+)
 from zimfarm_backend.common.schemas.models import (
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
+from zimfarm_backend.db.models import User
+from zimfarm_backend.db.offliner import create_offliner as db_create_offliner
 from zimfarm_backend.db.offliner import get_all_offliners
 from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
 from zimfarm_backend.db.offliner_definition import (
@@ -23,10 +29,11 @@ from zimfarm_backend.db.offliner_definition import (
 from zimfarm_backend.db.offliner_definition import (
     get_offliner_versions as db_get_offliner_versions,
 )
-from zimfarm_backend.routes.dependencies import gen_dbsession
+from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
 from zimfarm_backend.routes.http_errors import UnauthorizedError
 from zimfarm_backend.routes.models import ListResponse
 from zimfarm_backend.routes.offliners.models import (
+    OfflinerCreateSchema,
     OfflinerDefinitionCreateSchema,
 )
 
@@ -74,6 +81,30 @@ async def get_initial_offliner_version(
             ),
         }
     )
+
+
+@router.post("")
+async def create_offliner(
+    request: OfflinerCreateSchema,
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Create an offliner"""
+    # register new offliners? Because existing permissions overlap and it might not be
+    # feasible for someone who can create a schedule to create an offliner.
+    if not (current_user.scope and get_role_for(current_user.scope) == RoleEnum.ADMIN):
+        raise UnauthorizedError("You do not have permissions to create an offliner.")
+
+    db_create_offliner(
+        session,
+        offliner_id=request.offliner_id,
+        base_model=request.base_model,
+        docker_image_name=request.docker_image_name,
+        command_name=request.command_name,
+        ci_secret_hash=generate_password_hash(request.ci_secret_hash),
+    )
+
+    return Response(status_code=HTTPStatus.CREATED)
 
 
 @router.get("/{offliner_id}/versions")
