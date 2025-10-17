@@ -1,14 +1,13 @@
-FROM python:3.13-alpine
+FROM python:3.13-slim-bookworm
 
-RUN apk add --no-cache openssl gcc libffi-dev libc-dev openssh-keygen && \
-    rm -rf /var/cache/apk/* && \
-    pip install --no-cache-dir -U pip
-
+# install Python dependencies first (since they change more rarely than src code)
 COPY pyproject.toml README.md /app/
+COPY src/zimfarm_backend/__about__.py /app/src/zimfarm_backend/__about__.py
+RUN pip install --no-cache-dir "/app[dev]"
+
 COPY src /app/src
 COPY tests /app/tests
 
-RUN cd /app && \
-    pip install .[dev]
+RUN pip install --no-cache-dir /app
 
 WORKDIR /app/
