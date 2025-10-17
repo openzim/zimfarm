@@ -381,7 +381,9 @@ def update_schedule(
     if (
         request.offliner
         and request.offliner
-        != schedule_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+        != schedule_config.offliner.root[  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+            "offliner_id"
+        ]
     ):
         # Case 1: Attempting to change the offliner
         if not request.flags:
@@ -443,7 +445,9 @@ def update_schedule(
             session,
             cast(
                 str,
-                schedule_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                schedule_config.offliner.root[  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                    "offliner_id"
+                ],
             ),
         )
         if request.version:

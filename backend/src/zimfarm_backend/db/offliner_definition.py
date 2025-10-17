@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -67,12 +67,15 @@ def create_offliner_instance(
     skip_validation: bool = True,
 ) -> BaseModel:
     """Create the offliner instance from the offliner definition and data"""
-    if isinstance(offliner_definition, OfflinerDefinition):
-        offliner_definition = create_offliner_definition_schema(offliner_definition)
-    return build_offliner_model(
-        offliner,
-        offliner_definition.schema_,
-    ).model_validate(data, context={"skip_validation": skip_validation})
+    if skip_validation:
+        return RootModel[dict[str, Any]].model_validate(data)
+    else:
+        if isinstance(offliner_definition, OfflinerDefinition):
+            offliner_definition = create_offliner_definition_schema(offliner_definition)
+        return build_offliner_model(
+            offliner,
+            offliner_definition.schema_,
+        ).model_validate(data, context={"skip_validation": False})
 
 
 def get_offliner_definition_or_none(
