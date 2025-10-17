@@ -96,5 +96,11 @@
       "title": "Debug",
       "description": "Enable verbose output"
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "slug",
+      "transformers": [{ "name": "split", "operand": "~" }]
+    }
+  ]
 }

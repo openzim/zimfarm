@@ -78,6 +78,22 @@ class ModelValidatorSchema(CamelModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class TransformerSchema(CamelModel):
+    # the name of the transformer function to use for the field. If None, the field
+    # will be used as it is
+    name: Literal["split", "hostname"] | None = None
+    # the operand to use for the transformer function (if the function
+    # takes an operand)
+    operand: str | None = None
+
+
+class SimilarityDataSchema(CamelModel):
+    # the name of the flag to use for the similarity data
+    flag: str
+    # transformers are applied in sequential order
+    transformers: list[TransformerSchema]
+
+
 class OfflinerSpecSchema(CamelModel):
     flags: dict[str, FlagSchema]
     model_validators: list[ModelValidatorSchema] = Field(  # pyright: ignore
@@ -85,3 +101,6 @@ class OfflinerSpecSchema(CamelModel):
     )
     std_output: str | bool = Field(default=False)
     std_stats: str | bool = Field(default=False)
+    similarity_data: list[SimilarityDataSchema] = Field(  # pyright: ignore
+        default_factory=list
+    )

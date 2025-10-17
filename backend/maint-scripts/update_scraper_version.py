@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Script to update schedules and requested tasks with new image tags or offliner
 definitions.
@@ -54,6 +55,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend import logger
+from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import RequestedTask, Schedule
@@ -103,13 +105,19 @@ def update_entries(
             model.config["offliner"]["offliner_id"].astext == offliner.id
         )
     ).scalars():
+        obj_name = getattr(obj, "name", obj.id)
         if image_tag:
-            logger.info(f"setting {offliner.id} image tag to {args.image_tag}...")
+            logger.info(
+                f"setting {offliner.id} image tag for {model.__tablename__} {obj_name} "
+                f"to {args.image_tag}..."
+            )
             obj.config["image"]["tag"] = image_tag
             flag_modified(obj, "config")
 
         if offliner_definition:
-            logger.info(f"setting offliner defintion for {model.__tablename__}...")
+            logger.info(
+                f"setting offliner defintion for {model.__tablename__} {obj_name} ..."
+            )
             if name_mappings:
                 obj.config["offliner"] = update_offliner_flags(
                     offliner=offliner,
@@ -117,9 +125,12 @@ def update_entries(
                     data=obj.config["offliner"],
                     name_mappings=name_mappings,
                 )
-                flag_modified(obj, "config")
             obj.offliner_definition_id = offliner_definition.id
-
+            if isinstance(obj, Schedule):
+                obj.similarity_data = generate_similarity_data(
+                    obj.config["offliner"], offliner, offliner_definition.schema_
+                )
+            flag_modified(obj, "config")
         # Just needed to ensure our model still works
         if isinstance(obj, Schedule):
             create_schedule_full_schema(obj, offliner)

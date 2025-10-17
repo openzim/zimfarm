@@ -130,7 +130,7 @@ def test_create_schedule(
         enabled=True,
         notification=None,
         periodicity=SchedulePeriodicity.manually,
-        offliner_definition_id=mwoffliner_definition.id,
+        offliner_definition=mwoffliner_definition,
     )
 
     assert schedule.name == "test_schedule"
@@ -170,7 +170,7 @@ def test_create_duplicate_schedule_with_existing_name(
         enabled=True,
         notification=None,
         periodicity=SchedulePeriodicity.manually,
-        offliner_definition_id=mwoffliner_definition.id,
+        offliner_definition=mwoffliner_definition,
     )
     with pytest.raises(RecordAlreadyExistsError):
         create_schedule(
@@ -184,7 +184,7 @@ def test_create_duplicate_schedule_with_existing_name(
             enabled=True,
             notification=None,
             periodicity=SchedulePeriodicity.manually,
-            offliner_definition_id=mwoffliner_definition.id,
+            offliner_definition=mwoffliner_definition,
         )
 
 
@@ -219,7 +219,7 @@ def test_update_schedule(
             schedule_name=old_schedule.name,
             new_schedule_config=new_schedule_config,
             name=old_schedule.name + "_updated",
-            offliner_definition_id=mwoffliner_definition.id,
+            offliner_definition=mwoffliner_definition,
         ),
         mwoffliner,
     )
@@ -302,6 +302,7 @@ def test_get_schedules(
         requested_task = create_requested_task(schedule_name=schedule.name)
         task = create_task(requested_task=requested_task)
         schedule.most_recent_task = task
+        schedule.similarity_data = ["hello"]
         dbsession.add(schedule)
         dbsession.flush()
 
@@ -315,6 +316,7 @@ def test_get_schedules(
         requested_task = create_requested_task(schedule_name=schedule.name)
         task = create_task(requested_task=requested_task)
         schedule.most_recent_task = task
+        schedule.similarity_data = ["world"]
         dbsession.add(schedule)
         dbsession.flush()
 
@@ -328,6 +330,7 @@ def test_get_schedules(
         requested_task = create_requested_task(schedule_name=schedule.name)
         task = create_task(requested_task=requested_task)
         schedule.most_recent_task = task
+        schedule.similarity_data = ["foo", "bar"]
         dbsession.add(schedule)
         dbsession.flush()
 

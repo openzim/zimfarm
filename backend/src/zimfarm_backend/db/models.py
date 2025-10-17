@@ -208,6 +208,9 @@ class Schedule(Base):
     # context that a worker must have to run this schedule
     context: Mapped[str] = mapped_column(default="", server_default="", index=True)
     archived: Mapped[bool] = mapped_column(default=False, server_default=false())
+    similarity_data: Mapped[list[str]] = mapped_column(
+        default_factory=list, server_default="{}", index=True
+    )
 
     # use_alter is mandatory for alembic to break the dependency cycle
     # but it is still not totally handled automatically, the migration

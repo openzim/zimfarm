@@ -183,5 +183,11 @@
       "frozen": true,
       "default": true
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "domain",
+      "transformers": [{ "name": "hostname", "operand": null }]
+    }
+  ]
 }

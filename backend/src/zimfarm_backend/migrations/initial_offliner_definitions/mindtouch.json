@@ -148,5 +148,11 @@
       "description": "Output folder for ZIM file(s). Leave it as `/output`",
       "pattern": "^/output$"
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "library_url",
+      "transformers": [{ "name": "hostname", "operand": null }]
+    }
+  ]
 }

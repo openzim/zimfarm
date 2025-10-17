@@ -21,10 +21,12 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
 )
+from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
 from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
     LanguageSchema,
     MostRecentTaskSchema,
+    OfflinerDefinitionSchema,
     OfflinerSchema,
     ScheduleDurationSchema,
     ScheduleFullSchema,
@@ -230,6 +232,8 @@ def get_schedules(
     categories: list[ScheduleCategory] | None = None,
     tags: list[str] | None = None,
     archived: bool | None = None,
+    omit_names: list[str] | None = None,
+    similarity_data: list[str] | None = None,
 ) -> ScheduleListResult:
     """Get a list of schedules"""
     subquery = (
@@ -265,12 +269,20 @@ def get_schedules(
             # If a client provides an argument i.e it is not None,
             # we compare the corresponding model field against the argument,
             # otherwise, we compare the argument to its default which translates
-            # to a SQL true i.e we don't filter based on this argument.
+            # to a SQL true i.e we don't filter based on this argument (a no-op).
             (Schedule.archived == archived) | (archived is None),
             (Schedule.category.in_(categories or []) | (categories is None)),
             (Schedule.language_code.in_(lang or []) | (lang is None)),
             (Schedule.tags.contains(tags or []) | (tags is None)),
-            (Schedule.name.ilike(f"%{name}%") | (name is None)),
+            (
+                Schedule.similarity_data.overlap(similarity_data or [])
+                | (similarity_data is None)
+            ),
+            (
+                Schedule.name.ilike(f"%{name if name is not None else ''}%")
+                | (name is None)
+            ),
+            (Schedule.name.not_in(omit_names or []) | (omit_names is None)),
         )
         .offset(skip)
         .limit(limit)
@@ -340,7 +352,7 @@ def create_schedule(
     category: ScheduleCategory,
     language: LanguageSchema,
     config: ScheduleConfigSchema,
-    offliner_definition_id: UUID,
+    offliner_definition: OfflinerDefinitionSchema,
     tags: list[str],
     enabled: bool,
     notification: ScheduleNotificationSchema | None,
@@ -349,6 +361,7 @@ def create_schedule(
     comment: str | None = None,
 ) -> Schedule:
     """Create a new schedule"""
+    offliner = get_offliner(session, offliner_definition.offliner)
     schedule = Schedule(
         name=name,
         category=category,
@@ -359,8 +372,13 @@ def create_schedule(
         notification=notification.model_dump(mode="json") if notification else None,
         periodicity=periodicity,
         context=context or "",
+        similarity_data=generate_similarity_data(
+            config.offliner.model_dump(mode="json", exclude={"offliner_id"}),
+            offliner,
+            offliner_definition.schema_,
+        ),
     )
-    schedule.offliner_definition_id = offliner_definition_id
+    schedule.offliner_definition_id = offliner_definition.id
 
     schedule_duration = ScheduleDuration(
         value=DEFAULT_SCHEDULE_DURATION.value,
@@ -436,6 +454,7 @@ def create_schedule_full_schema(
         enabled=schedule.enabled,
         tags=schedule.tags,
         periodicity=schedule.periodicity,
+        similarity_data=schedule.similarity_data,
         notification=(
             ScheduleNotificationSchema.model_validate(schedule.notification)
             if schedule.notification
@@ -524,7 +543,7 @@ def update_schedule(
     author: str,
     *,
     schedule_name: str,
-    offliner_definition_id: UUID,
+    offliner_definition: OfflinerDefinitionSchema,
     new_schedule_config: ScheduleConfigSchema | None = None,
     language: LanguageSchema | None = None,
     name: str | None = None,
@@ -544,7 +563,7 @@ def update_schedule(
     if language:
         schedule.language_code = language.code
 
-    schedule.offliner_definition_id = offliner_definition_id
+    schedule.offliner_definition_id = offliner_definition.id
     schedule.name = name if name is not None else schedule.name
     schedule.category = category if category is not None else schedule.category
     schedule.tags = tags if tags is not None else schedule.tags
@@ -555,6 +574,13 @@ def update_schedule(
     if new_schedule_config:
         schedule.config = new_schedule_config.model_dump(
             mode="json", context={"show_secrets": True}
+        )
+        schedule.similarity_data = generate_similarity_data(
+            new_schedule_config.offliner.model_dump(
+                mode="json", exclude={"offliner_id"}
+            ),
+            get_offliner(session, offliner_definition.offliner),
+            offliner_definition.schema_,
         )
     schedule.is_valid = is_valid if is_valid is not None else schedule.is_valid
 

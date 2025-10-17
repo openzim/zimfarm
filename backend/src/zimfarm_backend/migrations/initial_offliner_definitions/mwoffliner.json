@@ -276,5 +276,11 @@
       "description": "Use a specific language variant, only for wikis supporting language conversion",
       "required": false
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "mwUrl",
+      "transformers": [{ "name": "hostname", "operand": null }]
+    }
+  ]
 }

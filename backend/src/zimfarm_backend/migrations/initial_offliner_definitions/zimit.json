@@ -969,5 +969,14 @@
       "pattern": "^([a-z0-9\\-\\.]+_)([a-z\\-]+_)([a-z0-9\\-\\.]+)$",
       "relaxedPattern": "^[A-Za-z0-9._-]+$"
     }
-  }
+  },
+  "similarityData": [
+    {
+      "flag": "seeds",
+      "transformers": [
+        { "name": "split", "operand": "," },
+        { "name": "hostname", "operand": null }
+      ]
+    }
+  ]
 }
