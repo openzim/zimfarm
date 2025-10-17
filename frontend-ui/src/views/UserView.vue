@@ -64,37 +64,54 @@
                       </a>
                     </p>
 
-                    <!-- Permissions Table -->
+                    <!-- Permissions List -->
                     <v-card class="mb-4" variant="outlined">
                       <v-card-title class="text-subtitle-1">
                         <v-icon class="mr-2">mdi-shield-account</v-icon>
                         Permissions
                       </v-card-title>
                       <v-card-text>
-                        <v-table density="compact">
-                          <thead>
-                            <tr>
-                              <th>Permission</th>
-                              <th
-                                v-for="header in scopeMainHeaders"
-                                :key="header"
-                                class="text-center"
-                              >
-                                {{ header }}
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="row in sortedScope" :key="row.name">
-                              <th>{{ row.name }}</th>
-                              <td v-for="(perm, name) in row.perms" :key="name" class="text-center">
-                                <v-icon v-if="perm" color="success" size="small">
-                                  mdi-check
-                                </v-icon>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </v-table>
+                        <div
+                          v-if="Object.keys(scope).length === 0"
+                          class="text-body-2 text-medium-emphasis"
+                        >
+                          No permissions assigned
+                        </div>
+                        <v-list v-else density="compact" class="pa-0">
+                          <v-list-item
+                            v-for="(namespacePermissions, namespace) in scope"
+                            :key="namespace"
+                          >
+                            <template #prepend>
+                              <v-icon color="primary" size="small">
+                                {{ getNamespaceIcon(namespace) }}
+                              </v-icon>
+                            </template>
+
+                            <v-list-item-title class="text-body-1 font-weight-medium">
+                              {{ formatNamespaceName(namespace) }}
+                            </v-list-item-title>
+
+                            <v-list-item-subtitle>
+                              <div class="d-flex flex-wrap ga-1 mt-2">
+                                <v-chip
+                                  v-for="permissionName in getAllPermissionsForNamespace(namespace)"
+                                  :key="permissionName"
+                                  :color="
+                                    namespacePermissions[permissionName] ? 'primary' : 'dark-grey'
+                                  "
+                                  :variant="
+                                    namespacePermissions[permissionName] ? 'flat' : 'outlined'
+                                  "
+                                  size="x-small"
+                                  class="text-caption text-uppercase"
+                                >
+                                  {{ formatPermissionName(permissionName) }}
+                                </v-chip>
+                              </div>
+                            </v-list-item-subtitle>
+                          </v-list-item>
+                        </v-list>
                       </v-card-text>
                     </v-card>
 
@@ -235,35 +252,55 @@ const canDeleteUser = computed(() => authStore.hasPermission('users', 'delete'))
 
 const canSSHKeyUsers = computed(() => authStore.hasPermission('users', 'ssh_keys'))
 
-const scopeMainHeaders = computed(() => Object.keys(scope.value))
+const getNamespaceIcon = (namespace: string): string => {
+  const iconMap: Record<string, string> = {
+    tasks: 'mdi-clipboard-list',
+    schedules: 'mdi-calendar-clock',
+    requested_tasks: 'mdi-clipboard-check',
+    users: 'mdi-account-group',
+    workers: 'mdi-server',
+    zim: 'mdi-package-variant',
+  }
+  return iconMap[namespace] || 'mdi-folder'
+}
 
-const scopeSecondaryHeaders = computed(() => {
-  const headers: string[] = []
-  scopeMainHeaders.value.forEach((namespace) => {
-    const namespaceScope = scope.value[namespace]
-    if (namespaceScope) {
-      Object.keys(namespaceScope).forEach((permName) => {
-        if (headers.indexOf(permName) === -1) {
-          headers.push(permName)
-        }
-      })
-    }
-  })
-  return headers
-})
+const formatNamespaceName = (namespace: string): string => {
+  const nameMap: Record<string, string> = {
+    tasks: 'Tasks',
+    schedules: 'Schedules',
+    requested_tasks: 'Requested Tasks',
+    users: 'Users',
+    workers: 'Workers',
+    zim: 'ZIM Files',
+  }
+  return nameMap[namespace] || namespace.charAt(0).toUpperCase() + namespace.slice(1)
+}
 
-const sortedScope = computed(() => {
-  const rows: Array<{ name: string; perms: Record<string, boolean> }> = []
-  scopeSecondaryHeaders.value.forEach((permName) => {
-    const row = { name: permName, perms: {} as Record<string, boolean> }
-    scopeMainHeaders.value.forEach((namespace) => {
-      const namespaceScope = scope.value[namespace]
-      row.perms[namespace] = namespaceScope ? namespaceScope[permName] || false : false
-    })
-    rows.push(row)
-  })
-  return rows
-})
+const formatPermissionName = (permission: string): string => {
+  const nameMap: Record<string, string> = {
+    read: 'Read',
+    create: 'Create',
+    update: 'Update',
+    delete: 'Delete',
+    cancel: 'Cancel',
+    archive: 'Archive',
+    request: 'Request',
+    unrequest: 'Unrequest',
+    secrets: 'Secrets',
+    change_password: 'Change Password',
+    ssh_keys: 'SSH Keys',
+    upload: 'Upload',
+    checkin: 'Check-in',
+  }
+  return nameMap[permission] || permission.charAt(0).toUpperCase() + permission.slice(1)
+}
+
+const getAllPermissionsForNamespace = (namespace: string): string[] => {
+  if (scope.value[namespace]) {
+    return Object.keys(scope.value[namespace])
+  }
+  return []
+}
 
 // Methods
 const confirmDelete = (sshKey: { name: string; fingerprint: string }) => {

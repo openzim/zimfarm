@@ -85,7 +85,7 @@ async def get_task(
     task = db_get_task(db_session, task_id)
     if not (
         current_user
-        and check_user_permission(current_user, namespace="tasks", name="create")
+        and check_user_permission(current_user, namespace="tasks", name="secrets")
     ):
         task.notification = None
         show_secrets = False

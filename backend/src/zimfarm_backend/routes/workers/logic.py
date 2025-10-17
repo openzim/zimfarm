@@ -67,7 +67,7 @@ async def update_worker(
     """Update a worker."""
     worker = db_get_worker(session, worker_name=name)
 
-    if not (check_user_permission(current_user, namespace="users", name="update")):
+    if not (check_user_permission(current_user, namespace="workers", name="update")):
         raise UnauthorizedError("You are not allowed to access this resource")
 
     if worker.deleted:
@@ -103,6 +103,9 @@ async def check_in_worker(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Check in a worker."""
+    if not check_user_permission(current_user, namespace="workers", name="create"):
+        raise UnauthorizedError("You are not allowed to check in a worker")
+
     worker = db_get_worker_or_none(session, worker_name=name)
 
     if worker is not None:

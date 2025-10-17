@@ -22,5 +22,5 @@ import { computed } from 'vue'
 const authStore = useAuthStore()
 
 // Computed properties
-const canRestore = computed(() => authStore.hasPermission('schedules', 'update'))
+const canRestore = computed(() => authStore.hasPermission('schedules', 'archive'))
 </script>

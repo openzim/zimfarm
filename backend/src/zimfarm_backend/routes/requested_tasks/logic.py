@@ -35,13 +35,15 @@ from zimfarm_backend.db.requested_task import (
     find_requested_task_for_worker,
     get_requested_task_by_id,
     request_task,
-    update_requested_task_priority,
 )
 from zimfarm_backend.db.requested_task import (
     delete_requested_task as db_delete_requested_task,
 )
 from zimfarm_backend.db.requested_task import (
     get_requested_tasks as db_get_requested_tasks,
+)
+from zimfarm_backend.db.requested_task import (
+    update_requested_task_priority as db_update_requested_task_priority,
 )
 from zimfarm_backend.db.schedule import count_enabled_schedules
 from zimfarm_backend.db.user import check_user_permission
@@ -292,7 +294,7 @@ def get_requested_task(
     # on anonymous requests and requests for users without schedules_update
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="tasks", name="secrets")
     ):
         requested_task.notification = None
 
@@ -300,7 +302,7 @@ def get_requested_task(
     # does not matter
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="tasks", name="secrets")
     ):
         show_secrets = False
     else:
@@ -314,19 +316,21 @@ def get_requested_task(
 
 
 @router.patch("/{requested_task_id}")
-def update_requested_task(
+def update_requested_task_priority(
     requested_task_id: Annotated[UUID, Path()],
     update_requested_task_schema: UpdateRequestedTaskSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> RequestedTaskFullSchema:
     """Update the priority of a requested task."""
-    if not check_user_permission(current_user, namespace="tasks", name="update"):
+    if not check_user_permission(
+        current_user, namespace="requested_tasks", name="update"
+    ):
         raise ForbiddenError("You are not allowed to update requested tasks")
 
     get_requested_task_by_id(session, requested_task_id)
 
-    return update_requested_task_priority(
+    return db_update_requested_task_priority(
         session, requested_task_id, update_requested_task_schema.priority
     )
 
