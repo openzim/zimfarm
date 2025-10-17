@@ -16,6 +16,7 @@ from pydantic import (
 )
 from pydantic_core.core_schema import SerializationInfo
 
+from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.enums import Platform, WarehousePath
 
 
@@ -116,13 +117,15 @@ ZIMMetadataString = Annotated[
 ]
 
 
-def show_secrets(value: Any, handler: Any, info: SerializationInfo) -> Any:
+def show_secrets(value: Any, _: Any, info: SerializationInfo) -> Any:
     """Show secret values in serialization"""
     context = info.context
+    value = value if isinstance(value, SecretStr) else SecretStr(value)
     if context and context.get("show_secrets"):
-        if isinstance(value, SecretStr):
-            return value.get_secret_value()
-    return handler(value, info)
+        value = value.get_secret_value()
+    else:
+        value = "*" * SECRET_STRING_LENGTH
+    return value
 
 
 def skip_validation(

@@ -100,8 +100,8 @@ SLACK_USERNAME = getenv("SLACK_USERNAME")
 SLACK_EMOJI = getenv("SLACK_EMOJI")
 SLACK_ICON = getenv("SLACK_ICON")
 
-# string to replace hidden secrets with
-SECRET_REPLACEMENT = "--------"  # nosec
+# length of secret strings
+SECRET_STRING_LENGTH = int(getenv("SECRET_STRING_LENGTH", default=24))
 
 # ###
 # workers whitelist management

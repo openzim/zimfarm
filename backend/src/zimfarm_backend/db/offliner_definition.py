@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -65,14 +65,16 @@ def create_offliner_instance(
     offliner_definition: OfflinerDefinitionSchema | OfflinerDefinition,
     data: dict[str, Any],
     skip_validation: bool = True,
+    extra: Literal["allow", "ignore", "forbid"] = "allow",
 ) -> BaseModel:
     """Create the offliner instance from the offliner definition and data"""
     if isinstance(offliner_definition, OfflinerDefinition):
         offliner_definition = create_offliner_definition_schema(offliner_definition)
-    return build_offliner_model(
-        offliner,
-        offliner_definition.schema_,
-    ).model_validate(data, context={"skip_validation": skip_validation})
+    model = build_offliner_model(offliner, offliner_definition.schema_, extra=extra)
+    if skip_validation:
+        return model.model_construct(**data)
+    else:
+        return model.model_validate(data, context={"skip_validation": skip_validation})
 
 
 def get_offliner_definition_or_none(
@@ -207,6 +209,7 @@ def update_offliner_flags(
         offliner_definition=offliner_definition,
         data=new_data,
         skip_validation=True,
+        extra="allow",
     ).model_dump(mode="json")
 
 
