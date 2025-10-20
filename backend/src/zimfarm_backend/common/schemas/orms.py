@@ -82,6 +82,34 @@ class TaskLightSchema(BaseTaskSchema):
     config: ConfigWithOnlyResourcesSchema
 
 
+class CMSStatusSchema(BaseModel):
+    status_code: int | None = None
+    succeeded: bool | None = None
+    on: datetime.datetime | None = None
+    book_id: UUID | None = None
+    title_ident: str | None = None
+
+
+class TaskFileSchema(BaseModel):
+    """
+    Schema for reading the files associated with a task
+    """
+
+    name: str
+    size: int | None = None
+    status: str
+    cms: CMSStatusSchema | None = None
+    created_timestamp: datetime.datetime | None = None
+    uploaded_timestamp: datetime.datetime | None = None
+    failed_timestamp: datetime.datetime | None = None
+    check_timestamp: datetime.datetime | None = None
+
+    check_result: int | None = None
+    check_log: str | None = None
+    check_details: dict[str, Any] | None = None
+    info: dict[str, Any] = Field(default_factory=dict)
+
+
 class TaskFullSchema(BaseTaskSchema):
     """
     Schema for reading a task model with all fields
@@ -94,7 +122,7 @@ class TaskFullSchema(BaseTaskSchema):
     container: dict[str, Any]
     priority: int
     notification: ScheduleNotificationSchema | None
-    files: dict[str, Any]
+    files: dict[str, TaskFileSchema]
     upload: dict[str, Any]
     offliner_definition_id: UUID = Field(exclude=True)
     offliner: str
