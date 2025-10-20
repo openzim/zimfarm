@@ -7,7 +7,7 @@ EXAMPLES:
 
 1. Update the similarity data for all offliner definitions. This updates the recipes
    similarity data too. Input can be a JSON file or sent via stdin.
-   ./update_scraper_version.py -o mwoffliner -s simialrity_data.in
+   ./update_similarity_data.py -o mwoffliner -s simialrity_data.in
 
 2 To update via stdin:
    echo '[
@@ -21,7 +21,7 @@ EXAMPLES:
         ]
       }
     ]' \
-    | ./update_scraper_version.py \
+    | ./update_similarity_data.py \
       -o mwoffliner \
       -s
 """
