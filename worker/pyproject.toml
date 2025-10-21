@@ -21,7 +21,7 @@ dependencies = [
     "humanfriendly == 10.0",
     "cryptography == 45.0.3",
     "docker == 7.1.0",
-    "requests == 2.32.3",
+    "requests == 2.32.4",
     "psutil == 7.0.0",
 ]
 
