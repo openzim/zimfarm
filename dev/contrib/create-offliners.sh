@@ -22,7 +22,7 @@ setup_offliner_configs() {
     offliner_configs["devdocs"]='{"base_model":"DashModel","docker_image_name":"openzim/devdocs","command_name":"devdocs2zim"}'
     offliner_configs["freecodecamp"]='{"base_model":"DashModel","docker_image_name":"openzim/freecodecamp","command_name":"fcc2zim"}'
     offliner_configs["gutenberg"]='{"base_model":"DashModel","docker_image_name":"openzim/gutenberg","command_name":"gutenberg2zim"}'
-    offliner_configs["sotoki"]='{"base_model":"DashModel","docker_image_name":"openzim/sotoki","command_name":"sotoki2zim"}'
+    offliner_configs["sotoki"]='{"base_model":"DashModel","docker_image_name":"openzim/sotoki","command_name":"sotoki"}'
     offliner_configs["wikihow"]='{"base_model":"DashModel","docker_image_name":"openzim/wikihow","command_name":"wikihow2zim"}'
     offliner_configs["ifixit"]='{"base_model":"DashModel","docker_image_name":"openzim/ifixit","command_name":"ifixit2zim"}'
     offliner_configs["mwoffliner"]='{"base_model":"DashModel","docker_image_name":"openzim/mwoffliner","command_name":"mwoffliner"}'
