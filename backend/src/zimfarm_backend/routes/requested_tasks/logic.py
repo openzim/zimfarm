@@ -49,7 +49,7 @@ from zimfarm_backend.db.worker import get_worker, update_worker
 from zimfarm_backend.routes.dependencies import (
     get_current_user,
     get_current_user_or_none,
-    get_current_user_or_none_with_session,
+    get_current_user_with_session,
 )
 from zimfarm_backend.routes.http_errors import (
     BadRequestError,
@@ -175,7 +175,7 @@ def get_requested_tasks_for_worker(
     avail_disk: Annotated[ZIMDisk, Query()],
     session: Annotated[OrmSession, Depends(gen_manual_dbsession)],
     current_user: Annotated[
-        User, Depends(get_current_user_or_none_with_session(session_type="manual"))
+        User, Depends(get_current_user_with_session(session_type="manual"))
     ],
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
