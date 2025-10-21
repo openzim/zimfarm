@@ -37,7 +37,7 @@ from zimfarm_backend.common.schemas.orms import (
     ScheduleDurationSchema,
 )
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.exceptions import RecordDisabledError, RecordDoesNotExistError
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
@@ -626,9 +626,7 @@ def find_requested_task_for_worker(
         raise RecordDoesNotExistError(f"Worker {worker_name} not found")
 
     if worker.cordoned or worker.admin_disabled:
-        raise RecordDisabledError(
-            f"Worker '{worker.name}' is disabled from running tasks."
-        )
+        return None
 
     # retrieve list of all running tasks with associated resources
     all_running_tasks = get_currently_running_tasks(session, worker)

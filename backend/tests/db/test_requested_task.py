@@ -17,7 +17,7 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerSchema,
     ScheduleDurationSchema,
 )
-from zimfarm_backend.db.exceptions import RecordDisabledError, RecordDoesNotExistError
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
 from zimfarm_backend.db.requested_task import (
     RequestedTaskWithDuration,
@@ -987,7 +987,7 @@ def test_does_platform_allow_worker_to_run(
             "testworker",
             True,
             False,
-            pytest.raises(RecordDisabledError),
+            does_not_raise(),
             False,
             id="sufficient-resources-but-cordoned",
         ),
@@ -998,7 +998,7 @@ def test_does_platform_allow_worker_to_run(
             "testworker",
             False,
             True,
-            pytest.raises(RecordDisabledError),
+            does_not_raise(),
             False,
             id="sufficient-resources-but-admin-disabled",
         ),
