@@ -325,7 +325,7 @@ class WatcherRunner:
         success, status, payload = self.query_api(
             "GET",
             "/schedules/",
-            params={"category": ["stack_exchange"], "name": f"{domain}_.+"},
+            params={"category": ["stack_exchange"], "name": f"{domain}_"},
         )
         if not success:
             logger.error(f"Can't get `{domain}` schedules from zimfarm")
