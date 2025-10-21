@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - 'main'
-    tags:
-      - dnscache-v*
-      - uploader-v*
   workflow_dispatch:
     inputs:
       force:
@@ -18,7 +15,7 @@ on:
 jobs:
 
   paths-filter:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -59,7 +56,7 @@ jobs:
 
   dnscache:
     name: Dnscache build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.dnscache == 'true' || inputs.force }}
     steps:
@@ -81,7 +78,7 @@ jobs:
 
   uploader:
     name: Uploader build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.uploader == 'true' || inputs.force }}
     steps:
@@ -103,7 +100,7 @@ jobs:
 
   backend:
     name: Backend build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force }}
     steps:
@@ -138,7 +135,7 @@ jobs:
 
   frontend-ui:
     name: Frontend UI build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.frontend_ui == 'true' || inputs.force }}
     steps:
@@ -173,7 +170,7 @@ jobs:
 
   receiver:
     name: Receiver build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.receiver == 'true' || inputs.force }}
     steps:
@@ -201,7 +198,7 @@ jobs:
 
   task-worker:
     name: Task worker build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.task_worker == 'true' || inputs.force }}
     steps:
@@ -223,7 +220,7 @@ jobs:
 
   worker-manager:
     name: Worker manager build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.worker_manager == 'true' || inputs.force }}
     steps:
@@ -245,7 +242,7 @@ jobs:
 
   monitor:
     name: Monitor build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force }}
     steps:
@@ -266,7 +263,7 @@ jobs:
 
   watcher:
     name: Watcher build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.watcher == 'true' || inputs.force }}
     steps:
