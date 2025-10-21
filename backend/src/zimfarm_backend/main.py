@@ -11,7 +11,6 @@ from pydantic import ValidationError
 
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
-    RecordDisabledError,
     RecordDoesNotExistError,
 )
 from zimfarm_backend.routes import (
@@ -130,14 +129,6 @@ async def validation_error_handler(_, exc: ValidationError):
 async def record_does_not_exist_error_handler(_, exc: RecordDoesNotExistError):
     return JSONResponse(
         status_code=HTTPStatus.NOT_FOUND,
-        content={"success": False, "message": exc.detail},
-    )
-
-
-@app.exception_handler(RecordDisabledError)
-async def record_disabled_error_handler(_, exc: RecordDisabledError):
-    return JSONResponse(
-        status_code=HTTPStatus.SERVICE_UNAVAILABLE,
         content={"success": False, "message": exc.detail},
     )
 
