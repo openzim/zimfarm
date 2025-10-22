@@ -18,7 +18,7 @@ from werkzeug.security import generate_password_hash
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
-from zimfarm_backend.common.roles import ROLES, RoleEnum
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     LanguageSchema,
@@ -693,7 +693,8 @@ def create_user(
             username=data_gen.first_name(),
             password_hash=generate_password_hash("testpassword"),
             email=data_gen.safe_email(),
-            scope=ROLES[permission],
+            scope=None,
+            role=permission,
         )
         dbsession.add(user)
 

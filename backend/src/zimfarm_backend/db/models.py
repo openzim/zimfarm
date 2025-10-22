@@ -69,6 +69,7 @@ class User(Base):
     password_hash: Mapped[str | None]
     email: Mapped[str | None]
     scope: Mapped[dict[str, Any] | None]
+    role: Mapped[str] = mapped_column(server_default="custom")
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     ssh_keys: Mapped[list["Sshkey"]] = relationship(

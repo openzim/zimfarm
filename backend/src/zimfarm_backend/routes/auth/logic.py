@@ -11,6 +11,7 @@ from werkzeug.security import check_password_hash
 
 from zimfarm_backend import logger
 from zimfarm_backend.common import constants, getnow
+from zimfarm_backend.common.roles import ROLES
 from zimfarm_backend.db import gen_dbsession
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
@@ -49,7 +50,7 @@ def _access_token_response(db_session: OrmSession, db_user: User, response: Resp
             user_id=str(db_user.id),
             issue_time=issue_time,
             username=db_user.username,
-            scope=db_user.scope,
+            scope=ROLES.get(db_user.role, db_user.scope),
             email=db_user.email,
         ),
         refresh_token=str(

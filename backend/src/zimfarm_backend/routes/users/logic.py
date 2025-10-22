@@ -96,7 +96,8 @@ def create_user(
             username=user_schema.username,
             email=user_schema.email,
             password_hash=generate_password_hash(user_schema.password),
-            scope=ROLES[user_schema.role],
+            scope=None,
+            role=user_schema.role,
         )
     except RecordAlreadyExistsError as exc:
         raise BadRequestError("User already exists") from exc
@@ -104,8 +105,9 @@ def create_user(
     return UserSchemaWithSshKeys(
         username=user.username,
         email=user.email,
-        scope=user.scope,
+        scope=ROLES.get(user.role, user.scope),
         ssh_keys=[SshKeyRead.model_validate(ssh_key) for ssh_key in user.ssh_keys],
+        role=user.role,
     )
 
 
@@ -127,8 +129,9 @@ def get_user(
     return UserSchemaWithSshKeys(
         username=user.username,
         email=user.email,
-        scope=user.scope,
+        scope=ROLES.get(user.role, user.scope),
         ssh_keys=[SshKeyRead.model_validate(ssh_key) for ssh_key in user.ssh_keys],
+        role=user.role,
     )
 
 
@@ -147,10 +150,7 @@ def update_user(
             raise UnauthorizedError("You are not allowed to access this resource")
 
     db_update_user(
-        db_session,
-        user_id=user.id,
-        email=user_schema.email,
-        scope=ROLES.get(user_schema.role) if user_schema.role else None,
+        db_session, user_id=user.id, email=user_schema.email, role=user_schema.role
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 

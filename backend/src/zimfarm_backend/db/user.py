@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
+from zimfarm_backend.common.roles import ROLES, RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -67,9 +68,11 @@ def check_user_permission(
     name: str,
 ) -> bool:
     """Check if a user has a permission for a given namespace and name"""
-    if user.scope is None:
+    # Select the scope that comes with their role enum or scope from the DB
+    scope = ROLES.get(user.role, user.scope)
+    if not scope:
         return False
-    return user.scope.get(namespace, {}).get(name, False)
+    return scope.get(namespace, {}).get(name, False)
 
 
 def update_user_password(
@@ -119,14 +122,18 @@ def create_user(
     username: str,
     email: str,
     password_hash: str,
-    scope: dict[str, Any],
+    scope: dict[str, Any] | None,
+    role: str,
 ) -> User:
     """Create a new user"""
+    if role != "custom" and scope is not None:
+        raise ValueError("No scopes should be defined for non-custom roles")
     user = User(
         username=username,
         email=email,
         password_hash=password_hash,
         scope=scope,
+        role=role,
         deleted=False,
     )
     session.add(user)
@@ -142,14 +149,14 @@ def update_user(
     *,
     user_id: UUID,
     email: str | None,
-    scope: dict[str, Any] | None,
+    role: RoleEnum | None,
 ) -> None:
     """Update a user"""
     values = {}
     if email is not None:
         values["email"] = email
-    if scope is not None:
-        values["scope"] = scope
+    if role is not None:
+        values["role"] = role
     if not values:
         return
     session.execute(update(User).where(User.id == user_id).values(**values))
