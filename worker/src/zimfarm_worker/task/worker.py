@@ -117,6 +117,8 @@ class TaskWorker(BaseWorker):
         self.host_logsdir: Path | None = None  # path on host where logs are stored
         self.scraper_succeeded: bool | None = None  # whether scraper succeeded
 
+        self.max_memory_usage: int = 0  # maximum memory used by scraper
+
         # register stop/^C
         self.register_signals()
 
@@ -187,13 +189,17 @@ class TaskWorker(BaseWorker):
         scraper_stats = self.scraper.stats(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
             stream=False
         )
+        scraper_stats = cast(dict[str, Any], scraper_stats)
+        # update statistics
+        self.max_memory_usage = max(
+            [
+                scraper_stats.get("memory_stats", {}).get("usage", 0),
+                self.max_memory_usage,
+            ]
+        )
         stats: dict[str, Any] = {
             "memory": {
-                "max_usage": scraper_stats.get(  # pyright: ignore[reportUnknownMemberType]
-                    "memory_stats", {}
-                ).get(
-                    "max_usage"
-                )
+                "max_usage": self.max_memory_usage,
             }
         }
 
