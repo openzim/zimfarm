@@ -129,7 +129,11 @@
         <template #[`item.duration`]="{ item }">
           {{
             formatDurationBetween(
-              getTimestampStringForStatus(item.timestamp, 'started'),
+              getTimestampStringForStatus(
+                item.timestamp,
+                'started',
+                getTimestampStringForStatus(item.timestamp, 'reserved'),
+              ),
               item.updated_at,
             )
           }}
