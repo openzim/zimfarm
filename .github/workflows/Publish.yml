@@ -26,7 +26,7 @@ jobs:
       watcher: ${{ steps.filter.outputs.watcher }}
       task_worker: ${{ steps.filter.outputs.task_worker }}
       worker_manager: ${{ steps.filter.outputs.worker_manager }}
-      healtcheck: ${{ steps.filter.outputs.healthcheck }}
+      healthcheck: ${{ steps.filter.outputs.healthcheck }}
 
     steps:
       - uses: actions/checkout@v5
@@ -297,7 +297,7 @@ jobs:
           image-name: openzim/zimfarm-healthcheck
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: healtcheck
+          context: healthcheck
           registries: ghcr.io
           credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
