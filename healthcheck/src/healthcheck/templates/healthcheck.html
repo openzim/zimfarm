@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Current system status." />
+    <meta http-equiv="refresh" content="300" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', path='images/favicon-96x96.png') }}"
+      sizes="96x96"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', path='images/logo.svg') }}"
+    />
+    <link
+      rel="shortcut icon"
+      type="image/x-icon"
+      href="{{ url_for('static', path='images/favicon.ico') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="{{ url_for('static', path='images/apple-touch-icon.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="57x57"
+      href="{{ url_for('static', path='images/apple-touch-icon-57x57.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="72x72"
+      href="{{ url_for('static', path='images/apple-touch-icon-72x72.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="{{ url_for('static', path='images/apple-touch-icon-76x76.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="114x114"
+      href="{{ url_for('static', path='images/apple-touch-icon-114x114.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="{{ url_for('static', path='images/apple-touch-icon-120x120.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="144x144"
+      href="{{ url_for('static', path='images/apple-touch-icon-144x144.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="{{ url_for('static', path='images/apple-touch-icon-152x152.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="{{ url_for('static', path='images/apple-touch-icon-180x180.png') }}"
+    />
+    <link
+      rel="manifest"
+      href="{{ url_for('static', path='images/site.webmanifest') }}"
+    />
+
+    <title>Zimfarm Healthcheck</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link
+      href="{{ url_for('static', path='css/healthcheck.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="d-flex align-items-center mb-4">
+        <img
+          src="{{ url_for('static', path='images/logo.svg') }}"
+          alt="Zimfarm Logo"
+          class="m-2"
+          style="height: 50px"
+        />
+      </div>
+      <header>
+        {% if global_status %}
+        <h1 class="alert alert-success">All systems Operational!</h1>
+        {% else %}
+        <h1 class="alert alert-warning">Ongoing incident or issue…</h1>
+        {% endif %}
+      </header>
+      <section>
+        <table class="table table-stripped">
+          <tr>
+            <th colspan="2">System</th>
+            <th class="text-right">Status</th>
+          </tr>
+          <tr>
+            <th>Authentication</th>
+            <td>Can authenticate with Zimfarm API</td>
+            <td class="text-right {{ auth.success|status_class }}">
+              {{ auth.success|status_text }}
+            </td>
+          </tr>
+          <tr>
+            <th>Database</th>
+            <td>Can connect to and execute query on database</td>
+            <td class="text-right {{ database.success|status_class }}">
+              {{ database.success|status_text }}
+            </td>
+          </tr>
+          <tr>
+            <th>Workers</th>
+            <td>At least one worker is currently connected and online</td>
+            <td class="text-right {{ workers.success|status_class }}">
+              {{ workers.success|status_text }}
+            </td>
+          </tr>
+        </table>
+      </section>
+    </div>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

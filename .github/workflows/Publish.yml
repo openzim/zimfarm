@@ -3,17 +3,16 @@ name: Publish
 on:
   push:
     branches:
-      - 'main'
+      - "main"
   workflow_dispatch:
     inputs:
       force:
-        description: 'Force publish all components'
+        description: "Force publish all components"
         required: false
         type: boolean
         default: false
 
 jobs:
-
   paths-filter:
     runs-on: ubuntu-24.04
 
@@ -27,32 +26,35 @@ jobs:
       watcher: ${{ steps.filter.outputs.watcher }}
       task_worker: ${{ steps.filter.outputs.task_worker }}
       worker_manager: ${{ steps.filter.outputs.worker_manager }}
+      healtcheck: ${{ steps.filter.outputs.healthcheck }}
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          backend:
-            - 'backend/**'
-          frontend_ui:
-            - 'frontend-ui/**'
-          dnscache:
-            - 'dnscache/**'
-          monitor:
-            - 'monitor/**'
-          receiver:
-            - 'receiver/**'
-          uploader:
-            - 'uploader/**'
-          watcher:
-            - 'watcher/**'
-          task_worker:
-            - 'worker/**'
-          worker_manager:
-            - 'worker/**'
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend_ui:
+              - 'frontend-ui/**'
+            dnscache:
+              - 'dnscache/**'
+            monitor:
+              - 'monitor/**'
+            receiver:
+              - 'receiver/**'
+            uploader:
+              - 'uploader/**'
+            watcher:
+              - 'watcher/**'
+            task_worker:
+              - 'worker/**'
+            worker_manager:
+              - 'worker/**'
+            healthcheck:
+              - 'healthcheck/**'
 
   dnscache:
     name: Dnscache build
@@ -72,8 +74,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: dnscache
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   uploader:
@@ -94,8 +95,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: uploader
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   backend:
@@ -115,8 +115,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: backend
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
       - name: Deploy Zimfarm API changes to openzim.org
@@ -150,8 +149,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: frontend-ui
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
       - name: Deploy Zimfarm UI changes to openzim.org
@@ -185,8 +183,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: receiver
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
       - name: Deploy Zimfarm receiver changes
@@ -214,8 +211,7 @@ jobs:
           context: worker
           dockerfile: task-Dockerfile
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   worker-manager:
@@ -236,8 +232,7 @@ jobs:
           context: worker
           dockerfile: manager-Dockerfile
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   monitor:
@@ -257,8 +252,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: monitor
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   watcher:
@@ -278,8 +272,7 @@ jobs:
           restrict-to: openzim/zimfarm
           context: watcher
           registries: ghcr.io
-          credentials:
-            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
       - name: Deploy Zimfarm Watcher changes
@@ -288,3 +281,23 @@ jobs:
           KUBE_CONFIG: ${{ secrets.ZIMFARM_KUBE_CONFIG }}
         with:
           args: rollout restart deployments watcher-deployment -n zimfarm
+
+  healthcheck:
+    name: Healthcheck build
+    runs-on: ubuntu-24.04
+    needs: paths-filter
+    if: ${{ needs.paths-filter.outputs.healthcheck == 'true' || inputs.force }}
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build and publish Docker Image
+        uses: openzim/docker-publish-action@v10
+        with:
+          image-name: openzim/zimfarm-healthcheck
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: healtcheck
+          registries: ghcr.io
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}

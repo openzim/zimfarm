@@ -1,0 +1,47 @@
+name: Healthcheck Tests
+
+on:
+  pull_request:
+    paths:
+      - "healthcheck/**"
+  push:
+    paths:
+      - "healthcheck/**"
+    branches:
+      - main
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: healthcheck/pyproject.toml
+          architecture: x64
+
+      - name: Build healthcheck Docker image
+        working-directory: healthcheck
+        run: docker build -t zimfarm-healthcheck:test .
+
+      - name: Run healthcheck container
+        run: |
+          docker run -d --name zimfarm-healthcheck-test \
+            -e ZIMFARM_API_URL=http://localhost:8001 \
+            -e ZIMFARM_USERNAME=admin \
+            -e ZIMFARM_PASSWORD=admin_pass \
+            -e ZIMFARM_DATABASE_URL=postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest \
+            -p 8000:80 \
+            zimfarm-healthcheck:test
+          # wait for container to be ready
+          for i in {1..10}; do
+            if curl -s http://localhost:8000 > /dev/null; then
+              echo "Healthcheck is up!"
+              break
+            fi
+            echo "Waiting for Healthcheck..."
+            sleep 3
+          done
