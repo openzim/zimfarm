@@ -41,7 +41,7 @@
     <v-row>
       <v-col cols="12" sm="4">
         <v-text-field
-          v-model="editSchedule.name"
+          v-model.trim="editSchedule.name"
           label="Recipe Name"
           hint="Recipe's identifier."
           placeholder="wikipedia_fr_all"
@@ -127,7 +127,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-combobox
-          v-model="editSchedule.context"
+          v-model.trim="editSchedule.context"
           :items="contexts"
           label="Context"
           hint="Execute schedule only on workers associated with this context"
@@ -208,7 +208,7 @@
     <v-row>
       <v-col cols="12" sm="4">
         <v-text-field
-          v-model="editSchedule.config.image.name"
+          v-model.trim="editSchedule.config.image.name"
           label="Image Name"
           hint="Image name without tag (docker_repo/name)"
           placeholder="openzim/mwoffliner"
@@ -245,7 +245,7 @@
     <v-row>
       <v-col cols="12" sm="3">
         <v-text-field
-          v-model="editSchedule.config.resources.cpu"
+          v-model.trim="editSchedule.config.resources.cpu"
           label="CPU"
           hint="Number of CPU shares to use"
           type="number"
@@ -296,7 +296,7 @@
     <v-row>
       <v-col>
         <v-textarea
-          v-model="editSchedule.config.artifacts_globs_str"
+          v-model.trim="editSchedule.config.artifacts_globs_str"
           label="Artifacts"
           hint="! Experts only ! Beware to not include your ZIM files and logs ! Globs of artifacts to archive, one glob expression per line."
           variant="outlined"
@@ -366,7 +366,7 @@
             />
             <v-text-field
               v-else-if="field.component === 'number'"
-              v-model="editFlags[field.dataKey]"
+              v-model.trim="editFlags[field.dataKey]"
               type="number"
               density="compact"
               variant="outlined"
@@ -381,7 +381,7 @@
             />
             <v-text-field
               v-else-if="field.component === 'url'"
-              v-model="editFlags[field.dataKey]"
+              v-model.trim="editFlags[field.dataKey]"
               type="url"
               density="compact"
               variant="outlined"
@@ -395,7 +395,7 @@
             />
             <v-text-field
               v-else-if="field.component === 'email'"
-              v-model="editFlags[field.dataKey]"
+              v-model.trim="editFlags[field.dataKey]"
               type="email"
               density="compact"
               variant="outlined"
@@ -409,7 +409,7 @@
             />
             <v-text-field
               v-else-if="field.component === 'color'"
-              v-model="editFlags[field.dataKey]"
+              v-model.trim="editFlags[field.dataKey]"
               type="color"
               density="compact"
               variant="outlined"
@@ -535,7 +535,7 @@
       <!-- Comment Input -->
       <div>
         <v-textarea
-          v-model="pendingComment"
+          v-model.trim="pendingComment"
           label="Comment (optional)"
           hint="Describe the changes you made to help track modifications"
           placeholder="e.g., Updated memory allocation, changed offliner version, etc."
@@ -1102,11 +1102,12 @@ const truncateToMaxGraphemes = (value: string, maxLength: number): string => {
 }
 
 const handleInputWithGraphemeLimit = (field: FlagField, value: string) => {
-  if (field.max_length && typeof value === 'string') {
-    const truncatedValue = truncateToMaxGraphemes(value, field.max_length)
+  const trimmedValue = value?.trim() || value
+  if (field.max_length && typeof trimmedValue === 'string') {
+    const truncatedValue = truncateToMaxGraphemes(trimmedValue, field.max_length)
     editFlags.value[field.dataKey] = truncatedValue
   } else {
-    editFlags.value[field.dataKey] = value
+    editFlags.value[field.dataKey] = trimmedValue
   }
 }
 
