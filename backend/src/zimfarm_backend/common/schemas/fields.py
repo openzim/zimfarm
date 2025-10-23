@@ -56,7 +56,7 @@ def not_empty(value: str) -> str:
     if not value.strip():
         raise ValueError("String value cannot be empty")
 
-    return value
+    return value.strip()
 
 
 def validate_language_code(value: str | None, info: ValidationInfo) -> str | None:

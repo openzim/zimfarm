@@ -356,11 +356,6 @@ def test_create_schedule_with_permssions(
             "none", HTTPStatus.UNPROCESSABLE_ENTITY, id="none-as-schedule-name"
         ),
         pytest.param(
-            "  test-schedule  ",
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-            id="spaces-in-schedule-name",
-        ),
-        pytest.param(
             "testSchedule", HTTPStatus.UNPROCESSABLE_ENTITY, id="uppercase-char"
         ),
     ],
