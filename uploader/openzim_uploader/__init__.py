@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-""" SCP/SFTP/S3 file uploader for openZIM/Zimfarm
+"""SCP/SFTP/S3 file uploader for openZIM/Zimfarm
 
-    manual tests lists (for each method):
-        - with username in URI
-        - with username in param
-        - not specifying target name
-        - specifying target name
-        - --move not specifying target name
-        - --move specifying target name
-        - with --cipher
-        - without --cipher
-        - --delete
-        - --compress
-        - --bandwidth
+manual tests lists (for each method):
+    - with username in URI
+    - with username in param
+    - not specifying target name
+    - specifying target name
+    - --move not specifying target name
+    - --move specifying target name
+    - with --cipher
+    - without --cipher
+    - --delete
+    - --compress
+    - --bandwidth
 """
 
 import argparse
@@ -23,12 +23,13 @@ import datetime
 import logging
 import os
 import pathlib
+from typing import cast
 import signal
 import subprocess
 import sys
 import tempfile
 import time
-import urllib
+import urllib.parse
 
 from kiwixstorage import FileTransferHook, KiwixStorage
 
@@ -50,6 +51,7 @@ HOST_KNOW_FILE = (
 MARKER_FILE = pathlib.Path(os.getenv("MARKER_FILE", "/usr/share/marker"))
 SCP_BIN_PATH = pathlib.Path(os.getenv("SCP_BIN_PATH", "/usr/bin/scp"))
 SFTP_BIN_PATH = pathlib.Path(os.getenv("SFTP_BIN_PATH", "/usr/bin/sftp"))
+S3_SCHEMES = ("s3", "s3+http", "s3+https")
 
 
 def now():
@@ -358,8 +360,19 @@ def s3_upload_file(
     cipher=None,  # not relevant
     delete_after=None,  # nb of days to expire upload file after
 ):
+    def get_url_scheme(url: urllib.parse.ParseResult) -> str:
+        if url.scheme.startswith("s3+http"):
+            return "http"
+        # covers both "s3" and "s3+https"
+        elif url.scheme.startswith("s3") or url.scheme.startswith("s3+https"):
+            return "https"
+        else:
+            raise ValueError(f"Unsupported URL scheme in: {url}")
+
     started_on = now()
-    s3_storage = KiwixStorage(rebuild_uri(upload_uri, scheme="https").geturl())
+    s3_storage = KiwixStorage(
+        rebuild_uri(upload_uri, scheme=get_url_scheme(upload_uri)).geturl()
+    )
     logger.debug(f"S3 initialized for {s3_storage.url.netloc}/{s3_storage.bucket_name}")
 
     key = upload_uri.path[1:]
@@ -527,7 +540,7 @@ def upload_file(
     delete_after=None,
 ):
     try:
-        upload_uri = urllib.parse.urlparse(upload_uri)
+        upload_uri = cast(urllib.parse.ParseResult, urllib.parse.urlparse(upload_uri))
         pathlib.Path(upload_uri.path)
     except Exception as exc:
         logger.error(f"invalid upload URI: `{upload_uri}` ({exc}).")
@@ -537,8 +550,10 @@ def upload_file(
     if upload_uri.scheme in ("scp", "sftp") and username and not upload_uri.username:
         upload_uri = rebuild_uri(upload_uri, username=username)
 
-    if upload_uri.scheme == "s3":
-        params = urllib.parse.parse_qs(upload_uri.query)
+    if upload_uri.scheme in S3_SCHEMES and upload_uri.query:
+        params = cast(
+            dict[str, list[str]], urllib.parse.parse_qs(str(upload_uri.query))
+        )
         if "secretAccessKey" in params.keys():
             params["secretAccessKey"] = ["xxxxx"]
         safe_upload_uri = rebuild_uri(
@@ -553,16 +568,18 @@ def upload_file(
         "scp": scp_upload_file,
         "sftp": sftp_upload_file,
         "s3": s3_upload_file,
-    }.get(upload_uri.scheme)
+        "s3+http": s3_upload_file,
+        "s3+https": s3_upload_file,
+    }.get(str(upload_uri.scheme))
 
     if not method:
         logger.critical(f"URI scheme not supported: {upload_uri.scheme}")
         return 1
 
-    if upload_uri.scheme in ("s3", "scp") and resume:
+    if upload_uri.scheme in ("scp",) + S3_SCHEMES and resume:
         logger.warning("--resume not supported via SCP/S3. Will upload from scratch.")
 
-    if upload_uri.scheme != "s3" and delete_after:
+    if upload_uri.scheme not in S3_SCHEMES and delete_after:
         logger.warning("--delete-after only supported on S3/Wasabi.")
 
     kwargs = {
