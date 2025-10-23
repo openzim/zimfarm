@@ -615,7 +615,7 @@
 
         <!-- Archive Tab -->
         <v-window-item value="archive">
-          <div v-if="canDeleteSchedules" class="pa-4">
+          <div v-if="canArchiveSchedules" class="pa-4">
             <ArchiveItem
               :name="scheduleName"
               :is-archived="schedule?.archived || false"
@@ -809,9 +809,10 @@ const totalDurationDict = computed(() => {
 })
 
 // Permission computed properties
-const canRequestTasks = computed(() => authStore.hasPermission('tasks', 'request'))
+const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
 const canUpdateSchedules = computed(() => authStore.hasPermission('schedules', 'update'))
 const canCreateSchedules = computed(() => authStore.hasPermission('schedules', 'create'))
+const canArchiveSchedules = computed(() => authStore.hasPermission('schedules', 'archive'))
 const canDeleteSchedules = computed(() => authStore.hasPermission('schedules', 'delete'))
 
 // History-related computed properties

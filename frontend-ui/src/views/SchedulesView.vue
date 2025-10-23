@@ -28,5 +28,5 @@ import { computed } from 'vue'
 const authStore = useAuthStore()
 
 // Computed properties
-const canRequestTasks = computed(() => authStore.hasPermission('tasks', 'request'))
+const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
 </script>

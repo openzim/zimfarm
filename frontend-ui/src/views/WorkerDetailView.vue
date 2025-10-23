@@ -464,7 +464,7 @@ const editContexts = ref<Array<{ name: string; ip: string | null }>>([])
 // Confirmation dialog state
 const showConfirmDialog = ref(false)
 
-const canUpdateWorkers = computed(() => authStore.hasPermission('users', 'update'))
+const canUpdateWorkers = computed(() => authStore.hasPermission('workers', 'update'))
 
 const hasChanges = computed(() => {
   if (!worker.value) return false

@@ -63,7 +63,7 @@ const notificationStore = useNotificationStore()
 const isRemoving = ref(false)
 const showDialog = ref(false)
 
-const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
+const canUnRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'delete'))
 
 const showConfirmDialog = () => {
   showDialog.value = true

@@ -35,13 +35,15 @@ from zimfarm_backend.db.requested_task import (
     find_requested_task_for_worker,
     get_requested_task_by_id,
     request_task,
-    update_requested_task_priority,
 )
 from zimfarm_backend.db.requested_task import (
     delete_requested_task as db_delete_requested_task,
 )
 from zimfarm_backend.db.requested_task import (
     get_requested_tasks as db_get_requested_tasks,
+)
+from zimfarm_backend.db.requested_task import (
+    update_requested_task_priority as db_update_requested_task_priority,
 )
 from zimfarm_backend.db.schedule import count_enabled_schedules
 from zimfarm_backend.db.user import check_user_permission
@@ -90,7 +92,9 @@ def create_request_task(
     current_user: User = Depends(get_current_user),
 ):
     """Create requested task from a list of schedule_names"""
-    if not check_user_permission(current_user, namespace="tasks", name="request"):
+    if not check_user_permission(
+        current_user, namespace="requested_tasks", name="create"
+    ):
         raise ForbiddenError("You are not allowed to request tasks")
 
     if count_enabled_schedules(session, new_requested_task.schedule_names) == 0:
@@ -292,7 +296,9 @@ def get_requested_task(
     # on anonymous requests and requests for users without schedules_update
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(
+            current_user, namespace="requested_tasks", name="secrets"
+        )
     ):
         requested_task.notification = None
 
@@ -300,7 +306,9 @@ def get_requested_task(
     # does not matter
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(
+            current_user, namespace="requested_tasks", name="secrets"
+        )
     ):
         show_secrets = False
     else:
@@ -314,19 +322,21 @@ def get_requested_task(
 
 
 @router.patch("/{requested_task_id}")
-def update_requested_task(
+def update_requested_task_priority(
     requested_task_id: Annotated[UUID, Path()],
     update_requested_task_schema: UpdateRequestedTaskSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> RequestedTaskFullSchema:
     """Update the priority of a requested task."""
-    if not check_user_permission(current_user, namespace="tasks", name="update"):
+    if not check_user_permission(
+        current_user, namespace="requested_tasks", name="update"
+    ):
         raise ForbiddenError("You are not allowed to update requested tasks")
 
     get_requested_task_by_id(session, requested_task_id)
 
-    return update_requested_task_priority(
+    return db_update_requested_task_priority(
         session, requested_task_id, update_requested_task_schema.priority
     )
 
@@ -338,7 +348,9 @@ def delete_requested_task(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> JSONResponse:
     """Delete a requested task by ID."""
-    if not check_user_permission(current_user, namespace="tasks", name="unrequest"):
+    if not check_user_permission(
+        current_user, namespace="requested_tasks", name="delete"
+    ):
         raise ForbiddenError("You are not allowed to unrequest tasks")
 
     db_delete_requested_task(session, requested_task_id)

@@ -184,8 +184,8 @@ const cleanedSelectedWorker = computed(() =>
 const requestedTaskId = computed(() => props.requestedTask?.id || null)
 
 // Permission computed properties
-const canRequestTasks = computed(() => authStore.hasPermission('tasks', 'request'))
-const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
+const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
+const canUnRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'delete'))
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
 
 // Methods

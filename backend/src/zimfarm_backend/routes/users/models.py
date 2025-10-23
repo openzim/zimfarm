@@ -1,70 +1,8 @@
-import datetime
-from typing import Any
-
-from pydantic import EmailStr, Field, computed_field, field_validator
+from pydantic import EmailStr, computed_field, field_validator
 
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import NotEmptyString
-
-
-class BaseUserSchema(BaseModel):
-    """
-    Base schema for reading a user model
-    """
-
-    username: str
-
-
-class UserSchema(BaseUserSchema):
-    """
-    Schema for reading a user model
-    """
-
-    email: str | None
-    role: str
-    scope: dict[str, Any] | None = Field(default=None)
-
-
-class BaseSshKeySchema(BaseModel):
-    """
-    Base schema for reading a ssh key model
-    """
-
-    key: str
-    name: str
-    type: str
-
-
-class SshKeyRead(BaseSshKeySchema):
-    """
-    Schema for reading a ssh key model
-    """
-
-    added: datetime.datetime
-    fingerprint: str
-
-
-class BaseUserWithSshKeysSchema(BaseUserSchema, BaseSshKeySchema):
-    """
-    Base schema for reading a user model with its ssh keys
-    """
-
-
-class SshKeyList(BaseModel):
-    """
-    Schema for reading a list of ssh keys
-    """
-
-    ssh_keys: list[SshKeyRead]
-
-
-class UserSchemaWithSshKeys(UserSchema):
-    """
-    Schema for reading a user model with its ssh keys
-    """
-
-    ssh_keys: list[SshKeyRead]
 
 
 class KeySchema(BaseModel):

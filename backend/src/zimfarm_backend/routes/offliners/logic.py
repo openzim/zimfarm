@@ -6,7 +6,6 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     SkipField,
@@ -29,6 +28,7 @@ from zimfarm_backend.db.offliner_definition import (
 from zimfarm_backend.db.offliner_definition import (
     get_offliner_versions as db_get_offliner_versions,
 )
+from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.routes.dependencies import gen_dbsession, get_current_user
 from zimfarm_backend.routes.http_errors import UnauthorizedError
 from zimfarm_backend.routes.models import ListResponse
@@ -90,9 +90,7 @@ async def create_offliner(
     current_user: User = Depends(get_current_user),
 ) -> Response:
     """Create an offliner"""
-    # register new offliners? Because existing permissions overlap and it might not be
-    # feasible for someone who can create a schedule to create an offliner.
-    if current_user.role != RoleEnum.ADMIN:
+    if not check_user_permission(current_user, namespace="offliners", name="create"):
         raise UnauthorizedError("You do not have permissions to create an offliner.")
 
     db_create_offliner(
