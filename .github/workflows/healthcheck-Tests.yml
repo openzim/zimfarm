@@ -36,7 +36,7 @@ jobs:
           pip install -e .[test,scripts]
 
       - name: Run tests
-        working-directory: healtcheck
+        working-directory: healthcheck
         run: inv coverage --args "-vvv"
 
       - name: Build healthcheck Docker image
