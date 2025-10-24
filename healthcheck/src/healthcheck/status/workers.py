@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from healthcheck.cache import memoize
 from healthcheck.constants import ZIMFARM_API_URL
 from healthcheck.requests import query_api
 from healthcheck.status import Result
@@ -25,6 +26,7 @@ def check_worker_online(worker: Worker) -> bool:
     return worker.status == "online"
 
 
+@memoize("ZIMFARM_WORKERS_STATUS")
 async def get_workers_status() -> Result[WorkersStatus]:
     """Fetch the list of workers and check their online status."""
     response = await query_api(

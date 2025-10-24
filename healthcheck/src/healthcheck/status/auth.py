@@ -2,6 +2,7 @@ import datetime
 
 from pydantic import BaseModel
 
+from healthcheck.cache import memoize
 from healthcheck.constants import ZIMFARM_API_URL, ZIMFARM_PASSWORD, ZIMFARM_USERNAME
 from healthcheck.requests import query_api
 from healthcheck.status import Result
@@ -16,6 +17,7 @@ class Token(BaseModel):
     token_type: str = "Bearer"
 
 
+@memoize("ZIMFARM_AUTH")
 async def authenticate() -> Result[Token]:
     """Check if authentication is sucessful with Zimfarm"""
     response = await query_api(

@@ -12,6 +12,12 @@ on:
 
 jobs:
   run-tests:
+    env:
+      ZIMFARM_API_URL: http://localhost:8001
+      ZIMFARM_USERNAME: admin
+      ZIMFARM_PASSWORD: admin_pass
+      ZIMFARM_DATABASE_URL: postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest
+
     runs-on: ubuntu-24.04
     steps:
       - name: Retrieve source code
@@ -23,6 +29,16 @@ jobs:
           python-version-file: healthcheck/pyproject.toml
           architecture: x64
 
+      - name: Install dependencies (and project)
+        working-directory: healthcheck
+        run: |
+          pip install -U pip
+          pip install -e .[test,scripts]
+
+      - name: Run tests
+        working-directory: healtcheck
+        run: inv coverage --args "-vvv"
+
       - name: Build healthcheck Docker image
         working-directory: healthcheck
         run: docker build -t zimfarm-healthcheck:test .
@@ -30,10 +46,10 @@ jobs:
       - name: Run healthcheck container
         run: |
           docker run -d --name zimfarm-healthcheck-test \
-            -e ZIMFARM_API_URL=http://localhost:8001 \
-            -e ZIMFARM_USERNAME=admin \
-            -e ZIMFARM_PASSWORD=admin_pass \
-            -e ZIMFARM_DATABASE_URL=postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest \
+            -e ZIMFARM_API_URL \
+            -e ZIMFARM_USERNAME \
+            -e ZIMFARM_PASSWORD \
+            -e ZIMFARM_DATABASE_URL \
             -p 8000:80 \
             zimfarm-healthcheck:test
           # wait for container to be ready
