@@ -83,6 +83,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                 {
                     "warehouse_path": row.config["warehouse_path"],
                     "resources": row.config["resources"],
+                    "platform": row.config.get("platform"),
                     "offliner": create_offliner_instance(
                         offliner=get_offliner(session, row.offliner),
                         offliner_definition=OfflinerDefinitionSchema(
@@ -102,6 +103,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                     "mount_point": row.config["mount_point"],
                     "command": row.config["command"],
                     "str_command": row.config["str_command"],
+                    "artifacts_globs": row.config.get("artifacts_globs", []),
                 },
                 context={"skip_validation": True},
             ),
