@@ -13,4 +13,6 @@ ZIMFARM_DATABASE_URL = getenv("ZIMFARM_DATABASE_URL", mandatory=True)
 
 CACHE_LOCATION = Path(getenv("CACHE_LOCATION", default="/data/cache"))
 CACHE_KEY_PREFIX = getenv("CACHE_KEY_PREFIX", default="healthcheck")
-DEFAULT_CACHE_TTL = parse_timespan(getenv("DEFAULT_CACHE_TTL", default="1m"))
+DEFAULT_CACHE_EXPIRATION = parse_timespan(
+    getenv("DEFAULT_CACHE_EXPIRATION", default="1m")
+)

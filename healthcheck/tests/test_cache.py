@@ -36,7 +36,7 @@ async def test_memoize_successful_result() -> None:
 
 
 @pytest.mark.asyncio
-async def test_memoize_failed_result() -> None:
+async def test_failed_results_are_not_memoized() -> None:
     """Test that failed results are not cached."""
     counter = 0
 
@@ -62,11 +62,37 @@ async def test_memoize_failed_result() -> None:
 
 
 @pytest.mark.asyncio
-async def test_memoize_cache_expiry() -> None:
-    """Test that cached values expire after TTL."""
+async def test_memoize_failed_result() -> None:
+    """Test that failed results can be memoized with setting."""
     counter = 0
 
-    @memoize("test-expiry", ttl=0.1)
+    @memoize("test-failure", cache_only_on_success=False)
+    async def get_failure() -> Result[Any]:
+        nonlocal counter
+        counter += 1
+        return Result(
+            success=False,
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+            data=None,
+        )
+
+    result1 = await get_failure()
+    assert not result1.success
+    assert result1.data is None
+    assert counter == 1
+
+    result2 = await get_failure()
+    assert not result2.success
+    assert result2.data is None
+    assert counter == 1  # Counter should not increment
+
+
+@pytest.mark.asyncio
+async def test_memoize_cache_expiry() -> None:
+    """Test that cached values expire."""
+    counter = 0
+
+    @memoize("test-expiry", expire=0.1)
     async def get_data() -> Result[int]:
         nonlocal counter
         counter += 1
