@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import EmailStr, Field, computed_field, field_validator
 
-from zimfarm_backend.common.roles import RoleEnum, get_role_for
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import NotEmptyString
 
@@ -22,14 +22,8 @@ class UserSchema(BaseUserSchema):
     """
 
     email: str | None
+    role: str
     scope: dict[str, Any] | None = Field(default=None)
-
-    @computed_field
-    @property
-    def role(self) -> str:
-        if self.scope is None:
-            return "custom"
-        return get_role_for(self.scope)
 
 
 class BaseSshKeySchema(BaseModel):

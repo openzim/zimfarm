@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.roles import ROLES
+from zimfarm_backend.common.roles import ROLES, RoleEnum
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -78,13 +78,26 @@ def test_create_user(dbsession: OrmSession):
         username="newuser",
         email="new@example.com",
         password_hash="hash",
-        scope=ROLES["editor"],
+        scope=None,
+        role=RoleEnum.EDITOR,
     )
     assert user.username == "newuser"
     assert user.email == "new@example.com"
     assert user.password_hash == "hash"
-    assert user.scope == ROLES["editor"]
+    assert user.role == "editor"
     assert not user.deleted
+
+
+def test_create_user_with_non_custom_role_and_scope(dbsession: OrmSession):
+    with pytest.raises(ValueError):
+        create_user(
+            dbsession,
+            username="newuser",
+            email="new@example.com",
+            password_hash="hash",
+            scope=ROLES["editor"],
+            role="editor",
+        )
 
 
 @pytest.mark.num_users(1)
@@ -97,6 +110,7 @@ def test_create_user_duplicate(dbsession: OrmSession, users: list[User]):
             email="new@example.com",
             password_hash="hash",
             scope={},
+            role="custom",
         )
 
 
@@ -107,11 +121,11 @@ def test_update_user(dbsession: OrmSession, users: list[User]):
         dbsession,
         user_id=users[0].id,
         email="updated@example.com",
-        scope=ROLES["editor"],
+        role=RoleEnum.EDITOR,
     )
     dbsession.refresh(users[0])
     assert users[0].email == "updated@example.com"
-    assert users[0].scope == ROLES["editor"]
+    assert users[0].role == RoleEnum.EDITOR
 
 
 @pytest.mark.num_users(1)
@@ -122,11 +136,11 @@ def test_update_user_partial(dbsession: OrmSession, users: list[User]):
         dbsession,
         user_id=users[0].id,
         email=None,
-        scope=ROLES["editor"],
+        role=RoleEnum.EDITOR,
     )
     dbsession.refresh(users[0])
     assert users[0].email == original_email
-    assert users[0].scope == ROLES["editor"]
+    assert users[0].role == RoleEnum.EDITOR
 
 
 @pytest.mark.num_users(1)

@@ -125,6 +125,14 @@ async def validation_error_handler(_, exc: ValidationError):
     )
 
 
+@app.exception_handler(ValueError)
+async def value_error_handler(_, exc: ValueError):
+    return JSONResponse(
+        status_code=HTTPStatus.BAD_REQUEST,
+        content={"success": False, "message": exc.args[0]},
+    )
+
+
 @app.exception_handler(RecordDoesNotExistError)
 async def record_does_not_exist_error_handler(_, exc: RecordDoesNotExistError):
     return JSONResponse(

@@ -6,7 +6,6 @@ from werkzeug.security import generate_password_hash
 
 from zimfarm_backend import logger
 from zimfarm_backend.common.constants import BASE_DIR, getenv
-from zimfarm_backend.common.roles import ROLES
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.offliner import get_all_offliners
@@ -42,7 +41,8 @@ def create_initial_user():
                 username=username,
                 email=None,
                 password_hash=generate_password_hash(password),
-                scope=ROLES.get("admin"),
+                scope=None,
+                role="admin",
                 deleted=False,
             )
             session.add(orm_user)
