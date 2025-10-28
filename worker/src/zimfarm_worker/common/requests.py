@@ -1,11 +1,15 @@
 import datetime
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
+from functools import wraps
 from json import JSONDecodeError
 from typing import Any
 
 import requests
 
 from zimfarm_worker.common import logger
+from zimfarm_worker.common.constants import REQUEST_RETRIES, REQUEST_RETRY_SECONDS
 from zimfarm_worker.common.cryptography import AuthMessage
 
 
@@ -28,6 +32,38 @@ class Response:
     json: dict[str, Any]
 
 
+def retry(
+    func: Callable[..., Any] | None = None,
+    *,
+    exception_types: tuple[type[Exception], ...] = (JSONDecodeError,),
+    retries: int = REQUEST_RETRIES,
+    interval: float = REQUEST_RETRY_SECONDS,
+) -> Any:
+    """Retry a function if any exception in exception_types is raised."""
+
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @wraps(func)
+        def wrapped(*args: Any, **kwargs: Any):
+            attempt = 0
+            while True:
+                attempt += 1
+                try:
+                    return func(*args, **kwargs)
+                except exception_types:
+                    if attempt <= retries:
+                        time.sleep(interval * attempt)
+                        continue
+                    raise
+
+        return wrapped
+
+    if func:
+        return decorator(func)
+
+    return decorator
+
+
+@retry
 def get_token(
     webapi_uri: str,
     auth_message: AuthMessage,
@@ -51,6 +87,7 @@ def get_token(
     )
 
 
+@retry
 def query_api(
     url: str,
     method: str = "get",
