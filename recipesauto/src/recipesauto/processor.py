@@ -1,4 +1,5 @@
 import copy
+from http import HTTPStatus
 from typing import Any
 
 import requests
@@ -159,11 +160,14 @@ class Processor:
         patched_recipe["config"]["warehouse_path"] = "/.hidden/dev"
         patched_recipe["periodicity"] = "manually"
         response = requests.post(
-            self.get_zf_url("/schedules/"),
+            self.get_zf_url("/schedules"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
             json=recipe,
         )
+
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
 
     def _patch_dictionary(
@@ -223,11 +227,15 @@ class Processor:
                 )
                 for current_recipe_key, current_recipe_value in current_recipe.items():
                     if current_recipe_key in [
+                        # keys handled separately
                         "config",
+                        "language",
+                        # read-only keys
                         "duration",
                         "most_recent_task",
                         "notification",
                         "is_requested",
+                        "is_valid",
                     ]:
                         continue
                     expected_value = expected_recipe[current_recipe_key]
@@ -238,6 +246,15 @@ class Processor:
                         f"{expected_value}"
                     )
                     changes[current_recipe_key] = expected_value
+
+                # handle special case of language (read != write)
+                current_recipe_value = current_recipe["language"]["code"]
+                expected_value = expected_recipe["language"]
+                if current_recipe_value != expected_value:
+                    logger.info(f"language: {current_recipe_value} => {expected_value}")
+                    changes[current_recipe_key] = expected_value
+
+                # handle special case of config
                 for current_recipe_key, current_recipe_value in current_recipe[
                     "config"
                 ].items():
@@ -245,9 +262,24 @@ class Processor:
                         "command",
                         "mount_point",
                         "str_command",
+                        "artifacts_globs",
                     ]:
                         continue
                     expected_value = expected_recipe["config"][current_recipe_key]
+                    if hasattr(current_recipe_value, "items"):
+                        keys_to_remove = []
+                        for key, value in current_recipe_value.items():
+                            if value is None or value == []:
+                                keys_to_remove.append(key)
+                        for key in keys_to_remove:
+                            del current_recipe_value[key]
+                    if hasattr(expected_value, "items"):
+                        keys_to_remove = []
+                        for key, value in expected_value.items():
+                            if value is None or value == []:
+                                keys_to_remove.append(key)
+                        for key in keys_to_remove:
+                            del expected_value[key]
                     if current_recipe_value == expected_value:
                         continue
                     if current_recipe_key != "offliner":
@@ -255,6 +287,7 @@ class Processor:
                             f"config.{current_recipe_key}: {current_recipe_value} => "
                             f"{expected_value}"
                         )
+                        changes[current_recipe_key] = expected_value
                     else:
                         logger.info("Flags have changed:")
                         current_flags = set(current_recipe_value.items())
@@ -265,7 +298,8 @@ class Processor:
                             logger.info(f"Added keys: {new_keys}")
                         if previous_keys := current_flags - expected_flags:
                             logger.info(f"Removed keys: {previous_keys}")
-                    changes[current_recipe_key] = expected_value
+                        # 'offliner' at read time ends up in 'flags' at write time
+                        changes["flags"] = expected_value
                 if changes and context.push:
                     if ask_for_confirmation:
                         response = input(
@@ -280,12 +314,15 @@ class Processor:
 
     def _patch_recipe_on_zf(self, recipe_name: str, changes: dict[str, Any]):
         """Really patch a recipe on the Zimfarm"""
+        logger.info(changes)
         response = requests.patch(
             self.get_zf_url(f"/schedules/{recipe_name}"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
             json=changes,
         )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
 
     def _delete_obsolete_recipes(
@@ -333,6 +370,8 @@ class Processor:
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
         )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
 
     def _list_zf_recipes(self) -> list[str]:
@@ -350,6 +389,9 @@ class Processor:
                 headers=self.get_zf_headers(),
                 timeout=context.http_timeout,
             )
+
+            if not HTTPStatus(response.status_code).is_success:
+                logger.error(response.text)
             response.raise_for_status()
 
             schedules = response.json()
@@ -369,10 +411,12 @@ class Processor:
         """Get the recipe details on zimfarm"""
 
         response = requests.get(
-            self.get_zf_url(f"/schedules/{recipe_name}"),
+            self.get_zf_url(f"/schedules/{recipe_name}?hide_secrets=False"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
         )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
         return response.json()
 

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-openzim==0.2.1"]
+requires = ["hatchling", "hatch-openzim"]
 build-backend = "hatchling.build"
 
 [project]

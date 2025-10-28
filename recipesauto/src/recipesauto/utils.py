@@ -2,8 +2,6 @@ import re
 
 import pycountry
 
-from recipesauto.constants import logger
-
 name_pattern = re.compile(r"^[a-z0-9\.\-]*_[a-z0-9\.\-]*_[a-z0-9\.\-]*_?[a-z0-9\.\-]*$")
 
 
@@ -21,6 +19,5 @@ def get_iso_639_3_code(code: str) -> str | None:
         language = pycountry.languages.get(alpha_2=code)
 
     if not language:
-        logger.warn(f"Could not find ISO 639-3 language code for '{code}'")
         return None
     return language.alpha_3
