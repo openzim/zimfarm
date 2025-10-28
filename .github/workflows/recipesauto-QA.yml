@@ -1,0 +1,41 @@
+name: Recipesauto QA
+
+on:
+  pull_request:
+    paths:
+      - "recipesauto/**"
+  push:
+    paths:
+      - "recipesauto/**"
+    branches:
+      - main
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: recipesauto/pyproject.toml
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        working-directory: recipesauto
+        run: |
+          pip install -U pip
+          pip install -e .[lint,scripts,test,check]
+
+      - name: Check black formatting
+        working-directory: recipesauto
+        run: inv lint-black
+
+      - name: Check ruff
+        working-directory: recipesauto
+        run: inv lint-ruff
+
+      - name: Check pyright
+        working-directory: recipesauto
+        run: inv check-pyright
