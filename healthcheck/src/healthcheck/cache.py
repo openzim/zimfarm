@@ -52,6 +52,9 @@ def memoize(
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             cache = init_cache()
             location = f"{CACHE_KEY_PREFIX}:{key}"
+            # Types other than the basic types like floats, ints, bytes, strings are
+            # are stored using pickle by default. Thus, we can save our results
+            # (pydantic models) directly to the cache and get it back as is.
             if (result := cache.get(location)) is not None:
                 return result
 
