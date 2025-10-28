@@ -125,7 +125,7 @@ const loadingStore = useLoadingStore()
 const scheduleStore = useScheduleStore()
 const notificationStore = useNotificationStore()
 
-const canUnRequestTasks = computed(() => authStore.hasPermission('tasks', 'unrequest'))
+const canUnRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'delete'))
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
 
 const handleFilterChange = (newFilter: string) => {

@@ -609,7 +609,7 @@ const zimfarmArtifactsUrl = computed(() => (task.value ? artifactsUrl(task.value
 
 // Permission computed properties
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
-const canCreateTasks = computed(() => authStore.hasPermission('tasks', 'create'))
+const canViewTaskSecrets = computed(() => authStore.hasPermission('tasks', 'secrets'))
 
 // Methods
 const createdAfter = (file: TaskFile, taskData: Task) => {
@@ -672,7 +672,7 @@ const scrollLogsToBottom = () => {
 
 const refreshData = async () => {
   loadingStore.startLoading('Fetching task...')
-  const response = await tasksStore.fetchTask(props.id, !canCreateTasks.value)
+  const response = await tasksStore.fetchTask(props.id, canViewTaskSecrets.value)
   if (response) {
     task.value = response
     // Use nextTick to ensure the DOM has updated before scrolling

@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from zimfarm_backend.common.roles import ROLES, RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.orms import UserSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -90,6 +91,15 @@ def update_user_password(
 class UserList(BaseModel):
     nb_records: int
     users: list[User]
+
+
+def create_user_schema(user: User) -> UserSchema:
+    return UserSchema(
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        scope=ROLES.get(user.role, user.scope),
+    )
 
 
 def get_users(

@@ -5,12 +5,18 @@ from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from zimfarm_backend.common.roles import ROLES
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     SkipField,
 )
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
+from zimfarm_backend.common.schemas.orms import (
+    BaseUserWithSshKeysSchema,
+    SshKeyList,
+    SshKeyRead,
+    UserSchema,
+    UserSchemaWithSshKeys,
+)
 from zimfarm_backend.db import gen_dbsession
 from zimfarm_backend.db.exceptions import RecordAlreadyExistsError
 from zimfarm_backend.db.models import User
@@ -22,6 +28,7 @@ from zimfarm_backend.db.ssh_key import (
 )
 from zimfarm_backend.db.user import (
     check_user_permission,
+    create_user_schema,
     get_user_by_username,
     get_user_by_username_or_none,
 )
@@ -39,14 +46,9 @@ from zimfarm_backend.routes.http_errors import (
 )
 from zimfarm_backend.routes.models import ListResponse
 from zimfarm_backend.routes.users.models import (
-    BaseUserWithSshKeysSchema,
     KeySchema,
     PasswordUpdateSchema,
-    SshKeyList,
-    SshKeyRead,
     UserCreateSchema,
-    UserSchema,
-    UserSchemaWithSshKeys,
     UserUpdateSchema,
 )
 from zimfarm_backend.utils.token import (
@@ -77,7 +79,7 @@ def get_users(
             limit=limit,
             page_size=len(results.users),
         ),
-        items=[UserSchema.model_validate(user) for user in results.users],
+        items=[create_user_schema(user) for user in results.users],
     )
 
 
@@ -103,11 +105,8 @@ def create_user(
         raise BadRequestError("User already exists") from exc
 
     return UserSchemaWithSshKeys(
-        username=user.username,
-        email=user.email,
-        scope=ROLES.get(user.role, user.scope),
+        **create_user_schema(user).model_dump(),
         ssh_keys=[SshKeyRead.model_validate(ssh_key) for ssh_key in user.ssh_keys],
-        role=user.role,
     )
 
 
@@ -127,11 +126,8 @@ def get_user(
         raise NotFoundError("User not found")
 
     return UserSchemaWithSshKeys(
-        username=user.username,
-        email=user.email,
-        scope=ROLES.get(user.role, user.scope),
+        **create_user_schema(user).model_dump(),
         ssh_keys=[SshKeyRead.model_validate(ssh_key) for ssh_key in user.ssh_keys],
-        role=user.role,
     )
 
 
@@ -245,7 +241,9 @@ def update_user_password(
             current_user.password_hash or "", password_update.current
         ):
             raise BadRequestError()
-    elif not check_user_permission(current_user, namespace="users", name="ssh_keys"):
+    elif not check_user_permission(
+        current_user, namespace="users", name="change_password"
+    ):
         raise UnauthorizedError("You are not allowed to access this resource")
 
     db_update_user_password(

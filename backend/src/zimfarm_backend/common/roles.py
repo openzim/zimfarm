@@ -16,8 +16,8 @@ class Permissions:
 
 class TaskPermissions(Permissions):
     names: ClassVar[list[str]] = [
-        "request",
-        "unrequest",
+        "read",
+        "secrets",
         "create",
         "update",
         "cancel",
@@ -26,7 +26,24 @@ class TaskPermissions(Permissions):
 
 
 class SchedulePermissions(Permissions):
-    names: ClassVar[list[str]] = ["create", "update", "delete"]
+    names: ClassVar[list[str]] = [
+        "read",
+        "secrets",
+        "create",
+        "update",
+        "archive",
+        "delete",
+    ]
+
+
+class RequestedTaskPermissions(Permissions):
+    names: ClassVar[list[str]] = [
+        "read",
+        "secrets",
+        "create",
+        "update",
+        "delete",
+    ]
 
 
 class UserPermissions(Permissions):
@@ -37,11 +54,25 @@ class UserPermissions(Permissions):
         "delete",
         "change_password",
         "ssh_keys",
+        "secrets",
+    ]
+
+
+class WorkerPermissions(Permissions):
+    names: ClassVar[list[str]] = [
+        "read",
+        "update",
+        "create",
+        "secrets",
     ]
 
 
 class ZimPermissions(Permissions):
     names: ClassVar[list[str]] = ["upload"]
+
+
+class OfflinerPermissions(Permissions):
+    names: ClassVar[list[str]] = ["read", "create", "update"]
 
 
 class RoleEnum(StrEnum):
@@ -59,29 +90,55 @@ ROLES: dict[str, dict[str, Any]] = {
         "schedules": SchedulePermissions.get_all(),
         "users": UserPermissions.get_all(),
         "zim": ZimPermissions.get_all(),
+        "workers": WorkerPermissions.get_all(),
+        "requested_tasks": RequestedTaskPermissions.get_all(),
+        "offliners": OfflinerPermissions.get_all(),
     },
     RoleEnum.MANAGER: {
-        "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
-        "schedules": SchedulePermissions.get(create=True, update=True, delete=True),
+        "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
+        "schedules": SchedulePermissions.get(
+            read=True,
+            create=True,
+            update=True,
+            validate=True,
+            archive=True,
+            secrets=True,
+        ),
         "users": UserPermissions.get(
-            read=True, create=True, update=True, delete=True, change_password=True
+            read=True,
+            create=True,
+            update=True,
+            delete=True,
+            change_password=True,
+            ssh_keys=True,
+            secrets=True,
+        ),
+        "workers": WorkerPermissions.get(read=True),
+    },
+    RoleEnum.EDITOR: {
+        "schedules": SchedulePermissions.get(
+            read=True, create=True, update=True, secrets=True
         ),
     },
-    RoleEnum.EDITOR: {"schedules": SchedulePermissions.get(create=True, update=True)},
     RoleEnum.EDITOR_REQUESTER.value: {
-        "tasks": TaskPermissions.get(request=True, unrequest=True, cancel=True),
+        "tasks": TaskPermissions.get(read=True, cancel=True),
         "schedules": SchedulePermissions.get(create=True, update=True),
+        "requested_tasks": RequestedTaskPermissions.get(
+            read=True, create=True, delete=True
+        ),
     },
     RoleEnum.WORKER: {
-        "tasks": TaskPermissions.get(create=True, update=True, cancel=True),
+        "tasks": TaskPermissions.get(
+            read=True, create=True, update=True, cancel=True, secrets=True
+        ),
+        "requested_tasks": RequestedTaskPermissions.get(
+            read=True, create=True, delete=True, secrets=True, update=True
+        ),
+        "workers": WorkerPermissions.get(read=True, create=True),
         "zim": ZimPermissions.get(upload=True),
     },
-    RoleEnum.PROCESSOR: {"tasks": TaskPermissions.get(update=True)},
+    RoleEnum.PROCESSOR: {
+        "tasks": TaskPermissions.get(update=True, secrets=True),
+        "requested_tasks": RequestedTaskPermissions.get(update=True, secrets=True),
+    },
 }
-
-
-def get_role_for(permissions: dict[str, Any]) -> str:
-    for role_name, role_perms in ROLES.items():
-        if role_perms == permissions:
-            return role_name
-    return "custom"
