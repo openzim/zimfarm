@@ -98,10 +98,8 @@ def test_skip_deleted_users(
     assert len(response_json["items"]) == 1
 
 
-@pytest.mark.num_users(1)
-def test_get_user_by_username(client: TestClient, users: list[User]):
-    url = f"/v2/users/{users[0].username}"
-    user = users[0]
+def test_get_user_by_username(client: TestClient, user: User):
+    url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -113,16 +111,14 @@ def test_get_user_by_username(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
-    assert response_json["username"] == users[0].username
+    assert response_json["username"] == user.username
 
 
-@pytest.mark.num_users(1)
 def test_get_user_by_username_not_found(
     client: TestClient,
-    users: list[User],
+    user: User,
 ):
-    url = f"/v2/users/{users[0].username}1"
-    user = users[0]
+    url = f"/v2/users/{user.username}1"
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -134,9 +130,7 @@ def test_get_user_by_username_not_found(
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.num_users(1)
-def test_patch_user_email(client: TestClient, users: list[User]):
-    user = users[0]
+def test_patch_user_email(client: TestClient, user: User):
     url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -189,10 +183,8 @@ def test_delete_user(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@pytest.mark.num_users(1)
-def test_create_user(client: TestClient, users: list[User]):
+def test_create_user(client: TestClient, user: User):
     url = "/v2/users/"
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -213,10 +205,8 @@ def test_create_user(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.OK
 
 
-@pytest.mark.num_users(1)
-def test_create_user_duplicate(client: TestClient, users: list[User]):
+def test_create_user_duplicate(client: TestClient, user: User):
     url = "/v2/users/"
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -228,7 +218,7 @@ def test_create_user_duplicate(client: TestClient, users: list[User]):
         url,
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "username": users[0].username,
+            "username": user.username,
             "email": "test@test.com",
             "password": "test",
             "role": "admin",
@@ -237,10 +227,8 @@ def test_create_user_duplicate(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@pytest.mark.num_users(1)
-def test_list_user_keys(client: TestClient, users: list[User]):
+def test_list_user_keys(client: TestClient, user: User):
     """Test listing a user's SSH keys"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -248,7 +236,7 @@ def test_list_user_keys(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/v2/users/{users[0].username}/keys"
+    url = f"/v2/users/{user.username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -281,10 +269,8 @@ def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.num_users(1)
-def test_create_user_key(client: TestClient, users: list[User]):
+def test_create_user_key(client: TestClient, user: User):
     """Test creating a new SSH key for a user"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -298,7 +284,7 @@ def test_create_user_key(client: TestClient, users: list[User]):
         encoding=serialization.Encoding.OpenSSH,
         format=serialization.PublicFormat.OpenSSH,
     )
-    url = f"/v2/users/{users[0].username}/keys"
+    url = f"/v2/users/{user.username}/keys"
     # generated keys don't come with hostname but backend requires it
     key_data = {"key": rsa_public_key_data.decode(encoding="ascii") + " test@localhost"}
     response = client.post(
@@ -314,10 +300,8 @@ def test_create_user_key(client: TestClient, users: list[User]):
     assert "added" in response_json
 
 
-@pytest.mark.num_users(1)
-def test_create_user_key_invalid(client: TestClient, users: list[User]):
+def test_create_user_key_invalid(client: TestClient, user: User):
     """Test creating an invalid SSH key"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -333,10 +317,8 @@ def test_create_user_key_invalid(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@pytest.mark.num_users(1)
-def test_create_user_key_duplicate(client: TestClient, users: list[User]):
+def test_create_user_key_duplicate(client: TestClient, user: User):
     """Test creating a duplicate SSH key"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -344,18 +326,16 @@ def test_create_user_key_duplicate(client: TestClient, users: list[User]):
         scope=user.scope,
         email=user.email,
     )
-    url = f"/v2/users/{users[0].username}/keys"
-    key_data = {"key": users[0].ssh_keys[0].key}
+    url = f"/v2/users/{user.username}/keys"
+    key_data = {"key": user.ssh_keys[0].key}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@pytest.mark.num_users(1)
-def test_get_user_key(client: TestClient, users: list[User]):
+def test_get_user_key(client: TestClient, user: User):
     """Test getting a specific SSH key"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -369,16 +349,14 @@ def test_get_user_key(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
-    assert response_json["username"] == users[0].username
-    assert response_json["key"] == users[0].ssh_keys[0].key
-    assert response_json["name"] == users[0].ssh_keys[0].name
-    assert response_json["type"] == users[0].ssh_keys[0].type
+    assert response_json["username"] == user.username
+    assert response_json["key"] == user.ssh_keys[0].key
+    assert response_json["name"] == user.ssh_keys[0].name
+    assert response_json["type"] == user.ssh_keys[0].type
 
 
-@pytest.mark.num_users(1)
-def test_get_user_key_not_found(client: TestClient, users: list[User]):
+def test_get_user_key_not_found(client: TestClient, user: User):
     """Test getting a non-existent SSH key"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -391,10 +369,8 @@ def test_get_user_key_not_found(client: TestClient, users: list[User]):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.num_users(1)
-def test_delete_user_key(client: TestClient, users: list[User]):
+def test_delete_user_key(client: TestClient, user: User):
     """Test deleting a user's SSH key"""
-    user = users[0]
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -426,6 +402,70 @@ def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_update_user_role(client: TestClient, user: User):
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        scope=user.scope,
+        email=user.email,
+    )
+    url = f"/v2/users/{user.username}"
+    response = client.patch(
+        url,
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"role": "editor"},
+    )
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+    # Verify the role is updated and scope is None
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert data["username"] == user.username
+    assert data["role"] == "editor"
+
+
+def test_update_user_scope(client: TestClient, user: User):
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        scope=user.scope,
+        email=user.email,
+    )
+    url = f"/v2/users/{user.username}"
+    response = client.patch(
+        url,
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"scope": {"schedules": {"read": True}}},
+    )
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+    # Verify the role is updated and scope is None
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert data["username"] == user.username
+
+
+def test_update_user_role_and_scope(client: TestClient, user: User):
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        scope=user.scope,
+        email=user.email,
+    )
+    url = f"/v2/users/{user.username}"
+    response = client.patch(
+        url,
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"scope": {"schedules": {"read": True}}, "role": "editor"},
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.num_users(2, permission="editor")

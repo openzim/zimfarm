@@ -359,8 +359,12 @@ const changePassword = async (password: string) => {
   loadingStore.stopLoading()
 }
 
-const updateUser = async (payload: { role?: string; email?: string }) => {
-  if (!(payload.role || payload.email)) return
+const updateUser = async (payload: {
+  role?: string
+  email?: string
+  scope?: Record<string, Record<string, boolean>>
+}) => {
+  if (!(payload.role || payload.email || payload.scope)) return
 
   loadingStore.startLoading('updating user…')
   const success = await userStore.updateUser(props.username, payload)

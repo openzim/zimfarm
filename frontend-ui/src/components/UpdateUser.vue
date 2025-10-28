@@ -13,7 +13,6 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                required
               />
             </v-col>
             <v-col cols="12" sm="6" md="4">
@@ -25,13 +24,29 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                required
               />
             </v-col>
             <v-col cols="12" sm="6" md="4" class="d-flex align-end">
               <v-btn type="submit" color="primary" variant="elevated" :disabled="!payload" block>
                 Update User
               </v-btn>
+            </v-col>
+          </v-row>
+
+          <v-row v-if="isCustomRole">
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.customScope"
+                label="Custom Scope (JSON)"
+                placeholder='{"tasks": {"read": true, "create": false}, "schedules": {"read": true}}'
+                hint="Enter the custom scope as JSON. Include all namespaces (tasks, schedules, users, workers, zim, requested_tasks, offliners) with their permissions."
+                persistent-hint
+                :error-messages="customScopeError ? [customScopeError] : []"
+                variant="outlined"
+                density="compact"
+                rows="10"
+                auto-grow
+              />
             </v-col>
           </v-row>
         </v-form>
@@ -150,14 +165,22 @@ interface Props {
   user: {
     username: string
     email: string
-    role: string
+    role?: string
+    scope?: Record<string, Record<string, boolean>>
   }
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'update-user', payload: { role: (typeof constants.ROLES)[number]; email?: string }): void
+  (
+    e: 'update-user',
+    payload: {
+      role?: (typeof constants.ROLES)[number]
+      email?: string
+      scope?: Record<string, Record<string, boolean>>
+    },
+  ): void
   (e: 'change-password', password: string): void
   (e: 'add-key', keyPayload: { name: string; key: string }): void
 }>()
@@ -169,6 +192,7 @@ const form = ref({
   email: '',
   role: '' as (typeof constants.ROLES)[number],
   password: '',
+  customScope: '',
 })
 
 const keyForm = ref({
@@ -180,14 +204,54 @@ const keyFile = ref<File | null>(null)
 const keyInputMode = ref<'file' | 'text'>('file')
 
 // Computed properties
+const isCustomRole = computed(() => form.value.role === 'custom')
+
 const payload = computed(() => {
-  const payload: { role: (typeof constants.ROLES)[number]; email?: string } = {
-    role: form.value.role,
+  const result: {
+    role?: (typeof constants.ROLES)[number]
+    email?: string
+    scope?: Record<string, Record<string, boolean>>
+  } = {}
+
+  // If role is custom, we send scope instead of role
+  if (form.value.role === 'custom') {
+    if (!form.value.customScope.trim()) {
+      return null
+    }
+    try {
+      const parsedScope = JSON.parse(form.value.customScope)
+      result.scope = parsedScope
+    } catch {
+      return null
+    }
+  } else {
+    // For non-custom roles, send the role
+    result.role = form.value.role
   }
+
+  // Only include email if it has changed
   if (form.value.email !== props.user.email) {
-    payload.email = form.value.email
+    result.email = form.value.email
   }
-  return payload
+
+  // Return null if no changes were made
+  if (!result.role && !result.scope && !result.email) {
+    return null
+  }
+
+  return result
+})
+
+const customScopeError = computed(() => {
+  if (form.value.role !== 'custom' || !form.value.customScope.trim()) {
+    return null
+  }
+  try {
+    JSON.parse(form.value.customScope)
+    return null
+  } catch {
+    return 'Invalid JSON format'
+  }
 })
 
 const keyPayload = computed(() => {
@@ -212,6 +276,18 @@ watch(keyInputMode, (newMode) => {
     keyFile.value = null
   }
 })
+
+// Watch for role changes to help populate custom scope template
+watch(
+  () => form.value.role,
+  (newRole, oldRole) => {
+    if (newRole === 'custom' && oldRole !== 'custom') {
+      if (!form.value.customScope.trim() && props.user.scope) {
+        form.value.customScope = JSON.stringify(props.user.scope, null, 2)
+      }
+    }
+  },
+)
 
 // Methods
 const keyTextChanged = () => {
@@ -292,7 +368,7 @@ const addKey = () => {
 }
 
 const updateUser = () => {
-  if (!(payload.value.role || payload.value.email)) return
+  if (!payload.value) return
   emit('update-user', payload.value)
 }
 
@@ -303,10 +379,17 @@ onMounted(() => {
       ? (props.user.role as (typeof constants.ROLES)[number])
       : 'editor'
 
+    // Initialize custom scope with user's current scope if role is custom
+    let customScope = ''
+    if (role === 'custom' && props.user.scope) {
+      customScope = JSON.stringify(props.user.scope, null, 2)
+    }
+
     form.value = {
       email: props.user.email,
       role,
       password: genPassword(),
+      customScope,
     }
   }
 })
