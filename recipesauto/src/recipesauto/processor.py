@@ -160,11 +160,14 @@ class Processor:
         patched_recipe["config"]["warehouse_path"] = "/.hidden/dev"
         patched_recipe["periodicity"] = "manually"
         response = requests.post(
-            self.get_zf_url("/schedules/"),
+            self.get_zf_url("/schedules"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
             json=recipe,
         )
+
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
 
     def _patch_dictionary(
@@ -270,6 +273,13 @@ class Processor:
                                 keys_to_remove.append(key)
                         for key in keys_to_remove:
                             del current_recipe_value[key]
+                    if hasattr(expected_value, "items"):
+                        keys_to_remove = []
+                        for key, value in expected_value.items():
+                            if value is None or value == []:
+                                keys_to_remove.append(key)
+                        for key in keys_to_remove:
+                            del expected_value[key]
                     if current_recipe_value == expected_value:
                         continue
                     if current_recipe_key != "offliner":
@@ -360,6 +370,8 @@ class Processor:
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
         )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
 
     def _list_zf_recipes(self) -> list[str]:
@@ -377,6 +389,9 @@ class Processor:
                 headers=self.get_zf_headers(),
                 timeout=context.http_timeout,
             )
+
+            if not HTTPStatus(response.status_code).is_success:
+                logger.error(response.text)
             response.raise_for_status()
 
             schedules = response.json()
@@ -400,6 +415,8 @@ class Processor:
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
         )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
         response.raise_for_status()
         return response.json()
 
