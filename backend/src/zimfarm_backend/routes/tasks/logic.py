@@ -103,7 +103,6 @@ async def get_task(
         offliner_definition=offliner_definition,
         show_secrets=show_secrets,
     )
-
     return JSONResponse(
         content=task.model_dump(mode="json", context={"show_secrets": show_secrets})
     )
