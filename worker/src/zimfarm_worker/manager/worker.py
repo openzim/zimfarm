@@ -265,11 +265,16 @@ class WorkerManager(BaseWorker):
                 continue  # already handling cancellation
 
             self.update_task_data(task_ident)
-            if self.tasks.get(task_ident, {}).get("status") in [
-                CANCELED,
-                CANCELING,
-                CANCEL_REQUESTED,
-            ]:
+            logger.debug(f"Checking if task {task_ident} should be cancelled...")
+            event_codes = {
+                event["code"]
+                for event in self.tasks.get(task_ident, {}).get("events", [])
+            }
+            cancel_events = {CANCEL_REQUESTED, CANCELED}
+            if (
+                self.tasks.get(task_ident, {}).get("status") in cancel_events
+                or event_codes & cancel_events
+            ):
                 self.cancel_and_remove_task(task_ident)
 
     def cancel_and_remove_task(self, task_ident: TaskIdent):
