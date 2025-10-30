@@ -14,7 +14,15 @@ export default {
   NOTIFICATION_ERROR_DURATION: 8000, // 8 seconds for errors
   NOTIFICATION_SUCCESS_DURATION: 3000, // 3 seconds for success
   // User roles
-  ROLES: ['admin', 'editor', 'editor-requester', 'manager', 'processor', 'worker'] as const,
+  ROLES: [
+    'admin',
+    'editor',
+    'editor-requester',
+    'manager',
+    'processor',
+    'worker',
+    'custom',
+  ] as const,
   MEMORY_VALUES: [
     536870912, // 512MiB
     1073741824, // 1GiB

@@ -146,7 +146,11 @@ def update_user(
             raise UnauthorizedError("You are not allowed to access this resource")
 
     db_update_user(
-        db_session, user_id=user.id, email=user_schema.email, role=user_schema.role
+        db_session,
+        user_id=user.id,
+        email=user_schema.email,
+        role=user_schema.role,
+        scope=user_schema.scope,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 

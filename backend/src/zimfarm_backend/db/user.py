@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
-from zimfarm_backend.common.roles import ROLES, RoleEnum
+from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import UserSchema
 from zimfarm_backend.db.exceptions import (
@@ -98,7 +98,9 @@ def create_user_schema(user: User) -> UserSchema:
         username=user.username,
         email=user.email,
         role=user.role,
-        scope=ROLES.get(user.role, user.scope),
+        scope=merge_scopes(
+            ROLES.get(user.role, user.scope or {}), ROLES[RoleEnum.ADMIN]
+        ),
     )
 
 
@@ -160,13 +162,25 @@ def update_user(
     user_id: UUID,
     email: str | None,
     role: RoleEnum | None,
+    scope: dict[str, dict[str, bool]] | None = None,
 ) -> None:
     """Update a user"""
+
+    if role is not None and scope is not None:
+        raise ValueError("Only one of role/scope must be set.")
+
     values = {}
     if email is not None:
         values["email"] = email
+
     if role is not None:
         values["role"] = role
+        values["scope"] = None
+
+    if scope is not None:
+        values["role"] = "custom"
+        values["scope"] = scope
+
     if not values:
         return
     session.execute(update(User).where(User.id == user_id).values(**values))

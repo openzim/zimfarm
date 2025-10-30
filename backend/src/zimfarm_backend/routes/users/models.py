@@ -1,4 +1,6 @@
-from pydantic import EmailStr, computed_field, field_validator
+from typing import Self
+
+from pydantic import EmailStr, computed_field, field_validator, model_validator
 
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
@@ -54,3 +56,10 @@ class UserUpdateSchema(BaseModel):
 
     email: EmailStr | None = None
     role: RoleEnum | None = None
+    scope: dict[str, dict[str, bool]] | None = None
+
+    @model_validator(mode="after")
+    def check_exclusive_fields(self) -> Self:
+        if self.role is not None and self.scope is not None:
+            raise ValueError("Only one of role/scope must be set")
+        return self

@@ -84,7 +84,7 @@ class RoleEnum(StrEnum):
     PROCESSOR = "processor"
 
 
-ROLES: dict[str, dict[str, Any]] = {
+ROLES: dict[str, dict[str, dict[str, bool]]] = {
     RoleEnum.ADMIN: {
         "tasks": TaskPermissions.get_all(),
         "schedules": SchedulePermissions.get_all(),
@@ -121,10 +121,10 @@ ROLES: dict[str, dict[str, Any]] = {
         ),
     },
     RoleEnum.EDITOR_REQUESTER.value: {
-        "tasks": TaskPermissions.get(read=True, cancel=True),
-        "schedules": SchedulePermissions.get(create=True, update=True),
+        "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
+        "schedules": SchedulePermissions.get(create=True, update=True, secrets=True),
         "requested_tasks": RequestedTaskPermissions.get(
-            read=True, create=True, delete=True
+            read=True, create=True, delete=True, secrets=True
         ),
     },
     RoleEnum.WORKER: {
@@ -142,3 +142,19 @@ ROLES: dict[str, dict[str, Any]] = {
         "requested_tasks": RequestedTaskPermissions.get(update=True, secrets=True),
     },
 }
+
+
+def merge_scopes(
+    user_scope: dict[str, dict[str, bool]], all_scopes: dict[str, dict[str, bool]]
+) -> dict[str, dict[str, bool]]:
+    """Combine user scope and all scopes populating missing user scopes with False."""
+    merged: dict[str, dict[str, bool]] = {}
+
+    for category, permissions in all_scopes.items():
+        merged[category] = {}
+        user_permissions = user_scope.get(category, {})
+
+        for perm, _ in permissions.items():
+            merged[category][perm] = user_permissions.get(perm, False)
+
+    return merged

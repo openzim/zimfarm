@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.roles import ROLES, RoleEnum
+from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -33,12 +33,11 @@ def test_get_user_by_id_not_found(dbsession: OrmSession):
         get_user_by_id(dbsession, user_id=uuid4())
 
 
-@pytest.mark.num_users(1)
-def test_get_user_by_id(dbsession: OrmSession, users: list[User]):
+def test_get_user_by_id(dbsession: OrmSession, user: User):
     """Test that get_user_by_id returns the user if the user exists"""
-    db_user = get_user_by_id(dbsession, user_id=users[0].id)
+    db_user = get_user_by_id(dbsession, user_id=user.id)
     assert db_user is not None
-    assert db_user.id == users[0].id
+    assert db_user.id == user.id
 
 
 def test_get_user_by_username_or_none(dbsession: OrmSession):
@@ -53,13 +52,12 @@ def test_get_user_by_username_not_found(dbsession: OrmSession):
         get_user_by_username(dbsession, username="doesnotexist")
 
 
-@pytest.mark.num_users(1)
-def test_get_user_by_username(dbsession: OrmSession, users: list[User]):
+def test_get_user_by_username(dbsession: OrmSession, user: User):
     """Test that get_user_by_username returns the user if the user exists"""
-    db_user = get_user_by_username(dbsession, username=users[0].username)
+    db_user = get_user_by_username(dbsession, username=user.username)
     assert db_user is not None
-    assert db_user.id == users[0].id
-    assert db_user.username == users[0].username
+    assert db_user.id == user.id
+    assert db_user.username == user.username
 
 
 @pytest.mark.num_users(10)
@@ -100,13 +98,12 @@ def test_create_user_with_non_custom_role_and_scope(dbsession: OrmSession):
         )
 
 
-@pytest.mark.num_users(1)
-def test_create_user_duplicate(dbsession: OrmSession, users: list[User]):
+def test_create_user_duplicate(dbsession: OrmSession, user: User):
     """Test that create_user raises an exception if username already exists"""
     with pytest.raises(RecordAlreadyExistsError):
         create_user(
             dbsession,
-            username=users[0].username,
+            username=user.username,
             email="new@example.com",
             password_hash="hash",
             scope={},
@@ -114,38 +111,98 @@ def test_create_user_duplicate(dbsession: OrmSession, users: list[User]):
         )
 
 
-@pytest.mark.num_users(1)
-def test_update_user(dbsession: OrmSession, users: list[User]):
-    """Test that update_user updates user fields"""
+def test_update_user_role(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
-        user_id=users[0].id,
+        user_id=user.id,
         email="updated@example.com",
         role=RoleEnum.EDITOR,
     )
-    dbsession.refresh(users[0])
-    assert users[0].email == "updated@example.com"
-    assert users[0].role == RoleEnum.EDITOR
+    dbsession.refresh(user)
+    assert user.email == "updated@example.com"
+    assert user.role == RoleEnum.EDITOR
+    assert user.scope is None
 
 
-@pytest.mark.num_users(1)
-def test_update_user_partial(dbsession: OrmSession, users: list[User]):
-    """Test that update_user can update partial fields"""
-    original_email = users[0].email
+def test_update_user_scope(dbsession: OrmSession, user: User):
+    scope = {"schedules": {"create": True, "delete": False, "update": True}}
     update_user(
         dbsession,
-        user_id=users[0].id,
+        user_id=user.id,
+        email="updated@example.com",
+        role=None,
+        scope=scope,
+    )
+    dbsession.refresh(user)
+    assert user.email == "updated@example.com"
+    assert user.role == "custom"
+    assert user.scope == scope
+
+
+@pytest.mark.parametrize(
+    ["custom_scope", "all_scopes", "expected"],
+    [
+        (
+            {"schedules": {"read": True}},
+            {
+                "schedules": {"read": True, "write": True},
+                "users": {"read": True, "write": True},
+            },
+            {
+                "schedules": {"read": True, "write": False},
+                "users": {"read": False, "write": False},
+            },
+        ),
+        (
+            {},
+            {
+                "schedules": {"read": True, "write": True},
+                "users": {"read": True, "write": True},
+            },
+            {
+                "schedules": {"read": False, "write": False},
+                "users": {"read": False, "write": False},
+            },
+        ),
+    ],
+)
+def test_merge_scopes(
+    custom_scope: dict[str, dict[str, bool]],
+    all_scopes: dict[str, dict[str, bool]],
+    expected: dict[str, dict[str, bool]],
+):
+    assert merge_scopes(custom_scope, all_scopes) == expected
+
+
+def test_update_user_scope_and_role(dbsession: OrmSession, user: User):
+    scope = {"schedules": {"create": True, "delete": False, "update": True}}
+    with pytest.raises(ValueError):
+        update_user(
+            dbsession,
+            user_id=user.id,
+            email="updated@example.com",
+            role=RoleEnum.EDITOR,
+            scope=scope,
+        )
+
+
+def test_update_user_partial(dbsession: OrmSession, user: User):
+    """Test that update_user can update partial fields"""
+    original_email = user.email
+    update_user(
+        dbsession,
+        user_id=user.id,
         email=None,
         role=RoleEnum.EDITOR,
     )
-    dbsession.refresh(users[0])
-    assert users[0].email == original_email
-    assert users[0].role == RoleEnum.EDITOR
+    dbsession.refresh(user)
+    assert user.email == original_email
+    assert user.role == RoleEnum.EDITOR
+    assert user.scope is None
 
 
-@pytest.mark.num_users(1)
-def test_delete_user(dbsession: OrmSession, users: list[User]):
+def test_delete_user(dbsession: OrmSession, user: User):
     """Test that delete_user marks user as deleted"""
-    delete_user(dbsession, user_id=users[0].id)
-    dbsession.refresh(users[0])
-    assert users[0].deleted
+    delete_user(dbsession, user_id=user.id)
+    dbsession.refresh(user)
+    assert user.deleted

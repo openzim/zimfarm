@@ -425,7 +425,7 @@ class UserSchema(BaseUserSchema):
 
     email: str | None
     role: str | None
-    scope: dict[str, Any] | None = Field(default=None)
+    scope: dict[str, dict[str, bool]]
 
 
 class BaseSshKeySchema(BaseModel):
