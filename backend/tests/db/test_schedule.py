@@ -131,11 +131,13 @@ def test_create_schedule(
         notification=None,
         periodicity=SchedulePeriodicity.manually,
         offliner_definition=mwoffliner_definition,
+        context="test",
     )
 
     assert schedule.name == "test_schedule"
     assert schedule.category == ScheduleCategory.other
     assert schedule.language_code == "eng"
+    assert schedule.context == "test"
     assert schedule.config == schedule_config.model_dump(
         mode="json", context={"show_secrets": True}
     )

@@ -193,6 +193,7 @@ def create_schedule(
         notification=request.notification,
         periodicity=request.periodicity,
         comment=request.comment,
+        context=request.context.strip() if request.context else None,
     )
 
     return JSONResponse(
