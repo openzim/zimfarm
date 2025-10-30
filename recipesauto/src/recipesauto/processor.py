@@ -176,7 +176,7 @@ class Processor:
         """Small utility function to patch only leaf values of a dictionnary"""
         for key, value in patch_dict.items():
             if key in existing_dict and isinstance(value, dict):
-                self._patch_dictionary(existing_dict[key], patch_dict[key])
+                self._patch_dictionary(existing_dict[key], value)
             else:
                 existing_dict[key] = value
 
@@ -314,7 +314,6 @@ class Processor:
 
     def _patch_recipe_on_zf(self, recipe_name: str, changes: dict[str, Any]):
         """Really patch a recipe on the Zimfarm"""
-        logger.info(changes)
         response = requests.patch(
             self.get_zf_url(f"/schedules/{recipe_name}"),
             headers=self.get_zf_headers(),
