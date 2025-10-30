@@ -1,10 +1,19 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from healthcheck.cache import close_cache, init_cache
 from healthcheck.router import router
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_cache()
+    yield
+    close_cache()
 
 
 def create_app(*, debug: bool = True):
@@ -16,6 +25,7 @@ def create_app(*, debug: bool = True):
         description=(
             "Service for checking health status of Zimfarm components and dependencies"
         ),
+        lifespan=lifespan,
     )
 
     main_router = APIRouter()

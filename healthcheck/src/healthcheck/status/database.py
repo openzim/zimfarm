@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.sql import text
 
 from healthcheck import logger
+from healthcheck.cache import memoize
 from healthcheck.constants import ZIMFARM_DATABASE_URL as DATABASE_URL
 from healthcheck.status import Result
 
@@ -21,6 +22,7 @@ class DatabaseConnectionInfo(BaseModel):
     version: str
 
 
+@memoize("ZIMFARM_DATABASE")
 async def check_database_connection() -> Result[DatabaseConnectionInfo]:
     """Check if we can connect to the database and run a simple query."""
     try:

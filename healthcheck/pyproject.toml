@@ -24,6 +24,7 @@ dependencies = [
     "humanfriendly == 10.0",
     "jinja2 == 3.1.6",
     "psycopg[binary,pool] == 3.2.9",
+    "diskcache == 5.6.3",
 ]
 dynamic = ["version"]
 
@@ -37,14 +38,15 @@ lint = [
 ]
 check = [
     "pyright == 1.1.400",
-    "types-humanfriendly == 10.0.0"
+    "types-humanfriendly == 10.0.0",
+    "diskcache-stubs == 5.6.3.6.20240818",
 ]
 test = [
     "coverage == 7.8.0",
     "httpx == 0.28.0",
     "pytest == 8.3.5",
-    "pytest-asyncio == 0.26.0",
     "pytest-env == 1.1.5",
+    "pytest-asyncio == 1.2.0",
     "Faker==37.3.0",
 ]
 dev = [
