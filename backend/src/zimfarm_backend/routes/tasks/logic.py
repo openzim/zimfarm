@@ -17,6 +17,7 @@ from zimfarm_backend.common.schemas.models import (
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.orms import TaskLightSchema
+from zimfarm_backend.common.upload import build_task_upload_uris
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
@@ -102,6 +103,10 @@ async def get_task(
         offliner=offliner,
         offliner_definition=offliner_definition,
         show_secrets=show_secrets,
+    )
+    task.container.command = task.config.command
+    task = build_task_upload_uris(
+        task, keys=["secretAccessKey", "keyId"], show_secrets=show_secrets
     )
     return JSONResponse(
         content=task.model_dump(mode="json", context={"show_secrets": show_secrets})

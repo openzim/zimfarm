@@ -110,6 +110,55 @@ class TaskFileSchema(BaseModel):
     info: dict[str, Any] = Field(default_factory=dict)
 
 
+class TaskContainerProgressSchema(BaseModel):
+    partial_zim: bool | None = None
+    overall: int | None = None
+    done: int | None = None
+
+
+class TaskContainerMemoryStatsSchema(BaseModel):
+    max_usage: int | None = None
+
+
+class TaskContainerStatsSchema(BaseModel):
+    memory: TaskContainerMemoryStatsSchema = Field(
+        default_factory=TaskContainerMemoryStatsSchema
+    )
+
+
+class TaskContainerSchema(BaseModel):
+    """
+    Schema for reading the container information of a task
+    """
+
+    log: str | None = None
+    image: str | None = None
+    stats: dict[str, Any] | None = None
+    artifacts: str | None = None
+    stderr: str | None = None
+    stdout: str | None = None
+    command: list[str] = Field(default_factory=list)
+    progress: TaskContainerProgressSchema | None = Field(
+        default_factory=TaskContainerProgressSchema
+    )
+    exit_code: int | None = None
+
+
+class TaskUploadConfigSchema(BaseModel):
+    expiration: int | None = None
+    upload_uri: str | None = None
+
+
+class ZimUploadConfigSchema(TaskUploadConfigSchema):
+    zimcheck: str | None = None
+
+
+class TaskUploadSchema(BaseModel):
+    zim: ZimUploadConfigSchema | None = None
+    logs: TaskUploadConfigSchema | None = None
+    artifacts: TaskUploadConfigSchema | None = None
+
+
 class TaskFullSchema(BaseTaskSchema):
     """
     Schema for reading a task model with all fields
@@ -119,11 +168,11 @@ class TaskFullSchema(BaseTaskSchema):
     events: list[dict[str, str | datetime.datetime]]
     debug: dict[str, Any]
     canceled_by: str | None
-    container: dict[str, Any]
+    container: TaskContainerSchema = Field(default_factory=TaskContainerSchema)
     priority: int
     notification: ScheduleNotificationSchema | None
     files: dict[str, TaskFileSchema]
-    upload: dict[str, Any]
+    upload: TaskUploadSchema
     offliner_definition_id: UUID = Field(exclude=True)
     offliner: str
     version: str
@@ -163,7 +212,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
 
     config: ExpandedScheduleConfigSchema
     events: list[dict[str, str | datetime.datetime]]
-    upload: dict[str, Any]
+    upload: TaskUploadSchema
     notification: ScheduleNotificationSchema | None
     rank: int | None = None
     schedule_id: UUID | None = Field(exclude=True)

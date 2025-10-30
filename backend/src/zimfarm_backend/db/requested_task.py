@@ -35,6 +35,7 @@ from zimfarm_backend.common.schemas.orms import (
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
     ScheduleDurationSchema,
+    TaskUploadSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
@@ -738,7 +739,7 @@ def create_requested_task_full_schema(
         worker_name=requested_task.worker.name if requested_task.worker else None,
         context=requested_task.context,
         events=requested_task.events,
-        upload=requested_task.upload,
+        upload=TaskUploadSchema.model_validate(requested_task.upload),
         notification=(
             ScheduleNotificationSchema.model_validate(requested_task.notification)
             if requested_task.notification
