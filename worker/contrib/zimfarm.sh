@@ -34,7 +34,7 @@ POLL_INTERVAL="180"
 MONITORING_DEST=""  # IP:PORT
 MONITORING_KEY=""  # UUID
 #########################
-SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh"
+SOURCE_URL="https://raw.githubusercontent.com/openzim/zimfarm/master/worker/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm-manager"
 SCRIPT_VERSION="1.0.1"
 CORDONED=""
@@ -177,7 +177,7 @@ function restart() {
         --log-opt max-size="100m" \
         -v $datadir:/data \
         -v /var/run/docker.sock:/var/run/docker.sock:ro \
-        -v $ZIMFARM_ROOT/id_rsa:/etc/ssh/keys/zimfarm:ro \
+        -v $ZIMFARM_ROOT/id_ed25519:/etc/ssh/keys/zimfarm:ro \
         $ipv6flag \
         --env ZIMFARM_MEMORY=$ZIMFARM_MAX_RAM \
         --env ZIMFARM_DISK=$ZIMFARM_DISK \
