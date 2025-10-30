@@ -2,7 +2,7 @@
 
 This is based on a `xlarge-xtradisk` with 300GB disk.
 
-``` sh
+```sh
 # check physical volumes
 sudo pvdisplay
 # check volume groups
@@ -22,7 +22,7 @@ Add the following line
 /dev/vd/second-local-disk			/srv	ext4	defaults	0	0
 ```
 
-``` sh
+```sh
 # mount newly created mount-point
 sudo mount -a
 # check mount point and disk size
@@ -31,7 +31,7 @@ df -h /srv/
 
 # Install docker
 
-``` sh
+```sh
 sudo apt update && sudo apt upgrade
 sudo apt install apt-transport-https     ca-certificates     curl     gnupg-agent     software-properties-common
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
@@ -45,37 +45,37 @@ sudo usermod -aG docker kelson
 
 # Change docker folder location
 
-``` sh
+```sh
 sudo systemctl stop docker
 sudo vim /etc/docker/daemon.json
 ```
 
-``` json
+```json
 {
-    "data-root": "/srv/docker"
+  "data-root": "/srv/docker"
 }
 ```
 
-``` sh
+```sh
 sudo rm -rf /var/lib/docker/
 sudo systemctl start docker
 ```
 
 # Install zimfarm
 
-``` sh
+```sh
 cd /srv/
 sudo mkdir -p zimfarm
 cd zimfarm/
-# install worker RSA key
-sudo mv /home/reg/id_rsa .
-sudo chown root:root id_rsa
-sudo chmod 0600 id_rsa
+# install worker Ed25119 key
+sudo mv /home/reg/id_ed25519 .
+sudo chown root:root id_ed25519
+sudo chmod 0600 id_ed25519
 sudo wget -O /usr/local/bin/zimfarm   https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.sh &&   sudo chmod +x /usr/local/bin/zimfarm &&   sudo wget -O /etc/zimfarm.config   https://raw.githubusercontent.com/openzim/zimfarm/master/workers/contrib/zimfarm.config
 sudo vim /etc/zimfarm.config
 ```
 
-``` sh
+```sh
 #!/bin/bash
 
 ### MANDATORY
@@ -83,7 +83,7 @@ sudo vim /etc/zimfarm.config
 # Zimfarm username
 ZIMFARM_USERNAME="wmf-worker"
 
-# Zimfarm folder. You have to create it. Put your `id_rsa` private key
+# Zimfarm folder. You have to create it. Put your `id_ed25519` private key
 # directly at its root. Will be used as well for other Zimfarm
 # temporary data.
 ZIMFARM_ROOT=/srv/zimfarm
@@ -130,8 +130,7 @@ PLATFORM_wikimedia_MAX_TASKS=3
 # PLATFORM_wikihow_MAX_TASKS=2
 ```
 
-
-``` sh
+```sh
 zimfarm start
 # check that the initial auth and all is OK and that it is polling
 zimfarm logs manager
@@ -139,7 +138,7 @@ zimfarm logs manager
 
 ## Add auto-prune
 
-``` sh
+```sh
 sudo vim /etc/cron.daily/zimfarm-prune
 ```
 
@@ -148,7 +147,7 @@ sudo vim /etc/cron.daily/zimfarm-prune
 /usr/local/bin/zimfarm prune
 ```
 
-``` s
+```s
 sudo chmod +x /etc/cron.daily/zimfarm-prune
 /etc/cron.daily/zimfarm-prune
 ```
