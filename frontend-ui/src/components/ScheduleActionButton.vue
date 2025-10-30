@@ -14,7 +14,7 @@
 <template>
   <div v-if="visible" class="d-flex justify-end">
     <!-- Worker Selection Dropdown -->
-    <v-menu v-show="canSelectWorker" location="bottom end" offset-y>
+    <v-menu v-if="canSelectWorker" location="bottom end" offset-y>
       <template v-slot:activator="{ props }">
         <v-btn v-bind="props" variant="outlined" color="primary" size="small" class="mr-2">
           <v-icon size="small" class="mr-1">mdi-server</v-icon>
@@ -131,7 +131,7 @@ import { computed, ref } from 'vue'
 
 // Props
 interface Props {
-  name: string
+  enabled: boolean
   ready: boolean
   task: TaskLight | null
   requestedTask: RequestedTaskLight | null
@@ -166,18 +166,18 @@ const isRunning = computed(() => (taskId.value !== null ? Boolean(taskId.value) 
 const isScheduled = computed(() =>
   requestedTaskId.value === null ? null : Boolean(requestedTaskId.value),
 )
-const canRequest = computed(() => !working.value && !isRunning.value && !isScheduled.value)
+const canRequest = computed(
+  () => props.enabled && !working.value && !isRunning.value && !isScheduled.value,
+)
 const canFire = computed(() => !working.value && canRequest.value)
 const canFireExisting = computed(() => !working.value && isScheduled.value)
 const canCancel = computed(() => !working.value && isRunning.value && taskId.value)
 const canUnRequest = computed(() => !working.value && isScheduled.value)
-const canSelectWorker = computed(
-  () => (canRequest.value || canFire.value) && props.workers.length > 0,
-)
 const allWorkers = computed(() => [
   { name: ANY_WORKER_NAME, status: 'offline' as const },
   ...props.workers,
 ])
+const canSelectWorker = computed(() => canRequest.value || canFire.value)
 const cleanedSelectedWorker = computed(() =>
   selectedWorker.value === ANY_WORKER_NAME ? null : selectedWorker.value,
 )
