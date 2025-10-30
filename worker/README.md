@@ -129,8 +129,9 @@ We do recommend to rotate this SSH key once a year. Zimfarm allows to have multi
 ### Create worker account on the Zimfarm
 
 Send your worker information to to Zimfarm Admins via mail [contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org) or on Slack:
-- worker name (only lowercase letter, see already in-use worker names at https://farm.openzim.org/workers, avoid generic names like "cloud-vm", "zimfarm-worker", ...) 
-- your email (should we need to contact you, send goodies, ...) 
+
+- worker name (only lowercase letter, see already in-use worker names at https://farm.openzim.org/workers, avoid generic names like "cloud-vm", "zimfarm-worker", ...)
+- your email (should we need to contact you, send goodies, ...)
 - the SSH public key
 
 Zimfarm Admin will create and configure your worker account.
@@ -215,3 +216,71 @@ If you feel like you want to meet these expectations, feel free to tell Zimfarm 
 - **`zimfarm prune`**: removes unused containers and volumes to save space. you can put that in a cron task daily. ⚠️ it removes all unused images and containers.
 - **`zimfarm update`**: displays a command you could use update this very script.
 - **`zimfarm update do`**: attempt to tun the `zimfarm update` command.
+
+## Clean Worker Shutdown
+
+When you need to perform maintenance, updates, or shutdown your worker for any reason, it's important to do so cleanly to avoid interrupting running tasks. Here's how to properly shutdown a Zimfarm worker:
+
+### Using the CORDONED Environment Variable
+
+To prepare your worker for shutdown, set the `CORDONED` environment variable in your `/etc/zimfarm.config` file:
+
+```bash
+CORDONED="true"
+```
+
+Then restart the worker:
+
+```bash
+zimfarm restart
+```
+
+**What happens when a worker is cordoned:**
+
+- The worker will **not accept any new tasks** from the Zimfarm scheduler
+- Currently running tasks will **continue to completion** without interruption
+- The worker remains connected to the Zimfarm but signals it's unavailable for new work
+
+### Waiting for Tasks to Complete
+
+Once your worker is cordoned:
+
+1. Monitor running tasks with `zimfarm ps`
+2. Check task logs if needed with `zimfarm logs <task-name>`
+3. **Wait patiently** for all running tasks to complete naturally
+4. Do not force-stop tasks unless absolutely necessary
+
+Some tasks can take days to complete. It's important to let them finish rather than canceling them, as this wastes resources and the task will need to be manually restarted on another worker.
+
+### Shutdown Frequency Expectations
+
+**Important guidelines for worker shutdowns:**
+
+- **Expected frequency**: We expect workers to not be shutdown more than **once per month** on a regular basis
+- **Prioritize stability over speed**: The duration of a shutdown is much less important than the frequency
+  - A 2-week shutdown once every few months is preferable to weekly 1-hour shutdowns
+  - Long shutdowns are acceptable; frequent shutdowns are problematic
+- **Why frequency matters**: Each shutdown interrupts the task scheduling process and can affect the entire Zimfarm pipeline. Minimizing shutdown frequency helps maintain a stable and predictable system
+- **Unplanned outages**: We understand that unexpected issues happen. One or two unplanned shutdowns per year are acceptable, but frequent unexpected downtimes become problematic
+
+### Complete Shutdown Process
+
+When all tasks have completed:
+
+```bash
+zimfarm shutdown
+```
+
+This stops both the manager and any remaining containers.
+
+### Resuming Operations
+
+To bring your worker back online after maintenance:
+
+1. If you cordoned the worker, remove or comment out `CORDONED="true"` from `/etc/zimfarm.config`
+2. Restart the worker:
+   ```bash
+   zimfarm restart
+   ```
+3. Verify it's working with `zimfarm logs manager` - you should see "polling..." messages
+   Your worker will now resume accepting tasks from the Zimfarm scheduler.
