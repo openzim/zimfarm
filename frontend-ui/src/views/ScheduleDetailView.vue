@@ -5,10 +5,10 @@
 <template>
   <v-container>
     <!-- Action Button Row -->
-    <v-row v-if="schedule && schedule.enabled && !schedule.archived">
+    <v-row v-if="schedule">
       <v-col>
         <ScheduleActionButton
-          :name="scheduleName"
+          :enabled="schedule.enabled && !schedule.archived"
           :ready="ready"
           :task="task"
           :requested-task="requestedTask"
