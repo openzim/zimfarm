@@ -1,0 +1,158 @@
+{
+    "en_lcc_a": {
+        "description": "General works",
+        "long_description": "Reference works and general collections from Project Gutenberg's Class A holdings: encyclopedias, dictionaries, collected essays, almanacs, and other General Works"
+    },
+    "en_lcc_b": {
+        "description": "Philosophy, psychology, religion",
+        "long_description": "Works on philosophical thought, psychological studies, religious texts, theology, and comparative religion"
+    },
+    "en_lcc_c": {
+        "description": "Auxiliary sciences of history",
+        "long_description": "Historical methodology, chronology, genealogy, heraldry, diplomatics, numismatics, and other specialized tools for historical research."
+    },
+    "en_lcc_d": {
+        "description": "World history (Europe, Asia, Africa, Australia)",
+        "long_description": "Historical works covering Europe, Asia, Africa, Australia, New Zealand, and other regions outside the Americas."
+    },
+    "en_lcc_e": {
+        "description": "History of the Americas",
+        "long_description": "Historical works, documents, and narratives covering United States history and historical events in the Americas."
+    },
+    "en_lcc_f": {
+        "description": "History of the Americas",
+        "long_description": "Historical works covering Canada, Latin America, and other regions of the Americas beyond the United States."
+    },
+    "en_lcc_g": {
+        "description": "Geography, anthropology, recreation",
+        "long_description": "Works on world geography, maps, anthropology, ethnology, folklore, sports, games, and recreational activities."
+    },
+    "en_lcc_h": {
+        "description": "Social sciences",
+        "long_description": "Economics, sociology, statistics, social theory, commerce, communication, transportation, and other social science disciplines."
+    },
+    "en_lcc_j": {
+        "description": "Political science",
+        "long_description": "Political theory, government systems, public administration, international relations, political philosophy, and civic affairs."
+    },
+    "en_lcc_k": {
+        "description": "Law",
+        "long_description": "Legal texts, jurisprudence, comparative law, international law, and legal systems from various jurisdictions worldwide."
+    },
+    "en_lcc_l": {
+        "description": "Education",
+        "long_description": "Educational theory, pedagogy, teaching methods, curriculum development, and works on educational systems and institutions."
+    },
+    "en_lcc_m": {
+        "description": "Music and books on music",
+        "long_description": "Musical scores, music theory, music history, biographies of composers, and analytical works on musical composition and performance."
+    },
+    "en_lcc_n": {
+        "description": "Fine arts",
+        "long_description": "Works on painting, sculpture, drawing, architecture, decorative arts, art history, and artistic techniques and criticism."
+    },
+    "en_lcc_p": {
+        "description": "Language and literature",
+        "long_description": "General literary works, linguistics, philology, and literature that spans multiple language families and traditions."
+    },
+    "en_lcc_q": {
+        "description": "Science",
+        "long_description": "Mathematics, astronomy, physics, chemistry, geology, paleontology, biology, botany, zoology, and other natural sciences."
+    },
+    "en_lcc_r": {
+        "description": "Medicine",
+        "long_description": "Medical texts, anatomy, physiology, public health, nursing, pharmacology, pathology, and clinical practice across medical specialties."
+    },
+    "en_lcc_s": {
+        "description": "Agriculture",
+        "long_description": "Farming, horticulture, forestry, animal husbandry, agricultural science, soil management, and rural economic topics."
+    },
+    "en_lcc_t": {
+        "description": "Technology",
+        "long_description": "Engineering, manufacturing, industrial arts, construction, mechanical trades, chemical technology, and applied sciences."
+    },
+    "en_lcc_u": {
+        "description": "Military science",
+        "long_description": "Military history, strategy, tactics, armed forces organization, military engineering, and defense-related topics."
+    },
+    "en_lcc_v": {
+        "description": "Naval science",
+        "long_description": "Naval operations, maritime warfare, naval history, seamanship, navigation, and naval architecture and engineering."
+    },
+    "en_lcc_z": {
+        "description": "Bibliography, library science, info resources",
+        "long_description": "Works on bibliography, cataloging, library management, book history, publishing, and information organization systems."
+    },
+    "en_lcc_pa": {
+        "description": "Greek and Latin language and literature",
+        "long_description": "Classical Greek and Latin texts, ancient literature, classical philology, and works from Greco-Roman civilization."
+    },
+    "en_lcc_pb": {
+        "description": "Modern and Celtic languages",
+        "long_description": "Celtic languages including Irish, Welsh, Scottish Gaelic, Breton, and modern European languages not covered elsewhere."
+    },
+    "en_lcc_pc": {
+        "description": "Romance languages",
+        "long_description": "French, Italian, Spanish, Portuguese, Romanian, Catalan language studies, philology, and linguistics of Romance languages."
+    },
+    "en_lcc_pd": {
+        "description": "Germanic and Scandinavian languages",
+        "long_description": "German, Dutch, Scandinavian language studies, philology, linguistics, and comparative Germanic language research."
+    },
+    "en_lcc_pe": {
+        "description": "English language",
+        "long_description": "English language studies, grammar, etymology, dialects, linguistics, philology, and the history of the English language."
+    },
+    "en_lcc_pf": {
+        "description": "West Germanic languages",
+        "long_description": "Dutch, Flemish, Afrikaans, Frisian, and other West Germanic languages beyond English and German."
+    },
+    "en_lcc_pg": {
+        "description": "Slavic, Baltic and Albanian languages",
+        "long_description": "Russian, Polish, Czech, Serbian, Croatian, Lithuanian, Latvian, Albanian language studies and linguistics."
+    },
+    "en_lcc_ph": {
+        "description": "Uralic and Basque languages",
+        "long_description": "Finnish, Hungarian, Estonian, Basque, and other Uralic language family studies and linguistics."
+    },
+    "en_lcc_pj": {
+        "description": "Oriental languages and literatures",
+        "long_description": "Arabic, Hebrew, Aramaic, Ethiopic, and other Semitic and Near Eastern languages and their literatures."
+    },
+    "en_lcc_pk": {
+        "description": "Indo-Iranian languages and literatures",
+        "long_description": "Sanskrit, Persian, Hindi, Urdu, and other Indo-Iranian languages, plus their classical and modern literatures."
+    },
+    "en_lcc_pl": {
+        "description": "Eastern Asia, Africa, Oceania languages",
+        "long_description": "Chinese, Japanese, Korean, African languages, Pacific Island languages, and their respective literatures."
+    },
+    "en_lcc_pm": {
+        "description": "Hyperborean, Indian, and artificial languages",
+        "long_description": "Native American languages, constructed languages like Esperanto, and indigenous languages of the Arctic regions."
+    },
+    "en_lcc_pn": {
+        "description": "Literature (General)",
+        "long_description": "General literary criticism, theory, drama, poetry, prose, rhetoric, journalism, and literary history across cultures."
+    },
+    "en_lcc_pq": {
+        "description": "French, Italian, Spanish, Portuguese literature",
+        "long_description": "Literary works and criticism from French, Italian, Spanish, Portuguese, and other Romance language literary traditions."
+    },
+    "en_lcc_pr": {
+        "description": "English literature",
+        "long_description": "British literature including poetry, drama, fiction, and prose from medieval times through modern periods."
+    },
+    "en_lcc_ps": {
+        "description": "American literature",
+        "long_description": "United States literature including novels, poetry, drama, essays, and literary criticism from American authors."
+    },
+    "en_lcc_pt": {
+        "description": "Germanic and Scandinavian literature",
+        "long_description": "German, Dutch, Flemish, Afrikaans, Scandinavian, Old Norse, Icelandic, Danish, Norwegian, Swedish literary works."
+    },
+    "en_lcc_pz": {
+        "description": "Fiction and juvenile belles lettres",
+        "long_description": "Fiction collections, children's literature, young adult fiction, and literary works for juvenile readers."
+    }
+}

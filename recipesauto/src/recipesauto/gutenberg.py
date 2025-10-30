@@ -1,4 +1,6 @@
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -80,9 +82,14 @@ SPECIAL_ZIM_LANGUAGES = {
 }
 
 
+def get_ref_data() -> dict[str, Any]:
+    return json.loads((Path(__file__).parent / "gutenberg.json").read_text())
+
+
 def get_expected_recipes() -> list[dict[str, Any]]:
     lang_codes = get_all_lang_codes()
     en_shelves = get_en_shelves()
+    ref_data = get_ref_data()
 
     return [
         {
@@ -128,14 +135,16 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "offliner": {
                     "lcc-shelves": shelve.letter,
                     "zim-title": "Project Gutenberg Library",
-                    "zim-desc": f"{shelve.letter} ("
-                    f"{shorthen_shelve_label(shelve.label)}) books in English",
+                    "zim-desc": ref_data[f"en_lcc_{shelve.letter.lower()}"][
+                        "description"
+                    ],
+                    "zim-long-desc": ref_data[f"en_lcc_{shelve.letter.lower()}"][
+                        "long_description"
+                    ],
                     "languages": "en",
                     "publisher": "openZIM",
                     "offliner_id": "gutenberg",
                     "stats-filename": "/output/task_progress.json",
-                    "zim-long-desc": f"All books in English from Library of Congress"
-                    f" bookshelf {shelve.letter}: {shelve.label}",
                     "zim-name": check_zim_name(
                         f"gutenberg_en_lcc-{shelve.letter.lower()}"
                     ),
@@ -157,5 +166,4 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "version": "dev",
         }
         for shelve in en_shelves
-        if shelve.letter == "A"
     ]
