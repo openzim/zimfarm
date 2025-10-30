@@ -36,7 +36,7 @@ for name, func in filters:
     templates.env.filters[name] = func  # type: ignore
 
 
-@router.get("/")
+@router.get("")
 async def healthcheck(request: Request) -> HTMLResponse:
     auth_check, db_check, workers_check = await gather(
         authenticate(),
