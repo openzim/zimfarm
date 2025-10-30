@@ -301,3 +301,17 @@ jobs:
           registries: ghcr.io
           credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
+
+      - name: Deploy Healthcheck changes to openzim.org
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.ZIMFARM_KUBE_CONFIG }}
+        with:
+          args: rollout restart deployments status-deployment -n zimfarm
+
+      - name: Deploy Healthcheck changes to youzim.it
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.ZIMIT_KUBE_CONFIG }}
+        with:
+          args: rollout restart deployments status-deployment -n zimit
