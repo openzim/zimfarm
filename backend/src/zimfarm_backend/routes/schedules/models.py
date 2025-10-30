@@ -44,7 +44,7 @@ class ScheduleCreateSchema(BaseModel):
     version: str = "initial"  # version of offliner to use for validation
     config: dict[str, Any]  # will be validated in the route
     notification: ScheduleNotificationSchema | None = None
-    context: NotEmptyString | None = None
+    context: str | None = None
     comment: str | None = None
 
 

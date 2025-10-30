@@ -266,6 +266,7 @@ def test_get_similar_schedules(
                 },
                 "enabled": True,
                 "periodicity": SchedulePeriodicity.manually.value,
+                "context": "test",
             },
             HTTPStatus.OK,
             id="valid-config",
@@ -306,6 +307,7 @@ def test_create_schedule(
 )
 def test_create_schedule_with_permssions(
     client: TestClient,
+    dbsession: OrmSession,
     create_user: Callable[..., User],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
@@ -338,9 +340,19 @@ def test_create_schedule_with_permssions(
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,
             "version": mwoffliner_definition.version,
+            "context": "test",
         },
     )
     assert response.status_code == expected_status_code
+    if response.status_code == HTTPStatus.OK:
+        # assert top-level scalar attributes of the schedule with the payload
+        schedule = get_schedule(dbsession, schedule_name="test_schedule")
+        assert schedule.language_code == "eng"
+        assert schedule.tags == ["important"]
+        assert schedule.enabled is True
+        assert schedule.context == "test"
+        assert schedule.periodicity == SchedulePeriodicity.manually.value
+        assert schedule.category == ScheduleCategory.wikipedia.value
 
 
 @pytest.mark.parametrize(
