@@ -5,8 +5,8 @@ from typing import Any
 
 import aiohttp
 
-from healthcheck import logger
 from healthcheck.constants import REQUESTS_TIMEOUT
+from healthcheck.status import status_logger as logger
 
 
 @dataclass
@@ -22,6 +22,7 @@ async def query_api(
     url: str,
     method: str = "get",
     *,
+    check_name: str,
     headers: dict[str, Any] | None = None,
     payload: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
@@ -29,6 +30,13 @@ async def query_api(
 ) -> Response:
     req_headers: dict[str, Any] = {}
     req_headers.update(headers if headers else {})
+
+    # Log request details
+    logger.debug(
+        f"Sending request: method={method.upper()}, url={url}, "
+        f"headers={req_headers}, params={params}, body={payload}",
+        extra={"checkname": check_name},
+    )
 
     async with aiohttp.ClientSession() as session:
         method = method.upper()
@@ -43,7 +51,14 @@ async def query_api(
             try:
                 text = await resp.text()
                 json_data: dict[str, Any] = {} if not text else await resp.json()
-                return Response(
+
+                # Log response details
+                logger.debug(
+                    f"Received response: status={resp.status}, body={text}",
+                    extra={"checkname": check_name},
+                )
+
+                response = Response(
                     status_code=HTTPStatus(resp.status),
                     success=resp.ok,
                     json=json_data,
@@ -51,6 +66,14 @@ async def query_api(
             except (JSONDecodeError, Exception):
                 logger.exception(
                     "unexpected error while decoding server response: "
-                    f"{await resp.text()}"
+                    f"{await resp.text()}",
+                    extra={"checkname": check_name},
                 )
                 raise
+            else:
+                if not response.success:
+                    logger.warning(
+                        f"Request to '{url}' failed with the following response {text}",
+                        extra={"checkname": check_name},
+                    )
+                return response

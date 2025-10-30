@@ -11,6 +11,7 @@ from healthcheck.status.auth import authenticate
 from healthcheck.status.database import (
     check_database_connection,
 )
+from healthcheck.status.frontend import check_frontend
 from healthcheck.status.workers import get_workers_status
 
 router = APIRouter(prefix="/healthcheck", tags=["healthcheck"])
@@ -38,9 +39,10 @@ for name, func in filters:
 
 @router.get("")
 async def healthcheck(request: Request) -> HTMLResponse:
-    auth_check, db_check, workers_check = await gather(
+    auth_check, db_check, frontend_check, workers_check = await gather(
         authenticate(),
         check_database_connection(),
+        check_frontend(),
         get_workers_status(),
     )
 
@@ -48,6 +50,7 @@ async def healthcheck(request: Request) -> HTMLResponse:
         [
             auth_check.success,
             db_check.success,
+            frontend_check.success,
             workers_check.success,
         ]
     )
@@ -59,6 +62,7 @@ async def healthcheck(request: Request) -> HTMLResponse:
             "global_status": global_status,
             "auth": auth_check,
             "database": db_check,
+            "frontend": frontend_check,
             "workers": workers_check,
         },
         status_code=HTTPStatus.OK if global_status else HTTPStatus.SERVICE_UNAVAILABLE,

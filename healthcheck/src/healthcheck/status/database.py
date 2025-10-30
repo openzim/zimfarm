@@ -4,9 +4,9 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.sql import text
 
-from healthcheck import logger
 from healthcheck.constants import ZIMFARM_DATABASE_URL as DATABASE_URL
 from healthcheck.status import Result
+from healthcheck.status import status_logger as logger
 
 engine = create_async_engine(
     DATABASE_URL,
@@ -29,6 +29,11 @@ async def check_database_connection() -> Result[DatabaseConnectionInfo]:
 
             version = (await session.execute(text("SHOW server_version"))).scalar_one()
 
+            logger.debug(
+                f"Database connection successful, version: {version}",
+                extra={"checkname": "zimfarm-database-connection"},
+            )
+
             return Result(
                 success=True,
                 status_code=HTTPStatus.OK,
@@ -38,7 +43,10 @@ async def check_database_connection() -> Result[DatabaseConnectionInfo]:
                 ),
             )
     except Exception:
-        logger.exception("Database connection check failed")
+        logger.exception(
+            "Database connection check failed",
+            extra={"checkname": "zimfarm-database-connection"},
+        )
         return Result(
             success=False,
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,

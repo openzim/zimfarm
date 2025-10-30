@@ -4,8 +4,9 @@ from typing import Literal
 from pydantic import BaseModel
 
 from healthcheck.constants import ZIMFARM_API_URL
-from healthcheck.requests import query_api
 from healthcheck.status import Result
+from healthcheck.status import status_logger as logger
+from healthcheck.status.requests import query_api
 
 
 class Worker(BaseModel):
@@ -28,7 +29,10 @@ def check_worker_online(worker: Worker) -> bool:
 async def get_workers_status() -> Result[WorkersStatus]:
     """Fetch the list of workers and check their online status."""
     response = await query_api(
-        f"{ZIMFARM_API_URL}/workers", method="GET", params={"hide_offlines": "true"}
+        f"{ZIMFARM_API_URL}/workers",
+        method="GET",
+        params={"hide_offlines": "true"},
+        check_name="zimfarm-workers-status",
     )
 
     if not response.success:
@@ -40,6 +44,11 @@ async def get_workers_status() -> Result[WorkersStatus]:
 
     workers = [Worker.model_validate(item) for item in response.json.get("items", [])]
     has_online = any(check_worker_online(worker) for worker in workers)
+    if not has_online:
+        logger.warning(
+            "No worker is currently online",
+            extra={"checkname": "zimfarm-workers-status"},
+        )
 
     return Result(
         success=len(workers) > 0,
