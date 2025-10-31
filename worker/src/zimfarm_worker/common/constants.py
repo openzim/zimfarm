@@ -191,3 +191,9 @@ DOCKER_API_RETRIES = int(getenv("DOCKER_API_RETRIES", default=5))
 DOCKER_API_RETRY_SECONDS = humanfriendly.parse_timespan(
     getenv("DOCKER_API_RETRY_DURATION", default="5s")
 )
+
+# number of times to retry a call to the webapi
+REQUEST_RETRIES = int(getenv("REQUEST_RETRIES", default=5))
+REQUEST_RETRY_SECONDS = humanfriendly.parse_timespan(
+    getenv("REQUEST_RETRY_DURATION", default="3s")
+)
