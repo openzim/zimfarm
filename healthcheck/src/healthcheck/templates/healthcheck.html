@@ -122,6 +122,13 @@
             </td>
           </tr>
           <tr>
+            <th>Frontend</th>
+            <td>Can request Zimfarm UI homepage</td>
+            <td class="text-right {{ frontend.success|status_class }}">
+              {{ frontend.success|status_text }}
+            </td>
+          </tr>
+          <tr>
             <th>Workers</th>
             <td>At least one worker is currently connected and online</td>
             <td class="text-right {{ workers.success|status_class }}">

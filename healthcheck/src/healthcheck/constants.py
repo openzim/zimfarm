@@ -23,6 +23,7 @@ DEBUG = parse_bool(getenv("DEBUG", default="false"))
 REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT", default="1m"))
 
 ZIMFARM_API_URL = getenv("ZIMFARM_API_URL", mandatory=True)
+ZIMFARM_FRONTEND_URL = getenv("ZIMFARM_FRONTEND_URL", mandatory=True)
 ZIMFARM_USERNAME = getenv("ZIMFARM_USERNAME", mandatory=True)
 ZIMFARM_PASSWORD = getenv("ZIMFARM_PASSWORD", mandatory=True)
 ZIMFARM_DATABASE_URL = getenv("ZIMFARM_DATABASE_URL", mandatory=True)

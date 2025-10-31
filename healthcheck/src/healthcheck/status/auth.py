@@ -3,8 +3,8 @@ import datetime
 from pydantic import BaseModel
 
 from healthcheck.constants import ZIMFARM_API_URL, ZIMFARM_PASSWORD, ZIMFARM_USERNAME
-from healthcheck.requests import query_api
 from healthcheck.status import Result
+from healthcheck.status.requests import query_api
 
 
 class Token(BaseModel):
@@ -22,6 +22,7 @@ async def authenticate() -> Result[Token]:
         f"{ZIMFARM_API_URL}/auth/authorize",
         method="POST",
         payload={"username": ZIMFARM_USERNAME, "password": ZIMFARM_PASSWORD},
+        check_name="zimfarm-api-authentication",
     )
     return Result(
         success=response.success,
