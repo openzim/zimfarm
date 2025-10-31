@@ -38,6 +38,7 @@ from zimfarm_worker.common.worker import BaseWorker
 from zimfarm_worker.task.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
+CPU_EWMA_ALPHA = 0.25  # EWMA smoothing factor for CPU percentage samples (0..1)
 PENDING = "pending"
 UPLOADING = "uploading"
 UPLOADED = "uploaded"
@@ -118,6 +119,7 @@ class TaskWorker(BaseWorker):
         self.scraper_succeeded: bool | None = None  # whether scraper succeeded
 
         self.max_memory_usage: int = 0  # maximum memory used by scraper
+        self.cpu_ewma: float = 0.0  # cpu exponential moving weighted average
 
         # register stop/^C
         self.register_signals()
@@ -197,10 +199,41 @@ class TaskWorker(BaseWorker):
                 self.max_memory_usage,
             ]
         )
+        # --- CPU percentage calculation with EWMA smoothing ---
+        cpu_sample = 0.0
+        cpu_stats = scraper_stats.get("cpu_stats", {})
+        precpu_stats = scraper_stats.get("precpu_stats", {})
+        prev_total = precpu_stats.get("cpu_usage", {}).get("total_usage", 0)
+        curr_total = cpu_stats.get("cpu_usage", {}).get("total_usage", 0)
+        prev_system = precpu_stats.get("system_cpu_usage", 0)
+        curr_system = cpu_stats.get("system_cpu_usage", 0)
+
+        delta_cpu = curr_total - prev_total
+        delta_system = curr_system - prev_system
+
+        online_cpus = cpu_stats.get("online_cpus", 0)
+        if delta_system > 0 and delta_cpu >= 0:
+            cpu_sample = (delta_cpu / float(delta_system)) * float(online_cpus) * 100.0
+        else:
+            cpu_sample = 0.0
+
+            # apply EWMA smoothing to reduce effect of short spikes
+        if self.cpu_ewma == 0.0:
+            self.cpu_ewma = cpu_sample
+        else:
+            self.cpu_ewma = (
+                CPU_EWMA_ALPHA * cpu_sample + (1.0 - CPU_EWMA_ALPHA) * self.cpu_ewma
+            )
+
         stats: dict[str, Any] = {
             "memory": {
                 "max_usage": self.max_memory_usage,
-            }
+            },
+            "cpu": {
+                "current_percent": round(cpu_sample, 2),
+                "ewma_percent": round(self.cpu_ewma, 2),
+                "online_cpus": online_cpus,
+            },
         }
 
         # fetch and compute progression from progress file
