@@ -40,6 +40,9 @@ from zimfarm_worker.common.worker import BaseWorker
 from zimfarm_worker.task.zim import get_zim_info
 
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
+CPU_EWMA_ALPHA = 0.01  # EWMA smoothing factor for CPU percentage samples (0..1)
+
+
 PENDING = "pending"
 DOING = "doing"
 DONE = "done"
@@ -132,6 +135,9 @@ class TaskWorker(BaseWorker):
         self.scraper_succeeded: bool | None = None  # whether scraper succeeded
 
         self.max_memory_usage: int = 0  # maximum memory used by scraper
+        self.max_disk_usage: int = 0  # maximum disk used by scraper
+        self.avg_cpu_usage: float = 0.0  # cpu exponential moving weighted average
+        self.max_cpu_usage: float = 0.0  # maximum cpu percentage used by scraper
 
         # register stop/^C
         self.register_signals()
@@ -192,8 +198,62 @@ class TaskWorker(BaseWorker):
             }
         )
 
+    def _get_scraper_disk_usage(self) -> int:
+        """
+        Get disk usage of scraper container's task workdir in bytes.
+
+        Calculates the actual disk space used by files in the scraper's
+        task workdir (where ZIM files and other outputs are written).
+        """
+        if not self.task_workdir:
+            return 0
+
+        try:
+            if self.task_workdir.exists() and self.task_workdir.is_dir():
+                return sum(
+                    f.stat().st_size
+                    for f in self.task_workdir.rglob("*")
+                    if f.is_file()
+                )
+            return 0
+        except Exception:
+            logger.exception("Failed to get scraper disk usage")
+            return 0
+
+    def _compute_scraper_cpu_stats(self, scraper_stats: dict[str, Any]) -> float:
+        """
+        Compute CPU usage statistics from scraper container stats.
+
+        Calculates CPU percentage with EWMA smoothing to reduce effect of
+        short spikes.
+        """
+        cpu_sample = 0.0
+        cpu_stats = scraper_stats.get("cpu_stats", {})
+        precpu_stats = scraper_stats.get("precpu_stats", {})
+        prev_total = precpu_stats.get("cpu_usage", {}).get("total_usage", 0)
+        curr_total = cpu_stats.get("cpu_usage", {}).get("total_usage", 0)
+        prev_system = precpu_stats.get("system_cpu_usage", 0)
+        curr_system = cpu_stats.get("system_cpu_usage", 0)
+
+        delta_cpu = curr_total - prev_total
+        delta_system = curr_system - prev_system
+        online_cpus = cpu_stats.get("online_cpus", 0)
+
+        if delta_system > 0 and delta_cpu >= 0 and online_cpus > 0:
+            cpu_sample = (delta_cpu / float(delta_system)) * float(online_cpus) * 100.0
+
+        # apply EWMA smoothing to reduce effect of short spikes
+        if self.avg_cpu_usage == 0.0:
+            self.avg_cpu_usage = cpu_sample
+        else:
+            self.avg_cpu_usage = (
+                CPU_EWMA_ALPHA * cpu_sample
+                + (1.0 - CPU_EWMA_ALPHA) * self.avg_cpu_usage
+            )
+        return cpu_sample
+
     def submit_scraper_progress(self):
-        """report last lines of scraper to the API"""
+        """report scraper statistics and logs to the API"""
         if not self.scraper:
             logger.error("No scraper to update")
             return
@@ -204,6 +264,7 @@ class TaskWorker(BaseWorker):
             stream=False
         )
         scraper_stats = cast(dict[str, Any], scraper_stats)
+
         # update statistics
         self.max_memory_usage = max(
             [
@@ -211,10 +272,24 @@ class TaskWorker(BaseWorker):
                 self.max_memory_usage,
             ]
         )
+
+        cpu_sample = self._compute_scraper_cpu_stats(scraper_stats)
+        self.max_cpu_usage = max([cpu_sample, self.max_cpu_usage])
+
+        disk_usage = self._get_scraper_disk_usage()
+        self.max_disk_usage = max([disk_usage, self.max_disk_usage])
+
         stats: dict[str, Any] = {
             "memory": {
                 "max_usage": self.max_memory_usage,
-            }
+            },
+            "cpu": {
+                "max_usage": self.max_cpu_usage,
+                "avg_usage": round(self.avg_cpu_usage, 2),
+            },
+            "disk": {
+                "max_usage": self.max_disk_usage,
+            },
         }
 
         # fetch and compute progression from progress file
