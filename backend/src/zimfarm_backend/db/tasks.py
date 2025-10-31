@@ -19,9 +19,11 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     RequestedTaskFullSchema,
     RunningTask,
+    TaskContainerSchema,
     TaskFileSchema,
     TaskFullSchema,
     TaskLightSchema,
+    TaskUploadSchema,
 )
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -111,14 +113,14 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             debug=row.debug,
             requested_by=row.requested_by,
             canceled_by=row.canceled_by,
-            container=row.container,
+            container=TaskContainerSchema.model_validate(row.container),
             priority=row.priority,
             notification=row.notification or None,
             files={
                 key: TaskFileSchema.model_validate(value)
                 for key, value in row.files.items()
             },
-            upload=row.upload,
+            upload=TaskUploadSchema.model_validate(row.upload),
             updated_at=row.updated_at,
             original_schedule_name=row.original_schedule_name,
             schedule_name=row.schedule_name,
@@ -242,7 +244,7 @@ def create_task(
             else {}
         ),
         files={},
-        upload=requested_task.upload,
+        upload=requested_task.upload.model_dump(mode="json"),
         original_schedule_name=requested_task.original_schedule_name,
         context=requested_task.context,
     )

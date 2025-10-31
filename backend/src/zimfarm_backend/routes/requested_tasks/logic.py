@@ -27,6 +27,7 @@ from zimfarm_backend.common.schemas.orms import (
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
 )
+from zimfarm_backend.common.upload import build_task_upload_uris
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
@@ -313,6 +314,10 @@ def get_requested_task(
         show_secrets = False
     else:
         show_secrets = not hide_secrets
+
+    requested_task = build_task_upload_uris(
+        requested_task, keys=["secretAccessKey", "keyId"], show_secrets=show_secrets
+    )
 
     return JSONResponse(
         content=requested_task.model_dump(

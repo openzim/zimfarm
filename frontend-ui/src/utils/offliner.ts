@@ -277,9 +277,9 @@ function uploadUrl(uri: string, filename: string) {
   const scheme = url.protocol.replace(/:$/, '')
 
   if (['http', 'https'].indexOf(scheme) == -1)
-    url = new URL(url.href.replace(new RegExp('^' + url.protocol), 'https:'))
+    url = new URL(url.href.replace(url.protocol, 'https:'))
 
-  if (scheme == 's3') {
+  if (['s3', 's3+http', 's3+https'].includes(scheme)) {
     let log_url = url.protocol + '//' + url.host + url.pathname
     const bucketName = url.searchParams.get('bucketName')
     if (bucketName) log_url += bucketName + '/'

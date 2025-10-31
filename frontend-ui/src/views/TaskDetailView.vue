@@ -672,7 +672,7 @@ const scrollLogsToBottom = () => {
 
 const refreshData = async () => {
   loadingStore.startLoading('Fetching task...')
-  const response = await tasksStore.fetchTask(props.id, canViewTaskSecrets.value)
+  const response = await tasksStore.fetchTask(props.id, !canViewTaskSecrets.value)
   if (response) {
     task.value = response
     // Use nextTick to ensure the DOM has updated before scrolling
