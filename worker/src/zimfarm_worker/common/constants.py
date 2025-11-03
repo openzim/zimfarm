@@ -69,7 +69,7 @@ DOCKER_CLIENT_TIMEOUT = 180  # 3mn for read timeout on docker API socket
 
 # configuration
 ZIMFARM_DISK_SPACE = as_pos_int(
-    humanfriendly.parse_size(getenv("ZIMFARM_DISK", default=str(2**34)))
+    humanfriendly.parse_size(getenv("ZIMFARM_DISK", default=str(2**34)), binary=True)
 )
 
 PHYSICAL_CPU = multiprocessing.cpu_count()
@@ -92,7 +92,9 @@ ZIMFARM_TASK_CPUSET = zimfarm_task_cpuset
 
 PHYSICAL_MEMORY = psutil.virtual_memory().total
 ZIMFARM_MEMORY = as_pos_int(
-    humanfriendly.parse_size(getenv("ZIMFARM_MEMORY", default=str(PHYSICAL_MEMORY)))
+    humanfriendly.parse_size(
+        getenv("ZIMFARM_MEMORY", default=str(PHYSICAL_MEMORY)), binary=True
+    )
 )
 CORDONED = parse_bool(getenv("CORDONED", default="False"))
 
