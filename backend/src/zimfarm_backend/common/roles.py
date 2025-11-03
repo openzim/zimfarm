@@ -114,6 +114,9 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
             secrets=True,
         ),
         "workers": WorkerPermissions.get(read=True),
+        "requested_tasks": RequestedTaskPermissions.get(
+            read=True, create=True, delete=True, secrets=True
+        ),
     },
     RoleEnum.EDITOR: {
         "schedules": SchedulePermissions.get(
