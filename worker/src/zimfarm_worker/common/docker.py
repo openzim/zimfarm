@@ -21,6 +21,7 @@ from zimfarm_worker.common.constants import (
     CHECKER_IMAGE,
     CONTAINER_SCRAPER_IDENT,
     CONTAINER_TASK_IDENT,
+    DEBUG,
     DEFAULT_CPU_SHARE,
     DISABLE_IPV6,
     DNSCACHE_IMAGE,
@@ -417,9 +418,14 @@ def start_monitor(
             "schedule_name": task["schedule_name"],
         },
         environment=environment,
-        cap_add=["SYS_PTRACE"],
+        cap_add=["SYS_PTRACE", "SYS_ADMIN"],
         security_opt=["apparmor=unconfined"],
         sysctls=get_sysctl(),
+        network_mode=(
+            f"container:{get_running_container_name()}"
+            if ENVIRONMENT == "development"
+            else "bridge"
+        ),
     )
 
 
@@ -589,12 +595,12 @@ def start_task_worker(
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
             "WORKER_NAME": worker_name,
-            "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
-            "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
-            "ZIMFARM_TASK_CPUS": os.getenv("ZIMFARM_TASK_CPUS"),
-            "ZIMFARM_TASK_CPUSET": os.getenv("ZIMFARM_TASK_CPUSET"),
-            "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
-            "DEBUG": os.getenv("DEBUG"),
+            "ZIMFARM_DISK": ZIMFARM_DISK_SPACE,
+            "ZIMFARM_CPUS": ZIMFARM_CPUS,
+            "ZIMFARM_TASK_CPUS": ZIMFARM_TASK_CPUS,
+            "ZIMFARM_TASK_CPUSET": ZIMFARM_TASK_CPUSET,
+            "ZIMFARM_MEMORY": ZIMFARM_MEMORY,
+            "DEBUG": DEBUG,
             "ENVIRONMENT": ENVIRONMENT,
             "USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "",
             "DISABLE_IPV6": "yes" if DISABLE_IPV6 else "",
