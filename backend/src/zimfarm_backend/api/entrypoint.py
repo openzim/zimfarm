@@ -1,0 +1,172 @@
+import os
+from collections import defaultdict
+from contextlib import asynccontextmanager
+from http import HTTPStatus
+
+from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+
+from zimfarm_backend.api.routes.auth.logic import router as auth_router
+from zimfarm_backend.api.routes.contexts.logic import router as contexts_router
+from zimfarm_backend.api.routes.healthcheck.logic import router as healthcheck_router
+from zimfarm_backend.api.routes.http_errors import BadRequestError
+from zimfarm_backend.api.routes.languages.logic import router as languages_router
+from zimfarm_backend.api.routes.offliners.logic import router as offliners_router
+from zimfarm_backend.api.routes.platforms.logic import router as platforms_router
+from zimfarm_backend.api.routes.requested_tasks.logic import (
+    router as requested_tasks_router,
+)
+from zimfarm_backend.api.routes.schedules.logic import router as schedules_router
+from zimfarm_backend.api.routes.status.logic import router as status_router
+from zimfarm_backend.api.routes.tags.logic import router as tags_router
+from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
+from zimfarm_backend.api.routes.users.logic import router as users_router
+from zimfarm_backend.api.routes.workers.logic import router as workers_router
+from zimfarm_backend.db.exceptions import (
+    RecordAlreadyExistsError,
+    RecordDoesNotExistError,
+)
+from zimfarm_backend.utils.database import (
+    create_initial_user,
+    load_offliners,
+    upgrade_db_schema,
+)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    upgrade_db_schema()
+    create_initial_user()
+    load_offliners()
+    yield
+
+
+def create_app(*, debug: bool = True):
+    app = FastAPI(
+        debug=debug,
+        docs_url="/",
+        title="Zimfarm API",
+        version="2.0.0",
+        description="Zimfarm API for managing tasks, workers, and other resources",
+        lifespan=lifespan,
+    )
+
+    if origins := os.getenv("ALLOWED_ORIGINS", None):
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins.split(","),
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+    main_router = APIRouter(prefix="/v2")
+    main_router.include_router(router=healthcheck_router)
+    main_router.include_router(router=auth_router)
+    main_router.include_router(router=contexts_router)
+    main_router.include_router(router=languages_router)
+    main_router.include_router(router=platforms_router)
+    main_router.include_router(router=offliners_router)
+    main_router.include_router(router=users_router)
+    main_router.include_router(router=requested_tasks_router)
+    main_router.include_router(router=workers_router)
+    main_router.include_router(router=tasks_router)
+    main_router.include_router(router=tags_router)
+    main_router.include_router(router=status_router)
+    main_router.include_router(router=schedules_router)
+
+    app.include_router(router=main_router)
+
+    return app
+
+
+app = create_app()
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error_handler(_, exc: RequestValidationError):
+    # transform the pydantic validation errors to a dictionary mapping
+    # the field to the list of errors
+    errors: dict[str | int, list[str]] = defaultdict(list)
+    for err in exc.errors():
+        loc = err["loc"]
+        key = loc[-1] if loc else "root"  # fallback for model level errors
+        errors[key].append(err["msg"])
+
+    return JSONResponse(
+        status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+        content={
+            "success": False,
+            "message": "Input values failed constraints validation",
+            "errors": errors,
+        },
+    )
+
+
+@app.exception_handler(ValidationError)
+async def validation_error_handler(_, exc: ValidationError):
+    # transform the pydantic validation errors to a dictionary mapping
+    # the field to the list of errors
+    errors: dict[str | int, list[str]] = defaultdict(list)
+    for err in exc.errors():
+        loc = err["loc"]
+        key = loc[-1] if loc else "root"  # fallback for model level errors
+        errors[key].append(err["msg"])
+    return JSONResponse(
+        status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+        content={
+            "success": False,
+            "message": "Input values failed constraints validation",
+            "errors": errors,
+        },
+    )
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(_, exc: ValueError):
+    return JSONResponse(
+        status_code=HTTPStatus.BAD_REQUEST,
+        content={"success": False, "message": exc.args[0]},
+    )
+
+
+@app.exception_handler(RecordDoesNotExistError)
+async def record_does_not_exist_error_handler(_, exc: RecordDoesNotExistError):
+    return JSONResponse(
+        status_code=HTTPStatus.NOT_FOUND,
+        content={"success": False, "message": exc.detail},
+    )
+
+
+@app.exception_handler(RecordAlreadyExistsError)
+async def record_already_exists_error_handler(_, exc: RecordAlreadyExistsError):
+    return JSONResponse(
+        status_code=HTTPStatus.CONFLICT,
+        content={"success": False, "message": exc.detail},
+    )
+
+
+@app.exception_handler(BadRequestError)
+async def bad_request_error_handler(_, exc: BadRequestError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "message": exc.detail, "errors": exc.errors},
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code, content={"success": False, "message": exc.detail}
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_error_handler(_, __):  # pyright: ignore
+    return JSONResponse(
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        content={"success": False, "message": "Internal server error"},
+    )

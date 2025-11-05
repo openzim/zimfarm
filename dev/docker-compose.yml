@@ -17,17 +17,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
   backend:
     build:
       context: ../backend
+      dockerfile: api.Dockerfile
     container_name: zf_backend
     volumes:
-      - ../backend/prestart.sh:/app/prestart.sh
-      - ../backend/periodic-scheduler.py:/app/periodic-scheduler.py
-      - ../backend/periodic-tasks.py:/app/periodic-tasks.py
-      - ../backend/maint-scripts:/app/maint-scripts
       - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
-      - ../backend/periodic.conf.dev:/etc/supervisor/conf.d/periodic.conf:ro
     ports:
       - 127.0.0.1:8000:80
     environment:
@@ -44,9 +41,41 @@ services:
       # username and password of admin user
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
+    command:
+      - uvicorn
+      - zimfarm_backend.api.entrypoint:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "80"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+      - --reload
+      - --reload-dir
+      - /usr/local/lib/python3.13/site-packages/zimfarm_backend
     depends_on:
       postgresdb:
         condition: service_healthy
+
+  background-tasks:
+    build:
+      context: ../backend
+      dockerfile: background-tasks.Dockerfile
+    container_name: zf_background_tasks
+    volumes:
+      - ../backend/maint-scripts:/app/maint-scripts
+      - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
+    environment:
+      DEBUG: true
+      JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    profiles:
+      - background-tasks
+
   frontend-ui:
     build: ../frontend-ui
     container_name: zf_frontend-ui
@@ -57,6 +86,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
   frontend-ui-dev:
     build:
       dockerfile: ../dev/frontend-ui-dev/Dockerfile
@@ -70,6 +100,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
   backend-tests:
     build:
       dockerfile: ../dev/backend-tools-tests/Dockerfile
@@ -84,6 +115,7 @@ services:
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimtest
     depends_on:
       - postgresdb
+
   receiver:
     build: ../receiver
     container_name: zf_receiver
@@ -96,56 +128,63 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    profiles:
+      - worker
 
-  # # uncomment this only if you want to run a StackExchange dumps watcher
-  # watcher:
-  #   build: ../watcher
-  #   container_name: zf_watcher
-  #   command: watcher --only beer.stackexchange.com --debug
-  #   environment:
-  #     - ZIMFARM_API_URL=http://backend:8000/v1
-  #     - ZIMFARM_USERNAME=admin
-  #     - ZIMFARM_PASSWORD=admin
-  #     - S3_URL=https://s3.us-west-1.wasabisys.com/?keyId=<your_key_id>&secretAccessKey=<your_secret_access_key>&bucketName=org-kiwix-dev-stackexchange
-  #   depends_on:
-  #     - backend
+  watcher:
+    build: ../watcher
+    container_name: zf_watcher
+    command: watcher --only beer.stackexchange.com --debug
+    environment:
+      - ZIMFARM_API_URL=http://backend:8000/v1
+      - ZIMFARM_USERNAME=admin
+      - ZIMFARM_PASSWORD=admin
+      - S3_URL=https://s3.us-west-1.wasabisys.com/?keyId=<your_key_id>&secretAccessKey=<your_secret_access_key>&bucketName=org-kiwix-dev-stackexchange
+    depends_on:
+      - backend
+    profiles:
+      - watcher
 
-  # uncomment this and the task_worker only if you want to run a worker manager
-  # worker_mgr:
-  #   build:
-  #     context: ../worker
-  #     dockerfile: manager-Dockerfile
-  #   container_name: zf_worker_mgr
-  #   depends_on:
-  #     backend:
-  #       condition: service_healthy
-  #     task_worker:
-  #       condition: service_started
-  #   command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
-  #   environment:
-  #     - DEBUG=true
-  #     - TASK_WORKER_IMAGE=zf_task_worker
-  #     - ENVIRONMENT=development
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
+  worker_mgr:
+    build:
+      context: ../worker
+      dockerfile: manager-Dockerfile
+    container_name: zf_worker_mgr
+    depends_on:
+      backend:
+        condition: service_healthy
+      task_worker:
+        condition: service_started
+    command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
+    environment:
+      - DEBUG=true
+      - TASK_WORKER_IMAGE=zf_task_worker
+      - ENVIRONMENT=development
+      - POLL_INTERVAL=10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
+    profiles:
+      - worker
 
   # you have to modify the command if you want to run a standalone worker
-  # task_worker:
-  #   build:
-  #     context: ../worker
-  #     dockerfile: task-Dockerfile
-  #   image: zf_task_worker
-  #   container_name: zf_task_worker
-  #   depends_on:
-  #     - backend
-  #   command: task-worker --help
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
-  #   environment:
-  #     - DEBUG=true
-  #     - ENVIRONMENT=development
+  task_worker:
+    build:
+      context: ../worker
+      dockerfile: task-Dockerfile
+    image: zf_task_worker
+    container_name: zf_task_worker
+    depends_on:
+      - backend
+    command: task-worker --help
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+    profiles:
+      - worker
 
 volumes:
   pg_data_zimfarm:

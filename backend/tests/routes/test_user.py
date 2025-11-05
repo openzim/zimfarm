@@ -6,9 +6,9 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.db.models import User
-from zimfarm_backend.utils.token import generate_access_token
 
 
 def test_list_users_no_auth(client: TestClient):

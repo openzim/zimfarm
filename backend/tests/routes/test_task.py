@@ -8,11 +8,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import RequestedTask, Task, User, Worker
-from zimfarm_backend.utils.token import generate_access_token
 
 
 def test_get_tasks(

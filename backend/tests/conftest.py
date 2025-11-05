@@ -16,6 +16,7 @@ from pytest import FixtureRequest, Mark
 from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import generate_password_hash
 
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
 from zimfarm_backend.common.roles import RoleEnum
@@ -46,13 +47,12 @@ from zimfarm_backend.db.models import (
 from zimfarm_backend.db.offliner import create_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
-from zimfarm_backend.utils.offliners import expanded_config
-from zimfarm_backend.utils.timestamp import get_timestamp_for_status
-from zimfarm_backend.utils.token import (
-    generate_access_token,
+from zimfarm_backend.utils.cryptography import (
     get_public_key_fingerprint,
     sign_message_with_rsa_key,
 )
+from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 
 @pytest.fixture

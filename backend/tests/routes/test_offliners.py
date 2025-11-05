@@ -4,12 +4,12 @@ from http import HTTPStatus
 import pytest
 from fastapi.testclient import TestClient
 
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db.models import User
-from zimfarm_backend.utils.token import generate_access_token
 
 
 def test_get_offliners(client: TestClient):

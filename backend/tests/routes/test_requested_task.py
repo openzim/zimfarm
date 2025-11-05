@@ -7,13 +7,13 @@ from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.routes.requested_tasks import logic
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import ResourcesSchema, ScheduleConfigSchema
 from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
 from zimfarm_backend.db.worker import get_worker
-from zimfarm_backend.routes.requested_tasks import logic
-from zimfarm_backend.utils.token import generate_access_token
 
 
 def test_create_request_task_no_permission(

@@ -37,6 +37,8 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
+            background_tasks:
+              - 'backend/**'
             frontend_ui:
               - 'frontend-ui/**'
             dnscache:
@@ -99,7 +101,7 @@ jobs:
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   backend:
-    name: Backend build
+    name: Backend API build
     runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force }}
@@ -114,6 +116,7 @@ jobs:
           on-master: latest
           restrict-to: openzim/zimfarm
           context: backend
+          dockerfile: api.Dockerfile
           registries: ghcr.io
           credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
@@ -131,6 +134,27 @@ jobs:
           KUBE_CONFIG: ${{ secrets.ZIMIT_KUBE_CONFIG }}
         with:
           args: rollout restart deployments api-deployment -n zimit
+
+  background-tasks:
+    name: Zimfarm Bakground Tasks Build
+    runs-on: ubuntu-24.04
+    needs: paths-filter
+    if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force }}
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build and publish Docker Image
+        uses: openzim/docker-publish-action@v10
+        with:
+          image-name: openzim/zimfarm-background-tasks
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: worker
+          dockerfile: background-tasks.Dockerfile
+          registries: ghcr.io
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
   frontend-ui:
     name: Frontend UI build
