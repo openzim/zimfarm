@@ -21,9 +21,9 @@ EOF
 echo "${REDIS_CONF}" > /etc/netdata/go.d/redis.conf
 
 # setup custom hostname for node in netdata
-if [ ! -z "${NETDATA_HOSTNAME}" ]
+if [ -n "${NETDATA_HOSTNAME}" ]
 then
-    printf "\n hostname = ${NETDATA_HOSTNAME}" >> /etc/netdata/netdata.conf
+    printf "\n hostname = %s" "${NETDATA_HOSTNAME}" >> /etc/netdata/netdata.conf
 fi
 
 # netdata's entrypoint
