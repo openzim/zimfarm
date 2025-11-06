@@ -32,7 +32,7 @@ from zimfarm_backend.common.schemas.orms import (
     TaskFullSchema,
 )
 from zimfarm_backend.db import dbsession
-from zimfarm_backend.db.tasks import get_task_by_id
+from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -177,10 +177,10 @@ def advertise_books_to_cms(task_id: UUID, session: so.Session):
     Safe to re-run as successful requests are skipped"""
     task = get_task_by_id(session, task_id)
     for file_name in task.files.keys():
-        advertise_book_to_cms(task, file_name)
+        advertise_book_to_cms(session, task, file_name)
 
 
-def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
+def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: str):
     """inform openZIM CMS (or compatible) of a created ZIM in the farm
 
     Safe to re-run as successful requests are skipped"""
@@ -188,10 +188,8 @@ def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
     file_data = task.files[file_name]
 
     # skip if already advertised to CMS
-    if file_data.cms:
-        # cms query already succeeded
-        if file_data.cms.succeeded:
-            return
+    if file_data.cms and file_data.cms.succeeded:
+        return
 
     # prepare payload and submit request to CMS
     download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
@@ -230,6 +228,18 @@ def advertise_book_to_cms(task: TaskFullSchema, file_name: str):
             )
 
     # record request result
+    create_or_update_task_file(
+        session,
+        task_id=task.id,
+        name=file_name,
+        status=file_data.status,
+        cms_status_code=file_data.cms.status_code,
+        cms_succeeded=file_data.cms.succeeded,
+        cms_book_id=file_data.cms.book_id,
+        cms_title_ident=file_data.cms.title_ident,
+        cms_on=file_data.cms.on,
+        cms_notified=True,
+    )
     task.files[file_name] = file_data
 
 

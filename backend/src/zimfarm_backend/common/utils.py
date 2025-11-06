@@ -403,7 +403,7 @@ def task_checked_file_event_handler(
         if task is None:
             raise RecordDoesNotExistError(f"Task {task_id} does not exist")
         if filename := file.get("name"):
-            advertise_book_to_cms(task, filename)
+            advertise_book_to_cms(session, task, filename)
 
 
 def task_update_event_handler(

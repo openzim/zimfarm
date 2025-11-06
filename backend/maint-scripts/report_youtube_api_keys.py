@@ -72,8 +72,8 @@ def report_youtube_api_keys(
                 if task.status != TaskStatus.succeeded:
                     continue
                 media_count = 0
-                for file in task.files.values():
-                    media_count += file["info"]["media_count"]
+                for file in task.task_files:
+                    media_count += file.info["media_count"]
                 schedule_data["media_count"] = media_count
                 break
         schedules_by_api_key[hashed_api_key]["schedules"].append(schedule_data)

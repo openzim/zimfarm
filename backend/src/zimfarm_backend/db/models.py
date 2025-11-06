@@ -202,7 +202,7 @@ class File(Base):
     )
     name: Mapped[str]
     status: Mapped[str]
-    size: Mapped[int | None] = mapped_column(default=None)
+    size: Mapped[int | None] = mapped_column(default=None, type_=BigInteger)
 
     # CMS status fields (nested in TaskFileSchema.cms)
     cms_status_code: Mapped[int | None] = mapped_column(default=None)

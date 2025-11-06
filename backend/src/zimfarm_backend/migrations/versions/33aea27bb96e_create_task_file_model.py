@@ -1,8 +1,9 @@
-"""create taskfile model
+"""create task file model
 
-Revision ID: f931ce37c66a
+
+Revision ID: 33aea27bb96e
 Revises: c1716b0a1595
-Create Date: 2025-11-06 15:30:43.486935
+Create Date: 2025-11-06 16:07:21.385887
 
 """
 
@@ -11,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "f931ce37c66a"
+revision = "33aea27bb96e"
 down_revision = "c1716b0a1595"
 branch_labels = None
 depends_on = None
@@ -29,7 +30,7 @@ def upgrade() -> None:
         ),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("status", sa.String(), nullable=False),
-        sa.Column("size", sa.Integer(), nullable=True),
+        sa.Column("size", sa.BigInteger(), nullable=True),
         sa.Column("cms_status_code", sa.Integer(), nullable=True),
         sa.Column("cms_succeeded", sa.Boolean(), nullable=True),
         sa.Column("cms_on", sa.DateTime(), nullable=True),
