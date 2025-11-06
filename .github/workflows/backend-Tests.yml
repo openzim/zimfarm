@@ -55,6 +55,10 @@ jobs:
           psql -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
           "host=localhost port=5432 dbname=zimtest user=zimfarm password=zimpass"
 
+      - name: Run Alembic Migrations
+        working-directory: backend/src/zimfarm_backend
+        run: alembic upgrade head
+
       - name: Build API Docker image
         working-directory: backend
         run: docker build -t zimfarm-backend:test -f api.Dockerfile .

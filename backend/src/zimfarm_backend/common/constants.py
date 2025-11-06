@@ -157,3 +157,7 @@ POSTGRES_URI = getenv("POSTGRES_URI", mandatory=True)
 WORKER_OFFLINE_DELAY_DURATION = parse_timespan(
     getenv("WORKER_OFFLINE_DELAY_DURATION", default="20m")
 )
+
+ALEMBIC_UPGRADE_HEAD_ON_START = parse_bool(
+    getenv("ALEMBIC_UPGRADE_HEAD_ON_START", default="false")
+)

@@ -29,6 +29,8 @@ export interface TaskFile {
   check_result?: number
   check_details?: Record<string, unknown>
   info?: TaskFileInfo
+  cms_on?: string
+  cms_notified?: boolean
 }
 
 export interface TaskContainer {
