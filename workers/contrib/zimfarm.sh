@@ -36,7 +36,7 @@ MONITORING_KEY=""  # UUID
 #########################
 SOURCE_URL="https://farm.openzim.org/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm-manager"
-SCRIPT_VERSION="1.0.1"
+SCRIPT_VERSION="1.0.2"
 CORDONED=""
 
 function die() {
