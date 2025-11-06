@@ -1,5 +1,6 @@
 # Zimfarm Workers
 
+
 # Resources & load expectations
 
 When setting-up a worker, you'll be joining the
@@ -113,7 +114,7 @@ ssh-keygen -t ed25519 -f id_ed25519
 If you are using a legacy system that doesn't support the Ed25519 algorithm, use:
 
 ```bash
-ssh-keygen -t rsa -b 2048 -f id_rsa
+ssh-keygen -t rsa -b 2048 -f id_ed25519
 ```
 
 ```bash
@@ -137,6 +138,8 @@ Send your worker information to to Zimfarm Admins via mail [contact+zimfarm@kiwi
 Zimfarm Admin will create and configure your worker account.
 
 ### Management script
+> **Note:** TThere is also a legacy `workers/` folder (plural) in the repository that contains a symlink of the `zimfarm.sh` script for backwards compatibility because the folder name was changed from `workers` to `worker` and older versions of the script needed to fetch their updates from that folder.
+
 
 A Zimfarm worker is just a Docker container spawning other containers.
 
@@ -222,6 +225,10 @@ If you feel like you want to meet these expectations, feel free to tell Zimfarm 
 When you need to perform maintenance, updates, or shutdown your worker for any reason, it's important to do so cleanly to avoid interrupting running tasks. Here's how to properly shutdown a Zimfarm worker:
 
 ### Using the CORDONED Environment Variable
+
+**NOTE**: In order to be able to cordon your worker, you need to be on at least version `1.0.1`. Run `zimfarm version` to see which version you are on.
+
+To update your zimfarm script, simply run `zimfarm update do`
 
 To prepare your worker for shutdown, set the `CORDONED` environment variable in your `/etc/zimfarm.config` file:
 

@@ -28,7 +28,9 @@ Anybody can use it in read-only mode.
 
 ### workers
 
-Workers are always-running computers which gets assigned ZIM creation tasks by the dispatcher. If you are interested in providing us worker resources, please [read these instructions](https://github.com/openzim/zimfarm/blob/main/workers/README.md).
+Workers are always-running computers which gets assigned ZIM creation tasks by the dispatcher. If you are interested in providing us worker resources, please [read these instructions](https://github.com/openzim/zimfarm/blob/main/worker/README.md).
+
+> **Note:** The repository contains both a `worker/` folder (singular) and a `workers/` folder (plural). The `worker/` folder is the current and actively maintained location for all worker-related code and documentation. The `workers/` folder is kept for backwards compatibility as it contains the legacy `zimfarm.sh` script that existing worker installations may still reference. If you're setting up a new worker or updating an existing one, you should use the script and documentation from the `worker/` folder. Old clients using the legacy script from `workers/contrib/zimfarm.sh` should update their installation to use the new location at `worker/contrib/zimfarm.sh`.
 
 A worker is made of two software components:
 

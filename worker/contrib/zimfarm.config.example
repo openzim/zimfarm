@@ -5,7 +5,7 @@
 # Zimfarm username
 ZIMFARM_USERNAME="myusername"
 
-# Zimfarm folder. You have to create it. Put your `id_rsa` private key
+# Zimfarm folder. You have to create it. Put your `id_ed25519` private key
 # directly at its root. Will be used as well for other Zimfarm
 # temporary data.
 ZIMFARM_ROOT=~/zimfarm
