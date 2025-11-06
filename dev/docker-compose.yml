@@ -185,3 +185,5 @@ services:
 
 volumes:
   pg_data_zimfarm:
+  netdatalib:
+  netdatacache:
