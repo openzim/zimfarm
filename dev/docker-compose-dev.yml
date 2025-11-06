@@ -3,10 +3,11 @@ services:
     image: postgres:17.3-bookworm
     container_name: zf_postgresdb
     ports:
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:2345:5432
     volumes:
       - pg_data_zimfarm:/var/lib/postgresql/data
       - ./postgres-initdb:/docker-entrypoint-initdb.d
+      - /home/elf/Downloads/:/backup
     # - ./restore/root/.borgmatic/postgresql_databases/api-postgres-db-service/zimfarm:/data/zimfarm
     environment:
       - POSTGRES_DB=zimfarm
@@ -31,18 +32,20 @@ services:
     environment:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm3
       ALEMBIC_UPGRADE_HEAD_ON_START: "true"
-      # upload logs to receiver but logs, zimcheck results and artificats to s3
-      ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
-      LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
-      ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
-      ARTIFACTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-artifacts
+      ARTIFACTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=org-kiwix-dev
+      LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=org-kiwix-dev
+      LOGS_EXPIRATION: 1
+      ZIM_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=org-kiwix-dev
+      ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=org-kiwix-dev
       ZIMCHECK_OPTION: --all
-      ALLOWED_ORIGINS: http://localhost:8001,http://localhost:8002
+      ALLOWED_ORIGINS: http://localhost:8001,http://localhost:8002,https://lamb-arriving-partially.ngrok-free.app
       # username and password of admin user
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
+      ORY_ACCESS_TOKEN: ory_pat_EwH2eyxVpr1UAiI9SaOIomYyAJm1T7cL
+      JWT_TOKEN_EXPIRY_DURATION: 2m
     command:
       - uvicorn
       - zimfarm_backend.api.entrypoint:app
@@ -71,16 +74,9 @@ services:
     environment:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
-      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+      POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm3
       ALEMBIC_UPGRADE_HEAD_ON_START: true
       INFORM_CMS: false
-      ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
-      LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
-      ZIMCHECK_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
-      ARTIFACTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-artifacts
-      ZIMCHECK_OPTION: --all
-      INIT_USERNAME: admin
-      INIT_PASSWORD: admin
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -127,21 +123,6 @@ services:
     depends_on:
       - postgresdb
 
-  receiver:
-    build: ../receiver
-    container_name: zf_receiver
-    ports:
-      - 127.0.0.1:8222:22
-    volumes:
-      - ./receiver/create-warehouse-paths.sh:/contrib/create-warehouse-paths.sh
-    environment:
-      - ZIMFARM_WEBAPI=http://backend:80/v2
-    depends_on:
-      backend:
-        condition: service_healthy
-    profiles:
-      - worker
-
   monitor:
     image: ghcr.io/netdata/netdata:v2.7.3
     container_name: zf_monitor
@@ -167,23 +148,23 @@ services:
       - /var/log:/host/var/log:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     profiles:
+      - monitor
+
+  receiver:
+    build: ../receiver
+    container_name: zf_receiver
+    ports:
+      - 127.0.0.1:8222:22
+    volumes:
+      - ./receiver/create-warehouse-paths.sh:/contrib/create-warehouse-paths.sh
+    environment:
+      - ZIMFARM_WEBAPI=http://backend:80/v2
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles:
       - worker
 
-  watcher:
-    build: ../watcher
-    container_name: zf_watcher
-    command: watcher --only beer.stackexchange.com --debug
-    environment:
-      - ZIMFARM_API_URL=http://backend:8000/v1
-      - ZIMFARM_USERNAME=admin
-      - ZIMFARM_PASSWORD=admin
-      - S3_URL=https://s3.us-west-1.wasabisys.com/?keyId=<your_key_id>&secretAccessKey=<your_secret_access_key>&bucketName=org-kiwix-dev-stackexchange
-    depends_on:
-      - backend
-    profiles:
-      - watcher
-
-  # uncomment this and the task_worker only if you want to run a worker manager
   worker_mgr:
     build:
       context: ../worker
@@ -194,25 +175,26 @@ services:
         condition: service_healthy
       task_worker:
         condition: service_started
+      # monitor:
+      #   condition: service_started
     command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
     environment:
       - DEBUG=true
       - TASK_WORKER_IMAGE=zf_task_worker
       - ENVIRONMENT=development
+      - ZIMFARM_DISK=5Gb
+      - ZIMFARM_CPU=4
       - POLL_INTERVAL=10
       - MONITORING_DEST=monitor:19999
       - MONITORING_KEY=7DC0DDB8-8EAA-4391-AF5D-BE017EECF0EE
+      - MONITOR_IMAGE=zf_monitor_image
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
     profiles:
       - worker
 
-  # you have to modify the command if you want to run a standalone worker
   task_worker:
-    build:
-      context: ../worker
-      dockerfile: task-Dockerfile
     image: zf_task_worker
     container_name: zf_task_worker
     depends_on:
@@ -224,6 +206,9 @@ services:
     environment:
       - DEBUG=true
       - ENVIRONMENT=development
+      - ZIMFARM_DISK=5Gb
+      - ZIMFARM_CPU=4
+      - POLL_INTERVAL=10
     profiles:
       - worker
 
@@ -231,8 +216,8 @@ services:
     image: minio/minio
     container_name: zf_minio
     ports:
-      - 9000:9000 # api
-      - 9001:9001 # web console
+      - "9000:9000" #api
+      - "9001:9001" #web console
     environment:
       - MINIO_ROOT_USER=minio_key
       - MINIO_ROOT_PASSWORD=minio_secret
@@ -245,23 +230,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-    profiles:
-      - worker
 
-  createbuckets:
-    image: minio/mc
-    container_name: zf_minio_setup
-    depends_on:
-      minio:
-        condition: service_healthy
-    volumes:
-      - ./contrib/setup-buckets.sh:/setup-buckets.sh
-    entrypoint: ["/bin/sh", "/setup-buckets.sh"]
-    profiles:
-      - worker
+    # createbuckets:
+    #   image: minio/mc
+    #   container_name: zf_minio_setup
+    #   depends_on:
+    #     minio:
+    #       condition: service_healthy
+    #   volumes:
+    #     - ./setup-buckets.sh:/setup-buckets.sh
+    #   entrypoint: ["/bin/sh", "/setup-buckets.sh"]
 
 volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
-  netdatalib:
-  netdatacache:
+  # netdatalib:
+  # netdatacache:
