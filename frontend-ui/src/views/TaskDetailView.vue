@@ -593,9 +593,7 @@ const maxMemory = computed(() => {
 const monitoringUrl = computed(() => {
   return `${config.MONITORING_URL}/host/${scheduleName.value}_${shortId.value}.${
     task.value?.worker_name
-  }/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${
-    shortId.value
-  }_submenu_cpu;after=${new Date(
+  }#after=${new Date(
     getTimestampStringForStatus(task.value?.timestamp, 'scraper_started', '') || 0,
   ).getTime()};before=${new Date(
     getTimestampStringForStatus(task.value?.timestamp, 'scraper_completed', '') || 0,
