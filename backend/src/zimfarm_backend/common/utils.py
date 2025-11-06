@@ -8,7 +8,7 @@ from typing import Any
 from uuid import UUID
 
 import sqlalchemy.orm as so
-from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy import select
 
 from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import INFORM_CMS
@@ -18,7 +18,7 @@ from zimfarm_backend.common.notifications import handle_notification
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.schedule import update_schedule_duration
-from zimfarm_backend.db.tasks import get_task_by_id_or_none
+from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id_or_none
 from zimfarm_backend.db.worker import get_worker
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,9 @@ def save_event(
 ):
     """save event and its accompanying data to database"""
 
-    task = session.get(Task, task_id)
+    task = session.scalars(
+        select(Task).options(so.selectinload(Task.task_files)).where(Task.id == task_id)
+    ).one_or_none()
     if task is None:
         raise RecordDoesNotExistError(f"Task {task_id} does not exist")
     schedule = task.schedule
@@ -157,24 +159,28 @@ def save_event(
     if kwargs.get("file", {}).get("name"):
         fkey = kwargs["file"]["name"]
         fstatus = kwargs["file"].get("status")
-        if fstatus == "created":
-            task.files[fkey] = {
-                "name": kwargs["file"]["name"],
-                "size": kwargs["file"].get("size"),  # missing in uploaded,
-                "status": fstatus,
-                f"{fstatus}_timestamp": timestamp,
-            }
-        elif fstatus in ("uploaded", "failed"):
-            task.files[fkey]["status"] = fstatus
-            task.files[fkey][f"{fstatus}_timestamp"] = timestamp
-        elif fstatus == "checked":
-            task.files[fkey]["check_result"] = kwargs["file"].get("check_result")
-            task.files[fkey]["check_log"] = kwargs["file"].get("check_log")
-            task.files[fkey]["check_timestamp"] = timestamp
-            task.files[fkey]["check_details"] = kwargs["file"].get("check_details")
-            task.files[fkey]["info"] = kwargs["file"].get("info")
 
-        flag_modified(task, "files")  # mark 'files' as modified
+        values: dict[str, Any] = {}
+        values["name"] = fkey
+        if fstatus == "created":
+            values.update(
+                {
+                    "name": kwargs["file"]["name"],
+                    "size": kwargs["file"].get("size"),  # missing in uploaded,
+                    "status": fstatus,
+                    f"{fstatus}_timestamp": timestamp,
+                }
+            )
+        elif fstatus in ("uploaded", "failed"):
+            values["status"] = fstatus
+            values[f"{fstatus}_timestamp"] = timestamp
+        elif fstatus == "checked":
+            values["check_result"] = kwargs["file"].get("check_result")
+            values["check_log"] = kwargs["file"].get("check_log")
+            values["check_timestamp"] = timestamp
+            values["check_details"] = kwargs["file"].get("check_details")
+
+        create_or_update_task_file(session, task_id=task.id, **values)
 
     session.flush()  # we have to flush first to avoid circular dependency
     if schedule and code == TaskStatus.reserved:
