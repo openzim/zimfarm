@@ -234,14 +234,24 @@ def downgrade() -> None:
                 "name": row[0],
                 "status": row[1],
                 "size": row[2],
-                "created_timestamp": zimfarm_dumps(row[8]) if row[8] else None,
-                "uploaded_timestamp": zimfarm_dumps(row[9]) if row[9] else None,
-                "failed_timestamp": zimfarm_dumps(row[10]) if row[10] else None,
-                "check_timestamp": zimfarm_dumps(row[11]) if row[11] else None,
+                "created_timestamp": (
+                    json.loads(zimfarm_dumps(row[8])) if row[8] else None
+                ),
+                "uploaded_timestamp": (
+                    json.loads(zimfarm_dumps(row[9])) if row[9] else None
+                ),
+                "failed_timestamp": (
+                    json.loads(zimfarm_dumps(row[10])) if row[10] else None
+                ),
+                "check_timestamp": (
+                    json.loads(zimfarm_dumps(row[11])) if row[11] else None
+                ),
                 "check_result": row[12],
                 "check_log": row[13],
-                "check_details": zimfarm_dumps(row[14]) if row[14] else None,
-                "info": zimfarm_dumps(row[15] if row[15] else {}),
+                "check_details": (
+                    json.loads(zimfarm_dumps(row[14])) if row[14] else None
+                ),
+                "info": json.loads(zimfarm_dumps(row[15] if row[15] else {})),
             }
 
             # Add CMS data if any field is present
@@ -252,7 +262,7 @@ def downgrade() -> None:
                 if row[4] is not None:
                     cms_data["succeeded"] = row[4]
                 if row[5] is not None:
-                    cms_data["on"] = zimfarm_dumps(row[5])
+                    cms_data["on"] = json.loads(zimfarm_dumps(row[5]))
                 if row[6] is not None:
                     cms_data["book_id"] = str(row[6])
                 if row[7] is not None:
