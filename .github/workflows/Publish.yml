@@ -37,8 +37,6 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
-            background_tasks:
-              - 'backend/**'
             frontend_ui:
               - 'frontend-ui/**'
             dnscache:
@@ -136,7 +134,7 @@ jobs:
           args: rollout restart deployments api-deployment -n zimit
 
   background-tasks:
-    name: Zimfarm Bakground Tasks Build
+    name: Zimfarm Background Tasks Build
     runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force }}
@@ -150,7 +148,7 @@ jobs:
           image-name: openzim/zimfarm-background-tasks
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: worker
+          context: backend
           dockerfile: background-tasks.Dockerfile
           registries: ghcr.io
           credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
