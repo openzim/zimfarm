@@ -11,7 +11,7 @@ from zimfarm_backend.db.models import User
 from zimfarm_backend.db.offliner import get_all_offliners
 
 
-def check_if_schema_is_up_to_date():
+def check_if_schema_is_up_to_date() -> bool:
     with Session.begin() as session:
         logger.info("Checking database schema")
         cfg = config.Config(BASE_DIR / "alembic.ini")
@@ -23,10 +23,12 @@ def check_if_schema_is_up_to_date():
         logger.info(f"current heads: {current_heads}")
         logger.info(f"directory heads: {directory_heads}")
         if current_heads != directory_heads:
-            raise ValueError(
+            logger.warning(
                 "Database schema is not up to date, please update schema first"
             )
+            return False
         logger.info("Database is up to date")
+        return True
 
 
 def create_initial_user():

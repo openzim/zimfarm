@@ -6,6 +6,7 @@ LABEL zimfarm=true
 ENV INIT_PASSWORD=admin
 # mailgun for notifications
 ENV MAILGUN_API_URL=https://api.mailgun.net/v3/mg.farm.openzim.org
+ENV ALEMBIC_UPGRADE_HEAD_ON_START=false
 ENV MAILGUN_FROM="Zimfarm <info@farm.openzim.org>"
 # ENV MAILGUN_API_KEY -
 

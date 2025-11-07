@@ -4,6 +4,7 @@ LABEL org.opencontainers.image.source=https://github.com/openzim/zimfarm
 LABEL zimfarm=true
 
 ENV INIT_PASSWORD=admin
+ENV ALEMBIC_UPGRADE_HEAD_ON_START=true
 
 # install Python dependencies first (since they change more rarely than src code)
 COPY pyproject.toml README.md /app/

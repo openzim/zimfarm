@@ -25,11 +25,13 @@ from zimfarm_backend.api.routes.tags.logic import router as tags_router
 from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
 from zimfarm_backend.api.routes.users.logic import router as users_router
 from zimfarm_backend.api.routes.workers.logic import router as workers_router
+from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
 from zimfarm_backend.utils.database import (
+    check_if_schema_is_up_to_date,
     create_initial_user,
     load_offliners,
     upgrade_db_schema,
@@ -38,7 +40,10 @@ from zimfarm_backend.utils.database import (
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    upgrade_db_schema()
+    if ALEMBIC_UPGRADE_HEAD_ON_START:
+        upgrade_db_schema()
+
+    check_if_schema_is_up_to_date()
     create_initial_user()
     load_offliners()
     yield

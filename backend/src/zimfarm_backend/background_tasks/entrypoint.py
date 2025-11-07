@@ -25,7 +25,9 @@ from zimfarm_backend.background_tasks.retry_cms_notifications import (
 )
 from zimfarm_backend.background_tasks.task_config import TaskConfig
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START
 from zimfarm_backend.db import Session
+from zimfarm_backend.utils.database import upgrade_db_schema
 
 # Configure background tasks with their execution intervals
 tasks: list[TaskConfig] = [
@@ -76,6 +78,9 @@ def main():
     logger.info(f"Configured {len(tasks)} tasks:")
 
     while True:
+        # First, upgrade the database schema
+        if ALEMBIC_UPGRADE_HEAD_ON_START:
+            upgrade_db_schema()
         now = getnow()
         for task_config in tasks:
             if task_config.should_run(now):
