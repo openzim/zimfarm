@@ -16,9 +16,13 @@ from zimfarm_backend.background_tasks.constants import (
     HISTORY_CLEANUP_INTERVAL,
     REMOVE_OLD_TASKS_INTERVAL,
     REQUEST_TASKS_INTERVAL,
+    RETRY_CMS_NOTIFICATIONS_INTERVAL,
 )
 from zimfarm_backend.background_tasks.history_cleanup import history_cleanup
 from zimfarm_backend.background_tasks.request_tasks import request_tasks
+from zimfarm_backend.background_tasks.retry_cms_notifications import (
+    retry_cms_notifications,
+)
 from zimfarm_backend.background_tasks.task_config import TaskConfig
 from zimfarm_backend.common import getnow
 from zimfarm_backend.db import Session
@@ -44,6 +48,10 @@ tasks: list[TaskConfig] = [
     TaskConfig(
         func=request_tasks,
         interval=REQUEST_TASKS_INTERVAL,
+    ),
+    TaskConfig(
+        func=retry_cms_notifications,
+        interval=RETRY_CMS_NOTIFICATIONS_INTERVAL,
     ),
 ]
 

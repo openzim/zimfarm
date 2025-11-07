@@ -238,7 +238,7 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
         cms_book_id=file_data.cms.book_id,
         cms_title_ident=file_data.cms.title_ident,
         cms_on=file_data.cms.on,
-        cms_notified=True,
+        cms_notified=file_data.cms.succeeded,
     )
     task.files[file_name] = file_data
 

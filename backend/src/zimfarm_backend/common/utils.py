@@ -160,25 +160,25 @@ def save_event(
         fkey = kwargs["file"]["name"]
         fstatus = kwargs["file"].get("status")
 
-        values: dict[str, Any] = {}
-        values["name"] = fkey
+        values: dict[str, Any] = {
+            "name": fkey,
+            "status": fstatus,
+        }
         if fstatus == "created":
             values.update(
                 {
-                    "name": kwargs["file"]["name"],
                     "size": kwargs["file"].get("size"),  # missing in uploaded,
-                    "status": fstatus,
                     f"{fstatus}_timestamp": timestamp,
                 }
             )
         elif fstatus in ("uploaded", "failed"):
-            values["status"] = fstatus
             values[f"{fstatus}_timestamp"] = timestamp
         elif fstatus == "checked":
             values["check_result"] = kwargs["file"].get("check_result")
             values["check_log"] = kwargs["file"].get("check_log")
             values["check_timestamp"] = timestamp
             values["check_details"] = kwargs["file"].get("check_details")
+            values["info"] = kwargs["file"].get("info")
 
         create_or_update_task_file(session, task_id=task.id, **values)
 
