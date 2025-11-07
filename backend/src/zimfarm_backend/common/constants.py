@@ -34,13 +34,6 @@ MESSAGE_VALIDITY_DURATION = parse_timespan(
     getenv("MESSAGE_VALIDITY_DURATION", default="1m")
 )
 
-# JWT settings
-JWT_TOKEN_ISSUER = getenv("JWT_TOKEN_ISSUER", default="zimfarm_backend")
-JWT_SECRET = getenv("JWT_SECRET", mandatory=True)
-JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
-    getenv("JWT_TOKEN_EXPIRY_DURATION", default="1d")
-)
-
 ENABLED_SCHEDULER = not getenv("DISABLE_SCHEDULER", default="")
 DEFAULT_SCHEDULE_DURATION = parse_timespan(
     getenv("DEFAULT_SCHEDULE_DURATION", default="31d")

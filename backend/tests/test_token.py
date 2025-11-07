@@ -6,7 +6,7 @@ from _pytest.python_api import RaisesContext
 from cryptography.hazmat.primitives.asymmetric import dsa
 
 from zimfarm_backend.exceptions import PublicKeyLoadError
-from zimfarm_backend.utils.token import get_public_key_type, load_public_key
+from zimfarm_backend.utils.cryptography import get_public_key_type, load_public_key
 
 
 @pytest.mark.parametrize(

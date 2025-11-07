@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
@@ -18,7 +19,6 @@ from zimfarm_backend.common.schemas.orms import (
 from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 from zimfarm_backend.db.schedule import get_schedule, update_schedule
-from zimfarm_backend.utils.token import generate_access_token
 
 
 @pytest.mark.parametrize(

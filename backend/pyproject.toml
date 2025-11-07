@@ -9,7 +9,7 @@ authors = [
 ]
 keywords = ["zimfarm"]
 requires-python = ">=3.13,<3.14"
-description = "zimfarm Backend API"
+description = "zimfarm Backend API and Background Tasks"
 license = {text = "GPL-3.0-or-later"}
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -18,8 +18,7 @@ classifiers = [
 ]
 dependencies = [
     "alembic == 1.15.2",
-    "fastapi[all] == 0.115.2",
-    "pydantic == 2.11.4", # this is also a sub-dep of fastapi but we rely a lot on it
+    "pydantic[email] == 2.11.4",
     "SQLAlchemy == 2.0.41",
     "PyJWT == 2.10.1",
     "pymongo == 4.13.0",
@@ -37,6 +36,9 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+api = [
+    "fastapi[all] == 0.115.2",
+]
 scripts = [
     "invoke == 2.2.0",
 ]
@@ -59,6 +61,7 @@ test = [
 dev = [
     "pre-commit == 4.2.0",
     "ipykernel == 6.29.5",
+    "zimfarm_backend[api]",
     "zimfarm_backend[scripts]",
     "zimfarm_backend[lint]",
     "zimfarm_backend[test]",
@@ -72,6 +75,7 @@ Donate = "https://www.kiwix.org/en/support-us/"
 [project.scripts]
 create-initial-user = "zimfarm_backend.utils.database:create_initial_user"
 check-db-schema = "zimfarm_backend.utils.database:check_if_schema_is_up_to_date"
+background-tasks = "zimfarm_backend.background_tasks.entrypoint:main"
 
 [tool.hatch.version]
 path = "src/zimfarm_backend/__about__.py"

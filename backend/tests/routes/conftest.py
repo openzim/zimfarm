@@ -4,8 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.entrypoint import app
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
-from zimfarm_backend.main import app
 
 
 @pytest.fixture

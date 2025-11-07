@@ -9,11 +9,14 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refresh_tokens
-from zimfarm_backend.utils.token import generate_access_token, sign_message_with_rsa_key
+from zimfarm_backend.utils.cryptography import (
+    sign_message_with_rsa_key,
+)
 
 
 @pytest.mark.num_users(1)

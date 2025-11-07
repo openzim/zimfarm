@@ -48,33 +48,44 @@ jobs:
         working-directory: backend
         run: |
           pip install -U pip
-          pip install -e .[test,scripts]
+          pip install -e .[test,scripts,api]
 
       - name: Create extensions on the PostgreSQL database
         run: >-
           psql -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
           "host=localhost port=5432 dbname=zimtest user=zimfarm password=zimpass"
 
-      - name: Build backend Docker image
+      - name: Build API Docker image
         working-directory: backend
-        run: docker build -t zimfarm-backend:test .
+        run: docker build -t zimfarm-backend:test -f api.Dockerfile .
 
-      - name: Run backend container
+      - name: Build background tasks Docker image
+        working-directory: backend
+        run: docker build -t zimfarm-background-tasks:test -f background-tasks.Dockerfile .
+
+      - name: Run API container
         run: |
           docker run -d --name zimfarm-backend-test \
             -e POSTGRES_URI=$POSTGRES_URI \
-            -e JWT_SECRET=DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw \
             -p 8000:80 \
             zimfarm-backend:test
           # wait for container to be ready
           for i in {1..10}; do
-            if curl -s http://localhost:8000/v2/healthcheck > /dev/null; then
+            if curl -fsSL http://localhost:8000/v2/healthcheck > /dev/null; then
               echo "Backend is up!"
               break
             fi
             echo "Waiting for backend..."
             sleep 3
           done
+
+      - name: Run background tasks container
+        run: |
+          docker run --rm --name zimfarm-background-tasks \
+            -e POSTGRES_URI=$POSTGRES_URI \
+            -e JWT_SECRET=DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw \
+            -p 8000:80 \
+            zimfarm-background-tasks:test background-tasks --help
 
       - name: Run tests
         working-directory: backend
