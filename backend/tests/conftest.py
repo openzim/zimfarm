@@ -1099,7 +1099,6 @@ def create_task(
             priority=requested_task.priority,
             config=requested_task.config,
             notification=requested_task.notification,
-            files={},
             upload=requested_task.upload,
             original_schedule_name=requested_task.original_schedule_name,
             context=requested_task.context,

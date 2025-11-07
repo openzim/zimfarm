@@ -82,7 +82,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
-        .options(selectinload(Task.task_files))
+        .options(selectinload(Task.files))
         .join(OfflinerDefinition, Task.offliner_definition)
         .join(Schedule, Task.schedule, isouter=True)
         .join(Worker, Task.worker, isouter=True)
@@ -133,9 +133,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                 if task.notification
                 else None
             ),
-            files={
-                file.name: create_task_file_schema(file) for file in task.task_files
-            },
+            files={file.name: create_task_file_schema(file) for file in task.files},
             upload=TaskUploadSchema.model_validate(task.upload),
             updated_at=task.updated_at,
             original_schedule_name=task.original_schedule_name,
@@ -259,7 +257,6 @@ def create_task(
             if requested_task.notification
             else {}
         ),
-        files={},
         upload=requested_task.upload.model_dump(mode="json"),
         original_schedule_name=requested_task.original_schedule_name,
         context=requested_task.context,

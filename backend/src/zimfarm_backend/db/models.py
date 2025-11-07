@@ -166,7 +166,6 @@ class Task(Base):
     # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     notification: Mapped[dict[str, Any]]
-    files: Mapped[dict[str, Any]]
     upload: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
     context: Mapped[str] = mapped_column(default="", server_default="")
@@ -190,7 +189,7 @@ class Task(Base):
     )
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
 
-    task_files: Mapped[list["File"]] = relationship(
+    files: Mapped[list["File"]] = relationship(
         back_populates="task", cascade="all, delete-orphan", init=False
     )
 
@@ -228,7 +227,7 @@ class File(Base):
 
     task_id: Mapped[UUID] = mapped_column(ForeignKey("task.id"), init=False)
 
-    task: Mapped["Task"] = relationship(back_populates="task_files", init=False)
+    task: Mapped["Task"] = relationship(back_populates="files", init=False)
 
     __table_args__ = (UniqueConstraint("task_id", "name"),)
 
