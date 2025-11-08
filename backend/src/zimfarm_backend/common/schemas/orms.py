@@ -114,6 +114,7 @@ class TaskContainerProgressSchema(BaseModel):
     partial_zim: bool | None = None
     overall: int | None = None
     done: int | None = None
+    total: int | None = None
 
 
 class TaskContainerMemoryStatsSchema(BaseModel):
