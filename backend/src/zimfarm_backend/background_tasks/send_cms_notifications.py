@@ -10,17 +10,14 @@ from zimfarm_backend.db.models import File, Task
 from zimfarm_backend.db.tasks import get_task_by_id
 
 
-def retry_cms_notifications(session: OrmSession):
-    """Retry CMS notifications for files that failed or were never notified.
+def notify_cms_for_checked_files(session: OrmSession):
+    """Send notifications to CMS about checked files."""
 
-    This task finds all checked files that have not been successfully notified to CMS.
-    """
-    logger.info(":: checking for files needing CMS notification retry")
-
-    # Skip if CMS notifications are disabled
     if not INFORM_CMS:
         logger.info("::: CMS notifications are disabled (INFORM_CMS=false)")
         return
+
+    logger.info(":: checking for files needing CMS notification")
 
     files_to_notify = session.execute(
         sa.select(File, Task.id.label("task_id"))
@@ -36,30 +33,23 @@ def retry_cms_notifications(session: OrmSession):
 
     nb_files = len(files_to_notify)
     if nb_files == 0:
-        logger.info("::: no files need CMS notification retry")
+        logger.info("::: no files need CMS notification")
         return
 
     logger.info(f"::: found {nb_files} file(s) needing CMS notification")
 
     nb_notified = 0
-    nb_failed = 0
 
-    for row in files_to_notify:
-        file = cast(File, row.File)
-        try:
+    try:
+        for row in files_to_notify:
+            file = cast(File, row.File)
             task_full = get_task_by_id(session, row.task_id)
 
             advertise_book_to_cms(session, task_full, file.name)
             nb_notified += 1
 
             logger.debug(f"Notified CMS for file {file.name} from task {row.task_id}")
-        except Exception:
-            nb_failed += 1
-            logger.exception(
-                f"Failed to notify CMS for file {file.name} from task {row.task_id}"
-            )
-
-    logger.info(
-        f"::: CMS notification retry completed: {nb_notified} notified, "
-        f"{nb_failed} failed"
-    )
+    except Exception:
+        logger.exception("Failed to send CMS notification")
+    else:
+        logger.info(f"::: Sent {nb_notified} notifications to CMS")

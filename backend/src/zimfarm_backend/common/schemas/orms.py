@@ -83,11 +83,8 @@ class TaskLightSchema(BaseTaskSchema):
 
 
 class CMSStatusSchema(BaseModel):
-    status_code: int | None = None
-    succeeded: bool | None = None
     on: datetime.datetime | None = None
-    book_id: UUID | None = None
-    title_ident: str | None = None
+    notified: bool | None = None
 
 
 class TaskFileSchema(BaseModel):

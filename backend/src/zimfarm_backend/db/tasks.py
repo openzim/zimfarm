@@ -12,6 +12,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
     CMSStatusSchema,
@@ -58,11 +59,8 @@ def create_task_file_schema(file: File) -> TaskFileSchema:
         check_details=file.check_details,
         info=file.info,
         cms=CMSStatusSchema(
-            status_code=file.cms_status_code,
-            succeeded=file.cms_succeeded,
             on=file.cms_on,
-            book_id=file.cms_book_id,
-            title_ident=file.cms_title_ident,
+            notified=file.cms_notified,
         ),
     )
 
@@ -351,68 +349,33 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
     }
 
 
+def get_task_file_or_none(
+    session: OrmSession, task_id: UUID, filename: str
+) -> TaskFileSchema | None:
+    """Get a task file by task id and file id."""
+    file = session.scalars(
+        select(File).where(File.task_id == task_id, File.name == filename)
+    ).one_or_none()
+    return create_task_file_schema(file) if file else None
+
+
+def get_task_file(session: OrmSession, task_id: UUID, filename: str) -> TaskFileSchema:
+    """Get a task file by task id and file name."""
+    if file := get_task_file_or_none(session, task_id, filename):
+        return file
+    raise RecordDoesNotExistError(f"Task {task_id} has no file {filename}")
+
+
 def create_or_update_task_file(
     session: OrmSession,
-    *,
-    task_id: UUID,
-    name: str,
-    status: str,
-    size: int | None = None,
-    cms_status_code: int | None = None,
-    cms_succeeded: bool | None = None,
-    cms_on: datetime.datetime | None = None,
-    cms_book_id: UUID | None = None,
-    cms_title_ident: str | None = None,
-    cms_notified: bool | None = None,
-    created_timestamp: datetime.datetime | None = None,
-    uploaded_timestamp: datetime.datetime | None = None,
-    failed_timestamp: datetime.datetime | None = None,
-    check_timestamp: datetime.datetime | None = None,
-    check_result: int | None = None,
-    check_log: str | None = None,
-    check_details: dict[str, Any] | None = None,
-    info: dict[str, Any] | None = None,
-) -> None:
+    request: FileCreateUpdateSchema,
+) -> TaskFileSchema:
     """Create or update a task file using insert with on conflict update."""
-    stmt = insert(File).values(
-        task_id=task_id,
-        name=name,
-        status=status,
-        size=size,
-        cms_status_code=cms_status_code,
-        cms_succeeded=cms_succeeded,
-        cms_on=cms_on,
-        cms_book_id=cms_book_id,
-        cms_title_ident=cms_title_ident,
-        cms_notified=cms_notified,
-        created_timestamp=created_timestamp,
-        uploaded_timestamp=uploaded_timestamp,
-        failed_timestamp=failed_timestamp,
-        check_timestamp=check_timestamp,
-        check_result=check_result,
-        check_log=check_log,
-        check_details=check_details,
-        info=info if info is not None else {},
-    )
+    values = request.model_dump(exclude_unset=True)
+    stmt = insert(File).values(**values)
     stmt = stmt.on_conflict_do_update(
         index_elements=[File.task_id, File.name],
-        set_={
-            File.status: stmt.excluded.status,
-            File.size: stmt.excluded.size,
-            File.cms_status_code: stmt.excluded.cms_status_code,
-            File.cms_succeeded: stmt.excluded.cms_succeeded,
-            File.cms_on: stmt.excluded.cms_on,
-            File.cms_book_id: stmt.excluded.cms_book_id,
-            File.cms_title_ident: stmt.excluded.cms_title_ident,
-            File.cms_notified: stmt.excluded.cms_notified,
-            File.created_timestamp: stmt.excluded.created_timestamp,
-            File.uploaded_timestamp: stmt.excluded.uploaded_timestamp,
-            File.failed_timestamp: stmt.excluded.failed_timestamp,
-            File.check_timestamp: stmt.excluded.check_timestamp,
-            File.check_result: stmt.excluded.check_result,
-            File.check_log: stmt.excluded.check_log,
-            File.check_details: stmt.excluded.check_details,
-            File.info: stmt.excluded.info,
-        },
+        set_={**request.model_dump(exclude_unset=True, exclude={"task_id", "name"})},
     )
     session.execute(stmt)
+    return get_task_file(session, request.task_id, request.name)

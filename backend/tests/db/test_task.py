@@ -1,5 +1,3 @@
-import datetime
-import uuid
 from collections.abc import Callable
 from uuid import UUID
 
@@ -9,6 +7,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -162,10 +161,12 @@ def test_create_task_already_exists(
 def test_create_or_update_task_file_create_minimal(dbsession: OrmSession, task: Task):
     """Test creating a new file with minimal required fields"""
     create_or_update_task_file(
-        session=dbsession,
-        task_id=task.id,
-        name="test_file.zim",
-        status="created",
+        dbsession,
+        FileCreateUpdateSchema(
+            task_id=task.id,
+            name="test_file.zim",
+            status="created",
+        ),
     )
     dbsession.flush()
 
@@ -184,29 +185,25 @@ def test_create_or_update_task_file_create_with_all_fields(
     dbsession: OrmSession, task: Task
 ):
     """Test creating a new file with all fields populated"""
-    cms_book_id = uuid.uuid4()
     now = getnow()
-
     create_or_update_task_file(
-        session=dbsession,
-        task_id=task.id,
-        name="complete_file.zim",
-        status="uploaded",
-        size=1024000,
-        cms_status_code=200,
-        cms_succeeded=True,
-        cms_on=now,
-        cms_book_id=cms_book_id,
-        cms_title_ident="test_title",
-        cms_notified=True,
-        created_timestamp=now,
-        uploaded_timestamp=now,
-        failed_timestamp=None,
-        check_timestamp=now,
-        check_result=0,
-        check_log="All checks passed",
-        check_details={"validation": "success"},
-        info={"custom": "data"},
+        dbsession,
+        FileCreateUpdateSchema(
+            task_id=task.id,
+            name="complete_file.zim",
+            status="uploaded",
+            size=1024000,
+            cms_on=now,
+            cms_notified=True,
+            created_timestamp=now,
+            uploaded_timestamp=now,
+            failed_timestamp=None,
+            check_timestamp=now,
+            check_result=0,
+            check_log="All checks passed",
+            check_details={"validation": "success"},
+            info={"custom": "data"},
+        ),
     )
     dbsession.flush()
 
@@ -218,11 +215,7 @@ def test_create_or_update_task_file_create_with_all_fields(
     assert result.name == "complete_file.zim"
     assert result.status == "uploaded"
     assert result.size == 1024000
-    assert result.cms_status_code == 200
-    assert result.cms_succeeded is True
     assert result.cms_on == now
-    assert result.cms_book_id == cms_book_id
-    assert result.cms_title_ident == "test_title"
     assert result.cms_notified is True
     assert result.created_timestamp == now
     assert result.uploaded_timestamp == now
@@ -238,72 +231,36 @@ def test_create_or_update_task_file_update_existing(dbsession: OrmSession, task:
     """Test updating an existing file"""
     # Create initial file
     create_or_update_task_file(
-        session=dbsession,
-        task_id=task.id,
-        name="update_test.zim",
-        status="created",
-        size=1000,
-        info={"version": "1"},
+        dbsession,
+        FileCreateUpdateSchema(
+            task_id=task.id,
+            name="update_test.zim",
+            status="created",
+            size=1000,
+            info={"version": "1"},
+            cms_notified=False,
+        ),
     )
     dbsession.flush()
 
     # Update the file
     create_or_update_task_file(
-        session=dbsession,
-        task_id=task.id,
-        name="update_test.zim",
-        status="uploaded",
-        size=2000,
-        info={"version": "2"},
+        dbsession,
+        FileCreateUpdateSchema(
+            task_id=task.id,
+            name="update_test.zim",
+            status="uploaded",
+            info={"version": "2"},
+        ),
     )
     dbsession.flush()
 
-    # Verify the file was updated
+    # Verify the file was updated with unset fields unchanged
     result = dbsession.execute(
         select(File).where(File.task_id == task.id, File.name == "update_test.zim")
     ).scalar_one()
 
+    assert result.cms_notified is False
+    assert result.size == 1000
     assert result.status == "uploaded"
-    assert result.size == 2000
     assert result.info == {"version": "2"}
-
-
-def test_create_or_update_task_file_update_specific_fields(
-    dbsession: OrmSession, task: Task
-):
-    """Test that updating specific fields doesn't affect others"""
-    now = getnow()
-
-    # Create file with initial fields
-    create_or_update_task_file(
-        session=dbsession,
-        task_id=task.id,
-        name="partial_update.zim",
-        status="created",
-        size=1000,
-        created_timestamp=now,
-    )
-    dbsession.flush()
-
-    later = now + datetime.timedelta(hours=1)
-
-    # Update only status and uploaded_timestamp
-    create_or_update_task_file(
-        session=dbsession,
-        task_id=task.id,
-        name="partial_update.zim",
-        status="uploaded",
-        uploaded_timestamp=later,
-    )
-    dbsession.flush()
-
-    result = dbsession.execute(
-        select(File).where(File.task_id == task.id, File.name == "partial_update.zim")
-    ).scalar_one()
-
-    # Updated fields should have new values
-    assert result.status == "uploaded"
-    assert result.uploaded_timestamp == later
-    # Original fields should be updated to None since we didn't pass them
-    assert result.size is None
-    assert result.created_timestamp is None

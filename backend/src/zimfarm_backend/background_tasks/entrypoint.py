@@ -13,15 +13,15 @@ from zimfarm_backend.background_tasks.constants import (
     BACKGROUND_TASKS_SLEEP_DURATION,
     CANCEL_INCOMPLETE_TASKS_INTERVAL,
     CANCEL_STALE_TASKS_INTERVAL,
+    CMS_NOTIFICATIONS_INTERVAL,
     HISTORY_CLEANUP_INTERVAL,
     REMOVE_OLD_TASKS_INTERVAL,
     REQUEST_TASKS_INTERVAL,
-    RETRY_CMS_NOTIFICATIONS_INTERVAL,
 )
 from zimfarm_backend.background_tasks.history_cleanup import history_cleanup
 from zimfarm_backend.background_tasks.request_tasks import request_tasks
-from zimfarm_backend.background_tasks.retry_cms_notifications import (
-    retry_cms_notifications,
+from zimfarm_backend.background_tasks.send_cms_notifications import (
+    notify_cms_for_checked_files,
 )
 from zimfarm_backend.background_tasks.task_config import TaskConfig
 from zimfarm_backend.common import getnow
@@ -52,8 +52,8 @@ tasks: list[TaskConfig] = [
         interval=REQUEST_TASKS_INTERVAL,
     ),
     TaskConfig(
-        func=retry_cms_notifications,
-        interval=RETRY_CMS_NOTIFICATIONS_INTERVAL,
+        func=notify_cms_for_checked_files,
+        interval=CMS_NOTIFICATIONS_INTERVAL,
     ),
 ]
 
@@ -77,10 +77,9 @@ def main():
     logger.info("Starting background tasks...")
     logger.info(f"Configured {len(tasks)} tasks:")
 
+    if ALEMBIC_UPGRADE_HEAD_ON_START:
+        upgrade_db_schema()
     while True:
-        # First, upgrade the database schema
-        if ALEMBIC_UPGRADE_HEAD_ON_START:
-            upgrade_db_schema()
         now = getnow()
         for task_config in tasks:
             if task_config.should_run(now):

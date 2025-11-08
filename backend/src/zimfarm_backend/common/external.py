@@ -4,7 +4,6 @@ import logging
 import typing
 from http import HTTPStatus
 from typing import Any, cast
-from uuid import UUID
 
 import requests
 import sqlalchemy as sa
@@ -26,13 +25,13 @@ from zimfarm_backend.common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.common.schemas.orms import (
     CMSStatusSchema,
     TaskFileSchema,
     TaskFullSchema,
 )
-from zimfarm_backend.db import dbsession
-from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id
+from zimfarm_backend.db.tasks import create_or_update_task_file
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -170,16 +169,6 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
     )
 
 
-@dbsession
-def advertise_books_to_cms(task_id: UUID, session: so.Session):
-    """inform openZIM CMS of all created ZIMs in the farm for this task
-
-    Safe to re-run as successful requests are skipped"""
-    task = get_task_by_id(session, task_id)
-    for file_name in task.files.keys():
-        advertise_book_to_cms(session, task, file_name)
-
-
 def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: str):
     """inform openZIM CMS (or compatible) of a created ZIM in the farm
 
@@ -188,17 +177,15 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
     file_data = task.files[file_name]
 
     # skip if already advertised to CMS
-    if file_data.cms and file_data.cms.succeeded:
+    if file_data.cms and file_data.cms.notified:
+        logger.warning(f"Book {file_data.name} already advertised to CMS")
         return
 
     # prepare payload and submit request to CMS
     download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
     file_data.cms = CMSStatusSchema(
-        status_code=-1,
-        succeeded=False,
         on=getnow(),
-        book_id=None,
-        title_ident=None,
+        notified=False,
     )
     try:
         resp = requests.post(
@@ -211,13 +198,10 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
         logger.exception(exc)
     else:
         status_code = HTTPStatus(resp.status_code)
-        file_data.cms.status_code = status_code.value
-        file_data.cms.succeeded = status_code == HTTPStatus.CREATED
+        file_data.cms.notified = status_code.is_success
         if status_code.is_success:
             try:
-                data = resp.json()
-                file_data.cms.book_id = data.get("uuid")
-                file_data.cms.title_ident = data.get("title")
+                resp.json()
             except Exception as exc:
                 logger.error(f"Unable to parse CMS response: {exc}")
                 logger.exception(exc)
@@ -228,19 +212,16 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
             )
 
     # record request result
-    create_or_update_task_file(
+    task.files[file_name] = create_or_update_task_file(
         session,
-        task_id=task.id,
-        name=file_name,
-        status=file_data.status,
-        cms_status_code=file_data.cms.status_code,
-        cms_succeeded=file_data.cms.succeeded,
-        cms_book_id=file_data.cms.book_id,
-        cms_title_ident=file_data.cms.title_ident,
-        cms_on=file_data.cms.on,
-        cms_notified=file_data.cms.succeeded,
+        FileCreateUpdateSchema(
+            task_id=task.id,
+            name=file_name,
+            status=file_data.status,
+            cms_on=file_data.cms.on,
+            cms_notified=file_data.cms.notified,
+        ),
     )
-    task.files[file_name] = file_data
 
 
 def get_openzimcms_payload(

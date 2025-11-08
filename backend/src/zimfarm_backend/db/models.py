@@ -204,11 +204,7 @@ class File(Base):
     size: Mapped[int | None] = mapped_column(default=None, type_=BigInteger)
 
     # CMS status fields (nested in TaskFileSchema.cms)
-    cms_status_code: Mapped[int | None] = mapped_column(default=None)
-    cms_succeeded: Mapped[bool | None] = mapped_column(default=None)
     cms_on: Mapped[datetime | None] = mapped_column(default=None)
-    cms_book_id: Mapped[UUID | None] = mapped_column(default=None)
-    cms_title_ident: Mapped[str | None] = mapped_column(default=None)
     cms_notified: Mapped[bool | None] = mapped_column(default=None, index=True)
 
     # Timestamp fields

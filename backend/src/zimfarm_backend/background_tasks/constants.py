@@ -63,10 +63,6 @@ HISTORY_CLEANUP_INTERVAL = datetime.timedelta(
 REQUEST_TASKS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("REQUEST_TASKS_INTERVAL", default="1h"))
 )
-
-# CMS notification retry
-# How often to check for files that need CMS notification retry
-# This retries files that failed notification or were never notified
-RETRY_CMS_NOTIFICATIONS_INTERVAL = datetime.timedelta(
-    seconds=parse_timespan(getenv("RETRY_CMS_NOTIFICATIONS_INTERVAL", default="10m"))
+CMS_NOTIFICATIONS_INTERVAL = datetime.timedelta(
+    seconds=parse_timespan(getenv("CMS_NOTIFICATIONS_INTERVAL", default="10m"))
 )

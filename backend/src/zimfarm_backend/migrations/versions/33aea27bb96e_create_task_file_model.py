@@ -41,11 +41,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("status", sa.String(), nullable=False),
         sa.Column("size", sa.BigInteger(), nullable=True),
-        sa.Column("cms_status_code", sa.Integer(), nullable=True),
-        sa.Column("cms_succeeded", sa.Boolean(), nullable=True),
         sa.Column("cms_on", sa.DateTime(), nullable=True),
-        sa.Column("cms_book_id", sa.Uuid(), nullable=True),
-        sa.Column("cms_title_ident", sa.String(), nullable=True),
         sa.Column("cms_notified", sa.Boolean(), nullable=True),
         sa.Column("created_timestamp", sa.DateTime(), nullable=True),
         sa.Column("uploaded_timestamp", sa.DateTime(), nullable=True),
@@ -104,23 +100,15 @@ def upgrade() -> None:
 
             # Extract CMS data if present
             cms_data = file_data.get("cms")
-            cms_status_code = None
-            cms_succeeded = None
             cms_on = None
-            cms_book_id = None
-            cms_title_ident = None
 
             if cms_data and isinstance(cms_data, dict):
                 cms_data = cast(dict[str, Any], cms_data)
-                cms_status_code = cms_data.get("status_code")
-                cms_succeeded = cms_data.get("succeeded")
                 cms_on = (
                     zimfarm_loads(json.dumps(cms_data.get("on")))
                     if cms_data.get("on")
                     else None
                 )
-                cms_book_id = cms_data.get("book_id")
-                cms_title_ident = cms_data.get("title_ident")
 
             # Insert file entry
             session.execute(
@@ -128,16 +116,14 @@ def upgrade() -> None:
                     """
                     INSERT INTO file (
                         name, status, size,
-                        cms_status_code, cms_succeeded, cms_on,
-                        cms_book_id, cms_title_ident, cms_notified,
+                        cms_on, cms_notified,
                         created_timestamp, uploaded_timestamp,
                         failed_timestamp, check_timestamp,
                         check_result, check_log, check_details, info,
                         task_id
                     ) VALUES (
                         :name, :status, :size,
-                        :cms_status_code, :cms_succeeded, :cms_on,
-                        :cms_book_id, :cms_title_ident, :cms_notified,
+                        :cms_on, :cms_notified,
                         :created_timestamp, :uploaded_timestamp,
                         :failed_timestamp, :check_timestamp,
                         :check_result, :check_log, :check_details, :info,
@@ -149,11 +135,7 @@ def upgrade() -> None:
                     "name": filename,
                     "status": file_data.get("status"),
                     "size": file_data.get("size"),
-                    "cms_status_code": cms_status_code,
-                    "cms_succeeded": cms_succeeded,
                     "cms_on": cms_on,
-                    "cms_book_id": cms_book_id,
-                    "cms_title_ident": cms_title_ident,
                     "cms_notified": None,  # Not in original schema
                     "created_timestamp": (
                         zimfarm_loads(json.dumps(file_data.get("created_timestamp")))
@@ -216,9 +198,7 @@ def downgrade() -> None:
                 """
                 SELECT
                     name, status, size,
-                    cms_status_code, cms_succeeded, cms_on,
-                    cms_book_id, cms_title_ident,
-                    created_timestamp, uploaded_timestamp,
+                    cms_on, created_timestamp, uploaded_timestamp,
                     failed_timestamp, check_timestamp,
                     check_result, check_log, check_details, info
                 FROM file
@@ -235,38 +215,28 @@ def downgrade() -> None:
                 "status": row[1],
                 "size": row[2],
                 "created_timestamp": (
-                    json.loads(zimfarm_dumps(row[8])) if row[8] else None
+                    json.loads(zimfarm_dumps(row[4])) if row[4] else None
                 ),
                 "uploaded_timestamp": (
-                    json.loads(zimfarm_dumps(row[9])) if row[9] else None
+                    json.loads(zimfarm_dumps(row[5])) if row[5] else None
                 ),
                 "failed_timestamp": (
-                    json.loads(zimfarm_dumps(row[10])) if row[10] else None
+                    json.loads(zimfarm_dumps(row[6])) if row[6] else None
                 ),
                 "check_timestamp": (
-                    json.loads(zimfarm_dumps(row[11])) if row[11] else None
+                    json.loads(zimfarm_dumps(row[7])) if row[7] else None
                 ),
-                "check_result": row[12],
-                "check_log": row[13],
+                "check_result": row[8],
+                "check_log": row[9],
                 "check_details": (
-                    json.loads(zimfarm_dumps(row[14])) if row[14] else None
+                    json.loads(zimfarm_dumps(row[10])) if row[10] else {}
                 ),
-                "info": json.loads(zimfarm_dumps(row[15] if row[15] else {})),
+                "info": json.loads(zimfarm_dumps(row[11] if row[11] else {})),
             }
 
             # Add CMS data if any field is present
-            if any([row[3], row[4], row[5], row[6], row[7]]):
-                cms_data: dict[str, Any] = {}
-                if row[3] is not None:
-                    cms_data["status_code"] = row[3]
-                if row[4] is not None:
-                    cms_data["succeeded"] = row[4]
-                if row[5] is not None:
-                    cms_data["on"] = json.loads(zimfarm_dumps(row[5]))
-                if row[6] is not None:
-                    cms_data["book_id"] = str(row[6])
-                if row[7] is not None:
-                    cms_data["title_ident"] = row[7]
+            if row[3] is not None:
+                cms_data: dict[str, Any] = {"on": json.loads(zimfarm_dumps(row[3]))}
 
                 if cms_data:
                     file_data["cms"] = cms_data

@@ -70,7 +70,8 @@ services:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
-      ALEMBIC_UPGRADE_HEAD_ON_START: "true"
+      ALEMBIC_UPGRADE_HEAD_ON_START: true
+      INFORM_CMS: false
     depends_on:
       postgresdb:
         condition: service_healthy

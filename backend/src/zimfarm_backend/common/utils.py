@@ -15,6 +15,7 @@ from zimfarm_backend.common.constants import INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.external import advertise_book_to_cms
 from zimfarm_backend.common.notifications import handle_notification
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.schedule import update_schedule_duration
@@ -157,30 +158,26 @@ def save_event(
     # - one on file upload complete with name and status=uploaded
     # - one on file check complete with result and log
     if kwargs.get("file", {}).get("name"):
-        fkey = kwargs["file"]["name"]
         fstatus = kwargs["file"].get("status")
+        values = FileCreateUpdateSchema(
+            name=kwargs["file"]["name"],
+            status=fstatus,
+            task_id=task.id,
+        )
 
-        values: dict[str, Any] = {
-            "name": fkey,
-            "status": fstatus,
-        }
         if fstatus == "created":
-            values.update(
-                {
-                    "size": kwargs["file"].get("size"),  # missing in uploaded,
-                    f"{fstatus}_timestamp": timestamp,
-                }
-            )
+            values.size = kwargs["file"].get("size")
+            values.created_timestamp = timestamp
         elif fstatus in ("uploaded", "failed"):
-            values[f"{fstatus}_timestamp"] = timestamp
+            setattr(values, f"{fstatus}_timestamp", timestamp)
         elif fstatus == "checked":
-            values["check_result"] = kwargs["file"].get("check_result")
-            values["check_log"] = kwargs["file"].get("check_log")
-            values["check_timestamp"] = timestamp
-            values["check_details"] = kwargs["file"].get("check_details")
-            values["info"] = kwargs["file"].get("info")
+            values.check_result = kwargs["file"].get("check_result")
+            values.check_log = kwargs["file"].get("check_log")
+            values.check_timestamp = timestamp
+            values.check_details = kwargs["file"].get("check_details", {})
+            values.info = kwargs["file"].get("info", {})
 
-        create_or_update_task_file(session, task_id=task.id, **values)
+        create_or_update_task_file(session, values)
 
     session.flush()  # we have to flush first to avoid circular dependency
     if schedule and code == TaskStatus.reserved:
