@@ -2,12 +2,15 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import datetime
+import shutil
 import signal
 import time
 import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, NamedTuple
+
+from docker.errors import NotFound
 
 from zimfarm_worker.common import getnow, logger
 from zimfarm_worker.common.constants import (
@@ -27,6 +30,7 @@ from zimfarm_worker.common.constants import (
 from zimfarm_worker.common.docker import (
     get_label_value,
     list_containers,
+    query_host_mounts,
     query_host_stats,
     remove_container,
     start_task_worker,
@@ -265,7 +269,6 @@ class WorkerManager(BaseWorker):
                 continue  # already handling cancellation
 
             self.update_task_data(task_ident)
-            logger.debug(f"Checking if task {task_ident} should be cancelled...")
             event_codes = {
                 event["code"]
                 for event in self.tasks.get(task_ident, {}).get("events", [])
@@ -338,10 +341,47 @@ class WorkerManager(BaseWorker):
                 self.update_task_data(task_ident)
 
         # filter our tasks register of gone containers
+        gone_task_idents: list[TaskIdent] = []
         for task_ident in list(self.tasks.keys()):
             if task_ident not in running_task_idents:
                 logger.info(f"task {task_ident} is not running anymore, unwatching.")
                 self.tasks.pop(task_ident, None)
+                gone_task_idents.append(task_ident)
+
+        if gone_task_idents:
+            self.remove_gone_containers(gone_task_idents)
+            self.cleanup_task_workdirs(gone_task_idents)
+
+    def remove_gone_containers(self, task_idents: list[TaskIdent]):
+        for task_ident in task_idents:
+            task_containers = list_containers(
+                self.docker, all=True, filters={"label": [f"task_id={task_ident.id}"]}
+            )
+            for container in task_containers:
+                try:
+                    remove_container(self.docker, container=container.name, force=True)
+                except NotFound:
+                    pass
+                else:
+                    logger.info(
+                        f"Removed container {container.name} for gone task "
+                        f"{task_ident.id}"
+                    )
+
+    def cleanup_task_workdirs(self, task_idents: list[TaskIdent]):
+        host_workdir = query_host_mounts(self.docker, [self.workdir]).get(self.workdir)
+        if not host_workdir:
+            logger.warning(f"Host workdir {self.workdir} not found")
+            return
+        for task_ident in task_idents:
+            task_workdir = host_workdir / task_ident.id
+            if task_workdir.exists():
+                try:
+                    shutil.rmtree(task_workdir)
+                except Exception as e:
+                    logger.error(f"Failed to remove task workdir {task_workdir}: {e}")
+                else:
+                    logger.info(f"Removed task workdir {task_workdir}")
 
     def stop_task_worker(self, task_ident: TaskIdent, timeout: int = 20):
         logger.debug(f"stop_task_worker: {task_ident.id}")
