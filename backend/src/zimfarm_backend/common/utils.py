@@ -11,15 +11,13 @@ import sqlalchemy.orm as so
 from sqlalchemy import select
 
 from zimfarm_backend.common import getnow, to_naive_utc
-from zimfarm_backend.common.constants import INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.external import advertise_book_to_cms
 from zimfarm_backend.common.notifications import handle_notification
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.schedule import update_schedule_duration
-from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id_or_none
+from zimfarm_backend.db.tasks import create_or_update_task_file
 from zimfarm_backend.db.worker import get_worker
 
 logger = logging.getLogger(__name__)
@@ -50,7 +48,6 @@ def task_event_handler(
         TaskStatus.created_file: task_created_file_event_handler,
         TaskStatus.uploaded_file: task_uploaded_file_event_handler,
         TaskStatus.failed_file: task_failed_file_event_handler,
-        TaskStatus.checked_file: task_checked_file_event_handler,
         TaskStatus.update: task_update_event_handler,
         TaskStatus.requested: task_requested_event_handler,
     }
@@ -377,30 +374,6 @@ def task_failed_file_event_handler(
     logger.info(f"Task file upload failed: {task_id}, {file['name']}")
 
     save_event(session, task_id, TaskStatus.failed_file, timestamp, file=file)
-
-
-def task_checked_file_event_handler(
-    session: so.Session, task_id: UUID, payload: dict[str, Any]
-):
-    file = {
-        "name": payload.get("filename"),
-        "status": "checked",
-        "check_result": payload.get("result"),
-        "check_log": payload.get("log"),
-        "check_details": payload.get("details"),
-        "info": payload.get("info"),
-    }
-    timestamp = get_timestamp_from_event(payload)
-    logger.info(f"Task checked file: {task_id}, {file['name']}")
-
-    save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
-
-    if INFORM_CMS:
-        task = get_task_by_id_or_none(session, task_id)
-        if task is None:
-            raise RecordDoesNotExistError(f"Task {task_id} does not exist")
-        if filename := file.get("name"):
-            advertise_book_to_cms(session, task, filename)
 
 
 def task_update_event_handler(

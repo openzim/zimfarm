@@ -82,11 +82,6 @@ class TaskLightSchema(BaseTaskSchema):
     config: ConfigWithOnlyResourcesSchema
 
 
-class CMSStatusSchema(BaseModel):
-    on: datetime.datetime | None = None
-    notified: bool | None = None
-
-
 class TaskFileSchema(BaseModel):
     """
     Schema for reading the files associated with a task
@@ -95,7 +90,8 @@ class TaskFileSchema(BaseModel):
     name: str
     size: int | None = None
     status: str
-    cms: CMSStatusSchema | None = None
+    cms_on: datetime.datetime | None = None
+    cms_notified: bool | None = None
     created_timestamp: datetime.datetime | None = None
     uploaded_timestamp: datetime.datetime | None = None
     failed_timestamp: datetime.datetime | None = None

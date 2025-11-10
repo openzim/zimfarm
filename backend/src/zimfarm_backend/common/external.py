@@ -27,7 +27,6 @@ from zimfarm_backend.common.constants import (
 )
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.common.schemas.orms import (
-    CMSStatusSchema,
     TaskFileSchema,
     TaskFullSchema,
 )
@@ -177,16 +176,14 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
     file_data = task.files[file_name]
 
     # skip if already advertised to CMS
-    if file_data.cms and file_data.cms.notified:
+    if file_data.cms_notified:
         logger.warning(f"Book {file_data.name} already advertised to CMS")
         return
 
     # prepare payload and submit request to CMS
     download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
-    file_data.cms = CMSStatusSchema(
-        on=getnow(),
-        notified=False,
-    )
+    file_data.cms_on = getnow()
+    file_data.cms_notified = False
     try:
         resp = requests.post(
             CMS_ENDPOINT,
@@ -198,7 +195,7 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
         logger.exception(exc)
     else:
         status_code = HTTPStatus(resp.status_code)
-        file_data.cms.notified = status_code.is_success
+        file_data.cms_notified = status_code.is_success
         if status_code.is_success:
             try:
                 resp.json()
@@ -218,8 +215,8 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
             task_id=task.id,
             name=file_name,
             status=file_data.status,
-            cms_on=file_data.cms.on,
-            cms_notified=file_data.cms.notified,
+            cms_on=file_data.cms_on,
+            cms_notified=file_data.cms_notified,
         ),
     )
 

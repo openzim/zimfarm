@@ -15,7 +15,6 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
-    CMSStatusSchema,
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
     ExpandedScheduleConfigSchema,
@@ -58,10 +57,8 @@ def create_task_file_schema(file: File) -> TaskFileSchema:
         check_log=file.check_log,
         check_details=file.check_details,
         info=file.info,
-        cms=CMSStatusSchema(
-            on=file.cms_on,
-            notified=file.cms_notified,
-        ),
+        cms_on=file.cms_on,
+        cms_notified=file.cms_notified,
     )
 
 
