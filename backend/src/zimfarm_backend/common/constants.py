@@ -116,6 +116,7 @@ WASABI_WHITELIST_POLICY_ARN = getenv("WASABI_WHITELIST_POLICY_ARN", default="")
 WASABI_WHITELIST_STATEMENT_ID = getenv(
     "WASABI_WHITELIST_STATEMENT_ID", default="ZimfarmWorkersIPsWhiteList"
 )
+WASABI_REQUEST_TIMEOUT = parse_timespan(getenv("WASABI_REQUEST_TIMEOUT", default="10s"))
 # list of IPs and networks to always allow (regardless of used by workers or not)
 WHITELISTED_IPS = [
     ip.strip() for ip in getenv("WHITELISTED_IPS", default="").split(",") if ip.strip()

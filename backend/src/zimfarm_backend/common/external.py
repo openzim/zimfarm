@@ -21,6 +21,7 @@ from zimfarm_backend.common.constants import (
     CMS_ZIM_DOWNLOAD_URL,
     REQ_TIMEOUT_CMS,
     WASABI_MAX_WHITELIST_VERSIONS,
+    WASABI_REQUEST_TIMEOUT,
     WASABI_URL,
     WASABI_WHITELIST_POLICY_ARN,
     WASABI_WHITELIST_STATEMENT_ID,
@@ -92,7 +93,11 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
         logger.error("> Unable to update workers whitelist: missing WASABI_URL")
         return
 
-    s3 = KiwixStorage(url=WASABI_URL)
+    s3 = KiwixStorage(
+        url=WASABI_URL,
+        connect_timeout=WASABI_REQUEST_TIMEOUT,
+        read_timeout=WASABI_REQUEST_TIMEOUT,
+    )
     try:
         if not s3.check_credentials(  # pyright: ignore[reportUnknownMemberType]
             list_buckets=True, failsafe=False
@@ -105,7 +110,7 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
         return
 
     iam = s3.get_service(  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        "iam"
+        "iam"  # pyright: ignore[reportArgumentType]
     )
     versions: list[dict[str, Any]] = cast(
         list[dict[str, Any]],
