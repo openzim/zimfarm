@@ -48,6 +48,7 @@ def task_event_handler(
         TaskStatus.created_file: task_created_file_event_handler,
         TaskStatus.uploaded_file: task_uploaded_file_event_handler,
         TaskStatus.failed_file: task_failed_file_event_handler,
+        TaskStatus.checked_file: task_checked_file_event_handler,
         TaskStatus.update: task_update_event_handler,
         TaskStatus.requested: task_requested_event_handler,
     }
@@ -374,6 +375,23 @@ def task_failed_file_event_handler(
     logger.info(f"Task file upload failed: {task_id}, {file['name']}")
 
     save_event(session, task_id, TaskStatus.failed_file, timestamp, file=file)
+
+
+def task_checked_file_event_handler(
+    session: so.Session, task_id: UUID, payload: dict[str, Any]
+):
+    file = {
+        "name": payload.get("filename"),
+        "status": "checked",
+        "check_result": payload.get("result"),
+        "check_log": payload.get("log"),
+        "check_details": payload.get("details"),
+        "info": payload.get("info"),
+    }
+    timestamp = get_timestamp_from_event(payload)
+    logger.info(f"Task checked file: {task_id}, {file['name']}")
+
+    save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
 
 
 def task_update_event_handler(
