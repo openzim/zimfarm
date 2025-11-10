@@ -1,1 +1,1 @@
-kiwixstorage==0.9.0
+kiwixstorage==0.10.0
