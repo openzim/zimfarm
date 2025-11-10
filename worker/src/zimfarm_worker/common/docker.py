@@ -86,12 +86,12 @@ def retry(
 
 
 @retry
-def get_image(client: DockerClient, name: str):
+def get_image(client: DockerClient, name: str) -> Image:
     return client.images.get(name)
 
 
 @retry
-def pull_image(client: DockerClient, repository: str, tag: str | None = None):
+def pull_image(client: DockerClient, repository: str, tag: str | None = None) -> Image:
     return client.images.pull(repository, tag)
 
 
@@ -110,7 +110,7 @@ def get_container(client: DockerClient, container_name: str) -> Container:
 
 
 @retry
-def list_containers(client: DockerClient, **kwargs: Any):
+def list_containers(client: DockerClient, **kwargs: Any) -> list[Container]:
     """all=False, since="Id or name", before="Id or name", limit=None, filters={}"""
     return client.containers.list(  # pyright: ignore[reportGeneralTypeIssues, reportReturnType, reportUnknownMemberType, reportUnknownVariableType]
         **kwargs
