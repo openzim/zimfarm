@@ -6,8 +6,9 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends ssh && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 RUN pip3 install --no-cache-dir -U pip && \
-    pip3 install --no-cache-dir "humanfriendly==10.0" "kiwixstorage==0.9.0"
+    pip3 install --no-cache-dir "humanfriendly==10.0" "kiwixstorage==0.10.1"
 
 COPY openzim_uploader/__init__.py /usr/local/bin/uploader
 RUN chmod +x /usr/local/bin/uploader
