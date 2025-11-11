@@ -21,6 +21,7 @@ class TaskStatus(StrEnum):
     uploaded_file = "uploaded_file"
     failed_file = "failed_file"
     checked_file = "checked_file"
+    check_results_uploaded = "check_results_uploaded"
 
     @classmethod
     def running(cls):
@@ -66,7 +67,13 @@ class TaskStatus(StrEnum):
 
     @classmethod
     def file_events(cls) -> list[str]:
-        return [cls.created_file, cls.uploaded_file, cls.failed_file, cls.checked_file]
+        return [
+            cls.created_file,
+            cls.uploaded_file,
+            cls.failed_file,
+            cls.checked_file,
+            cls.check_results_uploaded,
+        ]
 
     @classmethod
     def silent_events(cls) -> list[str]:

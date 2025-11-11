@@ -1,7 +1,6 @@
 import ipaddress
 import json
 import logging
-import typing
 from http import HTTPStatus
 from typing import Any, cast
 
@@ -31,6 +30,7 @@ from zimfarm_backend.common.schemas.orms import (
     TaskFileSchema,
     TaskFullSchema,
 )
+from zimfarm_backend.common.upload import upload_url
 from zimfarm_backend.db.tasks import create_or_update_task_file
 
 logging.basicConfig(level=logging.DEBUG)
@@ -192,7 +192,11 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
     try:
         resp = requests.post(
             CMS_ENDPOINT,
-            json=get_openzimcms_payload(file_data, download_prefix),
+            json=get_openzimcms_payload(
+                file_data,
+                download_prefix,
+                task.upload.check.upload_uri if task.upload.check else None,
+            ),
             timeout=REQ_TIMEOUT_CMS,
         )
     except Exception as exc:
@@ -227,8 +231,8 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
 
 
 def get_openzimcms_payload(
-    file: TaskFileSchema, download_prefix: str
-) -> dict[str, typing.Any]:
+    file: TaskFileSchema, download_prefix: str, zimcheck_base_url: str | None
+) -> dict[str, Any]:
     payload = {
         "id": file.info["id"],
         "period": file.info.get("metadata", {}).get("Date"),
@@ -238,6 +242,10 @@ def get_openzimcms_payload(
         "size": file.info.get("size"),
         "metadata": file.info.get("metadata"),
         "url": f"{download_prefix}/{file.name}",
-        "zimcheck": file.check_details or {},
+        "zimcheck_url": (
+            upload_url(zimcheck_base_url, file.check_filename)
+            if zimcheck_base_url and file.check_filename
+            else None
+        ),
     }
     return payload

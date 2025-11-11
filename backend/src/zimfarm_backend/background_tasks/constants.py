@@ -66,3 +66,6 @@ REQUEST_TASKS_INTERVAL = datetime.timedelta(
 CMS_NOTIFICATIONS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("CMS_NOTIFICATIONS_INTERVAL", default="10m"))
 )
+CMS_MAXIMUM_RETRY_INTERVAL = parse_timespan(
+    getenv("CMS_MAXIMUM_RETRY_INTERVAL", default="24h")
+)
