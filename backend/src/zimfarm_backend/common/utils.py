@@ -49,6 +49,7 @@ def task_event_handler(
         TaskStatus.uploaded_file: task_uploaded_file_event_handler,
         TaskStatus.failed_file: task_failed_file_event_handler,
         TaskStatus.checked_file: task_checked_file_event_handler,
+        TaskStatus.check_results_uploaded: task_check_results_uploaded_event_handler,
         TaskStatus.update: task_update_event_handler,
         TaskStatus.requested: task_requested_event_handler,
     }
@@ -159,21 +160,25 @@ def save_event(
         fstatus = kwargs["file"].get("status")
         values = FileCreateUpdateSchema(
             name=kwargs["file"]["name"],
-            status=fstatus,
             task_id=task.id,
         )
 
         if fstatus == "created":
+            values.status = fstatus
             values.size = kwargs["file"].get("size")
             values.created_timestamp = timestamp
         elif fstatus in ("uploaded", "failed"):
+            values.status = fstatus
             setattr(values, f"{fstatus}_timestamp", timestamp)
         elif fstatus == "checked":
+            values.status = fstatus
             values.check_result = kwargs["file"].get("check_result")
-            values.check_log = kwargs["file"].get("check_log")
             values.check_timestamp = timestamp
-            values.check_details = kwargs["file"].get("check_details", {})
             values.info = kwargs["file"].get("info", {})
+        elif fstatus == "check_results_uploaded":
+            # Don't update file status here as it must have been created/uploaded
+            values.check_filename = kwargs["file"].get("check_filename")
+            values.check_upload_timestamp = timestamp
 
         create_or_update_task_file(session, values)
 
@@ -383,15 +388,29 @@ def task_checked_file_event_handler(
     file = {
         "name": payload.get("filename"),
         "status": "checked",
-        "check_result": payload.get("result"),
-        "check_log": payload.get("log"),
-        "check_details": payload.get("details"),
         "info": payload.get("info"),
+        "check_result": payload.get("result"),
     }
     timestamp = get_timestamp_from_event(payload)
     logger.info(f"Task checked file: {task_id}, {file['name']}")
 
     save_event(session, task_id, TaskStatus.checked_file, timestamp, file=file)
+
+
+def task_check_results_uploaded_event_handler(
+    session: so.Session, task_id: UUID, payload: dict[str, Any]
+):
+    file = {
+        "name": payload.get("filename"),
+        "check_filename": payload.get("check_filename"),
+        "status": "check_results_uploaded",
+    }
+    timestamp = get_timestamp_from_event(payload)
+    logger.info(f"Task check results uploaded: {task_id}, {file['name']}")
+
+    save_event(
+        session, task_id, TaskStatus.check_results_uploaded, timestamp, file=file
+    )
 
 
 def task_update_event_handler(

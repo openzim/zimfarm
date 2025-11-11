@@ -200,8 +200,7 @@ def test_create_or_update_task_file_create_with_all_fields(
             failed_timestamp=None,
             check_timestamp=now,
             check_result=0,
-            check_log="All checks passed",
-            check_details={"validation": "success"},
+            check_filename="complete_file_zimcheck.json",
             info={"custom": "data"},
         ),
     )
@@ -222,8 +221,7 @@ def test_create_or_update_task_file_create_with_all_fields(
     assert result.failed_timestamp is None
     assert result.check_timestamp == now
     assert result.check_result == 0
-    assert result.check_log == "All checks passed"
-    assert result.check_details == {"validation": "success"}
+    assert result.check_filename == "complete_file_zimcheck.json"
     assert result.info == {"custom": "data"}
 
 

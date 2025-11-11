@@ -200,7 +200,7 @@ class File(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     name: Mapped[str]
-    status: Mapped[str]
+    status: Mapped[str | None] = mapped_column(default=None)
     size: Mapped[int | None] = mapped_column(default=None, type_=BigInteger)
 
     cms_on: Mapped[datetime | None] = mapped_column(default=None)
@@ -210,12 +210,14 @@ class File(Base):
     created_timestamp: Mapped[datetime | None] = mapped_column(default=None)
     uploaded_timestamp: Mapped[datetime | None] = mapped_column(default=None)
     failed_timestamp: Mapped[datetime | None] = mapped_column(default=None)
-    check_timestamp: Mapped[datetime | None] = mapped_column(default=None)
-
     # Check fields
+    check_timestamp: Mapped[datetime | None] = mapped_column(default=None)
     check_result: Mapped[int | None] = mapped_column(default=None)
     check_log: Mapped[str | None] = mapped_column(default=None)
     check_details: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    # if filename exists, then check result was uploaded successfully, otherwise false
+    check_filename: Mapped[str | None] = mapped_column(default=None)
+    check_upload_timestamp: Mapped[datetime | None] = mapped_column(default=None)
     info: Mapped[dict[str, Any]] = mapped_column(
         default_factory=dict, server_default="{}"
     )

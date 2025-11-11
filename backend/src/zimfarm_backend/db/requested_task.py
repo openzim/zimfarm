@@ -17,7 +17,9 @@ from zimfarm_backend.common.constants import (
     LOGS_UPLOAD_URI,
     ZIM_EXPIRATION,
     ZIM_UPLOAD_URI,
+    ZIMCHECK_EXPIRATION,
     ZIMCHECK_OPTION,
+    ZIMCHECK_UPLOAD_URI,
 )
 from zimfarm_backend.common.enums import Platform, TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
@@ -137,6 +139,10 @@ def _create_new_requested_task(
             "artifacts": {
                 "upload_uri": ARTIFACTS_UPLOAD_URI,
                 "expiration": ARTIFACTS_EXPIRATION,
+            },
+            "check": {
+                "upload_uri": ZIMCHECK_UPLOAD_URI,
+                "expiration": ZIMCHECK_EXPIRATION,
             },
         },
         notification=schedule.notification if schedule.notification else {},

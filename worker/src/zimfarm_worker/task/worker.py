@@ -5,6 +5,7 @@ import sys
 import tarfile
 import time
 import urllib.parse
+from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, cast
@@ -107,7 +108,14 @@ class TaskWorker(BaseWorker):
         self.zim_files: dict[str, dict[str, str]] = {}  # ZIM files registry
         self.zim_retries: dict[str, int] = {}  # ZIM files with upload errors (registry)
         self.uploader: Container | None = None  # zim-files uploader container
-        self.checker: Container | None = None  # zim-files uploader container
+        self.checker: Container | None = None  # zim-files checker container
+
+        self.zimcheck_uploader: Container | None = None  # zimcheck result uploader
+        # mapping of zimcheck result filenames to zim filename. This allows multiple
+        # checkers to run independent of the rate that upload for the check results
+        # happen
+        self.zimcheck_files: dict[str, str] = {}
+        self.zimcheck_retries: defaultdict[str, int] = defaultdict(int)
 
         self.scraper: Container | None = None  # scraper container
         self.log_uploader: Container | None = None  # scraper log uploader container
@@ -270,8 +278,6 @@ class TaskWorker(BaseWorker):
         filename: str,
         info: dict[str, Any],
         zimcheck_retcode: int,
-        zimcheck_result: dict[str, Any] | None = None,
-        zimcheck_log: str | None = None,
     ):
         logger.info(f"Updating file check-result={zimcheck_retcode} for {filename}")
         self.patch_task(
@@ -280,9 +286,25 @@ class TaskWorker(BaseWorker):
                 "payload": {
                     "filename": filename,
                     "result": zimcheck_retcode,
-                    "log": zimcheck_log,
-                    "details": zimcheck_result,
                     "info": info,
+                },
+            }
+        )
+
+    def mark_check_result_uploaded(
+        self,
+        filename: str,
+        zimcheck_filename: str | None,
+    ):
+        logger.info(
+            f"Updating file check-result-uploaded={zimcheck_filename} for {filename}"
+        )
+        self.patch_task(
+            {
+                "event": "check_results_uploaded",
+                "payload": {
+                    "filename": filename,
+                    "check_filename": zimcheck_filename,
                 },
             }
         )
@@ -394,6 +416,7 @@ class TaskWorker(BaseWorker):
             "scraper",
             "log_uploader",
             "artifacts_uploader",
+            "zimcheck_uploader",
             "uploader",
             "checker",
         ):
@@ -449,6 +472,100 @@ class TaskWorker(BaseWorker):
             host_workdir=self.host_task_workdir,
             filename=filename,
         )
+
+    def start_zimcheck_uploader(self, filename: str):
+        if (
+            not self.task
+            or "upload" not in self.task
+            or "check" not in self.task["upload"]
+            or not self.task["upload"]["check"]
+            or not self.task["upload"]["check"]["upload_uri"]
+        ):
+            return
+
+        if not self.task or not self.host_task_workdir:
+            logger.error("No task or host task workdir to start uploader")
+            return
+
+        logger.info(f"Starting zimcheck uploader for {filename}")
+
+        self.zimcheck_uploader = start_uploader(
+            self.docker,
+            task=self.task,
+            kind="check",
+            username=self.username,
+            host_workdir=self.host_task_workdir,
+            upload_dir="",
+            filename=filename,
+            move=False,
+            delete=False,
+            compress=False,
+            resume=False,
+        )
+
+    def upload_check_results(self):
+        """Upload results of zim checker saved to disk"""
+
+        # check if zimcheck uploader is running
+        if self.zimcheck_uploader:
+            self.zimcheck_uploader.reload()
+
+        if self.zimcheck_uploader and self.zimcheck_uploader.status in RUNNING_STATUSES:
+            # still running, nothing to do
+            return
+
+        # not running but was running
+        if self.zimcheck_uploader:
+            zimcheck_filename = cast(
+                str,
+                self.zimcheck_uploader.labels[  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+                    "filename"
+                ],
+            )
+            # get results of container
+            exit_code = self.zimcheck_uploader.attrs["State"]["ExitCode"]
+            logger.info(
+                f"Zimcheck Uploader for {zimcheck_filename} complete {exit_code}"
+            )
+            if exit_code == 0:
+                self.mark_check_result_uploaded(
+                    filename=self.zimcheck_files[zimcheck_filename],
+                    zimcheck_filename=zimcheck_filename,
+                )
+                del self.zimcheck_files[zimcheck_filename]
+                # Delete these files as they might be big
+                if self.task_workdir:
+                    (self.task_workdir / zimcheck_filename).unlink(missing_ok=True)
+            else:
+                logger.error(
+                    "Zimcheck Uploader:: "
+                    f"{get_container_logs(self.docker, self.zimcheck_uploader.name)}"  # pyright: ignore[reportArgumentType]
+                )
+                self.zimcheck_retries[zimcheck_filename] += 1
+                if self.zimcheck_retries[zimcheck_filename] >= MAX_ZIM_RETRIES:
+                    logger.error(
+                        f"{zimcheck_filename} exhausted retries {MAX_ZIM_RETRIES}"
+                    )
+                    del self.zimcheck_files[zimcheck_filename]
+                    if self.task_workdir:
+                        (self.task_workdir / zimcheck_filename).unlink(missing_ok=True)
+
+            self.zimcheck_uploader.remove()
+            self.zimcheck_uploader = None
+
+        # Start an uploader instance
+        if (
+            self.task
+            and self.zimcheck_uploader is None
+            and not self.should_stop
+            and self.host_task_workdir
+        ):
+            try:
+                zimcheck_file = set(self.zimcheck_files.keys()).pop()
+            except KeyError:
+                logger.debug("No zimcheck files to upload")
+                return
+            self.start_zimcheck_uploader(zimcheck_file)
 
     def container_running(self, which: str) -> bool:
         """whether refered container is still running or not"""
@@ -727,24 +844,45 @@ class TaskWorker(BaseWorker):
                 self.docker,
                 self.checker.name,  # pyright: ignore[reportArgumentType]
             ).strip()
+
+            zimcheck_info = get_zim_info(
+                self.task_workdir
+                / zim_file  # pyright: ignore[reportUnknownArgumentType]
+            )
+
             try:
                 zimcheck_result = ujson.loads(zimcheck_log)
             except Exception as exc:
+                # Failed to parse JSON, send raw log
                 zimcheck_result = None
                 logger.warning(f"Failed to parse zimcheck output: {exc}")
-            else:
-                zimcheck_log = None
 
+            zimcheck_metadata: dict[str, Any] = {
+                "filename": zim_file,
+                "info": zimcheck_info,
+                "result": zimcheck_result,
+                "log": zimcheck_log,
+                "retcode": self.checker.attrs["State"]["ExitCode"],
+            }
             self.mark_file_checked(
-                zim_file,  # pyright: ignore[reportArgumentType, reportUnknownArgumentType]
-                zimcheck_retcode=self.checker.attrs["State"]["ExitCode"],
-                zimcheck_result=zimcheck_result,
-                zimcheck_log=zimcheck_log,
-                info=get_zim_info(
-                    self.task_workdir
-                    / zim_file  # pyright: ignore[reportUnknownArgumentType]
-                ),
+                filename=zim_file,  # pyright: ignore[reportArgumentType, reportUnknownArgumentType]
+                zimcheck_retcode=zimcheck_metadata["retcode"],
+                info=zimcheck_info,
             )
+            # zimcheck results could be too big, so, we write them to a file
+            # https://github.com/openzim/zimfarm/issues/1456
+            zimcheck_filename = f"{zimcheck_info['id']}_zimcheck.json"
+            try:
+                with open(self.task_workdir / zimcheck_filename, "w") as f:
+                    json.dump(zimcheck_metadata, f)
+            except Exception as exc:
+                logger.error(f"Failed to write zimcheck metadata: {exc}")
+            else:
+                logger.info(f"Zimcheck metadata written to {zimcheck_filename}")
+                # Add the metadata for the uploader to pick it up
+                self.zimcheck_files[zimcheck_filename] = zim_file
+                del zimcheck_metadata
+
             self.checker.remove()
             self.checker = None
 
@@ -840,6 +978,7 @@ class TaskWorker(BaseWorker):
     def handle_files(self):
         self.upload_files()
         self.check_files()
+        self.upload_check_results()
 
     def handle_stopped_scraper(self):
         if not self.scraper:
@@ -904,10 +1043,12 @@ class TaskWorker(BaseWorker):
         # monitor upload/check of files
         while not self.should_stop and (
             self.busy_zim_files
+            or self.zimcheck_files
             or self.container_running("uploader")
             or self.container_running("checker")
             or self.container_running("log_uploader")
             or self.container_running("artifacts_uploader")
+            or self.container_running("zimcheck_uploader")
         ):
             now = getnow()
             if (now - last_check).total_seconds() < SLEEP_INTERVAL:

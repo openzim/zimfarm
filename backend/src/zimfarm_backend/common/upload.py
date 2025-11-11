@@ -70,4 +70,8 @@ def build_task_upload_uris(
         task.upload.artifacts.upload_uri = safe_upload_uri(
             task.upload.artifacts.upload_uri, keys=keys, show_secrets=show_secrets
         )
+    if task.upload.check and task.upload.check.upload_uri:
+        task.upload.check.upload_uri = safe_upload_uri(
+            task.upload.check.upload_uri, keys=keys, show_secrets=show_secrets
+        )
     return task
