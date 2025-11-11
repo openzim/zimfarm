@@ -23,7 +23,7 @@ def notify_cms_for_checked_files(session: OrmSession):
         sa.select(File, Task.id.label("task_id"))
         .join(Task, Task.id == File.task_id)
         .where(
-            File.status == "checked",
+            File.check_result.is_not(None),
             sa.or_(
                 File.cms_notified.is_(None),
                 File.cms_notified.is_(False),

@@ -272,7 +272,7 @@ export function artifactsUrl(task: Task) {
   return uploadUrl(task.upload.artifacts.upload_uri, task.container.artifacts)
 }
 
-function uploadUrl(uri: string, filename: string) {
+export function uploadUrl(uri: string, filename: string) {
   let url = new URL(uri)
   const scheme = url.protocol.replace(/:$/, '')
 

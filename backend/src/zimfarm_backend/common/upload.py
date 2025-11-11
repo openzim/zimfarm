@@ -75,3 +75,41 @@ def build_task_upload_uris(
             task.upload.check.upload_uri, keys=keys, show_secrets=show_secrets
         )
     return task
+
+
+def upload_url(uri: str, filename: str) -> str:
+    """Generate a display URL for an upload based on the URI scheme."""
+    url = urllib.parse.urlparse(uri)
+    scheme = url.scheme
+
+    # If scheme is not http or https, convert to https
+    if scheme not in ["http", "https"]:
+        url = urllib.parse.urlparse(uri.replace(url.scheme + ":", "https:"))
+
+    # Handle S3 scheme
+    if scheme in ["s3", "s3+http", "s3+https"]:
+        download_url = f"{url.scheme}://{url.netloc}{url.path}"
+
+        if not download_url.endswith("/"):
+            download_url += "/"
+        # Extract bucketName from query parameters
+        params = urllib.parse.parse_qs(url.query)
+        bucket_name = params.get("bucketName", [None])[0]
+
+        if bucket_name:
+            download_url += bucket_name + "/"
+
+        return download_url + filename
+
+    # For http/https schemes, return full URL with filename
+    if scheme in ["http", "https"]:
+        # Ensure path ends with / before adding filename
+        path = url.path
+        if path and not path.endswith("/"):
+            path += "/"
+        elif not path:
+            path = "/"
+
+        return f"{url.scheme}://{url.netloc}{path}{filename}"
+
+    return filename

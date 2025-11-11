@@ -33,6 +33,7 @@ def test_send_cms_notifications_disabled(
             task_id=task.id,
             name="test.zim",
             status="checked",
+            check_result=1,
             cms_notified=None,
         ),
     )
@@ -62,6 +63,7 @@ def test_send_cms_notifications_skip_already_notified(
             name="already_notified.zim",
             status="checked",
             cms_notified=True,  # Already successfully notified
+            check_result=1,
             cms_on=getnow(),
         ),
     )
@@ -92,6 +94,7 @@ def test_send_cms_notifications_retry_failed(
             status="checked",
             cms_notified=False,  # Failed notification
             cms_on=getnow(),
+            check_result=1,
         ),
     )
     dbsession.flush()
@@ -120,6 +123,7 @@ def test_send_cms_notifications_retry_never_notified(
             name="never_notified.zim",
             status="checked",
             cms_notified=None,  # Never attempted
+            check_result=1,
         ),
     )
     dbsession.flush()
@@ -149,6 +153,7 @@ def test_send_cms_notifications_skip_non_checked_files(
                 name=f"{status}_file.zim",
                 status=status,
                 cms_notified=None,  # Never notified
+                check_result=None,
             ),
         )
     dbsession.flush()
