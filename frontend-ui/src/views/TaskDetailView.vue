@@ -201,58 +201,31 @@
                             <td v-else>-</td>
                             <td v-if="file.check_result !== undefined">
                               <div class="d-flex flex-sm-column flex-lg-row align-center">
-                                <code>{{ file.check_result }}</code>
-                                <v-menu v-if="file.check_filename" location="left">
-                                  <template #activator="{ props: menuProps }">
-                                    <v-btn
-                                      v-bind="menuProps"
-                                      variant="text"
+                                <v-tooltip :text="`Return code: ${file.check_result}`">
+                                  <template #activator="{ props }">
+                                    <v-icon
+                                      v-bind="props"
+                                      :color="file.check_result === 0 ? 'success' : 'error'"
                                       size="small"
-                                      class="ml-2"
-                                      @click="fetchCheckDetails(file)"
-                                      :loading="loadingCheckDetails[file.check_filename]"
                                     >
-                                      <v-icon>mdi-eye</v-icon>
-                                    </v-btn>
+                                      {{
+                                        file.check_result === 0
+                                          ? 'mdi-check-circle'
+                                          : 'mdi-close-circle'
+                                      }}
+                                    </v-icon>
                                   </template>
-                                  <v-card max-width="400" max-height="300">
-                                    <v-card-title class="text-subtitle-2 pa-3"
-                                      >zimcheck output</v-card-title
-                                    >
-                                    <v-card-text class="pa-3">
-                                      <v-progress-circular
-                                        v-if="
-                                          loadingCheckDetails[file.check_filename] &&
-                                          !checkDetails[file.check_filename]
-                                        "
-                                        indeterminate
-                                        size="20"
-                                      />
-                                      <pre
-                                        v-else-if="checkDetails[file.check_filename]"
-                                        class="text-caption"
-                                        style="
-                                          max-height: 200px;
-                                          overflow-y: auto;
-                                          white-space: pre-wrap;
-                                          word-break: break-word;
-                                        "
-                                        >{{ checkDetails[file.check_filename] }}</pre
-                                      >
-                                      <span v-else class="text-caption"
-                                        >Failed to load zimcheck details</span
-                                      >
-                                    </v-card-text>
-                                  </v-card>
-                                </v-menu>
+                                </v-tooltip>
                                 <v-btn
-                                  v-if="file.check_filename && checkDetails[file.check_filename]"
+                                  v-if="file.check_filename"
                                   variant="text"
                                   size="small"
-                                  class="ml-1"
-                                  @click="copyLog(checkDetails[file.check_filename] || '')"
+                                  class="ml-2"
+                                  :href="getCheckUrl(file.check_filename)"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                 >
-                                  <v-icon>mdi-content-copy</v-icon>
+                                  <v-icon>mdi-download</v-icon>
                                 </v-btn>
                               </div>
                             </td>
@@ -515,8 +488,6 @@ const task = ref<Task | null>(null)
 const error = ref<string | null>(null)
 const currentTab = ref(props.selectedTab)
 const flagsDefinition = ref<OfflinerDefinition[]>([])
-const checkDetails = ref<Record<string, string | null>>({})
-const loadingCheckDetails = ref<Record<string, boolean>>({})
 
 // Computed properties
 const offsetString = computed(() => {
@@ -647,43 +618,9 @@ const uploadDuration = (file: TaskFile) => {
   return formatDurationBetween(file.created_timestamp, file.uploaded_timestamp)
 }
 
-const fetchCheckDetails = async (file: TaskFile) => {
-  if (!file.check_filename || !task.value || !task.value.upload.check?.upload_uri) return
-
-  const fileName = file.check_filename
-
-  // Don't fetch if already loading or already loaded
-  if (loadingCheckDetails.value[fileName] || checkDetails.value[fileName]) return
-
-  loadingCheckDetails.value[fileName] = true
-
-  try {
-    const url = uploadUrl(task.value.upload.check.upload_uri, fileName)
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    checkDetails.value[fileName] = data.result ? data.result : data.log
-  } catch (err) {
-    notificationStore.showError(`Failed to fetch zimcheck details: ${err}`)
-    checkDetails.value[fileName] = null
-  } finally {
-    loadingCheckDetails.value[fileName] = false
-  }
-}
-
-const copyLog = async (log: string) => {
-  try {
-    await navigator.clipboard.writeText(log)
-    notificationStore.showSuccess('zimcheck log copied to Clipboard!')
-  } catch {
-    notificationStore.showError(
-      'Unable to copy zimcheck log to clipboard 😞. Please copy it manually.',
-    )
-  }
+const getCheckUrl = (fileName: string) => {
+  if (!task.value?.upload.check?.upload_uri) return ''
+  return uploadUrl(task.value.upload.check.upload_uri, fileName)
 }
 
 const copyCommand = async (command: string) => {

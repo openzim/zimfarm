@@ -161,22 +161,19 @@ def save_event(
         values = FileCreateUpdateSchema(
             name=kwargs["file"]["name"],
             task_id=task.id,
+            status=fstatus,
         )
 
         if fstatus == "created":
-            values.status = fstatus
             values.size = kwargs["file"].get("size")
             values.created_timestamp = timestamp
         elif fstatus in ("uploaded", "failed"):
-            values.status = fstatus
             setattr(values, f"{fstatus}_timestamp", timestamp)
         elif fstatus == "checked":
-            values.status = fstatus
             values.check_result = kwargs["file"].get("check_result")
             values.check_timestamp = timestamp
             values.info = kwargs["file"].get("info", {})
         elif fstatus == "check_results_uploaded":
-            # Don't update file status here as it must have been created/uploaded
             values.check_filename = kwargs["file"].get("check_filename")
             values.check_upload_timestamp = timestamp
 

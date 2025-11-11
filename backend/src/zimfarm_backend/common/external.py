@@ -186,7 +186,7 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
         return
 
     # prepare payload and submit request to CMS
-    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}/{task.config.warehouse_path}"
+    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
     file_data.cms_on = getnow()
     file_data.cms_notified = False
     try:

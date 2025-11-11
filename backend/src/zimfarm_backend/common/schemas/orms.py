@@ -89,8 +89,8 @@ class TaskFileSchema(BaseModel):
 
     name: str
     task_id: UUID
+    status: str
     size: int | None = None
-    status: str | None = None
     cms_on: datetime.datetime | None = None
     cms_notified: bool | None = None
     created_timestamp: datetime.datetime | None = None

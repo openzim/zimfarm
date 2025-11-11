@@ -121,8 +121,7 @@ def calculate_pagination_metadata(
 class FileCreateUpdateSchema(BaseModel):
     name: str
     task_id: UUID
-    # status can be omitted while updating a file but not when creating
-    status: str | None = None
+    status: str
     size: int | None = None
     cms_on: datetime.datetime | None = None
     cms_notified: bool | None = None
