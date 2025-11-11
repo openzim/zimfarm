@@ -76,6 +76,42 @@ def get_timestamp_from_event(event: dict[str, Any]) -> datetime.datetime:
     return to_naive_utc(timestamp)
 
 
+def handle_file_event(
+    session: so.Session,
+    task_id: UUID,
+    file_data: dict[str, Any],
+    timestamp: datetime.datetime,
+) -> None:
+    """Handle file-related events and update task file records.
+
+    Files are uploaded as they are created; 3 events:
+    - one on file creation with name, size and status=created
+    - one on file upload complete with name and status=uploaded
+    - one on file check complete with result and log
+    """
+    fstatus = file_data["status"]
+    values = FileCreateUpdateSchema(
+        name=file_data["name"],
+        task_id=task_id,
+        status=fstatus,
+    )
+
+    if fstatus == "created":
+        values.size = file_data.get("size")
+        values.created_timestamp = timestamp
+    elif fstatus in ("uploaded", "failed"):
+        setattr(values, f"{fstatus}_timestamp", timestamp)
+    elif fstatus == "checked":
+        values.check_result = file_data.get("check_result")
+        values.check_timestamp = timestamp
+        values.info = file_data.get("info", {})
+    elif fstatus == "check_results_uploaded":
+        values.check_filename = file_data.get("check_filename")
+        values.check_upload_timestamp = timestamp
+
+    create_or_update_task_file(session, values)
+
+
 def save_event(
     session: so.Session,
     task_id: UUID,
@@ -152,32 +188,15 @@ def save_event(
     add_to_debug_if_present(task=task, kwargs_key="traceback", debug_key="traceback")
     add_to_debug_if_present(task=task, kwargs_key="exception", debug_key="exception")
 
-    # files are uploaded as there are created ; 3 events:
-    # - one on file creation with name, size and status=created
-    # - one on file upload complete with name and status=uploaded
-    # - one on file check complete with result and log
-    if kwargs.get("file", {}).get("name"):
-        fstatus = kwargs["file"].get("status")
-        values = FileCreateUpdateSchema(
-            name=kwargs["file"]["name"],
-            task_id=task.id,
-            status=fstatus,
-        )
-
-        if fstatus == "created":
-            values.size = kwargs["file"].get("size")
-            values.created_timestamp = timestamp
-        elif fstatus in ("uploaded", "failed"):
-            setattr(values, f"{fstatus}_timestamp", timestamp)
-        elif fstatus == "checked":
-            values.check_result = kwargs["file"].get("check_result")
-            values.check_timestamp = timestamp
-            values.info = kwargs["file"].get("info", {})
-        elif fstatus == "check_results_uploaded":
-            values.check_filename = kwargs["file"].get("check_filename")
-            values.check_upload_timestamp = timestamp
-
-        create_or_update_task_file(session, values)
+    # Handle file events if present
+    if kwargs.get("file"):
+        if kwargs.get("file", {}).get("name") and kwargs.get("file", {}).get("status"):
+            handle_file_event(session, task.id, kwargs["file"], timestamp)
+        else:
+            logger.warning(
+                f"Invalid file event for task {task.id}, requires at least "
+                "'name' and 'status'"
+            )
 
     session.flush()  # we have to flush first to avoid circular dependency
     if schedule and code == TaskStatus.reserved:
