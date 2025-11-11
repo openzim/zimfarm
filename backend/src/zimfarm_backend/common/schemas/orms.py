@@ -88,6 +88,7 @@ class TaskFileSchema(BaseModel):
     """
 
     name: str
+    task_id: UUID
     size: int | None = None
     status: str | None = None
     cms_on: datetime.datetime | None = None
@@ -99,8 +100,10 @@ class TaskFileSchema(BaseModel):
 
     check_result: int | None = None
     check_filename: str | None = None
-    check_upload_status: str | None = None
+    check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)
+    check_log: str | None = None
+    check_details: dict[str, Any] | None = None
 
 
 class TaskContainerProgressSchema(BaseModel):
