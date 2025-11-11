@@ -13,15 +13,25 @@ from zimfarm_backend.background_tasks.constants import (
     BACKGROUND_TASKS_SLEEP_DURATION,
     CANCEL_INCOMPLETE_TASKS_INTERVAL,
     CANCEL_STALE_TASKS_INTERVAL,
+    CMS_NOTIFICATIONS_INTERVAL,
     HISTORY_CLEANUP_INTERVAL,
     REMOVE_OLD_TASKS_INTERVAL,
     REQUEST_TASKS_INTERVAL,
 )
 from zimfarm_backend.background_tasks.history_cleanup import history_cleanup
 from zimfarm_backend.background_tasks.request_tasks import request_tasks
+from zimfarm_backend.background_tasks.send_cms_notifications import (
+    notify_cms_for_checked_files,
+)
 from zimfarm_backend.background_tasks.task_config import TaskConfig
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START
 from zimfarm_backend.db import Session
+from zimfarm_backend.utils.database import (
+    check_if_schema_is_up_to_date,
+    create_initial_user,
+    upgrade_db_schema,
+)
 
 # Configure background tasks with their execution intervals
 tasks: list[TaskConfig] = [
@@ -45,6 +55,10 @@ tasks: list[TaskConfig] = [
         func=request_tasks,
         interval=REQUEST_TASKS_INTERVAL,
     ),
+    TaskConfig(
+        func=notify_cms_for_checked_files,
+        interval=CMS_NOTIFICATIONS_INTERVAL,
+    ),
 ]
 
 
@@ -65,8 +79,12 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     logger.info("Starting background tasks...")
-    logger.info(f"Configured {len(tasks)} tasks:")
+    logger.info(f"Configured {len(tasks)} tasks")
 
+    if ALEMBIC_UPGRADE_HEAD_ON_START:
+        upgrade_db_schema()
+    check_if_schema_is_up_to_date()
+    create_initial_user()
     while True:
         now = getnow()
         for task_config in tasks:

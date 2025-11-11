@@ -1,16 +1,18 @@
 import datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Bundle
+from sqlalchemy.orm import Bundle, selectinload
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
@@ -19,6 +21,7 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     RequestedTaskFullSchema,
     RunningTask,
+    ScheduleNotificationSchema,
     TaskContainerSchema,
     TaskFileSchema,
     TaskFullSchema,
@@ -29,7 +32,7 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
-from zimfarm_backend.db.models import OfflinerDefinition, Schedule, Task, Worker
+from zimfarm_backend.db.models import File, OfflinerDefinition, Schedule, Task, Worker
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import get_schedule_duration
@@ -41,28 +44,31 @@ class TaskListResult(BaseModel):
     tasks: list[TaskLightSchema]
 
 
+def create_task_file_schema(file: File) -> TaskFileSchema:
+    return TaskFileSchema(
+        name=file.name,
+        size=file.size,
+        status=file.status,
+        created_timestamp=file.created_timestamp,
+        uploaded_timestamp=file.uploaded_timestamp,
+        failed_timestamp=file.failed_timestamp,
+        check_timestamp=file.check_timestamp,
+        check_result=file.check_result,
+        check_log=file.check_log,
+        check_details=file.check_details,
+        info=file.info,
+        cms_on=file.cms_on,
+        cms_notified=file.cms_notified,
+    )
+
+
 def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema | None:
     """
     Get a task by id or None if it does not exist
     """
     stmt = (
         select(
-            Task.id,
-            Task.status,
-            Task.timestamp,
-            Task.config,
-            Task.events,
-            Task.debug,
-            Task.requested_by,
-            Task.canceled_by,
-            Task.container,
-            Task.priority,
-            Task.notification,
-            Task.files,
-            Task.upload,
-            Task.updated_at,
-            Task.original_schedule_name,
-            Task.context,
+            Task,
             OfflinerDefinition.id.label("offliner_definition_id"),
             OfflinerDefinition.offliner.label("offliner"),
             OfflinerDefinition.schema.label("offliner_schema"),
@@ -71,21 +77,23 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
+        .options(selectinload(Task.files))
         .join(OfflinerDefinition, Task.offliner_definition)
         .join(Schedule, Task.schedule, isouter=True)
         .join(Worker, Task.worker, isouter=True)
         .where(Task.id == task_id)
     )
     if row := session.execute(stmt).one_or_none():
+        task = cast(Task, row.Task)
         return TaskFullSchema(
-            id=row.id,
-            status=row.status,
-            timestamp=row.timestamp,
+            id=task.id,
+            status=task.status,
+            timestamp=task.timestamp,
             config=ExpandedScheduleConfigSchema.model_validate(
                 {
-                    "warehouse_path": row.config["warehouse_path"],
-                    "resources": row.config["resources"],
-                    "platform": row.config.get("platform"),
+                    "warehouse_path": task.config["warehouse_path"],
+                    "resources": task.config["resources"],
+                    "platform": task.config.get("platform"),
                     "offliner": create_offliner_instance(
                         offliner=get_offliner(session, row.offliner),
                         offliner_definition=OfflinerDefinitionSchema(
@@ -97,35 +105,36 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
                                 row.offliner_schema
                             ),
                         ),
-                        data=row.config["offliner"],
+                        data=task.config["offliner"],
                         skip_validation=True,
                     ),
-                    "monitor": parse_bool(row.config.get("monitor")),
-                    "image": row.config["image"],
-                    "mount_point": row.config["mount_point"],
-                    "command": row.config["command"],
-                    "str_command": row.config["str_command"],
-                    "artifacts_globs": row.config.get("artifacts_globs", []),
+                    "monitor": parse_bool(task.config.get("monitor")),
+                    "image": task.config["image"],
+                    "mount_point": task.config["mount_point"],
+                    "command": task.config["command"],
+                    "str_command": task.config["str_command"],
+                    "artifacts_globs": task.config.get("artifacts_globs", []),
                 },
                 context={"skip_validation": True},
             ),
-            events=row.events,
-            debug=row.debug,
-            requested_by=row.requested_by,
-            canceled_by=row.canceled_by,
-            container=TaskContainerSchema.model_validate(row.container),
-            priority=row.priority,
-            notification=row.notification or None,
-            files={
-                key: TaskFileSchema.model_validate(value)
-                for key, value in row.files.items()
-            },
-            upload=TaskUploadSchema.model_validate(row.upload),
-            updated_at=row.updated_at,
-            original_schedule_name=row.original_schedule_name,
+            events=task.events,
+            debug=task.debug,
+            requested_by=task.requested_by,
+            canceled_by=task.canceled_by,
+            container=TaskContainerSchema.model_validate(task.container),
+            priority=task.priority,
+            notification=(
+                ScheduleNotificationSchema.model_validate(task.notification)
+                if task.notification
+                else None
+            ),
+            files={file.name: create_task_file_schema(file) for file in task.files},
+            upload=TaskUploadSchema.model_validate(task.upload),
+            updated_at=task.updated_at,
+            original_schedule_name=task.original_schedule_name,
             schedule_name=row.schedule_name,
             worker_name=row.worker_name,
-            context=row.context,
+            context=task.context,
             offliner_definition_id=row.offliner_definition_id,
             version=row.offliner_version,
             offliner=row.offliner,
@@ -243,7 +252,6 @@ def create_task(
             if requested_task.notification
             else {}
         ),
-        files={},
         upload=requested_task.upload.model_dump(mode="json"),
         original_schedule_name=requested_task.original_schedule_name,
         context=requested_task.context,
@@ -336,3 +344,35 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
         "remaining": remaining,
         "eta": eta,
     }
+
+
+def get_task_file_or_none(
+    session: OrmSession, task_id: UUID, filename: str
+) -> TaskFileSchema | None:
+    """Get a task file by task id and file id."""
+    file = session.scalars(
+        select(File).where(File.task_id == task_id, File.name == filename)
+    ).one_or_none()
+    return create_task_file_schema(file) if file else None
+
+
+def get_task_file(session: OrmSession, task_id: UUID, filename: str) -> TaskFileSchema:
+    """Get a task file by task id and file name."""
+    if file := get_task_file_or_none(session, task_id, filename):
+        return file
+    raise RecordDoesNotExistError(f"Task {task_id} has no file {filename}")
+
+
+def create_or_update_task_file(
+    session: OrmSession,
+    request: FileCreateUpdateSchema,
+) -> TaskFileSchema:
+    """Create or update a task file using insert with on conflict update."""
+    values = request.model_dump(exclude_unset=True)
+    stmt = insert(File).values(**values)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[File.task_id, File.name],
+        set_={**request.model_dump(exclude_unset=True, exclude={"task_id", "name"})},
+    )
+    session.execute(stmt)
+    return get_task_file(session, request.task_id, request.name)

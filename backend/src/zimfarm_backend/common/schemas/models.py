@@ -1,5 +1,8 @@
+import datetime
 import pathlib
 import re
+from typing import Any
+from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -113,3 +116,20 @@ def calculate_pagination_metadata(
         limit=limit,
         page_size=min(page_size, nb_records),
     )
+
+
+class FileCreateUpdateSchema(BaseModel):
+    name: str
+    status: str
+    task_id: UUID
+    size: int | None = None
+    cms_on: datetime.datetime | None = None
+    cms_notified: bool | None = None
+    created_timestamp: datetime.datetime | None = None
+    uploaded_timestamp: datetime.datetime | None = None
+    failed_timestamp: datetime.datetime | None = None
+    check_timestamp: datetime.datetime | None = None
+    check_result: int | None = None
+    check_log: str | None = None
+    check_details: dict[str, Any] = Field(default_factory=dict)
+    info: dict[str, Any] = Field(default_factory=dict)

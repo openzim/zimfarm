@@ -31,7 +31,7 @@ services:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
-      ALEMBIC_UPGRADE_HEAD_ON_START: "1"
+      ALEMBIC_UPGRADE_HEAD_ON_START: "true"
       # upload artifacts, logs and zim to receiver for simplicity
       ARTIFACTS_UPLOAD_URI: sftp://uploader@receiver:22/logs/ # reusing logs dir, kind of a hack
       LOGS_UPLOAD_URI: sftp://uploader@receiver:22/logs/
@@ -70,6 +70,8 @@ services:
       DEBUG: true
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
+      ALEMBIC_UPGRADE_HEAD_ON_START: true
+      INFORM_CMS: false
     depends_on:
       postgresdb:
         condition: service_healthy

@@ -166,7 +166,6 @@ class Task(Base):
     # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     notification: Mapped[dict[str, Any]]
-    files: Mapped[dict[str, Any]]
     upload: Mapped[dict[str, Any]]
     original_schedule_name: Mapped[str]
     context: Mapped[str] = mapped_column(default="", server_default="")
@@ -189,6 +188,43 @@ class Task(Base):
         ForeignKey("offliner_definition.id"), init=False
     )
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
+
+    files: Mapped[list["File"]] = relationship(
+        back_populates="task", cascade="all, delete-orphan", init=False
+    )
+
+
+class File(Base):
+    __tablename__ = "file"
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    name: Mapped[str]
+    status: Mapped[str]
+    size: Mapped[int | None] = mapped_column(default=None, type_=BigInteger)
+
+    cms_on: Mapped[datetime | None] = mapped_column(default=None)
+    cms_notified: Mapped[bool | None] = mapped_column(default=None, index=True)
+
+    # Timestamp fields
+    created_timestamp: Mapped[datetime | None] = mapped_column(default=None)
+    uploaded_timestamp: Mapped[datetime | None] = mapped_column(default=None)
+    failed_timestamp: Mapped[datetime | None] = mapped_column(default=None)
+    check_timestamp: Mapped[datetime | None] = mapped_column(default=None)
+
+    # Check fields
+    check_result: Mapped[int | None] = mapped_column(default=None)
+    check_log: Mapped[str | None] = mapped_column(default=None)
+    check_details: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    info: Mapped[dict[str, Any]] = mapped_column(
+        default_factory=dict, server_default="{}"
+    )
+
+    task_id: Mapped[UUID] = mapped_column(ForeignKey("task.id"), init=False)
+
+    task: Mapped["Task"] = relationship(back_populates="files", init=False)
+
+    __table_args__ = (UniqueConstraint("task_id", "name"),)
 
 
 class Schedule(Base):
