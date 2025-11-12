@@ -4,6 +4,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from healthcheck.constants import DEBUG
 from healthcheck.router import router
 
 
@@ -36,4 +37,4 @@ def create_app(*, debug: bool = True):
     return app
 
 
-app = create_app()
+app = create_app(debug=DEBUG)
