@@ -25,7 +25,7 @@ from zimfarm_backend.api.routes.tags.logic import router as tags_router
 from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
 from zimfarm_backend.api.routes.users.logic import router as users_router
 from zimfarm_backend.api.routes.workers.logic import router as workers_router
-from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START
+from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START, DEBUG
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -88,7 +88,7 @@ def create_app(*, debug: bool = True):
     return app
 
 
-app = create_app()
+app = create_app(debug=DEBUG)
 
 
 @app.exception_handler(RequestValidationError)
