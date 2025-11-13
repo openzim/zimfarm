@@ -16,6 +16,7 @@ from docker.models.containers import Container
 from zimfarm_worker.common import getnow, logger
 from zimfarm_worker.common.constants import (
     CONTAINER_TASK_IDENT,
+    ENVIRONMENT,
     MONITORING_KEY,
     PROGRESS_CAPABLE_OFFLINERS,
 )
@@ -345,7 +346,7 @@ class TaskWorker(BaseWorker):
         )
 
     def start_scraper(self):
-        if not self.task or not self.dns or not self.host_task_workdir:
+        if not self.task or not self.host_task_workdir:
             logger.error("No task to start scraper")
             return
         logger.info(f"Starting scraper. Expects files at: {self.host_task_workdir} ")
@@ -868,8 +869,9 @@ class TaskWorker(BaseWorker):
         # prepare sub folder
         self.setup_workdir()
 
-        # start our DNS cache
-        self.start_dnscache()
+        if ENVIRONMENT != "development":
+            # start our DNS cache
+            self.start_dnscache()
 
         # start scraper
         self.start_scraper()
