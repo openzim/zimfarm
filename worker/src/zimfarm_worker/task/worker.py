@@ -111,15 +111,16 @@ class TaskWorker(BaseWorker):
         self.zim_upload_retries: defaultdict[str, int] = defaultdict(
             int
         )  # ZIM files with upload errors (registry)
+        self.zimcheck_files: dict[str, str] = {}  # ZIM check files registry
+        self.zimcheck_upload_retries: defaultdict[str, int] = defaultdict(
+            int
+        )  # mapping of zimcheck file to number of upload retries
+
         self.zim_uploader: Container | None = None  # zim-files uploader container
         self.checker: Container | None = None  # zim-files checker container
-
-        self.zimcheck_uploader: Container | None = None  # zimcheck result uploader
-        # mapping of zimcheck result filenames to zim filename. This allows multiple
-        # checkers to run independent of the rate that upload for the check results
-        # happen
-        self.zimcheck_files: dict[str, str] = {}
-        self.zimcheck_retries: defaultdict[str, int] = defaultdict(int)
+        self.zimcheck_uploader: Container | None = (
+            None  # zimcheck results uploader container
+        )
 
         self.scraper: Container | None = None  # scraper container
         self.log_uploader: Container | None = None  # scraper log uploader container
@@ -444,12 +445,10 @@ class TaskWorker(BaseWorker):
         self.stop()
         self.cleanup_workdir()
 
-    def start_uploader(self, upload_dir: Path, filename: str):
-        logger.info(f"Gathering ZIM metadata for {upload_dir}/{filename}")
-
-        logger.info(f"Starting uploader for {upload_dir}/{filename}")
+    def start_zim_uploader(self, upload_dir: Path, filename: str):
+        logger.info(f"Starting zim uploader for {upload_dir}/{filename}")
         if not self.task or not self.host_task_workdir:
-            logger.error("No task or host task workdir to start uploader")
+            logger.error("No task or host task workdir to start zim uploader")
             return
         self.zim_uploader = start_uploader(
             self.docker,
@@ -468,7 +467,7 @@ class TaskWorker(BaseWorker):
     def start_checker(self, filename: str):
         logger.info(f"Starting zim checker for {filename}")
         if not self.task or not self.host_task_workdir:
-            logger.error("No task or host task workdir to start checker")
+            logger.error("No task or host task workdir to start zim checker")
             return
         self.checker = start_checker(
             self.docker,
@@ -478,11 +477,11 @@ class TaskWorker(BaseWorker):
         )
 
     def start_zimcheck_uploader(self, filename: str):
-        if not self.task or not self.host_task_workdir:
-            logger.error("No task or host task workdir to start uploader")
-            return
-
         logger.info(f"Starting zimcheck uploader for {filename}")
+
+        if not self.task or not self.host_task_workdir:
+            logger.error("No task or host task workdir to start zimcheck uploader")
+            return
 
         self.zimcheck_uploader = start_uploader(
             self.docker,
@@ -498,7 +497,7 @@ class TaskWorker(BaseWorker):
             resume=False,
         )
 
-    def upload_check_results(self):
+    def upload_zimcheck_results(self):
         """Upload results of zim checker saved to disk"""
 
         # check if zimcheck uploader is running
@@ -538,8 +537,11 @@ class TaskWorker(BaseWorker):
                     "Zimcheck Uploader:: "
                     f"{get_container_logs(self.docker, self.zimcheck_uploader.name)}"  # pyright: ignore[reportArgumentType]
                 )
-                self.zimcheck_retries[zimcheck_filename] += 1
-                if self.zimcheck_retries[zimcheck_filename] >= MAX_CHK_UPLOAD_RETRIES:
+                self.zimcheck_upload_retries[zimcheck_filename] += 1
+                if (
+                    self.zimcheck_upload_retries[zimcheck_filename]
+                    >= MAX_CHK_UPLOAD_RETRIES
+                ):
                     logger.error(
                         f"{zimcheck_filename} exhausted retries "
                         f"{MAX_CHK_UPLOAD_RETRIES}"
@@ -557,17 +559,11 @@ class TaskWorker(BaseWorker):
             self.zimcheck_uploader = None
 
         # Start an uploader instance
-        if (
-            self.task
-            and self.zimcheck_uploader is None
-            and not self.should_stop
-            and self.host_task_workdir
-        ):
-            try:
-                zimcheck_file = set(self.zimcheck_files.keys()).pop()
-            except KeyError:
-                logger.debug("No zimcheck files to upload")
-                return
+        try:
+            zimcheck_file = set(self.zimcheck_files.keys()).pop()
+        except KeyError:
+            logger.debug("No zimcheck files to upload")
+        else:
             zim_file = self.zimcheck_files[zimcheck_file]
             self.zim_files_actions_status[zim_file][CHK_UPLOAD] = DOING
             self.start_zimcheck_uploader(zimcheck_file)
@@ -826,7 +822,7 @@ class TaskWorker(BaseWorker):
             )
         )
 
-    def check_files(self):
+    def check_zims(self):
         if not self.task:
             logger.error("No task to check files")
             return
@@ -860,6 +856,7 @@ class TaskWorker(BaseWorker):
                 self.checker.name,  # pyright: ignore[reportArgumentType]
             ).strip()
 
+            logger.info(f"Gathering ZIM metadata for {zim_file}")
             zim_info = get_zim_info(
                 self.task_workdir
                 / zim_file  # pyright: ignore[reportUnknownArgumentType]
@@ -892,11 +889,12 @@ class TaskWorker(BaseWorker):
             try:
                 with open(self.task_workdir / zimcheck_filename, "w") as f:
                     json.dump(zimcheck_file_content, f)
-            except Exception as exc:
-                logger.error(f"Failed to write zimcheck metadata: {exc}")
+            except Exception:
+                logger.exception(
+                    f"Failed to write zimcheck output to {zimcheck_filename}"
+                )
             else:
-                logger.info(f"Zimcheck metadata written to {zimcheck_filename}")
-                # Add the metadata for the uploader to pick it up
+                logger.info(f"Zimcheck output written to {zimcheck_filename}")
                 self.zimcheck_files[zimcheck_filename] = zim_file
                 self.zim_files_actions_status[zim_file][CHK_UPLOAD] = PENDING
                 del zimcheck_file_content
@@ -919,7 +917,7 @@ class TaskWorker(BaseWorker):
                 self.start_checker(zim_file)
                 self.zim_files_actions_status[zim_file][ZIM_CHECK] = DOING
 
-    def upload_files(self):
+    def upload_zims(self):
         """manages self.zim_files
 
         - list files in folder to upload list
@@ -992,13 +990,13 @@ class TaskWorker(BaseWorker):
                 # no more pending files,
                 logger.debug("failed to get ZIM file: pending_zim_files empty")
             else:
-                self.start_uploader(self.task["config"]["warehouse_path"], zim_file)
+                self.start_zim_uploader(self.task["config"]["warehouse_path"], zim_file)
                 self.zim_files_actions_status[zim_file][ZIM_UPLOAD] = DOING
 
-    def handle_files(self):
-        self.upload_files()
-        self.check_files()
-        self.upload_check_results()
+    def handle_zims(self):
+        self.upload_zims()
+        self.check_zims()
+        self.upload_zimcheck_results()
 
     def handle_stopped_scraper(self):
         if not self.scraper:
@@ -1050,7 +1048,7 @@ class TaskWorker(BaseWorker):
 
             last_check = now
             self.submit_scraper_progress()
-            self.handle_files()
+            self.handle_zims()
 
         # scraper is done.
         # submit final progress (especially partialZim property)
@@ -1058,7 +1056,7 @@ class TaskWorker(BaseWorker):
         # check files so upload can continue
         self.handle_stopped_scraper()
 
-        self.handle_files()  # rescan folder
+        self.handle_zims()  # rescan folder
 
         # monitor upload/check of files
         while not self.should_stop and (
@@ -1076,13 +1074,13 @@ class TaskWorker(BaseWorker):
                 continue
 
             last_check = now
-            self.handle_files()
+            self.handle_zims()
             self.check_scraper_log_upload()
             self.check_scraper_artifacts_upload()
 
         # make sure we submit upload status for last zim and scraper log
         self.log_workdir_entries()
-        self.handle_files()
+        self.handle_zims()
         self.check_scraper_log_upload()
         self.check_scraper_artifacts_upload()
 

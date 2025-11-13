@@ -221,7 +221,7 @@
                                   variant="text"
                                   size="small"
                                   class="ml-2"
-                                  :href="getCheckUrl(file.check_filename)"
+                                  :href="zimfarmChecksUrl(file.check_filename)"
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
@@ -450,8 +450,8 @@ import {
   getTimezoneDetails,
 } from '@/utils/format'
 import {
-  uploadUrl,
   artifactsUrl,
+  checkUrl,
   getSecretFields,
   imageHuman as imageHumanFn,
   imageUrl as imageUrlFn,
@@ -613,14 +613,11 @@ const createdAfter = (file: TaskFile, taskData: Task) => {
   )
 }
 
+const zimfarmChecksUrl = (fileName: string) => (task.value ? checkUrl(task.value, fileName) : '')
+
 const uploadDuration = (file: TaskFile) => {
   if (!file.uploaded_timestamp) return '-'
   return formatDurationBetween(file.created_timestamp, file.uploaded_timestamp)
-}
-
-const getCheckUrl = (fileName: string) => {
-  if (!task.value?.upload.check?.upload_uri) return ''
-  return uploadUrl(task.value.upload.check.upload_uri, fileName)
 }
 
 const copyCommand = async (command: string) => {
