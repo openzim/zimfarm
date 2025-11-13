@@ -22,6 +22,7 @@ from zimfarm_backend.common.schemas.models import (
 )
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
+from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.offliner import create_offliner as db_create_offliner
 from zimfarm_backend.db.offliner import get_all_offliners
@@ -172,3 +173,12 @@ async def get_offliner(
             ),
         }
     )
+
+
+@router.get("/{offliner_id}/{version}/spec")
+async def get_offliner_spec(
+    offliner_id: Annotated[str, Path()],
+    version: Annotated[str, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> OfflinerDefinitionSchema:
+    return db_get_offliner_definition(session, offliner_id=offliner_id, version=version)
