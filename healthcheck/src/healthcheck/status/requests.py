@@ -16,6 +16,7 @@ class Response:
     status_code: HTTPStatus
     success: bool
     json: dict[str, Any]
+    error: str | None = None
 
 
 async def query_api(
@@ -63,13 +64,18 @@ async def query_api(
                     success=resp.ok,
                     json=json_data,
                 )
-            except (JSONDecodeError, Exception):
+            except (JSONDecodeError, Exception) as exc:
                 logger.exception(
                     "unexpected error while decoding server response: "
                     f"{await resp.text()}",
                     extra={"checkname": check_name},
                 )
-                raise
+                return Response(
+                    status_code=HTTPStatus(resp.status),
+                    success=False,
+                    json={},
+                    error=str(exc),
+                )
             else:
                 if not response.success:
                     logger.warning(
