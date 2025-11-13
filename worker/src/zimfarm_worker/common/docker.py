@@ -468,7 +468,11 @@ def start_checker(
 
 
 def start_scraper(
-    client: DockerClient, *, task: dict[str, Any], dns: list[str], host_workdir: Path
+    client: DockerClient,
+    *,
+    task: dict[str, Any],
+    dns: list[str] | None,
+    host_workdir: Path,
 ):
     config = task["config"]
     container_name = get_scraper_container_name(
@@ -506,19 +510,17 @@ def start_scraper(
     else:
         period = quota = None
 
-    return run_container(
-        client,
-        image=docker_image,
-        command=command,
+    kwargs = {
+        "image": docker_image,
+        "command": command,
         # disk is already reserved on zimtask
-        cpu_shares=cpu_shares,
-        cpu_period=period,
-        cpu_quota=quota,
-        cpuset_cpus=ZIMFARM_TASK_CPUSET or None,
-        mem_limit=mem_limit,
-        dns=dns,
-        detach=True,
-        labels={
+        "cpu_shares": cpu_shares,
+        "cpu_period": period,
+        "cpu_quota": quota,
+        "cpuset_cpus": ZIMFARM_TASK_CPUSET or None,
+        "mem_limit": mem_limit,
+        "detach": True,
+        "labels": {
             "zimfarm": "",
             "zimscraper": "yes",
             "task_id": task["id"],
@@ -530,14 +532,24 @@ def start_scraper(
             "human.task-cpu": str(ZIMFARM_TASK_CPUS),
             "human.task-cpuset": str(ZIMFARM_TASK_CPUSET),
         },
-        mem_swappiness=0,
-        shm_size=shm_size,
-        cap_add=cap_add,
-        cap_drop=cap_drop,
-        mounts=mounts,
-        name=container_name,
-        remove=False,  # scaper container will be removed once log&zim handled
-        sysctls=get_sysctl(),
+        "mem_swappiness": 0,
+        "shm_size": shm_size,
+        "cap_add": cap_add,
+        "cap_drop": cap_drop,
+        "mounts": mounts,
+        "name": container_name,
+        "remove": False,  # scraper container will be removed once log&zim handled
+        "sysctls": get_sysctl(),
+    }
+    if dns:
+        kwargs["dns"] = dns
+
+    if ENVIRONMENT == "development":
+        kwargs["network_mode"] = f"container:{get_running_container_name()}"
+
+    return run_container(
+        client,
+        **kwargs,
     )
 
 
