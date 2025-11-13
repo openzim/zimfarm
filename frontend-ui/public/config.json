@@ -4,5 +4,7 @@
   "MATOMO_ENABLED": false,
   "MATOMO_HOST": "https://stats.kiwix.org",
   "MATOMO_SITE_ID": 8,
-  "MATOMO_TRACKER_FILE_NAME": "matomo"
+  "MATOMO_TRACKER_FILE_NAME": "matomo",
+  "KIWIX_AUTH_CLIENT_ID": "d87a31d2-874e-44c4-9dc2-63fad523bf1b",
+  "KIWIX_AUTH_BASE_URL": "https://login.kiwix.org"
 }
