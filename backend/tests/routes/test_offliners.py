@@ -111,3 +111,12 @@ def test_update_offliner_definition(
         },
     )
     assert response.status_code == expected_status_code
+
+
+def test_get_offliner_spec(
+    client: TestClient,
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001
+):
+    response = client.get(f"/v2/offliners/{mwoffliner.id}/initial/spec")
+    assert response.status_code == HTTPStatus.OK
