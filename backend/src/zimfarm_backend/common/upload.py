@@ -6,13 +6,22 @@ from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.schemas.orms import RequestedTaskFullSchema, TaskFullSchema
 
 
-def rebuild_uri(uri: urllib.parse.ParseResult, query: str | None = None):
-    scheme = uri.scheme
-    username = uri.username
-    password = uri.password
-    hostname = uri.hostname or ""
-    port = uri.port
-    path = uri.path
+def rebuild_uri(
+    uri: urllib.parse.ParseResult,
+    scheme: str | None = None,
+    username: str | None = None,
+    password: str | None = None,
+    hostname: str | None = None,
+    port: int | None = None,
+    path: str | None = None,
+    query: str | None = None,
+):
+    scheme = scheme if scheme is not None else uri.scheme
+    username = username if username is not None else uri.username
+    password = password if password is not None else uri.password
+    hostname = hostname if hostname is not None else uri.hostname
+    port = port if port is not None else uri.port
+    path = path if path is not None else uri.path
     netloc = ""
     if username:
         netloc += username
@@ -20,10 +29,11 @@ def rebuild_uri(uri: urllib.parse.ParseResult, query: str | None = None):
         netloc += f":{password}"
     if username or password:
         netloc += "@"
-    netloc += hostname
+    if hostname:
+        netloc += hostname
     if port:
         netloc += f":{port}"
-    query = query or uri.query
+    query = query if query is not None else uri.query
     fragment = uri.fragment
     return urllib.parse.urlparse(
         urllib.parse.urlunparse([scheme, netloc, path, fragment, query, fragment])

@@ -20,11 +20,11 @@ import argparse
 import datetime
 import json
 import logging
+import re
 import tempfile
+import urllib.parse
 from pathlib import Path
 from typing import Any
-import re
-import urllib.parse
 
 import sqlalchemy as sa
 from kiwixstorage import KiwixStorage  # pyright: ignore[reportMissingTypeStubs]
@@ -36,6 +36,7 @@ from zimfarm_backend import logger
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import ZIMCHECK_EXPIRATION, ZIMCHECK_UPLOAD_URI
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
+from zimfarm_backend.common.upload import rebuild_uri
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import File, Task
 from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_file
@@ -49,41 +50,7 @@ def get_url_scheme(url: urllib.parse.ParseResult) -> str:
         return "https"
     else:
         raise ValueError(f"Unsupported URL scheme in: {url}")
-    
-def rebuild_uri(
-    uri,
-    scheme=None,
-    username=None,
-    password=None,
-    hostname=None,
-    port=None,
-    path=None,
-    params=None,
-    query=None,
-    fragment=None,
-):
-    scheme = scheme or uri.scheme
-    username = username or uri.username
-    password = password or uri.password
-    hostname = hostname or uri.hostname
-    port = port or uri.port
-    path = path or uri.path
-    netloc = ""
-    if username:
-        netloc += username
-    if password:
-        netloc += f":{password}"
-    if username or password:
-        netloc += "@"
-    netloc += hostname
-    if port:
-        netloc += f":{port}"
-    params = params or uri.params
-    query = query or uri.query
-    fragment = fragment or uri.fragment
-    return urllib.parse.urlparse(
-        urllib.parse.urlunparse([scheme, netloc, path, fragment, query, fragment])
-    )
+
 
 def upload_to_s3(
     upload_uri: str,
@@ -93,11 +60,9 @@ def upload_to_s3(
 ):
     """Upload the zimcheck JSON data to S3"""
     try:
-        upload_uri = urllib.parse.urlparse(upload_uri)
+        uri = urllib.parse.urlparse(upload_uri)
         # Initialize KiwixStorage with the upload URI
-        storage = KiwixStorage(
-            rebuild_uri(upload_uri, scheme=get_url_scheme(upload_uri)).geturl()
-        )
+        storage = KiwixStorage(rebuild_uri(uri, scheme=get_url_scheme(uri)).geturl())
 
         # Create a temporary file with the JSON data
         with tempfile.NamedTemporaryFile(
@@ -178,7 +143,7 @@ def upload_zimcheck_results(
                         check_log=None,
                         check_upload_timestamp=getnow(),
                         check_filename=check_filename,
-                        status = "check_results_uploaded",
+                        status="check_results_uploaded",
                     ),
                 )
                 # insert the upload uri and expiration days in the task, to be
@@ -216,6 +181,7 @@ def main():
 
     parser.add_argument(
         "--expiration",
+        type=int,
         help="S3 upload expiration in days (overrides ZIMCHECK_UPLOAD_EXPIRATION)",
         default=ZIMCHECK_EXPIRATION,
     )
@@ -243,8 +209,9 @@ def main():
                 expiration_days=args.expiration,
             )
         except (KeyboardInterrupt, Exception) as exc:
-            logger.error(f"Aborted: {str(exc)}")
+            logger.error(f"Aborted: {exc!s}")
             pass
+
 
 if __name__ == "__main__":
     main()
