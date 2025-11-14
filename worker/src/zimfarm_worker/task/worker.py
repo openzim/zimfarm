@@ -1066,7 +1066,6 @@ class TaskWorker(BaseWorker):
         # monitor upload/check of files
         while not self.should_stop and (
             self.busy_zim_files
-            or self.zimcheck_files
             or self.container_running("zim_uploader")
             or self.container_running("checker")
             or self.container_running("log_uploader")
