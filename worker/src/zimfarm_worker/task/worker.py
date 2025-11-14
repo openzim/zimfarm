@@ -558,15 +558,20 @@ class TaskWorker(BaseWorker):
             self.zimcheck_uploader.remove()
             self.zimcheck_uploader = None
 
-        # Start an uploader instance
-        try:
-            zimcheck_file = set(self.zimcheck_files.keys()).pop()
-        except KeyError:
-            logger.debug("No zimcheck files to upload")
-        else:
-            zim_file = self.zimcheck_files[zimcheck_file]
-            self.zim_files_actions_status[zim_file][CHK_UPLOAD] = DOING
-            self.start_zimcheck_uploader(zimcheck_file)
+        # Start a zimcheck results uploader instance
+        if (
+            self.zimcheck_uploader is None
+            and len(self.zimcheck_files) > 0
+            and not self.should_stop
+        ):
+            try:
+                zimcheck_file = set(self.zimcheck_files.keys()).pop()
+            except KeyError:
+                logger.debug("No zimcheck files to upload")
+            else:
+                zim_file = self.zimcheck_files[zimcheck_file]
+                self.zim_files_actions_status[zim_file][CHK_UPLOAD] = DOING
+                self.start_zimcheck_uploader(zimcheck_file)
 
     def container_running(self, which: str) -> bool:
         """whether refered container is still running or not"""
