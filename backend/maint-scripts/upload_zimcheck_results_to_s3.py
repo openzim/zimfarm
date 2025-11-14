@@ -116,7 +116,7 @@ def upload_to_s3(
                         "ContentType": "application/json",
                     },
                 )
-                if expiration_days is not None:
+                if expiration_days:
                     storage.set_object_autodelete_on(  # pyright: ignore[reportUnknownMemberType]
                         key=filename,
                         on=getnow() + datetime.timedelta(days=expiration_days),
