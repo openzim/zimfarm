@@ -47,6 +47,7 @@ class TaskListResult(BaseModel):
 def create_task_file_schema(file: File) -> TaskFileSchema:
     return TaskFileSchema(
         name=file.name,
+        task_id=file.task_id,
         size=file.size,
         status=file.status,
         created_timestamp=file.created_timestamp,
@@ -54,6 +55,8 @@ def create_task_file_schema(file: File) -> TaskFileSchema:
         failed_timestamp=file.failed_timestamp,
         check_timestamp=file.check_timestamp,
         check_result=file.check_result,
+        check_filename=file.check_filename,
+        check_upload_timestamp=file.check_upload_timestamp,
         check_log=file.check_log,
         check_details=file.check_details,
         info=file.info,

@@ -88,8 +88,9 @@ class TaskFileSchema(BaseModel):
     """
 
     name: str
-    size: int | None = None
+    task_id: UUID
     status: str
+    size: int | None = None
     cms_on: datetime.datetime | None = None
     cms_notified: bool | None = None
     created_timestamp: datetime.datetime | None = None
@@ -98,9 +99,11 @@ class TaskFileSchema(BaseModel):
     check_timestamp: datetime.datetime | None = None
 
     check_result: int | None = None
+    check_filename: str | None = None
+    check_upload_timestamp: datetime.datetime | None = None
+    info: dict[str, Any] = Field(default_factory=dict)
     check_log: str | None = None
     check_details: dict[str, Any] | None = None
-    info: dict[str, Any] = Field(default_factory=dict)
 
 
 class TaskContainerProgressSchema(BaseModel):
@@ -151,6 +154,7 @@ class TaskUploadSchema(BaseModel):
     zim: ZimUploadConfigSchema | None = None
     logs: TaskUploadConfigSchema | None = None
     artifacts: TaskUploadConfigSchema | None = None
+    check: TaskUploadConfigSchema | None = None
 
 
 class TaskFullSchema(BaseTaskSchema):

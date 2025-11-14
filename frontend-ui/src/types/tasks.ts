@@ -27,10 +27,9 @@ export interface TaskFile {
   check_timestamp?: string
   status: string
   check_result?: number
-  check_details?: Record<string, unknown>
+  check_filename?: string
+  check_upload_timestamp?: string
   info?: TaskFileInfo
-  cms_on?: string
-  cms_notified?: boolean
 }
 
 export interface TaskContainer {
@@ -72,6 +71,7 @@ export interface TaskUpload {
   zim: ZimUploadConfig
   logs: UploadConfig
   artifacts?: UploadConfig
+  check?: UploadConfig
 }
 
 export interface Task extends BaseTask {

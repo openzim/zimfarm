@@ -1,9 +1,11 @@
 from typing import cast
 
 import sqlalchemy as sa
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.background_tasks import logger
+from zimfarm_backend.background_tasks.constants import ZIMCHECK_RESULT_WAIT_INTERVAL
 from zimfarm_backend.common.constants import INFORM_CMS
 from zimfarm_backend.common.external import advertise_book_to_cms
 from zimfarm_backend.db.models import File, Task
@@ -23,11 +25,18 @@ def notify_cms_for_checked_files(session: OrmSession):
         sa.select(File, Task.id.label("task_id"))
         .join(Task, Task.id == File.task_id)
         .where(
-            File.status == "checked",
-            sa.or_(
-                File.cms_notified.is_(None),
-                File.cms_notified.is_(False),
-            ),
+            # We should send notifications for files that meet the following criteria:
+            # - have not been successfully notified
+            #  - have  check_result or check_filename
+            #  - are older than ZIMCHECK_RESULT_WAIT_INTERVAL since check_timestamp
+            or_(File.cms_notified.is_(None), File.cms_notified.is_(False)),
+            or_(File.check_result.is_not(None), File.check_filename.is_not(None)),
+            func.extract(
+                "epoch",
+                func.now()
+                - func.coalesce(File.check_timestamp, File.created_timestamp),
+            )
+            < ZIMCHECK_RESULT_WAIT_INTERVAL,
         )
     ).all()
 

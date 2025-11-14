@@ -272,6 +272,11 @@ export function artifactsUrl(task: Task) {
   return uploadUrl(task.upload.artifacts.upload_uri, task.container.artifacts)
 }
 
+export const checkUrl = (task: Task, fileName: string) => {
+  if (!task.upload.check?.upload_uri) return ''
+  return uploadUrl(task.upload.check.upload_uri, fileName)
+}
+
 function uploadUrl(uri: string, filename: string) {
   let url = new URL(uri)
   const scheme = url.protocol.replace(/:$/, '')

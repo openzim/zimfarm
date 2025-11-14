@@ -66,3 +66,6 @@ REQUEST_TASKS_INTERVAL = datetime.timedelta(
 CMS_NOTIFICATIONS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("CMS_NOTIFICATIONS_INTERVAL", default="10m"))
 )
+ZIMCHECK_RESULT_WAIT_INTERVAL = parse_timespan(
+    getenv("ZIMCHECK_RESULT_WAIT_INTERVAL", default="24h")
+)

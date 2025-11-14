@@ -120,8 +120,8 @@ def calculate_pagination_metadata(
 
 class FileCreateUpdateSchema(BaseModel):
     name: str
-    status: str
     task_id: UUID
+    status: str
     size: int | None = None
     cms_on: datetime.datetime | None = None
     cms_notified: bool | None = None
@@ -130,6 +130,8 @@ class FileCreateUpdateSchema(BaseModel):
     failed_timestamp: datetime.datetime | None = None
     check_timestamp: datetime.datetime | None = None
     check_result: int | None = None
+    check_filename: str | None = None
     check_log: str | None = None
-    check_details: dict[str, Any] = Field(default_factory=dict)
+    check_details: str | None = None
+    check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)

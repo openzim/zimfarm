@@ -9,6 +9,7 @@ from zimfarm_backend.common.upload import (
     build_task_upload_uris,
     rebuild_uri,
     safe_upload_uri,
+    upload_url,
 )
 
 
@@ -288,3 +289,55 @@ def test_build_task_upload_uris_no_secrets_in_uri():
         and result.upload.artifacts.upload_uri
         == "s3://s3.us-east-1.example.com/?bucketName=artifacts-bucket"
     )
+
+
+@pytest.mark.parametrize(
+    "uri,filename,expected",
+    [
+        pytest.param(
+            "https://example.com/path",
+            "file.txt",
+            "https://example.com/path/file.txt",
+            id="https-uri-with-path",
+        ),
+        pytest.param(
+            "https://example.com",
+            "file.txt",
+            "https://example.com/file.txt",
+            id="https-uri-no-path",
+        ),
+        pytest.param(
+            "s3://s3.example.com/path",
+            "file.zim",
+            "https://s3.example.com/path/file.zim",
+            id="s3-uri-without-bucket",
+        ),
+        pytest.param(
+            "s3://s3.example.com/path?bucketName=my-bucket",
+            "file.zim",
+            "https://s3.example.com/path/my-bucket/file.zim",
+            id="s3-uri-with-bucket",
+        ),
+        pytest.param(
+            "s3+https://s3.example.com/path?bucketName=my-bucket",
+            "file.zim",
+            "https://s3.example.com/path/my-bucket/file.zim",
+            id="s3+https-uri-with-bucket",
+        ),
+        pytest.param(
+            "s3://s3.us-east-1.example.com/?bucketName=zim-bucket&token=secret",
+            "wikipedia_en_all.zim",
+            "https://s3.us-east-1.example.com/zim-bucket/wikipedia_en_all.zim",
+            id="s3-uri-with-bucket-and-other-params",
+        ),
+    ],
+)
+def test_upload_url(uri: str, filename: str, expected: str):
+    """Test upload_url function with various URI schemes and filenames."""
+    result = upload_url(uri, filename)
+    assert result == expected
+
+
+def test_upload_url_with_invalid_uri():
+    result = upload_url("not a valid uri at all", "file.zim")
+    assert result == "file.zim"
