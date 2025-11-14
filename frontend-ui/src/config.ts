@@ -10,6 +10,8 @@ export interface Config {
   MATOMO_HOST: string
   MATOMO_SITE_ID: number
   MATOMO_TRACKER_FILE_NAME: string
+  KIWIX_AUTH_CLIENT_ID: string
+  KIWIX_AUTH_BASE_URL: string
 }
 
 export const ConfigService = {
