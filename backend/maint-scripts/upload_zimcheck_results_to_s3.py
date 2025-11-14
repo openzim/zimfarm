@@ -178,6 +178,7 @@ def upload_zimcheck_results(
                         check_log=None,
                         check_upload_timestamp=getnow(),
                         check_filename=check_filename,
+                        status = "check_results_uploaded",
                     ),
                 )
                 # insert the upload uri and expiration days in the task, to be
