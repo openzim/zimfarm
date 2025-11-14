@@ -236,12 +236,15 @@ def main():
         return
 
     with Session.begin() as session:
-        upload_zimcheck_results(
-            session=session,
-            upload_uri=args.upload_uri,
-            expiration_days=args.expiration,
-        )
-
+        try:
+            upload_zimcheck_results(
+                session=session,
+                upload_uri=args.upload_uri,
+                expiration_days=args.expiration,
+            )
+        except (KeyboardInterrupt, Exception) as exc:
+            logger.error(f"Aborted: {str(exc)}")
+            pass
 
 if __name__ == "__main__":
     main()
