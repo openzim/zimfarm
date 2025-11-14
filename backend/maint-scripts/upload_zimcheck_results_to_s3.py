@@ -23,6 +23,8 @@ import logging
 import tempfile
 from pathlib import Path
 from typing import Any
+import re
+import urllib.parse
 
 import sqlalchemy as sa
 from kiwixstorage import KiwixStorage  # pyright: ignore[reportMissingTypeStubs]
@@ -39,6 +41,50 @@ from zimfarm_backend.db.models import File, Task
 from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_file
 
 
+def get_url_scheme(url: urllib.parse.ParseResult) -> str:
+    if url.scheme.startswith("s3+http"):
+        return "http"
+    # covers both "s3" and "s3+https"
+    elif url.scheme.startswith("s3") or url.scheme.startswith("s3+https"):
+        return "https"
+    else:
+        raise ValueError(f"Unsupported URL scheme in: {url}")
+    
+def rebuild_uri(
+    uri,
+    scheme=None,
+    username=None,
+    password=None,
+    hostname=None,
+    port=None,
+    path=None,
+    params=None,
+    query=None,
+    fragment=None,
+):
+    scheme = scheme or uri.scheme
+    username = username or uri.username
+    password = password or uri.password
+    hostname = hostname or uri.hostname
+    port = port or uri.port
+    path = path or uri.path
+    netloc = ""
+    if username:
+        netloc += username
+    if password:
+        netloc += f":{password}"
+    if username or password:
+        netloc += "@"
+    netloc += hostname
+    if port:
+        netloc += f":{port}"
+    params = params or uri.params
+    query = query or uri.query
+    fragment = fragment or uri.fragment
+    return urllib.parse.urlparse(
+        urllib.parse.urlunparse([scheme, netloc, path, fragment, query, fragment])
+    )
+
 def upload_to_s3(
     upload_uri: str,
     json_data: dict[str, Any],
@@ -47,8 +93,11 @@ def upload_to_s3(
 ):
     """Upload the zimcheck JSON data to S3"""
     try:
+        upload_uri = urllib.parse.urlparse(upload_uri)
         # Initialize KiwixStorage with the upload URI
-        storage = KiwixStorage(upload_uri)
+        storage = KiwixStorage(
+            rebuild_uri(upload_uri, scheme=get_url_scheme(upload_uri)).geturl()
+        )
 
         # Create a temporary file with the JSON data
         with tempfile.NamedTemporaryFile(
@@ -180,6 +229,10 @@ def main():
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    if not re.match(r"s3(?:\+https?)?:\/\/", args.upload_uri):
+        logger.error("URL must be an S3 URL")
+        return
 
     with Session.begin() as session:
         upload_zimcheck_results(
