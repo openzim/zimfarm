@@ -12,6 +12,8 @@ export interface Config {
   MATOMO_TRACKER_FILE_NAME: string
   MONITORING_URL: string
   BLOB_MAX_SIZE: number
+  KIWIX_AUTH_CLIENT_ID: string
+  KIWIX_AUTH_BASE_URL: string
 }
 
 export const ConfigService = {
