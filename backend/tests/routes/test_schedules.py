@@ -56,9 +56,6 @@ def test_get_schedules(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     for i in range(10):
@@ -133,9 +130,6 @@ def test_get_similar_schedules(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     for i in range(10):
@@ -319,9 +313,6 @@ def test_create_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.post(
@@ -353,9 +344,6 @@ def test_create_schedule_with_permssions(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule_config = create_schedule_config()
@@ -419,9 +407,6 @@ def test_schedule_name(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule_config = create_schedule_config()
@@ -465,9 +450,6 @@ def test_get_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -504,9 +486,6 @@ def test_get_obsolete_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule_config = create_schedule_config()
@@ -548,9 +527,6 @@ def test_patch_obsolete_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule_config = create_schedule_config()
@@ -591,9 +567,6 @@ def test_update_schedule_unauthorized(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.patch(
@@ -704,9 +677,6 @@ def test_update_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -740,9 +710,6 @@ def test_delete_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -795,9 +762,6 @@ def test_clone_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -857,9 +821,6 @@ def test_validate_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
     schedule = create_schedule(name="test_schedule")
     # set the new language code in the db
@@ -890,9 +851,6 @@ def test_create_duplicate_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.post(
@@ -925,9 +883,6 @@ def test_clone_existing_schedule_with_name_unchanged(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule_config = create_schedule_config()
@@ -955,9 +910,6 @@ def test_update_existing_schedule_with_existing_name(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule_config = create_schedule_config()
@@ -1082,9 +1034,6 @@ def test_update_schedule_config_top_level_attributes(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -1130,9 +1079,6 @@ def test_get_schedule_history(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -1167,9 +1113,6 @@ def test_get_schedule_history_pagination(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
     schedule = create_schedule(
         name="test_schedule",
@@ -1225,9 +1168,6 @@ def test_get_schedule_history_entry(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -1252,9 +1192,6 @@ def test_get_schedule_backups(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     create_schedule(schedule_config=create_schedule_config())
@@ -1284,9 +1221,6 @@ def test_restore_schedules(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule", archived=True)
@@ -1317,9 +1251,6 @@ def test_archive_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule")
@@ -1350,9 +1281,6 @@ def test_restore_schedule(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     schedule = create_schedule(name="test_schedule", archived=True)

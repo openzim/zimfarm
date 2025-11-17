@@ -97,9 +97,6 @@ def test_get_obsolete_task(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
     task = create_task()
     task.config["offliner"]["mwUrl"] = None  # Unset mandatory field
@@ -133,9 +130,6 @@ def test_create_task_no_permission(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.post(
@@ -203,9 +197,6 @@ def test_update_task_no_permission(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.patch(
@@ -241,9 +232,6 @@ def test_update_task_success(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.patch(
@@ -265,9 +253,6 @@ def test_cancel_task_no_permission(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.post(
@@ -317,9 +302,6 @@ def test_cancel_task_success(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.post(

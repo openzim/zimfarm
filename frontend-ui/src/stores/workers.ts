@@ -1,4 +1,3 @@
-import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
@@ -6,14 +5,12 @@ import type { TaskLight } from '@/types/tasks'
 import type { Worker, WorkerMetrics, WorkerUpdateSchema } from '@/types/workers'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
-import { inject, ref } from 'vue'
-import type { VueCookies } from 'vue-cookies'
+import { ref } from 'vue'
 
 export const useWorkersStore = defineStore('workers', () => {
-  const $cookies = inject<VueCookies>('$cookies')
   const workers = ref<Worker[]>([])
   const errors = ref<string[]>([])
-  const defaultLimit = ref<number>(Number($cookies?.get('workers-table-limit') || 20))
+  const defaultLimit = ref<number>(Number(localStorage.getItem('workers-table-limit') || 20))
   const paginator = ref<Paginator>({
     page: 1,
     page_size: defaultLimit.value,
@@ -25,7 +22,7 @@ export const useWorkersStore = defineStore('workers', () => {
   const authStore = useAuthStore()
 
   const savePaginatorLimit = (limit: number) => {
-    $cookies?.set('workers-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+    localStorage.setItem('workers-table-limit', limit.toString())
   }
 
   const fetchWorkers = async (

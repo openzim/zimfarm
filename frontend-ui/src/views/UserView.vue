@@ -64,6 +64,11 @@
                       </a>
                     </p>
 
+                    <!-- IDP Sub -->
+                    <p v-if="user.idp_sub" class="mb-4">
+                      <strong>IDP Sub:</strong> <code>{{ user.idp_sub }}</code>
+                    </p>
+
                     <!-- Permissions List -->
                     <v-card class="mb-4" variant="outlined">
                       <v-card-title class="text-subtitle-1">
@@ -383,8 +388,9 @@ const updateUser = async (payload: {
   role?: string
   email?: string
   scope?: Record<string, Record<string, boolean>>
+  idp_sub?: string
 }) => {
-  if (!(payload.role || payload.email || payload.scope)) return
+  if (!(payload.role || payload.email || payload.scope || payload.idp_sub)) return
 
   loadingStore.startLoading('updating user…')
   const success = await userStore.updateUser(props.username, payload)

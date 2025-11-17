@@ -1,9 +1,11 @@
+from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
+from zimfarm_backend.common.schemas.models import UserUpdateSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -14,6 +16,8 @@ from zimfarm_backend.db.user import (
     delete_user,
     get_user_by_id,
     get_user_by_id_or_none,
+    get_user_by_idp_sub,
+    get_user_by_idp_sub_or_none,
     get_user_by_username,
     get_user_by_username_or_none,
     get_users,
@@ -58,6 +62,24 @@ def test_get_user_by_username(dbsession: OrmSession, user: User):
     assert db_user is not None
     assert db_user.id == user.id
     assert db_user.username == user.username
+
+
+def test_get_user_by_idp_sub_or_none(dbsession: OrmSession):
+    user = get_user_by_idp_sub_or_none(dbsession, idp_sub=uuid4(), fetch_ssh_keys=True)
+    assert user is None
+
+
+def test_get_user_by_idp_sub_not_found(dbsession: OrmSession):
+    with pytest.raises(RecordDoesNotExistError):
+        get_user_by_idp_sub(dbsession, idp_sub=uuid4(), fetch_ssh_keys=True)
+
+
+def test_get_user_by_idp_sub(dbsession: OrmSession, create_user: Callable[..., User]):
+    user = create_user(idp_sub=uuid4())
+    assert user.idp_sub is not None
+    db_user = get_user_by_idp_sub(dbsession, idp_sub=user.idp_sub, fetch_ssh_keys=True)
+    assert db_user is not None
+    assert db_user.id == user.id
 
 
 @pytest.mark.num_users(10)
@@ -115,8 +137,7 @@ def test_update_user_role(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        email="updated@example.com",
-        role=RoleEnum.EDITOR,
+        request=UserUpdateSchema(email="updated@example.com", role=RoleEnum.EDITOR),
     )
     dbsession.refresh(user)
     assert user.email == "updated@example.com"
@@ -129,9 +150,11 @@ def test_update_user_scope(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        email="updated@example.com",
-        role=None,
-        scope=scope,
+        request=UserUpdateSchema(
+            email="updated@example.com",
+            role=None,
+            scope=scope,
+        ),
     )
     dbsession.refresh(user)
     assert user.email == "updated@example.com"
@@ -180,9 +203,11 @@ def test_update_user_scope_and_role(dbsession: OrmSession, user: User):
         update_user(
             dbsession,
             user_id=user.id,
-            email="updated@example.com",
-            role=RoleEnum.EDITOR,
-            scope=scope,
+            request=UserUpdateSchema(
+                email="updated@example.com",
+                role=RoleEnum.EDITOR,
+                scope=scope,
+            ),
         )
 
 
@@ -192,8 +217,7 @@ def test_update_user_partial(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        email=None,
-        role=RoleEnum.EDITOR,
+        request=UserUpdateSchema(role=RoleEnum.EDITOR),
     )
     dbsession.refresh(user)
     assert user.email == original_email

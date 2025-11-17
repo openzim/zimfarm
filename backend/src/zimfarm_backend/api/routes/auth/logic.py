@@ -26,7 +26,7 @@ from zimfarm_backend.api.routes.http_errors import (
 )
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import constants, getnow
-from zimfarm_backend.common.roles import ROLES
+from zimfarm_backend.common.schemas.orms import UserSchema
 from zimfarm_backend.db import gen_dbsession
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User
@@ -36,7 +36,7 @@ from zimfarm_backend.db.refresh_token import (
     expire_refresh_tokens,
     get_refresh_token,
 )
-from zimfarm_backend.db.user import get_user_by_username
+from zimfarm_backend.db.user import create_user_schema, get_user_by_username
 from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.utils.cryptography import verify_signed_message
 
@@ -51,9 +51,6 @@ def _access_token_response(db_session: OrmSession, db_user: User, response: Resp
         access_token=generate_access_token(
             user_id=str(db_user.id),
             issue_time=issue_time,
-            username=db_user.username,
-            scope=ROLES.get(db_user.role, db_user.scope),
-            email=db_user.email,
         ),
         refresh_token=str(
             create_refresh_token(session=db_session, user_id=db_user.id).token
@@ -202,3 +199,11 @@ def test(
 ):
     """Test if user's authentication tokens are still valid."""
     return Response(status_code=HTTPStatus.NO_CONTENT)
+
+
+@router.get("/me")
+def get_current_user_info(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> UserSchema:
+    """Get the current authenticated user's information including scopes."""
+    return create_user_schema(current_user)

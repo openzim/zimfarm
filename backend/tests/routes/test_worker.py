@@ -207,9 +207,6 @@ def test_update_worker_context(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.put(
@@ -231,9 +228,6 @@ def test_update_worker_context_not_found(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.put(
@@ -255,9 +249,6 @@ def test_update_worker_context_no_payload(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.put(

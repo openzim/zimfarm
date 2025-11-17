@@ -40,6 +40,7 @@ dynamic = ["version"]
 api = [
     "fastapi[all] == 0.115.2",
     "zimscraperlib == 5.2.0"
+    "ory-client == 1.22.9",
 ]
 scripts = [
     "invoke == 2.2.0",
