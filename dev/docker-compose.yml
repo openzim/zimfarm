@@ -32,10 +32,11 @@ services:
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "true"
-      # upload artifacts, logs and zim to receiver for simplicity
-      ARTIFACTS_UPLOAD_URI: sftp://uploader@receiver:22/logs/ # reusing logs dir, kind of a hack
-      LOGS_UPLOAD_URI: sftp://uploader@receiver:22/logs/
+      # upload logs to receiver but logs, zimcheck results and artificats to s3
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
+      LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
+      ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
+      ARTIFACTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-artifacts
       ZIMCHECK_OPTION: --all
       ALLOWED_ORIGINS: http://localhost:8001,http://localhost:8002
       # username and password of admin user
@@ -72,6 +73,13 @@ services:
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: true
       INFORM_CMS: false
+      ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
+      LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
+      ZIMCHECK_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
+      ARTIFACTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-artifacts
+      ZIMCHECK_OPTION: --all
+      INIT_USERNAME: admin
+      INIT_PASSWORD: admin
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -188,5 +196,39 @@ services:
     profiles:
       - worker
 
+  minio:
+    image: minio/minio
+    container_name: zf_minio
+    ports:
+      - 9000:9000 # api
+      - 9001:9001 # web console
+    environment:
+      - MINIO_ROOT_USER=minio_key
+      - MINIO_ROOT_PASSWORD=minio_secret
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data_zimfarm:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    profiles:
+      - worker
+
+  createbuckets:
+    image: minio/mc
+    container_name: zf_minio_setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./contrib/setup-buckets.sh:/setup-buckets.sh
+    entrypoint: ["/bin/sh", "/setup-buckets.sh"]
+    profiles:
+      - worker
+
 volumes:
   pg_data_zimfarm:
+  minio_data_zimfarm:

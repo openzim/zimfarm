@@ -191,7 +191,7 @@
                                 </template>
                               </v-tooltip>
                             </td>
-                            <td v-if="file.status === 'uploaded'">
+                            <td v-if="file.uploaded_timestamp">
                               <v-tooltip :text="formatDt(file.uploaded_timestamp)">
                                 <template #activator="{ props }">
                                   <span v-bind="props">{{ uploadDuration(file) }}</span>
@@ -201,38 +201,31 @@
                             <td v-else>-</td>
                             <td v-if="file.check_result !== undefined">
                               <div class="d-flex flex-sm-column flex-lg-row align-center">
-                                <code>{{ file.check_result }}</code>
-                                <v-menu location="left">
+                                <v-tooltip :text="`Return code: ${file.check_result}`">
                                   <template #activator="{ props }">
-                                    <v-btn v-bind="props" variant="text" size="small" class="ml-2">
-                                      <v-icon>mdi-eye</v-icon>
-                                    </v-btn>
-                                  </template>
-                                  <v-card max-width="400" max-height="300">
-                                    <v-card-title class="text-subtitle-2 pa-3"
-                                      >zimcheck output</v-card-title
+                                    <v-icon
+                                      v-bind="props"
+                                      :color="file.check_result === 0 ? 'success' : 'error'"
+                                      size="small"
                                     >
-                                    <v-card-text class="pa-3">
-                                      <pre
-                                        class="text-caption"
-                                        style="
-                                          max-height: 200px;
-                                          overflow-y: auto;
-                                          white-space: pre-wrap;
-                                          word-break: break-word;
-                                        "
-                                        >{{ JSON.stringify(file.check_details, null, 2) }}</pre
-                                      >
-                                    </v-card-text>
-                                  </v-card>
-                                </v-menu>
+                                      {{
+                                        file.check_result === 0
+                                          ? 'mdi-check-circle'
+                                          : 'mdi-close-circle'
+                                      }}
+                                    </v-icon>
+                                  </template>
+                                </v-tooltip>
                                 <v-btn
+                                  v-if="file.check_filename"
                                   variant="text"
                                   size="small"
-                                  class="ml-1"
-                                  @click="copyLog(JSON.stringify(file.check_details, null, 2))"
+                                  class="ml-2"
+                                  :href="zimfarmChecksUrl(file.check_filename)"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                 >
-                                  <v-icon>mdi-content-copy</v-icon>
+                                  <v-icon>mdi-download</v-icon>
                                 </v-btn>
                               </div>
                             </td>
@@ -458,6 +451,7 @@ import {
 } from '@/utils/format'
 import {
   artifactsUrl,
+  checkUrl,
   getSecretFields,
   imageHuman as imageHumanFn,
   imageUrl as imageUrlFn,
@@ -619,20 +613,11 @@ const createdAfter = (file: TaskFile, taskData: Task) => {
   )
 }
 
+const zimfarmChecksUrl = (fileName: string) => (task.value ? checkUrl(task.value, fileName) : '')
+
 const uploadDuration = (file: TaskFile) => {
   if (!file.uploaded_timestamp) return '-'
   return formatDurationBetween(file.created_timestamp, file.uploaded_timestamp)
-}
-
-const copyLog = async (log: string) => {
-  try {
-    await navigator.clipboard.writeText(log)
-    notificationStore.showSuccess('zimcheck log copied to Clipboard!')
-  } catch {
-    notificationStore.showError(
-      'Unable to copy zimcheck log to clipboard 😞. Please copy it manually.',
-    )
-  }
 }
 
 const copyCommand = async (command: string) => {

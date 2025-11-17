@@ -67,6 +67,15 @@ ARTIFACTS_UPLOAD_URI = getenv("ARTIFACTS_UPLOAD_URI", default=None)
 # on the bucket and the bucket retention is smaller than value below
 ARTIFACTS_EXPIRATION = int(getenv("ARTIFACTS_EXPIRATION", default="30"))
 
+ZIMCHECK_RESULTS_UPLOAD_URI = getenv(
+    "ZIMCHECK_RESULTS_UPLOAD_URI",
+    default="sftp://uploader@warehouse.farm.openzim.org:1522/zimchecks",
+)
+# zimcheck files expiration, 0 to disable expiration
+# only working in Wasabi S3 for now, works only if retention compliance is activated
+# on the bucket and the bucket retention is smaller than value below
+ZIMCHECK_RESULTS_EXPIRATION = int(getenv("ZIMCHECK_RESULTS_EXPIRATION", default="0"))
+
 # empty ZIMCHECK_OPTION means no zimcheck
 ZIMCHECK_OPTION = getenv("ZIMCHECK_OPTION", default="")
 
