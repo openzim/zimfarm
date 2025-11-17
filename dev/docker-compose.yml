@@ -24,6 +24,7 @@ services:
       dockerfile: api.Dockerfile
     container_name: zf_backend
     volumes:
+      - ../backend/maint-scripts:/app/maint-scripts
       - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
     ports:
       - 127.0.0.1:8000:80
