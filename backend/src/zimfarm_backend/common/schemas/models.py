@@ -131,7 +131,5 @@ class FileCreateUpdateSchema(BaseModel):
     check_timestamp: datetime.datetime | None = None
     check_result: int | None = None
     check_filename: str | None = None
-    check_log: str | None = None
-    check_details: str | None = None
     check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)

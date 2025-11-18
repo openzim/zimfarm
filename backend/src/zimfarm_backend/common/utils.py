@@ -105,10 +105,6 @@ def handle_file_event(
         values.check_result = file_data.get("check_result")
         values.check_timestamp = timestamp
         values.info = file_data.get("info", {})
-        if check_log := file_data.get("check_log"):
-            values.check_log = check_log
-        if check_details := file_data.get("check_details"):
-            values.check_details = check_details
 
     elif fstatus == "check_results_uploaded":
         values.check_filename = file_data.get("check_filename")

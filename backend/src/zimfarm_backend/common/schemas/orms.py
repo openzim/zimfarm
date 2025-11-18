@@ -102,8 +102,6 @@ class TaskFileSchema(BaseModel):
     check_filename: str | None = None
     check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)
-    check_log: str | None = None
-    check_details: dict[str, Any] | None = None
 
 
 class TaskContainerProgressSchema(BaseModel):
