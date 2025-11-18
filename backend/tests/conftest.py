@@ -128,9 +128,6 @@ def access_token(user: User) -> str:
     return generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
 
 
