@@ -162,7 +162,7 @@ def create_user(
     password_hash: str | None = None,
     scope: dict[str, Any] | None = None,
     role: str = "custom",
-    idp_sub: str | None = None,
+    idp_sub: UUID | None = None,
 ) -> User:
     """Create a new user"""
     if role != "custom" and scope is not None:
