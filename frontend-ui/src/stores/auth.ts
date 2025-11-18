@@ -1,23 +1,28 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
 import type { ErrorResponse } from '@/types/errors'
-import type { ExtendedToken, JWTPayload, JWTUser, KiwixUserInfo, Token } from '@/types/user'
+import type { JWTUser } from '@/types/user'
 import { translateErrors } from '@/utils/errors'
 import {
   exchangeCodeForToken,
-  fetchKiwixUserInfo,
   getKiwixAuthConfig,
   logoutFromKiwixAuth,
   refreshKiwixToken,
 } from '@/services/auth/kiwix'
 import httpRequest from '@/utils/httpRequest'
-import { jwtDecode } from 'jwt-decode'
 import { defineStore } from 'pinia'
 import { computed, inject, ref } from 'vue'
 import type { VueCookies } from 'vue-cookies'
 
+interface StoredToken {
+  access_token: string
+  refresh_token: string
+  token_type: 'api' | 'kiwix'
+  expires_time: string // ISO 8601 datetime string
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<ExtendedToken | null>(null)
+  const token = ref<StoredToken | null>(null)
   const user = ref<JWTUser | null>(null)
   const errors = ref<string[]>([])
 
@@ -37,29 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Computed properties
   const isLoggedIn = computed(() => {
-    if (!token.value) return false
-    return true
-  })
-
-  const tokenExpiryDate = computed(() => {
-    if (!token.value) return null
-
-    // For Kiwix tokens, parse expires_time
-    if (token.value.token_type === 'kiwix') {
-      if (token.value.expires_time) {
-        return new Date(token.value.expires_time)
-      }
-      return null
-    }
-
-    // For legacy tokens, decode JWT
-    try {
-      const jwtPayload = jwtDecode<JWTPayload>(token.value.access_token)
-      return new Date(jwtPayload.exp * 1000)
-    } catch (error) {
-      console.error('Error decoding token:', error)
-      return null
-    }
+    return token.value !== null && user.value !== null
   })
 
   const username = computed(() => {
@@ -78,50 +61,58 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.scope || {}
   })
 
-  const renewTokenFromRefresh = async (
-    refreshToken: string,
-    tokenType: 'legacy' | 'kiwix' = 'legacy',
-  ) => {
+  const tokenExpiryDate = computed(() => {
+    if (!token.value) return null
+    return new Date(token.value.expires_time)
+  })
+
+  const isTokenExpired = computed(() => {
+    if (!tokenExpiryDate.value) return true
+    return new Date() >= tokenExpiryDate.value
+  })
+
+  const fetchUserInfo = async (accessToken: string) => {
     try {
-      if (tokenType === 'kiwix') {
-        // Refresh Kiwix token
-        const kiwixAuthConfig = getKiwixAuthConfig(config)
-        const kiwixToken = await refreshKiwixToken(refreshToken, kiwixAuthConfig)
-        const userInfo: KiwixUserInfo = await fetchKiwixUserInfo(
-          kiwixToken.access_token,
-          kiwixAuthConfig,
-        )
+      const apiService = httpRequest({
+        baseURL: `${config.ZIMFARM_WEBAPI}/auth`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      const response = (await apiService.get('/me')) as JWTUser
+      user.value = response
+      errors.value = []
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+      user.value = null
+      errors.value = translateErrors(error as ErrorResponse)
+      throw error
+    }
+  }
 
-        token.value = {
-          access_token: kiwixToken.access_token,
-          refresh_token: kiwixToken.refresh_token || refreshToken,
-          expires_time: new Date(Date.now() + kiwixToken.expires_in * 1000).toISOString(),
-          token_type: 'kiwix',
-          kiwix_sub: userInfo.sub,
-          kiwix_refresh_token: kiwixToken.refresh_token,
-        }
+  const renewTokenFromApi = async (refreshToken: string): Promise<StoredToken | null> => {
+    try {
+      const response = await service.post<
+        { refresh_token: string },
+        { access_token: string; refresh_token: string; expires_time: string }
+      >('/refresh', {
+        refresh_token: refreshToken,
+      })
 
-        user.value = {
-          username: userInfo.preferred_username || userInfo.email || userInfo.sub,
-          email: userInfo.email || '',
-          scope: {}, // Permissions managed by backend
-        }
-      } else {
-        // Refresh legacy token
-        const response = await service.post<{ refresh_token: string }, Token>('/refresh', {
-          refresh_token: refreshToken,
-        })
-        token.value = {
-          ...response,
-          token_type: 'legacy',
-        }
-        user.value = jwtDecode<JWTPayload>(token.value.access_token).user
+      const newToken: StoredToken = {
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: 'api',
+        expires_time: response.expires_time,
       }
 
+      token.value = newToken
+      await fetchUserInfo(newToken.access_token)
       errors.value = []
-      saveTokenToCookie(token.value)
-      return token.value?.access_token
+      saveTokenToCookie(newToken)
+      return newToken
     } catch (error) {
+      console.error('Token refresh failed:', error)
       token.value = null
       user.value = null
       errors.value = translateErrors(error as ErrorResponse)
@@ -129,64 +120,103 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const loadTokenFromCookie = async () => {
-    // Already authenticated and not expired
-    if (tokenExpiryDate.value && tokenExpiryDate.value > new Date()) {
-      return token.value?.access_token
-    }
-
-    const cookieValue = $cookies.get(constants.TOKEN_COOKIE_NAME)
-    if (!cookieValue) return null
-
-    let tokenData: ExtendedToken
+  const renewTokenFromKiwixOAuth = async (refreshToken: string): Promise<StoredToken | null> => {
     try {
-      tokenData = cookieValue
+      const kiwixAuthConfig = getKiwixAuthConfig(config)
+      const response = await refreshKiwixToken(refreshToken, kiwixAuthConfig)
 
-      // For Kiwix tokens
-      if (tokenData.token_type === 'kiwix') {
-        const expiryDate = tokenData.expires_time ? new Date(tokenData.expires_time) : null
-        const now = new Date()
+      // Calculate expiry time from expires_in
+      const expiresTime = new Date(Date.now() + response.expires_in * 1000).toISOString()
 
-        // Token expired, try to refresh
-        if (expiryDate && now > expiryDate && tokenData.kiwix_refresh_token) {
-          return await renewTokenFromRefresh(tokenData.kiwix_refresh_token, 'kiwix')
-        }
-
-        // Token still valid
-        token.value = tokenData
-        user.value = {
-          username: tokenData.kiwix_sub || 'kiwix-user',
-          email: '',
-          scope: {},
-        } as JWTUser
-        return token.value.access_token
+      const newToken: StoredToken = {
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: 'kiwix',
+        expires_time: expiresTime,
       }
 
-      // For legacy tokens, decode JWT
-      const jwtPayload = jwtDecode<JWTPayload>(tokenData.access_token)
-      const expiry = new Date(jwtPayload.exp * 1000)
-      const now = new Date()
-
-      if (now > expiry) {
-        return await renewTokenFromRefresh(tokenData.refresh_token, 'legacy')
-      }
-
-      token.value = {
-        ...tokenData,
-        token_type: 'legacy',
-      }
-      user.value = jwtPayload.user
-      return token.value?.access_token
+      token.value = newToken
+      await fetchUserInfo(newToken.access_token)
+      errors.value = []
+      saveTokenToCookie(newToken)
+      return newToken
     } catch (error) {
-      console.error('Error parsing cookie value', error)
-      $cookies.remove(constants.TOKEN_COOKIE_NAME)
+      console.error('Kiwix token refresh failed:', error)
+      token.value = null
+      user.value = null
+      errors.value = translateErrors(error as ErrorResponse)
       return null
     }
   }
 
-  const saveTokenToCookie = (tokenData: ExtendedToken) => {
-    // Decode JWT to get actual expiry time
-    // Set cookie with proper configuration for persistence
+  const renewToken = async (): Promise<string | null> => {
+    if (!token.value?.refresh_token) {
+      console.error('No refresh token available')
+      return null
+    }
+
+    const tokenType = token.value.token_type
+
+    if (tokenType === 'api') {
+      const newToken = await renewTokenFromApi(token.value.refresh_token)
+      return newToken?.access_token || null
+    } else if (tokenType === 'kiwix') {
+      const newToken = await renewTokenFromKiwixOAuth(token.value.refresh_token)
+      return newToken?.access_token || null
+    }
+
+    console.error('Unknown token type:', tokenType)
+    return null
+  }
+
+  const loadTokenFromCookie = async (): Promise<string | null> => {
+    // If already authenticated and token is still valid, return current token
+    if (token.value && !isTokenExpired.value) {
+      return token.value.access_token
+    }
+
+    // Try to load from cookie
+    const cookieValue = $cookies.get(constants.TOKEN_COOKIE_NAME)
+    if (!cookieValue) return null
+
+    let storedToken: StoredToken
+    try {
+      storedToken = cookieValue as StoredToken
+
+      // Validate token structure
+      if (!storedToken.access_token || !storedToken.refresh_token || !storedToken.token_type) {
+        throw new Error('Invalid token structure in cookie')
+      }
+    } catch (error) {
+      console.error('Error parsing cookie value', error)
+      // Incorrect cookie payload
+      $cookies.remove(constants.TOKEN_COOKIE_NAME)
+      return null
+    }
+
+    // Check if token is expired
+    const expiry = new Date(storedToken.expires_time)
+    const now = new Date()
+
+    if (now >= expiry) {
+      // Token expired, try to refresh
+      token.value = storedToken // Set temporarily for renewToken to work
+      return await renewToken()
+    }
+
+    // Token is still valid
+    token.value = storedToken
+    try {
+      await fetchUserInfo(storedToken.access_token)
+      return storedToken.access_token
+    } catch (error) {
+      // If fetching user info fails, try to refresh the token
+      console.error('Failed to fetch user info, attempting token refresh', error)
+      return await renewToken()
+    }
+  }
+
+  const saveTokenToCookie = (tokenData: StoredToken) => {
     $cookies.set(
       constants.TOKEN_COOKIE_NAME,
       JSON.stringify(tokenData),
@@ -200,10 +230,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = async () => {
-    // If Kiwix token, revoke it
+    // If we have a Kiwix token, revoke it
     if (token.value?.token_type === 'kiwix' && token.value.access_token) {
-      const kiwixAuthConfig = getKiwixAuthConfig(config)
-      await logoutFromKiwixAuth(token.value.access_token, kiwixAuthConfig)
+      try {
+        const kiwixAuthConfig = getKiwixAuthConfig(config)
+        await logoutFromKiwixAuth(token.value.access_token, kiwixAuthConfig)
+      } catch (error) {
+        console.error('Error revoking Kiwix token:', error)
+      }
     }
 
     token.value = null
@@ -212,26 +246,34 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const hasPermission = (resource: string, action: string) => {
-    if (!token.value) return false
+    if (!token.value || !user.value) return false
     return user.value?.scope[resource]?.[action] || false
   }
 
   const authenticate = async (username: string, password: string) => {
     try {
-      const response = await service.post<{ username: string; password: string }, Token>(
-        '/authorize',
-        {
-          username,
-          password,
-        },
-      )
-      token.value = {
-        ...response,
-        token_type: 'legacy',
+      const response = await service.post<
+        { username: string; password: string },
+        { access_token: string; refresh_token: string; expires_time: string }
+      >('/authorize', {
+        username,
+        password,
+      })
+
+      const newToken: StoredToken = {
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: 'api',
+        expires_time: response.expires_time,
       }
-      user.value = jwtDecode<JWTPayload>(token.value.access_token).user
+
+      token.value = newToken
+
+      // Fetch user info from backend
+      await fetchUserInfo(response.access_token)
+
       errors.value = []
-      saveTokenToCookie(token.value)
+      saveTokenToCookie(newToken)
       return true
     } catch (err: unknown) {
       token.value = null
@@ -251,33 +293,23 @@ export const useAuthStore = defineStore('auth', () => {
       // Exchange code for token
       const kiwixToken = await exchangeCodeForToken(code, codeVerifier, kiwixAuthConfig)
 
-      // Fetch user info
-      const userInfo: KiwixUserInfo = await fetchKiwixUserInfo(
-        kiwixToken.access_token,
-        kiwixAuthConfig,
-      )
+      // Calculate expiry time from expires_in
+      const expiresTime = new Date(Date.now() + kiwixToken.expires_in * 1000).toISOString()
 
-      // Create extended token
-      const extendedToken: ExtendedToken = {
+      const newToken: StoredToken = {
         access_token: kiwixToken.access_token,
-        refresh_token: kiwixToken.refresh_token || '',
-        expires_time: new Date(Date.now() + kiwixToken.expires_in * 1000).toISOString(),
+        refresh_token: kiwixToken.refresh_token,
         token_type: 'kiwix',
-        kiwix_sub: userInfo.sub,
-        kiwix_refresh_token: kiwixToken.refresh_token,
+        expires_time: expiresTime,
       }
 
-      token.value = extendedToken
+      token.value = newToken
 
-      // Create user object from Kiwix userinfo
-      user.value = {
-        username: userInfo.preferred_username || userInfo.email || userInfo.sub,
-        email: userInfo.email || '',
-        scope: {}, // Permissions will be managed by backend based on idp_sub
-      }
+      // Fetch user info from backend using the Kiwix token
+      await fetchUserInfo(kiwixToken.access_token)
 
       errors.value = []
-      saveTokenToCookie(token.value)
+      saveTokenToCookie(newToken)
       return true
     } catch (err: unknown) {
       token.value = null
@@ -314,12 +346,17 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     refreshToken,
     permissions,
+    tokenExpiryDate,
+    isTokenExpired,
 
     // Methods
     saveTokenToCookie,
     hasPermission,
     loadTokenFromCookie,
-    renewTokenFromRefresh,
+    fetchUserInfo,
+    renewToken,
+    renewTokenFromApi,
+    renewTokenFromKiwixOAuth,
     authenticate,
     authenticateWithKiwix,
     logout,
