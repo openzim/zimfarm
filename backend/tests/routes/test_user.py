@@ -22,9 +22,6 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.get(
         "/v2/users", headers={"Authorization": f"Bearer {access_token}"}
@@ -53,9 +50,6 @@ def test_list_users_with_param(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users?skip={skip}&limit={limit}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
@@ -78,9 +72,6 @@ def test_skip_deleted_users(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     for i in range(1, len(users)):
         users[i].deleted = True
@@ -103,9 +94,6 @@ def test_get_user_by_username(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
@@ -122,9 +110,6 @@ def test_get_user_by_username_not_found(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -135,9 +120,6 @@ def test_patch_user_email(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.patch(
         url,
@@ -154,9 +136,6 @@ def test_delete_user(client: TestClient, users: list[User]):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NO_CONTENT
@@ -166,9 +145,6 @@ def test_delete_user(client: TestClient, users: list[User]):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.post(
         "/v2/users",
@@ -188,9 +164,6 @@ def test_create_user(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.post(
         url,
@@ -210,9 +183,6 @@ def test_create_user_duplicate(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.post(
         url,
@@ -232,9 +202,6 @@ def test_list_user_keys(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
@@ -260,9 +227,6 @@ def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{users[1].username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
@@ -274,9 +238,6 @@ def test_create_user_key(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = new_key.public_key()
@@ -305,9 +266,6 @@ def test_create_user_key_invalid(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}/keys"
     key_data = {"key": "invalid-key xxxxxxx test@localhost"}
@@ -322,9 +280,6 @@ def test_create_user_key_duplicate(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}/keys"
     key_data = {"key": user.ssh_keys[0].key}
@@ -339,9 +294,6 @@ def test_get_user_key(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     fingerprint = user.ssh_keys[0].fingerprint
     url = f"/v2/users/{user.username}/keys/{fingerprint}"
@@ -360,9 +312,6 @@ def test_get_user_key_not_found(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}/keys/non-existent-fingerprint"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
@@ -374,9 +323,6 @@ def test_delete_user_key(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     fingerprint = user.ssh_keys[0].fingerprint
     url = f"/v2/users/{user.username}/keys/{fingerprint}"
@@ -396,9 +342,6 @@ def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -408,9 +351,6 @@ def test_update_user_role(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}"
     response = client.patch(
@@ -432,9 +372,6 @@ def test_update_user_scope(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}"
     response = client.patch(
@@ -455,9 +392,6 @@ def test_update_user_role_and_scope(client: TestClient, user: User):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     url = f"/v2/users/{user.username}"
     response = client.patch(
@@ -475,9 +409,6 @@ def test_update_user_password(client: TestClient, users: list[User]):
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.patch(
         f"/v2/users/{users[1].username}/password",
@@ -504,9 +435,6 @@ def test_update_user_password_invalid(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        scope=user.scope,
-        email=user.email,
     )
     response = client.patch(
         f"/v2/users/{user.username}/password",
