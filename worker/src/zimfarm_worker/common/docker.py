@@ -332,7 +332,22 @@ def upload_container_name(
 
 def get_ip_address(client: DockerClient, name: str) -> str:
     """IP Address (first) of a named container"""
-    return get_container(client, name).attrs["NetworkSettings"]["IPAddress"]
+    network_settings = get_container(client, name).attrs["NetworkSettings"]
+
+    # Try new structure first (Docker CE 29): Networks -> first network -> IPAddress
+    networks = network_settings.get("Networks", {})
+    if networks:
+        for _, network_config in networks.items():
+            ip_address = network_config.get("IPAddress", "")
+            if ip_address:
+                return ip_address
+
+    # Fallback to old structure (pre Docker CE 29): direct IPAddress field
+    ip_address = network_settings.get("IPAddress", "")
+    if ip_address:
+        return ip_address
+
+    raise ValueError(f"No IP address found for container '{name}'")
 
 
 def get_label_value(client: DockerClient, name: str, label: str) -> str:
