@@ -10,11 +10,8 @@ JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
 )
 
 # Kiwix OAuth/OIDC configuration
-KIWIX_JWKS_URI = getenv(
-    "KIWIX_JWKS_URI",
-    default="https://login.kiwix.org/.well-known/jwks.json",
-)
 KIWIX_ISSUER = getenv("KIWIX_ISSUER", default="https://login.kiwix.org")
-KIWIX_AUDIENCE = getenv(
-    "KIWIX_AUDIENCE", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
+KIWIX_CLIENT_ID = getenv(
+    "KIWIX_CLIENT_ID", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
 )
+ORY_ACCESS_TOKEN = getenv("ORY_ACCESS_TOKEN", mandatory=True)
