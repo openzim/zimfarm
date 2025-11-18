@@ -149,19 +149,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const renewToken = async (): Promise<string | null> => {
-    if (!token.value?.refresh_token) {
+  const renewToken = async (storedToken: StoredToken): Promise<string | null> => {
+    if (!storedToken.refresh_token) {
       console.error('No refresh token available')
       return null
     }
 
-    const tokenType = token.value.token_type
+    const tokenType = storedToken.token_type
 
     if (tokenType === 'api') {
-      const newToken = await renewTokenFromApi(token.value.refresh_token)
+      const newToken = await renewTokenFromApi(storedToken.refresh_token)
       return newToken?.access_token || null
     } else if (tokenType === 'kiwix') {
-      const newToken = await renewTokenFromKiwixOAuth(token.value.refresh_token)
+      const newToken = await renewTokenFromKiwixOAuth(storedToken.refresh_token)
       return newToken?.access_token || null
     }
 
@@ -171,7 +171,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const loadTokenFromCookie = async (): Promise<string | null> => {
     // If already authenticated and token is still valid, return current token
-    if (token.value && !isTokenExpired.value) {
+    if (token.value && tokenExpiryDate.value && tokenExpiryDate.value > new Date()) {
       return token.value.access_token
     }
 
@@ -198,10 +198,9 @@ export const useAuthStore = defineStore('auth', () => {
     const expiry = new Date(storedToken.expires_time)
     const now = new Date()
 
-    if (now >= expiry) {
+    if (now > expiry) {
       // Token expired, try to refresh
-      token.value = storedToken // Set temporarily for renewToken to work
-      return await renewToken()
+      return await renewToken(storedToken)
     }
 
     // Token is still valid
@@ -212,7 +211,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       // If fetching user info fails, try to refresh the token
       console.error('Failed to fetch user info, attempting token refresh', error)
-      return await renewToken()
+      return await renewToken(storedToken)
     }
   }
 
