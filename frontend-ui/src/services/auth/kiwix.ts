@@ -1,5 +1,5 @@
 import type { Config } from '@/config'
-import type { KiwixTokenResponse, KiwixUserInfo } from '@/types/user'
+import type { KiwixTokenResponse } from '@/types/user'
 import httpRequest from '@/utils/httpRequest'
 import {
   generateCodeChallenge,
@@ -136,31 +136,6 @@ export async function refreshKiwixToken(
 }
 
 /**
- * Fetch user info from Kiwix userinfo endpoint
- * Note: This Kiwix auth instance only returns the 'sub' claim as per its configuration
- * (claims_supported: ["sub"]). Other claims may or may not be present.
- */
-export async function fetchKiwixUserInfo(
-  accessToken: string,
-  config: KiwixAuthConfig,
-): Promise<KiwixUserInfo> {
-  const service = httpRequest({
-    baseURL: config.userInfoUrl,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
-
-  try {
-    const response = await service.get<null, KiwixUserInfo>('')
-    return response
-  } catch (error) {
-    console.error(error)
-    throw new Error('Failed to fetch user info')
-  }
-}
-
-/**
  * Logout from Kiwix auth session by revoking the access token
  */
 export async function logoutFromKiwixAuth(
@@ -188,18 +163,4 @@ export async function logoutFromKiwixAuth(
     console.error('Error revoking token:', error)
     // Continue with logout even if revocation fails
   }
-}
-
-/**
- * Get OpenID Connect Discovery metadata
- */
-export async function getKiwixAuthDiscoveryMetadata(
-  config: KiwixAuthConfig,
-): Promise<Record<string, unknown>> {
-  const service = httpRequest({
-    baseURL: `${config.basePath}/.well-known`,
-  })
-
-  const response = await service.get<null, Record<string, unknown>>('/openid-configuration')
-  return response
 }
