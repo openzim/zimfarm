@@ -12,7 +12,6 @@ export interface JWTPayload {
   exp: number
   iat: number
   subject: string
-  user: JWTUser
 }
 
 export interface User extends JWTUser {
@@ -54,18 +53,6 @@ export interface KiwixTokenResponse {
   refresh_token: string
   scope: string
   id_token?: string
-}
-
-export interface KiwixUserInfo {
-  sub: string
-  email?: string
-  email_verified?: boolean
-  name?: string
-  preferred_username?: string
-  given_name?: string
-  family_name?: string
-  picture?: string
-  [key: string]: unknown
 }
 
 // Extended token type to support both legacy and Kiwix authentication tokens
