@@ -113,14 +113,18 @@ class TaskContainerProgressSchema(BaseModel):
     total: int | None = None
 
 
-class TaskContainerMemoryStatsSchema(BaseModel):
-    max_usage: int | None = None
+class TaskResourceUsageSchema(BaseModel):
+    max_usage: int | float | None = Field(default=None, alias="max")
 
 
-class TaskContainerStatsSchema(BaseModel):
-    memory: TaskContainerMemoryStatsSchema = Field(
-        default_factory=TaskContainerMemoryStatsSchema
-    )
+class TaskCPUUsageSchema(TaskResourceUsageSchema):
+    avg_usage: float | None = Field(default=None, alias="avg")
+
+
+class TaskStatsSchema(BaseModel):
+    memory: TaskResourceUsageSchema = Field(default_factory=TaskResourceUsageSchema)
+    cpu: TaskCPUUsageSchema = Field(default_factory=TaskCPUUsageSchema)
+    disk: TaskResourceUsageSchema = Field(default_factory=TaskResourceUsageSchema)
 
 
 class TaskContainerSchema(BaseModel):
@@ -130,7 +134,7 @@ class TaskContainerSchema(BaseModel):
 
     log: str | None = None
     image: str | None = None
-    stats: dict[str, Any] | None = None
+    stats: TaskStatsSchema | None = None
     artifacts: str | None = None
     stderr: str | None = None
     stdout: str | None = None

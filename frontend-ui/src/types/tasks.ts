@@ -32,6 +32,15 @@ export interface TaskFile {
   info?: TaskFileInfo
 }
 
+export interface TaskResourceUsage {
+  max?: number | null
+}
+
+export interface TaskCPUUsage {
+  max?: number
+  avg?: number
+}
+
 export interface TaskContainer {
   command: string[]
   exit_code?: number
@@ -46,9 +55,9 @@ export interface TaskContainer {
     total: number
   } | null
   stats?: {
-    memory?: {
-      max_usage?: number | null
-    }
+    memory?: TaskResourceUsage
+    disk?: TaskResourceUsage
+    cpu?: TaskCPUUsage
   }
 }
 

@@ -324,13 +324,55 @@
                       <code class="text-pink-accent-2">{{ taskContainer.exit_code }}</code>
                     </td>
                   </tr>
-                  <tr v-if="maxMemory != null">
+                  <tr v-if="hasStats">
                     <th class="text-left w-20">Stats</th>
                     <td>
-                      <v-chip size="small" class="mr-2">
-                        <v-icon size="small" class="mr-1">mdi-memory</v-icon>
-                        {{ maxMemory }} (max)
-                      </v-chip>
+                      <div class="d-flex flex-wrap ga-2">
+                        <v-tooltip
+                          v-if="maxMemory"
+                          text="Maximum memory used during task execution"
+                        >
+                          <template #activator="{ props }">
+                            <v-chip v-bind="props" size="small">
+                              <v-icon size="small" class="mr-1">mdi-memory</v-icon>
+                              {{ maxMemory }} (max)
+                            </v-chip>
+                          </template>
+                        </v-tooltip>
+                        <v-tooltip
+                          v-if="maxDisk"
+                          text="Maximum disk space used during task execution"
+                        >
+                          <template #activator="{ props }">
+                            <v-chip v-bind="props" size="small">
+                              <v-icon size="small" class="mr-1">mdi-harddisk</v-icon>
+                              {{ maxDisk }} (max)
+                            </v-chip>
+                          </template>
+                        </v-tooltip>
+                        <v-tooltip
+                          v-if="hasCpuStats && cpuStats && cpuStats.max !== null"
+                          text="Maximum CPU usage percentage during task execution"
+                        >
+                          <template #activator="{ props }">
+                            <v-chip v-bind="props" size="small">
+                              <v-icon size="small" class="mr-1">mdi-cpu-64-bit</v-icon>
+                              {{ cpuStats.max.toFixed(1) }}% (max)
+                            </v-chip>
+                          </template>
+                        </v-tooltip>
+                        <v-tooltip
+                          v-if="hasCpuStats && cpuStats && cpuStats.avg !== null"
+                          text="Average CPU usage percentage during task execution"
+                        >
+                          <template #activator="{ props }">
+                            <v-chip v-bind="props" size="small">
+                              <v-icon size="small" class="mr-1">mdi-chart-line</v-icon>
+                              {{ cpuStats.avg.toFixed(1) }}% (avg)
+                            </v-chip>
+                          </template>
+                        </v-tooltip>
+                      </div>
                     </td>
                   </tr>
                   <tr v-if="taskProgress">
@@ -578,10 +620,35 @@ const canCancel = computed(() => {
 
 const maxMemory = computed(() => {
   try {
-    return formattedBytesSize(taskContainer.value?.stats?.memory?.max_usage || 0)
+    return formattedBytesSize(taskContainer.value?.stats?.memory?.max || 0)
   } catch {
     return null
   }
+})
+
+const maxDisk = computed(() => {
+  try {
+    return formattedBytesSize(taskContainer.value?.stats?.disk?.max || 0)
+  } catch {
+    return null
+  }
+})
+
+const cpuStats = computed(() => {
+  const stats = taskContainer.value?.stats?.cpu
+  if (!stats) return null
+  return {
+    max: stats.max ?? null,
+    avg: stats.avg ?? null,
+  }
+})
+
+const hasCpuStats = computed(() => {
+  return cpuStats.value && (cpuStats.value.max !== null || cpuStats.value.avg !== null)
+})
+
+const hasStats = computed(() => {
+  return maxMemory.value || maxDisk.value || hasCpuStats.value
 })
 
 const monitoringUrl = computed(() => {
