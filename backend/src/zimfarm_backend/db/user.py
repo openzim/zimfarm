@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.models import UserUpdateSchema
 from zimfarm_backend.common.schemas.orms import UserSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
@@ -184,27 +185,20 @@ def create_user(
 
 
 def update_user(
-    session: OrmSession,
-    *,
-    user_id: UUID,
-    email: str | None = None,
-    role: RoleEnum | None = None,
-    scope: dict[str, dict[str, bool]] | None = None,
+    session: OrmSession, *, user_id: UUID, request: UserUpdateSchema
 ) -> None:
     """Update a user"""
 
-    if role is not None and scope is not None:
+    if request.role is not None and request.scope is not None:
         raise ValueError("Only one of role/scope must be set.")
 
-    values = {}
-    if email is not None:
-        values["email"] = email
+    values = request.model_dump(exclude_unset=True)
 
-    if role is not None:
+    if (role := values.get("role")) is not None:
         values["role"] = role
         values["scope"] = None
 
-    if scope is not None:
+    if (scope := values.get("scope")) is not None:
         values["role"] = "custom"
         values["scope"] = scope
 
