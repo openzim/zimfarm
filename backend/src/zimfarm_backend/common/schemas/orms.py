@@ -475,6 +475,7 @@ class UserSchema(BaseUserSchema):
     email: str | None
     role: str | None
     scope: dict[str, dict[str, bool]]
+    idp_sub: UUID | None
 
 
 class BaseSshKeySchema(BaseModel):
