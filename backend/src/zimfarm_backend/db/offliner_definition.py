@@ -210,7 +210,7 @@ def update_offliner_flags(
         data=new_data,
         skip_validation=True,
         extra="allow",
-    ).model_dump(mode="json")
+    ).model_dump(mode="json", context={"show_secrets": True})
 
 
 def update_offliner_definition(

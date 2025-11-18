@@ -49,23 +49,26 @@ database. If you must use the -n flag, here are some examples:
 """
 
 import argparse
+from typing import cast
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend import logger
-from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
+from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import RequestedTask, Schedule
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
+    create_offliner_instance,
     get_offliner_definition,
+    get_offliner_definition_by_id,
     update_offliner_flags,
 )
 from zimfarm_backend.db.requested_task import create_requested_task_full_schema
-from zimfarm_backend.db.schedule import create_schedule_full_schema
+from zimfarm_backend.db.schedule import create_schedule_full_schema, update_schedule
 
 
 def parse_name_mappings(value: str) -> dict[str, str]:
@@ -89,10 +92,9 @@ def parse_name_mappings(value: str) -> dict[str, str]:
     return mappings
 
 
-def update_entries(
+def update_schedules(
     session: OrmSession,
     *,
-    model: type[Schedule] | type[RequestedTask],
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema | None,
     image_tag: str | None,
@@ -101,23 +103,94 @@ def update_entries(
     nb_modified: int = 0
 
     for obj in session.execute(
-        sa.select(model).where(
-            model.config["offliner"]["offliner_id"].astext == offliner.id
+        sa.select(Schedule).where(
+            Schedule.config["offliner"]["offliner_id"].astext == offliner.id
         )
     ).scalars():
-        obj_name = getattr(obj, "name", obj.id)
+        schedule = create_schedule_full_schema(obj, offliner)
+        schedule_config = cast(ScheduleConfigSchema, schedule.config)
+
+        if offliner_definition is None:
+            offliner_definition = get_offliner_definition_by_id(
+                session, schedule.offliner_definition_id
+            )
+
         if image_tag:
             logger.info(
-                f"setting {offliner.id} image tag for {model.__tablename__} {obj_name} "
+                f"setting {offliner.id} image tag for schedule {obj.name} "
+                f"to {args.image_tag}..."
+            )
+            schedule_config = schedule_config.model_copy(
+                update={"image": {"name": schedule_config.image.name, "tag": image_tag}}
+            )
+
+        if offliner_definition.id != schedule.offliner_definition_id:
+            logger.info(f"setting offliner definition for schedule {obj.name}...")
+
+        data = update_offliner_flags(
+            offliner=offliner,
+            offliner_definition=offliner_definition,
+            data=obj.config["offliner"],
+            name_mappings=name_mappings,
+        )
+
+        schedule_config = ScheduleConfigSchema.model_validate(
+            # reuse the existing config except for the offliner and image
+            {
+                **schedule_config.model_dump(
+                    mode="json",
+                    exclude={"offliner"},
+                    context={"show_secrets": True},
+                ),
+                "offliner": create_offliner_instance(
+                    offliner=offliner,
+                    offliner_definition=offliner_definition,
+                    data=data,
+                    skip_validation=True,
+                    extra="allow",
+                ),
+            },
+            context={"skip_validation": True},
+        )
+
+        update_schedule(
+            session,
+            offliner_definition=offliner_definition,
+            author="maint-scripts",
+            schedule_name=schedule.name,
+            new_schedule_config=schedule_config,
+            comment="updates made via update_scraper_version",
+        )
+
+        nb_modified += 1
+    return nb_modified
+
+
+def update_requested_tasks(
+    session: OrmSession,
+    *,
+    offliner: OfflinerSchema,
+    offliner_definition: OfflinerDefinitionSchema | None,
+    image_tag: str | None,
+    name_mappings: dict[str, str],
+) -> int:
+    nb_modified: int = 0
+
+    for obj in session.execute(
+        sa.select(RequestedTask).where(
+            RequestedTask.config["offliner"]["offliner_id"].astext == offliner.id
+        )
+    ).scalars():
+        if image_tag:
+            logger.info(
+                f"setting {offliner.id} image tag for requested task {obj.id} "
                 f"to {args.image_tag}..."
             )
             obj.config["image"]["tag"] = image_tag
             flag_modified(obj, "config")
 
         if offliner_definition:
-            logger.info(
-                f"setting offliner defintion for {model.__tablename__} {obj_name} ..."
-            )
+            logger.info(f"setting offliner definition for requested task {obj.id}...")
             if name_mappings:
                 obj.config["offliner"] = update_offliner_flags(
                     offliner=offliner,
@@ -126,16 +199,9 @@ def update_entries(
                     name_mappings=name_mappings,
                 )
             obj.offliner_definition_id = offliner_definition.id
-            if isinstance(obj, Schedule):
-                obj.similarity_data = generate_similarity_data(
-                    obj.config["offliner"], offliner, offliner_definition.schema_
-                )
             flag_modified(obj, "config")
         # Just needed to ensure our model still works
-        if isinstance(obj, Schedule):
-            create_schedule_full_schema(obj, offliner)
-        else:  # isinstance(obj, RequestedTask):
-            create_requested_task_full_schema(session, obj)
+        create_requested_task_full_schema(session, obj)
         nb_modified += 1
     return nb_modified
 
@@ -185,9 +251,8 @@ if __name__ == "__main__":
         else:
             offliner_definition = None
 
-        nb_schedules_modified = update_entries(
+        nb_schedules_modified = update_schedules(
             session,
-            model=Schedule,
             offliner=offliner,
             offliner_definition=offliner_definition,
             image_tag=args.image_tag,
@@ -195,9 +260,8 @@ if __name__ == "__main__":
         )
         logger.info(f"updated {nb_schedules_modified} schedule(s) ")
 
-        nb_requested_tasks_modified = update_entries(
+        nb_requested_tasks_modified = update_requested_tasks(
             session,
-            model=RequestedTask,
             offliner=offliner,
             offliner_definition=offliner_definition,
             image_tag=args.image_tag,
