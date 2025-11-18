@@ -213,8 +213,6 @@ class File(Base):
     # Check fields
     check_timestamp: Mapped[datetime | None] = mapped_column(default=None)
     check_result: Mapped[int | None] = mapped_column(default=None)
-    check_log: Mapped[str | None] = mapped_column(default=None)
-    check_details: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     # if filename exists, then check result was uploaded successfully
     check_filename: Mapped[str | None] = mapped_column(default=None)
     check_upload_timestamp: Mapped[datetime | None] = mapped_column(default=None)

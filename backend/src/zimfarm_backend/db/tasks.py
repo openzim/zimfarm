@@ -57,8 +57,6 @@ def create_task_file_schema(file: File) -> TaskFileSchema:
         check_result=file.check_result,
         check_filename=file.check_filename,
         check_upload_timestamp=file.check_upload_timestamp,
-        check_log=file.check_log,
-        check_details=file.check_details,
         info=file.info,
         cms_on=file.cms_on,
         cms_notified=file.cms_notified,
