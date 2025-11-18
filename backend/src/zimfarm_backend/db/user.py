@@ -125,6 +125,7 @@ def create_user_schema(user: User) -> UserSchema:
         scope=merge_scopes(
             ROLES.get(user.role, user.scope or {}), ROLES[RoleEnum.ADMIN]
         ),
+        idp_sub=user.idp_sub,
     )
 
 

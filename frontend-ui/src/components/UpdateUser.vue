@@ -12,7 +12,6 @@
                 label="Role"
                 variant="outlined"
                 density="compact"
-                hide-details
               />
             </v-col>
             <v-col cols="12" sm="6" md="4">
@@ -23,17 +22,17 @@
                 placeholder="Email"
                 variant="outlined"
                 density="compact"
-                hide-details
               />
             </v-col>
             <v-col cols="12" sm="6" md="4">
               <v-text-field
                 v-model="form.idp_sub"
                 label="IDP Sub (UUID)"
+                hint="Identifier issued by external identity provider."
                 placeholder="00000000-0000-0000-0000-000000000000"
                 variant="outlined"
                 density="compact"
-                hide-details
+                persistent-hint
               />
             </v-col>
             <v-col cols="12" sm="12" md="4" class="d-flex align-end">
@@ -239,8 +238,10 @@ const payload = computed(() => {
       return null
     }
   } else {
-    // For non-custom roles, send the role
-    result.role = form.value.role
+    // For non-custom roles, send the role only if it changed
+    if (form.value.role !== props.user.role) {
+      result.role = form.value.role
+    }
   }
 
   // Only include email if it has changed
