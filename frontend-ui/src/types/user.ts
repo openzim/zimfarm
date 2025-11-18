@@ -51,13 +51,4 @@ export interface KiwixTokenResponse {
   token_type: string
   expires_in: number
   refresh_token: string
-  scope: string
-  id_token?: string
-}
-
-// Extended token type to support both legacy and Kiwix authentication tokens
-export interface ExtendedToken extends Token {
-  token_type?: 'legacy' | 'kiwix'
-  kiwix_sub?: string // Kiwix subject identifier
-  kiwix_refresh_token?: string // Separate Kiwix refresh token
 }

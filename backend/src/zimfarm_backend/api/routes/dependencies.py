@@ -10,9 +10,9 @@ from pydantic import Field
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.constants import JWT_SECRET, KIWIX_AUDIENCE, KIWIX_ISSUER
+from zimfarm_backend.api.constants import JWT_SECRET
 from zimfarm_backend.api.routes.http_errors import UnauthorizedError
-from zimfarm_backend.api.token import jwks_verifier
+from zimfarm_backend.api.token import verify_kiwix_access_token
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
@@ -57,13 +57,10 @@ def get_jwt_claims_or_none(
         pass
 
     try:
-        decoded_token = jwks_verifier.verify_and_decode(
-            token=token,
-            issuer=KIWIX_ISSUER,
-            audience=KIWIX_AUDIENCE if KIWIX_AUDIENCE else None,
-        )
-        return JWTClaims(**decoded_token)
-
+        introspected_token = verify_kiwix_access_token(token)
+        return JWTClaims.model_validate(introspected_token)
+    except ValueError as exc:
+        raise UnauthorizedError("Invalid token") from exc
     except jwt_exceptions.ExpiredSignatureError as exc:
         raise UnauthorizedError("Token has expired.") from exc
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:

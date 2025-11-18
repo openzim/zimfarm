@@ -20,7 +20,7 @@ dependencies = [
     "alembic == 1.15.2",
     "pydantic[email] == 2.11.4",
     "SQLAlchemy == 2.0.41",
-    "PyJWT[crypto] == 2.10.1",
+    "PyJWT == 2.10.1",
     "pymongo == 4.13.0",
     "pytz == 2025.2",
     "requests == 2.32.4",
@@ -38,6 +38,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 api = [
     "fastapi[all] == 0.115.2",
+    "ory-client == 1.22.9",
 ]
 scripts = [
     "invoke == 2.2.0",
