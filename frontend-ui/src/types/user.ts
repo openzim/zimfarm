@@ -16,6 +16,7 @@ export interface JWTPayload {
 
 export interface User extends JWTUser {
   role: string
+  idp_sub?: string
 }
 
 export interface Token {
