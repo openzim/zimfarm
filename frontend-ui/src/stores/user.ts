@@ -121,14 +121,27 @@ export const useUserStore = defineStore('user', () => {
 
   const updateUser = async (
     username: string,
-    payload: { role?: string; email?: string; scope?: Record<string, Record<string, boolean>> },
+    payload: {
+      role?: string
+      email?: string
+      scope?: Record<string, Record<string, boolean>>
+      idp_sub?: string
+    },
   ) => {
     const service = await authStore.getApiService('users')
+    const cleanedPayload = Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== null || value != undefined),
+    )
     try {
       await service.patch<
-        { role?: string; email?: string; scope?: Record<string, Record<string, boolean>> },
+        {
+          role?: string
+          email?: string
+          scope?: Record<string, Record<string, boolean>>
+          idp_sub?: string
+        },
         null
-      >(`/${username}`, payload)
+      >(`/${username}`, cleanedPayload)
       errors.value = []
       return true
     } catch (error) {
