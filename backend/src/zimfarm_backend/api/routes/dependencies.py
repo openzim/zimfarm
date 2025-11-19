@@ -99,11 +99,17 @@ def get_current_user_with_session(
             Depends(get_current_user_or_none_with_session(session_type=session_type)),
         ],
     ) -> User:
+        # If we get here, it means the token was valid but the user being None
+        # means their idp_sub or id doesn't exist on the database or they have been
+        # marked as deleted.
         if user is None:
-            raise UnauthorizedError()
+            raise UnauthorizedError(
+                "This account is not yet authorized on the Zimfarm. "
+                "Please contact Zimfarm admins."
+            )
 
         if user.deleted:
-            raise UnauthorizedError()
+            raise UnauthorizedError("This account does not exist on the Zimfarm.")
 
         return user
 
