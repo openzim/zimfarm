@@ -33,7 +33,7 @@ services:
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "true"
-      # upload logs to receiver but logs, zimcheck results and artificats to s3
+      # upload zims to receiver but logs, zimcheck results and artificats to s3
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
       ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
@@ -143,7 +143,7 @@ services:
       - worker
 
   monitor:
-    image: ghcr.io/netdata/netdata:v2.7.3
+    build: ./netdata
     container_name: zf_monitor
     restart: unless-stopped
     ports:
@@ -183,7 +183,6 @@ services:
     profiles:
       - watcher
 
-  # uncomment this and the task_worker only if you want to run a worker manager
   worker_mgr:
     build:
       context: ../worker
@@ -201,6 +200,7 @@ services:
       - ENVIRONMENT=development
       - POLL_INTERVAL=10
       - MONITORING_DEST=monitor:19999
+      - MONITOR_IMAGE=zf_monitor
       - MONITORING_KEY=7DC0DDB8-8EAA-4391-AF5D-BE017EECF0EE
       - POLL_INTERVAL=10
     volumes:
