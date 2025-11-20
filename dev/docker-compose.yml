@@ -153,6 +153,11 @@ services:
       - SYS_ADMIN
     security_opt:
       - apparmor:unconfined
+    environment:
+      - ZIMFARM_API_URL=http://backend:80/v2
+      - ZIMFARM_USERNAME=admin
+      - ZIMFARM_PASSWORD=admin
+      - NETDATA_HOSTNAME=monitor
     volumes:
       - ./netdataconfig:/etc/netdata
       - ./netdataconfig/cloud.d:/var/lib/netdata/cloud.d
