@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,26 +8,6 @@ from zimfarm_backend.api.token import (
     _introspection_token_cache,  # pyright: ignore[reportPrivateUsage]
     verify_kiwix_access_token,
 )
-from zimfarm_backend.common import getnow
-
-
-@pytest.fixture(autouse=True)
-def clear_cache():
-    """Clear the introspection token cache before and after each test."""
-    _introspection_token_cache.clear()
-    yield
-    _introspection_token_cache.clear()
-
-
-@pytest.fixture
-def valid_introspected_token():
-    """Create a valid introspected token."""
-    token = MagicMock(spec=IntrospectedOAuth2Token)
-    token.active = True
-    token.iss = "https://login.kiwix.org"
-    token.client_id = "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    token.exp = int((getnow() + datetime.timedelta(hours=1)).timestamp())
-    return token
 
 
 def test_verify_kiwix_access_token_success(
