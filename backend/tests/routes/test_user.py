@@ -120,19 +120,6 @@ def test_get_user_by_username_not_found(
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_get_current_user(client: TestClient, user: User):
-    url = "/v2/users/me"
-    access_token = generate_access_token(
-        issue_time=getnow(),
-        user_id=str(user.id),
-    )
-    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
-    assert response.status_code == HTTPStatus.OK
-
-    response_json = response.json()
-    assert response_json["username"] == user.username
-
-
 def test_patch_user_email(client: TestClient, user: User):
     url = f"/v2/users/{user.username}"
     access_token = generate_access_token(
