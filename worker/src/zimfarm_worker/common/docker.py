@@ -389,6 +389,9 @@ def start_monitor(
 ):
     name = get_container_name("monitor", task["id"])
     image = get_or_pull_image(client, MONITOR_IMAGE)
+    scraper_container_name = get_scraper_container_name(
+        offliner=task["config"]["offliner"]["offliner_id"], task_id=task["id"]
+    )
 
     host_mounts = query_host_mounts(client, [DOCKER_SOCKET])
     host_docker_socket = str(host_mounts.get(DOCKER_SOCKET))
@@ -403,11 +406,10 @@ def start_monitor(
     ]
 
     environment = {
-        "SCRAPER_CONTAINER": get_ip_address(
-            client,
-            get_scraper_container_name(
-                offliner=task["config"]["offliner"]["offliner_id"], task_id=task["id"]
-            ),
+        "SCRAPER_CONTAINER": (
+            scraper_container_name
+            if ENVIRONMENT == "development"
+            else get_ip_address(client, scraper_container_name)
         ),
         "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
             task_ident=get_container_name(task["schedule_name"], task["id"]),

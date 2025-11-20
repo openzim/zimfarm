@@ -4,9 +4,11 @@ import json
 import os
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from http import HTTPStatus
 from typing import Any, Tuple, Union
-
-import requests
 
 API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v1")
 TEMPLATE = """[__KEY__]
@@ -25,16 +27,26 @@ TEMPLATE = """[__KEY__]
 
 
 def get_token() -> str:
-    req = requests.post(
-        url=f"{API_URL}/auth/authorize",
-        headers={
-            "username": os.getenv("ZIMFARM_USERNAME", "n/a"),
-            "password": os.getenv("ZIMFARM_PASSWORD", "n/a"),
-            "Content-type": "application/json",
-        },
-    )
-    req.raise_for_status()
-    return req.json().get("access_token")  # , req.json().get("refresh_token")
+    url = f"{API_URL}/auth/authorize"
+    headers = {
+        "Content-type": "application/json",
+    }
+
+    payload = {
+        "username": os.getenv("ZIMFARM_USERNAME", "n/a"),
+        "password": os.getenv("ZIMFARM_PASSWORD", "n/a"),
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            return data.get("access_token")
+    except urllib.error.HTTPError as e:
+        raise IOError(f"HTTP Error {e.code}: {e.reason}")
 
 
 def query_api(
@@ -47,60 +59,87 @@ def query_api(
     attempt: int = 0,
 ) -> Tuple[bool, int, Union[str, dict]]:
     url = f"{API_URL}{path}"
+
+    # Add query parameters to URL if provided
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+
     req_headers = {}
     req_headers.update(headers if headers else {})
+    req_headers.update(
+        {"Authorization": f"Bearer {token}", "Content-type": "application/json"}
+    )
+
+    # Prepare request data
+    data = None
+    if payload:
+        data = json.dumps(payload).encode("utf-8")
+
     try:
-        req_headers.update(
-            {"Authorization": f"Token {token}", "Content-type": "application/json"}
+        req = urllib.request.Request(
+            url, data=data, headers=req_headers, method=method.upper()
         )
-        req_method = getattr(requests, method.lower(), requests.get)
-        req = req_method(url=url, headers=req_headers, json=payload, params=params)
+        with urllib.request.urlopen(req) as response:
+            status_code = response.getcode()
+            response_text = response.read().decode("utf-8")
+
+            if status_code == HTTPStatus.NO_CONTENT:
+                return True, status_code, ""
+
+            try:
+                resp = json.loads(response_text) if response_text else {}
+            except json.JSONDecodeError:
+                return (
+                    False,
+                    status_code,
+                    f"ResponseError (not JSON): -- {response_text}",
+                )
+
+            if status_code in (HTTPStatus.OK, HTTPStatus.CREATED, HTTPStatus.ACCEPTED):
+                return True, status_code, resp
+
+            if "message" in resp:
+                content = resp["message"]
+            else:
+                content = str(resp)
+
+            return (False, status_code, content)
+
+    except urllib.error.HTTPError as e:
+        status_code = e.code
+        try:
+            error_body = e.read().decode("utf-8")
+            try:
+                resp = json.loads(error_body) if error_body else {}
+                if "message" in resp:
+                    content = resp["message"]
+                else:
+                    content = str(resp)
+            except json.JSONDecodeError:
+                content = f"HTTPError: {e.reason} -- {error_body}"
+        except Exception:
+            content = f"HTTPError: {e.reason}"
+
+        return (False, status_code, content)
+
     except Exception as exc:
         attempt += 1
         print(f"ConnectionError (attempt {attempt}) for {method} {url} -- {exc}")
         if attempt <= 3:
             time.sleep(attempt * 60 * 2)
-            return query_api(token, method, url, payload, params, headers, attempt)
+            return query_api(token, method, path, payload, params, headers, attempt)
         return (False, 599, f"ConnectionError -- {exc}")
-
-    if req.status_code == requests.codes.NO_CONTENT:
-        return True, req.status_code, ""
-
-    try:
-        resp = req.json() if req.text else {}
-    except json.JSONDecodeError:
-        return (
-            False,
-            req.status_code,
-            f"ResponseError (not JSON): -- {req.text}",
-        )
-    except Exception as exc:
-        return (
-            False,
-            req.status_code,
-            f"ResponseError -- {exc} -- {req.text}",
-        )
-
-    if req.status_code in (
-        requests.codes.OK,
-        requests.codes.CREATED,
-        requests.codes.ACCEPTED,
-    ):
-        return True, req.status_code, resp
-
-    if "message" in resp:
-        content = resp["message"]
-    else:
-        content = str(resp)
-
-    return (False, req.status_code, content)
 
 
 def main() -> None:
     fingerprints = []
     token = get_token()
 
-    def get_from_api(path: str) -> dict[str, Any]:
+    def get_from_api(
+        path: str,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         nonlocal token
         attempts = 0
         success = False
@@ -108,11 +147,13 @@ def main() -> None:
         response: Union[str, dict] = ""
 
         while attempts <= 1:
-            success, status_code, response = query_api(token, "GET", path)
+            success, status_code, response = query_api(
+                token, "GET", path, params=params, headers=headers
+            )
             attempts += 1
 
             # Unauthorised error: attempt to re-auth as scheduler might have restarted?
-            if status_code == requests.codes.UNAUTHORIZED:
+            if status_code == HTTPStatus.UNAUTHORIZED:
                 token = get_token()
                 continue
             else:
@@ -125,7 +166,7 @@ def main() -> None:
         assert isinstance(response, dict)
         return response
 
-    for user in get_from_api("/users/").get("items", []):
+    for user in get_from_api("/users", params={"limit": 100}).get("items", []):
         if user.get("role") != "worker":
             continue
         for ssh_key in get_from_api(f"/users/{user['username']}").get("ssh_keys", []):

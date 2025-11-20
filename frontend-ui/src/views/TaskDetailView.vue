@@ -657,7 +657,9 @@ const monitoringUrl = computed(() => {
   }#after=${new Date(
     getTimestampStringForStatus(task.value?.timestamp, 'scraper_started', '') || 0,
   ).getTime()};before=${new Date(
-    getTimestampStringForStatus(task.value?.timestamp, 'scraper_completed', '') || 0,
+    getTimestampStringForStatus(task.value?.timestamp, 'scraper_completed', '') ||
+      task.value?.updated_at ||
+      0,
   ).getTime()};theme=slate;utc=Africa/Bamako`
 })
 const webApiUrl = computed(() => config.ZIMFARM_WEBAPI)

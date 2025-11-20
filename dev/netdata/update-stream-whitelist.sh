@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 STREAMCONFPATH=/etc/netdata/stream.conf
 

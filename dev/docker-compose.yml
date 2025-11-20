@@ -155,6 +155,7 @@ services:
       - apparmor:unconfined
     volumes:
       - ./netdataconfig:/etc/netdata
+      - ./netdataconfig/cloud.d:/var/lib/netdata/cloud.d
       - netdatalib:/var/lib/netdata
       - netdatacache:/var/cache/netdata
       - ./netdata:/host/root:ro,rslave
@@ -202,7 +203,6 @@ services:
       - MONITORING_DEST=monitor:19999
       - MONITOR_IMAGE=zf_monitor
       - MONITORING_KEY=7DC0DDB8-8EAA-4391-AF5D-BE017EECF0EE
-      - POLL_INTERVAL=10
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
