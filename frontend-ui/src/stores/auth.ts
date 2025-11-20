@@ -1,6 +1,6 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
-import type { ErrorResponse } from '@/types/errors'
+import type { ErrorResponse, OAuth2ErrorResponse } from '@/types/errors'
 import type { JWTUser } from '@/types/user'
 import { translateErrors } from '@/utils/errors'
 import {
@@ -25,6 +25,10 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<StoredToken | null>(null)
   const user = ref<JWTUser | null>(null)
   const errors = ref<string[]>([])
+
+  // Track refresh state to prevent duplicate requests
+  const isRefreshFailed = ref(false)
+  const refreshPromise = ref<Promise<StoredToken | null> | null>(null)
 
   const $cookies = inject<VueCookies>('$cookies')
   if (!$cookies) {
@@ -71,6 +75,31 @@ export const useAuthStore = defineStore('auth', () => {
     return new Date() >= tokenExpiryDate.value
   })
 
+  /**
+   * Check if an error is a permanent refresh token failure
+   */
+  const isPermanentRefreshFailure = (error: unknown): boolean => {
+    // Check if it's an OAuth2 error response
+    const oauth2Error = error as OAuth2ErrorResponse
+    if (oauth2Error?.error === 'invalid_grant') {
+      return true
+    }
+
+    // Check if it's a backend API error response
+    const apiError = error as ErrorResponse
+    if (apiError?.message) {
+      const message = apiError.message.toLowerCase()
+      if (
+        message.includes('invalid authentication credentials') ||
+        message.includes('refresh token expired')
+      ) {
+        return true
+      }
+    }
+
+    return false
+  }
+
   const fetchUserInfo = async (accessToken: string) => {
     try {
       const apiService = httpRequest({
@@ -110,9 +139,20 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchUserInfo(newToken.access_token)
       errors.value = []
       saveTokenToCookie(newToken)
+
+      // Reset failure flag on success
+      isRefreshFailed.value = false
+
       return newToken
     } catch (error) {
       console.error('Token refresh failed:', error)
+
+      // Check if this is a permanent failure
+      if (isPermanentRefreshFailure(error)) {
+        isRefreshFailed.value = true
+        console.log('Refresh token permanently failed, will not retry')
+      }
+
       token.value = null
       user.value = null
       errors.value = translateErrors(error as ErrorResponse)
@@ -139,9 +179,20 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchUserInfo(newToken.access_token)
       errors.value = []
       saveTokenToCookie(newToken)
+
+      // Reset failure flag on success
+      isRefreshFailed.value = false
+
       return newToken
     } catch (error) {
       console.error('Kiwix token refresh failed:', error)
+
+      // Check if this is a permanent failure
+      if (isPermanentRefreshFailure(error)) {
+        isRefreshFailed.value = true
+        console.log('Kiwix refresh token permanently failed, will not retry')
+      }
+
       token.value = null
       user.value = null
       errors.value = translateErrors(error as ErrorResponse)
@@ -150,6 +201,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const renewToken = async (storedToken: StoredToken): Promise<string | null> => {
+    // If refresh has already failed permanently, don't retry
+    if (isRefreshFailed.value) {
+      console.log('Skipping refresh attempt - refresh token previously failed')
+      $cookies.remove(constants.TOKEN_COOKIE_NAME)
+      return null
+    }
+
+    // If a refresh is already in progress, wait for it
+    if (refreshPromise.value) {
+      console.log('Refresh already in progress, waiting for existing request...')
+      const result = await refreshPromise.value
+      return result?.access_token || null
+    }
+
     if (!storedToken.refresh_token) {
       console.error('No refresh token available')
       return null
@@ -157,16 +222,23 @@ export const useAuthStore = defineStore('auth', () => {
 
     const tokenType = storedToken.token_type
 
+    // Create and store the refresh promise to prevent duplicate requests
     if (tokenType === 'api') {
-      const newToken = await renewTokenFromApi(storedToken.refresh_token)
-      return newToken?.access_token || null
+      refreshPromise.value = renewTokenFromApi(storedToken.refresh_token)
     } else if (tokenType === 'kiwix') {
-      const newToken = await renewTokenFromKiwixOAuth(storedToken.refresh_token)
-      return newToken?.access_token || null
+      refreshPromise.value = renewTokenFromKiwixOAuth(storedToken.refresh_token)
+    } else {
+      console.error('Unknown token type:', tokenType)
+      return null
     }
 
-    console.error('Unknown token type:', tokenType)
-    return null
+    try {
+      const newToken = await refreshPromise.value
+      return newToken?.access_token || null
+    } finally {
+      // Clear the promise once done
+      refreshPromise.value = null
+    }
   }
 
   const loadTokenFromCookie = async (): Promise<string | null> => {
@@ -199,7 +271,13 @@ export const useAuthStore = defineStore('auth', () => {
     const now = new Date()
 
     if (now > expiry) {
-      // Token expired, try to refresh
+      // Token expired, check if refresh is already in progress
+      if (refreshPromise.value) {
+        console.log('Token refresh already in progress, waiting for existing request...')
+        const result = await refreshPromise.value
+        return result?.access_token || null
+      }
+      // Try to refresh
       return await renewToken(storedToken)
     }
 
@@ -209,8 +287,13 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchUserInfo(storedToken.access_token)
       return storedToken.access_token
     } catch (error) {
-      // If fetching user info fails, try to refresh the token
+      // If fetching user info fails, check if refresh is already in progress
       console.error('Failed to fetch user info, attempting token refresh', error)
+      if (refreshPromise.value) {
+        console.log('Token refresh already in progress, waiting for existing request...')
+        const result = await refreshPromise.value
+        return result?.access_token || null
+      }
       return await renewToken(storedToken)
     }
   }
@@ -242,6 +325,10 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     $cookies.remove(constants.TOKEN_COOKIE_NAME)
+
+    // Reset refresh failure state on logout
+    isRefreshFailed.value = false
+    refreshPromise.value = null
   }
 
   const hasPermission = (resource: string, action: string) => {
@@ -273,6 +360,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       errors.value = []
       saveTokenToCookie(newToken)
+
+      // Reset refresh failure state on successful login
+      isRefreshFailed.value = false
+
       return true
     } catch (err: unknown) {
       token.value = null
@@ -309,6 +400,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       errors.value = []
       saveTokenToCookie(newToken)
+
+      // Reset refresh failure state on successful login
+      isRefreshFailed.value = false
+
       return true
     } catch (err: unknown) {
       token.value = null
@@ -338,6 +433,8 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     user,
     errors,
+    isRefreshFailed,
+    refreshPromise,
 
     // Computed
     isLoggedIn,

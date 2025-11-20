@@ -90,18 +90,12 @@ export async function exchangeCodeForToken(
     code_verifier: codeVerifier,
   })
 
-  try {
-    const response = await service.post<URLSearchParams, KiwixTokenResponse>('', params, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    })
-    return response
-  } catch (error) {
-    console.error('Token exchange failed:', error)
-    const errorData = error as { error?: string; error_description?: string }
-    throw new Error(errorData.error_description || errorData.error || 'Token exchange failed')
-  }
+  const response = await service.post<URLSearchParams, KiwixTokenResponse>('', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  })
+  return response
 }
 
 /**
@@ -121,18 +115,12 @@ export async function refreshKiwixToken(
     refresh_token: refreshToken,
   })
 
-  try {
-    const response = await service.post<URLSearchParams, KiwixTokenResponse>('', params, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    })
-    return response
-  } catch (error) {
-    console.error('Token refresh failed:', error)
-    const errorData = error as { error?: string; error_description?: string }
-    throw new Error(errorData.error_description || errorData.error || 'Token refresh failed')
-  }
+  const response = await service.post<URLSearchParams, KiwixTokenResponse>('', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  })
+  return response
 }
 
 /**
