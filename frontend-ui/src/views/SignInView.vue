@@ -146,7 +146,7 @@ const username = ref('')
 const password = ref('')
 const remember = ref(true)
 const working = ref(false)
-const errors = computed(() => authStore.errors)
+const errors = ref<string[]>([])
 
 // Computed properties
 const contactEmail = computed(() => {
@@ -161,10 +161,10 @@ const rules = {
     value.length >= minLength || `This field must be at least ${minLength} characters long`,
 }
 
-// Watch for input changes to clear error
+// Watch for input changes to clear errors
 watch([username, password], () => {
-  if (authStore.errors.length > 0) {
-    authStore.errors = []
+  if (errors.value.length > 0) {
+    errors.value = []
   }
 })
 
@@ -174,11 +174,23 @@ const authenticate = async () => {
   if (!valid) return
 
   working.value = true
+  errors.value = []
 
-  await authStore.authenticate(username.value, password.value)
-  working.value = false
-  if (authStore.isLoggedIn) {
-    router.back()
+  try {
+    const success = await authStore.authenticate(username.value, password.value)
+
+    if (success && authStore.isLoggedIn) {
+      router.back()
+    } else {
+      // Copy errors from auth store to component errors
+      errors.value = [...authStore.errors]
+    }
+  } catch (err) {
+    console.error('Authentication error:', err)
+    errors.value =
+      authStore.errors.length > 0 ? [...authStore.errors] : ['An unexpected error occurred']
+  } finally {
+    working.value = false
   }
 }
 
