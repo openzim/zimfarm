@@ -122,9 +122,7 @@ def save_event(
 ):
     """save event and its accompanying data to database"""
 
-    task = session.scalars(
-        select(Task).options(so.selectinload(Task.files)).where(Task.id == task_id)
-    ).one_or_none()
+    task = session.scalars(select(Task).where(Task.id == task_id)).one_or_none()
     if task is None:
         raise RecordDoesNotExistError(f"Task {task_id} does not exist")
     schedule = task.schedule

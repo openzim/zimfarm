@@ -367,7 +367,7 @@ def get_task_file(session: OrmSession, task_id: UUID, filename: str) -> TaskFile
 def create_or_update_task_file(
     session: OrmSession,
     request: FileCreateUpdateSchema,
-) -> TaskFileSchema:
+):
     """Create or update a task file using insert with on conflict update."""
     values = request.model_dump(exclude_unset=True)
     stmt = insert(File).values(**values)
@@ -376,4 +376,3 @@ def create_or_update_task_file(
         set_={**request.model_dump(exclude_unset=True, exclude={"task_id", "name"})},
     )
     session.execute(stmt)
-    return get_task_file(session, request.task_id, request.name)
