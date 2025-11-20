@@ -176,6 +176,14 @@ services:
     profiles:
       - worker
 
+  task_monitor:
+    build:
+      context: ../monitor
+    image: zf_monitor
+    container_name: zf_task_monitor
+    entrypoint: ["/bin/sh", "-c"]
+    command: "exit"
+
   watcher:
     build: ../watcher
     container_name: zf_watcher
