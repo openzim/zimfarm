@@ -4,6 +4,7 @@ import datetime
 from collections.abc import Callable, Generator
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, cast
+from uuid import UUID
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -685,13 +686,16 @@ def create_user(
     rsa_public_key_data: bytes,
     data_gen: Faker,
 ) -> Callable[..., User]:
-    def _create_user(*, permission: RoleEnum = RoleEnum.ADMIN):
+    def _create_user(
+        *, permission: RoleEnum = RoleEnum.ADMIN, idp_sub: UUID | None = None
+    ):
         user = User(
             username=data_gen.first_name(),
             password_hash=generate_password_hash("testpassword"),
             email=data_gen.safe_email(),
             scope=None,
             role=permission,
+            idp_sub=idp_sub,
         )
         dbsession.add(user)
 
