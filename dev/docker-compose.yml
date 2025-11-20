@@ -159,10 +159,8 @@ services:
       - ZIMFARM_PASSWORD=admin
       - NETDATA_HOSTNAME=monitor
     volumes:
-      - ./netdataconfig:/etc/netdata
       - ./netdataconfig/cloud.d:/var/lib/netdata/cloud.d
       - netdatalib:/var/lib/netdata
-      - netdatacache:/var/cache/netdata
       - ./netdata:/host/root:ro,rslave
       - /etc/passwd:/host/etc/passwd:ro
       - /etc/group:/host/etc/group:ro
@@ -272,4 +270,3 @@ volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
   netdatalib:
-  netdatacache:
