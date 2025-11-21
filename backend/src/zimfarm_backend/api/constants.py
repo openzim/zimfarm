@@ -8,3 +8,10 @@ JWT_SECRET = getenv("JWT_SECRET", mandatory=True)
 JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
     getenv("JWT_TOKEN_EXPIRY_DURATION", default="1d")
 )
+
+# Kiwix OAuth/OIDC configuration
+KIWIX_ISSUER = getenv("KIWIX_ISSUER", default="https://login.kiwix.org")
+KIWIX_CLIENT_ID = getenv(
+    "KIWIX_CLIENT_ID", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
+)
+ORY_ACCESS_TOKEN = getenv("ORY_ACCESS_TOKEN", mandatory=True)
