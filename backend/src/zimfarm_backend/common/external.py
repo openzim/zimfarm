@@ -218,7 +218,7 @@ def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: 
             )
 
     # record request result
-    task.files[file_name] = create_or_update_task_file(
+    create_or_update_task_file(
         session,
         FileCreateUpdateSchema(
             task_id=task.id,
