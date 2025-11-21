@@ -34,7 +34,7 @@ jobs:
       healthcheck: ${{ steps.filter.outputs.healthcheck }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: dorny/paths-filter@v3
         id: filter
@@ -68,7 +68,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.dnscache == 'true' || inputs.force || contains(inputs.force_components, 'dnscache') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -89,7 +89,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.uploader == 'true' || inputs.force || contains(inputs.force_components, 'uploader') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -110,7 +110,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force || contains(inputs.force_components, 'backend') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -145,7 +145,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force || contains(inputs.force_components, 'backend') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -180,7 +180,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.frontend_ui == 'true' || inputs.force || contains(inputs.force_components, 'frontend_ui') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -214,7 +214,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.receiver == 'true' || inputs.force || contains(inputs.force_components, 'receiver') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -241,7 +241,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.task_worker == 'true' || inputs.force || contains(inputs.force_components, 'task_worker') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -262,7 +262,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.worker_manager == 'true' || inputs.force || contains(inputs.force_components, 'worker_manager') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -283,7 +283,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force || contains(inputs.force_components, 'monitor') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -303,7 +303,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.watcher == 'true' || inputs.force || contains(inputs.force_components, 'watcher') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -330,7 +330,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.healthcheck == 'true' || inputs.force || contains(inputs.force_components, 'healthcheck') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
