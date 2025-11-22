@@ -538,7 +538,7 @@ const offsetString = computed(() => {
 })
 
 const shortId = computed(() => {
-  return props.id.substring(0, 8)
+  return props.id.substring(0, 5)
 })
 
 const isRunning = computed(() => {
@@ -652,17 +652,16 @@ const hasStats = computed(() => {
 })
 
 const monitoringUrl = computed(() => {
-  return `http://monitoring.openzim.org/host/${scheduleName.value}_${shortId.value}.${
+  return `${config.MONITORING_URL}/host/${scheduleName.value}_${shortId.value}.${
     task.value?.worker_name
-  }/#menu_cgroup_zimscraper_${task.value?.original_schedule_name}_${
-    shortId.value
-  }_submenu_cpu;after=${new Date(
+  }#after=${new Date(
     getTimestampStringForStatus(task.value?.timestamp, 'scraper_started', '') || 0,
   ).getTime()};before=${new Date(
-    getTimestampStringForStatus(task.value?.timestamp, 'scraper_completed', '') || 0,
+    getTimestampStringForStatus(task.value?.timestamp, 'scraper_completed', '') ||
+      task.value?.updated_at ||
+      0,
   ).getTime()};theme=slate;utc=Africa/Bamako`
 })
-
 const webApiUrl = computed(() => config.ZIMFARM_WEBAPI)
 const kiwixDownloadUrl = computed(() => config.ZIMFARM_ZIM_DOWNLOAD_URL)
 const zimfarmLogsUrl = computed(() => (task.value ? logsUrl(task.value) : ''))

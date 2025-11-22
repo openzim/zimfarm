@@ -107,7 +107,7 @@ CONTAINER_SCRAPER_IDENT = "zimscraper"
 
 # monitoring-related
 MONITORING_DEST = getenv("MONITORING_DEST", default=None)  # {ip}:{port}
-MONITORING_KEY = getenv("MONITORING_DEST", default=None)  # {uuid}
+MONITORING_KEY = getenv("MONITORING_KEY", default=None)  # {uuid}
 
 # dispatcher-related
 DEFAULT_WEB_API_URLS = getenv(

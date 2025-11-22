@@ -33,7 +33,7 @@ services:
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "true"
-      # upload logs to receiver but logs, zimcheck results and artificats to s3
+      # upload zims to receiver but logs, zimcheck results and artificats to s3
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
       ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
@@ -142,6 +142,48 @@ services:
     profiles:
       - worker
 
+  monitor:
+    build: ./netdata
+    container_name: zf_monitor
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:8004:19999
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      - ZIMFARM_API_URL=http://backend:80/v2
+      - ZIMFARM_USERNAME=admin
+      - ZIMFARM_PASSWORD=admin
+      - NETDATA_HOSTNAME=monitor
+    volumes:
+      - ./netdataconfig/cloud.d:/var/lib/netdata/cloud.d
+      - netdatalib:/var/lib/netdata
+      - ./netdata:/host/root:ro,rslave
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /var/log:/host/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles:
+      - worker
+
+  task_monitor:
+    build:
+      context: ../monitor
+    image: zf_monitor
+    container_name: zf_task_monitor
+    entrypoint: ["/bin/sh", "-c"]
+    command: "exit"
+
   watcher:
     build: ../watcher
     container_name: zf_watcher
@@ -172,6 +214,8 @@ services:
       - TASK_WORKER_IMAGE=zf_task_worker
       - ENVIRONMENT=development
       - POLL_INTERVAL=10
+      - MONITORING_DEST=monitor:19999
+      - MONITOR_IMAGE=zf_monitor
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
@@ -233,3 +277,4 @@ services:
 volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
+  netdatalib:
