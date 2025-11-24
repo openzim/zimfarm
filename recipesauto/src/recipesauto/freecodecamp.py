@@ -272,6 +272,62 @@ static_data = {
         "long_description": "Queste sfide possono rivelarsi difficili, ma spingeranno "
         "la logica del tuo algoritmo a nuovi livelli.",
     },
+    "freecodecamp_zh-hans_all": {
+        "title": "FreeCodeCamp",
+        "description": "所有 FreeCodeCamp 课程",
+        "long_description": "通过所有 FreeCodeCamp 课程进行训练和学习。",
+    },
+    "freecodecamp_zh-hant_all": {
+        "title": "FreeCodeCamp",
+        "description": "所有 FreeCodeCamp 課程",
+        "long_description": "透過所有 FreeCodeCamp 課程進行訓練與學習。",
+    },
+    "freecodecamp_zh-hans_javascript-algorithms-and-data-structures": {
+        "title": "FreeCodeCamp JavaScript",
+        "description": "JavaScript 课程",
+        "long_description": "在 JavaScript 算法与数据结构认证课程中，您将学习 "  # noqa: RUF001
+        "JavaScript 的基础知识，包括变量、数组、对象、循环和函数。",  # noqa: RUF001
+    },
+    "freecodecamp_zh-hant_javascript-algorithms-and-data-structures": {
+        "title": "FreeCodeCamp JavaScript",
+        "description": "JavaScript 課程",
+        "long_description": "在 JavaScript 演算法與資料結構認證課程中，您將學習 "  # noqa: RUF001
+        "JavaScript 的基礎知識，包括變數、陣列、物件、迴圈與函式。",  # noqa: RUF001
+    },
+    "freecodecamp_zh-hans_coding-interview-prep": {
+        "title": "FreeCodeCamp 面试准备",
+        "description": "编码练习",
+        "long_description": "数十个测试您算法、数据结构和数学知识的编码挑战。"
+        "还包含多个可用于强化技能或加入作品集的项目。",
+    },
+    "freecodecamp_zh-hant_coding-interview-prep": {
+        "title": "FreeCodeCamp 面試準備",
+        "description": "程式編寫練習",
+        "long_description": "數十個測試您對演算法、資料結構及數學知識的挑戰。"
+        "並包含多個可用於強化技能或加入作品集的專案。",
+    },
+    "freecodecamp_zh-hans_project-euler": {
+        "title": "Project Euler",
+        "description": "编程挑战",
+        "long_description": "这些问题将强化您对算法和数学的理解。难度不一，"  # noqa: RUF001
+        "许多题目通过链式学习让您在解决一个问题后接触到新的概念，进而挑战更高级的问题。",  # noqa: RUF001
+    },
+    "freecodecamp_zh-hant_project-euler": {
+        "title": "Project Euler",
+        "description": "程式設計挑戰",
+        "long_description": "這些問題將強化您對演算法和數學的理解。難度各異，"  # noqa: RUF001
+        "許多題目透過連鎖式學習讓您在解決一個問題後接觸新的概念，進而挑戰更高難度的題目。",  # noqa: RUF001
+    },
+    "freecodecamp_zh-hans_rosetta-code": {
+        "title": "Rosetta Code",
+        "description": "提升你的創造性問題解决能力",
+        "long_description": "这些挑战可能会比较困难，但能将您的算法逻辑推向新的高度。",  # noqa: RUF001
+    },
+    "freecodecamp_zh-hant_rosetta-code": {
+        "title": "Rosetta Code",
+        "description": "提升你的創造性問題解決能力",
+        "long_description": "這些挑戰可能相當困難，但會將您的演算法邏輯推向新的高度。",  # noqa: RUF001
+    },
 }
 
 
@@ -300,7 +356,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         for member in zip_ref.namelist():
             if not member.endswith("/") and (
-                member.startswith("freeCodeCamp-main/curriculum/challenges/_meta")
+                member.startswith("freeCodeCamp-main/curriculum/structure/superblocks")
                 or member == "freeCodeCamp-main/shared/config/curriculum.ts"
             ):
                 target_path = extract_folder / member[len("freeCodeCamp-main/") :]
@@ -308,21 +364,22 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 target_path.write_bytes(zip_ref.read(member))
 
     curriculums: dict[str, Curriculum] = {}
-    for meta_file in extract_folder.rglob("**/meta.json"):
+    for meta_file in extract_folder.rglob("**/superblocks/*.json"):
         meta_content = json.loads(meta_file.read_bytes())
-        curriculum_name = meta_content["superBlock"]
+        curriculum_name = meta_file.stem
         if curriculum_name not in curriculums:
             curriculums[curriculum_name] = Curriculum(
                 dashed_name=curriculum_name, courses=[]
             )
         curriculum = curriculums[curriculum_name]
 
-        curriculum.courses.append(
+        curriculum.courses = [
             Course(
-                dashed_name=meta_content["dashedName"],
-                order=meta_content.get("order", 0),
+                dashed_name=course,
+                order=0,
             )
-        )
+            for course in meta_content.get("blocks", [])
+        ]
 
     curriculum_ts = next(iter(extract_folder.rglob("**/curriculum.ts")))
 
@@ -407,7 +464,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "description": _get_description(
                         curriculum=curriculum, language=language
                     ),
-                    "language": _get_zim_language_metadata(language),
+                    "language": _get_language_setting(language),
                     "long-description": _get_long_description(
                         curriculum=curriculum, language=language
                     ),
@@ -421,7 +478,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/freecodecamp",
-                    "tag": "2.0.0",
+                    "tag": _get_image_version(language),
                 },
                 "monitor": False,
                 "platform": None,
@@ -430,7 +487,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 536870912,
                     "memory": 2147483648,
                 },
-                "warehouse_path": "/freecodecamp",
+                "warehouse_path": _get_warehouse_path(language),
             },
             "enabled": True,
             "language": _get_zf_language(language=language),
@@ -439,6 +496,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "freecodecamp",
             ],
+            "version": _get_image_version(language),
+            "archived": False,
+            "context": "",
+            "offliner": "freecodecamp",
         }
         for curriculum in curriculums.values()
         for language in SpokenLanguage
@@ -463,7 +524,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     ),
                     "debug": True,
                     "description": _get_all_description(language=language),
-                    "language": _get_zim_language_metadata(language),
+                    "language": _get_language_setting(language),
                     "long-description": _get_all_long_description(language=language),
                     "name": check_zim_name(_get_all_name(language=language)),
                     "output": "/output",
@@ -473,7 +534,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/freecodecamp",
-                    "tag": "2.0.0",
+                    "tag": _get_image_version(language),
                 },
                 "monitor": False,
                 "platform": None,
@@ -482,7 +543,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 536870912,
                     "memory": 2147483648,
                 },
-                "warehouse_path": "/freecodecamp",
+                "warehouse_path": _get_warehouse_path(language),
             },
             "enabled": True,
             "language": _get_zf_language(language=language),
@@ -491,6 +552,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "freecodecamp",
             ],
+            "version": _get_image_version(language),
+            "archived": False,
+            "context": "",
+            "offliner": "freecodecamp",
         }
         for language in SpokenLanguage
         if _is_lang_needed(language=language)
@@ -503,9 +568,9 @@ class UndefinedMetadataError(Exception):
 
 def _get_zf_language(language: SpokenLanguage) -> str:
     if language == SpokenLanguage.CHINESE:
-        raise NotImplementedError()
+        return "zho"
     elif language == SpokenLanguage.CHINESE_TRADITIONAL:
-        raise NotImplementedError()
+        return "zho"
     elif language == SpokenLanguage.ENGLISH:
         return "eng"
     elif language == SpokenLanguage.ESPANOL:
@@ -595,38 +660,54 @@ def _get_all_long_description(language: SpokenLanguage) -> str:
     return long_description
 
 
+def _get_image_version(language: SpokenLanguage) -> str:
+    return (
+        "2.0.2"
+        if language not in [SpokenLanguage.CHINESE, SpokenLanguage.CHINESE_TRADITIONAL]
+        else "dev"
+    )
+
+
+def _get_warehouse_path(language: SpokenLanguage) -> str:
+    return (
+        "/freecodecamp"
+        if language not in [SpokenLanguage.CHINESE, SpokenLanguage.CHINESE_TRADITIONAL]
+        else "/.hidden/dev"
+    )
+
+
 def _get_zim_name_lang(language: SpokenLanguage) -> str:
     if language == SpokenLanguage.CHINESE:
-        raise UndefinedMetadataError
+        return "zh-hans"
     elif language == SpokenLanguage.CHINESE_TRADITIONAL:
-        raise UndefinedMetadataError
+        return "zh-hant"
     elif language == SpokenLanguage.ENGLISH:
-        return "eng"
+        return "en"
     elif language == SpokenLanguage.ESPANOL:
-        return "spa"
+        return "es"
     elif language == SpokenLanguage.GERMAN:
-        return "deu"
+        return "de"
     elif language == SpokenLanguage.ITALIAN:
-        return "ita"
+        return "it"
     elif language == SpokenLanguage.JAPANESE:
-        return "jpn"
+        return "ja"
     elif language == SpokenLanguage.KOREAN:
-        return "kor"
+        return "ko"
     elif language == SpokenLanguage.PORTUGUESE:
-        return "por"
+        return "pt"
     elif language == SpokenLanguage.SWAHILI:
-        return "swa"
+        return "sw"
     elif language == SpokenLanguage.UKRANIAN:
-        return "ukr"
+        return "ua"
     else:
         raise UndefinedMetadataError
 
 
-def _get_zim_language_metadata(language: SpokenLanguage) -> str:
+def _get_language_setting(language: SpokenLanguage) -> str:
     if language == SpokenLanguage.CHINESE:
-        raise UndefinedMetadataError
+        return "zh-hans"
     elif language == SpokenLanguage.CHINESE_TRADITIONAL:
-        raise UndefinedMetadataError
+        return "zh-hant"
     elif language == SpokenLanguage.ENGLISH:
         return "eng"
     elif language == SpokenLanguage.ESPANOL:
@@ -656,15 +737,11 @@ def _is_needed(curriculum: Curriculum, language: SpokenLanguage) -> bool:
         "rosetta-code",
         "coding-interview-prep",
     ] and language not in [
-        SpokenLanguage.CHINESE,  # not yet defined which code to use
-        SpokenLanguage.CHINESE_TRADITIONAL,  # not yet defined which code to use
         SpokenLanguage.KOREAN,  # not yet officialy supported on website
     ]
 
 
 def _is_lang_needed(language: SpokenLanguage) -> bool:
     return language not in [
-        SpokenLanguage.CHINESE,  # not yet defined which code to use
-        SpokenLanguage.CHINESE_TRADITIONAL,  # not yet defined which code to use
         SpokenLanguage.KOREAN,  # not yet officialy supported on website
     ]
