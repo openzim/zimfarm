@@ -661,19 +661,11 @@ def _get_all_long_description(language: SpokenLanguage) -> str:
 
 
 def _get_image_version(language: SpokenLanguage) -> str:
-    return (
-        "2.0.2"
-        if language not in [SpokenLanguage.CHINESE, SpokenLanguage.CHINESE_TRADITIONAL]
-        else "dev"
-    )
+    return "2.0.3"
 
 
 def _get_warehouse_path(language: SpokenLanguage) -> str:
-    return (
-        "/freecodecamp"
-        if language not in [SpokenLanguage.CHINESE, SpokenLanguage.CHINESE_TRADITIONAL]
-        else "/.hidden/dev"
-    )
+    return "/freecodecamp"
 
 
 def _get_zim_name_lang(language: SpokenLanguage) -> str:
