@@ -399,6 +399,7 @@ def create_schedule(
         tags=schedule.tags,
         periodicity=schedule.periodicity,
         context=schedule.context,
+        offliner_definition_version=offliner_definition.version,
     )
     schedule.history_entries.append(history_entry)
 
@@ -531,6 +532,7 @@ def toggle_archive_status(
         periodicity=schedule.periodicity,
         context=schedule.context,
         archived=schedule.archived,
+        offliner_definition_version=schedule.offliner_definition.version,
     )
     schedule.history_entries.append(history_entry)
     session.add(schedule)
@@ -599,6 +601,7 @@ def update_schedule(
         periodicity=schedule.periodicity,
         context=schedule.context,
         archived=schedule.archived,
+        offliner_definition_version=offliner_definition.version,
     )
     schedule.history_entries.append(history_entry)
 
@@ -642,6 +645,7 @@ def create_schedule_history_schema(
         context=history_entry.context,
         config=history_entry.config,
         archived=history_entry.archived,
+        offliner_definition_version=history_entry.offliner_definition_version,
     )
 
 

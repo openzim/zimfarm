@@ -310,6 +310,7 @@ class ScheduleHistory(Base):
     language_code: Mapped[str]
     tags: Mapped[list[str]]
     periodicity: Mapped[str]
+    offliner_definition_version: Mapped[str | None]
     context: Mapped[str] = mapped_column(default="", server_default="")
     archived: Mapped[bool] = mapped_column(default=False, server_default=false())
 
