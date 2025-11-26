@@ -3,7 +3,7 @@
 STREAMCONFPATH=/etc/netdata/stream.conf
 
 function md5of {
-    md5sum $1 | cut -d " " -f 1
+    md5sum "$1" | cut -d " " -f 1
 }
 
 echo "Updating stream configuration"

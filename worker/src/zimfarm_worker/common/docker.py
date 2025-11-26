@@ -435,7 +435,7 @@ def start_monitor(
             "schedule_name": task["schedule_name"],
         },
         environment=environment,
-        cap_add=["SYS_PTRACE", "SYS_ADMIN"],
+        cap_add=["SYS_PTRACE"],
         security_opt=["apparmor=unconfined"],
         sysctls=get_sysctl(),
         network_mode=(

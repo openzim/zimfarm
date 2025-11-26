@@ -10,7 +10,7 @@ import urllib.request
 from http import HTTPStatus
 from typing import Any, Tuple, Union
 
-API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v1")
+API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v2")
 TEMPLATE = """[__KEY__]
  enabled = yes
  default history = 2592000
