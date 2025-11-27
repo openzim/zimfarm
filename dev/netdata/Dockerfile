@@ -1,4 +1,4 @@
-FROM ghcr.io/netdata/netdata:v2.7.3
+FROM ghcr.io/netdata/netdata:v2.8.0
 LABEL org.opencontainers.image.source=https://github.com/kiwix/container-images
 
 RUN apt-get update && apt-get install -y wget cron procps psmisc && rm -rf /var/lib/apt/lists/*

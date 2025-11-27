@@ -1,4 +1,4 @@
-FROM ghcr.io/netdata/netdata:v2.7.3
+FROM ghcr.io/netdata/netdata:v2.8.0
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source=https://github.com/openzim/zimfarm
 
