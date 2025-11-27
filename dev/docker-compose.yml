@@ -150,7 +150,6 @@ services:
       - 127.0.0.1:8004:19999
     cap_add:
       - SYS_PTRACE
-      - SYS_ADMIN
     security_opt:
       - apparmor:unconfined
     environment:
@@ -161,6 +160,7 @@ services:
     volumes:
       - ./netdataconfig/cloud.d:/var/lib/netdata/cloud.d
       - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
       - ./netdata:/host/root:ro,rslave
       - /etc/passwd:/host/etc/passwd:ro
       - /etc/group:/host/etc/group:ro
@@ -179,7 +179,7 @@ services:
   task_monitor:
     build:
       context: ../monitor
-    image: zf_monitor
+    image: zf_task_monitor
     container_name: zf_task_monitor
     entrypoint: ["/bin/sh", "-c"]
     command: "exit"
@@ -208,6 +208,7 @@ services:
         condition: service_healthy
       task_worker:
         condition: service_started
+
     command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
     environment:
       - DEBUG=true
@@ -215,7 +216,7 @@ services:
       - ENVIRONMENT=development
       - POLL_INTERVAL=10
       - MONITORING_DEST=monitor:19999
-      - MONITOR_IMAGE=zf_monitor
+      - MONITOR_IMAGE=zf_task_monitor
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
@@ -278,3 +279,4 @@ volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
   netdatalib:
+  netdatacache:

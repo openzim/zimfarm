@@ -7,6 +7,7 @@ read -d '' STREAM_CONF << EOF
  enabled = yes
  destination = ${MONITORING_DEST}
  api key = ${MONITORING_KEY}
+ send charts matching = cgroup_zimscraper* cgroup_zimtask*
 EOF
 echo "${STREAM_CONF}" > /etc/netdata/stream.conf
 
