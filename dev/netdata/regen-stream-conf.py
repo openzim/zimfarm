@@ -2,6 +2,7 @@
 
 import json
 import os
+import uuid
 import sys
 import time
 import urllib.error
@@ -13,17 +14,22 @@ from typing import Any, Tuple, Union
 API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v2")
 TEMPLATE = """[__KEY__]
  enabled = yes
- default history = 2592000
- default memory = dbengine
- health enabled by default = auto
+ retention = 30d
+ db = dbengine
+ health enabled = auto
  timeout seconds = 60
- buffer size bytes = 1048576
- reconnect delay seconds = 5
+ buffer size = 1048576
+ reconnect delay = 5
  initial clock resync iterations = 60
  multiple connections = allow
  allow from = *
 
 """
+
+
+def format_key(fingerprint: str) -> str:
+    """UUID-hex looking from fingerprint"""
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, fingerprint)).upper()
 
 
 def get_token() -> str:
@@ -174,10 +180,7 @@ def main() -> None:
 
     content = ""
     for fingerprint in fingerprints:
-        key = (
-            f"{fingerprint[0:8]}-{fingerprint[8:12]}-{fingerprint[12:16]}"
-            f"-{fingerprint[16:20]}-{fingerprint[20:]}"
-        ).upper()
+        key = format_key(fingerprint)
         content += TEMPLATE.replace("__KEY__", key)
     print(content)
 
