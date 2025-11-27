@@ -33,6 +33,7 @@ export interface BaseScheduleHistorySchema {
   periodicity: string
   context: string
   archived: boolean
+  offliner_definition_version?: string
 }
 
 export interface ScheduleHistorySchema extends BaseScheduleHistorySchema {

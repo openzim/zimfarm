@@ -944,6 +944,7 @@ def create_schedule(
             tags=schedule.tags,
             periodicity=schedule.periodicity,
             context=schedule.context,
+            offliner_definition_version=mwoffliner_definition.version,
         )
         schedule.history_entries.append(history_entry)
 

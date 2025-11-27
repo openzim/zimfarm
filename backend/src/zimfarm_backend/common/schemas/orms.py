@@ -290,6 +290,7 @@ class ScheduleHistorySchema(BaseModel):
     periodicity: str
     context: str
     archived: bool
+    offliner_definition_version: str | None = None
     # entries are serialized as dict[str, Any] instead of ScheduleConfigSchema
     # because the entry is possibly outdated and would fail validation as the
     # offliner schema evolves
