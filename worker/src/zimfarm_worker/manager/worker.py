@@ -2,12 +2,15 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import datetime
+import shutil
 import signal
 import time
 import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, NamedTuple
+
+from docker.errors import NotFound
 
 from zimfarm_worker.common import getnow, logger
 from zimfarm_worker.common.constants import (
@@ -30,6 +33,7 @@ from zimfarm_worker.common.docker import (
     query_host_stats,
     remove_container,
     start_task_worker,
+    stop_container,
     stop_task_worker,
 )
 from zimfarm_worker.common.utils import as_pos_int, format_size
@@ -343,6 +347,82 @@ class WorkerManager(BaseWorker):
                 logger.info(f"task {task_ident} is not running anymore, unwatching.")
                 self.tasks.pop(task_ident, None)
 
+    def cleanup_leftovers(self):
+        """Clean up leftover containers and workdir folders."""
+        logger.debug("Running cleanup of leftover containers and workdir folders")
+
+        known_task_ids = {task_ident.id for task_ident in self.tasks.keys()}
+
+        # Clean up leftover containerr
+        try:
+            all_zimfarm_containers = list_containers(
+                self.docker, all=True, filters={"label": ["zimfarm"]}
+            )
+
+            for container in all_zimfarm_containers:
+                try:
+                    task_id = get_label_value(self.docker, container.name, "task_id")
+
+                    if not task_id:
+                        continue
+
+                    if task_id not in known_task_ids:
+                        logger.info(
+                            f"Cleaning up leftover container {container.name} "
+                            f"for task {task_id}"
+                        )
+                        try:
+                            stop_container(self.docker, container.name, timeout=10)
+                        except (NotFound, Exception) as exc:
+                            logger.debug(
+                                f"Could not stop container {container.name}: {exc}"
+                            )
+
+                        try:
+                            remove_container(
+                                self.docker, container=container.name, force=True
+                            )
+                            logger.info(f"Removed leftover container {container.name}")
+                        except Exception as exc:
+                            logger.warning(
+                                f"Failed to remove container {container.name}: {exc}"
+                            )
+
+                except Exception as exc:
+                    logger.debug(f"Could not process container {container.name}: {exc}")
+        except Exception as exc:
+            logger.warning(f"Error during container cleanup: {exc}")
+
+        # Clean up leftover workdir folders
+        try:
+            if not self.workdir.exists():
+                logger.debug(
+                    f"Workdir {self.workdir} does not exist, skipping folder cleanup"
+                )
+                return
+
+            for item in self.workdir.iterdir():
+                if not item.is_dir():
+                    continue
+
+                # Folder name should be a task_id
+                folder_task_id = item.name
+
+                if folder_task_id in known_task_ids:
+                    continue
+
+                logger.info(
+                    f"Cleaning up leftover workdir folder {item} "
+                    f"for task {folder_task_id}"
+                )
+                try:
+                    shutil.rmtree(item)
+                    logger.info(f"Removed leftover workdir folder {item}")
+                except Exception as exc:
+                    logger.warning(f"Failed to remove workdir folder {item}: {exc}")
+        except Exception as exc:
+            logger.warning(f"Error during workdir cleanup: {exc}")
+
     def stop_task_worker(self, task_ident: TaskIdent, timeout: int = 20):
         logger.debug(f"stop_task_worker: {task_ident.id}")
         stop_task_worker(self.docker, task_id=task_ident.id, timeout=timeout)
@@ -396,6 +476,7 @@ class WorkerManager(BaseWorker):
         while not self.should_stop:
             if self.should_poll:
                 self.sync_tasks_and_containers()
+                self.cleanup_leftovers()
                 self.poll()
             else:
                 self.sleep()
