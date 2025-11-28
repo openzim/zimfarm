@@ -7,6 +7,7 @@ read -d '' STREAM_CONF << EOF
  enabled = yes
  destination = ${MONITORING_DEST}
  api key = ${MONITORING_KEY}
+ send charts matching = cgroup_zimscraper* cgroup_zimtask*
 EOF
 echo "${STREAM_CONF}" > /etc/netdata/stream.conf
 
@@ -21,9 +22,9 @@ EOF
 echo "${REDIS_CONF}" > /etc/netdata/go.d/redis.conf
 
 # setup custom hostname for node in netdata
-if [ ! -z "${NETDATA_HOSTNAME}" ]
+if [ -n "${NETDATA_HOSTNAME}" ]
 then
-    printf "\n hostname = ${NETDATA_HOSTNAME}" >> /etc/netdata/netdata.conf
+    printf "\n hostname = %s" "${NETDATA_HOSTNAME}" >> /etc/netdata/netdata.conf
 fi
 
 # netdata's entrypoint

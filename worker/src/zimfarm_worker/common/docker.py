@@ -21,6 +21,7 @@ from zimfarm_worker.common.constants import (
     CHECKER_IMAGE,
     CONTAINER_SCRAPER_IDENT,
     CONTAINER_TASK_IDENT,
+    DEBUG,
     DEFAULT_CPU_SHARE,
     DISABLE_IPV6,
     DNSCACHE_IMAGE,
@@ -388,6 +389,9 @@ def start_monitor(
 ):
     name = get_container_name("monitor", task["id"])
     image = get_or_pull_image(client, MONITOR_IMAGE)
+    scraper_container_name = get_scraper_container_name(
+        offliner=task["config"]["offliner"]["offliner_id"], task_id=task["id"]
+    )
 
     host_mounts = query_host_mounts(client, [DOCKER_SOCKET])
     host_docker_socket = str(host_mounts.get(DOCKER_SOCKET))
@@ -402,11 +406,10 @@ def start_monitor(
     ]
 
     environment = {
-        "SCRAPER_CONTAINER": get_ip_address(
-            client,
-            get_scraper_container_name(
-                offliner=task["config"]["offliner"]["offliner_id"], task_id=task["id"]
-            ),
+        "SCRAPER_CONTAINER": (
+            scraper_container_name
+            if ENVIRONMENT == "development"
+            else get_ip_address(client, scraper_container_name)
         ),
         "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
             task_ident=get_container_name(task["schedule_name"], task["id"]),
@@ -435,6 +438,11 @@ def start_monitor(
         cap_add=["SYS_PTRACE"],
         security_opt=["apparmor=unconfined"],
         sysctls=get_sysctl(),
+        network_mode=(
+            f"container:{get_running_container_name()}"
+            if ENVIRONMENT == "development"
+            else "bridge"
+        ),
     )
 
 
@@ -616,12 +624,12 @@ def start_task_worker(
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
             "WORKER_NAME": worker_name,
-            "ZIMFARM_DISK": os.getenv("ZIMFARM_DISK"),
-            "ZIMFARM_CPUS": os.getenv("ZIMFARM_CPUS"),
-            "ZIMFARM_TASK_CPUS": os.getenv("ZIMFARM_TASK_CPUS"),
-            "ZIMFARM_TASK_CPUSET": os.getenv("ZIMFARM_TASK_CPUSET"),
-            "ZIMFARM_MEMORY": os.getenv("ZIMFARM_MEMORY"),
-            "DEBUG": os.getenv("DEBUG"),
+            "ZIMFARM_DISK": ZIMFARM_DISK_SPACE,
+            "ZIMFARM_CPUS": ZIMFARM_CPUS,
+            "ZIMFARM_TASK_CPUS": ZIMFARM_TASK_CPUS,
+            "ZIMFARM_TASK_CPUSET": ZIMFARM_TASK_CPUSET,
+            "ZIMFARM_MEMORY": ZIMFARM_MEMORY,
+            "DEBUG": DEBUG,
             "ENVIRONMENT": ENVIRONMENT,
             "USE_PUBLIC_DNS": "yes" if USE_PUBLIC_DNS else "",
             "DISABLE_IPV6": "yes" if DISABLE_IPV6 else "",

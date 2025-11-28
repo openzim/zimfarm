@@ -1,3 +1,4 @@
 {
-    "ZIMFARM_WEBAPI": "http://localhost:8000/v2"
+  "ZIMFARM_WEBAPI": "http://localhost:8000/v2",
+  "MONITORING_URL": "http://localhost:8004/v3"
 }
