@@ -38,6 +38,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 api = [
     "fastapi[all] == 0.115.2",
+    "ory-client == 1.22.9",
 ]
 scripts = [
     "invoke == 2.2.0",

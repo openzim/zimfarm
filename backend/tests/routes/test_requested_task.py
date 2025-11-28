@@ -25,9 +25,6 @@ def test_create_request_task_no_permission(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.post(
@@ -497,9 +494,6 @@ def test_update_requested_task_no_permission(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.patch(
@@ -521,9 +515,6 @@ def test_update_requested_task_success(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.patch(
@@ -546,9 +537,6 @@ def test_delete_requested_task_no_permission(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.delete(
@@ -568,9 +556,6 @@ def test_delete_requested_task_success(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.delete(
