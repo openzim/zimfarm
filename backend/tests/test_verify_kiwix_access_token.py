@@ -1,18 +1,40 @@
+import datetime
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
+import jwt
 import pytest
-from ory_client.models.introspected_o_auth2_token import IntrospectedOAuth2Token
 
 from zimfarm_backend.api import token as token_module
-from zimfarm_backend.api.token import (
-    _introspection_token_cache,  # pyright: ignore[reportPrivateUsage]
-    verify_kiwix_access_token,
-)
+from zimfarm_backend.api.token import verify_kiwix_access_token
+from zimfarm_backend.common import getnow
+
+
+def create_test_jwt_token(
+    issuer: str = "https://login.kiwix.org",
+    client_id: str = "d87a31d2-874e-44c4-9dc2-63fad523bf1b",
+    subject: str | None = None,
+    exp_delta: datetime.timedelta = datetime.timedelta(hours=1),
+) -> str:
+    """Create a test JWT token with the given parameters."""
+    if subject is None:
+        subject = str(UUID(int=0))
+
+    now = getnow()
+    payload = {
+        "iss": issuer,
+        "sub": subject,
+        "iat": int(now.timestamp()),
+        "exp": int((now + exp_delta).timestamp()),
+    }
+    payload["client_id"] = client_id
+
+    # Create a test token (unsigned for testing purposes)
+    return jwt.encode(payload, "test-secret", algorithm="HS256")
 
 
 def test_verify_kiwix_access_token_success(
     monkeypatch: pytest.MonkeyPatch,
-    valid_introspected_token: IntrospectedOAuth2Token,
 ):
     """Test successful verification of a valid Kiwix access token."""
     monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
@@ -20,187 +42,64 @@ def test_verify_kiwix_access_token_success(
         token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
     )
 
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = valid_introspected_token
+    test_token = create_test_jwt_token()
 
-        result = verify_kiwix_access_token("valid_token")
+    # Mock the PyJWKClient and jwt.decode
+    mock_signing_key = MagicMock()
+    mock_signing_key.key = "test-key"
 
-        assert result == valid_introspected_token
-        assert result.active is True
-        assert result.iss == "https://login.kiwix.org"
-        assert result.client_id == "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-        mock_introspect.assert_called_once_with("valid_token")
+    decoded_payload = {
+        "iss": "https://login.kiwix.org",
+        "sub": str(UUID(int=0)),
+        "client_id": "d87a31d2-874e-44c4-9dc2-63fad523bf1b",
+        "iat": int(getnow().timestamp()),
+        "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
+    }
+
+    with (
+        patch.object(
+            token_module._jwks_client,  # pyright: ignore[reportPrivateUsage]
+            "get_signing_key_from_jwt",
+        ) as mock_get_key,
+        patch("zimfarm_backend.api.token.jwt.decode") as mock_decode,
+    ):
+        mock_get_key.return_value = mock_signing_key
+        mock_decode.return_value = decoded_payload
+
+        result = verify_kiwix_access_token(test_token)
+
+        assert result == decoded_payload
+        assert result["iss"] == "https://login.kiwix.org"
+        assert result["client_id"] == "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
+        mock_get_key.assert_called_once_with(test_token)
+        mock_decode.assert_called_once()
 
 
-def test_verify_kiwix_access_token_uses_cache_on_second_call(
+def test_verify_kiwix_access_token_expired_token(
     monkeypatch: pytest.MonkeyPatch,
-    valid_introspected_token: IntrospectedOAuth2Token,
 ):
-    """Test that verify_kiwix_access_token uses cache on subsequent calls."""
+    """Test that expired tokens raise ValueError."""
     monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
     monkeypatch.setattr(
         token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
     )
 
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = valid_introspected_token
+    test_token = create_test_jwt_token()
 
-        # First call - should hit the API
-        result1 = verify_kiwix_access_token("cached_token")
-        assert mock_introspect.call_count == 1
+    mock_signing_key = MagicMock()
+    mock_signing_key.key = "test-key"
 
-        # Second call - should use cache
-        result2 = verify_kiwix_access_token("cached_token")
-        assert mock_introspect.call_count == 1  # Still 1
-
-        assert result1 == result2
-
-
-def test_verify_kiwix_access_token_inactive_token(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Test that inactive tokens raise ValueError."""
-    monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
-    monkeypatch.setattr(
-        token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    )
-
-    inactive_token = MagicMock(spec=IntrospectedOAuth2Token)
-    inactive_token.active = False
-
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = inactive_token
-
-        with pytest.raises(ValueError, match="Kiwix access token is not active"):
-            verify_kiwix_access_token("inactive_token")
-
-
-def test_verify_kiwix_access_token_invalid_issuer(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Test that tokens with invalid issuer raise ValueError."""
-    monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
-    monkeypatch.setattr(
-        token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    )
-
-    invalid_issuer_token = MagicMock(spec=IntrospectedOAuth2Token)
-    invalid_issuer_token.active = True
-    invalid_issuer_token.iss = "https://wrong-issuer.com"
-    invalid_issuer_token.client_id = "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = invalid_issuer_token
-
-        with pytest.raises(ValueError, match="Kiwix access token issuer is not valid"):
-            verify_kiwix_access_token("invalid_issuer_token")
-
-
-def test_verify_kiwix_access_token_invalid_client_id(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Test that tokens with invalid client_id raise ValueError."""
-    monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
-    monkeypatch.setattr(
-        token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    )
-
-    invalid_client_token = MagicMock(spec=IntrospectedOAuth2Token)
-    invalid_client_token.active = True
-    invalid_client_token.iss = "https://login.kiwix.org"
-    invalid_client_token.client_id = "wrong-client-id"
-
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = invalid_client_token
+    with (
+        patch.object(
+            token_module._jwks_client,  # pyright: ignore[reportPrivateUsage]
+            "get_signing_key_from_jwt",
+        ) as mock_get_key,
+        patch("zimfarm_backend.api.token.jwt.decode") as mock_decode,
+    ):
+        mock_get_key.return_value = mock_signing_key
+        mock_decode.side_effect = jwt.ExpiredSignatureError("Token has expired")
 
         with pytest.raises(
-            ValueError, match="Kiwix access token client ID is not valid"
+            jwt.ExpiredSignatureError, match="Kiwix access token has expired"
         ):
-            verify_kiwix_access_token("invalid_client_token")
-
-
-def test_verify_kiwix_access_token_caches_successful_verification(
-    monkeypatch: pytest.MonkeyPatch,
-    valid_introspected_token: IntrospectedOAuth2Token,
-):
-    """Test that successful verifications are cached."""
-    monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
-    monkeypatch.setattr(
-        token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    )
-
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = valid_introspected_token
-
-        # Verify cache is empty
-        assert len(_introspection_token_cache) == 0
-
-        # First call should populate cache
-        verify_kiwix_access_token("token_to_cache")
-
-        # Verify cache now has the token
-        assert len(_introspection_token_cache) == 1
-
-
-def test_verify_kiwix_access_token_does_not_cache_failures(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Test that failed verifications are not cached."""
-    monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
-    monkeypatch.setattr(
-        token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    )
-
-    inactive_token = MagicMock(spec=IntrospectedOAuth2Token)
-    inactive_token.active = False
-
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = inactive_token
-
-        # Verify cache is empty
-        assert len(_introspection_token_cache) == 0
-
-        # Try to verify - should fail
-        with pytest.raises(ValueError):
-            verify_kiwix_access_token("inactive_token")
-
-        # Verify cache is still empty
-        assert len(_introspection_token_cache) == 0
-
-
-def test_verify_kiwix_access_token_cache_miss_different_tokens(
-    monkeypatch: pytest.MonkeyPatch,
-    valid_introspected_token: IntrospectedOAuth2Token,
-):
-    """Test that different tokens each trigger API calls."""
-    monkeypatch.setattr(token_module, "KIWIX_ISSUER", "https://login.kiwix.org")
-    monkeypatch.setattr(
-        token_module, "KIWIX_CLIENT_ID", "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    )
-
-    with patch(
-        "zimfarm_backend.api.token.OryOAuth2Api.introspect_o_auth2_token"
-    ) as mock_introspect:
-        mock_introspect.return_value = valid_introspected_token
-
-        # First token
-        verify_kiwix_access_token("token1")
-        assert mock_introspect.call_count == 1
-
-        # Second different token should trigger another API call
-        verify_kiwix_access_token("token2")
-        assert mock_introspect.call_count == 2
+            verify_kiwix_access_token(test_token)

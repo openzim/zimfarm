@@ -10,13 +10,22 @@ from pydantic import Field
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.constants import JWT_SECRET
+from zimfarm_backend.api.constants import (
+    CREATE_NEW_KIWIX_ACCOUNT,
+    JWT_SECRET,
+    KIWIX_CLIENT_ID,
+)
 from zimfarm_backend.api.routes.http_errors import UnauthorizedError
 from zimfarm_backend.api.token import verify_kiwix_access_token
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
-from zimfarm_backend.db.user import get_user_by_id_or_none, get_user_by_idp_sub_or_none
+from zimfarm_backend.db.user import (
+    create_user,
+    get_user_by_id_or_none,
+    get_user_by_idp_sub_or_none,
+)
 
 security = HTTPBearer(description="Access Token", auto_error=False)
 AuthorizationCredentials = Annotated[
@@ -29,6 +38,7 @@ class JWTClaims(BaseModel):
     exp: datetime.datetime
     iat: datetime.datetime
     sub: uuid.UUID = Field(alias="subject")
+    client_id: str | None = Field(exclude=True, default=None)
 
 
 def get_jwt_claims_or_none(
@@ -59,8 +69,6 @@ def get_jwt_claims_or_none(
     try:
         introspected_token = verify_kiwix_access_token(token)
         return JWTClaims.model_validate(introspected_token)
-    except ValueError as exc:
-        raise UnauthorizedError("Invalid token") from exc
     except jwt_exceptions.ExpiredSignatureError as exc:
         raise UnauthorizedError("Token has expired.") from exc
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:
@@ -83,7 +91,21 @@ def get_current_user_or_none_with_session(
             return None
         user = get_user_by_id_or_none(session, user_id=claims.sub)
         if user is None:
-            return get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
+            user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
+            # If this is a kiwix token, we create a new user with this idp_sub
+            if (
+                user is None
+                and CREATE_NEW_KIWIX_ACCOUNT
+                and claims.client_id == KIWIX_CLIENT_ID
+            ):
+                create_user(
+                    session,
+                    username=str(claims.sub),
+                    role=RoleEnum.VIEWER,
+                    idp_sub=claims.sub,
+                )
+                user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
+
         return user
 
     return _get_current_user_or_none

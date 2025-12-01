@@ -4,7 +4,6 @@ import datetime
 from collections.abc import Callable, Generator
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, cast
-from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
@@ -13,16 +12,12 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from faker import Faker
 from faker.providers import DynamicProvider
-from ory_client.models.introspected_o_auth2_token import IntrospectedOAuth2Token
 from pydantic import BaseModel
 from pytest import FixtureRequest, Mark
 from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import generate_password_hash
 
-from zimfarm_backend.api.token import (
-    _introspection_token_cache,  # pyright: ignore[reportPrivateUsage]
-    generate_access_token,
-)
+from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
 from zimfarm_backend.common.roles import RoleEnum
@@ -1125,24 +1120,3 @@ def create_task(
 @pytest.fixture
 def task(create_task: Callable[..., Task]) -> Task:
     return create_task()
-
-
-@pytest.fixture(autouse=True)
-def clear_cache():
-    """Clear the introspection token cache before and after each test."""
-    _introspection_token_cache.clear()
-    yield
-    _introspection_token_cache.clear()
-
-
-@pytest.fixture
-def valid_introspected_token():
-    """Create a valid introspected token."""
-    token = MagicMock(spec=IntrospectedOAuth2Token)
-    token.active = True
-    token.iss = "https://login.kiwix.org"
-    token.client_id = "d87a31d2-874e-44c4-9dc2-63fad523bf1b"
-    token.sub = str(UUID(int=0))  # Generate a valid UUID string
-    token.exp = int((getnow() + datetime.timedelta(hours=1)).timestamp())
-    token.iat = int(getnow().timestamp())
-    return token

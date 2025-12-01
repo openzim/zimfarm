@@ -1,105 +1,47 @@
 import datetime
-import hashlib
-from dataclasses import dataclass
+from typing import Any
 
 import jwt
-from ory_client.api.o_auth2_api import OAuth2Api as OryOAuth2Api
-from ory_client.api_client import ApiClient as OryApiClient
-from ory_client.configuration import Configuration as OryClientConfiguration
-from ory_client.exceptions import ApiException
-from ory_client.models.introspected_o_auth2_token import IntrospectedOAuth2Token
+from jwt import PyJWKClient
 
-from zimfarm_backend import logger
 from zimfarm_backend.api.constants import (
     JWT_SECRET,
     JWT_TOKEN_EXPIRY_DURATION,
     JWT_TOKEN_ISSUER,
     KIWIX_CLIENT_ID,
     KIWIX_ISSUER,
-    ORY_ACCESS_TOKEN,
-)
-from zimfarm_backend.common import getnow
-
-_ory_client_configuration = OryClientConfiguration(
-    host=KIWIX_ISSUER, access_token=ORY_ACCESS_TOKEN
+    KIWIX_JWKS_URI,
 )
 
-
-@dataclass
-class _CachedToken:
-    """Cached introspected token with expiration time."""
-
-    introspected_token: IntrospectedOAuth2Token
-    expires_at: datetime.datetime
+# PyJWKClient for fetching and caching JWKS from OpenID configuration
+# The client will automatically discover JWKS URI from /.well-known/openid-configuration
+# and cache the keys internally
+_jwks_client = PyJWKClient(KIWIX_JWKS_URI, cache_keys=True)
 
 
-# Cache to store introspected tokens with their expiration time
-# Key is SHA256 hash of the token, value is _CachedToken
-_introspection_token_cache: dict[str, _CachedToken] = {}
+def verify_kiwix_access_token(token: str) -> dict[str, Any]:
+    """Verify a Kiwix access token by validating JWT signature using JWKS."""
+    signing_key = _jwks_client.get_signing_key_from_jwt(token)
 
+    # Decode and verify the token
+    decoded_token = jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["RS256"],
+        issuer=KIWIX_ISSUER,
+        options={
+            "verify_signature": True,
+            "verify_exp": True,
+            "verify_iat": True,
+            "verify_iss": True,
+            "require": ["exp", "iat", "iss", "sub"],
+        },
+    )
+    client_id = decoded_token.get("client_id")
+    if client_id != KIWIX_CLIENT_ID:
+        raise ValueError("Kiwix access token client ID is not valid")
 
-def _hash_token(token: str) -> str:
-    """Hash token for use as cache key to avoid storing raw tokens in memory."""
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
-def _is_cache_entry_valid(cached: _CachedToken) -> bool:
-    """Check if a cached token entry is still valid (not expired)."""
-    return getnow() < cached.expires_at
-
-
-def _get_cached_introspection_token(token: str) -> IntrospectedOAuth2Token | None:
-    """Get cached introspection result if available and not expired."""
-    token_hash = _hash_token(token)
-    if cached := _introspection_token_cache.get(token_hash):
-        if _is_cache_entry_valid(cached):
-            return cached.introspected_token
-        # Remove expired entry
-        del _introspection_token_cache[token_hash]
-    return None
-
-
-def _cache_introspection_token(token: str, introspected_token: IntrospectedOAuth2Token):
-    """Cache an introspected token with TTL based on its expiration time."""
-    token_hash = _hash_token(token)
-    # Use token's exp time if available, otherwise cache for a short duration
-    if introspected_token.exp:
-        # exp is a Unix timestamp (seconds since epoch)
-        expires_at = datetime.datetime.fromtimestamp(introspected_token.exp)
-        _introspection_token_cache[token_hash] = _CachedToken(
-            introspected_token=introspected_token,
-            expires_at=expires_at,
-        )
-
-
-def verify_kiwix_access_token(token: str) -> IntrospectedOAuth2Token:
-    """Verify a Kiwix access token by calling introspection endpoint.
-
-    Results are cached based on token expiration time to reduce API calls.
-    """
-    # Check cache first
-    if cached_token := _get_cached_introspection_token(token):
-        return cached_token
-
-    # Cache miss - perform introspection
-    with OryApiClient(_ory_client_configuration) as api_client:
-        api_instance = OryOAuth2Api(api_client)
-        try:
-            introspected_token = api_instance.introspect_o_auth2_token(token)
-        except ApiException as e:
-            logger.exception("Failed to verify Kiwix access token")
-            raise ValueError("Failed to verify Kiwix access token") from e
-        if not introspected_token.active:
-            raise ValueError("Kiwix access token is not active")
-        if KIWIX_ISSUER != introspected_token.iss:
-            raise ValueError("Kiwix access token issuer is not valid")
-        if KIWIX_CLIENT_ID != introspected_token.client_id:
-            raise ValueError("Kiwix access token client ID is not valid")
-
-        # Cache the successful introspection result
-        _cache_introspection_token(token, introspected_token)
-
-        return introspected_token
+    return decoded_token
 
 
 def generate_access_token(
