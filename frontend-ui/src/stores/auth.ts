@@ -12,7 +12,6 @@ import {
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { computed, inject, ref } from 'vue'
-import type { VueCookies } from 'vue-cookies'
 
 interface StoredToken {
   access_token: string
@@ -30,10 +29,6 @@ export const useAuthStore = defineStore('auth', () => {
   const isRefreshFailed = ref(false)
   const refreshPromise = ref<Promise<StoredToken | null> | null>(null)
 
-  const $cookies = inject<VueCookies>('$cookies')
-  if (!$cookies) {
-    throw new Error('VueCookies is not defined')
-  }
   const config = inject<Config>(constants.config)
 
   if (!config) {
@@ -138,7 +133,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = newToken
       await fetchUserInfo(newToken.access_token)
       errors.value = []
-      saveTokenToCookie(newToken)
+      saveTokenToLocalStorage(newToken)
 
       // Reset failure flag on success
       isRefreshFailed.value = false
@@ -178,7 +173,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = newToken
       await fetchUserInfo(newToken.access_token)
       errors.value = []
-      saveTokenToCookie(newToken)
+      saveTokenToLocalStorage(newToken)
 
       // Reset failure flag on success
       isRefreshFailed.value = false
@@ -204,7 +199,7 @@ export const useAuthStore = defineStore('auth', () => {
     // If refresh has already failed permanently, don't retry
     if (isRefreshFailed.value) {
       console.log('Skipping refresh attempt - refresh token previously failed')
-      $cookies.remove(constants.TOKEN_COOKIE_NAME)
+      localStorage.removeItem(constants.TOKEN_STORAGE_KEY)
       return null
     }
 
@@ -241,28 +236,28 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const loadTokenFromCookie = async (): Promise<string | null> => {
+  const loadTokenFromLocalStorage = async (): Promise<string | null> => {
     // If already authenticated and token is still valid, return current token
     if (token.value && tokenExpiryDate.value && tokenExpiryDate.value > new Date()) {
       return token.value.access_token
     }
 
-    // Try to load from cookie
-    const cookieValue = $cookies.get(constants.TOKEN_COOKIE_NAME)
-    if (!cookieValue) return null
+    // Try to load from localStorage
+    const storedValue = localStorage.getItem(constants.TOKEN_STORAGE_KEY)
+    if (!storedValue) return null
 
     let storedToken: StoredToken
     try {
-      storedToken = cookieValue as StoredToken
+      storedToken = JSON.parse(storedValue)
 
       // Validate token structure
       if (!storedToken.access_token || !storedToken.refresh_token || !storedToken.token_type) {
-        throw new Error('Invalid token structure in cookie')
+        throw new Error('Invalid token structure in localStorage')
       }
     } catch (error) {
-      console.error('Error parsing cookie value', error)
-      // Incorrect cookie payload
-      $cookies.remove(constants.TOKEN_COOKIE_NAME)
+      console.error('Error parsing localStorage value', error)
+      // Incorrect token payload
+      localStorage.removeItem(constants.TOKEN_STORAGE_KEY)
       return null
     }
 
@@ -298,17 +293,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const saveTokenToCookie = (tokenData: StoredToken) => {
-    $cookies.set(
-      constants.TOKEN_COOKIE_NAME,
-      JSON.stringify(tokenData),
-      // persist with config cookie expiry so that even thought the cookie expires,
-      // we can still use the refresh token to get a new access token without logging in again
-      constants.TOKEN_COOKIE_EXPIRY,
-      '/', // path
-      undefined, // domain
-      config.ZIMFARM_WEBAPI.startsWith('https://'), // secure flag
-    )
+  const saveTokenToLocalStorage = (tokenData: StoredToken) => {
+    localStorage.setItem(constants.TOKEN_STORAGE_KEY, JSON.stringify(tokenData))
   }
 
   const logout = async () => {
@@ -324,7 +310,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     token.value = null
     user.value = null
-    $cookies.remove(constants.TOKEN_COOKIE_NAME)
+    localStorage.removeItem(constants.TOKEN_STORAGE_KEY)
 
     // Reset refresh failure state on logout
     isRefreshFailed.value = false
@@ -359,7 +345,7 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchUserInfo(response.access_token)
 
       errors.value = []
-      saveTokenToCookie(newToken)
+      saveTokenToLocalStorage(newToken)
 
       // Reset refresh failure state on successful login
       isRefreshFailed.value = false
@@ -399,7 +385,7 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchUserInfo(kiwixToken.access_token)
 
       errors.value = []
-      saveTokenToCookie(newToken)
+      saveTokenToLocalStorage(newToken)
 
       // Reset refresh failure state on successful login
       isRefreshFailed.value = false
@@ -414,7 +400,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const getApiService = async (baseURL: string) => {
-    const token = await loadTokenFromCookie()
+    const token = await loadTokenFromLocalStorage()
     if (!token)
       return httpRequest({
         baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
@@ -446,9 +432,9 @@ export const useAuthStore = defineStore('auth', () => {
     isTokenExpired,
 
     // Methods
-    saveTokenToCookie,
+    saveTokenToLocalStorage,
     hasPermission,
-    loadTokenFromCookie,
+    loadTokenFromLocalStorage,
     fetchUserInfo,
     renewToken,
     renewTokenFromApi,
