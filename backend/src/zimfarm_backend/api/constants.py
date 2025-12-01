@@ -1,6 +1,6 @@
 from humanfriendly import parse_timespan
 
-from zimfarm_backend.common.constants import getenv
+from zimfarm_backend.common.constants import getenv, parse_bool
 
 # JWT settings
 JWT_TOKEN_ISSUER = getenv("JWT_TOKEN_ISSUER", default="zimfarm_backend")
@@ -10,8 +10,14 @@ JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
 )
 
 # Kiwix OAuth/OIDC configuration
+KIWIX_JWKS_URI = getenv(
+    "KIWIX_JWKS_URI",
+    default="https://login.kiwix.org/.well-known/jwks.json",
+)
 KIWIX_ISSUER = getenv("KIWIX_ISSUER", default="https://login.kiwix.org")
 KIWIX_CLIENT_ID = getenv(
     "KIWIX_CLIENT_ID", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
 )
-ORY_ACCESS_TOKEN = getenv("ORY_ACCESS_TOKEN", mandatory=True)
+CREATE_NEW_KIWIX_ACCOUNT = parse_bool(
+    getenv("CREATE_NEW_KIWIX_ACCOUNT", default="true")
+)
