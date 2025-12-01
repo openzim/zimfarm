@@ -1,16 +1,13 @@
-import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { SshKeyRead, User, UserWithSshKeys } from '@/types/user'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
-import { inject, ref } from 'vue'
-import type { VueCookies } from 'vue-cookies'
+import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
-  const $cookies = inject<VueCookies>('$cookies')
-  const limit = Number($cookies?.get('users-table-limit') || 20)
+  const limit = Number(localStorage.getItem('users-table-limit') || 20)
   const errors = ref<string[]>([])
   const users = ref<User[]>([])
   const paginator = ref<Paginator>({
@@ -24,7 +21,7 @@ export const useUserStore = defineStore('user', () => {
   const authStore = useAuthStore()
 
   const savePaginatorLimit = (limit: number) => {
-    $cookies?.set('users-table-limit', limit, constants.COOKIE_LIFETIME_EXPIRY)
+    localStorage.setItem('users-table-limit', limit.toString())
   }
 
   const createUser = async (username: string, email: string, role: string, password: string) => {

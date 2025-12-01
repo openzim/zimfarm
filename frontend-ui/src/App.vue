@@ -25,7 +25,7 @@ const router = useRouter()
 const ready = ref(false)
 
 onMounted(async () => {
-  await authStore.loadTokenFromCookie()
+  await authStore.loadTokenFromLocalStorage()
   loadingStore.startLoading('Loading application data...')
 
   await languageStore.fetchLanguages()

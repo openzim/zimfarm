@@ -4,7 +4,6 @@
   - athenticates on the API
   - retrieve and store token in store
   - handles own login/error
-  - save token info in cookie if asked to remember
   - supports Ory.sh OAuth2 authentication -->
 
 <template>

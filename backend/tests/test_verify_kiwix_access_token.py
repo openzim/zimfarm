@@ -99,7 +99,5 @@ def test_verify_kiwix_access_token_expired_token(
         mock_get_key.return_value = mock_signing_key
         mock_decode.side_effect = jwt.ExpiredSignatureError("Token has expired")
 
-        with pytest.raises(
-            jwt.ExpiredSignatureError, match="Kiwix access token has expired"
-        ):
+        with pytest.raises(jwt.ExpiredSignatureError, match="Token has expired"):
             verify_kiwix_access_token(test_token)

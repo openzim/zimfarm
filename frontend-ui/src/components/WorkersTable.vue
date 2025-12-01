@@ -215,13 +215,11 @@
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import TaskLink from '@/components/TaskLink.vue'
-import constants from '@/constants'
 import type { Paginator } from '@/types/base'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, fromNow } from '@/utils/format'
-import { computed, inject, onMounted, ref, watch } from 'vue'
-import type { VueCookies } from 'vue-cookies'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   workerHeaders: { title: string; value: string }[]
@@ -263,15 +261,13 @@ function toggleWorkerRow(workerName: string): void {
 }
 
 // Persist expand/collapse-all preference
-const $cookies = inject<VueCookies>('$cookies')
-
 function getExpandAllPreference(): boolean {
-  const value = $cookies?.get('workers-expand-all')
+  const value = localStorage.getItem('workers-expand-all')
   return value === null ? false : JSON.parse(value)
 }
 
 function saveExpandAllPreference(value: boolean): void {
-  $cookies?.set('workers-expand-all', JSON.stringify(value), constants.COOKIE_LIFETIME_EXPIRY)
+  localStorage.setItem('workers-expand-all', JSON.stringify(value))
 }
 
 onMounted(() => {
