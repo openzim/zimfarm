@@ -72,7 +72,13 @@ def report_youtube_api_keys(
                 if task.status != TaskStatus.succeeded:
                     continue
                 media_count = 0
-                for file in task.task_files:
+                for file in task.files:
+                    if "media_count" not in file.info:
+                        logger.warning(
+                            f"Task {task.id} of {schedule.name} schedule is missing "
+                            "media_count info, ignoring, key usage stats will be "
+                            "impacted"
+                        )
                     media_count += file.info["media_count"]
                 schedule_data["media_count"] = media_count
                 break
