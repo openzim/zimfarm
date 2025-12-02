@@ -143,7 +143,7 @@ services:
       - worker
 
   monitor:
-    build: ./netdata
+    build: ../monitor/parent
     container_name: zf_monitor
     restart: unless-stopped
     ports:
@@ -158,10 +158,9 @@ services:
       - ZIMFARM_PASSWORD=admin
       - NETDATA_HOSTNAME=monitor
     volumes:
-      - ./netdataconfig/cloud.d:/var/lib/netdata/cloud.d
+      - netdataconfig:/etc/netdata
       - netdatalib:/var/lib/netdata
       - netdatacache:/var/cache/netdata
-      - ./netdata:/host/root:ro,rslave
       - /etc/passwd:/host/etc/passwd:ro
       - /etc/group:/host/etc/group:ro
       - /etc/localtime:/etc/localtime:ro
@@ -178,11 +177,13 @@ services:
 
   task_monitor:
     build:
-      context: ../monitor
+      context: ../monitor/child
     image: zf_task_monitor
     container_name: zf_task_monitor
     entrypoint: ["/bin/sh", "-c"]
     command: "exit"
+    profiles:
+      - worker
 
   watcher:
     build: ../watcher
@@ -280,3 +281,4 @@ volumes:
   minio_data_zimfarm:
   netdatalib:
   netdatacache:
+  netdataconfig:
