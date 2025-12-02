@@ -46,7 +46,9 @@ jobs:
               - 'frontend-ui/**'
             dnscache:
               - 'dnscache/**'
-            monitor:
+            monitor_parent:
+              - 'monitor/**'
+            monitor_child:
               - 'monitor/**'
             receiver:
               - 'receiver/**'
@@ -276,8 +278,8 @@ jobs:
           credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
 
-  monitor:
-    name: Monitor build
+  monitor-child:
+    name: Monitor child build
     runs-on: ubuntu-24.04
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force || contains(inputs.force_components, 'monitor') }}
@@ -288,10 +290,30 @@ jobs:
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
         with:
-          image-name: openzim/zimfarm-monitor
+          image-name: openzim/zimfarm-monitor-child
           on-master: latest
           restrict-to: openzim/zimfarm
-          context: monitor
+          context: monitor/child
+          registries: ghcr.io
+          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+            GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
+
+  monitor-parent:
+    name: Monitor parent build
+    runs-on: ubuntu-24.04
+    needs: paths-filter
+    if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force || contains(inputs.force_components, 'monitor') }}
+    steps:
+      - name: Retrieve source code
+        uses: actions/checkout@v5
+
+      - name: Build and publish Docker Image
+        uses: openzim/docker-publish-action@v10
+        with:
+          image-name: openzim/zimfarm-monitor-parent
+          on-master: latest
+          restrict-to: openzim/zimfarm
+          context: monitor/parent
           registries: ghcr.io
           credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}

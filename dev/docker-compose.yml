@@ -33,7 +33,7 @@ services:
       JWT_SECRET: DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw
       POSTGRES_URI: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
       ALEMBIC_UPGRADE_HEAD_ON_START: "true"
-      # upload zims to receiver but logs, zimcheck results and artificats to s3
+      # upload zims to receiver but logs, zimcheck results and artifacts to s3
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
       ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
@@ -142,9 +142,9 @@ services:
     profiles:
       - worker
 
-  monitor:
+  monitor_parent:
     build: ../monitor/parent
-    container_name: zf_monitor
+    container_name: zf_monitor_parent
     restart: unless-stopped
     ports:
       - 127.0.0.1:8004:19999
@@ -156,18 +156,8 @@ services:
       - ZIMFARM_API_URL=http://backend:80/v2
       - ZIMFARM_USERNAME=admin
       - ZIMFARM_PASSWORD=admin
-      - NETDATA_HOSTNAME=monitor
+      - NETDATA_HOSTNAME=monitor_parent
     volumes:
-      - netdataconfig:/etc/netdata
-      - netdatalib:/var/lib/netdata
-      - netdatacache:/var/cache/netdata
-      - /etc/passwd:/host/etc/passwd:ro
-      - /etc/group:/host/etc/group:ro
-      - /etc/localtime:/etc/localtime:ro
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /etc/os-release:/host/etc/os-release:ro
-      - /var/log:/host/var/log:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       backend:
@@ -175,11 +165,13 @@ services:
     profiles:
       - worker
 
-  task_monitor:
+  # Build monitor child image with proper tag so that it is available to be used by
+  # worker manager
+  monitor_child:
     build:
       context: ../monitor/child
-    image: zf_task_monitor
-    container_name: zf_task_monitor
+    image: zf_monitor_child
+    container_name: zf_monitor_child
     entrypoint: ["/bin/sh", "-c"]
     command: "exit"
     profiles:
@@ -209,6 +201,10 @@ services:
         condition: service_healthy
       task_worker:
         condition: service_started
+      monitor_child:
+        condition: service_started
+      monitor_parent:
+        condition: service_started
 
     command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
     environment:
@@ -216,15 +212,16 @@ services:
       - TASK_WORKER_IMAGE=zf_task_worker
       - ENVIRONMENT=development
       - POLL_INTERVAL=10
-      - MONITORING_DEST=monitor:19999
-      - MONITOR_IMAGE=zf_task_monitor
+      - MONITORING_DEST=zf_monitor_parent:19999
+      - MONITOR_IMAGE=zf_monitor_child
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./test_worker-identity/id_ed25519:/etc/ssh/keys/zimfarm
     profiles:
       - worker
 
-  # you have to modify the command if you want to run a standalone worker
+  # Build the task worker image so it is available to be used by the worker manager.
+  # You have to modify the command if you want to run a standalone task worker
   task_worker:
     build:
       context: ../worker

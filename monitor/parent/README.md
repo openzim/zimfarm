@@ -1,4 +1,4 @@
-# maintenance-netdata
+# zimfarm-monitor-parent
 
 A [netdata](https://github.com/netdata/netdata/) container to monitor zimfarm tasks.
 
@@ -26,7 +26,7 @@ netdata is user-friendly but has quite many features. Check out [the dashboard d
 
 To monitor the main Kiwix server, select the node with the same name as the `NETDATA_HOSTNAME` from the `Nodes` Tab located at the top of the UI. Default `NETDATA_HOSTNAME` is `monitoring.openzim.org`. All the metrics you see are for the main server.
 
-To monitor a Zimfarm task, you must select it from the _Nodes_ Tab at the top of the UI. If you are looking at it while it's running, a **live** indicator should be visible. After selecting it, you should click on the **Containers & VMs** section on the right sidbar. This is because the other metrics are related to the host and not necessarily the zimtask itself. In the **Containers & VMs** section, for each metric you want to view, the metrics will be aggregated across all containers running on the host itself. So, to filter out for the specific container you want e.g scraper, dnscache, etc, you will need to select `Group by instance` on the metric chart. The default is `Group by dimension`. After selecting `Group by instance`, select the specific container you want from the dropdown that lists the cgroups. For example, if you wanted to select zimscraper container, you would see in the dropdown `cgroup_zimcraper....` (The dot would be composed of the offliner type and task id).
+To monitor a Zimfarm task, you must select it from the _Nodes_ Tab at the top of the UI. If you are looking at it while it's running, a **live** indicator should be visible. After selecting it, you should click on the **Containers & VMs** section on the right sidebar. This is because the other metrics are related to the host and not necessarily the zimtask itself. In the **Containers & VMs** section, for each metric you want to view, the metrics will be aggregated across all containers running on the host itself. So, to filter out for the specific container you want e.g scraper, dnscache, etc, you will need to select `Group by instance` on the metric chart. The default is `Group by dimension`. After selecting `Group by instance`, select the specific container you want from the dropdown that lists the cgroups. For example, if you wanted to select zimscraper container, you would see in the dropdown `cgroup_zimcraper....` (The dot would be composed of the offliner type and task id).
 
 You can check whether there were other tasks running during your monitored-task by looking at the list of containers. If there are multiple `zimscraper` ones, be careful. If there is only a single scraper in your data, you can safely look at any metric.
 

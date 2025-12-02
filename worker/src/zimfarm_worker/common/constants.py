@@ -43,7 +43,7 @@ UPLOADER_IMAGE = getenv(
 )
 CHECKER_IMAGE = getenv("CHECKER_IMAGE", default="ghcr.io/openzim/zim-tools:3.6.0")
 MONITOR_IMAGE = getenv(
-    "MONITOR_IMAGE", default="ghcr.io/openzim/zimfarm-monitor:latest"
+    "MONITOR_IMAGE", default="ghcr.io/openzim/zimfarm-monitor-child:latest"
 )
 
 # paths
