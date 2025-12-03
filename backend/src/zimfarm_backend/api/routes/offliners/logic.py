@@ -58,32 +58,6 @@ async def get_offliners(
     )
 
 
-@router.get("/{offliner_id}")
-async def get_initial_offliner_version(
-    offliner_id: Annotated[str, Path()],
-    session: Annotated[OrmSession, Depends(gen_dbsession)],
-) -> JSONResponse:
-    """Get a specific offliner"""
-
-    # find the schema class that matches the offliner
-    offliner = db_get_offliner(session, offliner_id)
-    offliner_definition = db_get_offliner_definition(
-        session, offliner_id=offliner_id, version="initial"
-    )
-    schema_cls = build_offliner_model(offliner, offliner_definition.schema_)
-
-    flags = schema_to_flags(schema_cls)
-
-    return JSONResponse(
-        content={
-            "flags": [flag.model_dump(mode="json", by_alias=True) for flag in flags],
-            "help": (  # dynamic + sourced from backend because it might be custom
-                f"https://github.com/openzim/{offliner}/wiki/Frequently-Asked-Questions"
-            ),
-        }
-    )
-
-
 @router.post("")
 async def create_offliner(
     request: OfflinerCreateSchema,
