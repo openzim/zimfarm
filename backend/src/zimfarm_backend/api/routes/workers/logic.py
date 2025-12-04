@@ -5,7 +5,11 @@ from fastapi import APIRouter, Depends, Path, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.routes.dependencies import gen_dbsession, get_current_user
+from zimfarm_backend.api.routes.dependencies import (
+    gen_dbsession,
+    get_current_user,
+    get_current_user_or_none,
+)
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
     UnauthorizedError,
@@ -37,6 +41,7 @@ router = APIRouter(prefix="/workers", tags=["workers"])
 @router.get("")
 async def get_workers(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 20,
     *,
@@ -44,7 +49,12 @@ async def get_workers(
 ) -> ListResponse[WorkerLightSchema]:
     """Get a list of workers."""
     results = db_get_workers(
-        session, skip=skip, limit=limit, hide_offlines=hide_offlines
+        session,
+        skip=skip,
+        limit=limit,
+        hide_offlines=hide_offlines,
+        show_secrets=current_user is not None
+        and check_user_permission(current_user, namespace="workers", name="secrets"),
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
@@ -90,9 +100,15 @@ async def update_worker(
 async def get_worker(
     name: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
 ) -> WorkerMetricsSchema:
     """Get a single worker with full details and metrics."""
-    return db_get_worker_metrics(session, worker_name=name)
+    return db_get_worker_metrics(
+        session,
+        worker_name=name,
+        show_secrets=current_user is not None
+        and check_user_permission(current_user, namespace="workers", name="secrets"),
+    )
 
 
 @router.put("/{name}/check-in")

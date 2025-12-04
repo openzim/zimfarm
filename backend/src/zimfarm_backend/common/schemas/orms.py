@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import pytz
-from pydantic import AfterValidator, Field, computed_field
+from pydantic import AfterValidator, Field, computed_field, field_serializer
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
@@ -352,12 +352,37 @@ class ScheduleFullSchema(BaseModel):
 
 
 class BaseWorkerSchema(BaseModel):
+    show_secrets: bool = Field(default=True, exclude=True)
     name: str
     offliners: list[str]
     last_seen: datetime.datetime | None = None
     cordoned: bool
     admin_disabled: bool
     contexts: dict[str, IPv4Address | IPv6Address | None]
+    last_ip: IPv4Address | None = Field(exclude=True)
+
+    @computed_field
+    @property
+    def ip_changed(self) -> bool:
+        """Determine if last_ip is not found in context-set IPs"""
+        context_ips = {ip for _, ip in self.contexts.items() if ip is not None}
+        if context_ips:
+            return self.last_ip not in context_ips
+        return False
+
+    @field_serializer("last_ip")
+    def serialize_ip(self, last_ip: IPv4Address | None):
+        return str(last_ip) if self.show_secrets else None
+
+    @field_serializer("contexts")
+    def serialize_context_ips(
+        self, contexts: dict[str, IPv4Address | IPv6Address | None]
+    ):
+        if self.show_secrets:
+            return {
+                context: str(ip) if ip else None for context, ip in contexts.items()
+            }
+        return dict.fromkeys(contexts)
 
 
 class Worker(BaseWorkerSchema):
@@ -369,7 +394,6 @@ class Worker(BaseWorkerSchema):
     cpu: ZIMCPU
     memory: ZIMMemory
     disk: ZIMDisk
-    last_ip: IPv4Address | None = None
     deleted: bool
     user_id: UUID
 
@@ -412,6 +436,7 @@ class WorkerMetricsSchema(WorkerLightSchema):
     Schema for reading a worker model with full details and metrics
     """
 
+    last_ip: IPv4Address | None
     running_tasks: list[RunningTask]
     nb_tasks_total: int
     nb_tasks_completed: int

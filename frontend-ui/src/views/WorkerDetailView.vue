@@ -175,8 +175,29 @@
                     density="comfortable"
                     class="text-caption text-uppercase"
                   >
-                    {{ ctx }}
+                    <template v-if="canUpdateWorkers && ip"> {{ ctx }}: {{ ip }} </template>
+                    <template v-else>
+                      {{ ctx }}
+                    </template>
                   </v-chip>
+                </div>
+
+                <v-divider class="my-3" />
+
+                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                  <v-icon size="small" class="mr-1">mdi-ip-network</v-icon>
+                  Last IP
+                  <v-tooltip v-if="worker.ip_changed" location="bottom">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="small" color="warning" class="ml-1">
+                        mdi-alert-circle-outline
+                      </v-icon>
+                    </template>
+                    <span>IP discrepancy detected between worker IP and context IPs</span>
+                  </v-tooltip>
+                </div>
+                <div class="text-body-2">
+                  {{ worker.last_ip || 'N/A' }}
                 </div>
 
                 <v-divider class="my-3" />

@@ -5,6 +5,7 @@ import csv
 import datetime
 import os
 from pathlib import Path
+from typing import Any
 
 import requests
 from dateutil.relativedelta import relativedelta
@@ -28,7 +29,11 @@ file_prefix = os.getenv("FILE_PREFIX", "zimfarm_tasks_")
 offliners = os.getenv("OFFLINERS", "zimit").split(",")
 
 
-def get_event_value(events, code, default=None):
+def get_event_value(
+    events: list[dict[str, str | datetime.datetime]],
+    code: str,
+    default: Any | None = None,
+):
     matching_events = [event for event in events if event["code"] == code]
     if matching_events:
         return matching_events[0]["timestamp"]

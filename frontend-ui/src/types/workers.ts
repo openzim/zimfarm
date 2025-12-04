@@ -9,6 +9,8 @@ interface BaseWorker {
   cordoned: boolean
   admin_disabled: boolean
   contexts: Record<string, string | null>
+  last_ip?: string
+  ip_changed: boolean
 }
 
 export interface Worker extends BaseWorker {
