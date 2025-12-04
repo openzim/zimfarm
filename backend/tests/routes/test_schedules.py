@@ -168,6 +168,7 @@ def test_get_similar_schedules(
                 },
                 "enabled": True,
                 "periodicity": SchedulePeriodicity.manually.value,
+                "version": "initial",
             },
             HTTPStatus.UNPROCESSABLE_ENTITY,
             id="invalid-config-missing-offliner-id",
@@ -201,6 +202,7 @@ def test_get_similar_schedules(
                 },
                 "enabled": True,
                 "periodicity": SchedulePeriodicity.manually.value,
+                "version": "initial",
             },
             HTTPStatus.UNPROCESSABLE_ENTITY,
             id="invalid-config-extra-keys",
@@ -267,6 +269,7 @@ def test_get_similar_schedules(
                 "enabled": True,
                 "periodicity": SchedulePeriodicity.manually.value,
                 "context": "test",
+                "version": "initial",
             },
             HTTPStatus.OK,
             id="valid-config",
@@ -874,6 +877,7 @@ def test_create_duplicate_schedule(
             ),
             "enabled": True,
             "periodicity": SchedulePeriodicity.manually.value,
+            "version": "initial",
         },
     )
     assert response.status_code == HTTPStatus.CONFLICT

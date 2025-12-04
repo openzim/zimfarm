@@ -41,7 +41,7 @@ class ScheduleCreateSchema(BaseModel):
     periodicity: SchedulePeriodicity
     tags: list[NotEmptyString] = Field(default_factory=list)
     enabled: bool
-    version: str = "initial"  # version of offliner to use for validation
+    version: NotEmptyString
     config: dict[str, Any]  # will be validated in the route
     notification: ScheduleNotificationSchema | None = None
     context: str | None = None
