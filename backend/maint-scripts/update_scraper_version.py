@@ -104,7 +104,8 @@ def update_schedules(
 
     for obj in session.execute(
         sa.select(Schedule).where(
-            Schedule.config["offliner"]["offliner_id"].astext == offliner.id
+            Schedule.config["offliner"]["offliner_id"].astext == offliner.id,
+            Schedule.archived.is_(False),
         )
     ).scalars():
         schedule = create_schedule_full_schema(obj, offliner)
