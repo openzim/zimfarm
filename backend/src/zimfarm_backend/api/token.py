@@ -2,21 +2,52 @@ import datetime
 from typing import Any
 
 import jwt
+from jwt import PyJWKClient
 
 from zimfarm_backend.api.constants import (
     JWT_SECRET,
     JWT_TOKEN_EXPIRY_DURATION,
     JWT_TOKEN_ISSUER,
+    KIWIX_CLIENT_ID,
+    KIWIX_ISSUER,
+    KIWIX_JWKS_URI,
 )
+
+# PyJWKClient for fetching and caching JWKS from OpenID configuration
+# The client will automatically discover JWKS URI from /.well-known/openid-configuration
+# and cache the keys internally
+_jwks_client = PyJWKClient(KIWIX_JWKS_URI, cache_keys=True)
+
+
+def verify_kiwix_access_token(token: str) -> dict[str, Any]:
+    """Verify a Kiwix access token by validating JWT signature using JWKS."""
+    signing_key = _jwks_client.get_signing_key_from_jwt(token)
+
+    # Decode and verify the token
+    decoded_token = jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["RS256"],
+        issuer=KIWIX_ISSUER,
+        options={
+            "verify_signature": True,
+            "verify_exp": True,
+            "verify_iat": True,
+            "verify_iss": True,
+            "require": ["exp", "iat", "iss", "sub"],
+        },
+    )
+    client_id = decoded_token.get("client_id")
+    if client_id != KIWIX_CLIENT_ID:
+        raise ValueError("Kiwix access token client ID is not valid")
+
+    return decoded_token
 
 
 def generate_access_token(
     *,
     user_id: str,
-    username: str,
     issue_time: datetime.datetime,
-    email: str | None = None,
-    scope: dict[str, Any] | None = None,
 ) -> str:
     """Generate a JWT access token for the given user ID with configured expiry."""
 
@@ -26,10 +57,5 @@ def generate_access_token(
         "exp": expire_time.timestamp(),  # expiration time
         "iat": issue_time.timestamp(),  # issued at
         "subject": user_id,
-        "user": {
-            "username": username,
-            "email": email,
-            "scope": scope or {},
-        },
     }
     return jwt.encode(payload, key=JWT_SECRET, algorithm="HS256")

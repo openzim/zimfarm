@@ -1,6 +1,7 @@
 import ArchivedSchedulesView from '@/views/ArchivedSchedulesView.vue'
 import ChangePasswordView from '@/views/ChangePasswordView.vue'
 import NotFoundView from '@/views/NotFound.vue'
+import OAuthCallbackView from '@/views/OAuthCallbackView.vue'
 import PipelineView from '@/views/PipelineView.vue'
 import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
 import SchedulesView from '@/views/SchedulesView.vue'
@@ -55,6 +56,12 @@ const routes = [
     name: 'sign-in',
     component: SignInView,
     meta: { title: 'Zimfarm | Sign In' },
+  },
+  {
+    path: '/oauth/callback',
+    name: 'oauth-callback',
+    component: OAuthCallbackView,
+    meta: { title: 'Zimfarm | Authenticating...' },
   },
   {
     path: '/change-password',

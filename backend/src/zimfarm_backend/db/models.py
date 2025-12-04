@@ -71,6 +71,7 @@ class User(Base):
     scope: Mapped[dict[str, Any] | None]
     role: Mapped[str] = mapped_column(server_default="custom")
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
+    idp_sub: Mapped[UUID | None] = mapped_column(unique=True, index=True, default=None)
 
     ssh_keys: Mapped[list["Sshkey"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False

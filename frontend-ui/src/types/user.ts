@@ -12,11 +12,11 @@ export interface JWTPayload {
   exp: number
   iat: number
   subject: string
-  user: JWTUser
 }
 
 export interface User extends JWTUser {
   role: string
+  idp_sub?: string
 }
 
 export interface Token {
@@ -44,4 +44,12 @@ export interface SshKeyList {
 
 export interface UserWithSshKeys extends User, SshKeyList {
   ssh_keys: SshKeyRead[]
+}
+
+// Kiwix OAuth2 authentication types
+export interface KiwixTokenResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+  refresh_token: string
 }
