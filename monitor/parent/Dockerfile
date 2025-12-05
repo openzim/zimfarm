@@ -27,7 +27,7 @@ RUN printf "enabled: no\n" | tee /etc/netdata/python.d.conf /etc/netdata/go.d.co
     && chmod 0644 /etc/cron.d/update-stream-whitelist \
     && touch /etc/netdata/stream.conf \
     && chmod a+x /usr/local/bin/entrypoint \
-    && wget https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 \
+    && wget -q https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 \
     && mv dumb-init_1.2.5_x86_64 /usr/bin/dumb-init \
     && chmod +x /usr/bin/dumb-init
 

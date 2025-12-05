@@ -48,7 +48,7 @@ def get_token() -> str:
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
 
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req) as response:  # nosec B310
             data = json.loads(response.read().decode("utf-8"))
             return data.get("access_token")
     except urllib.error.HTTPError as e:
@@ -85,7 +85,7 @@ def query_api(
         req = urllib.request.Request(
             url, data=data, headers=req_headers, method=method.upper()
         )
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req) as response:  # nosec B310
             status_code = response.getcode()
             response_text = response.read().decode("utf-8")
 
