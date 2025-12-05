@@ -61,8 +61,12 @@ def _serialize_worker_context(
     }
 
 
-def create_worker_schema(worker: Worker) -> WorkerLightSchema:
+def create_worker_schema(
+    worker: Worker, *, show_secrets: bool = True
+) -> WorkerLightSchema:
     return WorkerLightSchema(
+        show_secrets=show_secrets,
+        last_ip=worker.last_ip,
         last_seen=worker.last_seen,
         name=worker.name,
         offliners=worker.offliners,
@@ -103,7 +107,12 @@ def update_worker(
 
 
 def get_workers(
-    session: OrmSession, *, skip: int, limit: int, hide_offlines: bool = False
+    session: OrmSession,
+    *,
+    skip: int,
+    limit: int,
+    hide_offlines: bool = False,
+    show_secrets: bool = True,
 ) -> WorkersListResult:
     """Get a list of workers."""
     stmt = (
@@ -130,11 +139,13 @@ def get_workers(
     results = WorkersListResult(nb_records=0, workers=[])
     for nb_records, worker in session.execute(stmt).all():
         results.nb_records = nb_records
-        results.workers.append(create_worker_schema(worker))
+        results.workers.append(create_worker_schema(worker, show_secrets=show_secrets))
     return results
 
 
-def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetricsSchema:
+def get_worker_metrics(
+    session: OrmSession, *, worker_name: str, show_secrets: bool = True
+) -> WorkerMetricsSchema:
     """Get a worker with full details and metrics."""
     worker = get_worker(session, worker_name=worker_name)
 
@@ -155,6 +166,7 @@ def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetric
 
     return WorkerMetricsSchema(
         name=worker.name,
+        last_ip=worker.last_ip,
         last_seen=worker.last_seen,
         username=worker.user.username,
         resources=ConfigResourcesSchema(
@@ -171,6 +183,7 @@ def get_worker_metrics(session: OrmSession, *, worker_name: str) -> WorkerMetric
         nb_tasks_failed=nb_failed or 0,
         cordoned=worker.cordoned,
         admin_disabled=worker.admin_disabled,
+        show_secrets=show_secrets,
     )
 
 

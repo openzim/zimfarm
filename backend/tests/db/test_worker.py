@@ -1,13 +1,13 @@
 import datetime
 from collections.abc import Callable
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv6Address
 
 import pytest
 from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.schemas.orms import OfflinerSchema
+from zimfarm_backend.common.schemas.orms import BaseWorkerSchema, OfflinerSchema
 from zimfarm_backend.db import worker as worker_module
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import User, Worker
@@ -223,3 +223,55 @@ def test_update_worker_scheduling_disabled(
         dbsession, worker_name=worker.name, admin_disabled=admin_disabled
     )
     assert updated_worker.admin_disabled is expected_admin_disabled
+
+
+@pytest.mark.parametrize(
+    "contexts, last_ip, ip_changed",
+    [
+        pytest.param(
+            {"wikipedia": None},
+            None,
+            False,
+            id="context-and-worker-no-ip",
+        ),
+        pytest.param(
+            {"wikipedia": IPv4Address("127.0.0.1")},
+            None,
+            True,
+            id="worker-no-ip-context-ip",
+        ),
+        pytest.param(
+            {"wikipedia": IPv4Address("127.0.0.1")},
+            IPv4Address("127.0.0.1"),
+            False,
+            id="worker-and-context-same-ip",
+        ),
+        pytest.param(
+            {"wikipedia": IPv4Address("127.0.0.1")},
+            IPv4Address("127.0.0.2"),
+            True,
+            id="worker-and-context-different-ip",
+        ),
+        pytest.param(
+            {"wikipedia": None},
+            IPv4Address("127.0.0.2"),
+            False,
+            id="worker-has-ip-context-no-ip",
+        ),
+    ],
+)
+def test_worker_ip_changed(
+    contexts: dict[str, IPv4Address | IPv6Address | None],
+    last_ip: IPv4Address | None,
+    *,
+    ip_changed: bool,
+):
+    worker = BaseWorkerSchema(
+        name="test_worker",
+        offliners=["mwoffliner"],
+        cordoned=False,
+        admin_disabled=False,
+        contexts=contexts,
+        last_ip=last_ip,
+    )
+    assert worker.ip_changed is ip_changed

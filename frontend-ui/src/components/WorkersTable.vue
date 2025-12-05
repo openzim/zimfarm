@@ -82,6 +82,15 @@
               >
                 {{ item.status }}
               </v-chip>
+              <!-- IP discrepancy indicator -->
+              <v-tooltip v-if="item.ip_changed" location="bottom">
+                <template #activator="{ props }">
+                  <v-icon v-bind="props" size="small" color="warning" class="ml-1">
+                    mdi-alert-circle-outline
+                  </v-icon>
+                </template>
+                <span>IP discrepancy detected between worker IP and context IPs</span>
+              </v-tooltip>
               <!-- Local scheduling status -->
               <v-chip
                 v-if="item.cordoned"
