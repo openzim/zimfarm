@@ -198,7 +198,25 @@ class TaskWorker(BaseWorker):
             }
         )
 
-    def _get_scraper_disk_usage(self) -> int:
+    def _get_scraper_container_size(self) -> int:
+        """Calculate the space taken by the scraper image plus R/W layer."""
+        if not self.scraper:
+            return 0
+        result = cast(
+            dict[str, Any],
+            self.docker.api._result(  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+                self.docker.api._get(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                    self.docker.api._url(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                        "/containers/{0}/json", self.scraper.name
+                    ),
+                    params={"size": True},
+                ),
+                True,
+            ),
+        )
+        return result.get("SizeRootFs", 0) + result.get("SizeRw", 0)
+
+    def _get_scraper_workdir_disk_usage(self) -> int:
         """
         Get disk usage of scraper container's task workdir in bytes.
 
@@ -276,7 +294,9 @@ class TaskWorker(BaseWorker):
         cpu_sample = self._compute_scraper_cpu_stats(scraper_stats)
         self.max_cpu_usage = max([cpu_sample, self.max_cpu_usage])
 
-        disk_usage = self._get_scraper_disk_usage()
+        disk_usage = (
+            self._get_scraper_workdir_disk_usage() + self._get_scraper_container_size()
+        )
         self.max_disk_usage = max([disk_usage, self.max_disk_usage])
 
         stats: dict[str, Any] = {
