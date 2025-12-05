@@ -1,5 +1,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import uuid
+
 import humanfriendly
 
 
@@ -17,8 +19,5 @@ def format_size(value: float) -> str:
 
 
 def format_key(fingerprint: str) -> str:
-    """UUID-hex looking from RSA fingerprint"""
-    return (
-        f"{fingerprint[0:8]}-{fingerprint[8:12]}-{fingerprint[12:16]}"
-        f"-{fingerprint[16:20]}-{fingerprint[20:]}"
-    ).upper()
+    """UUID-hex looking from fingerprint"""
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, fingerprint)).upper()

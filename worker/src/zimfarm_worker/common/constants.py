@@ -43,7 +43,7 @@ UPLOADER_IMAGE = getenv(
 )
 CHECKER_IMAGE = getenv("CHECKER_IMAGE", default="ghcr.io/openzim/zim-tools:3.6.0")
 MONITOR_IMAGE = getenv(
-    "MONITOR_IMAGE", default="ghcr.io/openzim/zimfarm-monitor:latest"
+    "MONITOR_IMAGE", default="ghcr.io/openzim/zimfarm-monitor-child:latest"
 )
 
 # paths
@@ -107,7 +107,7 @@ CONTAINER_SCRAPER_IDENT = "zimscraper"
 
 # monitoring-related
 MONITORING_DEST = getenv("MONITORING_DEST", default=None)  # {ip}:{port}
-MONITORING_KEY = getenv("MONITORING_DEST", default=None)  # {uuid}
+MONITORING_KEY = getenv("MONITORING_KEY", default=None)  # {uuid}
 
 # dispatcher-related
 DEFAULT_WEB_API_URLS = getenv(
