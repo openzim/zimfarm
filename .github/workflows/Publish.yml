@@ -12,7 +12,7 @@ on:
         type: boolean
         default: false
       force_components:
-        description: "Force publish specific components (comma-separated: backend, frontend_ui, dnscache, monitor, receiver, uploader, watcher, task_worker, worker_manager, healthcheck)"
+        description: "Force publish specific components (comma-separated: backend, frontend_ui, dnscache, monitor_child, monitor_parent, receiver, uploader, watcher, task_worker, worker_manager, healthcheck)"
         required: false
         type: string
         default: ""
@@ -22,22 +22,24 @@ jobs:
     runs-on: ubuntu-24.04
 
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend_ui: ${{ steps.filter.outputs.frontend_ui }}
-      dnscache: ${{ steps.filter.outputs.dnscache }}
-      monitor: ${{ steps.filter.outputs.monitor }}
-      receiver: ${{ steps.filter.outputs.receiver }}
-      uploader: ${{ steps.filter.outputs.uploader }}
-      watcher: ${{ steps.filter.outputs.watcher }}
-      task_worker: ${{ steps.filter.outputs.task_worker }}
-      worker_manager: ${{ steps.filter.outputs.worker_manager }}
-      healthcheck: ${{ steps.filter.outputs.healthcheck }}
+      backend: ${{ steps.filter.outputs.backend || 'false' }}
+      frontend_ui: ${{ steps.filter.outputs.frontend_ui || 'false' }}
+      dnscache: ${{ steps.filter.outputs.dnscache || 'false' }}
+      monitor_parent: ${{ steps.filter.outputs.monitor_parent || 'false' }}
+      monitor_child: ${{ steps.filter.outputs.monitor_child || 'false' }}
+      receiver: ${{ steps.filter.outputs.receiver || 'false' }}
+      uploader: ${{ steps.filter.outputs.uploader || 'false' }}
+      watcher: ${{ steps.filter.outputs.watcher || 'false' }}
+      task_worker: ${{ steps.filter.outputs.task_worker || 'false' }}
+      worker_manager: ${{ steps.filter.outputs.worker_manager || 'false' }}
+      healthcheck: ${{ steps.filter.outputs.healthcheck || 'false' }}
 
     steps:
       - uses: actions/checkout@v6
 
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name == 'push'
         with:
           filters: |
             backend:
@@ -47,9 +49,9 @@ jobs:
             dnscache:
               - 'dnscache/**'
             monitor_parent:
-              - 'monitor/**'
+              - 'monitor/parent/**'
             monitor_child:
-              - 'monitor/**'
+              - 'monitor/child/**'
             receiver:
               - 'receiver/**'
             uploader:
@@ -67,7 +69,7 @@ jobs:
     name: Dnscache build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.dnscache == 'true' || inputs.force || contains(inputs.force_components, 'dnscache') }}
+    if: ${{ needs.paths-filter.outputs.dnscache == 'true' || inputs.force == true || contains(inputs.force_components, 'dnscache') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -88,7 +90,7 @@ jobs:
     name: Uploader build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.uploader == 'true' || inputs.force || contains(inputs.force_components, 'uploader') }}
+    if: ${{ needs.paths-filter.outputs.uploader == 'true' || inputs.force == true || contains(inputs.force_components, 'uploader') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -109,7 +111,7 @@ jobs:
     name: Backend API build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force || contains(inputs.force_components, 'backend') }}
+    if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force == true || contains(inputs.force_components, 'backend') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -144,7 +146,7 @@ jobs:
     name: Zimfarm Background Tasks Build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force || contains(inputs.force_components, 'backend') }}
+    if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force == true || contains(inputs.force_components, 'backend') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -179,7 +181,7 @@ jobs:
     name: Frontend UI build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.frontend_ui == 'true' || inputs.force || contains(inputs.force_components, 'frontend_ui') }}
+    if: ${{ needs.paths-filter.outputs.frontend_ui == 'true' || inputs.force == true || contains(inputs.force_components, 'frontend_ui') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -213,7 +215,7 @@ jobs:
     name: Receiver build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.receiver == 'true' || inputs.force || contains(inputs.force_components, 'receiver') }}
+    if: ${{ needs.paths-filter.outputs.receiver == 'true' || inputs.force == true || contains(inputs.force_components, 'receiver') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -240,7 +242,7 @@ jobs:
     name: Task worker build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.task_worker == 'true' || inputs.force || contains(inputs.force_components, 'task_worker') }}
+    if: ${{ needs.paths-filter.outputs.task_worker == 'true' || inputs.force == true || contains(inputs.force_components, 'task_worker') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -261,7 +263,7 @@ jobs:
     name: Worker manager build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.worker_manager == 'true' || inputs.force || contains(inputs.force_components, 'worker_manager') }}
+    if: ${{ needs.paths-filter.outputs.worker_manager == 'true' || inputs.force == true || contains(inputs.force_components, 'worker_manager') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -282,7 +284,7 @@ jobs:
     name: Monitor child build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force || contains(inputs.force_components, 'monitor') }}
+    if: ${{ needs.paths-filter.outputs.monitor_child == 'true' || inputs.force == true || contains(inputs.force_components, 'monitor_child') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -302,7 +304,7 @@ jobs:
     name: Monitor parent build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.monitor == 'true' || inputs.force || contains(inputs.force_components, 'monitor') }}
+    if: ${{ needs.paths-filter.outputs.monitor_parent == 'true' || inputs.force == true || contains(inputs.force_components, 'monitor_parent') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v5
@@ -322,7 +324,7 @@ jobs:
     name: Watcher build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.watcher == 'true' || inputs.force || contains(inputs.force_components, 'watcher') }}
+    if: ${{ needs.paths-filter.outputs.watcher == 'true' || inputs.force == true || contains(inputs.force_components, 'watcher') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
@@ -349,7 +351,7 @@ jobs:
     name: Healthcheck build
     runs-on: ubuntu-24.04
     needs: paths-filter
-    if: ${{ needs.paths-filter.outputs.healthcheck == 'true' || inputs.force || contains(inputs.force_components, 'healthcheck') }}
+    if: ${{ needs.paths-filter.outputs.healthcheck == 'true' || inputs.force == true || contains(inputs.force_components, 'healthcheck') }}
     steps:
       - name: Retrieve source code
         uses: actions/checkout@v6
