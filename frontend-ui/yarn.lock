@@ -3349,10 +3349,10 @@ vue@^3.5.17:
     "@vue/server-renderer" "3.5.21"
     "@vue/shared" "3.5.21"
 
-vuetify@^3.8.11:
-  version "3.10.0"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.10.0.tgz#1171ed0339968cca1c59d9a0be58e4f518e61903"
-  integrity sha512-cgtssO0yriqwEdOd6jGfUqUUztunxYPDhyY+iog0Q8i5WEa+3+eQ/dGpXeFoU80qMVm0k6uPd8aJpc5wEVXu3g==
+vuetify@^3.11.2:
+  version "3.11.2"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.11.2.tgz#dd345af4cc4b4deaea525bb69904f51a7dcc7b9c"
+  integrity sha512-1lL0qN6JIdbx6xGYpo6dnx378EfC0t4EotPJdP4go8ThmIdRO3xLva1ALxhxi5lSYTht4R9OVk9miVnwVfDx3A==
 
 w3c-xmlserializer@^5.0.0:
   version "5.0.0"

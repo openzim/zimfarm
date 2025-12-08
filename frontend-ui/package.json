@@ -26,7 +26,7 @@
     "vue-cookies": "^1.8.6",
     "vue-matomo": "^4.2.0",
     "vue-router": "^4.5.1",
-    "vuetify": "^3.8.11"
+    "vuetify": "^3.11.2"
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",

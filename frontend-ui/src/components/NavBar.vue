@@ -77,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import Loading from '@/components/Loading.vue'
 import UserButton from '@/components/UserButton.vue'
 import { ref } from 'vue'
 
