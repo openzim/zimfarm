@@ -81,6 +81,10 @@ def query_api(
         )
     except (JSONDecodeError, Exception):
         logger.exception(
-            f"unexpected error while decoding server response: {resp.text}"
+            f"unexpected error while making request to {url} : {resp.text}"
         )
-        raise
+        return Response(
+            status_code=resp.status_code,
+            success=resp.ok,
+            json={},
+        )
