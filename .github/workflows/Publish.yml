@@ -307,7 +307,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.monitor_parent == 'true' || inputs.force == true || contains(inputs.force_components, 'monitor_parent') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
