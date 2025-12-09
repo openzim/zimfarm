@@ -9,12 +9,13 @@ from zimfarm_backend.background_tasks import cancel_tasks as cancel_tasks_module
 from zimfarm_backend.background_tasks.cancel_tasks import cancel_incomplete_tasks
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.db.models import Task, Worker
+from zimfarm_backend.db.models import Task, User, Worker
 
 
 def test_cancel_incomplete_tasks_stale_task(
     dbsession: OrmSession,
     create_task: Callable[..., Task],
+    create_user: Callable[..., User],
     worker: Worker,
     monkeypatch: MonkeyPatch,
 ):
@@ -26,6 +27,7 @@ def test_cancel_incomplete_tasks_stale_task(
         datetime.timedelta(hours=1).total_seconds(),
     )
     old_time = now - datetime.timedelta(hours=2)
+    create_user(username="periodic-task-gone")
 
     task = create_task(status=TaskStatus.started)
     task.worker_id = worker.id
@@ -91,6 +93,7 @@ def test_cancel_incomplete_tasks_excludes_complete_statuses(
 def test_cancel_incomplete_tasks_handles_various_incomplete_statuses(
     dbsession: OrmSession,
     create_task: Callable[..., Task],
+    create_user: Callable[..., User],
     worker: Worker,
     status: TaskStatus,
     monkeypatch: MonkeyPatch,
@@ -103,6 +106,7 @@ def test_cancel_incomplete_tasks_handles_various_incomplete_statuses(
         datetime.timedelta(hours=1).total_seconds(),
     )
     old_time = now - datetime.timedelta(hours=2)
+    create_user(username="periodic-task-gone")
 
     task = create_task(status=status)
     task.worker_id = worker.id
@@ -115,4 +119,5 @@ def test_cancel_incomplete_tasks_handles_various_incomplete_statuses(
     # Task should have cancel_requested status
     dbsession.refresh(task)
     assert task.status == TaskStatus.cancel_requested
-    assert task.canceled_by == "periodic-task-gone"
+    assert task.canceled_by is not None
+    assert task.canceled_by.username == "periodic-task-gone"

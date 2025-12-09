@@ -687,10 +687,13 @@ def create_user(
     data_gen: Faker,
 ) -> Callable[..., User]:
     def _create_user(
-        *, permission: RoleEnum = RoleEnum.ADMIN, idp_sub: UUID | None = None
+        *,
+        username: str | None = None,
+        permission: RoleEnum = RoleEnum.ADMIN,
+        idp_sub: UUID | None = None,
     ):
         user = User(
-            username=data_gen.first_name(),
+            username=username or data_gen.first_name(),
             password_hash=generate_password_hash("testpassword"),
             email=data_gen.safe_email(),
             scope=None,
@@ -883,10 +886,12 @@ def create_schedule(
     schedule_config: ScheduleConfigSchema,
     language: LanguageSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
+    user: User,
 ):
     _language = language
     _schedule_config = schedule_config
     _offliner_definition = mwoffliner_definition
+    _user = user
 
     def _create_schedule(
         *,
@@ -901,6 +906,7 @@ def create_schedule(
         schedule_config: ScheduleConfigSchema | None = None,
         raw_schedule_config: dict[str, Any] | None = None,
         worker: Worker | None = None,
+        user: User | None = None,
         archived: bool = False,
     ) -> Schedule:
         offliner_definition = offliner_definition or _offliner_definition
@@ -937,7 +943,6 @@ def create_schedule(
         schedule.durations.append(schedule_duration)
 
         history_entry = ScheduleHistory(
-            author="test",
             created_at=getnow(),
             comment=None,
             config=schedule.config,
@@ -950,6 +955,7 @@ def create_schedule(
             context=schedule.context,
             offliner_definition_version=offliner_definition.version,
         )
+        history_entry.author_id = user.id if user else _user.id
         schedule.history_entries.append(history_entry)
 
         dbsession.add(schedule)
@@ -983,15 +989,17 @@ def create_requested_task(
     schedule_config: ScheduleConfigSchema,
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
+    user: User,
 ):
     _schedule_config = schedule_config
     _worker = worker
+    _user = user
 
     def _create_requested_task(
         *,
         schedule_name: str = "testschedule",
         status: TaskStatus = TaskStatus.requested,
-        requested_by: str = "testuser",
+        requested_by: User = _user,
         priority: int = 0,
         worker: Worker | None = None,
         request_date: datetime.datetime | None = None,
@@ -1021,7 +1029,6 @@ def create_requested_task(
             timestamp=timestamp,
             updated_at=request_date or now,
             events=events,
-            requested_by=requested_by,
             priority=priority,
             config=expanded_config(
                 schedule_config, mwoffliner, mwoffliner_definition
@@ -1031,6 +1038,7 @@ def create_requested_task(
             original_schedule_name=schedule_name,
             context=schedule.context,
         )
+        requested_task.requested_by_id = requested_by.id
         requested_task.schedule = schedule
         requested_task.offliner_definition_id = schedule.offliner_definition_id
         requested_task.worker = _worker if worker is None else worker
@@ -1077,6 +1085,7 @@ def requested_tasks(
 def create_task(
     create_requested_task: Callable[..., RequestedTask],
     worker: Worker,
+    user: User,
     dbsession: OrmSession,
 ) -> Callable[..., Task]:
     _worker = worker
@@ -1098,8 +1107,6 @@ def create_task(
             debug={},
             status=requested_task.status,
             timestamp=requested_task.timestamp,
-            requested_by=requested_task.requested_by,
-            canceled_by=None,
             container={},
             priority=requested_task.priority,
             config=requested_task.config,
@@ -1109,6 +1116,7 @@ def create_task(
             context=requested_task.context,
         )
         task.id = requested_task.id
+        task.requested_by_id = user.id
         task.offliner_definition_id = requested_task.offliner_definition_id
         task.schedule_id = requested_task.schedule_id
         task.worker_id = _worker.id if worker is None else worker.id
