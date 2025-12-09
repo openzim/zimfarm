@@ -276,6 +276,3 @@ services:
 volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
-  netdatalib:
-  netdatacache:
-  netdataconfig:

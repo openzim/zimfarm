@@ -40,7 +40,20 @@ fi
 
 # Run update-stream-whitelist on startup
 echo "Running initial stream whitelist update"
-/usr/local/bin/update-stream-whitelist.sh &
+/usr/local/bin/update-stream-whitelist.sh
+
+# Setup cron job with environment variables
+echo "Setting up cron job with environment variables"
+cat > /etc/cron.d/update-stream-whitelist <<EOF
+DOCKER_USR=${DOCKER_USR}
+NETDATA_LISTENER_PORT=${NETDATA_LISTENER_PORT}
+ZIMFARM_API_URL=${ZIMFARM_API_URL}
+ZIMFARM_USERNAME=${ZIMFARM_USERNAME}
+ZIMFARM_PASSWORD=${ZIMFARM_PASSWORD}
+
+*/15 * * * * root /usr/local/bin/update-stream-whitelist.sh >> /var/log/cron.log 2>&1
+EOF
+chmod 0644 /etc/cron.d/update-stream-whitelist
 
 # Start cron in the background
 echo "Starting cron daemon"

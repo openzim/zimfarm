@@ -14,18 +14,13 @@ COPY update-stream-whitelist.sh /usr/local/bin/update-stream-whitelist.sh
 COPY regen-stream-conf.py /usr/local/bin/regen-stream-conf
 COPY entrypoint.sh /usr/local/bin/entrypoint
 
-# disable all external modules and setup cron
+# disable all external modules
 RUN printf "enabled: no\n" | tee /etc/netdata/python.d.conf /etc/netdata/go.d.conf /etc/netdata/node.d.conf \
     && printf "#!/bin/bash\nrm -rf /var/cache/netdata/* && kill 1\n" > /usr/local/bin/reset-netdata \
     && chmod a+x /usr/local/bin/reset-netdata \
     && chmod a+x /usr/local/bin/regen-stream-conf \
     && chmod a+x /usr/local/bin/update-stream-whitelist.sh \
     && touch /etc/netdata/.opt-out-from-anonymous-statistics \
-    && echo "DOCKER_USR=netdata" > /etc/cron.d/update-stream-whitelist \
-    && echo "NETDATA_LISTENER_PORT=19999" >> /etc/cron.d/update-stream-whitelist \
-    && echo "*/15 * * * * root /usr/local/bin/update-stream-whitelist.sh >> /var/log/cron.log 2>&1" >> /etc/cron.d/update-stream-whitelist \
-    && chmod 0644 /etc/cron.d/update-stream-whitelist \
-    && touch /etc/netdata/stream.conf \
     && chmod a+x /usr/local/bin/entrypoint \
     && wget -q https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 \
     && mv dumb-init_1.2.5_x86_64 /usr/bin/dumb-init \

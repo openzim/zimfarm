@@ -119,6 +119,7 @@ def get_users(
         .where(User.deleted.is_(False))
         .offset(skip)
         .limit(limit)
+        .order_by(User.username.asc(), User.id.asc())
     )
 
     results = UserList(nb_records=0, users=[])
