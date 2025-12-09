@@ -37,7 +37,9 @@ class FlagSchema(BaseFlagSchema):
         "list-of-string-enum",
         "list-of-url",
         "list-of-email",
+        "blob",
     ]
+    kind: Literal["image", "css"] | None = None
     choices: list[str] | list[Choice] | None = None
     alias: str | None = None
     relaxed_pattern: str | None = Field(validation_alias="relaxedPattern", default=None)
@@ -61,6 +63,17 @@ class FlagSchema(BaseFlagSchema):
         """Validate that a frozen field has a default"""
         if self.frozen and not self.default:
             raise ValueError("Frozen fields should have a default")
+
+        return self
+
+    @model_validator(mode="after")
+    def check_type(self) -> Self:
+        """Validate that only blob types have a kind"""
+        if self.type == "blob" and not self.kind:
+            raise ValueError("Blob types must specify a kind")
+
+        if self.type != "blob" and self.kind:
+            raise ValueError("Only blob types should specify a kind")
 
         return self
 
