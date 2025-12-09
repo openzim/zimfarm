@@ -1109,7 +1109,7 @@ def test_get_schedule_history_pagination(
     query_string: str,
     expected_count: int,
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    user = create_user(username="test", permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
@@ -1125,7 +1125,7 @@ def test_get_schedule_history_pagination(
     for i in range(9):
         update_schedule(
             session=dbsession,
-            author="test",
+            author=user.username,
             schedule_name=schedule.name,
             comment=f"test_comment_{i}",
             tags=[*schedule.tags, f"test_tag_{i}"],

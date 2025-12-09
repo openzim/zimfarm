@@ -288,6 +288,7 @@ def test_request_task_for_worker(
     create_worker: Callable[..., Worker],
     create_schedule: Callable[..., Schedule],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_user: Callable[..., User],
     *,
     worker_cordoned: bool,
     worker_admin_disabled: bool,
@@ -319,10 +320,11 @@ def test_request_task_for_worker(
         ),
         context=schedule_context,
     )
+    requested_by = create_user(username="testuser")
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
-        requested_by="testuser",
+        requested_by=requested_by.username,
         worker_name=worker.name,
     )
     assert bool(result.requested_task) == result_bool
@@ -593,7 +595,7 @@ def test_get_requested_tasks(
     ):
         assert task.id == requested_task.id
         assert task.status == requested_task.status
-        assert task.requested_by == requested_task.requested_by
+        assert task.requested_by == requested_task.requested_by.username
         assert (
             task.worker_name
             == requested_task.worker.name  # pyright: ignore[reportOptionalMemberAccess]
@@ -867,7 +869,6 @@ def test_get_tasks_doable_by_worker(
         status=TaskStatus.requested,
         timestamp=[("requested", getnow()), ("reserved", getnow())],
         events=[{"code": TaskStatus.requested, "timestamp": getnow()}],
-        requested_by=worker.user.username,
         priority=0,
         config=expanded_config(
             schedule_config, mwoffliner, mwoffliner_definition
@@ -878,6 +879,7 @@ def test_get_tasks_doable_by_worker(
         original_schedule_name="test_schedule",
         context=schedule_context,
     )
+    task.requested_by = worker.user
     task.offliner_definition_id = mwoffliner_definition.id
     dbsession.add(task)
     dbsession.flush()
@@ -1054,7 +1056,6 @@ def test_find_requested_task_for_worker(
         status="requested",
         timestamp=[("requested", getnow()), ("reserved", getnow())],
         events=[{"code": "requested", "timestamp": getnow()}],
-        requested_by=worker.user.username,
         priority=0,
         config=expanded_config(
             schedule_config, mwoffliner, mwoffliner_definition
@@ -1064,6 +1065,7 @@ def test_find_requested_task_for_worker(
         updated_at=getnow(),
         original_schedule_name="test_schedule",
     )
+    task.requested_by = worker.user
     task.offliner_definition_id = mwoffliner_definition.id
     task.worker = worker
     dbsession.add(task)
@@ -1155,7 +1157,6 @@ def test_find_requested_task_for_worker_with_schedule(
         status="requested",
         timestamp=[("requested", getnow()), ("reserved", getnow())],
         events=[{"code": "requested", "timestamp": getnow()}],
-        requested_by=worker.user.username,
         priority=0,
         config=expanded_config(
             schedule_config, mwoffliner, mwoffliner_definition
@@ -1166,6 +1167,7 @@ def test_find_requested_task_for_worker_with_schedule(
         original_schedule_name="test_schedule",
         context=schedule_context,
     )
+    task.requested_by = worker.user
     task.offliner_definition_id = mwoffliner_definition.id
     worker.contexts = worker_contexts
     task.worker = worker

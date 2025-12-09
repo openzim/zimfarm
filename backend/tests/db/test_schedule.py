@@ -114,6 +114,7 @@ def test_get_schedule_duration_with_worker(
 
 def test_create_schedule(
     dbsession: OrmSession,
+    user: User,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
 ):
@@ -123,7 +124,7 @@ def test_create_schedule(
         session=dbsession,
         name="test_schedule",
         category=ScheduleCategory.other,
-        author="test",
+        author=user.username,
         language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
         tags=["test"],
@@ -156,15 +157,17 @@ def test_create_schedule(
 def test_create_duplicate_schedule_with_existing_name(
     dbsession: OrmSession,
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_user: Callable[..., User],
     mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that create_schedule creates a schedule with the correct duration"""
     schedule_config = create_schedule_config(cpu=1, memory=2**10, disk=2**10)
     schedule_name = "test_schedule"
+    user = create_user(username="author")
     create_schedule(
         session=dbsession,
         name=schedule_name,
-        author="test",
+        author=user.username,
         category=ScheduleCategory.other,
         language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
@@ -178,7 +181,7 @@ def test_create_duplicate_schedule_with_existing_name(
         create_schedule(
             session=dbsession,
             name=schedule_name,
-            author="test",
+            author=user.username,
             category=ScheduleCategory.other,
             language=LanguageSchema(code="eng", name="English"),
             config=schedule_config,
@@ -202,6 +205,7 @@ def test_get_all_schedules(
 
 def test_update_schedule(
     dbsession: OrmSession,
+    user: User,
     create_schedule: Callable[..., Schedule],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
     mwoffliner: OfflinerSchema,
@@ -217,7 +221,7 @@ def test_update_schedule(
     updated_schedule = create_schedule_full_schema(
         update_schedule(
             dbsession,
-            author="test",
+            author=user.username,
             schedule_name=old_schedule.name,
             new_schedule_config=new_schedule_config,
             name=old_schedule.name + "_updated",

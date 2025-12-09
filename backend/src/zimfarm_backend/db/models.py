@@ -160,8 +160,10 @@ class Task(Base):
     events: Mapped[list[dict[str, Any]]]
     debug: Mapped[dict[str, Any]]
     status: Mapped[str] = mapped_column(index=True)
-    requested_by: Mapped[str]
-    canceled_by: Mapped[str | None]
+    requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    canceled_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("user.id"), init=False
+    )
     container: Mapped[dict[str, Any]]
     priority: Mapped[int]
     # config must be JSON instead of JSONB so that we can query on dict item value
@@ -192,6 +194,12 @@ class Task(Base):
 
     files: Mapped[list["File"]] = relationship(
         back_populates="task", cascade="all, delete-orphan", init=False
+    )
+    requested_by: Mapped["User"] = relationship(
+        init=False, foreign_keys=[requested_by_id]
+    )
+    canceled_by: Mapped["User | None"] = relationship(
+        init=False, foreign_keys=[canceled_by_id]
     )
 
 
@@ -307,7 +315,7 @@ class ScheduleHistory(Base):
     schedule_id: Mapped[UUID] = mapped_column(
         ForeignKey("schedule.id", ondelete="CASCADE"), init=False
     )
-    author: Mapped[str]
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
     created_at: Mapped[datetime]
     comment: Mapped[str | None]
     name: Mapped[str]
@@ -327,6 +335,7 @@ class ScheduleHistory(Base):
     schedule: Mapped["Schedule"] = relationship(
         back_populates="history_entries", init=False
     )
+    author: Mapped["User"] = relationship(init=False)
 
 
 class ScheduleDuration(Base):
@@ -357,7 +366,7 @@ class RequestedTask(Base):
     status: Mapped[str]
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[list[dict[str, Any]]]
-    requested_by: Mapped[str]
+    requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
     priority: Mapped[int]
     # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
@@ -387,6 +396,8 @@ class RequestedTask(Base):
         ForeignKey("offliner_definition.id"), init=False
     )
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
+    requested_by: Mapped["User"] = relationship(init=False)
+
     __table_args__ = (UniqueConstraint("schedule_id"),)
 
 

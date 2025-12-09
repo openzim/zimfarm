@@ -49,6 +49,7 @@ from zimfarm_backend.db.offliner_definition import (
 )
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
+from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.db.worker import get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.timestamp import (
@@ -109,7 +110,6 @@ def _create_new_requested_task(
         status=TaskStatus.requested,
         timestamp=[(TaskStatus.requested.value, now)],
         events=[{"code": TaskStatus.requested, "timestamp": now}],
-        requested_by=requested_by,
         priority=priority,
         config=expanded_config(
             offliner=offliner,
@@ -152,6 +152,9 @@ def _create_new_requested_task(
         # as schedule might be deleted from DB
         context=schedule.context,
     )
+    requested_task.requested_by_id = get_user_by_username(
+        session, username=requested_by
+    ).id
     requested_task.schedule = schedule
     if worker:
         requested_task.worker = worker
@@ -329,7 +332,7 @@ def get_requested_tasks(
             RequestedTask.status,
             RequestedTask.config,
             RequestedTask.timestamp,
-            RequestedTask.requested_by,
+            User.username.label("requested_by"),
             RequestedTask.priority,
             RequestedTask.original_schedule_name,
             RequestedTask.updated_at,
@@ -337,6 +340,7 @@ def get_requested_tasks(
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
+        .join(User, RequestedTask.requested_by)
         .join(Worker, RequestedTask.worker, isouter=True)
         .join(Schedule, RequestedTask.schedule, isouter=True)
         .where(
@@ -460,7 +464,10 @@ def get_tasks_doable_by_worker(
 
     query = (
         select(RequestedTask)
-        .options(selectinload(RequestedTask.offliner_definition))
+        .options(
+            selectinload(RequestedTask.offliner_definition),
+            selectinload(RequestedTask.requested_by),
+        )
         .where(
             RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger)
             <= worker.cpu,
@@ -512,7 +519,7 @@ def get_tasks_doable_by_worker(
                     context={"skip_validation": True},
                 ),
                 timestamp=task.timestamp,
-                requested_by=task.requested_by,
+                requested_by=task.requested_by.username,
                 priority=task.priority,
                 worker_name=task.worker.name if task.worker else worker.name,
                 context=task.context,
@@ -736,7 +743,7 @@ def create_requested_task_full_schema(
             context={"skip_validation": True},
         ),
         timestamp=requested_task.timestamp,
-        requested_by=requested_task.requested_by,
+        requested_by=requested_task.requested_by.username,
         priority=requested_task.priority,
         schedule_name=(
             requested_task.schedule.name if requested_task.schedule else None
@@ -765,7 +772,10 @@ def get_requested_task_by_id_or_none(
 ) -> RequestedTaskFullSchema | None:
     requested_task = session.scalars(
         select(RequestedTask)
-        .options(selectinload(RequestedTask.offliner_definition))
+        .options(
+            selectinload(RequestedTask.offliner_definition),
+            selectinload(RequestedTask.requested_by),
+        )
         .where(RequestedTask.id == requested_task_id)
     ).one_or_none()
     if requested_task is None:
