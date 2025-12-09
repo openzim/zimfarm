@@ -231,6 +231,7 @@ import type { Worker } from '@/types/workers'
 import { formatDt, fromNow } from '@/utils/format'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import type { VueCookies } from 'vue-cookies'
+import { useTheme } from 'vuetify'
 
 const props = defineProps<{
   workerHeaders: { title: string; value: string }[]
@@ -251,6 +252,7 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
 const expanded = ref<string[]>([])
+const theme = useTheme()
 
 const expandedAll = computed(
   () => props.workers.length > 0 && props.workers.every((w) => expanded.value.includes(w.name)),
@@ -350,7 +352,8 @@ function getRowProps({
 }): RowProps {
   const row = internalItem?.raw ?? item
   if (row?.kind === 'task') {
-    return { class: 'bg-grey-lighten-4' }
+    const isDark = theme.global.current.value.dark
+    return { class: isDark ? 'bg-grey-darken-3' : 'bg-grey-lighten-4' }
   }
   return {}
 }

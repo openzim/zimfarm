@@ -25,6 +25,9 @@ const app = createApp(App)
 const vuetify = createVuetify({
   components,
   directives,
+  theme: {
+    defaultTheme: 'system',
+  },
 })
 
 const pinia = createPinia()
