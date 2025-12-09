@@ -1,5 +1,5 @@
 FROM ghcr.io/netdata/netdata:v2.8.0
-LABEL org.opencontainers.image.source=https://github.com/kiwix/container-images
+LABEL org.opencontainers.image.source=https://github.com/openzim/zimfarm
 
 RUN apt-get update && apt-get install -y wget cron procps psmisc && rm -rf /var/lib/apt/lists/*
 
