@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.api.constants import (
     CREATE_NEW_KIWIX_ACCOUNT,
     JWT_SECRET,
-    KIWIX_CLIENT_ID,
 )
 from zimfarm_backend.api.routes.http_errors import UnauthorizedError
 from zimfarm_backend.api.token import verify_kiwix_access_token
@@ -39,7 +38,7 @@ class JWTClaims(BaseModel):
     exp: datetime.datetime
     iat: datetime.datetime
     sub: uuid.UUID = Field(alias="subject")
-    client_id: str | None = Field(exclude=True, default=None)
+    name: str | None = Field(exclude=True, default=None)
 
 
 def get_jwt_claims_or_none(
@@ -93,15 +92,13 @@ def get_current_user_or_none_with_session(
         user = get_user_by_id_or_none(session, user_id=claims.sub)
         if user is None:
             user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
-            # If this is a kiwix token, we create a new user with this idp_sub
-            if (
-                user is None
-                and CREATE_NEW_KIWIX_ACCOUNT
-                and claims.client_id == KIWIX_CLIENT_ID
-            ):
+            # If this is a kiwix token, we create a new user account
+            if user is None and CREATE_NEW_KIWIX_ACCOUNT:
+                if not claims.name:
+                    raise UnauthorizedError("Token is missing 'profile' scope")
                 create_user(
                     session,
-                    username=str(claims.sub),
+                    username=claims.name,
                     role=RoleEnum.VIEWER,
                     idp_sub=claims.sub,
                 )

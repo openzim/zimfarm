@@ -29,17 +29,11 @@ def verify_kiwix_access_token(token: str) -> dict[str, Any]:
         signing_key.key,
         algorithms=["RS256"],
         issuer=KIWIX_ISSUER,
+        audience=KIWIX_CLIENT_ID,
         options={
-            "verify_signature": True,
-            "verify_exp": True,
-            "verify_iat": True,
-            "verify_iss": True,
-            "require": ["exp", "iat", "iss", "sub"],
+            "require": ["exp", "iat", "iss", "sub", "name", "amr", "aud"],
         },
     )
-    client_id = decoded_token.get("client_id")
-    if client_id != KIWIX_CLIENT_ID:
-        raise ValueError("Kiwix access token client ID is not valid")
 
     return decoded_token
 

@@ -164,7 +164,7 @@ export const useAuthStore = defineStore('auth', () => {
       const expiresTime = new Date(Date.now() + response.expires_in * 1000).toISOString()
 
       const newToken: StoredToken = {
-        access_token: response.access_token,
+        access_token: response.id_token,
         refresh_token: response.refresh_token,
         token_type: 'kiwix',
         expires_time: expiresTime,
@@ -373,7 +373,7 @@ export const useAuthStore = defineStore('auth', () => {
       const expiresTime = new Date(Date.now() + kiwixToken.expires_in * 1000).toISOString()
 
       const newToken: StoredToken = {
-        access_token: kiwixToken.access_token,
+        access_token: kiwixToken.id_token,
         refresh_token: kiwixToken.refresh_token,
         token_type: 'kiwix',
         expires_time: expiresTime,
@@ -382,7 +382,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = newToken
 
       // Fetch user info from backend using the Kiwix token
-      await fetchUserInfo(kiwixToken.access_token)
+      await fetchUserInfo(newToken.access_token)
 
       errors.value = []
       saveTokenToLocalStorage(newToken)
