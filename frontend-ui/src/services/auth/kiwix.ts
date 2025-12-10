@@ -61,7 +61,6 @@ export async function initiateKiwixLogin(config: KiwixAuthConfig): Promise<void>
     state: state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
-    aal: 'aal2',
     scope: 'openid profile offline_access',
   })
 
