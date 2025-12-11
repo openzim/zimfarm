@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import uuid
 from collections.abc import Callable
 from functools import partial
 from itertools import chain
@@ -87,9 +88,7 @@ def process_blob_fields(
             if flag_schema.kind is None:
                 raise ValueError("Blobs must have a 'kind'")
 
-            response = upload_blob(
-                data=value,
-            )
+            response = upload_blob(data=value, kind=flag_schema.kind)
             setattr(data, flag_name, response.url)
             results.append(
                 ProcessedBlob(
@@ -102,9 +101,27 @@ def process_blob_fields(
     return results
 
 
-def upload_blob(
-    data: str,
-) -> UploadResponse:
+def generate_blob_name_uuid(
+    kind: str,
+) -> str:
+    """
+    Generate random UUID-based filename.
+    """
+    blob_uuid = uuid.uuid4()
+    extension = get_extension_from_kind(kind)
+    return f"{blob_uuid}{extension}"
+
+
+def get_extension_from_kind(kind: str) -> str:
+    """Simple extension mapping from kind"""
+    if kind == "css":
+        return ".css"
+    elif kind == "image":
+        return ".png"
+    return ".bin"
+
+
+def upload_blob(*, data: str, kind: str) -> UploadResponse:
     """
     Upload blob data to upstream storage and return the URL.
     """
@@ -120,8 +137,9 @@ def upload_blob(
     headers = {
         "Content-Type": "application/octet-stream",
     }
+    filename = generate_blob_name_uuid(kind)
 
-    url = f"{BLOB_STORAGE_URL}/picture.png"
+    url = f"{BLOB_STORAGE_URL}/{filename}"
     response = requests.put(
         url,
         headers=headers,
