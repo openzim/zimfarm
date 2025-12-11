@@ -421,9 +421,12 @@ class Blob(Base):
     )
     flag_name: Mapped[str]
     kind: Mapped[str]
-    url: Mapped[str] = mapped_column(index=True)
+    url: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(
         init=False, server_default=text("CURRENT_TIMESTAMP")
     )
+    checksum: Mapped[str]  # SHA-256 checksum of blob
 
     schedule: Mapped["Schedule"] = relationship(init=False, back_populates="blobs")
+
+    __table_args__ = (UniqueConstraint("schedule_id", "flag_name", "checksum"),)

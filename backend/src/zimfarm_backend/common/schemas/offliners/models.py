@@ -26,6 +26,7 @@ class ProcessedBlob(BaseModel):
     kind: str
     url: AnyUrl
     flag_name: str
+    checksum: str
 
 
 class FlagSchema(BaseFlagSchema):

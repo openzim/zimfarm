@@ -17,6 +17,7 @@ from zimfarm_backend.common.schemas.offliners.models import (
     TransformerSchema,
 )
 from zimfarm_backend.common.schemas.offliners.transformers import (
+    UploadResponse,
     process_blob_fields,
     transform_data,
 )
@@ -290,7 +291,9 @@ def test_process_blob_field():
     with patch(
         "zimfarm_backend.common.schemas.offliners.transformers.upload_blob"
     ) as mock_upload_blob:
-        mock_upload_blob.return_value = "https://www.example.com/style.css"
+        mock_upload_blob.return_value = UploadResponse(
+            url="https://www.example.com/style.css", checksum="1"
+        )
         processed_blobs = process_blob_fields(instance, spec)
         mock_upload_blob.assert_called_once()
         assert (

@@ -35,7 +35,7 @@ from zimfarm_backend.common.schemas.orms import (
     ScheduleLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.blob import create_blob
+from zimfarm_backend.db.blob import create_or_update_blob
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -420,7 +420,7 @@ def create_schedule(
     session.refresh(schedule)
 
     for processed_blob in processed_blobs:
-        create_blob(session, schedule_id=schedule.id, request=processed_blob)
+        create_or_update_blob(session, schedule_id=schedule.id, request=processed_blob)
 
     return schedule
 
@@ -577,7 +577,9 @@ def update_schedule(
             new_schedule_config.offliner, offliner_definition.schema_
         )
         for processed_blob in processed_blobs:
-            create_blob(session, schedule_id=schedule.id, request=processed_blob)
+            create_or_update_blob(
+                session, schedule_id=schedule.id, request=processed_blob
+            )
         schedule.config = new_schedule_config.model_dump(
             mode="json", context={"show_secrets": True}
         )

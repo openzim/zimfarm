@@ -1,15 +1,18 @@
 import base64
+import hashlib
 from collections.abc import Callable
 from functools import partial
 from itertools import chain
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 import requests
 from pydantic import AnyUrl, BaseModel
 
 from zimfarm_backend.common.constants import (
-    BLOB_STORAGE_API_KEY,
+    BLOB_STORAGE_PASSWORD,
     BLOB_STORAGE_URL,
+    BLOB_STORAGE_USERNAME,
     REQUESTS_TIMEOUT,
 )
 from zimfarm_backend.common.schemas.offliners.models import (
@@ -17,6 +20,11 @@ from zimfarm_backend.common.schemas.offliners.models import (
     ProcessedBlob,
     TransformerSchema,
 )
+
+
+class UploadResponse(NamedTuple):
+    url: str
+    checksum: str
 
 
 def get_transformer_function(
@@ -79,13 +87,16 @@ def process_blob_fields(
             if flag_schema.kind is None:
                 raise ValueError("Blobs must have a 'kind'")
 
-            url = upload_blob(
+            response = upload_blob(
                 data=value,
             )
-            setattr(data, flag_name, url)
+            setattr(data, flag_name, response.url)
             results.append(
                 ProcessedBlob(
-                    kind=flag_schema.kind, url=AnyUrl(url), flag_name=flag_name
+                    kind=flag_schema.kind,
+                    url=AnyUrl(response.url),
+                    flag_name=flag_name,
+                    checksum=response.checksum,
                 )
             )
     return results
@@ -93,7 +104,7 @@ def process_blob_fields(
 
 def upload_blob(
     data: str,
-) -> str:
+) -> UploadResponse:
     """
     Upload blob data to upstream storage and return the URL.
     """
@@ -104,18 +115,19 @@ def upload_blob(
         encoded_data = data
 
     blob_data = base64.b64decode(encoded_data)
+    checksum = hashlib.sha256(blob_data).hexdigest()
 
     headers = {
         "Content-Type": "application/octet-stream",
-        "Authorization": f"Bearer {BLOB_STORAGE_API_KEY}",
     }
 
-    response = requests.post(
-        f"{BLOB_STORAGE_URL}/upload",
+    url = f"{BLOB_STORAGE_URL}/picture.png"
+    response = requests.put(
+        url,
         headers=headers,
         data=blob_data,
         timeout=REQUESTS_TIMEOUT,
+        auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
     )
     response.raise_for_status()
-    result = response.json()
-    return result["url"]
+    return UploadResponse(checksum=checksum, url=url)
