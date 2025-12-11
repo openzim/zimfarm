@@ -1,9 +1,22 @@
+import base64
 from collections.abc import Callable
 from functools import partial
 from itertools import chain
 from urllib.parse import urlparse
 
-from zimfarm_backend.common.schemas.offliners.models import TransformerSchema
+import requests
+from pydantic import AnyUrl, BaseModel
+
+from zimfarm_backend.common.constants import (
+    BLOB_STORAGE_API_KEY,
+    BLOB_STORAGE_URL,
+    REQUESTS_TIMEOUT,
+)
+from zimfarm_backend.common.schemas.offliners.models import (
+    OfflinerSpecSchema,
+    ProcessedBlob,
+    TransformerSchema,
+)
 
 
 def get_transformer_function(
@@ -22,7 +35,7 @@ def get_transformer_function(
         case None:
             # return the value as it is if there is no transformer associated
             return lambda x: [x]
-        case _:
+        case _:  # pyright: ignore[reportUnnecessaryComparison]
             raise ValueError(
                 f"No transformer function registered for '{transformer.name}'"
             )
@@ -47,3 +60,62 @@ def transform_data(data: list[str], transformers: list[TransformerSchema]) -> li
         ),
         tail,
     )
+
+
+def process_blob_fields(
+    data: BaseModel,
+    schema: OfflinerSpecSchema,
+) -> list[ProcessedBlob]:
+    """Upload blob data and update flag with URL if needed, or keep URLs as is."""
+
+    results: list[ProcessedBlob] = []
+    for flag_name, flag_schema in schema.flags.items():
+        if flag_schema.type != "blob":
+            continue
+
+        value = getattr(data, flag_name)
+
+        if value and isinstance(value, str) and not value.startswith("http"):
+            if flag_schema.kind is None:
+                raise ValueError("Blobs must have a 'kind'")
+
+            url = upload_blob(
+                data=value,
+            )
+            setattr(data, flag_name, url)
+            results.append(
+                ProcessedBlob(
+                    kind=flag_schema.kind, url=AnyUrl(url), flag_name=flag_name
+                )
+            )
+    return results
+
+
+def upload_blob(
+    data: str,
+) -> str:
+    """
+    Upload blob data to upstream storage and return the URL.
+    """
+    # Extract base64 data if it's a data URI
+    if data.startswith("data:"):
+        _, encoded_data = data.split(",", 1)
+    else:
+        encoded_data = data
+
+    blob_data = base64.b64decode(encoded_data)
+
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Authorization": f"Bearer {BLOB_STORAGE_API_KEY}",
+    }
+
+    response = requests.post(
+        f"{BLOB_STORAGE_URL}/upload",
+        headers=headers,
+        data=blob_data,
+        timeout=REQUESTS_TIMEOUT,
+    )
+    response.raise_for_status()
+    result = response.json()
+    return result["url"]

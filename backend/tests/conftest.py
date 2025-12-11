@@ -885,6 +885,7 @@ def create_schedule(
 ):
     _language = language
     _schedule_config = schedule_config
+    _offliner_definition = mwoffliner_definition
 
     def _create_schedule(
         *,
@@ -892,6 +893,7 @@ def create_schedule(
         category: str = "wikipedia",
         periodicity: str = "monthly",
         notification: dict[str, Any] | None = None,
+        offliner_definition: OfflinerDefinitionSchema | None = None,
         language: LanguageSchema | None = None,
         tags: list[str] | None = None,
         context: str | None = None,
@@ -900,6 +902,7 @@ def create_schedule(
         worker: Worker | None = None,
         archived: bool = False,
     ) -> Schedule:
+        offliner_definition = offliner_definition or _offliner_definition
         language = _language if language is None else language
         schedule_config = (
             _schedule_config if schedule_config is None else schedule_config
@@ -944,7 +947,7 @@ def create_schedule(
             tags=schedule.tags,
             periodicity=schedule.periodicity,
             context=schedule.context,
-            offliner_definition_version=mwoffliner_definition.version,
+            offliner_definition_version=offliner_definition.version,
         )
         schedule.history_entries.append(history_entry)
 
