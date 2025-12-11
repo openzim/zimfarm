@@ -1,18 +1,26 @@
 # ruff: noqa: E501
 from contextlib import nullcontext as does_not_raise
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from _pytest.python_api import RaisesContext
 
 from zimfarm_backend.common.enums import DockerImageName
-from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
+from zimfarm_backend.common.schemas.offliners.builder import (
+    build_offliner_model,
+    generate_similarity_data,
+)
 from zimfarm_backend.common.schemas.offliners.models import (
     OfflinerSpecSchema,
     SimilarityDataSchema,
     TransformerSchema,
 )
-from zimfarm_backend.common.schemas.offliners.transformers import transform_data
+from zimfarm_backend.common.schemas.offliners.transformers import (
+    UploadResponse,
+    process_blob_fields,
+    transform_data,
+)
 from zimfarm_backend.common.schemas.orms import OfflinerSchema
 
 
@@ -245,3 +253,51 @@ def test_generate_similarity_data_value_missing(
     )
     with expected:
         generate_similarity_data(data, offliner, spec)
+
+
+def test_process_blob_field():
+    spec = OfflinerSpecSchema.model_validate(
+        {
+            "flags": {
+                "custom_css": {
+                    "type": "blob",
+                    "kind": "css",
+                    "label": "Custom CSS",
+                    "description": "Upload custom CSS file",
+                    "alias": "custom-css",
+                    "required": False,
+                },
+                "name": {
+                    "type": "string",
+                    "label": "Name",
+                    "description": "Project name",
+                    "required": True,
+                },
+            }
+        }
+    )
+    offliner = OfflinerSchema(
+        id="zimit",
+        base_model="CamelModel",
+        docker_image_name=DockerImageName.zimit,
+        command_name="zimit2zim",
+        ci_secret_hash=None,
+    )
+
+    offliner_model = build_offliner_model(offliner, spec)
+    instance = offliner_model.model_validate(
+        {"offliner_id": "zimit", "name": "test", "custom-css": "base64string"}
+    )
+    with patch(
+        "zimfarm_backend.common.schemas.offliners.transformers.upload_blob"
+    ) as mock_upload_blob:
+        mock_upload_blob.return_value = UploadResponse(
+            url="https://www.example.com/style.css", checksum="1"
+        )
+        processed_blobs = process_blob_fields(instance, spec)
+        mock_upload_blob.assert_called_once()
+        assert (
+            instance.custom_css  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+            == "https://www.example.com/style.css"
+        )
+        assert len(processed_blobs) == 1

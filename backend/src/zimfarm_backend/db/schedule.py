@@ -22,6 +22,7 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleNotificationSchema,
 )
 from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
+from zimfarm_backend.common.schemas.offliners.transformers import process_blob_fields
 from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
     LanguageSchema,
@@ -34,6 +35,7 @@ from zimfarm_backend.common.schemas.orms import (
     ScheduleLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
+from zimfarm_backend.db.blob import create_or_update_blob
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -362,6 +364,7 @@ def create_schedule(
 ) -> Schedule:
     """Create a new schedule"""
     offliner = get_offliner(session, offliner_definition.offliner)
+    processed_blobs = process_blob_fields(config.offliner, offliner_definition.schema_)
     schedule = Schedule(
         name=name,
         category=category,
@@ -413,6 +416,12 @@ def create_schedule(
             ) from exc
         logger.exception("Unknown exception encountered while creating schedule")
         raise
+
+    session.refresh(schedule)
+
+    for processed_blob in processed_blobs:
+        create_or_update_blob(session, schedule_id=schedule.id, request=processed_blob)
+
     return schedule
 
 
@@ -562,6 +571,25 @@ def update_schedule(
 
     if schedule.archived:
         raise RecordDoesNotExistError(f"Schedule with name {schedule_name} is archived")
+
+    if new_schedule_config:
+        processed_blobs = process_blob_fields(
+            new_schedule_config.offliner, offliner_definition.schema_
+        )
+        for processed_blob in processed_blobs:
+            create_or_update_blob(
+                session, schedule_id=schedule.id, request=processed_blob
+            )
+        schedule.config = new_schedule_config.model_dump(
+            mode="json", context={"show_secrets": True}
+        )
+        schedule.similarity_data = generate_similarity_data(
+            new_schedule_config.offliner.model_dump(
+                mode="json", exclude={"offliner_id"}
+            ),
+            get_offliner(session, offliner_definition.offliner),
+            offliner_definition.schema_,
+        )
     if language:
         schedule.language_code = language.code
 
@@ -573,17 +601,6 @@ def update_schedule(
     schedule.periodicity = (
         periodicity if periodicity is not None else schedule.periodicity
     )
-    if new_schedule_config:
-        schedule.config = new_schedule_config.model_dump(
-            mode="json", context={"show_secrets": True}
-        )
-        schedule.similarity_data = generate_similarity_data(
-            new_schedule_config.offliner.model_dump(
-                mode="json", exclude={"offliner_id"}
-            ),
-            get_offliner(session, offliner_definition.offliner),
-            offliner_definition.schema_,
-        )
     schedule.is_valid = is_valid if is_valid is not None else schedule.is_valid
 
     schedule.context = context if context is not None else schedule.context
