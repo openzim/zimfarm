@@ -291,6 +291,14 @@ class Schedule(Base):
         order_by="ScheduleHistory.created_at.desc()",
     )
 
+    blobs: Mapped[list["Blob"]] = relationship(
+        back_populates="schedule",
+        cascade="all, delete",
+        passive_deletes=True,
+        init=False,
+        default_factory=list,
+    )
+
 
 class ScheduleHistory(Base):
     __tablename__ = "schedule_history"
@@ -400,3 +408,25 @@ class Offliner(Base):
     docker_image_name: Mapped[str]
     command_name: Mapped[str]
     ci_secret_hash: Mapped[str | None]
+
+
+class Blob(Base):
+    __tablename__ = "blob"
+
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    schedule_id: Mapped[UUID] = mapped_column(
+        ForeignKey("schedule.id", ondelete="CASCADE"), init=False
+    )
+    flag_name: Mapped[str]
+    kind: Mapped[str]
+    url: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(
+        init=False, server_default=text("CURRENT_TIMESTAMP")
+    )
+    checksum: Mapped[str]  # SHA-256 checksum of blob
+
+    schedule: Mapped["Schedule"] = relationship(init=False, back_populates="blobs")
+
+    __table_args__ = (UniqueConstraint("schedule_id", "flag_name", "checksum"),)

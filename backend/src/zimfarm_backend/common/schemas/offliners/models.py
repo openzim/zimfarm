@@ -1,6 +1,6 @@
 from typing import Literal, Self
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import AnyUrl, ConfigDict, Field, model_validator
 
 from zimfarm_backend.common.schemas import BaseModel, CamelModel
 
@@ -20,6 +20,13 @@ class BaseFlagSchema(BaseModel):
     min_length: int | None = Field(validation_alias="minLength", default=None)
     max_length: int | None = Field(validation_alias="maxLength", default=None)
     pattern: str | None = None
+
+
+class ProcessedBlob(BaseModel):
+    kind: str
+    url: AnyUrl
+    flag_name: str
+    checksum: str
 
 
 class FlagSchema(BaseFlagSchema):

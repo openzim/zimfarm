@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import pytz
-from pydantic import AfterValidator, Field, computed_field, field_serializer
+from pydantic import AfterValidator, AnyUrl, Field, computed_field, field_serializer
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
@@ -542,3 +542,11 @@ class UserSchemaWithSshKeys(UserSchema):
     """
 
     ssh_keys: list[SshKeyRead]
+
+
+class BlobSchema(BaseModel):
+    id: UUID = Field(exclude=True)
+    schedule_name: str
+    flag_name: str
+    created_at: datetime.datetime
+    url: AnyUrl
