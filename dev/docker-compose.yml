@@ -87,6 +87,9 @@ services:
       ZIMCHECK_OPTION: --all
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
+      BLOB_STORAGE_URL: http://blob-storage
+      BLOB_STORAGE_USERNAME: zimfarm
+      BLOB_STORAGE_PASSWORD: zimpass
     depends_on:
       postgresdb:
         condition: service_healthy

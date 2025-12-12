@@ -1,9 +1,17 @@
+from uuid import uuid4
+
 import pytest
 from pydantic import AnyUrl
+from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
-from zimfarm_backend.db.blob import create_or_update_blob, get_blob, get_blob_or_none
+from zimfarm_backend.db.blob import (
+    create_or_update_blob,
+    delete_blob,
+    get_blob,
+    get_blob_or_none,
+)
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Blob, Schedule
 
@@ -95,3 +103,35 @@ def test_get_blob_not_found(dbsession: OrmSession, schedule: Schedule):
             flag_name="nonexistent",
             checksum="999",
         )
+
+
+def test_delete_blob_success(dbsession: OrmSession, schedule: Schedule):
+    """Test successfully deleting a blob"""
+    blob = Blob(
+        kind="css",
+        flag_name="custom-css",
+        url="https://www.example.com/style.css",
+        checksum="1",
+    )
+    schedule.blobs.append(blob)
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    blob_id = blob.id
+
+    rows_deleted = delete_blob(dbsession, blob_id=blob_id)
+
+    assert rows_deleted == 1
+
+    # Verify blob is deleted from database
+    result = dbsession.execute(select(Blob).where(Blob.id == blob_id)).first()
+    assert result is None
+
+
+def test_delete_blob_nonexistent(dbsession: OrmSession):
+    """Test deleting a blob that doesn't exist"""
+
+    nonexistent_id = uuid4()
+    rows_deleted = delete_blob(dbsession, blob_id=nonexistent_id)
+
+    assert rows_deleted == 0

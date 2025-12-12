@@ -14,9 +14,13 @@ from zimfarm_backend.background_tasks.constants import (
     CANCEL_INCOMPLETE_TASKS_INTERVAL,
     CANCEL_STALE_TASKS_INTERVAL,
     CMS_NOTIFICATIONS_INTERVAL,
+    DELETE_ORPHANED_BLOBS_INTERVAL,
     HISTORY_CLEANUP_INTERVAL,
     REMOVE_OLD_TASKS_INTERVAL,
     REQUEST_TASKS_INTERVAL,
+)
+from zimfarm_backend.background_tasks.delete_orphaned_blobs import (
+    delete_orphaned_blobs,
 )
 from zimfarm_backend.background_tasks.history_cleanup import history_cleanup
 from zimfarm_backend.background_tasks.request_tasks import request_tasks
@@ -58,6 +62,10 @@ tasks: list[TaskConfig] = [
     TaskConfig(
         func=notify_cms_for_checked_files,
         interval=CMS_NOTIFICATIONS_INTERVAL,
+    ),
+    TaskConfig(
+        func=delete_orphaned_blobs,
+        interval=DELETE_ORPHANED_BLOBS_INTERVAL,
     ),
 ]
 
