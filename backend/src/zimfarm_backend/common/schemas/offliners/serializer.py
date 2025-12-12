@@ -3,7 +3,7 @@ from types import UnionType
 from typing import Annotated, Any, Union, cast, get_args, get_origin
 
 from annotated_types import Ge, Le, MaxLen, MinLen
-from pydantic import AnyUrl, BaseModel, EmailStr, SecretStr
+from pydantic import BaseModel, SecretStr
 from pydantic.fields import FieldInfo
 
 from zimfarm_backend.common.schemas.offliners.models import BaseFlagSchema, Choice
@@ -25,6 +25,7 @@ class Flag(BaseFlagSchema):
     key: str
     type: str
     choices: list[Choice] | None = None
+    kind: str | None = None
 
 
 def get_base_type(field_type: Any) -> Any:
@@ -45,46 +46,11 @@ def get_base_type(field_type: Any) -> Any:
         if len(non_none_types) == 1:
             return get_base_type(non_none_types[0])
         else:
-            # For complex unions, default to str
-            return str
+            # For complex unions, default to the first arg
+            return non_none_types[0]
 
     # Return the type as-is if it's not a special type
     return field_type
-
-
-def get_field_type(field_type: Any) -> str:
-    """Determine the type string for a field based on its type annotation."""
-    # Get the base type first
-    base_type = get_base_type(field_type)
-
-    # Handle basic types
-    if base_type is str:
-        return "string"
-    elif base_type is int:
-        return "integer"
-    elif base_type is float:
-        return "float"
-    elif base_type is bool:
-        return "boolean"
-    elif base_type is AnyUrl:
-        return "url"
-    elif base_type is EmailStr:
-        return "email"
-    elif base_type is SecretStr:
-        return "string"
-    elif isinstance(base_type, type) and issubclass(base_type, Enum):
-        return "string-enum"
-
-    # Handle list types
-    origin = get_origin(base_type)
-    if origin is list:
-        args = get_args(base_type)
-        if args:
-            element_type = args[0]
-            return "list-of-" + get_field_type(element_type)
-        return "list-of-string"
-
-    return "string"
 
 
 def get_field_metadata(field_info: FieldInfo) -> list[Any]:
@@ -201,9 +167,7 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
         # Determine if field is required
         required = field_info.is_required()
 
-        # Determine field type
-        field_type_str = get_field_type(field_type)
-
+        json_schema_extra = cast(dict[str, Any], field_info.json_schema_extra)
         # Get enum choices if applicable
         choices = get_enum_choices(field_type)
 
@@ -214,8 +178,9 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
             key=field_alias,
             label=capitalize_words(title),
             required=required,
-            type=field_type_str,
+            type=json_schema_extra["type"],
             secret=is_secret(field_type),
+            kind=json_schema_extra["kind"],
         )
 
         # Add choices if available
