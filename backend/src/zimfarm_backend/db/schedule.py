@@ -590,7 +590,7 @@ def process_schedule_blobs(
         if existing_blob is None:
             upload_blob(prepared_blob)
             # Update the flag value in the offliner to point to the URL
-            setattr(offliner, prepared_blob.flag_name, str(prepared_blob.url))
+            setattr(offliner, prepared_blob.flag_name, str(prepared_blob.public_url))
             uploaded_blobs.append(prepared_blob)
         else:
             # reset the base64 input with the url in the DB

@@ -54,7 +54,9 @@ def create_or_update_blob(
     request: PreparedBlob,
 ):
     """Create or update a schedule blob"""
-    values = request.model_dump(exclude_unset=True, mode="json", exclude={"data"})
+    values = request.model_dump(
+        exclude_unset=True, mode="json", exclude={"data", "private_url"}
+    )
     values["schedule_id"] = schedule_id
     stmt = insert(Blob).values(**values)
     stmt = stmt.on_conflict_do_update(
@@ -62,7 +64,7 @@ def create_or_update_blob(
         set_={
             **request.model_dump(
                 exclude_unset=True,
-                exclude={"flag_name", "checksum", "data"},
+                exclude={"flag_name", "checksum", "data", "private_url"},
                 mode="json",
             )
         },

@@ -635,6 +635,7 @@ def test_process_schedule_blobs(dbsession: OrmSession):
     prepared_blob = PreparedBlob(
         kind="css",
         flag_name="custom_css",
+        private_url=AnyUrl("https://www.example.com/style.css"),
         url=AnyUrl("https://www.example.com/style.css"),
         checksum="1",
         data=b"hello",

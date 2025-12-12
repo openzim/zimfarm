@@ -12,8 +12,9 @@ from pydantic import AnyUrl, BaseModel
 
 from zimfarm_backend.common.constants import (
     BLOB_MAX_SIZE,
+    BLOB_PRIVATE_STORAGE_URL,
+    BLOB_PUBLIC_STORAGE_URL,
     BLOB_STORAGE_PASSWORD,
-    BLOB_STORAGE_URL,
     BLOB_STORAGE_USERNAME,
     REQUESTS_TIMEOUT,
 )
@@ -102,7 +103,8 @@ def process_blob_fields(
             results.append(
                 PreparedBlob(
                     kind=flag_schema.kind,
-                    url=AnyUrl(f"{BLOB_STORAGE_URL}/{filename}"),
+                    private_url=AnyUrl(f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"),
+                    url=AnyUrl(f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"),
                     flag_name=flag_name,
                     checksum=hashlib.sha256(blob_data).hexdigest(),
                     data=blob_data,
@@ -139,7 +141,7 @@ def upload_blob(request: PreparedBlob):
         "Content-Type": "application/octet-stream",
     }
     response = requests.put(
-        str(request.url),
+        str(request.private_url),
         headers=headers,
         data=request.data,
         timeout=REQUESTS_TIMEOUT,
