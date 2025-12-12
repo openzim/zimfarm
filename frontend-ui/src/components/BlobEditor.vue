@@ -43,7 +43,14 @@
 
 <script setup lang="ts">
 import { formattedBytesSize } from '@/utils/format'
-import { computed, ref, watch } from 'vue'
+import constants from '@/constants'
+import type { Config } from '@/config'
+import { computed, ref, watch, inject } from 'vue'
+
+const config = inject<Config>(constants.config)
+if (!config) {
+  throw new Error('Config is not defined')
+}
 
 interface Props {
   modelValue: string | null | undefined
@@ -51,7 +58,6 @@ interface Props {
   kind?: 'image' | 'css'
   required?: boolean
   description?: string | null
-  maxSize?: number // in bytes, default 1MB
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -59,7 +65,6 @@ const props = withDefaults(defineProps<Props>(), {
   kind: 'image',
   required: false,
   description: null,
-  maxSize: 1 * 1024 * 1024, // 1MB default
 })
 
 const emit = defineEmits<{
@@ -126,8 +131,8 @@ const handleFileChange = async (event: Event) => {
   const file = files[0]
 
   // Validate file size
-  if (file.size > props.maxSize) {
-    errorMessage.value = `File size must be less than ${formattedBytesSize(props.maxSize)}`
+  if (file.size > config.BLOB_MAX_SIZE) {
+    errorMessage.value = `File size must be less than ${formattedBytesSize(config.BLOB_MAX_SIZE)}`
     hasError.value = true
     if (fileInputRef.value) {
       fileInputRef.value.value = ''
