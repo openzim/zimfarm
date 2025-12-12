@@ -236,16 +236,7 @@ const textToBase64 = (text: string): string => {
 
 const fetchCssFromUrl = async (url: string): Promise<string> => {
   try {
-    // Replace protocol and hostname with BLOB_STORAGE_URI from config
-    let fetchUrl = url
-    if ((url.startsWith('http://') || url.startsWith('https://')) && config) {
-      // Extract the path from the URL (everything after hostname)
-      const urlObj = new URL(url)
-      const path = urlObj.pathname + urlObj.search + urlObj.hash
-      fetchUrl = `${config.BLOB_STORAGE_URI}${path}`
-    }
-
-    const response = await fetch(fetchUrl)
+    const response = await fetch(url)
     if (!response.ok) {
       throw new Error(`Failed to fetch CSS: ${response.statusText}`)
     }

@@ -43,7 +43,8 @@ services:
       # username and password of admin user
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
-      BLOB_STORAGE_URL: http://blob-storage
+      BLOB_PRIVATE_STORAGE_URL: http://blob-storage
+      BLOB_PUBLIC_STORAGE_URL: http://localhost:8003
       BLOB_STORAGE_USERNAME: zimfarm
       BLOB_STORAGE_PASSWORD: zimpass
 
@@ -87,7 +88,8 @@ services:
       ZIMCHECK_OPTION: --all
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
-      BLOB_STORAGE_URL: http://blob-storage
+      BLOB_PRIVATE_STORAGE_URL: http://blob-storage
+      BLOB_PUBLIC_STORAGE_URL: http://localhost:8003
       BLOB_STORAGE_USERNAME: zimfarm
       BLOB_STORAGE_PASSWORD: zimpass
     depends_on:
