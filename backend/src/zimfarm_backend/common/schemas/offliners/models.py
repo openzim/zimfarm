@@ -22,11 +22,14 @@ class BaseFlagSchema(BaseModel):
     pattern: str | None = None
 
 
-class ProcessedBlob(BaseModel):
+class PreparedBlob(BaseModel):
+    """Blob data prepared for upload but not yet uploaded"""
+
     kind: str
-    url: AnyUrl
+    url: AnyUrl  # The URL to upload the file to. Includes generated filename
     flag_name: str
     checksum: str
+    data: bytes
 
 
 class FlagSchema(BaseFlagSchema):

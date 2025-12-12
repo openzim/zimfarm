@@ -4,7 +4,6 @@ import uuid
 from collections.abc import Callable
 from functools import partial
 from itertools import chain
-from typing import NamedTuple
 from urllib.parse import urlparse
 
 import requests
@@ -20,14 +19,9 @@ from zimfarm_backend.common.constants import (
 )
 from zimfarm_backend.common.schemas.offliners.models import (
     OfflinerSpecSchema,
-    ProcessedBlob,
+    PreparedBlob,
     TransformerSchema,
 )
-
-
-class UploadResponse(NamedTuple):
-    url: str
-    checksum: str
 
 
 def get_transformer_function(
@@ -76,10 +70,10 @@ def transform_data(data: list[str], transformers: list[TransformerSchema]) -> li
 def process_blob_fields(
     data: BaseModel,
     schema: OfflinerSpecSchema,
-) -> list[ProcessedBlob]:
-    """Upload blob data and update flag with URL if needed, or keep URLs as is."""
+) -> list[PreparedBlob]:
+    """Prepare blob fields for upload"""
 
-    results: list[ProcessedBlob] = []
+    results: list[PreparedBlob] = []
     for flag_name, flag_schema in schema.flags.items():
         if flag_schema.type != "blob":
             continue
@@ -90,14 +84,28 @@ def process_blob_fields(
             if flag_schema.kind is None:
                 raise ValueError("Blobs must have a 'kind'")
 
-            response = upload_blob(data=value, kind=flag_schema.kind)
-            setattr(data, flag_name, response.url)
+            if value.startswith("data:"):
+                _, encoded_data = value.split(",", 1)
+            else:
+                encoded_data = value
+
+            blob_data = base64.b64decode(encoded_data)
+
+            if len(blob_data) > BLOB_MAX_SIZE:
+                raise ValueError(
+                    f"Blob size ({format_size(len(blob_data), binary=True)} bytes) "
+                    "exceeds maximum allowed size "
+                    f"({format_size(BLOB_MAX_SIZE, binary=True)})"
+                )
+
+            filename = generate_blob_name_uuid(flag_schema.kind)
             results.append(
-                ProcessedBlob(
+                PreparedBlob(
                     kind=flag_schema.kind,
-                    url=AnyUrl(response.url),
+                    url=AnyUrl(f"{BLOB_STORAGE_URL}/{filename}"),
                     flag_name=flag_name,
-                    checksum=response.checksum,
+                    checksum=hashlib.sha256(blob_data).hexdigest(),
+                    data=blob_data,
                 )
             )
     return results
@@ -123,38 +131,18 @@ def get_extension_from_kind(kind: str) -> str:
     return ".bin"
 
 
-def upload_blob(*, data: str, kind: str) -> UploadResponse:
+def upload_blob(request: PreparedBlob):
     """
-    Upload blob data to upstream storage and return the URL.
+    Upload blob data to upstream storage.
     """
-    # Extract base64 data if it's a data URI
-    if data.startswith("data:"):
-        _, encoded_data = data.split(",", 1)
-    else:
-        encoded_data = data
-
-    blob_data = base64.b64decode(encoded_data)
-
-    if len(blob_data) > BLOB_MAX_SIZE:
-        raise ValueError(
-            f"Blob size ({format_size(len(blob_data), binary=True)} bytes) exceeds "
-            f"maximum allowed size ({format_size(BLOB_MAX_SIZE, binary=True)})"
-        )
-
-    checksum = hashlib.sha256(blob_data).hexdigest()
-
     headers = {
         "Content-Type": "application/octet-stream",
     }
-    filename = generate_blob_name_uuid(kind)
-
-    url = f"{BLOB_STORAGE_URL}/{filename}"
     response = requests.put(
-        url,
+        str(request.url),
         headers=headers,
-        data=blob_data,
+        data=request.data,
         timeout=REQUESTS_TIMEOUT,
         auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
     )
     response.raise_for_status()
-    return UploadResponse(checksum=checksum, url=url)
