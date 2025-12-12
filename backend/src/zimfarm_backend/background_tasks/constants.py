@@ -69,3 +69,6 @@ CMS_NOTIFICATIONS_INTERVAL = datetime.timedelta(
 CMS_MAXIMUM_RETRY_INTERVAL = parse_timespan(
     getenv("CMS_MAXIMUM_RETRY_INTERVAL", default="24h")
 )
+DELETE_ORPHANED_BLOBS_INTERVAL = datetime.timedelta(
+    seconds=parse_timespan(getenv("DELETE_ORPHANED_BLOBS_INTERVAL", default="24h"))
+)
