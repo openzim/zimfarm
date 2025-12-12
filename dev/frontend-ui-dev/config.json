@@ -1,6 +1,5 @@
 {
   "ZIMFARM_WEBAPI": "http://localhost:8000/v2",
   "MONITORING_URL": "http://localhost:8004/v3",
-  "BLOB_MAX_SIZE": 1048576,
-  "BLOB_STORAGE_URI": "http://localhost:8003"
+  "BLOB_MAX_SIZE": 1048576
 }

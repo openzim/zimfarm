@@ -289,8 +289,11 @@ def test_process_blob_field(monkeypatch: MonkeyPatch):
         {"offliner_id": "zimit", "name": "test", "custom-css": "base64string"}
     )
     monkeypatch.setattr(
-        transformers_module, "BLOB_STORAGE_URL", "http://blob-storage.com"
+        transformers_module, "BLOB_PUBLIC_STORAGE_URL", "http://blob-storage.com"
+    )
+    monkeypatch.setattr(
+        transformers_module, "BLOB_PRIVATE_STORAGE_URL", "http://blob-storage.com"
     )
     processed_blobs = process_blob_fields(instance, spec)
     assert len(processed_blobs) == 1
-    assert str(processed_blobs[0].url).startswith("http://blob-storage.com")
+    assert str(processed_blobs[0].public_url).startswith("http://blob-storage.com")
