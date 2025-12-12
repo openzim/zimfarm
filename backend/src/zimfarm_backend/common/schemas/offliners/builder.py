@@ -113,6 +113,9 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
         # otherwise, it invalidates the required validation
         default=... if flag.required and flag.default is None else flag.default,
         frozen=parse_bool(flag.frozen),
+        # Add additional information to the pydantic field to be used while determing
+        # flag details.
+        json_schema_extra={"kind": flag.kind, "type": flag.type},
     )
     match flag.type:
         case "string-enum" | "list-of-string-enum":

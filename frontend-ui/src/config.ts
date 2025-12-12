@@ -11,6 +11,7 @@ export interface Config {
   MATOMO_SITE_ID: number
   MATOMO_TRACKER_FILE_NAME: string
   MONITORING_URL: string
+  BLOB_MAX_SIZE: number
 }
 
 export const ConfigService = {

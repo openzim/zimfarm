@@ -440,6 +440,14 @@
                 {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
               </template>
             </v-textarea>
+            <BlobEditor
+              v-else-if="field.component === 'blob'"
+              v-model="editFlags[field.dataKey]"
+              :label="field.label"
+              :kind="field.kind"
+              :required="field.required"
+              :description="field.description ?? undefined"
+            />
             <v-text-field
               v-else
               :model-value="editFlags[field.dataKey]"
@@ -550,6 +558,7 @@
 </template>
 
 <script setup lang="ts">
+import BlobEditor from '@/components/BlobEditor.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
@@ -580,6 +589,7 @@ interface FlagField {
   min_length: number | null
   max_length: number | null
   pattern: string | null
+  kind?: 'image' | 'css'
 }
 
 export interface Props {
@@ -888,11 +898,13 @@ const hasChanges = computed(() => {
       // if we are toggling a switch to false and it's a null on the original object,
       // then it's not a change
       if (change.lhs === null && change.rhs === false) return false
-      if (change.rhs === undefined || change.rhs === null) {
+      // If changing from null/empty to null/empty, it's not a change
+      if (
+        (change.lhs === null || change.lhs === '') &&
+        (change.rhs === undefined || change.rhs === null || change.rhs === '')
+      ) {
         return false
       }
-      // If a value is empty and the previous value is null, it's not a change
-      if (change.lhs === null && change.rhs === '') return false
     }
     return true
   })
@@ -937,6 +949,8 @@ const flagsFields = computed(() => {
         })) || undefined
     } else if (field.type === 'long-text') {
       component = 'textarea'
+    } else if (field.type === 'blob') {
+      component = 'blob'
     }
 
     return {
@@ -954,6 +968,7 @@ const flagsFields = computed(() => {
       component,
       options,
       step,
+      kind: field.kind,
     }
   })
 })

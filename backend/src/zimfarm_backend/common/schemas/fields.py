@@ -26,6 +26,10 @@ class GraphemeStr(str):
         return len(regex.findall(r"\X", self))
 
 
+class BlobStr(str):
+    pass
+
+
 def to_grapheme_str(value: str):
     return GraphemeStr(value)
 
