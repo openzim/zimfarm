@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
@@ -16,8 +15,6 @@ from zimfarm_backend.db.user import (
     delete_user,
     get_user_by_id,
     get_user_by_id_or_none,
-    get_user_by_idp_sub,
-    get_user_by_idp_sub_or_none,
     get_user_by_username,
     get_user_by_username_or_none,
     get_users,
@@ -62,24 +59,6 @@ def test_get_user_by_username(dbsession: OrmSession, user: User):
     assert db_user is not None
     assert db_user.id == user.id
     assert db_user.username == user.username
-
-
-def test_get_user_by_idp_sub_or_none(dbsession: OrmSession):
-    user = get_user_by_idp_sub_or_none(dbsession, idp_sub=uuid4(), fetch_ssh_keys=True)
-    assert user is None
-
-
-def test_get_user_by_idp_sub_not_found(dbsession: OrmSession):
-    with pytest.raises(RecordDoesNotExistError):
-        get_user_by_idp_sub(dbsession, idp_sub=uuid4(), fetch_ssh_keys=True)
-
-
-def test_get_user_by_idp_sub(dbsession: OrmSession, create_user: Callable[..., User]):
-    user = create_user(idp_sub=uuid4())
-    assert user.idp_sub is not None
-    db_user = get_user_by_idp_sub(dbsession, idp_sub=user.idp_sub, fetch_ssh_keys=True)
-    assert db_user is not None
-    assert db_user.id == user.id
 
 
 @pytest.mark.num_users(10)

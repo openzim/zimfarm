@@ -24,7 +24,6 @@ from zimfarm_backend.db.user import (
     check_user_permission,
     create_user,
     get_user_by_id_or_none,
-    get_user_by_idp_sub_or_none,
 )
 
 security = HTTPBearer(description="Access Token", auto_error=False)
@@ -92,19 +91,17 @@ def get_current_user_or_none_with_session(
         if claims is None:
             return None
         user = get_user_by_id_or_none(session, user_id=claims.sub)
-        if user is None:
-            user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
-            # If this is a kiwix token, we create a new user account
-            if user is None and CREATE_NEW_KIWIX_ACCOUNT:
-                if not claims.name:
-                    raise UnauthorizedError("Token is missing 'profile' scope")
-                create_user(
-                    session,
-                    username=claims.name,
-                    role=RoleEnum.VIEWER,
-                    idp_sub=claims.sub,
-                )
-                user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
+        # If this is a kiwix token, we create a new user account
+        if user is None and CREATE_NEW_KIWIX_ACCOUNT:
+            if not claims.name:
+                raise UnauthorizedError("Token is missing 'profile' scope")
+            create_user(
+                session,
+                username=claims.name,
+                role=RoleEnum.VIEWER,
+                idp_sub=claims.sub,
+            )
+            user = get_user_by_id_or_none(session, user_id=claims.sub)
 
         return user
 

@@ -40,34 +40,11 @@ def get_user_by_username(
     return user
 
 
-def get_user_by_idp_sub_or_none(
-    session: OrmSession, *, idp_sub: UUID, fetch_ssh_keys: bool = False
-) -> User | None:
-    """Get a user by IDP sub or return None if the user does not exist"""
-    stmt = select(User).where(User.idp_sub == idp_sub)
-    if fetch_ssh_keys:
-        stmt = stmt.options(selectinload(User.ssh_keys))
-    return session.scalars(stmt).one_or_none()
-
-
-def get_user_by_idp_sub(
-    session: OrmSession, *, idp_sub: UUID, fetch_ssh_keys: bool = False
-) -> User:
-    """Get a user by IDP sub or raise an exception if the user does not exist"""
-    if (
-        user := get_user_by_idp_sub_or_none(
-            session, idp_sub=idp_sub, fetch_ssh_keys=fetch_ssh_keys
-        )
-    ) is None:
-        raise RecordDoesNotExistError(f"User with idp_sub {idp_sub} does not exist")
-    return user
-
-
 def get_user_by_id_or_none(
     session: OrmSession, *, user_id: UUID, fetch_ssh_keys: bool = False
 ) -> User | None:
     """Get a user by id or return None if the user does not exist"""
-    stmt = select(User).where(User.id == user_id)
+    stmt = select(User).where((User.id == user_id) | (User.idp_sub == user_id))
     if fetch_ssh_keys:
         stmt = stmt.options(selectinload(User.ssh_keys))
     return session.scalars(stmt).one_or_none()
