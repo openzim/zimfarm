@@ -42,7 +42,8 @@ def verify_kiwix_access_token(token: str) -> dict[str, Any]:
     # https://www.ory.com/docs/kratos/mfa/overview#authenticator-assurance-level-aal
     amr = set(decoded_token.get("amr", []))
     if KIWIX_LOGIN_REQUIRE_2FA and not (
-        {"password", "oidc"} & amr and {"webauthn", "lookup_secrets", "totp"} & amr
+        {"password", "oidc", "code"} & amr
+        and {"webauthn", "lookup_secrets", "totp"} & amr
     ):
         raise ValueError(
             "2FA authentication is mandatory on Zimfarm but it looks like you only "

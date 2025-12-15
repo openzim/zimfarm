@@ -46,7 +46,6 @@
                 variant="outlined"
                 :rules="[rules.required, rules.minLength(3)]"
                 required
-                autofocus
                 class="mb-3"
                 density="compact"
                 hide-details="auto"
