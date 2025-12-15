@@ -1,7 +1,9 @@
 {
   "ZIMFARM_WEBAPI": "http://localhost:8000/v2",
   "MONITORING_URL": "http://localhost:8004/v3",
-  "KIWIX_AUTH_CLIENT_ID": "d87a31d2-874e-44c4-9dc2-63fad523bf1b",
+  "OAUTH_CLIENT_ID": "38302485-7f3d-4e88-b1b3-ec02fb92ec8c",
   "BLOB_MAX_SIZE": 1048576,
-  "KIWIX_AUTH_BASE_URL": "https://login.kiwix.org"
+  "OAUTH_BASE_URL": "https://tender-wiles-i8ance55ra.projects.oryapis.com",
+  "OAUTH_MODE": "session",
+  "LOGIN_MODES": ["local", "oauth"]
 }

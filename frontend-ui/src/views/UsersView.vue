@@ -173,7 +173,7 @@ import { useUserStore } from '@/stores/user'
 import type { User } from '@/types/user'
 import { generatePassword } from '@/utils/browsers'
 
-const roles = constants.ROLES
+const roles = constants.ROLES.filter((role) => role !== 'custom')
 
 // Simple password generator function
 const genPassword = () => generatePassword(8)

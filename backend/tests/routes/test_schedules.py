@@ -105,9 +105,6 @@ def test_get_archived_schedules(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
     create_schedule(name="test_schedule", archived=True)
 

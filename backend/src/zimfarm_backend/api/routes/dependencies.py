@@ -1,44 +1,28 @@
-import datetime
-import uuid
 from typing import Annotated, Literal
 
-import jwt
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import exceptions as jwt_exceptions
-from pydantic import Field
-from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.constants import (
-    CREATE_NEW_KIWIX_ACCOUNT,
-    JWT_SECRET,
+    CREATE_NEW_OAUTH_ACCOUNT,
 )
 from zimfarm_backend.api.routes.http_errors import UnauthorizedError
-from zimfarm_backend.api.token import verify_kiwix_access_token
+from zimfarm_backend.api.token import JWTClaims, token_decoder
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import (
     check_user_permission,
     create_user,
     get_user_by_id_or_none,
-    get_user_by_idp_sub_or_none,
 )
 
 security = HTTPBearer(description="Access Token", auto_error=False)
 AuthorizationCredentials = Annotated[
     HTTPAuthorizationCredentials | None, Depends(security)
 ]
-
-
-class JWTClaims(BaseModel):
-    iss: str
-    exp: datetime.datetime
-    iat: datetime.datetime
-    sub: uuid.UUID = Field(alias="subject")
-    name: str | None = Field(exclude=True, default=None)
 
 
 def get_jwt_claims_or_none(
@@ -53,22 +37,8 @@ def get_jwt_claims_or_none(
         return None
     token = authorization.credentials
 
-    # First, try to decode as Zimfarm token
     try:
-        jwt_claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        claims = JWTClaims(**jwt_claims)
-        return claims
-    except (
-        jwt_exceptions.InvalidTokenError,
-        jwt_exceptions.PyJWTError,
-        PydanticValidationError,
-    ):
-        # Not a Zimfarm token, try Kiwix token
-        pass
-
-    try:
-        introspected_token = verify_kiwix_access_token(token)
-        return JWTClaims.model_validate(introspected_token)
+        return token_decoder.decode(token)
     except jwt_exceptions.ExpiredSignatureError as exc:
         raise UnauthorizedError("Token has expired.") from exc
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:
@@ -92,19 +62,17 @@ def get_current_user_or_none_with_session(
         if claims is None:
             return None
         user = get_user_by_id_or_none(session, user_id=claims.sub)
-        if user is None:
-            user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
-            # If this is a kiwix token, we create a new user account
-            if user is None and CREATE_NEW_KIWIX_ACCOUNT:
-                if not claims.name:
-                    raise UnauthorizedError("Token is missing 'profile' scope")
-                create_user(
-                    session,
-                    username=claims.name,
-                    role=RoleEnum.VIEWER,
-                    idp_sub=claims.sub,
-                )
-                user = get_user_by_idp_sub_or_none(session, idp_sub=claims.sub)
+        # If this is a kiwix token, we create a new user account
+        if user is None and CREATE_NEW_OAUTH_ACCOUNT:
+            if not claims.name:
+                raise UnauthorizedError("Token is missing 'profile' scope")
+            create_user(
+                session,
+                username=claims.name,
+                role=RoleEnum.VIEWER,
+                idp_sub=claims.sub,
+            )
+            user = get_user_by_id_or_none(session, user_id=claims.sub)
 
         return user
 

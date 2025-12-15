@@ -47,6 +47,14 @@ services:
       BLOB_PUBLIC_STORAGE_URL: http://localhost:8003
       BLOB_STORAGE_USERNAME: zimfarm
       BLOB_STORAGE_PASSWORD: zimpass
+      OAUTH_JWKS_URI: https://tender-wiles-i8ance55ra.projects.oryapis.com/.well-known/jwks.json
+      OAUTH_ISSUER: https://tender-wiles-i8ance55ra.projects.oryapis.com
+      OAUTH_OIDC_CLIENT_ID: 38302485-7f3d-4e88-b1b3-ec02fb92ec8c
+      OAUTH_OIDC_LOGIN_REQUIRE_2FA: true
+      OAUTH_SESSION_AUDIENCE_ID: 309693e7-ad5e-4379-bf93-ba89314230fd
+      OAUTH_SESSION_LOGIN_REQUIRE_2FA: true
+      CREATE_NEW_OAUTH_ACCOUNT: true
+      AUTH_MODES: local,oauth-oidc,oauth-session
 
     command:
       - uvicorn

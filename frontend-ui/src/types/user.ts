@@ -45,12 +45,3 @@ export interface SshKeyList {
 export interface UserWithSshKeys extends User, SshKeyList {
   ssh_keys: SshKeyRead[]
 }
-
-// Kiwix OAuth2 authentication types
-export interface KiwixTokenResponse {
-  access_token: string
-  token_type: string
-  expires_in: number
-  refresh_token: string
-  id_token: string
-}

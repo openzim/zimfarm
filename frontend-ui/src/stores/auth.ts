@@ -2,23 +2,16 @@ import type { Config } from '@/config'
 import constants from '@/constants'
 import type { ErrorResponse, OAuth2ErrorResponse } from '@/types/errors'
 import type { JWTUser } from '@/types/user'
+import type { AuthProviderType, StoredToken } from '@/types/auth'
 import { translateErrors } from '@/utils/errors'
-import {
-  exchangeCodeForToken,
-  getKiwixAuthConfig,
-  logoutFromKiwixAuth,
-  refreshKiwixToken,
-} from '@/services/auth/kiwix'
+import { getOAuthConfig } from '@/services/auth/base'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { computed, inject, ref } from 'vue'
-
-interface StoredToken {
-  access_token: string
-  refresh_token: string
-  token_type: 'api' | 'kiwix'
-  expires_time: string // ISO 8601 datetime string
-}
+import { OAuthOIDCProvider } from '@/services/auth/OAuthOIDCProvider'
+import { OAuthSessionProvider } from '@/services/auth/OAuthSessionProvider'
+import type { AuthProvider } from '@/services/auth/base'
+import { LocalAuthProvider } from '@/services/auth/LocalAuthProvider'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<StoredToken | null>(null)
@@ -35,9 +28,14 @@ export const useAuthStore = defineStore('auth', () => {
     throw new Error('Config is not defined')
   }
 
-  const service = httpRequest({
-    baseURL: `${config.ZIMFARM_WEBAPI}/auth`,
-  })
+  let oauthProvider: AuthProvider | null = null
+  if (config.OAUTH_MODE == 'oidc') {
+    oauthProvider = new OAuthOIDCProvider(getOAuthConfig(config))
+  } else if (config.OAUTH_MODE == 'session') {
+    oauthProvider = new OAuthSessionProvider(getOAuthConfig(config))
+  }
+
+  const localauthProvider = new LocalAuthProvider(config.ZIMFARM_WEBAPI)
 
   // Computed properties
   const isLoggedIn = computed(() => {
@@ -70,13 +68,27 @@ export const useAuthStore = defineStore('auth', () => {
     return new Date() >= tokenExpiryDate.value
   })
 
+  const getAuthProvider = (providerType: AuthProviderType): AuthProvider => {
+    switch (providerType) {
+      case 'oauth':
+        if (!oauthProvider) {
+          throw new Error('No oauth provider configured.')
+        }
+        return oauthProvider
+      case 'local':
+        return localauthProvider
+      default:
+        throw new Error(`Unknown auth provider type: ${providerType}`)
+    }
+  }
+
   /**
    * Check if an error is a permanent refresh token failure
    */
   const isPermanentRefreshFailure = (error: unknown): boolean => {
     // Check if it's an OAuth2 error response
     const oauth2Error = error as OAuth2ErrorResponse
-    if (oauth2Error?.error === 'invalid_grant') {
+    if (oauth2Error?.error === 'invalid_grant' || oauth2Error?.code == 401) {
       return true
     }
 
@@ -110,104 +122,20 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Failed to fetch user info:', error)
       user.value = null
       errors.value = translateErrors(error as ErrorResponse)
-      throw error
     }
   }
 
-  const renewTokenFromApi = async (refreshToken: string): Promise<StoredToken | null> => {
-    try {
-      const response = await service.post<
-        { refresh_token: string },
-        { access_token: string; refresh_token: string; expires_time: string }
-      >('/refresh', {
-        refresh_token: refreshToken,
-      })
-
-      const newToken: StoredToken = {
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        token_type: 'api',
-        expires_time: response.expires_time,
-      }
-
-      token.value = newToken
-      await fetchUserInfo(newToken.access_token)
-      errors.value = []
-      saveTokenToLocalStorage(newToken)
-
-      // Reset failure flag on success
-      isRefreshFailed.value = false
-
-      return newToken
-    } catch (error) {
-      console.error('Token refresh failed:', error)
-
-      // Check if this is a permanent failure
-      if (isPermanentRefreshFailure(error)) {
-        isRefreshFailed.value = true
-        console.log('Refresh token permanently failed, will not retry')
-      }
-
-      token.value = null
-      user.value = null
-      errors.value = translateErrors(error as ErrorResponse)
-      return null
-    }
-  }
-
-  const renewTokenFromKiwixOAuth = async (refreshToken: string): Promise<StoredToken | null> => {
-    try {
-      const kiwixAuthConfig = getKiwixAuthConfig(config)
-      const response = await refreshKiwixToken(refreshToken, kiwixAuthConfig)
-
-      // Calculate expiry time from expires_in
-      const expiresTime = new Date(Date.now() + response.expires_in * 1000).toISOString()
-
-      const newToken: StoredToken = {
-        access_token: response.id_token,
-        refresh_token: response.refresh_token,
-        token_type: 'kiwix',
-        expires_time: expiresTime,
-      }
-
-      token.value = newToken
-      await fetchUserInfo(newToken.access_token)
-      errors.value = []
-      saveTokenToLocalStorage(newToken)
-
-      // Reset failure flag on success
-      isRefreshFailed.value = false
-
-      return newToken
-    } catch (error) {
-      console.error('Kiwix token refresh failed:', error)
-
-      // Check if this is a permanent failure
-      if (isPermanentRefreshFailure(error)) {
-        isRefreshFailed.value = true
-        console.log('Kiwix refresh token permanently failed, will not retry')
-      }
-
-      token.value = null
-      user.value = null
-      errors.value = translateErrors(error as ErrorResponse)
-      return null
-    }
-  }
-
-  const renewToken = async (storedToken: StoredToken): Promise<string | null> => {
+  const renewToken = async (storedToken: StoredToken): Promise<StoredToken | null> => {
     // If refresh has already failed permanently, don't retry
+    const provider = getAuthProvider(storedToken.token_type)
     if (isRefreshFailed.value) {
-      console.log('Skipping refresh attempt - refresh token previously failed')
-      localStorage.removeItem(constants.TOKEN_STORAGE_KEY)
+      provider.removeToken()
       return null
     }
 
     // If a refresh is already in progress, wait for it
     if (refreshPromise.value) {
-      console.log('Refresh already in progress, waiting for existing request...')
-      const result = await refreshPromise.value
-      return result?.access_token || null
+      return await refreshPromise.value
     }
 
     if (!storedToken.refresh_token) {
@@ -215,51 +143,57 @@ export const useAuthStore = defineStore('auth', () => {
       return null
     }
 
-    const tokenType = storedToken.token_type
-
     // Create and store the refresh promise to prevent duplicate requests
-    if (tokenType === 'api') {
-      refreshPromise.value = renewTokenFromApi(storedToken.refresh_token)
-    } else if (tokenType === 'kiwix') {
-      refreshPromise.value = renewTokenFromKiwixOAuth(storedToken.refresh_token)
-    } else {
-      console.error('Unknown token type:', tokenType)
-      return null
-    }
+    refreshPromise.value = provider.refreshAuth(storedToken.refresh_token)
 
     try {
       const newToken = await refreshPromise.value
-      return newToken?.access_token || null
+      if (!newToken) {
+        throw new Error('Unable to refresh token')
+      }
+      await fetchUserInfo(newToken.access_token)
+      isRefreshFailed.value = false
+      return newToken
+    } catch (error) {
+      console.error('Token refresh failed:', error)
+
+      // Check if this is a permanent failure
+      if (isPermanentRefreshFailure(error)) {
+        isRefreshFailed.value = true
+        provider.removeToken()
+      }
+
+      token.value = null
+      user.value = null
+      errors.value = translateErrors(error as ErrorResponse)
+      return null
     } finally {
       // Clear the promise once done
       refreshPromise.value = null
     }
   }
 
-  const loadTokenFromLocalStorage = async (): Promise<string | null> => {
+  const loadToken = async (): Promise<StoredToken | null> => {
     // If already authenticated and token is still valid, return current token
     if (token.value && tokenExpiryDate.value && tokenExpiryDate.value > new Date()) {
-      return token.value.access_token
+      return token.value
     }
 
-    // Try to load from localStorage
-    const storedValue = localStorage.getItem(constants.TOKEN_STORAGE_KEY)
-    if (!storedValue) return null
-
-    let storedToken: StoredToken
+    // Try to load from kiwx/local providers as we don't know which
+    let storedToken: StoredToken | null = null
     try {
-      storedToken = JSON.parse(storedValue)
-
-      // Validate token structure
-      if (!storedToken.access_token || !storedToken.refresh_token || !storedToken.token_type) {
-        throw new Error('Invalid token structure in localStorage')
+      if (oauthProvider) {
+        storedToken = await oauthProvider.loadToken()
       }
-    } catch (error) {
-      console.error('Error parsing localStorage value', error)
-      // Incorrect token payload
-      localStorage.removeItem(constants.TOKEN_STORAGE_KEY)
-      return null
+
+      if (!storedToken) {
+        storedToken = await localauthProvider.loadToken()
+      }
+    } catch (error: unknown) {
+      console.error('Failed to load token:', error)
+      await logout()
     }
+    if (!storedToken) return null
 
     // Check if token is expired
     const expiry = new Date(storedToken.expires_time)
@@ -268,49 +202,43 @@ export const useAuthStore = defineStore('auth', () => {
     if (now > expiry) {
       // Token expired, check if refresh is already in progress
       if (refreshPromise.value) {
-        console.log('Token refresh already in progress, waiting for existing request...')
-        const result = await refreshPromise.value
-        return result?.access_token || null
+        const refreshed = await refreshPromise.value
+        if (!refreshed) {
+          await logout()
+          return null
+        }
+        token.value = refreshed
+        return refreshed
       }
       // Try to refresh
-      return await renewToken(storedToken)
+      storedToken = await renewToken(storedToken)
     }
 
     // Token is still valid
-    token.value = storedToken
-    try {
-      await fetchUserInfo(storedToken.access_token)
-      return storedToken.access_token
-    } catch (error) {
-      // If fetching user info fails, check if refresh is already in progress
-      console.error('Failed to fetch user info, attempting token refresh', error)
-      if (refreshPromise.value) {
-        console.log('Token refresh already in progress, waiting for existing request...')
-        const result = await refreshPromise.value
-        return result?.access_token || null
-      }
-      return await renewToken(storedToken)
+    if (!storedToken) {
+      await logout()
+      return null
     }
-  }
-
-  const saveTokenToLocalStorage = (tokenData: StoredToken) => {
-    localStorage.setItem(constants.TOKEN_STORAGE_KEY, JSON.stringify(tokenData))
+    if (!user.value) {
+      await fetchUserInfo(storedToken.access_token)
+    }
+    token.value = storedToken
+    return storedToken
   }
 
   const logout = async () => {
     // If we have a Kiwix token, revoke it
-    if (token.value?.token_type === 'kiwix' && token.value.access_token) {
+    if (token.value?.token_type) {
       try {
-        const kiwixAuthConfig = getKiwixAuthConfig(config)
-        await logoutFromKiwixAuth(token.value.access_token, kiwixAuthConfig)
+        const provider = getAuthProvider(token.value?.token_type)
+        await provider.logout()
       } catch (error) {
-        console.error('Error revoking Kiwix token:', error)
+        console.error('Error revoking token:', error)
       }
     }
 
     token.value = null
     user.value = null
-    localStorage.removeItem(constants.TOKEN_STORAGE_KEY)
 
     // Reset refresh failure state on logout
     isRefreshFailed.value = false
@@ -322,70 +250,27 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.scope[resource]?.[action] || false
   }
 
-  const authenticate = async (username: string, password: string) => {
+  const authenticate = async (
+    providerType: AuthProviderType,
+    username?: string,
+    password?: string,
+  ) => {
     try {
-      const response = await service.post<
-        { username: string; password: string },
-        { access_token: string; refresh_token: string; expires_time: string }
-      >('/authorize', {
-        username,
-        password,
-      })
-
-      const newToken: StoredToken = {
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        token_type: 'api',
-        expires_time: response.expires_time,
+      const provider = getAuthProvider(providerType)
+      await provider.initiateLogin(username, password)
+      // Oauth providers typically redirect to a new url as part of the
+      // login process. If we are still here, it means this is from the local
+      // provider which has stored the token
+      const newToken = await provider.loadToken()
+      if (!newToken) {
+        throw new Error('Invalid authentication token')
       }
-
       token.value = newToken
-
       // Fetch user info from backend
-      await fetchUserInfo(response.access_token)
-
-      errors.value = []
-      saveTokenToLocalStorage(newToken)
-
-      // Reset refresh failure state on successful login
-      isRefreshFailed.value = false
-
-      return true
-    } catch (err: unknown) {
-      token.value = null
-      user.value = null
-      errors.value = translateErrors(err as ErrorResponse)
-      return false
-    }
-  }
-
-  /**
-   * Authenticate with Kiwix OAuth2 code
-   */
-  const authenticateWithKiwix = async (code: string, codeVerifier: string) => {
-    try {
-      const kiwixAuthConfig = getKiwixAuthConfig(config)
-
-      // Exchange code for token
-      const kiwixToken = await exchangeCodeForToken(code, codeVerifier, kiwixAuthConfig)
-
-      // Calculate expiry time from expires_in
-      const expiresTime = new Date(Date.now() + kiwixToken.expires_in * 1000).toISOString()
-
-      const newToken: StoredToken = {
-        access_token: kiwixToken.id_token,
-        refresh_token: kiwixToken.refresh_token,
-        token_type: 'kiwix',
-        expires_time: expiresTime,
-      }
-
-      token.value = newToken
-
-      // Fetch user info from backend using the Kiwix token
       await fetchUserInfo(newToken.access_token)
 
       errors.value = []
-      saveTokenToLocalStorage(newToken)
+      provider.saveToken(newToken)
 
       // Reset refresh failure state on successful login
       isRefreshFailed.value = false
@@ -400,7 +285,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const getApiService = async (baseURL: string) => {
-    const token = await loadTokenFromLocalStorage()
+    const token = await loadToken()
     if (!token)
       return httpRequest({
         baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
@@ -409,9 +294,33 @@ export const useAuthStore = defineStore('auth', () => {
     return httpRequest({
       baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token.access_token}`,
       },
     })
+  }
+
+  const handleCallBack = async (providerType: AuthProviderType, callbackUrl: string) => {
+    try {
+      const provider = getAuthProvider(providerType)
+      const newToken = await provider.onCallback(callbackUrl)
+      token.value = newToken
+
+      // Fetch user info from backend using the Kiwix token
+      await fetchUserInfo(newToken.access_token)
+
+      errors.value = []
+      provider.saveToken(newToken)
+
+      // Reset refresh failure state on successful login
+      isRefreshFailed.value = false
+
+      return true
+    } catch (err: unknown) {
+      token.value = null
+      user.value = null
+      errors.value = translateErrors(err as ErrorResponse)
+      return false
+    }
   }
 
   return {
@@ -432,16 +341,14 @@ export const useAuthStore = defineStore('auth', () => {
     isTokenExpired,
 
     // Methods
-    saveTokenToLocalStorage,
     hasPermission,
-    loadTokenFromLocalStorage,
+    loadToken,
     fetchUserInfo,
     renewToken,
-    renewTokenFromApi,
-    renewTokenFromKiwixOAuth,
     authenticate,
-    authenticateWithKiwix,
     logout,
     getApiService,
+    handleCallBack,
+    getAuthProvider,
   }
 })

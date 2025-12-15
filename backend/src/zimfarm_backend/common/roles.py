@@ -145,14 +145,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
         "tasks": TaskPermissions.get(update=True, secrets=True),
         "requested_tasks": RequestedTaskPermissions.get(update=True, secrets=True),
     },
-    RoleEnum.VIEWER: {
-        "tasks": TaskPermissions.get(read=True),
-        "schedules": SchedulePermissions.get(read=True),
-        "users": UserPermissions.get(read=True),
-        "workers": WorkerPermissions.get(read=True),
-        "requested_tasks": RequestedTaskPermissions.get(read=True),
-        "offliners": OfflinerPermissions.get(read=True),
-    },
+    RoleEnum.VIEWER: {},
 }
 
 

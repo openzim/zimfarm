@@ -37,11 +37,9 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-import { retrieveAndClearPKCEParams } from '@/utils/pkce'
 import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
-const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -50,35 +48,7 @@ const error = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    // Get code and state from URL query parameters
-    const code = route.query.code as string
-    const state = route.query.state as string
-    const errorParam = route.query.error as string
-    const errorDescription = route.query.error_description as string
-
-    // Check for OAuth errors from Kiwix auth
-    if (errorParam) {
-      throw new Error(errorDescription || `OAuth error: ${errorParam}`)
-    }
-
-    if (!code || !state) {
-      throw new Error('Missing authorization code or state parameter')
-    }
-
-    // Retrieve PKCE parameters from session storage
-    const pkceParams = retrieveAndClearPKCEParams()
-    if (!pkceParams) {
-      throw new Error('PKCE parameters not found. Please try signing in again.')
-    }
-
-    // Verify state to prevent CSRF attacks
-    if (state !== pkceParams.state) {
-      throw new Error('Invalid state parameter. Possible CSRF attack.')
-    }
-
-    // Authenticate with Kiwix using authorization code and PKCE verifier
-    const success = await authStore.authenticateWithKiwix(code, pkceParams.verifier)
-
+    const success = await authStore.handleCallBack('oauth', window.location.href)
     if (!success) {
       throw new Error(authStore.errors.join(', ') || 'Authentication failed')
     }

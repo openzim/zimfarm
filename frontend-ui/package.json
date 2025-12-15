@@ -28,7 +28,6 @@
     "vite-plugin-vuetify": "^2.1.1",
     "vue": "^3.5.17",
     "vue-advanced-cropper": "^2.8.9",
-    "vue-cookies": "^1.8.6",
     "vue-matomo": "^4.2.0",
     "vue-router": "^4.5.1",
     "vuetify": "^3.11.2"

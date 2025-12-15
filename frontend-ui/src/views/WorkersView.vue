@@ -114,7 +114,8 @@ import { useWorkersStore } from '@/stores/workers'
 import type { TaskLight } from '@/types/tasks'
 import { formattedBytesSize } from '@/utils/format'
 
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 // Stores
 const workersStore = useWorkersStore()
