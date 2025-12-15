@@ -19,6 +19,7 @@ classifiers = [
 dependencies = [
     "alembic == 1.15.2",
     "pydantic[email] == 2.11.4",
+    "pydantic-extra-types == 2.10.6",
     "SQLAlchemy == 2.0.41",
     "PyJWT == 2.10.1",
     "pymongo == 4.13.0",

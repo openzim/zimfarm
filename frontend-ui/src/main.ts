@@ -11,6 +11,7 @@ import 'vuetify/styles'
 import { createPinia } from 'pinia'
 import VueMatomo from 'vue-matomo'
 import VueCookies from 'vue-cookies'
+import { VColorInput } from 'vuetify/labs/VColorInput'
 
 // config
 import getConfig, { configPlugin } from '@/config'
@@ -23,7 +24,10 @@ import constants from '@/constants'
 const app = createApp(App)
 
 const vuetify = createVuetify({
-  components,
+  components: {
+    ...components,
+    VColorInput,
+  },
   directives,
   theme: {
     defaultTheme: 'system',

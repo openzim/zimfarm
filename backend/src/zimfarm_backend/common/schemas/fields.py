@@ -9,12 +9,14 @@ from pydantic import (
     AnyUrl,
     Field,
     SecretStr,
+    SerializerFunctionWrapHandler,
     ValidationInfo,
     ValidatorFunctionWrapHandler,
     WrapSerializer,
     WrapValidator,
 )
 from pydantic_core.core_schema import SerializationInfo
+from pydantic_extra_types.color import Color
 
 from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.enums import Platform, WarehousePath
@@ -258,6 +260,18 @@ ZIMOutputFolder = Annotated[
 
 SkipableBool = Annotated[bool, WrapValidator(skip_validation)]
 OptionalSkipableBool = SkipableBool | None
+
+
+def serialize_color_to_hex(value: Any, _: SerializerFunctionWrapHandler) -> str:
+    """Serialize a color to hexadecimal codes."""
+    if isinstance(value, Color):
+        value = value.as_hex(format="long").upper()
+    return value
+
+
+SkipableColor = Annotated[
+    Color, WrapValidator(skip_validation), WrapSerializer(serialize_color_to_hex)
+]
 
 OptionalZIMOutputFolder = ZIMOutputFolder | None
 

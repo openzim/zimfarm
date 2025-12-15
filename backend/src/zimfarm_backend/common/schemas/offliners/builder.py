@@ -22,6 +22,7 @@ from zimfarm_backend.common.schemas.fields import (
     OptionalField,
     SecretUrl,
     SkipableBool,
+    SkipableColor,
     SkipableUrl,
     ZIMSecretStr,
     enum_member,
@@ -50,6 +51,7 @@ TYPE_MAP = {
     "list-of-integer": list[int],
     "list-of-float": list[float],
     "list-of-email": list[EmailStr],
+    "color": SkipableColor,
 }
 
 

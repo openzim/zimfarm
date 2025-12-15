@@ -407,12 +407,15 @@
               :hint="field.description ?? undefined"
               persistent-hint
             />
-            <v-text-field
+            <v-color-input
               v-else-if="field.component === 'color'"
+              color-pip
+              pip-variant="flat"
               v-model.trim="editFlags[field.dataKey]"
-              type="color"
               density="compact"
               variant="outlined"
+              mode="hex"
+              :modes="['hex']"
               :placeholder="field.placeholder"
               :required="field.required"
               :rules="getFieldRules(field)"
@@ -919,7 +922,7 @@ const flagsFields = computed(() => {
     let options: Array<{ title: string; value: string | undefined }> | undefined = undefined
     let step = null
 
-    if (field.type === 'hex-color') {
+    if (field.type === 'color') {
       component = 'color'
     } else if (field.type === 'url') {
       component = 'url'

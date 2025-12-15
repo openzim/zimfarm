@@ -49,6 +49,7 @@ class FlagSchema(BaseFlagSchema):
         "list-of-url",
         "list-of-email",
         "blob",
+        "color",
     ]
     kind: Literal["image", "css"] | None = None
     choices: list[str] | list[Choice] | None = None
