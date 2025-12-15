@@ -37,8 +37,8 @@ def verify_kiwix_access_token(token: str) -> dict[str, Any]:
     )
 
     # Ensure the user logged in with two authentication factors. As per the Ory docs,
-    # "password" and "oidc" are categorized as first methods of login while "totp",
-    # "webauthn" and "lookup_secret" are second authentication methods
+    # "password", "code"  and "oidc" are categorized as first methods of login while
+    # "totp", "webauthn" and "lookup_secret" are second authentication methods
     # https://www.ory.com/docs/kratos/mfa/overview#authenticator-assurance-level-aal
     amr = set(decoded_token.get("amr", []))
     if KIWIX_LOGIN_REQUIRE_2FA and not (
