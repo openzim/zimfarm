@@ -19,6 +19,7 @@ KIWIX_ISSUER = getenv("KIWIX_ISSUER", default="https://login.kiwix.org")
 KIWIX_CLIENT_ID = getenv(
     "KIWIX_CLIENT_ID", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
 )
+KIWIX_LOGIN_REQUIRE_2FA = parse_bool(getenv("KIWIX_LOGIN_REQUIRE_2FA", default="true"))
 CREATE_NEW_KIWIX_ACCOUNT = parse_bool(
     getenv("CREATE_NEW_KIWIX_ACCOUNT", default="true")
 )

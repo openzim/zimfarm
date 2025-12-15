@@ -73,6 +73,8 @@ def get_jwt_claims_or_none(
         raise UnauthorizedError("Token has expired.") from exc
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:
         raise UnauthorizedError("Invalid token") from exc
+    except ValueError as exc:
+        raise UnauthorizedError(exc.args[0]) from exc
     except Exception as exc:
         raise UnauthorizedError("Unable to verify token") from exc
 

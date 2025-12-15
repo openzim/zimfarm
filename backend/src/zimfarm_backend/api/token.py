@@ -11,6 +11,7 @@ from zimfarm_backend.api.constants import (
     KIWIX_CLIENT_ID,
     KIWIX_ISSUER,
     KIWIX_JWKS_URI,
+    KIWIX_LOGIN_REQUIRE_2FA,
 )
 
 # PyJWKClient for fetching and caching JWKS from OpenID configuration
@@ -34,6 +35,20 @@ def verify_kiwix_access_token(token: str) -> dict[str, Any]:
             "require": ["exp", "iat", "iss", "sub", "name", "amr", "aud"],
         },
     )
+
+    # Ensure the user logged in with two authentication factors. As per the Ory docs,
+    # "password" and "oidc" are categorized as first methods of login while "totp",
+    # "webauthn" and "lookup_secret" are second authentication methods
+    # https://www.ory.com/docs/kratos/mfa/overview#authenticator-assurance-level-aal
+    amr = set(decoded_token.get("amr", []))
+    if KIWIX_LOGIN_REQUIRE_2FA and not (
+        {"password", "oidc"} & amr and {"webauthn", "lookup_secrets", "totp"} & amr
+    ):
+        raise ValueError(
+            "2FA authentication is mandatory on Zimfarm but it looks like you only "
+            "have one setup on Ory. Please, configure a second one on Ory at "
+            "https://login.kiwix.org/settings"
+        )
 
     return decoded_token
 
