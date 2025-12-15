@@ -5,7 +5,7 @@ from pydantic import AnyUrl
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
+from zimfarm_backend.common.schemas.orms import CreateBlobSchema
 from zimfarm_backend.db.blob import (
     create_or_update_blob,
     delete_blob,
@@ -20,13 +20,11 @@ def test_create_schedule_blob(dbsession: OrmSession, schedule: Schedule):
     create_or_update_blob(
         dbsession,
         schedule_id=schedule.id,
-        request=PreparedBlob(
+        request=CreateBlobSchema(
             kind="css",
-            private_url=AnyUrl("https://www.example.com/style.css"),
             url=AnyUrl("https://www.example.com/style.css"),
             flag_name="custom-css",
             checksum="1",
-            data=b"hello",
         ),
     )
     dbsession.refresh(schedule)
@@ -48,13 +46,11 @@ def test_update_schedule_blob(dbsession: OrmSession, schedule: Schedule):
     create_or_update_blob(
         dbsession,
         schedule_id=schedule.id,
-        request=PreparedBlob(
+        request=CreateBlobSchema(
             kind="css",
-            private_url=AnyUrl("https://www.example.com/style2.css"),
             url=AnyUrl("https://www.example.com/style2.css"),
             flag_name="custom-css",
             checksum="1",
-            data=b"hello",
         ),
     )
     dbsession.refresh(schedule)

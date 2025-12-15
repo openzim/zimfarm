@@ -544,9 +544,13 @@ class UserSchemaWithSshKeys(UserSchema):
     ssh_keys: list[SshKeyRead]
 
 
-class BlobSchema(BaseModel):
-    schedule_name: str | None
+class CreateBlobSchema(BaseModel):
     flag_name: str
-    checksum: str
-    created_at: datetime.datetime
+    kind: str
     url: AnyUrl
+    checksum: str
+
+
+class BlobSchema(CreateBlobSchema):
+    schedule_name: str | None
+    created_at: datetime.datetime

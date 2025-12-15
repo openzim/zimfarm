@@ -32,6 +32,7 @@ from zimfarm_backend.common.schemas.offliners.transformers import (
 )
 from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
+    CreateBlobSchema,
     LanguageSchema,
     MostRecentTaskSchema,
     OfflinerDefinitionSchema,
@@ -438,7 +439,16 @@ def create_schedule(
 
     # Create the blobs now that we have the schedule ID
     for blob in uploaded_blobs:
-        create_or_update_blob(session, schedule_id=schedule.id, request=blob)
+        create_or_update_blob(
+            session,
+            schedule_id=schedule.id,
+            request=CreateBlobSchema(
+                kind=blob.kind,
+                flag_name=blob.flag_name,
+                url=blob.public_url,
+                checksum=blob.checksum,
+            ),
+        )
 
     return schedule
 
@@ -632,7 +642,16 @@ def update_schedule(
             prepared_blobs=prepared_blobs,
         )
         for blob in uploaded_blobs:
-            create_or_update_blob(session, schedule_id=schedule.id, request=blob)
+            create_or_update_blob(
+                session,
+                schedule_id=schedule.id,
+                request=CreateBlobSchema(
+                    kind=blob.kind,
+                    flag_name=blob.flag_name,
+                    url=blob.public_url,
+                    checksum=blob.checksum,
+                ),
+            )
 
         schedule.config = new_schedule_config.model_dump(
             mode="json", context={"show_secrets": True}

@@ -6,8 +6,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
-from zimfarm_backend.common.schemas.orms import BlobSchema
+from zimfarm_backend.common.schemas.orms import BlobSchema, CreateBlobSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Blob, Schedule
 
@@ -31,6 +30,7 @@ def get_blob_or_none(
             schedule_name=row.schedule_name,
             checksum=blob.checksum,
             url=AnyUrl(blob.url),
+            kind=blob.kind,
             flag_name=blob.flag_name,
             created_at=blob.created_at,
         )
@@ -51,11 +51,12 @@ def create_or_update_blob(
     session: OrmSession,
     *,
     schedule_id: UUID,
-    request: PreparedBlob,
+    request: CreateBlobSchema,
 ):
     """Create or update a schedule blob"""
     values = request.model_dump(
-        exclude_unset=True, mode="json", exclude={"data", "private_url"}
+        exclude_unset=True,
+        mode="json",
     )
     values["schedule_id"] = schedule_id
     stmt = insert(Blob).values(**values)
@@ -64,7 +65,7 @@ def create_or_update_blob(
         set_={
             **request.model_dump(
                 exclude_unset=True,
-                exclude={"flag_name", "checksum", "data", "private_url"},
+                exclude={"flag_name", "checksum"},
                 mode="json",
             )
         },
