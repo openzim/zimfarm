@@ -1,12 +1,13 @@
 # ruff: noqa: E501
 from contextlib import nullcontext as does_not_raise
 from typing import Any
-from unittest.mock import patch
 
 import pytest
 from _pytest.python_api import RaisesContext
+from pytest import MonkeyPatch
 
 from zimfarm_backend.common.enums import DockerImageName
+from zimfarm_backend.common.schemas.offliners import transformers as transformers_module
 from zimfarm_backend.common.schemas.offliners.builder import (
     build_offliner_model,
     generate_similarity_data,
@@ -17,7 +18,6 @@ from zimfarm_backend.common.schemas.offliners.models import (
     TransformerSchema,
 )
 from zimfarm_backend.common.schemas.offliners.transformers import (
-    UploadResponse,
     process_blob_fields,
     transform_data,
 )
@@ -255,7 +255,7 @@ def test_generate_similarity_data_value_missing(
         generate_similarity_data(data, offliner, spec)
 
 
-def test_process_blob_field():
+def test_process_blob_field(monkeypatch: MonkeyPatch):
     spec = OfflinerSpecSchema.model_validate(
         {
             "flags": {
@@ -288,16 +288,9 @@ def test_process_blob_field():
     instance = offliner_model.model_validate(
         {"offliner_id": "zimit", "name": "test", "custom-css": "base64string"}
     )
-    with patch(
-        "zimfarm_backend.common.schemas.offliners.transformers.upload_blob"
-    ) as mock_upload_blob:
-        mock_upload_blob.return_value = UploadResponse(
-            url="https://www.example.com/style.css", checksum="1"
-        )
-        processed_blobs = process_blob_fields(instance, spec)
-        mock_upload_blob.assert_called_once()
-        assert (
-            instance.custom_css  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
-            == "https://www.example.com/style.css"
-        )
-        assert len(processed_blobs) == 1
+    monkeypatch.setattr(
+        transformers_module, "BLOB_STORAGE_URL", "http://blob-storage.com"
+    )
+    processed_blobs = process_blob_fields(instance, spec)
+    assert len(processed_blobs) == 1
+    assert str(processed_blobs[0].url).startswith("http://blob-storage.com")
