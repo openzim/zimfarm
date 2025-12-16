@@ -4,7 +4,11 @@ from pydantic import EmailStr, computed_field, field_validator, model_validator
 
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.fields import NotEmptyString
+from zimfarm_backend.common.schemas.fields import (
+    LimitFieldMax200,
+    NotEmptyString,
+    SkipField,
+)
 
 
 class KeySchema(BaseModel):
@@ -63,3 +67,9 @@ class UserUpdateSchema(BaseModel):
         if self.role is not None and self.scope is not None:
             raise ValueError("Only one of role/scope must be set")
         return self
+
+
+class UsersGetSchema(BaseModel):
+    skip: SkipField = 0
+    limit: LimitFieldMax200 = 20
+    username: NotEmptyString | None = None

@@ -48,14 +48,19 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const fetchUsers = async (skip: number = 0, limit: number = 20) => {
+  const fetchUsers = async (skip: number = 0, limit: number = 20, username?: string) => {
     const service = await authStore.getApiService('users')
+    // filter out undefined values from params
+    const cleanedParams = Object.fromEntries(
+      Object.entries({
+        limit,
+        skip,
+        username,
+      }).filter(([, value]) => !!value),
+    )
     try {
       const response = await service.get<null, ListResponse<User>>('', {
-        params: {
-          skip,
-          limit,
-        },
+        params: cleanedParams,
       })
       errors.value = []
       users.value = response.items

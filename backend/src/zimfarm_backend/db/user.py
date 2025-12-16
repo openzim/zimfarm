@@ -105,10 +105,7 @@ def create_user_schema(user: User) -> UserSchema:
 
 
 def get_users(
-    session: OrmSession,
-    *,
-    skip: int,
-    limit: int,
+    session: OrmSession, *, skip: int, limit: int, username: str | None = None
 ) -> UserList:
     """Get a list of users"""
     query = (
@@ -116,7 +113,11 @@ def get_users(
             func.count().over().label("nb_records"),
             User,
         )
-        .where(User.deleted.is_(False))
+        .where(
+            User.deleted.is_(False),
+            (User.username.ilike(f"%{username if username is not None else ''}%"))
+            | (username is None),
+        )
         .offset(skip)
         .limit(limit)
         .order_by(User.username.asc(), User.id.asc())
