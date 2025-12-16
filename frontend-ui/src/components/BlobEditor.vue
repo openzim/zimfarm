@@ -13,6 +13,15 @@
       >
         <template #append-inner>
           <v-btn
+            v-if="modelValue && kind === 'css'"
+            icon="mdi-pencil"
+            size="x-small"
+            variant="text"
+            color="primary"
+            @click="handleEditCss"
+            title="Edit CSS"
+          />
+          <v-btn
             v-if="modelValue"
             icon="mdi-close"
             size="x-small"
@@ -38,6 +47,16 @@
     <div v-if="errorMessage" class="text-error text-caption mt-2">
       {{ errorMessage }}
     </div>
+
+    <!-- CSS Editor Dialog -->
+    <CssEditorDialog
+      v-if="kind === 'css'"
+      v-model="showCssEditor"
+      :css-content="cssEditorContent"
+      :loading="loadingCssContent"
+      @save="handleCssSave"
+      @cancel="handleCssCancel"
+    />
   </div>
 </template>
 
@@ -46,6 +65,7 @@ import { formattedBytesSize } from '@/utils/format'
 import constants from '@/constants'
 import type { Config } from '@/config'
 import { computed, ref, watch, inject } from 'vue'
+import CssEditorDialog from './CssEditorDialog.vue'
 
 const config = inject<Config>(constants.config)
 if (!config) {
@@ -75,6 +95,9 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const errorMessage = ref<string>('')
 const hasError = ref(false)
 const currentFileName = ref<string>('')
+const showCssEditor = ref(false)
+const cssEditorContent = ref('')
+const loadingCssContent = ref(false)
 
 const acceptedTypes = computed(() => {
   if (props.kind === 'image') {
@@ -92,6 +115,9 @@ const displayFileName = computed(() => {
   if (props.modelValue) {
     if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
       return props.modelValue
+    }
+    if (props.kind === 'css') {
+      return 'CSS file (base64)'
     }
     return 'Uploaded file (base64)'
   }
@@ -166,6 +192,12 @@ const handleFileChange = async (event: Event) => {
     // Convert to base64
     const base64 = await convertFileToBase64(file)
     emit('update:modelValue', base64)
+
+    // For CSS files, automatically open the editor
+    if (props.kind === 'css') {
+      cssEditorContent.value = base64ToText(base64)
+      showCssEditor.value = true
+    }
   } catch (error) {
     console.error('Failed to process file:', error)
     errorMessage.value = 'Failed to process file. Please try again.'
@@ -183,6 +215,73 @@ const handleRemove = () => {
     fileInputRef.value.value = ''
   }
   emit('update:modelValue', null)
+}
+
+const base64ToText = (base64String: string): string => {
+  // Remove data URL prefix if present
+  const base64Data = base64String.includes(',') ? base64String.split(',')[1] : base64String
+
+  try {
+    return atob(base64Data)
+  } catch (error) {
+    console.error('Failed to decode base64:', error)
+    return ''
+  }
+}
+
+const textToBase64 = (text: string): string => {
+  const encoded = btoa(text)
+  return `data:text/css;base64,${encoded}`
+}
+
+const fetchCssFromUrl = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSS: ${response.statusText}`)
+    }
+    return await response.text()
+  } catch (error) {
+    console.error('Error fetching CSS from URL:', error)
+    throw error
+  }
+}
+
+const handleEditCss = async () => {
+  if (!props.modelValue) return
+
+  loadingCssContent.value = true
+  errorMessage.value = ''
+
+  try {
+    if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
+      cssEditorContent.value = await fetchCssFromUrl(props.modelValue)
+    } else if (props.modelValue.startsWith('data:')) {
+      cssEditorContent.value = base64ToText(props.modelValue)
+    } else {
+      // Assume it's already base64 without prefix
+      cssEditorContent.value = base64ToText(props.modelValue)
+    }
+
+    showCssEditor.value = true
+  } catch (error) {
+    console.error('Failed to load CSS content:', error)
+    errorMessage.value = 'Failed to load CSS content for editing'
+    hasError.value = true
+  } finally {
+    loadingCssContent.value = false
+  }
+}
+
+const handleCssSave = (content: string) => {
+  // Convert edited CSS content back to base64
+  const base64Content = textToBase64(content)
+  emit('update:modelValue', base64Content)
+  showCssEditor.value = false
+}
+
+const handleCssCancel = () => {
+  showCssEditor.value = false
 }
 
 // Watch for URL updates from backend (after submission)

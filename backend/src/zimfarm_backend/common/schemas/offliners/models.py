@@ -26,7 +26,8 @@ class PreparedBlob(BaseModel):
     """Blob data prepared for upload but not yet uploaded"""
 
     kind: str
-    url: AnyUrl  # The URL to upload the file to. Includes generated filename
+    private_url: AnyUrl  # The URL to upload the file to
+    public_url: AnyUrl = Field(alias="url")
     flag_name: str
     checksum: str
     data: bytes

@@ -22,6 +22,7 @@ def test_create_schedule_blob(dbsession: OrmSession, schedule: Schedule):
         schedule_id=schedule.id,
         request=PreparedBlob(
             kind="css",
+            private_url=AnyUrl("https://www.example.com/style.css"),
             url=AnyUrl("https://www.example.com/style.css"),
             flag_name="custom-css",
             checksum="1",
@@ -49,6 +50,7 @@ def test_update_schedule_blob(dbsession: OrmSession, schedule: Schedule):
         schedule_id=schedule.id,
         request=PreparedBlob(
             kind="css",
+            private_url=AnyUrl("https://www.example.com/style2.css"),
             url=AnyUrl("https://www.example.com/style2.css"),
             flag_name="custom-css",
             checksum="1",
