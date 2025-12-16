@@ -3,11 +3,13 @@
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
+import pydantic
 import pytest
 from _pytest.python_api import RaisesContext
 from pydantic import ValidationError
 
 from zimfarm_backend.common.constants import parse_bool
+from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     CommaSeparatedZIMLangCode,
     GraphemeStr,
@@ -19,7 +21,6 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMName,
     ZIMTitle,
 )
-from zimfarm_backend.common.schemas.models import BaseModel
 
 
 class ZIMFileNameModel(BaseModel):
@@ -240,7 +241,7 @@ def test_language_code_validator_skips_validation_when_context_set():
     ],
 )
 def test_ted_flags_schema(
-    ted_flags_schema_cls: type[BaseModel],
+    ted_flags_schema_cls: type[pydantic.BaseModel],
     languages: str,
     expected: RaisesContext[Exception],
 ):
@@ -323,7 +324,7 @@ def test_ted_flags_schema_skips_validation_when_context_set(
     ],
 )
 def test_ted_flags_schema_fields_exclusivity(
-    ted_flags_schema_cls: type[BaseModel],
+    ted_flags_schema_cls: type[pydantic.BaseModel],
     links: str,
     topics: str,
     playlists: str,
@@ -365,7 +366,7 @@ def test_ted_flags_schema_fields_exclusivity(
     ],
 )
 def test_ted_flags_schema_links(
-    ted_flags_schema_cls: type[BaseModel],
+    ted_flags_schema_cls: type[pydantic.BaseModel],
     links: str,
     expected: RaisesContext[Exception],
 ):

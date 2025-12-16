@@ -1,8 +1,8 @@
 import pycountry
-from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import LanguageSchema
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError

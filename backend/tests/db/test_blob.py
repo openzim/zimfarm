@@ -11,6 +11,7 @@ from zimfarm_backend.db.blob import (
     delete_blob,
     get_blob,
     get_blob_or_none,
+    get_blobs,
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Blob, Schedule
@@ -133,3 +134,55 @@ def test_delete_blob_nonexistent(dbsession: OrmSession):
     rows_deleted = delete_blob(dbsession, blob_id=nonexistent_id)
 
     assert rows_deleted == 0
+
+
+@pytest.mark.parametrize(
+    "skip,limit,expected_nb_records",
+    [
+        (0, 10, 10),
+        (0, 5, 5),
+        (10, 1, 0),
+        (5, 10, 5),
+    ],
+)
+def test_get_blobs(
+    dbsession: OrmSession,
+    schedule: Schedule,
+    skip: int,
+    limit: int,
+    expected_nb_records: int,
+):
+    for i in range(10):
+        schedule.blobs.append(
+            Blob(
+                kind="css",
+                flag_name="custom-css",
+                url=f"https://www.example.com/style{i}.css",
+                checksum=f"{i}",
+            )
+        )
+    dbsession.add(schedule)
+    dbsession.flush()
+    results = get_blobs(dbsession, skip=skip, limit=limit, schedule_name=schedule.name)
+    assert len(results.blobs) == expected_nb_records
+    assert len(results.blobs) <= limit
+
+
+def test_get_blobs_wrong_schedule_name(
+    dbsession: OrmSession,
+    schedule: Schedule,
+):
+    schedule.blobs.append(
+        Blob(
+            kind="css",
+            flag_name="custom-css",
+            url="https://www.example.com/style.css",
+            checksum="1",
+        )
+    )
+    dbsession.add(schedule)
+    dbsession.flush()
+    results = get_blobs(
+        dbsession, skip=0, limit=10, schedule_name=schedule.name + "wrong"
+    )
+    assert len(results.blobs) == 0

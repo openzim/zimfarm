@@ -66,6 +66,7 @@ import constants from '@/constants'
 import type { Config } from '@/config'
 import { computed, ref, watch, inject } from 'vue'
 import CssEditorDialog from './CssEditorDialog.vue'
+import { computeChecksumFromBase64 } from '@/utils/checksum'
 
 const config = inject<Config>(constants.config)
 if (!config) {
@@ -89,6 +90,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | null]
+  'checksum-computed': [checksum: string | null]
 }>()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -191,6 +193,16 @@ const handleFileChange = async (event: Event) => {
 
     // Convert to base64
     const base64 = await convertFileToBase64(file)
+
+    // Compute checksum and emit
+    try {
+      const checksum = await computeChecksumFromBase64(base64)
+      emit('checksum-computed', checksum)
+    } catch (error) {
+      console.error('Failed to compute checksum:', error)
+      emit('checksum-computed', null)
+    }
+
     emit('update:modelValue', base64)
 
     // For CSS files, automatically open the editor
@@ -214,6 +226,7 @@ const handleRemove = () => {
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
+  emit('checksum-computed', null)
   emit('update:modelValue', null)
 }
 
@@ -273,9 +286,19 @@ const handleEditCss = async () => {
   }
 }
 
-const handleCssSave = (content: string) => {
+const handleCssSave = async (content: string) => {
   // Convert edited CSS content back to base64
   const base64Content = textToBase64(content)
+
+  // Compute checksum and emit
+  try {
+    const checksum = await computeChecksumFromBase64(base64Content)
+    emit('checksum-computed', checksum)
+  } catch (error) {
+    console.error('Failed to compute checksum:', error)
+    emit('checksum-computed', null)
+  }
+
   emit('update:modelValue', base64Content)
   showCssEditor.value = false
 }
