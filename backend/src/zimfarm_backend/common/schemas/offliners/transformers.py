@@ -8,9 +8,11 @@ from typing import NamedTuple
 from urllib.parse import urlparse
 
 import requests
+from humanfriendly import format_size
 from pydantic import AnyUrl, BaseModel
 
 from zimfarm_backend.common.constants import (
+    BLOB_MAX_SIZE,
     BLOB_STORAGE_PASSWORD,
     BLOB_STORAGE_URL,
     BLOB_STORAGE_USERNAME,
@@ -84,7 +86,7 @@ def process_blob_fields(
 
         value = getattr(data, flag_name)
 
-        if value and isinstance(value, str) and not value.startswith("http"):
+        if value and not value.startswith("http"):
             if flag_schema.kind is None:
                 raise ValueError("Blobs must have a 'kind'")
 
@@ -132,6 +134,13 @@ def upload_blob(*, data: str, kind: str) -> UploadResponse:
         encoded_data = data
 
     blob_data = base64.b64decode(encoded_data)
+
+    if len(blob_data) > BLOB_MAX_SIZE:
+        raise ValueError(
+            f"Blob size ({format_size(len(blob_data), binary=True)} bytes) exceeds "
+            f"maximum allowed size ({format_size(BLOB_MAX_SIZE, binary=True)})"
+        )
+
     checksum = hashlib.sha256(blob_data).hexdigest()
 
     headers = {

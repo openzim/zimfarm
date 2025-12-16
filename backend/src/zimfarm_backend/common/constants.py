@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from humanfriendly import parse_timespan
+from humanfriendly import parse_size, parse_timespan
 
 from zimfarm_backend.common.enums import SchedulePeriodicity
 
@@ -174,3 +174,4 @@ ALEMBIC_UPGRADE_HEAD_ON_START = parse_bool(
 BLOB_STORAGE_URL = getenv("BLOB_STORAGE_URL")
 BLOB_STORAGE_USERNAME = getenv("BLOB_STORAGE_USERNAME")
 BLOB_STORAGE_PASSWORD = getenv("BLOB_STORAGE_PASSWORD")
+BLOB_MAX_SIZE = parse_size(getenv("BLOB_MAX_SIZE", default="1MB"), binary=True)
