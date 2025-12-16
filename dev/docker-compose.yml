@@ -43,6 +43,10 @@ services:
       # username and password of admin user
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
+      BLOB_STORAGE_URL: http://blob-storage
+      BLOB_STORAGE_USERNAME: zimfarm
+      BLOB_STORAGE_PASSWORD: zimpass
+
     command:
       - uvicorn
       - zimfarm_backend.api.entrypoint:app
@@ -59,6 +63,8 @@ services:
     depends_on:
       postgresdb:
         condition: service_healthy
+      blob-storage:
+        condition: service_started
 
   background-tasks:
     build:
@@ -273,6 +279,19 @@ services:
     profiles:
       - worker
 
+  blob-storage:
+    image: ghcr.io/kiwix/nginx-webdav:latest
+    container_name: zf_blob_storage
+    environment:
+      - USERNAME=zimfarm
+      - PASSWORD=zimpass
+      - NAME=Zimfarm Blob Storage
+    ports:
+      - 127.0.0.1:8003:80
+    volumes:
+      - blob_data_zimfarm:/data
+
 volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
+  blob_data_zimfarm:
