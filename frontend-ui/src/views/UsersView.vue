@@ -9,68 +9,35 @@
 
     <!-- Content only shown if user has permission -->
     <div v-show="canReadUsers">
-      <!-- Create User Form -->
-      <v-card v-show="canCreateUsers" class="mb-6" flat>
-        <v-card-title class="text-h6">
-          <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Create New User
-        </v-card-title>
-
+      <v-card class="mb-4" flat>
         <v-card-text>
-          <v-form @submit.prevent="createUser" ref="formRef">
-            <v-row>
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  v-model="form.username"
-                  label="Username"
-                  placeholder="Enter username"
-                  variant="outlined"
-                  density="compact"
-                  hide-details="auto"
-                  :rules="[rules.required, rules.minLength(3)]"
-                />
-              </v-col>
-
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  v-model="form.email"
-                  label="Email"
-                  type="email"
-                  placeholder="Enter email"
-                  variant="outlined"
-                  density="compact"
-                  hide-details="auto"
-                  :rules="[rules.required, rules.email]"
-                />
-              </v-col>
-
-              <v-col cols="12" sm="6" md="3">
-                <v-select
-                  v-model="form.role"
-                  :items="roles"
-                  label="Role"
-                  variant="outlined"
-                  density="compact"
-                  hide-details="auto"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-
-              <v-col cols="12" sm="6" md="3" class="d-flex align-end">
-                <v-btn
-                  type="submit"
-                  color="primary"
-                  variant="elevated"
-                  :disabled="!isFormValid || isCreating"
-                  :loading="isCreating"
-                  block
-                >
-                  <v-icon class="mr-2">mdi-account-plus</v-icon>
-                  Create User
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-form>
+          <v-row align="center">
+            <v-col cols="12" sm="8">
+              <v-text-field
+                v-model="searchUsername"
+                label="Search user"
+                placeholder="Enter username to search"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                hide-details
+                @blur="handleSearchChange"
+              />
+            </v-col>
+            <v-col cols="12" sm="4">
+              <v-btn
+                v-if="canCreateUsers"
+                color="primary"
+                variant="elevated"
+                block
+                @click="showCreateDialog = true"
+              >
+                <v-icon class="mr-2">mdi-account-plus</v-icon>
+                Create User
+              </v-btn>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
 
@@ -85,11 +52,114 @@
         @load-data="loadData"
       />
     </div>
+
+    <!-- Create User Dialog -->
+    <v-dialog v-model="showCreateDialog" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="text-h6 bg-primary">
+          <v-icon class="mr-2">mdi-account-plus</v-icon>
+          Create New User
+        </v-card-title>
+
+        <v-card-text class="pt-4">
+          <v-form @submit.prevent="createUser" ref="formRef">
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="form.username"
+                  label="Username"
+                  placeholder="Enter username"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :validate-on="'blur'"
+                  :rules="[rules.required, rules.minLength(3)]"
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-text-field
+                  v-model="form.email"
+                  label="Email"
+                  type="email"
+                  placeholder="Enter email"
+                  variant="outlined"
+                  density="compact"
+                  :validate-on="'blur'"
+                  hide-details="auto"
+                  :rules="[rules.required, rules.email]"
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-select
+                  v-model="form.role"
+                  :items="roles"
+                  label="Role"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :validate-on="'blur'"
+                  :rules="[rules.required]"
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-text-field
+                  v-model="form.password"
+                  label="Password"
+                  placeholder="Enter password or generate one"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  :type="showPassword ? 'text' : 'password'"
+                  :rules="[rules.required, rules.minLength(8)]"
+                >
+                  <template #append-inner>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      @click="showPassword = !showPassword"
+                      tabindex="-1"
+                    >
+                      <v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                    </v-btn>
+                  </template>
+                </v-text-field>
+              </v-col>
+
+              <v-col cols="12">
+                <v-btn variant="outlined" color="primary" block @click="generateNewPassword">
+                  <v-icon class="mr-2">mdi-refresh</v-icon>
+                  Generate New Password
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeCreateDialog" :disabled="isCreating"> Cancel </v-btn>
+          <v-btn
+            color="primary"
+            variant="elevated"
+            :disabled="!isFormValid || isCreating"
+            :loading="isCreating"
+            @click="createUser"
+          >
+            <v-icon class="mr-2">mdi-account-plus</v-icon>
+            Create User
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import ErrorMessage from '@/components/ErrorMessage.vue'
@@ -121,6 +191,8 @@ const formRef = ref()
 const users = ref<User[]>([])
 const isCreating = ref(false)
 const error = ref<string | null>(null)
+const searchUsername = ref<string>('')
+const showCreateDialog = ref(false)
 
 // Paginator state (from store)
 const paginator = computed(() => userStore.paginator)
@@ -130,7 +202,10 @@ const form = ref({
   username: '',
   email: '',
   role: 'editor' as const,
+  password: '',
 })
+
+const showPassword = ref(false)
 
 // Computed properties
 const canReadUsers = computed(() => authStore.hasPermission('users', 'read'))
@@ -138,7 +213,7 @@ const canReadUsers = computed(() => authStore.hasPermission('users', 'read'))
 const canCreateUsers = computed(() => authStore.hasPermission('users', 'create'))
 
 const isFormValid = computed(() => {
-  return form.value.username && form.value.email && form.value.role
+  return form.value.username && form.value.email && form.value.role && form.value.password
 })
 
 // Table headers
@@ -167,19 +242,17 @@ const createUser = async () => {
   isCreating.value = true
   loadingStore.startLoading('Creating user...')
 
-  const password = genPassword()
-
   const response = await userStore.createUser(
     form.value.username,
     form.value.email,
     form.value.role,
-    password,
+    form.value.password,
   )
 
   if (response) {
     // Show success notification
     notificationStore.showSuccess(
-      `User "${response.username}" has been created with password "${password}".`,
+      `User "${response.username}" has been created with password "${form.value.password}".`,
       8000,
     )
 
@@ -188,8 +261,12 @@ const createUser = async () => {
       username: '',
       email: '',
       role: 'editor' as const,
+      password: '',
     }
     formRef.value?.reset()
+    showPassword.value = false
+
+    showCreateDialog.value = false
 
     // Reload users list
     await loadData(paginator.value.limit, paginator.value.skip)
@@ -211,7 +288,7 @@ const loadData = async (limit: number, skip: number) => {
 
   loadingStore.startLoading('Fetching users...')
 
-  const response = await userStore.fetchUsers(skip, limit)
+  const response = await userStore.fetchUsers(skip, limit, searchUsername.value || undefined)
   if (response) {
     users.value = response
     userStore.savePaginatorLimit(limit)
@@ -223,6 +300,27 @@ const loadData = async (limit: number, skip: number) => {
   loadingStore.stopLoading()
 }
 
+const handleSearchChange = async () => {
+  await loadData(paginator.value.limit, 0)
+}
+
+const closeCreateDialog = () => {
+  showCreateDialog.value = false
+  form.value = {
+    username: '',
+    email: '',
+    role: 'editor' as const,
+    password: '',
+  }
+  formRef.value?.reset()
+  showPassword.value = false
+}
+
+const generateNewPassword = () => {
+  form.value.password = genPassword()
+  showPassword.value = true
+}
+
 const handleLimitChange = async (newLimit: number) => {
   userStore.savePaginatorLimit(newLimit)
 }
@@ -232,6 +330,13 @@ onMounted(async () => {
   if (!canReadUsers.value) {
     error.value = 'You do not have permission to view users.'
     return
+  }
+})
+
+// Watch for dialog open to generate password
+watch(showCreateDialog, (newValue) => {
+  if (newValue) {
+    generateNewPassword()
   }
 })
 </script>

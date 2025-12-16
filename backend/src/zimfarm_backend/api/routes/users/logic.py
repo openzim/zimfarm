@@ -16,11 +16,8 @@ from zimfarm_backend.api.routes.users.models import (
     KeySchema,
     PasswordUpdateSchema,
     UserCreateSchema,
+    UsersGetSchema,
     UserUpdateSchema,
-)
-from zimfarm_backend.common.schemas.fields import (
-    LimitFieldMax200,
-    SkipField,
 )
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.common.schemas.orms import (
@@ -64,19 +61,20 @@ router = APIRouter(prefix="/users", tags=["users"])
 def get_users(
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
-    skip: Annotated[SkipField, Query()] = 0,
-    limit: Annotated[LimitFieldMax200, Query()] = 20,
+    params: Annotated[UsersGetSchema, Query()],
 ) -> ListResponse[UserSchema]:
     """Get a list of users"""
     if not check_user_permission(current_user, namespace="users", name="read"):
         raise UnauthorizedError("You are not allowed to access this resource")
 
-    results = db_get_users(db_session, skip=skip, limit=limit)
+    results = db_get_users(
+        db_session, skip=params.skip, limit=params.limit, username=params.username
+    )
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
-            skip=skip,
-            limit=limit,
+            skip=params.skip,
+            limit=params.limit,
             page_size=len(results.users),
         ),
         items=[create_user_schema(user) for user in results.users],
