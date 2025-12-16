@@ -293,8 +293,6 @@ class Schedule(Base):
 
     blobs: Mapped[list["Blob"]] = relationship(
         back_populates="schedule",
-        cascade="all, delete",
-        passive_deletes=True,
         init=False,
         default_factory=list,
     )
@@ -416,8 +414,8 @@ class Blob(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    schedule_id: Mapped[UUID] = mapped_column(
-        ForeignKey("schedule.id", ondelete="CASCADE"), init=False
+    schedule_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("schedule.id", ondelete="SET NULL"), init=False
     )
     flag_name: Mapped[str]
     kind: Mapped[str]
@@ -427,6 +425,8 @@ class Blob(Base):
     )
     checksum: Mapped[str]  # SHA-256 checksum of blob
 
-    schedule: Mapped["Schedule"] = relationship(init=False, back_populates="blobs")
+    schedule: Mapped["Schedule | None"] = relationship(
+        init=False, back_populates="blobs"
+    )
 
     __table_args__ = (UniqueConstraint("schedule_id", "flag_name", "checksum"),)

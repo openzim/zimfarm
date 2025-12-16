@@ -2,7 +2,7 @@ from typing import cast
 from uuid import UUID
 
 from pydantic import AnyUrl
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
@@ -68,3 +68,14 @@ def create_or_update_blob(
         },
     )
     session.execute(stmt)
+
+
+def delete_blob(session: OrmSession, *, blob_id: UUID) -> int:
+    """Delete a blob by its ID using the delete construct.
+
+    Returns:
+        The number of rows deleted (0 or 1)
+    """
+    stmt = delete(Blob).where(Blob.id == blob_id)
+    result = session.execute(stmt)
+    return result.rowcount
