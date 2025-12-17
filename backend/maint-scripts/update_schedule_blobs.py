@@ -34,7 +34,7 @@ from zimfarm_backend.db.offliner_definition import (
 
 class BlobFlag(BaseModel):
     flag_name: str
-    kind: Literal["image", "css"]
+    kind: Literal["image", "css", "html"]
 
 
 FLAG_MAPPINGS: dict[str, list[BlobFlag]] = {
