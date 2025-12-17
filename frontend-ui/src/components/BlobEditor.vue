@@ -1,6 +1,12 @@
 <template>
   <div>
-    <div class="d-flex align-center">
+    <div
+      class="d-flex align-center"
+      @drop.prevent="handleDrop"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @dragenter.prevent="handleDragEnter"
+    >
       <v-text-field
         v-model="displayFileName"
         :label="label"
@@ -10,6 +16,7 @@
         :hint="description ?? undefined"
         persistent-hint
         :hide-details="hasError ? false : 'auto'"
+        :class="{ 'drag-over': isDragging }"
       >
         <template #append-inner>
           <v-btn
@@ -100,6 +107,7 @@ const currentFileName = ref<string>('')
 const showCssEditor = ref(false)
 const cssEditorContent = ref('')
 const loadingCssContent = ref(false)
+const isDragging = ref(false)
 
 const acceptedTypes = computed(() => {
   if (props.kind === 'image') {
@@ -145,26 +153,14 @@ const convertFileToBase64 = (file: File): Promise<string> => {
   })
 }
 
-const handleFileChange = async (event: Event) => {
+const processFile = async (file: File) => {
   errorMessage.value = ''
   hasError.value = false
-
-  const target = event.target as HTMLInputElement
-  const files = target.files
-
-  if (!files || files.length === 0) {
-    return
-  }
-
-  const file = files[0]
 
   // Validate file size
   if (file.size > config.BLOB_MAX_SIZE) {
     errorMessage.value = `File size must be less than ${formattedBytesSize(config.BLOB_MAX_SIZE)}`
     hasError.value = true
-    if (fileInputRef.value) {
-      fileInputRef.value.value = ''
-    }
     return
   }
 
@@ -172,18 +168,12 @@ const handleFileChange = async (event: Event) => {
   if (props.kind === 'image' && !file.type.startsWith('image/')) {
     errorMessage.value = 'File must be an image'
     hasError.value = true
-    if (fileInputRef.value) {
-      fileInputRef.value.value = ''
-    }
     return
   }
 
   if (props.kind === 'css' && file.type !== 'text/css' && !file.name.endsWith('.css')) {
     errorMessage.value = 'File must be a CSS file'
     hasError.value = true
-    if (fileInputRef.value) {
-      fileInputRef.value.value = ''
-    }
     return
   }
 
@@ -215,14 +205,54 @@ const handleFileChange = async (event: Event) => {
     errorMessage.value = 'Failed to process file. Please try again.'
     hasError.value = true
     currentFileName.value = ''
-    if (fileInputRef.value) {
-      fileInputRef.value.value = ''
-    }
   }
+}
+
+const handleFileChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const files = target.files
+
+  if (!files || files.length === 0) {
+    return
+  }
+
+  const file = files[0]
+  await processFile(file)
+
+  // Clear file input
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
+const handleDragEnter = () => {
+  isDragging.value = true
+}
+
+const handleDragOver = () => {
+  isDragging.value = true
+}
+
+const handleDragLeave = () => {
+  isDragging.value = false
+}
+
+const handleDrop = async (event: DragEvent) => {
+  isDragging.value = false
+
+  const files = event.dataTransfer?.files
+  if (!files || files.length === 0) {
+    return
+  }
+
+  const file = files[0]
+  await processFile(file)
 }
 
 const handleRemove = () => {
   currentFileName.value = ''
+  errorMessage.value = ''
+  hasError.value = false
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
@@ -321,3 +351,10 @@ watch(
   { immediate: true },
 )
 </script>
+
+<style scoped>
+.drag-over :deep(.v-field) {
+  border: 2px dashed rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
+</style>
