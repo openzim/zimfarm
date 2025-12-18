@@ -1085,6 +1085,13 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
         }
       }
     }
+
+    // Refresh blobs after updating schedule
+    const scheduleName = update.name || props.scheduleName
+    const blobsResponse = await blobStore.fetchBlobs(scheduleName)
+    if (blobsResponse) {
+      blobs.value = blobsResponse
+    }
   } else {
     for (const error of scheduleStore.errors) {
       notificationStore.showError(error)

@@ -21,13 +21,13 @@
       >
         <template #append-inner>
           <v-btn
-            v-if="modelValue && kind === 'css'"
+            v-if="modelValue && (kind === 'css' || kind === 'html')"
             icon="mdi-pencil"
             size="x-small"
             variant="text"
             color="primary"
-            @click="handleEditCss"
-            title="Edit CSS"
+            @click="handleEditText"
+            :title="`Edit ${kind.toUpperCase()}`"
           />
           <v-btn
             v-if="modelValue"
@@ -56,14 +56,15 @@
       {{ errorMessage }}
     </div>
 
-    <!-- CSS Editor Dialog -->
-    <CssEditorDialog
-      v-if="kind === 'css'"
-      v-model="showCssEditor"
-      :css-content="cssEditorContent"
-      :loading="loadingCssContent"
-      @save="handleCssSave"
-      @cancel="handleCssCancel"
+    <!-- Text Editor Dialog -->
+    <TextEditorDialog
+      v-if="kind === 'css' || kind === 'html'"
+      v-model="showTextEditor"
+      :text-content="textEditorContent"
+      :file-type="kind"
+      :loading="loadingTextContent"
+      @save="handleTextSave"
+      @cancel="handleTextCancel"
     />
   </div>
 </template>
@@ -73,7 +74,7 @@ import { formattedBytesSize } from '@/utils/format'
 import constants from '@/constants'
 import type { Config } from '@/config'
 import { computed, ref, watch, inject } from 'vue'
-import CssEditorDialog from './CssEditorDialog.vue'
+import TextEditorDialog from './TextEditorDialog.vue'
 import { computeChecksumFromBase64 } from '@/utils/checksum'
 
 const config = inject<Config>(constants.config)
@@ -84,7 +85,7 @@ if (!config) {
 interface Props {
   modelValue: string | null | undefined
   label?: string
-  kind?: 'image' | 'css'
+  kind?: 'image' | 'css' | 'html'
   required?: boolean
   description?: string | null
 }
@@ -105,9 +106,9 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const errorMessage = ref<string>('')
 const hasError = ref(false)
 const currentFileName = ref<string>('')
-const showCssEditor = ref(false)
-const cssEditorContent = ref('')
-const loadingCssContent = ref(false)
+const showTextEditor = ref(false)
+const textEditorContent = ref('')
+const loadingTextContent = ref(false)
 const isDragging = ref(false)
 
 const acceptedTypes = computed(() => {
@@ -115,6 +116,8 @@ const acceptedTypes = computed(() => {
     return 'image/*'
   } else if (props.kind === 'css') {
     return '.css,text/css'
+  } else if (props.kind === 'html') {
+    return '.html,.htm,text/html'
   }
   return '*'
 })
@@ -175,10 +178,10 @@ const processText = async (text: string, filename: string) => {
     currentFileName.value = filename
     emit('update:modelValue', base64Content)
 
-    // Automatically open the editor for CSS
-    if (props.kind === 'css') {
-      cssEditorContent.value = text
-      showCssEditor.value = true
+    // Automatically open the editor for text files (CSS, HTML)
+    if (props.kind === 'css' || props.kind === 'html') {
+      textEditorContent.value = text
+      showTextEditor.value = true
     }
   } catch (error) {
     console.error('Failed to process text content:', error)
@@ -212,9 +215,21 @@ const processFile = async (file: File) => {
     return
   }
 
+  if (
+    props.kind === 'html' &&
+    file.type !== 'text/html' &&
+    !file.name.endsWith('.html') &&
+    !file.name.endsWith('.htm')
+  ) {
+    errorMessage.value = 'File must be an HTML file'
+    hasError.value = true
+    return
+  }
+
   try {
     // For CSS files, read as text
-    if (props.kind === 'css') {
+    // For text files (CSS, HTML), read as text and use processText for consistency
+    if (props.kind === 'css' || props.kind === 'html') {
       const text = await file.text()
       await processText(text, file.name)
       return
@@ -311,10 +326,12 @@ const handlePaste = async (event: ClipboardEvent) => {
   }
 
   // Handle text content for CSS
-  if (props.kind === 'css') {
+  // Handle text content for CSS/HTML - use processText directly
+  if (props.kind === 'css' || props.kind === 'html') {
     const text = clipboardData.getData('text/plain')
     if (text) {
-      await processText(text, 'pasted-content.css')
+      const extension = props.kind === 'css' ? 'css' : 'html'
+      await processText(text, `pasted-content.${extension}`)
       return
     }
   }
@@ -345,50 +362,51 @@ const base64ToText = (base64String: string): string => {
 
 const textToBase64 = (text: string): string => {
   const encoded = btoa(text)
-  return `data:text/css;base64,${encoded}`
+  const mimeType = props.kind === 'html' ? 'text/html' : 'text/css'
+  return `data:${mimeType};base64,${encoded}`
 }
 
-const fetchCssFromUrl = async (url: string): Promise<string> => {
+const fetchTextFromUrl = async (url: string): Promise<string> => {
   try {
     const response = await fetch(url)
     if (!response.ok) {
-      throw new Error(`Failed to fetch CSS: ${response.statusText}`)
+      throw new Error(`Failed to fetch content: ${response.statusText}`)
     }
     return await response.text()
   } catch (error) {
-    console.error('Error fetching CSS from URL:', error)
+    console.error('Error fetching text from URL:', error)
     throw error
   }
 }
 
-const handleEditCss = async () => {
+const handleEditText = async () => {
   if (!props.modelValue) return
 
-  loadingCssContent.value = true
+  loadingTextContent.value = true
   errorMessage.value = ''
 
   try {
     if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
-      cssEditorContent.value = await fetchCssFromUrl(props.modelValue)
+      textEditorContent.value = await fetchTextFromUrl(props.modelValue)
     } else if (props.modelValue.startsWith('data:')) {
-      cssEditorContent.value = base64ToText(props.modelValue)
+      textEditorContent.value = base64ToText(props.modelValue)
     } else {
       // Assume it's already base64 without prefix
-      cssEditorContent.value = base64ToText(props.modelValue)
+      textEditorContent.value = base64ToText(props.modelValue)
     }
 
-    showCssEditor.value = true
+    showTextEditor.value = true
   } catch (error) {
-    console.error('Failed to load CSS content:', error)
-    errorMessage.value = 'Failed to load CSS content for editing'
+    console.error('Failed to load text content:', error)
+    errorMessage.value = 'Failed to load content for editing'
     hasError.value = true
   } finally {
-    loadingCssContent.value = false
+    loadingTextContent.value = false
   }
 }
 
-const handleCssSave = async (content: string) => {
-  // Convert edited CSS content back to base64
+const handleTextSave = async (content: string) => {
+  // Convert edited text content back to base64
   const base64Content = textToBase64(content)
 
   // Compute checksum and emit
@@ -401,11 +419,11 @@ const handleCssSave = async (content: string) => {
   }
 
   emit('update:modelValue', base64Content)
-  showCssEditor.value = false
+  showTextEditor.value = false
 }
 
-const handleCssCancel = () => {
-  showCssEditor.value = false
+const handleTextCancel = () => {
+  showTextEditor.value = false
 }
 
 // Watch for URL updates from backend (after submission)

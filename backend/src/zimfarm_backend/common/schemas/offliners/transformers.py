@@ -130,6 +130,8 @@ def get_extension_from_kind(kind: str) -> str:
         return ".css"
     elif kind == "image":
         return ".png"
+    elif kind == "html":
+        return ".html"
     return ".bin"
 
 
