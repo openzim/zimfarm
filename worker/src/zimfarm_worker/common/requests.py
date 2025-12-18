@@ -72,19 +72,21 @@ def query_api(
         "PUT": requests.put,
     }.get(method.upper(), requests.get)
 
-    resp = func(url, headers=req_headers, json=payload, params=params)
+    resp = None
     try:
+        resp = func(url, headers=req_headers, json=payload, params=params)
         return Response(
             status_code=resp.status_code,
             success=resp.ok,
             json=resp.json() if resp.text else {},
         )
-    except (JSONDecodeError, Exception):
+    except (JSONDecodeError, Exception) as exc:
         logger.exception(
-            f"unexpected error while making request to {url} : {resp.text}"
+            f"unexpected error while making request to {url} : "
+            f"{resp.text if resp else exc}"
         )
         return Response(
-            status_code=resp.status_code,
-            success=resp.ok,
+            status_code=resp.status_code if resp else -1,
+            success=resp.ok if resp else False,
             json={},
         )
