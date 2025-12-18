@@ -21,6 +21,15 @@
       >
         <template #append-inner>
           <v-btn
+            v-if="modelValue && kind === 'image'"
+            icon="mdi-image-edit"
+            size="x-small"
+            variant="text"
+            color="primary"
+            @click="handleEditImage"
+            title="Edit Image"
+          />
+          <v-btn
             v-if="modelValue && (kind === 'css' || kind === 'html')"
             icon="mdi-pencil"
             size="x-small"
@@ -56,15 +65,25 @@
       {{ errorMessage }}
     </div>
 
+    <!-- Image Editor Dialog -->
+    <ImageEditorDialog
+      v-if="kind === 'image'"
+      v-model="showBlobEditor"
+      :image-data="blobEditorContent"
+      :loading="loadingBlobContent"
+      @save="handleImageSave"
+      @cancel="handleBlobEditorCancel"
+    />
+
     <!-- Text Editor Dialog -->
     <TextEditorDialog
       v-if="kind === 'css' || kind === 'html'"
-      v-model="showTextEditor"
-      :text-content="textEditorContent"
+      v-model="showBlobEditor"
+      :text-content="blobEditorContent"
       :file-type="kind"
-      :loading="loadingTextContent"
+      :loading="loadingBlobContent"
       @save="handleTextSave"
-      @cancel="handleTextCancel"
+      @cancel="handleBlobEditorCancel"
     />
   </div>
 </template>
@@ -75,6 +94,7 @@ import constants from '@/constants'
 import type { Config } from '@/config'
 import { computed, ref, watch, inject } from 'vue'
 import TextEditorDialog from './TextEditorDialog.vue'
+import ImageEditorDialog from './ImageEditorDialog.vue'
 import { computeChecksumFromBase64 } from '@/utils/checksum'
 
 const config = inject<Config>(constants.config)
@@ -106,9 +126,9 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const errorMessage = ref<string>('')
 const hasError = ref(false)
 const currentFileName = ref<string>('')
-const showTextEditor = ref(false)
-const textEditorContent = ref('')
-const loadingTextContent = ref(false)
+const showBlobEditor = ref(false)
+const blobEditorContent = ref('')
+const loadingBlobContent = ref(false)
 const isDragging = ref(false)
 
 const acceptedTypes = computed(() => {
@@ -177,12 +197,8 @@ const processText = async (text: string, filename: string) => {
 
     currentFileName.value = filename
     emit('update:modelValue', base64Content)
-
-    // Automatically open the editor for text files (CSS, HTML)
-    if (props.kind === 'css' || props.kind === 'html') {
-      textEditorContent.value = text
-      showTextEditor.value = true
-    }
+    blobEditorContent.value = text
+    showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to process text content:', error)
     errorMessage.value = 'Failed to process content. Please try again.'
@@ -209,7 +225,7 @@ const processFile = async (file: File) => {
     return
   }
 
-  if (props.kind === 'css' && file.type !== 'text/css' && !file.name.endsWith('.css')) {
+  if (props.kind === 'css' && file.type !== 'text/css') {
     errorMessage.value = 'File must be a CSS file'
     hasError.value = true
     return
@@ -234,8 +250,8 @@ const processFile = async (file: File) => {
       await processText(text, file.name)
       return
     }
+    // At this point, we are now dealing with images
 
-    // For images, use base64 conversion
     currentFileName.value = file.name
     const base64 = await convertFileToBase64(file)
 
@@ -248,6 +264,8 @@ const processFile = async (file: File) => {
     }
 
     emit('update:modelValue', base64)
+    blobEditorContent.value = base64
+    showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to process file:', error)
     errorMessage.value = 'Failed to process file. Please try again.'
@@ -379,51 +397,91 @@ const fetchTextFromUrl = async (url: string): Promise<string> => {
   }
 }
 
-const handleEditText = async () => {
+const handleEditImage = async () => {
   if (!props.modelValue) return
 
-  loadingTextContent.value = true
+  loadingBlobContent.value = true
   errorMessage.value = ''
 
   try {
     if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
-      textEditorContent.value = await fetchTextFromUrl(props.modelValue)
-    } else if (props.modelValue.startsWith('data:')) {
-      textEditorContent.value = base64ToText(props.modelValue)
+      // For URLs, we need to fetch and convert to base64
+      const response = await fetch(props.modelValue)
+      const blob = await response.blob()
+      const reader = new FileReader()
+      blobEditorContent.value = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
     } else {
-      // Assume it's already base64 without prefix
-      textEditorContent.value = base64ToText(props.modelValue)
+      // Already base64
+      blobEditorContent.value = props.modelValue
     }
 
-    showTextEditor.value = true
+    showBlobEditor.value = true
+  } catch (error) {
+    console.error('Failed to load image content:', error)
+    errorMessage.value = 'Failed to load image for editing'
+    hasError.value = true
+  } finally {
+    loadingBlobContent.value = false
+  }
+}
+
+const handleEditText = async () => {
+  if (!props.modelValue) return
+
+  loadingBlobContent.value = true
+  errorMessage.value = ''
+
+  try {
+    if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
+      blobEditorContent.value = await fetchTextFromUrl(props.modelValue)
+    } else if (props.modelValue.startsWith('data:')) {
+      blobEditorContent.value = base64ToText(props.modelValue)
+    } else {
+      // Assume it's already base64 without prefix
+      blobEditorContent.value = base64ToText(props.modelValue)
+    }
+
+    showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to load text content:', error)
     errorMessage.value = 'Failed to load content for editing'
     hasError.value = true
   } finally {
-    loadingTextContent.value = false
+    loadingBlobContent.value = false
   }
 }
 
-const handleTextSave = async (content: string) => {
-  // Convert edited text content back to base64
-  const base64Content = textToBase64(content)
-
+const handleBlobSave = async (base64Data: string) => {
   // Compute checksum and emit
   try {
-    const checksum = await computeChecksumFromBase64(base64Content)
+    const checksum = await computeChecksumFromBase64(base64Data)
     emit('checksum-computed', checksum)
   } catch (error) {
     console.error('Failed to compute checksum:', error)
     emit('checksum-computed', null)
   }
 
-  emit('update:modelValue', base64Content)
-  showTextEditor.value = false
+  emit('update:modelValue', base64Data)
 }
 
-const handleTextCancel = () => {
-  showTextEditor.value = false
+const handleImageSave = async (imageData: string) => {
+  await handleBlobSave(imageData)
+  showBlobEditor.value = false
+}
+
+const handleTextSave = async (content: string) => {
+  // Convert edited text content back to base64
+  const base64Content = textToBase64(content)
+  await handleBlobSave(base64Content)
+  showBlobEditor.value = false
+}
+
+const handleBlobEditorCancel = () => {
+  showBlobEditor.value = false
 }
 
 // Watch for URL updates from backend (after submission)
