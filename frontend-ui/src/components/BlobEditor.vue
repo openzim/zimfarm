@@ -12,11 +12,12 @@
         :label="label"
         density="compact"
         variant="outlined"
-        readonly
         :hint="description ?? undefined"
         persistent-hint
         :hide-details="hasError ? false : 'auto'"
         :class="{ 'drag-over': isDragging }"
+        @beforeinput="handleBeforeInput"
+        @paste="handlePaste"
       >
         <template #append-inner>
           <v-btn
@@ -126,10 +127,6 @@ const displayFileName = computed(() => {
     if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
       return props.modelValue
     }
-    if (props.kind === 'css') {
-      return 'CSS file (base64)'
-    }
-    return 'Uploaded file (base64)'
   }
   return ''
 })
@@ -151,6 +148,44 @@ const convertFileToBase64 = (file: File): Promise<string> => {
     reader.onerror = () => reject(reader.error)
     reader.readAsDataURL(file)
   })
+}
+
+const processText = async (text: string, filename: string) => {
+  errorMessage.value = ''
+  hasError.value = false
+
+  try {
+    // Validate size
+    const textSize = new Blob([text]).size
+    if (textSize > config.BLOB_MAX_SIZE) {
+      errorMessage.value = `Content size must be less than ${formattedBytesSize(config.BLOB_MAX_SIZE)}`
+      hasError.value = true
+      return
+    }
+
+    const base64Content = textToBase64(text)
+    try {
+      const checksum = await computeChecksumFromBase64(base64Content)
+      emit('checksum-computed', checksum)
+    } catch (error) {
+      console.error('Failed to compute checksum:', error)
+      emit('checksum-computed', null)
+    }
+
+    currentFileName.value = filename
+    emit('update:modelValue', base64Content)
+
+    // Automatically open the editor for CSS
+    if (props.kind === 'css') {
+      cssEditorContent.value = text
+      showCssEditor.value = true
+    }
+  } catch (error) {
+    console.error('Failed to process text content:', error)
+    errorMessage.value = 'Failed to process content. Please try again.'
+    hasError.value = true
+    currentFileName.value = ''
+  }
 }
 
 const processFile = async (file: File) => {
@@ -178,13 +213,17 @@ const processFile = async (file: File) => {
   }
 
   try {
-    // Store the filename
-    currentFileName.value = file.name
+    // For CSS files, read as text
+    if (props.kind === 'css') {
+      const text = await file.text()
+      await processText(text, file.name)
+      return
+    }
 
-    // Convert to base64
+    // For images, use base64 conversion
+    currentFileName.value = file.name
     const base64 = await convertFileToBase64(file)
 
-    // Compute checksum and emit
     try {
       const checksum = await computeChecksumFromBase64(base64)
       emit('checksum-computed', checksum)
@@ -194,12 +233,6 @@ const processFile = async (file: File) => {
     }
 
     emit('update:modelValue', base64)
-
-    // For CSS files, automatically open the editor
-    if (props.kind === 'css') {
-      cssEditorContent.value = base64ToText(base64)
-      showCssEditor.value = true
-    }
   } catch (error) {
     console.error('Failed to process file:', error)
     errorMessage.value = 'Failed to process file. Please try again.'
@@ -247,6 +280,44 @@ const handleDrop = async (event: DragEvent) => {
 
   const file = files[0]
   await processFile(file)
+}
+
+const handleBeforeInput = (event: InputEvent) => {
+  // Allow paste operations
+  if (event.inputType === 'insertFromPaste') {
+    return
+  }
+  // Prevent all other input (typing, etc.)
+  event.preventDefault()
+}
+
+const handlePaste = async (event: ClipboardEvent) => {
+  event.preventDefault()
+
+  errorMessage.value = ''
+  hasError.value = false
+
+  const clipboardData = event.clipboardData
+  if (!clipboardData) {
+    return
+  }
+
+  // Check for files first
+  const files = clipboardData.files
+  if (files && files.length > 0) {
+    const file = files[0]
+    await processFile(file)
+    return
+  }
+
+  // Handle text content for CSS
+  if (props.kind === 'css') {
+    const text = clipboardData.getData('text/plain')
+    if (text) {
+      await processText(text, 'pasted-content.css')
+      return
+    }
+  }
 }
 
 const handleRemove = () => {
