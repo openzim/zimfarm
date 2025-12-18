@@ -34,7 +34,7 @@ from zimfarm_backend.db.offliner_definition import (
 
 class BlobFlag(BaseModel):
     flag_name: str
-    kind: Literal["image", "css", "html"]
+    kind: Literal["image", "css", "html", "txt"]
 
 
 FLAG_MAPPINGS: dict[str, list[BlobFlag]] = {
@@ -46,7 +46,11 @@ FLAG_MAPPINGS: dict[str, list[BlobFlag]] = {
         BlobFlag(flag_name="css", kind="css"),
     ],
     "mindtouch": [BlobFlag(flag_name="illustration_url", kind="image")],
-    "mwoffliner": [BlobFlag(flag_name="customZimFavicon", kind="image")],
+    "mwoffliner": [
+        BlobFlag(flag_name="customZimFavicon", kind="image"),
+        BlobFlag(flag_name="articleList", kind="txt"),
+        BlobFlag(flag_name="articleListToIgnore", kind="txt"),
+    ],
     "nautilus": [
         BlobFlag(flag_name="main_logo", kind="image"),
         BlobFlag(flag_name="secondary_logo", kind="image"),

@@ -132,6 +132,8 @@ def get_extension_from_kind(kind: str) -> str:
         return ".png"
     elif kind == "html":
         return ".html"
+    elif kind == "txt":
+        return ".txt"
     return ".bin"
 
 

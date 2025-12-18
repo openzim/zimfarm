@@ -30,13 +30,13 @@
             title="Edit Image"
           />
           <v-btn
-            v-if="modelValue && (kind === 'css' || kind === 'html')"
+            v-if="modelValue && isTextKind"
             icon="mdi-pencil"
             size="x-small"
             variant="text"
             color="primary"
             @click="handleEditText"
-            :title="`Edit ${kind.toUpperCase()}`"
+            :title="`Edit ${kind === 'txt' ? 'Text' : kind.toUpperCase()}`"
           />
           <v-btn
             v-if="modelValue"
@@ -77,10 +77,10 @@
 
     <!-- Text Editor Dialog -->
     <TextEditorDialog
-      v-if="kind === 'css' || kind === 'html'"
+      v-if="isTextKind"
       v-model="showBlobEditor"
       :text-content="blobEditorContent"
-      :file-type="kind"
+      :file-type="textFileType"
       :loading="loadingBlobContent"
       @save="handleTextSave"
       @cancel="handleBlobEditorCancel"
@@ -102,10 +102,12 @@ if (!config) {
   throw new Error('Config is not defined')
 }
 
+const TEXT_KINDS = ['css', 'html', 'txt'] as const
+
 interface Props {
   modelValue: string | null | undefined
   label?: string
-  kind?: 'image' | 'css' | 'html'
+  kind?: 'image' | 'css' | 'html' | 'txt'
   required?: boolean
   description?: string | null
 }
@@ -131,6 +133,12 @@ const blobEditorContent = ref('')
 const loadingBlobContent = ref(false)
 const isDragging = ref(false)
 
+const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT_KINDS)[number]))
+
+const textFileType = computed(() => {
+  return isTextKind.value ? (props.kind as 'css' | 'html' | 'txt') : 'txt'
+})
+
 const acceptedTypes = computed(() => {
   if (props.kind === 'image') {
     return 'image/*'
@@ -138,6 +146,8 @@ const acceptedTypes = computed(() => {
     return '.css,text/css'
   } else if (props.kind === 'html') {
     return '.html,.htm,text/html'
+  } else if (props.kind === 'txt') {
+    return '.txt,text/plain'
   }
   return '*'
 })
@@ -225,7 +235,9 @@ const processFile = async (file: File) => {
     return
   }
 
-  if (props.kind === 'css' && file.type !== 'text/css') {
+  // For text files, check MIME type first, fall back to extension
+  // (MIME types can be unreliable depending on OS/browser)
+  if (props.kind === 'css' && file.type !== 'text/css' && !file.name.endsWith('.css')) {
     errorMessage.value = 'File must be a CSS file'
     hasError.value = true
     return
@@ -242,10 +254,15 @@ const processFile = async (file: File) => {
     return
   }
 
+  if (props.kind === 'txt' && file.type !== 'text/plain' && !file.name.endsWith('.txt')) {
+    errorMessage.value = 'File must be a TXT file'
+    hasError.value = true
+    return
+  }
+
   try {
-    // For CSS files, read as text
-    // For text files (CSS, HTML), read as text and use processText for consistency
-    if (props.kind === 'css' || props.kind === 'html') {
+    // For text files (CSS, HTML, TXT), read as text and use processText for consistency
+    if (isTextKind.value) {
       const text = await file.text()
       await processText(text, file.name)
       return
@@ -343,12 +360,13 @@ const handlePaste = async (event: ClipboardEvent) => {
     return
   }
 
-  // Handle text content for CSS
-  // Handle text content for CSS/HTML - use processText directly
-  if (props.kind === 'css' || props.kind === 'html') {
+  // Handle text content for CSS/HTML/TXT - use processText directly
+  if (isTextKind.value) {
     const text = clipboardData.getData('text/plain')
     if (text) {
-      const extension = props.kind === 'css' ? 'css' : 'html'
+      let extension = 'txt'
+      if (props.kind === 'css') extension = 'css'
+      else if (props.kind === 'html') extension = 'html'
       await processText(text, `pasted-content.${extension}`)
       return
     }
@@ -380,7 +398,9 @@ const base64ToText = (base64String: string): string => {
 
 const textToBase64 = (text: string): string => {
   const encoded = btoa(text)
-  const mimeType = props.kind === 'html' ? 'text/html' : 'text/css'
+  let mimeType = 'text/plain'
+  if (props.kind === 'html') mimeType = 'text/html'
+  else if (props.kind === 'css') mimeType = 'text/css'
   return `data:${mimeType};base64,${encoded}`
 }
 
@@ -484,15 +504,21 @@ const handleBlobEditorCancel = () => {
   showBlobEditor.value = false
 }
 
-// Watch for URL updates from backend (after submission)
+// Watch for updates from parent (backend URLs or resets)
 watch(
   () => props.modelValue,
   (newValue, oldValue) => {
-    // Update display when backend returns a URL
     if (newValue && newValue !== oldValue) {
+      // Update display when backend returns a URL
       if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
         currentFileName.value = newValue
       }
+    } else if (!newValue && oldValue) {
+      // Clear internal state when value is reset to null/undefined
+      currentFileName.value = ''
+      errorMessage.value = ''
+      hasError.value = false
+      blobEditorContent.value = ''
     }
   },
   { immediate: true },
