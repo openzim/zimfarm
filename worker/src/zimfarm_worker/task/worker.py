@@ -138,6 +138,9 @@ class TaskWorker(BaseWorker):
         self.max_disk_usage: int = 0  # maximum disk used by scraper
         self.avg_cpu_usage: float = 0.0  # cpu exponential moving weighted average
         self.max_cpu_usage: float = 0.0  # maximum cpu percentage used by scraper
+        self._nb_scraper_container_size_exceptions: int = (
+            0  # nb of times exceptions regarding container size have been thrown
+        )
 
         # register stop/^C
         self.register_signals()
@@ -206,19 +209,30 @@ class TaskWorker(BaseWorker):
         # This should be removed once the upstream PR is accepted.
         if not self.scraper:
             return 0
-        result = cast(
-            dict[str, Any],
-            self.docker.api._result(  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
-                self.docker.api._get(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-                    self.docker.api._url(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-                        "/containers/{0}/json", self.scraper.name
+        try:
+            result = cast(
+                dict[str, Any],
+                self.docker.api._result(  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+                    self.docker.api._get(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                        self.docker.api._url(  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                            "/containers/{0}/json", self.scraper.name
+                        ),
+                        params={"size": True},
                     ),
-                    params={"size": True},
+                    True,
                 ),
-                True,
-            ),
-        )
-        return result.get("SizeRootFs", 0) + result.get("SizeRw", 0)
+            )
+            return result.get("SizeRootFs", 0) + result.get("SizeRw", 0)
+        except Exception as exc:
+            self._nb_scraper_container_size_exceptions += 1
+            if self._nb_scraper_container_size_exceptions > 1:
+                logger.warning(
+                    f"Failed to get container disk usage: {exc!s}, "
+                    f"nb_occurrence: {self._nb_scraper_container_size_exceptions}"
+                )
+            else:
+                logger.exception("Failed to get container disk usage")
+            return 0
 
     def _get_scraper_workdir_disk_usage(self) -> int:
         """
