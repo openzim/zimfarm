@@ -2,13 +2,57 @@ from typing import cast
 from uuid import UUID
 
 from pydantic import AnyUrl
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import BlobSchema, CreateBlobSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Blob, Schedule
+
+
+class BlobListResult(BaseModel):
+    nb_records: int
+    blobs: list[BlobSchema]
+
+
+def get_blobs(
+    session: OrmSession,
+    *,
+    schedule_name: str,
+    skip: int,
+    limit: int,
+) -> BlobListResult:
+    """Get a list of blobs for the schedule"""
+    query = (
+        select(
+            func.count().over().label("nb_records"),
+            Blob,
+            Schedule.name.label("schedule_name"),
+        )
+        .join(Schedule, Blob.schedule)
+        .where(Schedule.name == schedule_name)
+        .offset(skip)
+        .limit(limit)
+        .order_by(Blob.created_at.desc())
+    )
+
+    results = BlobListResult(nb_records=0, blobs=[])
+    for nb_records, blob, _schedule_name in session.execute(query).all():
+        blob = cast(Blob, blob)
+        results.nb_records = nb_records
+        results.blobs.append(
+            BlobSchema(
+                schedule_name=_schedule_name,
+                checksum=blob.checksum,
+                url=AnyUrl(blob.url),
+                kind=blob.kind,
+                flag_name=blob.flag_name,
+                created_at=blob.created_at,
+            )
+        )
+    return results
 
 
 def get_blob_or_none(

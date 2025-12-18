@@ -598,6 +598,7 @@
               :help-url="helpUrl"
               :offliner-versions="offlinerVersions"
               :image-tags="imageTags"
+              :blobs="blobs"
               @submit="updateSchedule"
               @image-name-change="fetchScheduleImageTags"
               @offliner-change="handleOfflinerChange"
@@ -684,6 +685,7 @@ import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
+import { useBlobStore } from '@/stores/blob'
 import { useContextStore } from '@/stores/context'
 import { useLanguageStore } from '@/stores/language'
 import { useNotificationStore } from '@/stores/notification'
@@ -695,6 +697,7 @@ import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
 import { useTagStore } from '@/stores/tag'
 import { useTasksStore } from '@/stores/tasks'
 import { useWorkersStore } from '@/stores/workers'
+import type { Blob } from '@/types/blob'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
@@ -744,6 +747,7 @@ const contextStore = useContextStore()
 const languageStore = useLanguageStore()
 const offlinerStore = useOfflinerStore()
 const platformStore = usePlatformStore()
+const blobStore = useBlobStore()
 
 // Config
 const appConfig = inject<Config>(constants.config)
@@ -764,6 +768,7 @@ const offlinerVersions = ref<string[]>([])
 const platforms = ref<string[]>([])
 const flagsDefinition = ref<OfflinerDefinition[]>([])
 const helpUrl = ref<string>('')
+const blobs = ref<Blob[]>([])
 
 const ready = ref<boolean>(false)
 const schedule = ref<Schedule | null>(null)
@@ -1285,6 +1290,13 @@ onMounted(async () => {
     if (!schedule.value.is_valid) {
       await validateSchedule()
     }
+    // Fetch blobs only if we're on the edit tab
+    if (props.selectedTab === 'edit') {
+      const blobsResponse = await blobStore.fetchBlobs(props.scheduleName)
+      if (blobsResponse) {
+        blobs.value = blobsResponse
+      }
+    }
   }
 })
 
@@ -1304,6 +1316,13 @@ watch(
     }
     if (newTab === 'similar' && schedule.value) {
       await loadSimilar(scheduleStore.paginator.limit, scheduleStore.paginator.skip)
+    }
+    // Fetch blobs when switching to edit tab
+    if (newTab === 'edit' && schedule.value) {
+      const blobsResponse = await blobStore.fetchBlobs(props.scheduleName)
+      if (blobsResponse) {
+        blobs.value = blobsResponse
+      }
     }
   },
 )

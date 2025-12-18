@@ -2,8 +2,9 @@ import uuid
 from typing import Any
 from uuid import UUID
 
+import pydantic
 from psycopg.errors import UniqueViolation
-from pydantic import BaseModel, SerializeAsAny
+from pydantic import SerializeAsAny
 from sqlalchemy import Integer, func, select
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import JSONPATH, insert
@@ -18,6 +19,7 @@ from zimfarm_backend.common.enums import (
     SchedulePeriodicity,
     TaskStatus,
 )
+from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     ScheduleNotificationSchema,
@@ -582,7 +584,7 @@ def process_schedule_blobs(
     *,
     prepared_blobs: list[PreparedBlob],
     schedule_id: UUID,
-    offliner: SerializeAsAny[BaseModel],
+    offliner: SerializeAsAny[pydantic.BaseModel],
 ) -> list[PreparedBlob]:
     """Upload blobs for schedule and set flag in offliner config
 

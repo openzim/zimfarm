@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from zimfarm_backend.api.routes.auth.logic import router as auth_router
+from zimfarm_backend.api.routes.blobs.logic import router as blobs_router
 from zimfarm_backend.api.routes.contexts.logic import router as contexts_router
 from zimfarm_backend.api.routes.healthcheck.logic import router as healthcheck_router
 from zimfarm_backend.api.routes.http_errors import BadRequestError
@@ -75,6 +76,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=languages_router)
     main_router.include_router(router=platforms_router)
     main_router.include_router(router=offliners_router)
+    main_router.include_router(router=blobs_router)
     main_router.include_router(router=users_router)
     main_router.include_router(router=requested_tasks_router)
     main_router.include_router(router=workers_router)

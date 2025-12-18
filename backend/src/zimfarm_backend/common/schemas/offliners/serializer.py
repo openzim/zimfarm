@@ -175,7 +175,7 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
         flag_obj = Flag(
             data_key=field_alias,
             description=description,
-            key=field_alias,
+            key=field_name,
             label=capitalize_words(title),
             required=required,
             type=json_schema_extra["type"],

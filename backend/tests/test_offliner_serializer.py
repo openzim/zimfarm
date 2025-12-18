@@ -59,7 +59,7 @@ def test_is_secret(field: Any, *, is_secret_field: bool):
 def test_mw_offliner_schema_to_flags(mwoffliner_schema_cls: type[BaseModel]):
     flags = schema_to_flags(mwoffliner_schema_cls)
     for flag in flags:
-        key = flag.key
+        key = flag.data_key
 
         # Check if the flag is required
         if key in (
