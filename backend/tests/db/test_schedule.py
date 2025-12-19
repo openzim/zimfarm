@@ -1,29 +1,23 @@
 import datetime
 from collections.abc import Callable
 from contextlib import nullcontext as does_not_raise
-from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
 from _pytest.python_api import RaisesContext
-from pydantic import AnyUrl
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import (
-    DockerImageName,
     ScheduleCategory,
     SchedulePeriodicity,
     TaskStatus,
 )
 from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
-from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
-from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
 from zimfarm_backend.common.schemas.orms import (
     LanguageSchema,
     OfflinerDefinitionSchema,
     OfflinerSchema,
-    OfflinerSpecSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import (
@@ -51,7 +45,6 @@ from zimfarm_backend.db.schedule import (
     get_schedule_history_entry_or_none,
     get_schedule_or_none,
     get_schedules,
-    process_schedule_blobs,
     restore_schedules,
     toggle_archive_status,
     update_schedule,
@@ -596,59 +589,3 @@ def test_restore_schedules(
 
     with expected:
         restore_schedules(dbsession, schedule_names=schedule_names, actor=user.username)
-
-
-def test_process_schedule_blobs(dbsession: OrmSession):
-    spec = OfflinerSpecSchema.model_validate(
-        {
-            "flags": {
-                "custom_css": {
-                    "type": "blob",
-                    "kind": "css",
-                    "label": "Custom CSS",
-                    "description": "Upload custom CSS file",
-                    "alias": "custom-css",
-                    "required": False,
-                },
-                "name": {
-                    "type": "string",
-                    "label": "Name",
-                    "description": "Project name",
-                    "required": True,
-                },
-            }
-        }
-    )
-    offliner = OfflinerSchema(
-        id="zimit",
-        base_model="CamelModel",
-        docker_image_name=DockerImageName.zimit,
-        command_name="zimit2zim",
-        ci_secret_hash=None,
-    )
-
-    offliner_model = build_offliner_model(offliner, spec)
-    instance = offliner_model.model_validate(
-        {"offliner_id": "zimit", "name": "test", "custom-css": "base64string"}
-    )
-
-    prepared_blob = PreparedBlob(
-        kind="css",
-        flag_name="custom_css",
-        private_url=AnyUrl("https://www.example.com/style.css"),
-        url=AnyUrl("https://www.example.com/style.css"),
-        checksum="1",
-        data=b"hello",
-    )
-    with patch("zimfarm_backend.db.schedule.upload_blob") as mock_upload_blob:
-        process_schedule_blobs(
-            session=dbsession,
-            prepared_blobs=[prepared_blob],
-            schedule_id=uuid4(),
-            offliner=instance,
-        )
-        mock_upload_blob.assert_called_once()
-        assert (
-            instance.custom_css  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
-            == "https://www.example.com/style.css"
-        )

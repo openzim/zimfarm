@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 from humanfriendly import format_size
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl
 
 from zimfarm_backend.common.constants import (
     BLOB_MAX_SIZE,
@@ -19,7 +19,6 @@ from zimfarm_backend.common.constants import (
     REQUESTS_TIMEOUT,
 )
 from zimfarm_backend.common.schemas.offliners.models import (
-    OfflinerSpecSchema,
     PreparedBlob,
     TransformerSchema,
 )
@@ -68,49 +67,32 @@ def transform_data(data: list[str], transformers: list[TransformerSchema]) -> li
     )
 
 
-def process_blob_fields(
-    data: BaseModel,
-    schema: OfflinerSpecSchema,
-) -> list[PreparedBlob]:
+def prepare_blob(*, blob_data: str, kind: str, flag_name: str) -> PreparedBlob:
     """Prepare blob fields for upload"""
 
-    results: list[PreparedBlob] = []
-    for flag_name, flag_schema in schema.flags.items():
-        if flag_schema.type != "blob":
-            continue
+    if blob_data.startswith("data:"):
+        _, encoded_data = blob_data.split(",", 1)
+    else:
+        encoded_data = blob_data
 
-        value = getattr(data, flag_name)
+    value = base64.b64decode(encoded_data)
 
-        if value and not value.startswith("http"):
-            if flag_schema.kind is None:
-                raise ValueError("Blobs must have a 'kind'")
+    if len(value) > BLOB_MAX_SIZE:
+        raise ValueError(
+            f"Blob size ({format_size(len(value), binary=True)} bytes) "
+            "exceeds maximum allowed size "
+            f"({format_size(BLOB_MAX_SIZE, binary=True)})"
+        )
 
-            if value.startswith("data:"):
-                _, encoded_data = value.split(",", 1)
-            else:
-                encoded_data = value
-
-            blob_data = base64.b64decode(encoded_data)
-
-            if len(blob_data) > BLOB_MAX_SIZE:
-                raise ValueError(
-                    f"Blob size ({format_size(len(blob_data), binary=True)} bytes) "
-                    "exceeds maximum allowed size "
-                    f"({format_size(BLOB_MAX_SIZE, binary=True)})"
-                )
-
-            filename = generate_blob_name_uuid(flag_schema.kind)
-            results.append(
-                PreparedBlob(
-                    kind=flag_schema.kind,
-                    private_url=AnyUrl(f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"),
-                    url=AnyUrl(f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"),
-                    flag_name=flag_name,
-                    checksum=hashlib.sha256(blob_data).hexdigest(),
-                    data=blob_data,
-                )
-            )
-    return results
+    filename = generate_blob_name_uuid(kind)
+    return PreparedBlob(
+        kind=kind,
+        private_url=AnyUrl(f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"),
+        url=AnyUrl(f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"),
+        flag_name=flag_name,
+        checksum=hashlib.sha256(value).hexdigest(),
+        data=value,
+    )
 
 
 def generate_blob_name_uuid(

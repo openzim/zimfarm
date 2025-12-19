@@ -1,10 +1,7 @@
-import uuid
 from typing import Any
 from uuid import UUID
 
-import pydantic
 from psycopg.errors import UniqueViolation
-from pydantic import SerializeAsAny
 from sqlalchemy import Integer, func, select
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import JSONPATH, insert
@@ -25,16 +22,8 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleNotificationSchema,
 )
 from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
-from zimfarm_backend.common.schemas.offliners.models import (
-    PreparedBlob,
-)
-from zimfarm_backend.common.schemas.offliners.transformers import (
-    process_blob_fields,
-    upload_blob,
-)
 from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
-    CreateBlobSchema,
     LanguageSchema,
     MostRecentTaskSchema,
     OfflinerDefinitionSchema,
@@ -45,7 +34,6 @@ from zimfarm_backend.common.schemas.orms import (
     ScheduleLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.blob import create_or_update_blob, get_blob_or_none
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -374,17 +362,6 @@ def create_schedule(
 ) -> Schedule:
     """Create a new schedule"""
     offliner = get_offliner(session, offliner_definition.offliner)
-    prepared_blobs = process_blob_fields(config.offliner, offliner_definition.schema_)
-    # Since this is a new schedule and we don't know it's ID, all of its blobs
-    # should be stored as we pass a random UUID. As a side effect, before
-    # we create the schedule, the config would be updated to point to
-    # the proper URL of the uploaded blob.
-    uploaded_blobs = process_schedule_blobs(
-        session,
-        schedule_id=uuid.uuid4(),
-        prepared_blobs=prepared_blobs,
-        offliner=config.offliner,
-    )
     schedule = Schedule(
         name=name,
         category=category,
@@ -438,19 +415,6 @@ def create_schedule(
         raise
 
     session.refresh(schedule)
-
-    # Create the blobs now that we have the schedule ID
-    for blob in uploaded_blobs:
-        create_or_update_blob(
-            session,
-            schedule_id=schedule.id,
-            request=CreateBlobSchema(
-                kind=blob.kind,
-                flag_name=blob.flag_name,
-                url=blob.public_url,
-                checksum=blob.checksum,
-            ),
-        )
 
     return schedule
 
@@ -579,37 +543,6 @@ def toggle_archive_status(
     return schedule
 
 
-def process_schedule_blobs(
-    session: OrmSession,
-    *,
-    prepared_blobs: list[PreparedBlob],
-    schedule_id: UUID,
-    offliner: SerializeAsAny[pydantic.BaseModel],
-) -> list[PreparedBlob]:
-    """Upload blobs for schedule and set flag in offliner config
-
-    Only uploaded blobs are returned
-    """
-    uploaded_blobs: list[PreparedBlob] = []
-    for prepared_blob in prepared_blobs:
-        # upload the blob only if its new for the schedule flag
-        existing_blob = get_blob_or_none(
-            session,
-            schedule_id=schedule_id,
-            checksum=prepared_blob.checksum,
-            flag_name=prepared_blob.flag_name,
-        )
-        if existing_blob is None:
-            upload_blob(prepared_blob)
-            # Update the flag value in the offliner to point to the URL
-            setattr(offliner, prepared_blob.flag_name, str(prepared_blob.public_url))
-            uploaded_blobs.append(prepared_blob)
-        else:
-            # reset the base64 input with the url in the DB
-            setattr(offliner, prepared_blob.flag_name, existing_blob.url)
-    return uploaded_blobs
-
-
 def update_schedule(
     session: OrmSession,
     author: str,
@@ -634,27 +567,6 @@ def update_schedule(
         raise RecordDoesNotExistError(f"Schedule with name {schedule_name} is archived")
 
     if new_schedule_config:
-        prepared_blobs = process_blob_fields(
-            new_schedule_config.offliner, offliner_definition.schema_
-        )
-        uploaded_blobs = process_schedule_blobs(
-            session,
-            schedule_id=schedule.id,
-            offliner=new_schedule_config.offliner,
-            prepared_blobs=prepared_blobs,
-        )
-        for blob in uploaded_blobs:
-            create_or_update_blob(
-                session,
-                schedule_id=schedule.id,
-                request=CreateBlobSchema(
-                    kind=blob.kind,
-                    flag_name=blob.flag_name,
-                    url=blob.public_url,
-                    checksum=blob.checksum,
-                ),
-            )
-
         schedule.config = new_schedule_config.model_dump(
             mode="json", context={"show_secrets": True}
         )

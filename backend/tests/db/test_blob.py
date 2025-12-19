@@ -81,7 +81,6 @@ def test_get_blob_or_none_found(dbsession: OrmSession, schedule: Schedule):
     assert blob.flag_name == "custom-css"
     assert blob.checksum == "1"
     assert str(blob.url) == "https://www.example.com/style.css"
-    assert blob.schedule_name == schedule.name
 
 
 def test_get_blob_or_none_not_found(dbsession: OrmSession, schedule: Schedule):

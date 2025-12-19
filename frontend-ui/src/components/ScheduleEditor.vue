@@ -450,7 +450,8 @@
               :kind="field.kind"
               :required="field.required"
               :description="field.description ?? undefined"
-              @checksum-computed="(checksum) => handleChecksumComputed(field.key, checksum)"
+              :schedule-name="schedule.name"
+              :flag-key="field.key"
             />
             <v-text-field
               v-else
@@ -570,7 +571,7 @@ import constants from '@/constants'
 import { useNotificationStore } from '@/stores/notification'
 import { useScheduleStore } from '@/stores/schedule'
 import type { Resources } from '@/types/base'
-import type { Blob } from '@/types/blob'
+
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
@@ -608,7 +609,6 @@ export interface Props {
   flagsDefinition: OfflinerDefinition[]
   helpUrl: string
   imageTags: string[]
-  blobs: Blob[]
 }
 
 interface Emits {
@@ -624,14 +624,11 @@ const emit = defineEmits<Emits>()
 // Stores
 const scheduleStore = useScheduleStore()
 const notificationStore = useNotificationStore()
-
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(
   JSON.parse(JSON.stringify(props.schedule.config.offliner)),
 )
-// Track blob flags checksums
-const blobChecksums = ref<Record<string, string>>({})
 
 // Confirmation dialog state
 const showConfirmDialog = ref(false)
@@ -673,14 +670,6 @@ const handleImageNameBlur = (imageName: string) => {
   }
 }
 
-const handleChecksumComputed = (flagKey: string, checksum: string | null) => {
-  if (checksum) {
-    blobChecksums.value[flagKey] = checksum
-  } else {
-    blobChecksums.value[flagKey] = ''
-  }
-}
-
 // Initialize edit data when schedule changes
 watch(
   () => props.schedule,
@@ -690,8 +679,6 @@ watch(
       editFlags.value = JSON.parse(JSON.stringify(newSchedule.config.offliner))
       // Initialize lastEmittedImageName with current schedule's image name
       lastEmittedImageName.value = newSchedule.config.image.name
-      // Reset blob checksums
-      blobChecksums.value = {}
     }
   },
   { deep: true, immediate: true },
@@ -898,42 +885,7 @@ const hasChanges = computed<boolean>(() => {
 
   if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) return true
 
-  // Check if any blob has changed by comparing computed checksums
-  // For each blob field, check if any blob with that flag_name has the same checksum
-  if (props.blobs && props.blobs.length > 0) {
-    for (const flagName in blobChecksums.value) {
-      const currentChecksum = blobChecksums.value[flagName]
-      // Find if any blob with this flag_name has the same checksum
-      const matchingBlob = props.blobs.find(
-        (b) => b.flag_name === flagName && b.checksum === currentChecksum,
-      )
-      if (!matchingBlob) {
-        return true
-      }
-    }
-  }
-
-  // Filter out blob fields since they're already checked via checksum comparison
-  const blobFieldKeys = new Set(
-    flagsFields.value.filter((f) => f.component === 'blob').map((f) => f.dataKey),
-  )
-  // While the checksum comparison checks that we are not uploading a duplicate
-  // file, we still want to be able to set the file back to an existing file
-  // if this flag was empty before originally.
-  for (const blobFieldKey of blobFieldKeys) {
-    if (!props.schedule.config.offliner[blobFieldKey] && editFlags.value[blobFieldKey]) return true
-  }
-
-  // Create copies without blob fields for comparison
-  const originalFlagsWithoutBlobs = { ...props.schedule.config.offliner }
-  const editFlagsWithoutBlobs = { ...editFlags.value }
-
-  for (const blobKey of blobFieldKeys) {
-    delete originalFlagsWithoutBlobs[blobKey]
-    delete editFlagsWithoutBlobs[blobKey]
-  }
-
-  let changes = diff(originalFlagsWithoutBlobs, editFlagsWithoutBlobs)
+  let changes = diff(props.schedule.config.offliner, editFlags.value)
 
   if (!changes) return false
 
@@ -1287,7 +1239,6 @@ const handleReset = () => {
   if (props.schedule) {
     editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
     editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
-    blobChecksums.value = {}
     // reset the flags and fields
     handleOfflinerVersionChange(props.schedule.config.offliner.offliner_id, props.schedule.version)
   }

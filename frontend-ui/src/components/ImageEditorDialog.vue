@@ -75,7 +75,16 @@
         <v-btn icon="mdi-close" variant="text" @click="handleCancel" size="small" />
       </v-card-title>
 
-      <v-card-text class="pa-4">
+      <div class="pa-4 pb-0">
+        <v-alert type="info" variant="tonal" density="compact">
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          Modifying the image or comment may create a new blob and update the URL.
+        </v-alert>
+      </div>
+
+      <div class="pa-4">
         <div v-if="imageLoaded" class="cropper-container">
           <Cropper
             ref="cropperRef"
@@ -83,6 +92,7 @@
             :stencil-props="{
               aspectRatio: undefined,
             }"
+            :default-size="defaultSize"
             image-restriction="fit-area"
             class="cropper"
             @change="handleCropperChange"
@@ -93,12 +103,23 @@
           <v-progress-circular indeterminate color="primary" />
           <div class="mt-2">Loading image...</div>
         </div>
-      </v-card-text>
+      </div>
 
-      <v-card-text v-if="errorMessage" class="text-error py-2">
+      <div v-if="errorMessage" class="text-error py-2 px-4">
         <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
         {{ errorMessage }}
-      </v-card-text>
+      </div>
+
+      <div class="pa-4">
+        <v-textarea
+          :model-value="comment"
+          @update:model-value="$emit('update:comment', $event)"
+          label="Comment (optional)"
+          variant="outlined"
+          density="compact"
+          rows="2"
+        />
+      </div>
 
       <v-card-actions class="pa-4">
         <v-spacer />
@@ -126,14 +147,17 @@ interface Props {
   modelValue: boolean
   imageData: string
   loading?: boolean
+  comment?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
+  comment: '',
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
+  'update:comment': [value: string]
   save: [imageData: string]
   cancel: []
 }>()
@@ -145,6 +169,7 @@ const errorMessage = ref('')
 const processing = ref(false)
 const cropperRef = ref<InstanceType<typeof Cropper> | null>(null)
 const croppedDimensions = ref<{ width: number; height: number } | null>(null)
+const detectedMimeType = ref<string>('image/png')
 
 // Watch for prop changes
 watch(
@@ -177,9 +202,67 @@ watch(isOpen, (newValue) => {
   }
 })
 
+const defaultSize = ({ imageSize }: { imageSize: { width: number; height: number } }) => {
+  return {
+    width: imageSize.width,
+    height: imageSize.height,
+  }
+}
+
+// vue-advanced-cropper tends to increase the size of the images
+// if we do not specify the mime type of the image
+// https://github.com/advanced-cropper/vue-advanced-cropper/issues/41
+// so, we need to accurately tell it what's the mime type of the file
+// in question so it doesn't overscale.
+const detectMimeTypeFromDataUrl = (dataUrl: string): string => {
+  const base64Data = dataUrl.split(',')[1]
+  if (!base64Data) {
+    return 'image/png' // fallback
+  }
+
+  try {
+    // Only need first few bytes
+    const binaryString = atob(base64Data.substring(0, 100))
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    // Check magic bytes (file signature)
+    const header = Array.from(bytes.subarray(0, 4))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('')
+
+    switch (header) {
+      case '89504e47':
+        return 'image/png'
+      case '47494638':
+        return 'image/gif'
+      case 'ffd8ffe0':
+      case 'ffd8ffe1':
+      case 'ffd8ffe2':
+      case 'ffd8ffe3':
+      case 'ffd8ffe8':
+        return 'image/jpeg'
+      default:
+        // Try to get from data URL prefix
+        const match = dataUrl.match(/^data:(image\/[a-z]+);/)
+        return match ? match[1] : 'image/png'
+    }
+  } catch (error) {
+    console.error('Error detecting MIME type:', error)
+    // Try to get from data URL prefix as fallback
+    const match = dataUrl.match(/^data:(image\/[a-z]+);/)
+    return match ? match[1] : 'image/png'
+  }
+}
+
 const loadImage = () => {
   imageLoaded.value = false
   imageSource.value = props.imageData
+
+  detectedMimeType.value = detectMimeTypeFromDataUrl(props.imageData)
+
   // Give the cropper time to initialize
   setTimeout(() => {
     imageLoaded.value = true
@@ -243,8 +326,8 @@ const handleDone = async () => {
   try {
     const { canvas } = cropperRef.value.getResult()
     if (canvas) {
-      // Convert canvas to base64
-      const croppedImageData = canvas.toDataURL('image/png')
+      // Convert canvas to base64 using the detected MIME type to preserve original format
+      const croppedImageData = canvas.toDataURL(detectedMimeType.value)
       emit('save', croppedImageData)
     } else {
       errorMessage.value = 'Failed to process image'
@@ -277,5 +360,19 @@ const handleCancel = () => {
 .cropper {
   height: 100%;
   width: 100%;
+}
+
+.cropper :deep(.vue-handler) {
+  background: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.cropper :deep(.vue-line) {
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.cropper :deep(.vue-simple-handler) {
+  background: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
 }
 </style>

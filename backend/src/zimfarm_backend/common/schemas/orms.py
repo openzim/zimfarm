@@ -550,8 +550,10 @@ class CreateBlobSchema(BaseModel):
     kind: str
     url: AnyUrl
     checksum: str
+    comments: str | None = None
 
 
 class BlobSchema(CreateBlobSchema):
-    schedule_name: str | None
+    id: UUID
+    schedule_id: UUID | None = Field(exclude=True, default=None)
     created_at: datetime.datetime
