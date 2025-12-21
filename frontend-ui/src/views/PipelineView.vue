@@ -15,17 +15,17 @@
     :errors="errors"
     :canUnRequestTasks="canUnRequestTasks"
     :canCancelTasks="canCancelTasks"
-    :lastRunsLoaded="lastRunsLoaded"
     :schedulesLastRuns="schedulesLastRuns"
     @limit-changed="handleLimitChange"
     @load-data="loadData"
+    @load-last-run="handleLoadLastRun"
+    @load-all-last-runs="handleLoadAllLastRuns"
   />
 </template>
 
 <script setup lang="ts">
 import PipelineTable from '@/components/PipelineTable.vue'
 import TasksListTab from '@/components/TasksListTab.vue'
-import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
@@ -96,7 +96,6 @@ const props = withDefaults(
   },
 )
 
-const lastRunsLoaded = ref(false)
 const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
 
 const currentFilter = ref(props.filter)
@@ -145,6 +144,8 @@ watch(currentFilter, async (newFilter) => {
   if (intervalId.value) {
     clearInterval(intervalId.value)
   }
+  // Clear last runs when switching filters
+  schedulesLastRuns.value = {}
   await loadData(paginator.value.limit, paginator.value.skip, newFilter)
   intervalId.value = window.setInterval(async () => {
     await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value, true)
@@ -162,10 +163,8 @@ async function loadData(
   }
   if (!hideLoading) {
     loadingStore.startLoading('Fetching tasks...')
+    tasks.value = []
   }
-
-  lastRunsLoaded.value = false
-  tasks.value = []
 
   switch (filter) {
     case 'todo':
@@ -195,12 +194,6 @@ async function loadData(
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
-      if (loadingStore.isLoading) {
-        loadingStore.stopLoading()
-      }
-      if (errors.value.length === 0) {
-        await loadLastRuns()
-      }
       break
     default:
       throw new Error(`Invalid filter: ${filter}`)
@@ -210,32 +203,31 @@ async function loadData(
   }
 }
 
-async function loadLastRuns() {
-  const schedule_names = Array.from(new Set(tasks.value.map((task) => task.schedule_name)))
+async function handleLoadLastRun(scheduleName: string) {
+  if (!scheduleName) return
 
-  // Set lastRunsLoaded to true immediately and avoid setting the loading state
-  // so UI can start displaying data as it arrives
-  // loadingStore.startLoading('Loading last runs...')
-  lastRunsLoaded.value = true
-
-  // Process each schedule individually with a pause between requests
-  for (const schedule_name of schedule_names) {
-    if (schedule_name) {
-      const result = await scheduleStore.fetchSchedule(schedule_name)
-      if (result && result.most_recent_task) {
-        schedulesLastRuns.value[schedule_name] = result.most_recent_task
-      }
-      if (scheduleStore.errors.length > 0) {
-        for (const error of scheduleStore.errors) {
-          notificationStore.showError(
-            `Failed to load last run for schedule ${schedule_name}: ${error}`,
-          )
-        }
-      }
-      // Add a pause between requests to avoid overwhelming the backend
-      await new Promise((resolve) => setTimeout(resolve, constants.TASKS_LOAD_SCHEDULES_DELAY))
+  const result = await scheduleStore.fetchSchedule(scheduleName)
+  if (result && result.most_recent_task) {
+    schedulesLastRuns.value[scheduleName] = result.most_recent_task
+  }
+  if (scheduleStore.errors.length > 0) {
+    for (const error of scheduleStore.errors) {
+      notificationStore.showError(`Failed to load last run for schedule ${scheduleName}: ${error}`)
     }
   }
+}
+
+async function handleLoadAllLastRuns() {
+  const scheduleNames = new Set<string>()
+  tasks.value.forEach((task) => {
+    if (task.schedule_name) {
+      scheduleNames.add(task.schedule_name)
+    }
+  })
+
+  const promises = Array.from(scheduleNames).map((scheduleName) => handleLoadLastRun(scheduleName))
+
+  await Promise.all(promises)
 }
 
 async function handleLimitChange(newLimit: number) {
