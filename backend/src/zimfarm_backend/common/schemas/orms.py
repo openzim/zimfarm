@@ -360,6 +360,7 @@ class BaseWorkerSchema(BaseModel):
     admin_disabled: bool
     contexts: dict[str, IPv4Address | IPv6Address | None]
     last_ip: IPv4Address | None = Field(exclude=True)
+    selfish: bool
 
     @computed_field
     @property

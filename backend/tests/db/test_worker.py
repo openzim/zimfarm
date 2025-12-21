@@ -273,5 +273,6 @@ def test_worker_ip_changed(
         admin_disabled=False,
         contexts=contexts,
         last_ip=last_ip,
+        selfish=False,
     )
     assert worker.ip_changed is ip_changed

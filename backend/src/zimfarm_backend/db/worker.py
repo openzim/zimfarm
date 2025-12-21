@@ -68,6 +68,7 @@ def create_worker_schema(
         show_secrets=show_secrets,
         last_ip=worker.last_ip,
         last_seen=worker.last_seen,
+        selfish=worker.selfish,
         name=worker.name,
         offliners=worker.offliners,
         resources=ConfigResourcesSchema(
@@ -167,6 +168,7 @@ def get_worker_metrics(
     return WorkerMetricsSchema(
         name=worker.name,
         last_ip=worker.last_ip,
+        selfish=worker.selfish,
         last_seen=worker.last_seen,
         username=worker.user.username,
         resources=ConfigResourcesSchema(
