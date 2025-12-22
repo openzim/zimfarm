@@ -18,6 +18,7 @@ from zimfarm_backend.common.schemas.offliners.models import (
     TransformerSchema,
 )
 from zimfarm_backend.common.schemas.offliners.transformers import (
+    get_extension_from_kind,
     process_blob_fields,
     transform_data,
 )
@@ -297,3 +298,17 @@ def test_process_blob_field(monkeypatch: MonkeyPatch):
     processed_blobs = process_blob_fields(instance, spec)
     assert len(processed_blobs) == 1
     assert str(processed_blobs[0].public_url).startswith("http://blob-storage.com")
+
+
+@pytest.mark.parametrize(
+    "kind,expected_kind",
+    [
+        ("css", ".css"),
+        ("image", ".png"),
+        ("html", ".html"),
+        ("txt", ".txt"),
+        ("zip", ".bin"),
+    ],
+)
+def test_get_extension_from_kind(kind: str, expected_kind: str):
+    assert get_extension_from_kind(kind) == expected_kind

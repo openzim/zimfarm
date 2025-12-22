@@ -1287,6 +1287,7 @@ const handleReset = () => {
   if (props.schedule) {
     editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
     editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
+    blobChecksums.value = {}
     // reset the flags and fields
     handleOfflinerVersionChange(props.schedule.config.offliner.offliner_id, props.schedule.version)
   }

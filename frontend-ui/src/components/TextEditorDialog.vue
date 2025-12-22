@@ -42,7 +42,7 @@ import { ref, watch, computed } from 'vue'
 interface Props {
   modelValue: boolean
   textContent: string
-  fileType?: 'css' | 'html'
+  fileType?: 'css' | 'html' | 'txt'
   loading?: boolean
 }
 
@@ -67,6 +67,8 @@ const iconName = computed(() => {
       return 'mdi-language-html5'
     case 'css':
       return 'mdi-language-css3'
+    case 'txt':
+      return 'mdi-file-document-outline'
     default:
       return 'mdi-file-document-outline'
   }
@@ -78,6 +80,8 @@ const fileTypeLabel = computed(() => {
       return 'HTML'
     case 'css':
       return 'CSS'
+    case 'txt':
+      return 'Text'
     default:
       return 'Text'
   }
