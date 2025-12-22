@@ -14,7 +14,7 @@ from zimfarm_backend.api.routes.http_errors import UnauthorizedError
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
-from zimfarm_backend.db.user import get_user_by_id_or_none
+from zimfarm_backend.db.user import check_user_permission, get_user_by_id_or_none
 
 security = HTTPBearer(description="Access Token", auto_error=False)
 AuthorizationCredentials = Annotated[
@@ -92,3 +92,20 @@ def get_current_user_with_session(
 # Convenience functions for common cases
 get_current_user_or_none = get_current_user_or_none_with_session(session_type="auto")
 get_current_user = get_current_user_with_session(session_type="auto")
+
+
+def require_permission(*, namespace: str, name: str):
+    """
+    checks if the current user has a specific permission.
+    """
+
+    def _check_permission(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if not check_user_permission(current_user, namespace=namespace, name=name):
+            raise UnauthorizedError(
+                "You do not have permission to perform this action. "
+            )
+        return current_user
+
+    return _check_permission

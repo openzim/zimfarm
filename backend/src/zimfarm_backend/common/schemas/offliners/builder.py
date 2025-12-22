@@ -146,7 +146,7 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
                 )
             else:
                 py_type = base_type if flag.required else Optional[base_type]
-        case "url" | "list-of-url":
+        case "url" | "list-of-url" | "blob":
             base_type = SecretUrl if flag.secret else SkipableUrl
             if flag.type == "list-of-url":
                 py_type = (
@@ -162,12 +162,6 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
                 )
             else:
                 py_type = base_type if flag.required else Optional[base_type]
-        case "blob":
-            # Blob values are going to be sent as base64 strings from the clients.
-            # These should be converted to URLs after upload. The "kind" attribute would
-            # preserve information about the type of blob
-            base_type = NotEmptyString
-            py_type = base_type if flag.required else Optional[base_type]
         case _:
             # For other simple types, we can just return the pydantic field with the
             # skip_validation wrapper

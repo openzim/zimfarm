@@ -8,7 +8,16 @@
         <v-btn icon="mdi-close" variant="text" @click="handleCancel" size="small" />
       </v-card-title>
 
-      <v-card-text class="pa-4">
+      <div class="pa-4 pb-0">
+        <v-alert type="info" variant="tonal" density="compact">
+          <template #prepend>
+            <v-icon>mdi-information</v-icon>
+          </template>
+          Modifying the content or comment may create a new blob and update the URL.
+        </v-alert>
+      </div>
+
+      <div class="pa-4">
         <v-textarea
           v-model="editedContent"
           variant="outlined"
@@ -18,12 +27,25 @@
           hide-details
           spellcheck="false"
         />
-      </v-card-text>
+      </div>
 
-      <v-card-text v-if="errorMessage" class="text-error py-2">
+      <div v-if="errorMessage" class="text-error py-2 px-4">
         <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
         {{ errorMessage }}
-      </v-card-text>
+      </div>
+
+      <div class="pa-4">
+        <v-textarea
+          :model-value="comment"
+          @update:model-value="$emit('update:comment', $event)"
+          label="Comment (optional)"
+          hint="Add a comment about this file"
+          variant="outlined"
+          density="compact"
+          rows="2"
+          persistent-hint
+        />
+      </div>
 
       <v-card-actions class="pa-4">
         <v-spacer />
@@ -44,15 +66,18 @@ interface Props {
   textContent: string
   fileType?: 'css' | 'html' | 'txt'
   loading?: boolean
+  comment?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   fileType: 'css',
+  comment: '',
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
+  'update:comment': [value: string]
   save: [content: string]
   cancel: []
 }>()

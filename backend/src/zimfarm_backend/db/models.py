@@ -425,6 +425,8 @@ class Blob(Base):
     )
     checksum: Mapped[str]  # SHA-256 checksum of blob
 
+    comments: Mapped[str | None] = mapped_column(default=None)
+
     schedule: Mapped["Schedule | None"] = relationship(
         init=False, back_populates="blobs"
     )

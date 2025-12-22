@@ -8,7 +8,7 @@
       @dragenter.prevent="handleDragEnter"
     >
       <v-text-field
-        v-model="displayFileName"
+        v-model="userInput"
         :label="label"
         density="compact"
         variant="outlined"
@@ -16,12 +16,20 @@
         persistent-hint
         :hide-details="hasError ? false : 'auto'"
         :class="{ 'drag-over': isDragging }"
-        @beforeinput="handleBeforeInput"
         @paste="handlePaste"
+        @blur="handleInputBlur"
+        placeholder="Enter URL or drag and drop a file"
       >
         <template #append-inner>
+          <v-progress-circular
+            v-if="loadingBlobContent"
+            indeterminate
+            size="20"
+            width="2"
+            color="primary"
+          />
           <v-btn
-            v-if="modelValue && kind === 'image'"
+            v-else-if="modelValue && kind === 'image'"
             icon="mdi-image-edit"
             size="x-small"
             variant="text"
@@ -30,13 +38,22 @@
             title="Edit Image"
           />
           <v-btn
-            v-if="modelValue && isTextKind"
+            v-else-if="modelValue && isTextKind"
             icon="mdi-pencil"
             size="x-small"
             variant="text"
             color="primary"
             @click="handleEditText"
             :title="`Edit ${kind === 'txt' ? 'Text' : kind.toUpperCase()}`"
+          />
+          <v-btn
+            v-else-if="!modelValue && isTextKind"
+            icon="mdi-pencil-plus"
+            size="x-small"
+            variant="text"
+            color="primary"
+            @click="handleCreateText"
+            :title="`Create ${kind === 'txt' ? 'Text' : kind.toUpperCase()} File`"
           />
           <v-btn
             v-if="modelValue"
@@ -70,7 +87,8 @@
       v-if="kind === 'image'"
       v-model="showBlobEditor"
       :image-data="blobEditorContent"
-      :loading="loadingBlobContent"
+      v-model:comment="blobComment"
+      :loading="loadingBlobContent || isUploading || isLoadingBlob"
       @save="handleImageSave"
       @cancel="handleBlobEditorCancel"
     />
@@ -81,7 +99,8 @@
       v-model="showBlobEditor"
       :text-content="blobEditorContent"
       :file-type="textFileType"
-      :loading="loadingBlobContent"
+      v-model:comment="blobComment"
+      :loading="loadingBlobContent || isUploading || isLoadingBlob"
       @save="handleTextSave"
       @cancel="handleBlobEditorCancel"
     />
@@ -95,7 +114,8 @@ import type { Config } from '@/config'
 import { computed, ref, watch, inject } from 'vue'
 import TextEditorDialog from './TextEditorDialog.vue'
 import ImageEditorDialog from './ImageEditorDialog.vue'
-import { computeChecksumFromBase64 } from '@/utils/checksum'
+import { computeChecksumFromBase64, computeChecksumFromFile } from '@/utils/checksum'
+import { useBlobStore } from '@/stores/blob'
 
 const config = inject<Config>(constants.config)
 if (!config) {
@@ -110,6 +130,8 @@ interface Props {
   kind?: 'image' | 'css' | 'html' | 'txt'
   required?: boolean
   description?: string | null
+  scheduleName: string
+  flagKey: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -121,17 +143,25 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | null]
-  'checksum-computed': [checksum: string | null]
 }>()
+
+const blobStore = useBlobStore()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const errorMessage = ref<string>('')
 const hasError = ref(false)
 const currentFileName = ref<string>('')
+const userInput = ref<string>('')
 const showBlobEditor = ref(false)
 const blobEditorContent = ref('')
 const loadingBlobContent = ref(false)
 const isDragging = ref(false)
+const blobComment = ref<string>('')
+const originalBlobComment = ref<string>('')
+const currentBlobId = ref<string | undefined>(undefined)
+const currentBlobChecksum = ref<string | undefined>(undefined)
+const isUploading = ref(false)
+const isLoadingBlob = ref(false)
 
 const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT_KINDS)[number]))
 
@@ -152,17 +182,14 @@ const acceptedTypes = computed(() => {
   return '*'
 })
 
-const displayFileName = computed(() => {
-  if (currentFileName.value) {
-    return currentFileName.value
+const isValidUrl = (text: string): boolean => {
+  try {
+    const url = new URL(text)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
   }
-  if (props.modelValue) {
-    if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
-      return props.modelValue
-    }
-  }
-  return ''
-})
+}
 
 const triggerFileInput = () => {
   fileInputRef.value?.click()
@@ -173,7 +200,9 @@ const convertFileToBase64 = (file: File): Promise<string> => {
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        resolve(reader.result)
+        // Remove data URL prefix (e.g., "data:image/png;base64,")
+        const base64Data = reader.result.includes(',') ? reader.result.split(',')[1] : reader.result
+        resolve(base64Data)
       } else {
         reject(new Error('Failed to convert file to base64'))
       }
@@ -196,17 +225,7 @@ const processText = async (text: string, filename: string) => {
       return
     }
 
-    const base64Content = textToBase64(text)
-    try {
-      const checksum = await computeChecksumFromBase64(base64Content)
-      emit('checksum-computed', checksum)
-    } catch (error) {
-      console.error('Failed to compute checksum:', error)
-      emit('checksum-computed', null)
-    }
-
     currentFileName.value = filename
-    emit('update:modelValue', base64Content)
     blobEditorContent.value = text
     showBlobEditor.value = true
   } catch (error) {
@@ -272,16 +291,8 @@ const processFile = async (file: File) => {
     currentFileName.value = file.name
     const base64 = await convertFileToBase64(file)
 
-    try {
-      const checksum = await computeChecksumFromBase64(base64)
-      emit('checksum-computed', checksum)
-    } catch (error) {
-      console.error('Failed to compute checksum:', error)
-      emit('checksum-computed', null)
-    }
-
-    emit('update:modelValue', base64)
-    blobEditorContent.value = base64
+    // Add data URL prefix for image editor display
+    blobEditorContent.value = `data:image/png;base64,${base64}`
     showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to process file:', error)
@@ -332,21 +343,35 @@ const handleDrop = async (event: DragEvent) => {
   await processFile(file)
 }
 
-const handleBeforeInput = (event: InputEvent) => {
-  // Allow paste operations
-  if (event.inputType === 'insertFromPaste') {
+const handleInputBlur = () => {
+  // When user finishes typing/pasting, check if it's a URL
+  const trimmedInput = userInput.value.trim()
+
+  if (!trimmedInput) {
+    // Empty input, clear everything
+    handleRemove()
     return
   }
-  // Prevent all other input (typing, etc.)
-  event.preventDefault()
+
+  if (isValidUrl(trimmedInput)) {
+    // It's a valid URL, store it without opening editor
+    currentFileName.value = trimmedInput
+    emit('update:modelValue', trimmedInput)
+    errorMessage.value = ''
+    hasError.value = false
+  } else if (isTextKind.value) {
+    // For text kinds, treat non-URL input as text content to be edited
+    // Don't automatically open editor, just keep the input
+    errorMessage.value = 'Please use the pencil icon to create content or enter a valid URL'
+    hasError.value = true
+  } else {
+    // For image kind, only URLs are valid for direct input
+    errorMessage.value = 'Please enter a valid URL or use file upload'
+    hasError.value = true
+  }
 }
 
 const handlePaste = async (event: ClipboardEvent) => {
-  event.preventDefault()
-
-  errorMessage.value = ''
-  hasError.value = false
-
   const clipboardData = event.clipboardData
   if (!clipboardData) {
     return
@@ -355,32 +380,56 @@ const handlePaste = async (event: ClipboardEvent) => {
   // Check for files first
   const files = clipboardData.files
   if (files && files.length > 0) {
+    event.preventDefault()
     const file = files[0]
     await processFile(file)
     return
   }
 
-  // Handle text content for CSS/HTML/TXT - use processText directly
-  if (isTextKind.value) {
-    const text = clipboardData.getData('text/plain')
-    if (text) {
-      let extension = 'txt'
-      if (props.kind === 'css') extension = 'css'
-      else if (props.kind === 'html') extension = 'html'
-      await processText(text, `pasted-content.${extension}`)
-      return
-    }
+  // Get pasted text
+  const text = clipboardData.getData('text/plain')
+  if (!text) {
+    return
   }
+
+  // Check if it's a URL
+  if (isValidUrl(text.trim())) {
+    // It's a URL, allow default paste behavior
+    errorMessage.value = ''
+    hasError.value = false
+    return
+  }
+
+  // For non-URL text content in text kinds, open editor immediately
+  if (isTextKind.value) {
+    event.preventDefault()
+    errorMessage.value = ''
+    hasError.value = false
+    let extension = 'txt'
+    if (props.kind === 'css') extension = 'css'
+    else if (props.kind === 'html') extension = 'html'
+    await processText(text, `pasted-content.${extension}`)
+    return
+  }
+
+  // For image kind with non-URL text, prevent paste and show error
+  event.preventDefault()
+  errorMessage.value = 'Please enter a valid URL or use file upload'
+  hasError.value = true
 }
 
 const handleRemove = () => {
   currentFileName.value = ''
+  userInput.value = ''
   errorMessage.value = ''
   hasError.value = false
+  blobComment.value = ''
+  originalBlobComment.value = ''
+  currentBlobId.value = undefined
+  currentBlobChecksum.value = undefined
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
-  emit('checksum-computed', null)
   emit('update:modelValue', null)
 }
 
@@ -397,24 +446,7 @@ const base64ToText = (base64String: string): string => {
 }
 
 const textToBase64 = (text: string): string => {
-  const encoded = btoa(text)
-  let mimeType = 'text/plain'
-  if (props.kind === 'html') mimeType = 'text/html'
-  else if (props.kind === 'css') mimeType = 'text/css'
-  return `data:${mimeType};base64,${encoded}`
-}
-
-const fetchTextFromUrl = async (url: string): Promise<string> => {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch content: ${response.statusText}`)
-    }
-    return await response.text()
-  } catch (error) {
-    console.error('Error fetching text from URL:', error)
-    throw error
-  }
+  return btoa(text)
 }
 
 const handleEditImage = async () => {
@@ -422,12 +454,15 @@ const handleEditImage = async () => {
 
   loadingBlobContent.value = true
   errorMessage.value = ''
+  blobEditorContent.value = ''
 
   try {
+    // Fetch blob metadata if URL
     if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
-      // For URLs, we need to fetch and convert to base64
-      const response = await fetch(props.modelValue)
-      const blob = await response.blob()
+      const blob = await fetchBlobByUrl(props.modelValue)
+      if (!blob) {
+        throw new Error('Failed to fetch blob content')
+      }
       const reader = new FileReader()
       blobEditorContent.value = await new Promise((resolve, reject) => {
         reader.onload = () => resolve(reader.result as string)
@@ -435,8 +470,8 @@ const handleEditImage = async () => {
         reader.readAsDataURL(blob)
       })
     } else {
-      // Already base64
-      blobEditorContent.value = props.modelValue
+      // Raw base64 - add data URL prefix for image editor
+      blobEditorContent.value = `data:image/png;base64,${props.modelValue}`
     }
 
     showBlobEditor.value = true
@@ -454,75 +489,243 @@ const handleEditText = async () => {
 
   loadingBlobContent.value = true
   errorMessage.value = ''
+  blobEditorContent.value = ''
 
   try {
     if (props.modelValue.startsWith('http://') || props.modelValue.startsWith('https://')) {
-      blobEditorContent.value = await fetchTextFromUrl(props.modelValue)
-    } else if (props.modelValue.startsWith('data:')) {
-      blobEditorContent.value = base64ToText(props.modelValue)
+      // Fetch blob metadata first
+      const blob = await fetchBlobByUrl(props.modelValue)
+      if (!blob) {
+        throw new Error('Failed to fetch blob content')
+      }
+      blobEditorContent.value = await blob.text()
     } else {
-      // Assume it's already base64 without prefix
       blobEditorContent.value = base64ToText(props.modelValue)
     }
 
     showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to load text content:', error)
-    errorMessage.value = 'Failed to load content for editing'
+    errorMessage.value = 'Failed to load text for editing'
     hasError.value = true
   } finally {
     loadingBlobContent.value = false
   }
 }
 
-const handleBlobSave = async (base64Data: string) => {
-  // Compute checksum and emit
-  try {
-    const checksum = await computeChecksumFromBase64(base64Data)
-    emit('checksum-computed', checksum)
-  } catch (error) {
-    console.error('Failed to compute checksum:', error)
-    emit('checksum-computed', null)
-  }
+const handleCreateText = () => {
+  // Initialize with empty content for creating a new text blob
+  blobEditorContent.value = ''
+  blobComment.value = ''
+  originalBlobComment.value = ''
+  errorMessage.value = ''
+  showBlobEditor.value = true
+}
 
-  emit('update:modelValue', base64Data)
+const uploadBlob = async (base64Data: string) => {
+  isUploading.value = true
+  errorMessage.value = ''
+
+  try {
+    // Compute checksum of new data
+    const newChecksum = await computeChecksumFromBase64(base64Data)
+
+    if (newChecksum === currentBlobChecksum.value) {
+      if (blobComment.value !== originalBlobComment.value) {
+        if (!currentBlobId.value) {
+          // No existing blob, create new one
+          const newBlob = await blobStore.createBlob(props.scheduleName, {
+            flag_name: props.flagKey,
+            kind: props.kind,
+            data: base64Data,
+            comments: blobComment.value || '',
+          })
+
+          if (newBlob) {
+            currentBlobId.value = newBlob.id
+            currentBlobChecksum.value = newBlob.checksum
+            originalBlobComment.value = blobComment.value
+            currentFileName.value = newBlob.url
+            emit('update:modelValue', newBlob.url)
+            return true
+          } else {
+            errorMessage.value = 'Failed to upload blob'
+            return false
+          }
+        }
+        // Only comment changed, update it
+        const updatedBlob = await blobStore.updateBlob(currentBlobId.value, {
+          comments: blobComment.value,
+        })
+
+        if (updatedBlob) {
+          originalBlobComment.value = blobComment.value
+          currentFileName.value = updatedBlob.url
+          emit('update:modelValue', updatedBlob.url)
+          return true
+        } else {
+          errorMessage.value = 'Failed to update blob comment'
+          return false
+        }
+      } else {
+        // Nothing changed at all, just return success without API call
+        return true
+      }
+    } else {
+      // Data changed, create new blob backend will handle duplicate detection
+      const blob = await blobStore.createBlob(props.scheduleName, {
+        flag_name: props.flagKey,
+        kind: props.kind,
+        data: base64Data,
+        comments: blobComment.value || '',
+      })
+
+      if (blob) {
+        currentBlobId.value = blob.id
+        currentBlobChecksum.value = blob.checksum
+        originalBlobComment.value = blobComment.value
+        currentFileName.value = blob.url
+        emit('update:modelValue', blob.url)
+        return true
+      } else {
+        errorMessage.value = 'Failed to upload blob'
+        return false
+      }
+    }
+  } catch (error) {
+    console.error('Failed to upload blob:', error)
+    errorMessage.value = 'An error occurred while uploading'
+    return false
+  } finally {
+    isUploading.value = false
+  }
 }
 
 const handleImageSave = async (imageData: string) => {
-  await handleBlobSave(imageData)
-  showBlobEditor.value = false
+  // Check if image data is empty
+  if (!imageData || imageData.trim() === '' || imageData === 'data:,') {
+    handleRemove()
+    showBlobEditor.value = false
+    return
+  }
+
+  const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData
+
+  // Check if base64 data is empty after removing prefix
+  if (!base64Data || base64Data.trim() === '') {
+    handleRemove()
+    showBlobEditor.value = false
+    return
+  }
+
+  const success = await uploadBlob(base64Data)
+  if (success) {
+    showBlobEditor.value = false
+  }
 }
 
 const handleTextSave = async (content: string) => {
-  // Convert edited text content back to base64
+  // Check if content is empty
+  if (!content || content.trim() === '') {
+    handleRemove()
+    showBlobEditor.value = false
+    return
+  }
+
+  // Convert edited text content to raw base64
   const base64Content = textToBase64(content)
-  await handleBlobSave(base64Content)
-  showBlobEditor.value = false
+
+  const success = await uploadBlob(base64Content)
+  if (success) {
+    showBlobEditor.value = false
+  }
 }
 
 const handleBlobEditorCancel = () => {
   showBlobEditor.value = false
 }
 
+// Fetch blob details when URL is provided
+const fetchBlobByUrl = async (url: string) => {
+  isLoadingBlob.value = true
+  errorMessage.value = ''
+
+  try {
+    // First, download the file and compute checksum locally
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`)
+    }
+
+    const blob = await response.blob()
+    // Convert Blob to File for checksum computation
+    const file = new File([blob], 'downloaded-file', { type: blob.type })
+    const localChecksum = await computeChecksumFromFile(file)
+
+    // Then fetch blob metadata from backend to see if it exists
+    const backendBlob = await blobStore.fetchBlob(props.scheduleName, localChecksum, props.flagKey)
+
+    if (backendBlob) {
+      // Blob exists in backend, use its ID and comments but keep local checksum
+      currentBlobId.value = backendBlob.id
+      currentBlobChecksum.value = localChecksum
+      blobComment.value = backendBlob.comments || ''
+      originalBlobComment.value = backendBlob.comments || ''
+      currentFileName.value = backendBlob.url
+    } else {
+      // Blob not found in backend, but we still have the local checksum
+      currentFileName.value = url
+      currentBlobId.value = undefined
+      currentBlobChecksum.value = localChecksum
+      blobComment.value = ''
+      originalBlobComment.value = ''
+    }
+    return blob
+  } catch (error) {
+    console.error('Failed to fetch blob details:', error)
+    // If fetch fails, just display the URL without blob metadata
+    currentFileName.value = url
+    currentBlobId.value = undefined
+    currentBlobChecksum.value = undefined
+    blobComment.value = ''
+    originalBlobComment.value = ''
+  } finally {
+    isLoadingBlob.value = false
+  }
+}
+
 // Watch for updates from parent (backend URLs or resets)
 watch(
   () => props.modelValue,
-  (newValue, oldValue) => {
-    if (newValue && newValue !== oldValue) {
-      // Update display when backend returns a URL
-      if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
-        currentFileName.value = newValue
-      }
-    } else if (!newValue && oldValue) {
+  async (newValue, oldValue) => {
+    if (!newValue && oldValue) {
       // Clear internal state when value is reset to null/undefined
       currentFileName.value = ''
+      userInput.value = ''
       errorMessage.value = ''
       hasError.value = false
       blobEditorContent.value = ''
+      blobComment.value = ''
+      originalBlobComment.value = ''
+      currentBlobId.value = undefined
+      currentBlobChecksum.value = undefined
+    } else if (newValue && newValue !== oldValue) {
+      // Update userInput when modelValue changes from parent
+      if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
+        userInput.value = newValue
+        currentFileName.value = newValue
+      }
     }
   },
   { immediate: true },
 )
+
+// Sync userInput with currentFileName for display
+watch(currentFileName, (newValue) => {
+  if (newValue && !userInput.value) {
+    userInput.value = newValue
+  }
+})
 </script>
 
 <style scoped>

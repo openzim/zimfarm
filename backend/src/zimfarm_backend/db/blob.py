@@ -29,30 +29,49 @@ def get_blobs(
         select(
             func.count().over().label("nb_records"),
             Blob,
-            Schedule.name.label("schedule_name"),
         )
-        .join(Schedule, Blob.schedule)
-        .where(Schedule.name == schedule_name)
+        .where(
+            Schedule.name == schedule_name,
+        )
         .offset(skip)
         .limit(limit)
         .order_by(Blob.created_at.desc())
     )
 
     results = BlobListResult(nb_records=0, blobs=[])
-    for nb_records, blob, _schedule_name in session.execute(query).all():
+    for nb_records, blob in session.execute(query).all():
         blob = cast(Blob, blob)
         results.nb_records = nb_records
-        results.blobs.append(
-            BlobSchema(
-                schedule_name=_schedule_name,
-                checksum=blob.checksum,
-                url=AnyUrl(blob.url),
-                kind=blob.kind,
-                flag_name=blob.flag_name,
-                created_at=blob.created_at,
-            )
-        )
+        results.blobs.append(_create_blob_schema(blob))
     return results
+
+
+def _create_blob_schema(blob: Blob) -> BlobSchema:
+    return BlobSchema(
+        id=blob.id,
+        checksum=blob.checksum,
+        url=AnyUrl(blob.url),
+        kind=blob.kind,
+        flag_name=blob.flag_name,
+        created_at=blob.created_at,
+        schedule_id=blob.schedule_id,
+        comments=blob.comments,
+    )
+
+
+def get_blob_by_id_or_none(session: OrmSession, *, blob_id: UUID) -> BlobSchema | None:
+    """Get a blob by its ID"""
+    stmt = select(Blob).join(Schedule, Blob.schedule).where(Blob.id == blob_id)
+    blob = session.scalars(stmt).one_or_none()
+    if blob:
+        return _create_blob_schema(blob)
+    return None
+
+
+def get_blob_by_id(session: OrmSession, *, blob_id: UUID) -> BlobSchema:
+    if blob := get_blob_by_id_or_none(session, blob_id=blob_id):
+        return blob
+    raise RecordDoesNotExistError("Blob does not exist")
 
 
 def get_blob_or_none(
@@ -68,16 +87,9 @@ def get_blob_or_none(
             Blob.checksum == checksum,
         )
     )
-    if row := session.execute(stmt).one_or_none():
-        blob = cast(Blob, row.Blob)
-        return BlobSchema(
-            schedule_name=row.schedule_name,
-            checksum=blob.checksum,
-            url=AnyUrl(blob.url),
-            kind=blob.kind,
-            flag_name=blob.flag_name,
-            created_at=blob.created_at,
-        )
+    blob = session.scalars(stmt).one_or_none()
+    if blob:
+        return _create_blob_schema(blob)
     return None
 
 
