@@ -17,9 +17,11 @@ from zimfarm_backend.api.routes.users.models import (
     PasswordUpdateSchema,
     UserCreateSchema,
     UsersGetSchema,
-    UserUpdateSchema,
 )
-from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
+from zimfarm_backend.common.schemas.models import (
+    UserUpdateSchema,
+    calculate_pagination_metadata,
+)
 from zimfarm_backend.common.schemas.orms import (
     BaseUserWithSshKeysSchema,
     SshKeyList,
