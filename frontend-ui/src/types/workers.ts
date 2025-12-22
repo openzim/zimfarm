@@ -11,6 +11,7 @@ interface BaseWorker {
   contexts: Record<string, string | null>
   last_ip?: string
   ip_changed: boolean
+  selfish: boolean
 }
 
 export interface Worker extends BaseWorker {

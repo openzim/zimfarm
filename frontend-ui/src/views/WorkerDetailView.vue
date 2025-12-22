@@ -35,6 +35,17 @@
           >
             Disabled by Zimfarm Administrator
           </v-chip>
+
+          <!-- Selfish worker status -->
+          <v-chip
+            v-if="worker?.selfish"
+            color="warning"
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-account-lock"
+          >
+            Selfish
+          </v-chip>
         </div>
       </v-col>
     </v-row>
