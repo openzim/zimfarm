@@ -1,6 +1,23 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
+      <!-- Load All Last Runs button - only show in failed tab -->
+      <div v-if="showLoadAllButton" class="d-flex justify-end">
+        <v-btn
+          :loading="loadingAllSchedules"
+          :disabled="loadingAllSchedules || tasks.length === 0"
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-refresh"
+          @click="handleLoadAllLastRuns"
+        >
+          Load All Last Runs
+          <v-tooltip activator="parent" location="bottom">
+            Load last run status for all schedules on this page
+          </v-tooltip>
+        </v-btn>
+      </div>
+
       <v-data-table-server
         :headers="headers"
         :items="tasks"
@@ -144,19 +161,41 @@
         </template>
 
         <template #[`item.last_run`]="{ item }">
-          <span
-            v-if="lastRunsLoaded && item.schedule_name && schedulesLastRuns[item.schedule_name]"
-          >
-            <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
-              {{ schedulesLastRuns[item.schedule_name].status }} </code
-            >,
-            <TaskLink
-              :id="schedulesLastRuns[item.schedule_name].id"
-              :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
-              :status="schedulesLastRuns[item.schedule_name].status"
-              :timestamp="schedulesLastRuns[item.schedule_name].timestamp"
-            />
-          </span>
+          <div v-if="item.schedule_name" class="d-flex align-center">
+            <span v-if="schedulesLastRuns[item.schedule_name]">
+              <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
+                {{ schedulesLastRuns[item.schedule_name].status }} </code
+              >,
+              <TaskLink
+                :id="schedulesLastRuns[item.schedule_name].id"
+                :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
+                :status="schedulesLastRuns[item.schedule_name].status"
+                :timestamp="schedulesLastRuns[item.schedule_name].timestamp"
+              />
+            </span>
+            <v-btn
+              :icon="loadingSchedules[item.schedule_name] ? 'mdi-loading' : 'mdi-refresh'"
+              :loading="loadingSchedules[item.schedule_name]"
+              :disabled="loadingSchedules[item.schedule_name]"
+              size="small"
+              variant="text"
+              color="primary"
+              @click="handleLoadLastRun(item.schedule_name)"
+              density="comfortable"
+              class="ml-2"
+            >
+              <v-icon :class="{ 'mdi-spin': loadingSchedules[item.schedule_name] }">
+                {{ loadingSchedules[item.schedule_name] ? 'mdi-loading' : 'mdi-refresh' }}
+              </v-icon>
+              <v-tooltip activator="parent" location="bottom">
+                {{
+                  loadingSchedules[item.schedule_name]
+                    ? 'Loading...'
+                    : 'Load/refresh last run status'
+                }}
+              </v-tooltip>
+            </v-btn>
+          </div>
         </template>
 
         <template #[`item.requested_by`]="{ item }">
@@ -179,7 +218,7 @@ import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
@@ -189,7 +228,6 @@ const props = defineProps<{
   loadingText: string // the text to display when the table is loading
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
   paginator: Paginator // the paginator
-  lastRunsLoaded: boolean // whether the last runs have been loaded
   schedulesLastRuns: Record<string, MostRecentTask> // the last runs for each schedule
   errors: string[] // the errors to display
 }>()
@@ -197,10 +235,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
+  loadLastRun: [scheduleName: string]
+  loadAllLastRuns: []
 }>()
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
+const loadingSchedules = ref<Record<string, boolean>>({})
+const loadingAllSchedules = ref(false)
+
+// Check if we should show the "Load All Last Runs" button (only in failed tab)
+const showLoadAllButton = computed(() => {
+  return props.headers.some((header) => header.value === 'last_run')
+})
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   //  number is the next number, we need to calculate the skip for the request
@@ -221,4 +268,38 @@ function statusClass(status: string) {
   else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'schedule-failed'
   else return 'schedule-running'
 }
+
+async function handleLoadLastRun(scheduleName: string) {
+  if (!scheduleName) return
+  loadingSchedules.value[scheduleName] = true
+  try {
+    emit('loadLastRun', scheduleName)
+  } finally {
+    loadingSchedules.value[scheduleName] = false
+  }
+}
+
+async function handleLoadAllLastRuns() {
+  loadingAllSchedules.value = true
+  try {
+    emit('loadAllLastRuns')
+  } finally {
+    loadingAllSchedules.value = false
+  }
+}
 </script>
+
+<style scoped>
+.mdi-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
