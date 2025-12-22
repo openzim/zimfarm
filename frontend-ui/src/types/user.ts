@@ -54,3 +54,14 @@ export interface KiwixTokenResponse {
   refresh_token: string
   id_token: string
 }
+
+// Kiwix session-based JWT response
+export interface KiwixSessionResponse {
+  id: string
+  expires_at: string
+  issued_at: string
+  active: boolean
+  authenticator_assurance_level: string
+  authenticated_at: string
+  tokenized: string // JWT token
+}

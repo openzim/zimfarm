@@ -1,9 +1,9 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 
 export default function httpRequest(
-  httpProps: Pick<AxiosRequestConfig, 'baseURL' | 'headers'>,
+  httpProps: Pick<AxiosRequestConfig, 'baseURL' | 'headers' | 'withCredentials'>,
 ): AxiosInstance {
-  const { baseURL, headers } = httpProps
+  const { baseURL, headers, withCredentials = true } = httpProps
   const http = axios.create({
     baseURL,
     timeout: 30000, // timeout of 30 seconds
@@ -11,7 +11,7 @@ export default function httpRequest(
       ...headers,
       'Content-Type': 'application/json',
     },
-    withCredentials: true,
+    withCredentials,
     paramsSerializer: {
       indexes: null, // This prevents the [] notation in array parameters
     },

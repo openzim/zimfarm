@@ -14,6 +14,7 @@ export interface Config {
   BLOB_MAX_SIZE: number
   KIWIX_AUTH_CLIENT_ID: string
   KIWIX_AUTH_BASE_URL: string
+  KIWIX_OAUTH_MODE: 'oidc' | 'session'
 }
 
 export const ConfigService = {

@@ -121,7 +121,6 @@
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
-import { getKiwixAuthConfig, initiateKiwixLogin } from '@/services/auth/kiwix'
 import { computed, inject, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -175,7 +174,7 @@ const authenticate = async () => {
   errors.value = []
 
   try {
-    const success = await authStore.authenticate(username.value, password.value)
+    const success = await authStore.authenticate('local', undefined, username.value, password.value)
 
     if (success && authStore.isLoggedIn) {
       router.back()
@@ -198,10 +197,7 @@ const signInWithKiwix = async () => {
   if (redirect) {
     sessionStorage.setItem('auth_redirect', redirect)
   }
-
-  // Get Kiwix auth configuration and initiate OAuth2 flow
-  const kiwixAuthConfig = getKiwixAuthConfig(config)
-  await initiateKiwixLogin(kiwixAuthConfig)
+  await authStore.authenticate('kiwix')
 }
 </script>
 
