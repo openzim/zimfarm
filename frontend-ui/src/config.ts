@@ -12,9 +12,10 @@ export interface Config {
   MATOMO_TRACKER_FILE_NAME: string
   MONITORING_URL: string
   BLOB_MAX_SIZE: number
-  KIWIX_AUTH_CLIENT_ID: string
-  KIWIX_AUTH_BASE_URL: string
-  KIWIX_OAUTH_MODE: 'oidc' | 'session'
+  OAUTH_CLIENT_ID: string
+  OAUTH_BASE_URL: string
+  OAUTH_MODE: 'oidc' | 'session'
+  LOGIN_MODES: Array<string>
 }
 
 export const ConfigService = {

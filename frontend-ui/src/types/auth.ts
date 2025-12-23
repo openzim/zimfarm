@@ -1,4 +1,4 @@
-export type AuthProviderType = 'local' | 'kiwix'
+export type AuthProviderType = 'local' | 'oauth'
 
 export interface StoredToken {
   access_token: string

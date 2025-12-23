@@ -4,12 +4,12 @@ import type { ErrorResponse, OAuth2ErrorResponse } from '@/types/errors'
 import type { JWTUser } from '@/types/user'
 import type { AuthProviderType, StoredToken } from '@/types/auth'
 import { translateErrors } from '@/utils/errors'
-import { getKiwixAuthConfig } from '@/services/auth/base'
+import { getOAuthConfig } from '@/services/auth/base'
 import httpRequest from '@/utils/httpRequest'
 import { defineStore } from 'pinia'
 import { computed, inject, ref } from 'vue'
-import { KiwixOIDCProvider } from '@/services/auth/KiwixOIDCProvider'
-import { KiwixSessionProvider } from '@/services/auth/KiwixSessionProvider'
+import { OAuthOIDCProvider } from '@/services/auth/OAuthOIDCProvider'
+import { OAuthSessionProvider } from '@/services/auth/OAuthSessionProvider'
 import type { AuthProvider } from '@/services/auth/base'
 import { LocalAuthProvider } from '@/services/auth/LocalAuthProvider'
 
@@ -29,10 +29,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   let oauthProvider: AuthProvider | null = null
-  if (config.KIWIX_OAUTH_MODE == 'oidc') {
-    oauthProvider = new KiwixOIDCProvider(getKiwixAuthConfig(config))
-  } else if (config.KIWIX_OAUTH_MODE == 'session') {
-    oauthProvider = new KiwixSessionProvider(getKiwixAuthConfig(config))
+  if (config.OAUTH_MODE == 'oidc') {
+    oauthProvider = new OAuthOIDCProvider(getOAuthConfig(config))
+  } else if (config.OAUTH_MODE == 'session') {
+    oauthProvider = new OAuthSessionProvider(getOAuthConfig(config))
   }
 
   const localauthProvider = new LocalAuthProvider(config.ZIMFARM_WEBAPI)
@@ -70,7 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const getAuthProvider = (providerType: AuthProviderType): AuthProvider => {
     switch (providerType) {
-      case 'kiwix':
+      case 'oauth':
         if (!oauthProvider) {
           throw new Error('No oauth provider configured.')
         }
@@ -129,14 +129,12 @@ export const useAuthStore = defineStore('auth', () => {
     // If refresh has already failed permanently, don't retry
     const provider = getAuthProvider(storedToken.token_type)
     if (isRefreshFailed.value) {
-      console.log('Skipping refresh attempt - refresh token previously failed')
       provider.removeToken()
       return null
     }
 
     // If a refresh is already in progress, wait for it
     if (refreshPromise.value) {
-      console.log('Refresh already in progress, waiting for existing request...')
       return await refreshPromise.value
     }
 
@@ -150,7 +148,10 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const newToken = await refreshPromise.value
-      await fetchUserInfo(storedToken.access_token)
+      if (!newToken) {
+        throw new Error('Unable to refresh token')
+      }
+      await fetchUserInfo(newToken.access_token)
       isRefreshFailed.value = false
       return newToken
     } catch (error) {
@@ -160,7 +161,6 @@ export const useAuthStore = defineStore('auth', () => {
       if (isPermanentRefreshFailure(error)) {
         isRefreshFailed.value = true
         provider.removeToken()
-        console.log('Refresh token permanently failed, will not retry')
       }
 
       token.value = null
@@ -181,12 +181,17 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Try to load from kiwx/local providers as we don't know which
     let storedToken: StoredToken | null = null
-    if (oauthProvider) {
-      storedToken = await oauthProvider.loadToken()
-    }
+    try {
+      if (oauthProvider) {
+        storedToken = await oauthProvider.loadToken()
+      }
 
-    if (!storedToken) {
-      storedToken = await localauthProvider.loadToken()
+      if (!storedToken) {
+        storedToken = await localauthProvider.loadToken()
+      }
+    } catch (error: unknown) {
+      console.error('Failed to load token:', error)
+      await logout()
     }
     if (!storedToken) return null
 
@@ -197,7 +202,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (now > expiry) {
       // Token expired, check if refresh is already in progress
       if (refreshPromise.value) {
-        console.log('Token refresh already in progress, waiting for existing request...')
         const refreshed = await refreshPromise.value
         if (!refreshed) {
           await logout()
@@ -215,7 +219,9 @@ export const useAuthStore = defineStore('auth', () => {
       await logout()
       return null
     }
-    if (!user.value) await fetchUserInfo(storedToken.access_token)
+    if (!user.value) {
+      await fetchUserInfo(storedToken.access_token)
+    }
     token.value = storedToken
     return storedToken
   }
@@ -246,13 +252,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const authenticate = async (
     providerType: AuthProviderType,
-    returnUrl?: string,
     username?: string,
     password?: string,
   ) => {
     try {
       const provider = getAuthProvider(providerType)
-      await provider.initiateLogin(returnUrl, username, password)
+      await provider.initiateLogin(username, password)
       // Oauth providers typically redirect to a new url as part of the
       // login process. If we are still here, it means this is from the local
       // provider which has stored the token

@@ -20,7 +20,7 @@
             <h1 class="text-h5 mb-4 font-weight-medium">Please sign in</h1>
 
             <!-- Sign In Form -->
-            <v-form @submit.prevent="authenticate" ref="form">
+            <v-form v-if="showLocalLogin" @submit.prevent="authenticate" ref="form">
               <!-- Error Snackbar -->
               <v-alert
                 v-for="error in errors"
@@ -88,11 +88,12 @@
               </v-btn>
             </v-form>
 
-            <v-divider class="my-4">
+            <v-divider v-if="showDivider" class="my-4">
               <span class="text-medium-emphasis px-2">OR</span>
             </v-divider>
 
             <v-btn
+              v-if="showOAuthLogin"
               variant="outlined"
               color="primary"
               size="large"
@@ -151,6 +152,18 @@ const contactEmail = computed(() => {
   return 'contact@kiwix.org'
 })
 
+const showLocalLogin = computed(() => {
+  return config.LOGIN_MODES.includes('local')
+})
+
+const showOAuthLogin = computed(() => {
+  return config.LOGIN_MODES.includes('oauth')
+})
+
+const showDivider = computed(() => {
+  return showLocalLogin.value && showOAuthLogin.value
+})
+
 // Form validation rules
 const rules = {
   required: (value: string) => !!value || 'This field is required',
@@ -174,7 +187,7 @@ const authenticate = async () => {
   errors.value = []
 
   try {
-    const success = await authStore.authenticate('local', undefined, username.value, password.value)
+    const success = await authStore.authenticate('local', username.value, password.value)
 
     if (success && authStore.isLoggedIn) {
       router.back()
@@ -197,7 +210,7 @@ const signInWithKiwix = async () => {
   if (redirect) {
     sessionStorage.setItem('auth_redirect', redirect)
   }
-  await authStore.authenticate('kiwix')
+  await authStore.authenticate('oauth')
 }
 </script>
 

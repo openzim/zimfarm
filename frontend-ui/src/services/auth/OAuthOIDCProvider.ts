@@ -1,20 +1,27 @@
-import type { KiwixTokenResponse } from '@/types/user'
 import httpRequest from '@/utils/httpRequest'
 import { type StoredToken } from '@/types/auth'
 import constants from '@/constants'
-import { AuthProvider, type KiwixAuthConfig } from '@/services/auth/base'
+import { AuthProvider, type OAuthConfig } from '@/services/auth/base'
+
+interface OAuthOIDCTokenResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+  refresh_token: string
+  id_token: string
+}
 
 /**
  * OIDC/OAuth2 authentication provider using PKCE flow
  */
-export class KiwixOIDCProvider extends AuthProvider {
-  protected config: KiwixAuthConfig
+export class OAuthOIDCProvider extends AuthProvider {
+  protected config: OAuthConfig
   protected keyName: string
 
-  constructor(config: KiwixAuthConfig) {
+  constructor(config: OAuthConfig) {
     super()
     this.config = config
-    this.keyName = `${constants.TOKEN_STORAGE_KEY}-kiwix-oidc`
+    this.keyName = `${constants.TOKEN_STORAGE_KEY}-oauth-oidc`
   }
   /**
    * Initiates the OAuth2 PKCE flow
@@ -34,7 +41,7 @@ export class KiwixOIDCProvider extends AuthProvider {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: 'code',
-      redirect_uri: this.getRedirectUri(),
+      redirect_uri: this.getRedirectUri('/oauth/callback'),
       state: state,
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
@@ -92,7 +99,7 @@ export class KiwixOIDCProvider extends AuthProvider {
       refresh_token: refreshToken,
     })
 
-    const response = await service.post<URLSearchParams, KiwixTokenResponse>('', params, {
+    const response = await service.post<URLSearchParams, OAuthOIDCTokenResponse>('', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -102,7 +109,7 @@ export class KiwixOIDCProvider extends AuthProvider {
     const newToken: StoredToken = {
       access_token: response.id_token,
       refresh_token: response.refresh_token,
-      token_type: 'kiwix',
+      token_type: 'oauth',
       expires_time: expiresTime,
     }
     this.saveToken(newToken)
@@ -148,7 +155,7 @@ export class KiwixOIDCProvider extends AuthProvider {
     return {
       access_token: response.id_token,
       refresh_token: response.refresh_token,
-      token_type: 'kiwix',
+      token_type: 'oauth',
       expires_time: expiresTime,
     }
   }
@@ -157,7 +164,7 @@ export class KiwixOIDCProvider extends AuthProvider {
    * Exchange authorization code for tokens
    * This is specific to OIDC flow and called after redirect from auth server
    */
-  async exchangeCodeForToken(code: string, codeVerifier: string): Promise<KiwixTokenResponse> {
+  async exchangeCodeForToken(code: string, codeVerifier: string): Promise<OAuthOIDCTokenResponse> {
     const service = httpRequest({
       baseURL: this.config.tokenUrl,
     })
@@ -166,11 +173,11 @@ export class KiwixOIDCProvider extends AuthProvider {
       grant_type: 'authorization_code',
       client_id: this.config.clientId,
       code: code,
-      redirect_uri: this.getRedirectUri(),
+      redirect_uri: this.getRedirectUri('/oauth/callback'),
       code_verifier: codeVerifier,
     })
 
-    const response = await service.post<URLSearchParams, KiwixTokenResponse>('', params, {
+    const response = await service.post<URLSearchParams, OAuthOIDCTokenResponse>('', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -210,8 +217,8 @@ export class KiwixOIDCProvider extends AuthProvider {
   /**
    * Get redirect URI based on current origin
    */
-  private getRedirectUri(): string {
-    return `${window.location.origin}/oauth/callback`
+  private getRedirectUri(returnUrl: string): string {
+    return `${window.location.origin}${returnUrl}`
   }
 
   /**
