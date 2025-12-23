@@ -50,6 +50,7 @@ from zimfarm_backend.db.models import (
 )
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
+from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -346,8 +347,8 @@ def get_schedules(
 
 def create_schedule(
     session: OrmSession,
-    author: str,
     *,
+    author: str,
     name: str,
     category: ScheduleCategory,
     language: LanguageSchema,
@@ -362,6 +363,7 @@ def create_schedule(
 ) -> Schedule:
     """Create a new schedule"""
     offliner = get_offliner(session, offliner_definition.offliner)
+    user = get_user_by_username(session, username=author)
     schedule = Schedule(
         name=name,
         category=category,
@@ -388,7 +390,6 @@ def create_schedule(
     schedule.durations.append(schedule_duration)
 
     history_entry = ScheduleHistory(
-        author=author,
         created_at=getnow(),
         comment=comment,
         config=config.model_dump(mode="json"),
@@ -401,6 +402,7 @@ def create_schedule(
         context=schedule.context,
         offliner_definition_version=offliner_definition.version,
     )
+    history_entry.author = user
     schedule.history_entries.append(history_entry)
 
     session.add(schedule)
@@ -522,8 +524,8 @@ def toggle_archive_status(
             f"Schedule with name {schedule_name} already has archive status {archived}"
         )
     schedule.archived = archived
+    user = get_user_by_username(session, username=actor)
     history_entry = ScheduleHistory(
-        author=actor,
         created_at=getnow(),
         comment=comment,
         config=schedule.config,
@@ -537,6 +539,7 @@ def toggle_archive_status(
         archived=schedule.archived,
         offliner_definition_version=schedule.offliner_definition.version,
     )
+    history_entry.author = user
     schedule.history_entries.append(history_entry)
     session.add(schedule)
     session.flush()
@@ -545,8 +548,8 @@ def toggle_archive_status(
 
 def update_schedule(
     session: OrmSession,
-    author: str,
     *,
+    author: str,
     schedule_name: str,
     offliner_definition: OfflinerDefinitionSchema,
     new_schedule_config: ScheduleConfigSchema | None = None,
@@ -562,6 +565,7 @@ def update_schedule(
 ) -> Schedule:
     """Update a schedule with the given values that are set."""
     schedule = get_schedule(session, schedule_name=schedule_name)
+    user = get_user_by_username(session, username=author)
 
     if schedule.archived:
         raise RecordDoesNotExistError(f"Schedule with name {schedule_name} is archived")
@@ -593,7 +597,6 @@ def update_schedule(
     schedule.context = context if context is not None else schedule.context
 
     history_entry = ScheduleHistory(
-        author=author,
         created_at=getnow(),
         comment=comment,
         config=schedule.config,
@@ -607,6 +610,7 @@ def update_schedule(
         archived=schedule.archived,
         offliner_definition_version=offliner_definition.version,
     )
+    history_entry.author = user
     schedule.history_entries.append(history_entry)
 
     session.add(schedule)
@@ -637,7 +641,7 @@ def create_schedule_history_schema(
 ) -> ScheduleHistorySchema:
     return ScheduleHistorySchema(
         id=history_entry.id,
-        author=history_entry.author,
+        author=history_entry.author.username,
         created_at=history_entry.created_at,
         comment=history_entry.comment,
         name=history_entry.name,

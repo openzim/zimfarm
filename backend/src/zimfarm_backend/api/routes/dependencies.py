@@ -1,20 +1,23 @@
-import datetime
-import uuid
 from typing import Annotated, Literal
 
-import jwt
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import exceptions as jwt_exceptions
-from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.constants import JWT_SECRET
+from zimfarm_backend.api.constants import (
+    CREATE_NEW_OAUTH_ACCOUNT,
+)
 from zimfarm_backend.api.routes.http_errors import UnauthorizedError
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.api.token import JWTClaims, token_decoder
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
-from zimfarm_backend.db.user import check_user_permission, get_user_by_id_or_none
+from zimfarm_backend.db.user import (
+    check_user_permission,
+    create_user,
+    get_user_by_id_or_none,
+)
 
 security = HTTPBearer(description="Access Token", auto_error=False)
 AuthorizationCredentials = Annotated[
@@ -22,34 +25,28 @@ AuthorizationCredentials = Annotated[
 ]
 
 
-class JWTClaims(BaseModel):
-    iss: str
-    exp: datetime.datetime
-    iat: datetime.datetime
-    subject: uuid.UUID
-
-
 def get_jwt_claims_or_none(
     authorization: AuthorizationCredentials,
 ) -> JWTClaims | None:
     """
-    Get the JWT claims or None if the user is not authenticated
+    Get the JWT claims or None if the user is not authenticated.
+
+    Tries to decode as Zimfarm token first, then as Kiwix token.
     """
     if authorization is None:
         return None
     token = authorization.credentials
+
     try:
-        jwt_claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return token_decoder.decode(token)
     except jwt_exceptions.ExpiredSignatureError as exc:
         raise UnauthorizedError("Token has expired.") from exc
     except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:
-        raise UnauthorizedError from exc
-
-    try:
-        claims = JWTClaims(**jwt_claims)
-    except PydanticValidationError as exc:
-        raise UnauthorizedError from exc
-    return claims
+        raise UnauthorizedError("Invalid token") from exc
+    except ValueError as exc:
+        raise UnauthorizedError(exc.args[0]) from exc
+    except Exception as exc:
+        raise UnauthorizedError("Unable to verify token") from exc
 
 
 def get_current_user_or_none_with_session(
@@ -64,7 +61,20 @@ def get_current_user_or_none_with_session(
     ) -> User | None:
         if claims is None:
             return None
-        return get_user_by_id_or_none(session, user_id=claims.subject)
+        user = get_user_by_id_or_none(session, user_id=claims.sub)
+        # If this is a kiwix token, we create a new user account
+        if user is None and CREATE_NEW_OAUTH_ACCOUNT:
+            if not claims.name:
+                raise UnauthorizedError("Token is missing 'profile' scope")
+            create_user(
+                session,
+                username=claims.name,
+                role=RoleEnum.VIEWER,
+                idp_sub=claims.sub,
+            )
+            user = get_user_by_id_or_none(session, user_id=claims.sub)
+
+        return user
 
     return _get_current_user_or_none
 
@@ -78,11 +88,17 @@ def get_current_user_with_session(
             Depends(get_current_user_or_none_with_session(session_type=session_type)),
         ],
     ) -> User:
+        # If we get here, it means the token was valid but the user being None
+        # means their idp_sub or id doesn't exist on the database or they have been
+        # marked as deleted.
         if user is None:
-            raise UnauthorizedError()
+            raise UnauthorizedError(
+                "This account is not yet authorized on the Zimfarm. "
+                "Please contact Zimfarm admins."
+            )
 
         if user.deleted:
-            raise UnauthorizedError()
+            raise UnauthorizedError("This account does not exist on the Zimfarm.")
 
         return user
 
