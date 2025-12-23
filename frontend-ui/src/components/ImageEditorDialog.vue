@@ -94,6 +94,8 @@
             }"
             :default-size="defaultSize"
             image-restriction="fit-area"
+            backgroundClass="cropper-background"
+            foregroundClass="cropper-foreground"
             class="cropper"
             @change="handleCropperChange"
           />
@@ -352,7 +354,6 @@ const handleCancel = () => {
   width: 100%;
   height: 600px;
   max-height: 70vh;
-  background-color: #f5f5f5;
   border-radius: 4px;
   overflow: hidden;
 }
@@ -374,5 +375,13 @@ const handleCancel = () => {
 .cropper :deep(.vue-simple-handler) {
   background: rgb(var(--v-theme-primary));
   border-color: rgb(var(--v-theme-primary));
+}
+
+:deep(.cropper-background) {
+  background: white;
+}
+
+:deep(.cropper-foreground) {
+  background: white;
 }
 </style>
