@@ -176,7 +176,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   if (loadingStore.isLoading) {
     loadingStore.stopLoading()
   }
-  
+
   // Update URL with current page number
   updateUrlWithPage(limit, skip)
 }
@@ -317,7 +317,7 @@ function updateUrlWithPage(limit: number, skip: number) {
   } else if (filters.value.tags.length > 1) {
     query.tag = filters.value.tags
   }
-  
+
   // Add page number to URL (page is 1-indexed, calculated from skip and limit)
   const page = skip > 0 ? Math.floor(skip / limit) + 1 : 1
   if (page > 1) {
@@ -386,7 +386,7 @@ onMounted(async () => {
 
   // Mark as ready to show content
   ready.value = true
-  
+
   // Load data with page from URL
   await loadData(paginator.value.limit, skip)
 })
@@ -405,21 +405,21 @@ watch(
     if (!ready.value) {
       return
     }
-    
+
     const previousFilters = { ...filters.value }
     loadFiltersFromUrl()
-    
+
     // Check if filters changed
     const filtersChanged =
       previousFilters.name !== filters.value.name ||
       JSON.stringify(previousFilters.categories) !== JSON.stringify(filters.value.categories) ||
       JSON.stringify(previousFilters.languages) !== JSON.stringify(filters.value.languages) ||
       JSON.stringify(previousFilters.tags) !== JSON.stringify(filters.value.tags)
-    
+
     // Get page from URL
     const page = getPageFromUrl()
     const skip = calculateSkipFromPage(page, paginator.value.limit)
-    
+
     // Reload data if filters changed, page changed, or schedules array is empty (e.g., after back navigation)
     if (filtersChanged || skip !== paginator.value.skip || schedules.value.length === 0) {
       blockUrlUpdates.value = true
