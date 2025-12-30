@@ -36,6 +36,7 @@
         :items-per-page="selectedLimit"
         :items-length="paginator.count"
         :items-per-page-options="limits"
+        v-model:page="currentPage"
         class="elevation-1"
         item-value="name"
         :show-select="showSelection"
@@ -148,8 +149,17 @@ const emit = defineEmits<{
 
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
+const currentPage = ref(1)
 
 const selectedSchedules = computed(() => props.selectedSchedules)
+
+// Calculate current page from paginator (page is 1-indexed)
+const computedPage = computed(() => {
+  if (props.paginator.skip > 0 && props.paginator.limit > 0) {
+    return Math.floor(props.paginator.skip / props.paginator.limit) + 1
+  }
+  return 1
+})
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
@@ -171,9 +181,18 @@ watch(
   () => props.paginator,
   (newPaginator) => {
     selectedLimit.value = newPaginator.limit
+    // Sync current page with paginator
+    currentPage.value = computedPage.value
   },
   { immediate: true },
 )
+
+// Watch computed page to sync with paginator changes
+watch(computedPage, (newPage) => {
+  if (currentPage.value !== newPage) {
+    currentPage.value = newPage
+  }
+})
 
 function handleSelectionChange(selection: string[]) {
   emit('selectionChanged', selection)
