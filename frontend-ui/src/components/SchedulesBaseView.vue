@@ -176,6 +176,9 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   if (loadingStore.isLoading) {
     loadingStore.stopLoading()
   }
+  
+  // Update URL with current page number
+  updateUrlWithPage(limit, skip)
 }
 
 async function handleFiltersChange(newFilters: typeof filters.value) {
@@ -284,7 +287,16 @@ function updateUrl() {
     return
   }
 
-  // create query object from selected filters
+  // Reset to page 1 when filters change
+  updateUrlWithPage(paginator.value.limit, 0)
+}
+
+function updateUrlWithPage(limit: number, skip: number) {
+  if (blockUrlUpdates.value || isFirefoxOnIOS()) {
+    return
+  }
+
+  // create query object from selected filters and page
   const query: Record<string, string | string[]> = {}
 
   if (filters.value.name) {
@@ -304,6 +316,12 @@ function updateUrl() {
     query.tag = filters.value.tags[0]
   } else if (filters.value.tags.length > 1) {
     query.tag = filters.value.tags
+  }
+  
+  // Add page number to URL (page is 1-indexed, calculated from skip and limit)
+  const page = skip > 0 ? Math.floor(skip / limit) + 1 : 1
+  if (page > 1) {
+    query.page = page.toString()
   }
 
   router.push({
@@ -335,22 +353,42 @@ function loadFiltersFromUrl() {
   }
 }
 
+function getPageFromUrl(): number {
+  const query = router.currentRoute.value.query
+  if (query.page && typeof query.page === 'string') {
+    const page = parseInt(query.page, 10)
+    if (!isNaN(page) && page > 0) {
+      return page
+    }
+  }
+  return 1
+}
+
+function calculateSkipFromPage(page: number, limit: number): number {
+  return page > 1 ? (page - 1) * limit : 0
+}
+
 // Lifecycle
 onMounted(async () => {
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
 
-  // Load filters from URL
+  // Load filters and page from URL
   loadFiltersFromUrl()
+  const page = getPageFromUrl()
+  const skip = calculateSkipFromPage(page, paginator.value.limit)
 
   // Set up auto-refresh
   intervalId.value = window.setInterval(async () => {
     await loadData(paginator.value.limit, paginator.value.skip, true)
   }, 60000)
 
-  // Mark as ready to show content - the table will handle initial load via updateOptions
+  // Mark as ready to show content
   ready.value = true
+  
+  // Load data with page from URL
+  await loadData(paginator.value.limit, skip)
 })
 
 onBeforeUnmount(() => {
@@ -359,12 +397,36 @@ onBeforeUnmount(() => {
   }
 })
 
-// Watch for route changes to update filters
+// Watch for route changes to update filters and reload data
 watch(
   () => router.currentRoute.value.query,
-  () => {
+  async () => {
+    // Skip if component is not ready yet (initial mount will handle it)
+    if (!ready.value) {
+      return
+    }
+    
+    const previousFilters = { ...filters.value }
     loadFiltersFromUrl()
+    
+    // Check if filters changed
+    const filtersChanged =
+      previousFilters.name !== filters.value.name ||
+      JSON.stringify(previousFilters.categories) !== JSON.stringify(filters.value.categories) ||
+      JSON.stringify(previousFilters.languages) !== JSON.stringify(filters.value.languages) ||
+      JSON.stringify(previousFilters.tags) !== JSON.stringify(filters.value.tags)
+    
+    // Get page from URL
+    const page = getPageFromUrl()
+    const skip = calculateSkipFromPage(page, paginator.value.limit)
+    
+    // Reload data if filters changed, page changed, or schedules array is empty (e.g., after back navigation)
+    if (filtersChanged || skip !== paginator.value.skip || schedules.value.length === 0) {
+      blockUrlUpdates.value = true
+      await loadData(paginator.value.limit, skip)
+      blockUrlUpdates.value = false
+    }
   },
-  { deep: true, immediate: true },
+  { deep: true },
 )
 </script>
