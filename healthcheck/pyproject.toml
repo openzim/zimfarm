@@ -20,7 +20,7 @@ dependencies = [
     "fastapi[all] == 0.115.2",
     "pydantic == 2.11.4", # this is also a sub-dep of fastapi but we rely a lot on it
     "SQLAlchemy == 2.0.41",
-    "aiohttp == 3.13.1",
+    "aiohttp == 3.13.3",
     "humanfriendly == 10.0",
     "jinja2 == 3.1.6",
     "psycopg[binary,pool] == 3.2.9",
