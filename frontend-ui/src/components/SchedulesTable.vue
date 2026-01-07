@@ -152,10 +152,17 @@ const router = useRouter()
 const route = useRoute()
 
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(Number(route.query.limit) || props.paginator.limit)
-const currentPage = ref(Number(route.query.page) || 1)
+const selectedLimit = ref(props.paginator.limit)
 
 const selectedSchedules = computed(() => props.selectedSchedules)
+
+// Calculate current page from paginator (page is 1-indexed)
+const computedPage = computed(() => {
+  if (props.paginator.skip > 0 && props.paginator.limit > 0) {
+    return Math.floor(props.paginator.skip / props.paginator.limit) + 1
+  }
+  return 1
+})
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
@@ -182,19 +189,19 @@ function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
 
 // Sync with route query changes to emit loadData once
 watch(
-  () => route.query,
-  (newQuery) => {
-    const limit = Number(newQuery.limit) || props.paginator.limit
-    const page = Number(newQuery.page) || 1
-    const skip = (page - 1) * limit
-
-    currentPage.value = page
-    selectedLimit.value = limit
-
-    emit('loadData', limit, skip)
+  () => props.paginator,
+  (newPaginator) => {
+    selectedLimit.value = newPaginator.limit
   },
   { immediate: true }
 )
+
+// Watch computed page to sync with paginator changes
+watch(computedPage, (newPage) => {
+  if (currentPage.value !== newPage) {
+    currentPage.value = newPage
+  }
+})
 
 function handleSelectionChange(selection: string[]) {
   emit('selectionChanged', selection)
