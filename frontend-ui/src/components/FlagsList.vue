@@ -6,7 +6,14 @@
           <code class="text-pink-accent-2">{{ name }}</code>
         </td>
         <td>
-          <span>{{ value }}</span>
+          <div class="d-flex align-center ga-2">
+            <span>{{ value }}</span>
+            <BlobViewer
+              v-if="getBlobField(name)"
+              :blob-value="String(value)"
+              :kind="getBlobField(name)!.kind || 'image'"
+            />
+          </div>
         </td>
       </tr>
     </tbody>
@@ -15,17 +22,19 @@
 
 <script setup lang="ts">
 import type { OfflinerFlags } from '@/types/schedule'
+import type { OfflinerDefinition } from '@/types/offliner'
 import { computed } from 'vue'
+import BlobViewer from '@/components/BlobViewer.vue'
 
 interface Props {
   offliner: OfflinerFlags
   shrink?: boolean
-  secretFields?: string[]
+  flagsDefinition?: OfflinerDefinition[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   shrink: false,
-  secretFields: () => [],
+  flagsDefinition: () => [],
 })
 
 const filteredOffliner = computed(() => {
@@ -48,6 +57,14 @@ const filteredOffliner = computed(() => {
 
   return sortedResult
 })
+
+const getBlobField = (fieldName: string) => {
+  if (!props.flagsDefinition || props.flagsDefinition.length === 0) {
+    return null
+  }
+  const field = props.flagsDefinition.find((f) => f.data_key === fieldName)
+  return field?.type === 'blob' ? field : null
+}
 </script>
 
 <style scoped>
