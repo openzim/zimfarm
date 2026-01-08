@@ -82,6 +82,7 @@ class RoleEnum(StrEnum):
     EDITOR_REQUESTER = "editor-requester"
     WORKER = "worker"
     PROCESSOR = "processor"
+    VIEWER = "viewer"
 
 
 ROLES: dict[str, dict[str, dict[str, bool]]] = {
@@ -144,6 +145,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
         "tasks": TaskPermissions.get(update=True, secrets=True),
         "requested_tasks": RequestedTaskPermissions.get(update=True, secrets=True),
     },
+    RoleEnum.VIEWER: {},
 }
 
 

@@ -19,6 +19,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.utils import task_cancel_requested_event_handler
 from zimfarm_backend.db.models import Task, Worker
+from zimfarm_backend.db.user import get_user_by_username
 
 
 def get_stale_tasks_with_status(
@@ -95,9 +96,10 @@ def cancel_stale_tasks_with_status(
     tasks = get_stale_tasks_with_status(session, status, ago)
 
     nb_canceled_tasks = 0
+    user = get_user_by_username(session, username=PERIODIC_TASK_NAME)
     for task in tasks:
         task.status = TaskStatus.canceled
-        task.canceled_by = PERIODIC_TASK_NAME
+        task.canceled_by_id = user.id
         task.timestamp.append((TaskStatus.canceled, now))
         task.events.append(
             {

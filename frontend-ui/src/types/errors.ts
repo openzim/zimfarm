@@ -3,3 +3,9 @@ export interface ErrorResponse {
   message: string
   errors?: Record<string, string>
 }
+
+export interface OAuth2ErrorResponse {
+  code?: number
+  error: string
+  error_description?: string
+}

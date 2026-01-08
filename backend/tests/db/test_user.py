@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
+from zimfarm_backend.common.schemas.models import UserUpdateSchema
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -115,8 +116,7 @@ def test_update_user_role(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        email="updated@example.com",
-        role=RoleEnum.EDITOR,
+        request=UserUpdateSchema(email="updated@example.com", role=RoleEnum.EDITOR),
     )
     dbsession.refresh(user)
     assert user.email == "updated@example.com"
@@ -129,9 +129,11 @@ def test_update_user_scope(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        email="updated@example.com",
-        role=None,
-        scope=scope,
+        request=UserUpdateSchema(
+            email="updated@example.com",
+            role=None,
+            scope=scope,
+        ),
     )
     dbsession.refresh(user)
     assert user.email == "updated@example.com"
@@ -180,9 +182,11 @@ def test_update_user_scope_and_role(dbsession: OrmSession, user: User):
         update_user(
             dbsession,
             user_id=user.id,
-            email="updated@example.com",
-            role=RoleEnum.EDITOR,
-            scope=scope,
+            request=UserUpdateSchema(
+                email="updated@example.com",
+                role=RoleEnum.EDITOR,
+                scope=scope,
+            ),
         )
 
 
@@ -192,8 +196,7 @@ def test_update_user_partial(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        email=None,
-        role=RoleEnum.EDITOR,
+        request=UserUpdateSchema(role=RoleEnum.EDITOR),
     )
     dbsession.refresh(user)
     assert user.email == original_email
