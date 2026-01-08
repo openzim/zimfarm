@@ -522,7 +522,7 @@
                   <tr>
                     <th class="text-left pa-4 align-top">Config</th>
                     <td>
-                      <FlagsList :offliner="config.offliner" :secret-fields="secretFields" />
+                      <FlagsList :offliner="config.offliner" :flags-definition="flagsDefinition" />
                     </td>
                   </tr>
                   <tr>
@@ -712,7 +712,6 @@ import {
   buildDockerCommand,
   buildScheduleDuration,
   buildTotalDurationDict,
-  getSecretFields,
   imageHuman as imageHumanFn,
   imageUrl as imageUrlFn,
 } from '@/utils/offliner'
@@ -798,7 +797,6 @@ const platform = computed(() => config.value?.platform || '')
 const warehousePath = computed(() => config.value?.warehouse_path || '')
 const imageHuman = computed(() => imageHumanFn(config.value))
 const imageUrl = computed(() => imageUrlFn(config.value))
-const secretFields = computed(() => getSecretFields(flagsDefinition.value))
 const command = computed(() => buildDockerCommand(schedule.value?.name || '', config.value))
 const offlinerCommand = computed(() => buildCommandWithout(config.value))
 const scheduleDurationDict = computed(() => {
