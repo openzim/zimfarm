@@ -35,7 +35,7 @@
   </v-dialog>
 
   <!-- Text Viewer Dialog -->
-  <v-dialog v-if="isTextKind" v-model="showViewer" max-width="600px">
+  <v-dialog v-if="isText" v-model="showViewer" max-width="600px">
     <v-card>
       <v-card-title class="d-flex justify-space-between align-center">
         <span>View {{ kind === 'txt' ? 'Text' : kind.toUpperCase() }}</span>
@@ -66,14 +66,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useNotificationStore } from '@/stores/notification'
-
-const TEXT_KINDS = ['css', 'html', 'txt'] as const
+import { isTextKind, type BlobKind } from '@/utils/blob'
 
 const notificationStore = useNotificationStore()
 
 interface Props {
   blobValue: string
-  kind?: 'image' | 'css' | 'html' | 'txt'
+  kind?: BlobKind
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,7 +83,7 @@ const showViewer = ref(false)
 const blobContent = ref('')
 const loadingBlobContent = ref(false)
 
-const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT_KINDS)[number]))
+const isText = computed(() => isTextKind(props.kind))
 
 const textFileClass = computed(() => {
   if (props.kind === 'css') return 'language-css'
@@ -152,7 +151,7 @@ const handleViewText = async () => {
 const handleView = () => {
   if (props.kind === 'image') {
     handleViewImage()
-  } else if (isTextKind.value) {
+  } else if (isText.value) {
     handleViewText()
   }
 }
