@@ -10,14 +10,14 @@ import type { VueCookies } from 'vue-cookies'
 
 export const useUserStore = defineStore('user', () => {
   const $cookies = inject<VueCookies>('$cookies')
-  const limit = Number($cookies?.get('users-table-limit') || 20)
+  const defaultLimit = ref<number>(Number($cookies?.get('users-table-limit') || 20))
   const errors = ref<string[]>([])
   const users = ref<User[]>([])
   const paginator = ref<Paginator>({
     page: 1,
-    page_size: limit,
+    page_size: defaultLimit.value,
     skip: 0,
-    limit: limit,
+    limit: defaultLimit.value,
     count: 0,
   })
 
@@ -168,6 +168,7 @@ export const useUserStore = defineStore('user', () => {
     // State
     errors,
     users,
+    defaultLimit,
     paginator,
 
     // Actions
