@@ -83,6 +83,7 @@
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SchedulesFilter from '@/components/SchedulesFilter.vue'
 import SchedulesTable from '@/components/SchedulesTable.vue'
+import type { Paginator } from '@/types/base'
 import constants from '@/constants'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
@@ -118,8 +119,6 @@ const headers = [
 
 // Reactive state
 const schedules = ref<ScheduleLight[]>([])
-const paginator = computed(() => scheduleStore.paginator)
-
 const blockUrlUpdates = ref<boolean>(false)
 const ready = ref<boolean>(false)
 
@@ -152,6 +151,14 @@ const languages = computed(() => languageStore.languages)
 const tags = computed(() => tagStore.tags)
 const categories = constants.CATEGORIES
 
+const paginator = ref<Paginator>({
+  page: 1,
+  page_size: scheduleStore.defaultLimit,
+  skip: 0,
+  limit: scheduleStore.defaultLimit,
+  count: 0,
+})
+
 // Methods
 async function loadData(limit: number, skip: number, hideLoading: boolean = false) {
   if (!hideLoading) {
@@ -168,6 +175,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   )
 
   schedules.value = scheduleStore.schedules
+  paginator.value = { ...scheduleStore.paginator }
   scheduleStore.savePaginatorLimit(limit)
   errors.value = scheduleStore.errors
   for (const error of errors.value) {
@@ -180,8 +188,8 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
 
 async function handleFiltersChange(newFilters: typeof filters.value) {
   filters.value = newFilters
-  updateUrl()
-  await loadData(paginator.value.limit, 0)
+  paginator.value.skip = 0
+  updateUrlFilters()
 }
 
 async function handleLimitChange(newLimit: number) {
@@ -195,8 +203,8 @@ async function clearFilters() {
     languages: [],
     tags: [],
   }
-  updateUrl()
-  await loadData(paginator.value.limit, 0)
+  paginator.value.skip = 0
+  updateUrlFilters()
 }
 
 function handleSelectionChanged(newSelection: string[]) {
@@ -279,7 +287,7 @@ function handleRestoreCancel() {
   restoreComment.value = '' // Reset comment when cancelled
 }
 
-function updateUrl() {
+function updateUrlFilters() {
   if (blockUrlUpdates.value || isFirefoxOnIOS()) {
     return
   }
@@ -314,25 +322,48 @@ function updateUrl() {
 
 function loadFiltersFromUrl() {
   const query = router.currentRoute.value.query
+  const newFilters = {
+    name: '',
+    categories: [] as string[],
+    languages: [] as string[],
+    tags: [] as string[],
+  }
 
   if (query.name && typeof query.name === 'string') {
-    filters.value.name = query.name
+    newFilters.name = query.name
   }
 
   if (query.category) {
     const categoryValue = Array.isArray(query.category) ? query.category : [query.category]
-    filters.value.categories = categoryValue.filter((c): c is string => c !== null)
+
+    newFilters.categories = categoryValue.filter((c): c is string => c !== null)
   }
 
   if (query.lang) {
     const langValue = Array.isArray(query.lang) ? query.lang : [query.lang]
-    filters.value.languages = langValue.filter((l): l is string => l !== null)
+    newFilters.languages = langValue.filter((l): l is string => l !== null)
   }
 
   if (query.tag) {
     const tagValue = Array.isArray(query.tag) ? query.tag : [query.tag]
-    filters.value.tags = tagValue.filter((t): t is string => t !== null)
+    newFilters.tags = tagValue.filter((t): t is string => t !== null)
   }
+
+  let page = 1
+  if (query.page && typeof query.page === 'string') {
+    const parsedPage = parseInt(query.page, 10)
+    if (!isNaN(parsedPage) && parsedPage > 1) {
+      page = parsedPage
+    }
+  }
+
+  paginator.value = {
+    ...paginator.value,
+    page: page,
+    skip: (page - 1) * paginator.value.limit,
+  }
+
+  filters.value = newFilters
 }
 
 // Lifecycle
@@ -341,7 +372,7 @@ onMounted(async () => {
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
 
-  // Load filters from URL
+  // Load filters and paginator from URL
   loadFiltersFromUrl()
 
   // Set up auto-refresh
@@ -362,8 +393,9 @@ onBeforeUnmount(() => {
 // Watch for route changes to update filters
 watch(
   () => router.currentRoute.value.query,
-  () => {
+  async () => {
     loadFiltersFromUrl()
+    await loadData(paginator.value.limit, paginator.value.skip)
   },
   { deep: true, immediate: true },
 )
