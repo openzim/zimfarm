@@ -471,6 +471,39 @@
                 {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
               </template>
             </v-text-field>
+            <!-- YouTube link helper for ident field -->
+            <div
+              v-if="
+                taskName === 'youtube' &&
+                (field.dataKey === 'ident' || field.dataKey === 'id') &&
+                editFlags[field.dataKey] &&
+                getYouTubeUrls(editFlags[field.dataKey]).length > 0
+              "
+              class="mt-2"
+            >
+              <div class="d-flex flex-wrap ga-2 align-center">
+                <span class="text-caption text-medium-emphasis">Open on YouTube:</span>
+                <template
+                  v-for="item in getYouTubeUrls(editFlags[field.dataKey])"
+                  :key="item.url"
+                >
+                  <v-btn
+                    :href="item.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    density="compact"
+                    class="text-none"
+                  >
+                    <v-icon start size="small">mdi-youtube</v-icon>
+                    {{ item.id.length > 20 ? item.id.substring(0, 20) + '...' : item.id }}
+                    <v-icon end size="small">mdi-open-in-new</v-icon>
+                  </v-btn>
+                </template>
+              </div>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -577,6 +610,7 @@ import type { OfflinerDefinition } from '@/types/offliner'
 import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
+import { generateYouTubeUrls } from '@/utils/youtube'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
@@ -1110,6 +1144,13 @@ const getGraphemeCount = (value: unknown): number => {
     return value.split(byGrapheme).length
   }
   return 0
+}
+
+const getYouTubeUrls = (value: unknown): Array<{ id: string; url: string }> => {
+  if (typeof value === 'string' && value.trim()) {
+    return generateYouTubeUrls(value)
+  }
+  return []
 }
 
 const truncateToMaxGraphemes = (value: string, maxLength: number): string => {
