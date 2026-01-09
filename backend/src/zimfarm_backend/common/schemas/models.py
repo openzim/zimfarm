@@ -105,7 +105,7 @@ def calculate_pagination_metadata(
     limit: int,
     page_size: int,
 ) -> Paginator:
-    page = math.floor(skip / limit) + 1
+    page = math.floor(skip / limit) + 1 if limit > 0 else 1
     if nb_records == 0:
         return Paginator(
             nb_records=0,
