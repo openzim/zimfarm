@@ -1229,7 +1229,6 @@ const handleSubmit = async () => {
 
   // Fetch similar recipes count before showing confirmation dialog
   await fetchSimilarRecipesCount()
-  console.log('similarRecipesCount', similarRecipesCount.value)
 
   // Show confirmation dialog instead of directly submitting
   showConfirmDialog.value = true
