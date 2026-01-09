@@ -113,7 +113,6 @@ watch(
       tags: [...newFilters.tags],
     }
   },
-  { deep: true },
 )
 
 // Computed properties for select options

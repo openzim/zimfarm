@@ -23,6 +23,8 @@
                 clearable
                 hide-details
                 @blur="handleSearchChange"
+                @keyup.enter="handleSearchChange"
+                @click:clear="handleSearchChange"
               />
             </v-col>
             <v-col cols="12" sm="4">
@@ -49,7 +51,6 @@
         :loading-text="loadingStore.loadingText"
         :errors="userStore.errors"
         @limit-changed="handleLimitChange"
-        @load-data="loadData"
       />
     </div>
 
@@ -170,7 +171,7 @@ import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useUserStore } from '@/stores/user'
 import type { User } from '@/types/user'
-import { generatePassword } from '@/utils/browsers'
+import { generatePassword, isFirefoxOnIOS } from '@/utils/browsers'
 
 const roles = constants.ROLES
 
@@ -194,8 +195,13 @@ const error = ref<string | null>(null)
 const searchUsername = ref<string>('')
 const showCreateDialog = ref(false)
 
-// Paginator state (from store)
-const paginator = computed(() => userStore.paginator)
+const paginator = ref({
+  page: 1,
+  page_size: userStore.defaultLimit,
+  skip: 0,
+  limit: userStore.defaultLimit,
+  count: 0,
+})
 
 // Form data
 const form = ref({
@@ -291,6 +297,7 @@ const loadData = async (limit: number, skip: number) => {
   const response = await userStore.fetchUsers(skip, limit, searchUsername.value || undefined)
   if (response) {
     users.value = response
+    paginator.value = { ...userStore.paginator }
     userStore.savePaginatorLimit(limit)
   } else {
     for (const error of userStore.errors) {
@@ -301,7 +308,18 @@ const loadData = async (limit: number, skip: number) => {
 }
 
 const handleSearchChange = async () => {
-  await loadData(paginator.value.limit, 0)
+  paginator.value = {
+    ...paginator.value,
+    page: 1,
+    skip: 0,
+  }
+  const query: Record<string, string> = {}
+  if (searchUsername.value) {
+    query.name = searchUsername.value
+  }
+  router.push({
+    query: Object.keys(query).length > 0 ? query : undefined,
+  })
 }
 
 const closeCreateDialog = () => {
@@ -323,6 +341,13 @@ const generateNewPassword = () => {
 
 const handleLimitChange = async (newLimit: number) => {
   userStore.savePaginatorLimit(newLimit)
+  paginator.value = {
+    ...paginator.value,
+    limit: newLimit,
+    page: 1,
+    skip: 0,
+  }
+  await loadData(newLimit, 0)
 }
 
 // Lifecycle
@@ -339,4 +364,32 @@ watch(showCreateDialog, (newValue) => {
     generateNewPassword()
   }
 })
+
+watch(
+  () => router.currentRoute.value.query,
+  async () => {
+    const query = router.currentRoute.value.query
+    let page = 1
+    if (query.page && typeof query.page === 'string') {
+      const parsedPage = parseInt(query.page, 10)
+      if (!isNaN(parsedPage) && parsedPage > 1) {
+        page = parsedPage
+      }
+    }
+    // Sync search from URL
+    if (query.name && typeof query.name === 'string') {
+      searchUsername.value = query.name
+    } else {
+      searchUsername.value = ''
+    }
+    const newSkip = (page - 1) * paginator.value.limit
+    paginator.value = {
+      ...paginator.value,
+      page: page,
+      skip: newSkip,
+    }
+    await loadData(paginator.value.limit, newSkip)
+  },
+  { deep: true, immediate: true },
+)
 </script>
