@@ -23,7 +23,8 @@
         :items="tasks"
         :loading="loading"
         :loading-text="loadingText"
-        :items-per-page="selectedLimit"
+        :page="props.paginator.page"
+        :items-per-page="props.paginator.limit"
         :items-length="props.paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
@@ -131,7 +132,7 @@
           <RemoveRequestedTaskButton
             v-if="canUnRequestTasks"
             :id="item.id"
-            @requested-task-removed="emit('loadData', selectedLimit, 0)"
+            @requested-task-removed="emit('loadData', props.paginator.limit, 0)"
           />
         </template>
 
@@ -139,7 +140,7 @@
           <CancelTaskButton
             v-if="canCancelTasks"
             :id="item.id"
-            @task-canceled="emit('loadData', selectedLimit, 0)"
+            @task-canceled="emit('loadData', props.paginator.limit, 0)"
           />
         </template>
 
@@ -218,7 +219,11 @@ import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
@@ -240,7 +245,6 @@ const emit = defineEmits<{
 }>()
 
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(props.paginator.limit)
 const loadingSchedules = ref<Record<string, boolean>>({})
 const loadingAllSchedules = ref(false)
 
@@ -250,18 +254,20 @@ const showLoadAllButton = computed(() => {
 })
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
-  //  number is the next number, we need to calculate the skip for the request
-  const page = options.page > 1 ? options.page - 1 : 0
-  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
-}
+  const query = { ...route.query }
 
-watch(
-  () => props.paginator,
-  (newPaginator) => {
-    selectedLimit.value = newPaginator.limit
-  },
-  { immediate: true },
-)
+  if (options.page > 1) {
+    query.page = options.page.toString()
+  } else {
+    delete query.page
+  }
+
+  router.push({ query })
+
+  if (options.itemsPerPage != props.paginator.limit) {
+    emit('limitChanged', options.itemsPerPage)
+  }
+}
 
 function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'

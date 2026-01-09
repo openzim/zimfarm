@@ -13,12 +13,12 @@ export const useScheduleStore = defineStore('schedule', () => {
   const schedule = ref<Schedule | null>(null)
   const errors = ref<string[]>([])
   const schedules = ref<ScheduleLight[]>([])
-  const limit = Number($cookies?.get('schedules-table-limit') || 20)
+  const defaultLimit = ref<number>(Number($cookies?.get('schedules-table-limit') || 20))
   const paginator = ref<Paginator>({
     page: 1,
-    page_size: limit,
+    page_size: defaultLimit.value,
     skip: 0,
-    limit: limit,
+    limit: defaultLimit.value,
     count: 0,
   })
   const authStore = useAuthStore()
@@ -249,6 +249,7 @@ export const useScheduleStore = defineStore('schedule', () => {
 
   return {
     // State
+    defaultLimit,
     schedule,
     schedules,
     paginator,

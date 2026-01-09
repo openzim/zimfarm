@@ -83,6 +83,7 @@
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SchedulesFilter from '@/components/SchedulesFilter.vue'
 import SchedulesTable from '@/components/SchedulesTable.vue'
+import type { Paginator } from '@/types/base'
 import constants from '@/constants'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
@@ -93,7 +94,7 @@ import { useTagStore } from '@/stores/tag'
 import type { ScheduleLight } from '@/types/schedule'
 import { isFirefoxOnIOS } from '@/utils/browsers'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 // Props
 interface Props {
@@ -118,19 +119,42 @@ const headers = [
 
 // Reactive state
 const schedules = ref<ScheduleLight[]>([])
-const paginator = computed(() => scheduleStore.paginator)
 
-const blockUrlUpdates = ref<boolean>(false)
 const ready = ref<boolean>(false)
 
 const errors = ref<string[]>([])
 
-const filters = ref({
-  name: '',
-  categories: [] as string[],
-  languages: [] as string[],
-  tags: [] as string[],
+const filters = computed(() => {
+  const query = router.currentRoute.value.query
+  const derived = {
+    name: '',
+    categories: [] as string[],
+    languages: [] as string[],
+    tags: [] as string[],
+  }
+
+  if (query.name && typeof query.name === 'string') {
+    derived.name = query.name
+  }
+
+  if (query.category) {
+    const categoryValue = Array.isArray(query.category) ? query.category : [query.category]
+    derived.categories = categoryValue.filter((c): c is string => c !== null)
+  }
+
+  if (query.lang) {
+    const langValue = Array.isArray(query.lang) ? query.lang : [query.lang]
+    derived.languages = langValue.filter((l): l is string => l !== null)
+  }
+
+  if (query.tag) {
+    const tagValue = Array.isArray(query.tag) ? query.tag : [query.tag]
+    derived.tags = tagValue.filter((t): t is string => t !== null)
+  }
+
+  return derived
 })
+
 const requestingText = ref<string | null>(null)
 const restoringText = ref<string | null>(null)
 const intervalId = ref<number | null>(null)
@@ -140,6 +164,7 @@ const restoreComment = ref<string>('')
 
 // Stores
 const router = useRouter()
+const route = useRoute()
 const scheduleStore = useScheduleStore()
 const languageStore = useLanguageStore()
 const tagStore = useTagStore()
@@ -151,6 +176,14 @@ const requestedTasksStore = useRequestedTasksStore()
 const languages = computed(() => languageStore.languages)
 const tags = computed(() => tagStore.tags)
 const categories = constants.CATEGORIES
+
+const paginator = ref<Paginator>({
+  page: Number(route.query.page) || 1,
+  page_size: scheduleStore.defaultLimit,
+  skip: 0,
+  limit: scheduleStore.defaultLimit,
+  count: 0,
+})
 
 // Methods
 async function loadData(limit: number, skip: number, hideLoading: boolean = false) {
@@ -168,6 +201,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   )
 
   schedules.value = scheduleStore.schedules
+  paginator.value = { ...scheduleStore.paginator }
   scheduleStore.savePaginatorLimit(limit)
   errors.value = scheduleStore.errors
   for (const error of errors.value) {
@@ -179,24 +213,36 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
 }
 
 async function handleFiltersChange(newFilters: typeof filters.value) {
-  filters.value = newFilters
-  updateUrl()
-  await loadData(paginator.value.limit, 0)
+  updateUrlFilters(newFilters)
 }
 
 async function handleLimitChange(newLimit: number) {
   scheduleStore.savePaginatorLimit(newLimit)
+  // When a limit changes, we can update the data in two ways.
+  // - resetting the paginator page number to 1. The update would be emitted
+  // by the table's onUpdateOptions which updates the route.
+  // - explicitly loading the data. This is useful when we are on the same page
+  // and the table's onUpdateOptions won't make any change in the route.
+  if (paginator.value.page !== 1) {
+    paginator.value = {
+      ...paginator.value,
+      limit: newLimit,
+      page: 1,
+      skip: 0,
+    }
+  } else {
+    await loadData(newLimit, 0)
+  }
 }
 
 async function clearFilters() {
-  filters.value = {
+  const emptyFilters = {
     name: '',
     categories: [],
     languages: [],
     tags: [],
   }
-  updateUrl()
-  await loadData(paginator.value.limit, 0)
+  updateUrlFilters(emptyFilters)
 }
 
 function handleSelectionChanged(newSelection: string[]) {
@@ -279,31 +325,31 @@ function handleRestoreCancel() {
   restoreComment.value = '' // Reset comment when cancelled
 }
 
-function updateUrl() {
-  if (blockUrlUpdates.value || isFirefoxOnIOS()) {
+function updateUrlFilters(sourceFilters: typeof filters.value) {
+  if (isFirefoxOnIOS()) {
     return
   }
 
   // create query object from selected filters
   const query: Record<string, string | string[]> = {}
 
-  if (filters.value.name) {
-    query.name = filters.value.name
+  if (sourceFilters.name) {
+    query.name = sourceFilters.name
   }
-  if (filters.value.categories.length === 1) {
-    query.category = filters.value.categories[0]
-  } else if (filters.value.categories.length > 1) {
-    query.category = filters.value.categories
+  if (sourceFilters.categories.length === 1) {
+    query.category = sourceFilters.categories[0]
+  } else if (sourceFilters.categories.length > 1) {
+    query.category = sourceFilters.categories
   }
-  if (filters.value.languages.length === 1) {
-    query.lang = filters.value.languages[0]
-  } else if (filters.value.languages.length > 1) {
-    query.lang = filters.value.languages
+  if (sourceFilters.languages.length === 1) {
+    query.lang = sourceFilters.languages[0]
+  } else if (sourceFilters.languages.length > 1) {
+    query.lang = sourceFilters.languages
   }
-  if (filters.value.tags.length === 1) {
-    query.tag = filters.value.tags[0]
-  } else if (filters.value.tags.length > 1) {
-    query.tag = filters.value.tags
+  if (sourceFilters.tags.length === 1) {
+    query.tag = sourceFilters.tags[0]
+  } else if (sourceFilters.tags.length > 1) {
+    query.tag = sourceFilters.tags
   }
 
   router.push({
@@ -312,37 +358,13 @@ function updateUrl() {
   })
 }
 
-function loadFiltersFromUrl() {
-  const query = router.currentRoute.value.query
-
-  if (query.name && typeof query.name === 'string') {
-    filters.value.name = query.name
-  }
-
-  if (query.category) {
-    const categoryValue = Array.isArray(query.category) ? query.category : [query.category]
-    filters.value.categories = categoryValue.filter((c): c is string => c !== null)
-  }
-
-  if (query.lang) {
-    const langValue = Array.isArray(query.lang) ? query.lang : [query.lang]
-    filters.value.languages = langValue.filter((l): l is string => l !== null)
-  }
-
-  if (query.tag) {
-    const tagValue = Array.isArray(query.tag) ? query.tag : [query.tag]
-    filters.value.tags = tagValue.filter((t): t is string => t !== null)
-  }
-}
-
 // Lifecycle
 onMounted(async () => {
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
 
-  // Load filters from URL
-  loadFiltersFromUrl()
+  // Filters are derived from the route; no manual load needed
 
   // Set up auto-refresh
   intervalId.value = window.setInterval(async () => {
@@ -362,8 +384,17 @@ onBeforeUnmount(() => {
 // Watch for route changes to update filters
 watch(
   () => router.currentRoute.value.query,
-  () => {
-    loadFiltersFromUrl()
+  async () => {
+    const query = router.currentRoute.value.query
+    let page = 1
+    if (query.page && typeof query.page === 'string') {
+      const parsedPage = parseInt(query.page, 10)
+      if (!isNaN(parsedPage) && parsedPage > 1) {
+        page = parsedPage
+      }
+    }
+    const newSkip = (page - 1) * paginator.value.limit
+    await loadData(paginator.value.limit, newSkip)
   },
   { deep: true, immediate: true },
 )

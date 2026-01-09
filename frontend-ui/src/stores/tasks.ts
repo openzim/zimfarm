@@ -12,12 +12,12 @@ export const useTasksStore = defineStore('tasks', () => {
   const $cookies = inject<VueCookies>('$cookies')
   const task = ref<Task | null>(null)
   const tasks = ref<TaskLight[]>([])
-  const limit = Number($cookies?.get('tasks-table-limit') || 20)
+  const defaultLimit = ref<number>(Number($cookies?.get('tasks-table-limit') || 20))
   const paginator = ref<Paginator>({
     page: 1,
-    page_size: limit,
+    page_size: defaultLimit.value,
     skip: 0,
-    limit: limit,
+    limit: defaultLimit.value,
     count: 0,
   })
   const errors = ref<string[]>([])
@@ -94,7 +94,7 @@ export const useTasksStore = defineStore('tasks', () => {
     tasks,
     paginator,
     errors,
-
+    defaultLimit,
     // Actions
     fetchTasks,
     cancelTask,

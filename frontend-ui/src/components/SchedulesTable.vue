@@ -33,7 +33,8 @@
         :headers="headers"
         :items="schedules"
         :loading="loading"
-        :items-per-page="selectedLimit"
+        :page="paginator.page"
+        :items-per-page="paginator.limit"
         :items-length="paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
@@ -110,7 +111,8 @@
 import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 // Props
 interface Props {
@@ -138,6 +140,9 @@ const props = withDefaults(defineProps<Props>(), {
   showFilters: true,
 })
 
+const router = useRouter()
+const route = useRoute()
+
 // Define emits
 const emit = defineEmits<{
   limitChanged: [limit: number]
@@ -147,7 +152,6 @@ const emit = defineEmits<{
 }>()
 
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(props.paginator.limit)
 
 const selectedSchedules = computed(() => props.selectedSchedules)
 
@@ -162,18 +166,21 @@ const hasActiveFilters = computed(() => {
 })
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
-  // page is 1-indexed, we need to calculate the skip for the request
-  const page = options.page > 1 ? options.page - 1 : 0
-  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
-}
+  const query = { ...route.query }
+  if (options.page > 1) {
+    query.page = options.page.toString()
+  } else {
+    delete query.page
+  }
 
-watch(
-  () => props.paginator,
-  (newPaginator) => {
-    selectedLimit.value = newPaginator.limit
-  },
-  { immediate: true },
-)
+  router.push({ query })
+
+  // Emit limit change when it actually changes as the query would be the
+  // same and we need to reload the data.
+  if (options.itemsPerPage != props.paginator.limit) {
+    emit('limitChanged', options.itemsPerPage)
+  }
+}
 
 function handleSelectionChange(selection: string[]) {
   emit('selectionChanged', selection)

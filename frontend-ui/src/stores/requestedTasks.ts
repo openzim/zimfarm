@@ -14,13 +14,13 @@ import type { VueCookies } from 'vue-cookies'
 
 export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   const $cookies = inject<VueCookies>('$cookies')
-  const limit = Number($cookies?.get('requested-tasks-table-limit') || 20)
+  const defaultLimit = ref<number>(Number($cookies?.get('requested-tasks-table-limit') || 20))
   const requestedTasks = ref<RequestedTaskLight[]>([])
   const paginator = ref<Paginator>({
     page: 1,
-    page_size: limit,
+    page_size: defaultLimit.value,
     skip: 0,
-    limit: limit,
+    limit: defaultLimit.value,
     count: 0,
   })
 
@@ -137,6 +137,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     requestedTasks,
     errors,
     paginator,
+    defaultLimit,
     // Actions
     fetchRequestedTasks,
     removeRequestedTask,
