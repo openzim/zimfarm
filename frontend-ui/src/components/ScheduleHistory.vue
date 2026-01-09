@@ -82,7 +82,12 @@
               </v-chip>
             </div>
 
-            <DiffViewer :differences="scheduleDifferences" />
+            <div v-if="loadingOfflinerDef" class="d-flex justify-center align-center pa-8">
+              <v-progress-circular indeterminate color="primary" />
+              <span class="ml-4">Loading offliner definitions...</span>
+            </div>
+
+            <DiffViewer v-else :differences="enhancedDifferences" />
           </v-card-text>
         </v-card>
       </template>
@@ -103,13 +108,16 @@
 import DiffViewer from '@/components/DiffViewer.vue'
 import { useNotificationStore } from '@/stores/notification'
 import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
+import { useOfflinerStore } from '@/stores/offliner'
 import type { Paginator } from '@/types/base'
 import type { ScheduleHistorySchema } from '@/types/schedule'
+import type { OfflinerDefinition } from '@/types/offliner'
 import { formatDt } from '@/utils/format'
 import type * as DeepDiff from 'deep-diff'
 import { diff } from 'deep-diff'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import type { EnhancedDiff } from '@/utils/diff'
 
 const props = defineProps<{
   history: ScheduleHistorySchema[]
@@ -127,10 +135,14 @@ const route = useRoute()
 const router = useRouter()
 const scheduleHistoryStore = useScheduleHistoryStore()
 const notificationStore = useNotificationStore()
+const offlinerStore = useOfflinerStore()
 
 // New state for multi-selection
 const selectedItems = ref<Set<number>>(new Set())
 const showDiffViewer = ref(false)
+const oldFlagsDefinition = ref<OfflinerDefinition[]>([])
+const newFlagsDefinition = ref<OfflinerDefinition[]>([])
+const loadingOfflinerDef = ref(false)
 
 const selectedItemsArray = computed(() => {
   return Array.from(selectedItems.value)
@@ -171,7 +183,74 @@ const scheduleDifferences = computed(
   },
 )
 
-const toggleHistoryItemSelection = (item: ScheduleHistorySchema, index: number) => {
+// Enhanced differences with blob metadata
+const enhancedDifferences = computed((): EnhancedDiff[] | undefined => {
+  if (!scheduleDifferences.value) {
+    return undefined
+  }
+
+  // Build blob map from both old and new configs
+  const blobMap = new Map<string, 'image' | 'css' | 'html' | 'txt'>()
+  if (selectedItemsArray.value.length === 2) {
+    const oldConfig = selectedItemsArray.value[0].config as { offliner?: Record<string, unknown> }
+    const newConfig = selectedItemsArray.value[1].config as { offliner?: Record<string, unknown> }
+
+    const addBlobsToMap = (
+      config: { offliner?: Record<string, unknown> },
+      definition: OfflinerDefinition[],
+    ) => {
+      if (!config.offliner || !definition.length) return
+
+      for (const field of definition) {
+        if (field.type === 'blob' && field.kind) {
+          const value = config.offliner[field.data_key]
+          if (value && typeof value === 'string') {
+            blobMap.set(value, field.kind)
+          }
+        }
+      }
+    }
+
+    addBlobsToMap(oldConfig, oldFlagsDefinition.value)
+    addBlobsToMap(newConfig, newFlagsDefinition.value)
+  }
+
+  // Enhance each difference with blob metadata
+  return scheduleDifferences.value.map((diff) => {
+    const enhanced: EnhancedDiff = { ...diff }
+
+    // Check if any value in this diff is a blob
+    if (diff.kind === 'E' && (diff.lhs || diff.rhs)) {
+      const oldValue = diff.lhs ? String(diff.lhs) : ''
+      const newValue = diff.rhs ? String(diff.rhs) : ''
+      const oldKind = blobMap.get(oldValue)
+      const newKind = blobMap.get(newValue)
+
+      if (oldKind || newKind) {
+        enhanced.isBlob = true
+        enhanced.blobKind = newKind || oldKind
+      }
+    } else if (diff.kind === 'N' && diff.rhs) {
+      const value = String(diff.rhs)
+      const kind = blobMap.get(value)
+      if (kind) {
+        enhanced.isBlob = true
+        enhanced.blobKind = kind
+      }
+    } else if (diff.kind === 'D' && diff.lhs) {
+      const value = String(diff.lhs)
+      const kind = blobMap.get(value)
+      if (kind) {
+        enhanced.isBlob = true
+        enhanced.blobKind = kind
+      }
+    }
+
+    return enhanced
+  })
+})
+
+const toggleHistoryItemSelection = async (item: ScheduleHistorySchema, index: number) => {
   if (selectedItems.value.has(index)) {
     // Remove from selection
     selectedItems.value.delete(index)
@@ -185,10 +264,66 @@ const toggleHistoryItemSelection = (item: ScheduleHistorySchema, index: number) 
     // Automatically show diff viewer when exactly 2 items are selected
     if (selectedItems.value.size === 2) {
       showDiffViewer.value = true
+      await fetchOfflinerDefinitions()
     }
   }
 
   updateUrlQueryParams()
+}
+
+// Fetch both offliner definitions from the selected schedule history items
+const fetchOfflinerDefinitions = async () => {
+  if (selectedItemsArray.value.length !== 2) {
+    return
+  }
+
+  loadingOfflinerDef.value = true
+  oldFlagsDefinition.value = []
+  newFlagsDefinition.value = []
+
+  try {
+    // Get offliner info from both history items
+    const oldItem = selectedItemsArray.value[0]
+    const newItem = selectedItemsArray.value[1]
+
+    const oldConfig = oldItem.config as { offliner?: { offliner_id?: string } }
+    const newConfig = newItem.config as { offliner?: { offliner_id?: string } }
+
+    const oldOfflinerName = oldConfig?.offliner?.offliner_id
+    const newOfflinerName = newConfig?.offliner?.offliner_id
+
+    if (!oldOfflinerName && !newOfflinerName) {
+      console.warn('No offliner_id found in either history item')
+      return
+    }
+
+    if (oldOfflinerName && oldItem.offliner_definition_version) {
+      const version = oldItem.offliner_definition_version
+      const response = await offlinerStore.fetchOfflinerDefinitionByVersion(
+        oldOfflinerName,
+        version,
+      )
+      if (response) {
+        oldFlagsDefinition.value = response.flags
+      }
+    }
+
+    if (newOfflinerName && newItem.offliner_definition_version) {
+      const version = newItem.offliner_definition_version
+      const response = await offlinerStore.fetchOfflinerDefinitionByVersion(
+        newOfflinerName,
+        version,
+      )
+      if (response) {
+        newFlagsDefinition.value = response.flags
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch offliner definitions:', err)
+    notificationStore.showError('Failed to load offliner definitions for blob comparison')
+  } finally {
+    loadingOfflinerDef.value = false
+  }
 }
 
 const updateUrlQueryParams = () => {
@@ -230,6 +365,7 @@ const selectHistoryEntriesFromUrl = async () => {
   if (index1 !== -1 && index2 !== -1) {
     selectedItems.value = new Set([index1, index2])
     showDiffViewer.value = true
+    await fetchOfflinerDefinitions()
     return
   }
 
@@ -257,6 +393,7 @@ const selectHistoryEntriesFromUrl = async () => {
       if (newIndex1 !== -1 && newIndex2 !== -1) {
         selectedItems.value = new Set([newIndex1, newIndex2])
         showDiffViewer.value = true
+        await fetchOfflinerDefinitions()
       } else {
         notificationStore.showError('Failed to find history entries after fetching')
       }
@@ -296,7 +433,7 @@ watch(
 )
 
 // Initialize selection from URL on mount
-onMounted(() => {
-  selectHistoryEntriesFromUrl()
+onMounted(async () => {
+  await selectHistoryEntriesFromUrl()
 })
 </script>
