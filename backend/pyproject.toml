@@ -29,7 +29,7 @@ dependencies = [
     "jinja2 == 3.1.6",
     "kiwixstorage == 0.10.1",
     "psycopg[binary,pool] == 3.2.9",
-    "Werkzeug == 3.1.4",
+    "Werkzeug == 3.1.5",
     "cryptography == 45.0.3",
     "pycountry == 24.6.1",
     "regex == 2025.9.1"
