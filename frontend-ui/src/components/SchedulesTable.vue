@@ -34,7 +34,7 @@
         :items="schedules"
         :loading="loading"
         :page="paginator.page"
-        :items-per-page="selectedLimit"
+        :items-per-page="paginator.limit"
         :items-length="paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
@@ -111,7 +111,7 @@
 import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // Props
@@ -152,7 +152,6 @@ const emit = defineEmits<{
 }>()
 
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(props.paginator.limit)
 
 const selectedSchedules = computed(() => props.selectedSchedules)
 
@@ -168,25 +167,21 @@ const hasActiveFilters = computed(() => {
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
+  const limitChanged = options.itemsPerPage !== props.paginator.limit
+
   if (options.page > 1) {
     query.page = options.page.toString()
   } else {
     delete query.page
   }
+
   router.push({ query })
 
-  // // page is 1-indexed, we need to calculate the skip for the request
-  // const page = options.page > 1 ? options.page - 1 : 0
-  // emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
+  // Only emit limit change when it actually changes
+  if (limitChanged) {
+    emit('limitChanged', options.itemsPerPage)
+  }
 }
-
-watch(
-  () => props.paginator,
-  (newPaginator) => {
-    selectedLimit.value = newPaginator.limit
-  },
-  { immediate: true },
-)
 
 function handleSelectionChange(selection: string[]) {
   emit('selectionChanged', selection)

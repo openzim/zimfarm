@@ -119,17 +119,42 @@ const headers = [
 
 // Reactive state
 const schedules = ref<ScheduleLight[]>([])
-const blockUrlUpdates = ref<boolean>(false)
+
 const ready = ref<boolean>(false)
 
 const errors = ref<string[]>([])
 
-const filters = ref({
-  name: '',
-  categories: [] as string[],
-  languages: [] as string[],
-  tags: [] as string[],
+const filters = computed(() => {
+  const query = router.currentRoute.value.query
+  const derived = {
+    name: '',
+    categories: [] as string[],
+    languages: [] as string[],
+    tags: [] as string[],
+  }
+
+  if (query.name && typeof query.name === 'string') {
+    derived.name = query.name
+  }
+
+  if (query.category) {
+    const categoryValue = Array.isArray(query.category) ? query.category : [query.category]
+    derived.categories = categoryValue.filter((c): c is string => c !== null)
+  }
+
+  if (query.lang) {
+    const langValue = Array.isArray(query.lang) ? query.lang : [query.lang]
+    derived.languages = langValue.filter((l): l is string => l !== null)
+  }
+
+  if (query.tag) {
+    const tagValue = Array.isArray(query.tag) ? query.tag : [query.tag]
+    derived.tags = tagValue.filter((t): t is string => t !== null)
+  }
+
+  return derived
 })
+
 const requestingText = ref<string | null>(null)
 const restoringText = ref<string | null>(null)
 const intervalId = ref<number | null>(null)
@@ -187,24 +212,38 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
 }
 
 async function handleFiltersChange(newFilters: typeof filters.value) {
-  filters.value = newFilters
-  paginator.value.skip = 0
-  updateUrlFilters()
+  paginator.value = {
+    ...paginator.value,
+    skip: 0,
+    page: 1,
+  }
+  updateUrlFilters(newFilters)
 }
 
 async function handleLimitChange(newLimit: number) {
   scheduleStore.savePaginatorLimit(newLimit)
+  paginator.value = {
+    ...paginator.value,
+    limit: newLimit,
+    page: 1,
+    skip: 0,
+  }
+  await loadData(newLimit, 0)
 }
 
 async function clearFilters() {
-  filters.value = {
+  const emptyFilters = {
     name: '',
     categories: [],
     languages: [],
     tags: [],
   }
-  paginator.value.skip = 0
-  updateUrlFilters()
+  paginator.value = {
+    ...paginator.value,
+    skip: 0,
+    page: 1,
+  }
+  updateUrlFilters(emptyFilters)
 }
 
 function handleSelectionChanged(newSelection: string[]) {
@@ -287,31 +326,31 @@ function handleRestoreCancel() {
   restoreComment.value = '' // Reset comment when cancelled
 }
 
-function updateUrlFilters() {
-  if (blockUrlUpdates.value || isFirefoxOnIOS()) {
+function updateUrlFilters(sourceFilters: typeof filters.value) {
+  if (isFirefoxOnIOS()) {
     return
   }
 
   // create query object from selected filters
   const query: Record<string, string | string[]> = {}
 
-  if (filters.value.name) {
-    query.name = filters.value.name
+  if (sourceFilters.name) {
+    query.name = sourceFilters.name
   }
-  if (filters.value.categories.length === 1) {
-    query.category = filters.value.categories[0]
-  } else if (filters.value.categories.length > 1) {
-    query.category = filters.value.categories
+  if (sourceFilters.categories.length === 1) {
+    query.category = sourceFilters.categories[0]
+  } else if (sourceFilters.categories.length > 1) {
+    query.category = sourceFilters.categories
   }
-  if (filters.value.languages.length === 1) {
-    query.lang = filters.value.languages[0]
-  } else if (filters.value.languages.length > 1) {
-    query.lang = filters.value.languages
+  if (sourceFilters.languages.length === 1) {
+    query.lang = sourceFilters.languages[0]
+  } else if (sourceFilters.languages.length > 1) {
+    query.lang = sourceFilters.languages
   }
-  if (filters.value.tags.length === 1) {
-    query.tag = filters.value.tags[0]
-  } else if (filters.value.tags.length > 1) {
-    query.tag = filters.value.tags
+  if (sourceFilters.tags.length === 1) {
+    query.tag = sourceFilters.tags[0]
+  } else if (sourceFilters.tags.length > 1) {
+    query.tag = sourceFilters.tags
   }
 
   router.push({
@@ -320,60 +359,13 @@ function updateUrlFilters() {
   })
 }
 
-function loadFiltersFromUrl() {
-  const query = router.currentRoute.value.query
-  const newFilters = {
-    name: '',
-    categories: [] as string[],
-    languages: [] as string[],
-    tags: [] as string[],
-  }
-
-  if (query.name && typeof query.name === 'string') {
-    newFilters.name = query.name
-  }
-
-  if (query.category) {
-    const categoryValue = Array.isArray(query.category) ? query.category : [query.category]
-
-    newFilters.categories = categoryValue.filter((c): c is string => c !== null)
-  }
-
-  if (query.lang) {
-    const langValue = Array.isArray(query.lang) ? query.lang : [query.lang]
-    newFilters.languages = langValue.filter((l): l is string => l !== null)
-  }
-
-  if (query.tag) {
-    const tagValue = Array.isArray(query.tag) ? query.tag : [query.tag]
-    newFilters.tags = tagValue.filter((t): t is string => t !== null)
-  }
-
-  let page = 1
-  if (query.page && typeof query.page === 'string') {
-    const parsedPage = parseInt(query.page, 10)
-    if (!isNaN(parsedPage) && parsedPage > 1) {
-      page = parsedPage
-    }
-  }
-
-  paginator.value = {
-    ...paginator.value,
-    page: page,
-    skip: (page - 1) * paginator.value.limit,
-  }
-
-  filters.value = newFilters
-}
-
 // Lifecycle
 onMounted(async () => {
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
 
-  // Load filters and paginator from URL
-  loadFiltersFromUrl()
+  // Filters are derived from the route; no manual load needed
 
   // Set up auto-refresh
   intervalId.value = window.setInterval(async () => {
@@ -394,8 +386,21 @@ onBeforeUnmount(() => {
 watch(
   () => router.currentRoute.value.query,
   async () => {
-    loadFiltersFromUrl()
-    await loadData(paginator.value.limit, paginator.value.skip)
+    const query = router.currentRoute.value.query
+    let page = 1
+    if (query.page && typeof query.page === 'string') {
+      const parsedPage = parseInt(query.page, 10)
+      if (!isNaN(parsedPage) && parsedPage > 1) {
+        page = parsedPage
+      }
+    }
+    const newSkip = (page - 1) * paginator.value.limit
+    paginator.value = {
+      ...paginator.value,
+      page: page,
+      skip: newSkip,
+    }
+    await loadData(paginator.value.limit, newSkip)
   },
   { deep: true, immediate: true },
 )
