@@ -31,8 +31,9 @@
         :headers="workerHeaders"
         :items="combinedItems"
         :loading="loading"
-        :items-per-page="selectedLimit"
-        :items-length="props.paginator.count"
+        :page="paginator.page"
+        :items-per-page="paginator.limit"
+        :items-length="paginator.count"
         :items-per-page-options="limits"
         class="elevation-1 combined-table"
         item-key="id"
@@ -243,6 +244,7 @@ import { formatDt, fromNow } from '@/utils/format'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import type { VueCookies } from 'vue-cookies'
 import { useTheme } from 'vuetify'
+import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps<{
   workerHeaders: { title: string; value: string }[]
@@ -256,12 +258,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   limitChanged: [limit: number]
-  loadData: [limit: number, skip: number]
   toggleWorkersList: []
 }>()
 
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(props.paginator.limit)
+const router = useRouter()
+const route = useRoute()
 const expanded = ref<string[]>([])
 const theme = useTheme()
 
@@ -312,17 +314,20 @@ watch(
 )
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
-  const page = options.page > 1 ? options.page - 1 : 0
-  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
-}
+  const query = { ...route.query }
 
-watch(
-  () => props.paginator,
-  (newPaginator) => {
-    selectedLimit.value = newPaginator.limit
-  },
-  { immediate: true },
-)
+  if (options.page > 1) {
+    query.page = options.page.toString()
+  } else {
+    delete query.page
+  }
+
+  router.push({ query })
+
+  if (options.itemsPerPage != props.paginator.limit) {
+    emit('limitChanged', options.itemsPerPage)
+  }
+}
 
 // Build a combined flat list of rows (workers and their tasks) with a `kind` discriminator
 type CombinedWorkerItem = Worker & { kind: 'worker'; id: string }

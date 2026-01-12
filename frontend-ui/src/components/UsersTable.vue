@@ -5,8 +5,9 @@
         :headers="headers"
         :items="users"
         :loading="loading"
-        :items-per-page="selectedLimit"
-        :items-length="props.paginator.count"
+        :page="paginator.page"
+        :items-per-page="paginator.limit"
+        :items-length="paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
         item-key="username"
@@ -58,7 +59,7 @@
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import type { Paginator } from '@/types/base'
 import type { User } from '@/types/user'
-import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps<{
   headers: { title: string; key: string; sortable?: boolean }[]
@@ -71,25 +72,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   limitChanged: [limit: number]
-  loadData: [limit: number, skip: number]
 }>()
 
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(props.paginator.limit)
+const router = useRouter()
+const route = useRoute()
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
-  // Calculate the skip for the request
-  const page = options.page > 1 ? options.page - 1 : 0
-  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
-}
+  const query = { ...route.query }
 
-watch(
-  () => props.paginator,
-  (newPaginator) => {
-    selectedLimit.value = newPaginator.limit
-  },
-  { immediate: true },
-)
+  if (options.page > 1) {
+    query.page = options.page.toString()
+  } else {
+    delete query.page
+  }
+
+  router.push({ query })
+
+  if (options.itemsPerPage != props.paginator.limit) {
+    emit('limitChanged', options.itemsPerPage)
+  }
+}
 
 const getRoleColor = (role: string): string => {
   const colorMap: Record<string, string> = {

@@ -32,11 +32,21 @@ import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTasksStore } from '@/stores/tasks'
-import type { MostRecentTask } from '@/types/base'
+import type { Paginator, MostRecentTask } from '@/types/base'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
+const requestedTasksStore = useRequestedTasksStore()
+const tasksStore = useTasksStore()
+const authStore = useAuthStore()
+const loadingStore = useLoadingStore()
+const scheduleStore = useScheduleStore()
+const notificationStore = useNotificationStore()
 
 // Filter options
 const filterOptions = [
@@ -87,69 +97,42 @@ const headers = computed(() => {
   }
 })
 
-const props = withDefaults(
-  defineProps<{
-    filter?: string
-  }>(),
-  {
-    filter: new URLSearchParams(window.location.search).get('filter') || 'todo',
-  },
-)
+const currentFilter = computed(() => {
+  const filter = route.query.filter
+  return (Array.isArray(filter) ? filter[0] : filter) || 'todo'
+})
 
 const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
 
-const currentFilter = ref(props.filter)
 const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
-const paginator = computed(() => {
-  switch (currentFilter.value) {
-    case 'todo':
-      return requestedTasksStore.paginator
-    case 'doing':
-    case 'done':
-    case 'failed':
-      return tasksStore.paginator
-    default:
-      return tasksStore.paginator
-  }
+const defaultLimit = computed(() =>
+  currentFilter.value == 'todo' ? requestedTasksStore.defaultLimit : tasksStore.defaultLimit,
+)
+const paginator = ref<Paginator>({
+  page: Number(route.query.page) || 1,
+  page_size: defaultLimit.value,
+  skip: 0,
+  limit: defaultLimit.value,
+  count: 0,
 })
 const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
-
-const router = useRouter()
-
-const requestedTasksStore = useRequestedTasksStore()
-const tasksStore = useTasksStore()
-const authStore = useAuthStore()
-const loadingStore = useLoadingStore()
-const scheduleStore = useScheduleStore()
-const notificationStore = useNotificationStore()
 
 const canUnRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'delete'))
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
 
 const handleFilterChange = (newFilter: string) => {
-  currentFilter.value = newFilter
-
   // Navigate to the new filter route
   router.push({
     query: {
-      ...router.currentRoute.value.query,
       filter: newFilter,
     },
   })
 }
 
-// Watch for filter changes and load data
-watch(currentFilter, async (newFilter) => {
-  if (intervalId.value) {
-    clearInterval(intervalId.value)
-  }
-  // Clear last runs when switching filters
+// Clear last runs when switching filters
+watch(currentFilter, () => {
   schedulesLastRuns.value = {}
-  await loadData(paginator.value.limit, paginator.value.skip, newFilter)
-  intervalId.value = window.setInterval(async () => {
-    await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value, true)
-  }, 60000)
 })
 
 async function loadData(
@@ -172,6 +155,7 @@ async function loadData(
       tasks.value = requestedTasksStore.requestedTasks
       errors.value = requestedTasksStore.errors
       requestedTasksStore.savePaginatorLimit(limit)
+      paginator.value = { ...requestedTasksStore.paginator }
       break
     case 'doing':
       await tasksStore.fetchTasks({
@@ -182,18 +166,21 @@ async function loadData(
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
+      paginator.value = { ...tasksStore.paginator }
       break
     case 'done':
       await tasksStore.fetchTasks({ limit, skip, status: ['succeeded'] })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
+      paginator.value = { ...tasksStore.paginator }
       break
     case 'failed':
       await tasksStore.fetchTasks({ limit, skip, status: ['scraper_killed', 'failed', 'canceled'] })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
+      paginator.value = { ...tasksStore.paginator }
       break
     default:
       throw new Error(`Invalid filter: ${filter}`)
@@ -241,8 +228,35 @@ async function handleLimitChange(newLimit: number) {
       tasksStore.savePaginatorLimit(newLimit)
       break
   }
+
+  if (paginator.value.page != 1) {
+    paginator.value = {
+      ...paginator.value,
+      limit: newLimit,
+      page: 1,
+      skip: 0,
+    }
+  } else {
+    await loadData(newLimit, 0, currentFilter.value)
+  }
 }
 
+watch(
+  () => router.currentRoute.value.query,
+  async () => {
+    const query = router.currentRoute.value.query
+    let page = 1
+    if (query.page && typeof query.page === 'string') {
+      const parsedPage = parseInt(query.page, 10)
+      if (!isNaN(parsedPage) && parsedPage > 1) {
+        page = parsedPage
+      }
+    }
+    const newSkip = (page - 1) * paginator.value.limit
+    await loadData(paginator.value.limit, newSkip)
+  },
+  { deep: true, immediate: true },
+)
 onMounted(async () => {
   intervalId.value = window.setInterval(async () => {
     await loadData(paginator.value.limit, paginator.value.skip, currentFilter.value, true)

@@ -84,7 +84,6 @@
       :errors="errors"
       :toggle-text="toggleText"
       @limit-changed="handleLimitChange"
-      @load-data="loadData"
       @toggle-workers-list="toggleWorkersList"
     />
 
@@ -103,7 +102,8 @@ import { useWorkersStore } from '@/stores/workers'
 import type { TaskLight } from '@/types/tasks'
 import { formattedBytesSize } from '@/utils/format'
 
-import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import type { VueCookies } from 'vue-cookies'
 
 const $cookies = inject<VueCookies>('$cookies')
@@ -113,6 +113,8 @@ const workersStore = useWorkersStore()
 const tasksStore = useTasksStore()
 const notificationStore = useNotificationStore()
 const loadingStore = useLoadingStore()
+const router = useRouter()
+const route = useRoute()
 
 // Reactive state
 const errors = ref<string[]>([])
@@ -128,7 +130,13 @@ const workerHeaders = [
 ]
 
 const workers = computed(() => workersStore.workers)
-const paginator = computed(() => workersStore.paginator)
+const paginator = ref({
+  page: Number(route.query.page) || 1,
+  page_size: workersStore.defaultLimit,
+  skip: 0,
+  limit: workersStore.defaultLimit,
+  count: 0,
+})
 
 // Computed properties
 const onlineWorkers = computed(() => workers.value.filter((worker) => worker.status === 'online'))
@@ -247,6 +255,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
     loadingStore.startLoading('Fetching workers...')
   }
   await workersStore.fetchWorkers({ limit, skip, hide_offlines: !showingAll.value })
+  paginator.value = { ...workersStore.paginator }
   workersStore.savePaginatorLimit(limit)
   errors.value = workersStore.errors
   for (const error of errors.value) {
@@ -260,6 +269,16 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
 
 async function handleLimitChange(newLimit: number) {
   workersStore.savePaginatorLimit(newLimit)
+  if (paginator.value.page != 1) {
+    paginator.value = {
+      ...paginator.value,
+      limit: newLimit,
+      page: 1,
+      skip: 0,
+    }
+  } else {
+    await loadData(newLimit, 0, false)
+  }
 }
 
 // Lifecycle
@@ -274,4 +293,20 @@ onBeforeUnmount(() => {
     clearInterval(intervalId.value)
   }
 })
+watch(
+  () => router.currentRoute.value.query,
+  async () => {
+    const query = router.currentRoute.value.query
+    let page = 1
+    if (query.page && typeof query.page === 'string') {
+      const parsedPage = parseInt(query.page, 10)
+      if (!isNaN(parsedPage) && parsedPage > 1) {
+        page = parsedPage
+      }
+    }
+    const newSkip = (page - 1) * paginator.value.limit
+    await loadData(paginator.value.limit, newSkip)
+  },
+  { deep: true, immediate: true },
+)
 </script>
