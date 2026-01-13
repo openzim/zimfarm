@@ -60,37 +60,37 @@ const headers = computed(() => {
   switch (currentFilter.value) {
     case 'todo':
       return [
-        { title: 'Schedule', value: 'schedule_name' },
-        { title: 'Requested', value: 'requested' },
-        { title: 'By', value: 'requested_by' },
-        { title: 'Resources', value: 'resources' },
-        { title: 'Worker', value: 'worker' },
-        canUnRequestTasks.value ? { title: 'Remove', value: 'remove' } : null,
+        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Requested', value: 'requested', sortable: false },
+        { title: 'By', value: 'requested_by', sortable: false },
+        { title: 'Resources', value: 'resources', sortable: false },
+        { title: 'Worker', value: 'worker', sortable: false },
+        canUnRequestTasks.value ? { title: 'Remove', value: 'remove', sortable: false } : null,
       ].filter(Boolean) as { title: string; value: string }[]
     case 'doing':
       return [
-        { title: 'Schedule', value: 'schedule_name' },
-        { title: 'Started', value: 'started' },
-        { title: 'By', value: 'requested_by' },
-        { title: 'Resources', value: 'resources' },
-        { title: 'Worker', value: 'worker' },
-        canUnRequestTasks.value ? { title: 'Cancel', value: 'cancel' } : null,
+        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Started', value: 'started', sortable: false },
+        { title: 'By', value: 'requested_by', sortable: false },
+        { title: 'Resources', value: 'resources', sortable: false },
+        { title: 'Worker', value: 'worker', sortable: false },
+        canUnRequestTasks.value ? { title: 'Cancel', value: 'cancel', sortable: false } : null,
       ].filter(Boolean) as { title: string; value: string }[]
     case 'done':
       return [
-        { title: 'Schedule', value: 'schedule_name' },
-        { title: 'Completed', value: 'completed' },
-        { title: 'Worker', value: 'worker' },
-        { title: 'Duration', value: 'duration' },
+        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Completed', value: 'completed', sortable: false },
+        { title: 'Worker', value: 'worker', sortable: false },
+        { title: 'Duration', value: 'duration', sortable: false },
       ]
     case 'failed':
       return [
-        { title: 'Schedule', value: 'schedule_name' },
-        { title: 'Stopped', value: 'stopped' },
-        { title: 'Worker', value: 'worker' },
-        { title: 'Duration', value: 'duration' },
-        { title: 'Status', value: 'status' },
-        { title: 'Last Run', value: 'last_run' },
+        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Stopped', value: 'stopped', sortable: false },
+        { title: 'Worker', value: 'worker', sortable: false },
+        { title: 'Duration', value: 'duration', sortable: false },
+        { title: 'Status', value: 'status', sortable: false },
+        { title: 'Last Run', value: 'last_run', sortable: false },
       ]
     default:
       return []

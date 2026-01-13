@@ -344,162 +344,192 @@
       </v-col>
     </v-row>
 
-    <v-table v-if="flagsFields.length > 0" class="flags-table">
-      <tbody>
-        <tr v-for="field in flagsFields" :key="field.dataKey">
-          <th class="w-25 align-top pa-4 font-weight-bold">
+    <div v-if="flagsFields.length > 0">
+      <v-row v-for="field in flagsFields" :key="field.dataKey" no-gutters class="py-2">
+        <v-col
+          cols="12"
+          md="3"
+          :class="[
+            'align-self-start',
+            'pt-2',
+            {
+              'd-none d-md-block':
+                [
+                  'text',
+                  'number',
+                  'url',
+                  'email',
+                  'blob',
+                  'select',
+                  'multiselect',
+                  'textarea',
+                  'color',
+                ].includes(field.component) || field.component === undefined,
+            },
+          ]"
+        >
+          <div class="text-subtitle-2">
             {{ field.label }}
             <span v-if="field.required" class="text-red font-weight-bold text-subtitle-1">*</span>
-          </th>
-          <td class="align-top py-2">
-            <SwitchButton
-              v-if="field.component === 'switch'"
-              v-model="editFlags[field.dataKey]"
-              density="compact"
-              :details="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-select
-              v-else-if="field.component === 'multiselect'"
-              v-model="editFlags[field.dataKey]"
-              :items="field.options"
-              multiple
-              chips
-              closable-chips
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'eager blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-select
-              v-else-if="field.component === 'select'"
-              v-model="editFlags[field.dataKey]"
-              :items="field.options"
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-text-field
-              v-else-if="field.component === 'number'"
-              v-model.trim="editFlags[field.dataKey]"
-              type="number"
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              :step="field.step"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-text-field
-              v-else-if="field.component === 'url'"
-              v-model.trim="editFlags[field.dataKey]"
-              type="url"
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-text-field
-              v-else-if="field.component === 'email'"
-              v-model.trim="editFlags[field.dataKey]"
-              type="email"
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-color-input
-              v-else-if="field.component === 'color'"
-              color-pip
-              pip-variant="flat"
-              v-model.trim="editFlags[field.dataKey]"
-              density="compact"
-              variant="outlined"
-              mode="hex"
-              :modes="['hex']"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            />
-            <v-textarea
-              v-else-if="field.component === 'textarea'"
-              :model-value="editFlags[field.dataKey]"
-              @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              auto-grow
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            >
-              <template v-if="field.max_length" #counter>
-                {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
-              </template>
-            </v-textarea>
-            <BlobEditor
-              v-else-if="field.component === 'blob'"
-              v-model="editFlags[field.dataKey]"
-              :label="field.label"
-              :kind="field.kind"
-              :required="field.required"
-              :description="field.description ?? undefined"
-              :schedule-name="schedule.name"
-              :flag-key="field.key"
-            />
-            <v-text-field
-              v-else
-              :model-value="editFlags[field.dataKey]"
-              @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
-              density="compact"
-              variant="outlined"
-              :placeholder="field.placeholder"
-              :required="field.required"
-              :rules="getFieldRules(field)"
-              :hide-details="'auto'"
-              :validate-on="'blur'"
-              :hint="field.description ?? undefined"
-              persistent-hint
-            >
-              <template v-if="field.max_length" #counter>
-                {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
-              </template>
-            </v-text-field>
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
+          </div>
+        </v-col>
+        <v-col cols="12" md="9">
+          <SwitchButton
+            v-if="field.component === 'switch'"
+            v-model="editFlags[field.dataKey]"
+            density="compact"
+            :details="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-select
+            v-else-if="field.component === 'multiselect'"
+            v-model="editFlags[field.dataKey]"
+            :items="field.options"
+            multiple
+            chips
+            closable-chips
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'eager blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-select
+            v-else-if="field.component === 'select'"
+            v-model="editFlags[field.dataKey]"
+            :items="field.options"
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-text-field
+            v-else-if="field.component === 'number'"
+            v-model.trim="editFlags[field.dataKey]"
+            type="number"
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            :step="field.step"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-text-field
+            v-else-if="field.component === 'url'"
+            v-model.trim="editFlags[field.dataKey]"
+            type="url"
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-text-field
+            v-else-if="field.component === 'email'"
+            v-model.trim="editFlags[field.dataKey]"
+            type="email"
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-color-input
+            v-else-if="field.component === 'color'"
+            color-pip
+            pip-variant="flat"
+            v-model.trim="editFlags[field.dataKey]"
+            density="compact"
+            variant="outlined"
+            mode="hex"
+            :modes="['hex']"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          />
+          <v-textarea
+            v-else-if="field.component === 'textarea'"
+            :model-value="editFlags[field.dataKey]"
+            @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            auto-grow
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          >
+            <template v-if="field.max_length" #counter>
+              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
+            </template>
+          </v-textarea>
+          <BlobEditor
+            v-else-if="field.component === 'blob'"
+            v-model="editFlags[field.dataKey]"
+            :label="field.label"
+            :kind="field.kind"
+            :required="field.required"
+            :description="field.description ?? undefined"
+            :schedule-name="schedule.name"
+            :flag-key="field.key"
+          />
+          <v-text-field
+            v-else
+            :model-value="editFlags[field.dataKey]"
+            @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
+            density="compact"
+            variant="outlined"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
+            :placeholder="field.placeholder"
+            :required="field.required"
+            :rules="getFieldRules(field)"
+            :hide-details="'auto'"
+            :validate-on="'blur'"
+            :hint="field.description ?? undefined"
+            persistent-hint
+          >
+            <template v-if="field.max_length" #counter>
+              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
+            </template>
+          </v-text-field>
+        </v-col>
+        <v-divider class="mt-1"></v-divider>
+      </v-row>
+    </div>
 
     <div class="d-flex flex-column flex-sm-row justify-end ga-2">
       <v-btn
@@ -612,6 +642,7 @@ import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 
 interface FlagField {
   label: string
@@ -656,6 +687,7 @@ const emit = defineEmits<Emits>()
 // Stores
 const scheduleStore = useScheduleStore()
 const notificationStore = useNotificationStore()
+const { smAndDown } = useDisplay()
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

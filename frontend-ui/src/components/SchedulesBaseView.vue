@@ -92,7 +92,6 @@ import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTagStore } from '@/stores/tag'
 import type { ScheduleLight } from '@/types/schedule'
-import { isFirefoxOnIOS } from '@/utils/browsers'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -109,12 +108,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Define headers for the table
 const headers = [
-  { title: 'Name', value: 'name' },
-  { title: 'Category', value: 'category' },
-  { title: 'Language', value: 'language' },
-  { title: 'Offliner', value: 'offliner' },
-  { title: 'Requested', value: 'requested' },
-  { title: 'Last Task', value: 'last_task' },
+  { title: 'Name', value: 'name', sortable: false },
+  { title: 'Category', value: 'category', sortable: false },
+  { title: 'Language', value: 'language', sortable: false },
+  { title: 'Offliner', value: 'offliner', sortable: false },
+  { title: 'Requested', value: 'requested', sortable: false },
+  { title: 'Last Task', value: 'last_task', sortable: false },
 ]
 
 // Reactive state
@@ -326,10 +325,6 @@ function handleRestoreCancel() {
 }
 
 function updateUrlFilters(sourceFilters: typeof filters.value) {
-  if (isFirefoxOnIOS()) {
-    return
-  }
-
   // create query object from selected filters
   const query: Record<string, string | string[]> = {}
 

@@ -2,9 +2,9 @@
   <v-container class="py-8">
     <v-row justify="center">
       <v-col cols="12" md="10" lg="8">
-        <v-card class="pa-6" elevation="2">
-          <v-card-title class="d-flex align-center mb-4">
-            <h2 class="text-h4 font-weight-bold">Support Zimfarm</h2>
+        <v-card class="pa-4 pa-sm-6" elevation="2">
+          <v-card-title class="d-flex align-center mb-4 flex-wrap">
+            <h2 class="text-h5 text-sm-h4 font-weight-bold">Support Zimfarm</h2>
             <img src="/assets/logo.svg" width="32" height="32" class="ml-2" alt="Zimfarm Logo" />
           </v-card-title>
 
@@ -27,9 +27,11 @@
             </p>
 
             <v-card variant="outlined" class="mb-4">
-              <v-card-title class="text-h6">
+              <v-card-title
+                class="text-subtitle-1 text-sm-h6 font-weight-bold d-flex align-center flex-wrap"
+              >
                 <v-icon class="mr-2">mdi-heart</v-icon>
-                Support with Donations
+                <span>Support with Donations</span>
               </v-card-title>
               <v-card-text>
                 <p class="mb-0">
@@ -49,9 +51,9 @@
             </v-card>
 
             <v-card variant="flat" class="mb-2">
-              <v-card-title class="text-h6 d-flex align-center">
+              <v-card-title class="text-subtitle-1 text-sm-h6 d-flex align-center flex-wrap">
                 <v-icon class="mr-2">mdi-server</v-icon>
-                Donate a Worker
+                <span>Donate a Worker</span>
               </v-card-title>
               <v-card-text>
                 <p>
@@ -106,9 +108,3 @@
 </template>
 
 <script setup lang="ts"></script>
-
-<style scoped>
-.v-card-title h2 {
-  margin: 0;
-}
-</style>

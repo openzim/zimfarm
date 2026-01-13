@@ -115,41 +115,61 @@
                       </v-card-text>
                     </v-card>
 
-                    <!-- SSH Keys Table -->
+                    <!-- SSH Keys List -->
                     <v-card v-if="user.ssh_keys && user.ssh_keys.length" variant="outlined">
                       <v-card-title class="text-subtitle-1">
                         <v-icon class="mr-2">mdi-key</v-icon>
                         SSH Keys
                       </v-card-title>
                       <v-card-text>
-                        <v-table density="compact">
-                          <thead>
-                            <tr>
-                              <th>SSH Key</th>
-                              <th>Fingerprint</th>
-                              <th v-if="canSSHKeyUsers">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="sshKey in user.ssh_keys" :key="sshKey.name">
-                              <td>{{ sshKey.name }}</td>
-                              <td>
-                                <code>{{ sshKey.fingerprint }}</code>
-                              </td>
-                              <td v-if="canSSHKeyUsers">
-                                <v-btn
-                                  color="error"
-                                  size="small"
-                                  variant="outlined"
-                                  @click="confirmDelete(sshKey)"
-                                >
-                                  <v-icon size="small" class="mr-1">mdi-delete</v-icon>
-                                  Delete
-                                </v-btn>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </v-table>
+                        <!-- Header (visible on md and up) -->
+                        <div
+                          class="d-none d-md-flex font-weight-medium text-body-2 pb-2 mb-2 border-b"
+                        >
+                          <div class="flex-grow-1" style="flex-basis: 30%">SSH Key</div>
+                          <div class="flex-grow-1" style="flex-basis: 50%">Fingerprint</div>
+                          <div v-if="canSSHKeyUsers" style="flex-basis: 20%; min-width: 120px">
+                            Actions
+                          </div>
+                        </div>
+
+                        <!-- SSH Keys Items -->
+                        <div
+                          v-for="sshKey in user.ssh_keys"
+                          :key="sshKey.name"
+                          class="d-flex flex-column flex-md-row align-start align-md-center py-3 border-b"
+                        >
+                          <!-- SSH Key Name -->
+                          <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 30%">
+                            <div class="text-caption text-medium-emphasis d-md-none">SSH Key</div>
+                            <div class="text-body-2">{{ sshKey.name }}</div>
+                          </div>
+
+                          <!-- Fingerprint -->
+                          <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 50%">
+                            <div class="text-caption text-medium-emphasis d-md-none">
+                              Fingerprint
+                            </div>
+                            <code class="text-body-2">{{ sshKey.fingerprint }}</code>
+                          </div>
+
+                          <!-- Actions -->
+                          <div
+                            v-if="canSSHKeyUsers"
+                            class="mt-2 mt-md-0"
+                            style="flex-basis: 20%; min-width: 120px"
+                          >
+                            <v-btn
+                              color="error"
+                              size="small"
+                              variant="outlined"
+                              @click="confirmDelete(sshKey)"
+                            >
+                              <v-icon size="small" class="mr-1">mdi-delete</v-icon>
+                              Delete
+                            </v-btn>
+                          </div>
+                        </div>
                       </v-card-text>
                     </v-card>
                   </v-card-text>
