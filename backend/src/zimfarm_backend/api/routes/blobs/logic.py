@@ -1,3 +1,4 @@
+import base64
 from http import HTTPStatus
 from typing import Annotated
 from uuid import UUID
@@ -5,6 +6,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.image import (
+    convert_image_to_png,
+    create_zim_illustration,
+)
 from zimfarm_backend.api.routes.blobs.models import (
     BlobsGetSchema,
     CreateBlobRequest,
@@ -41,15 +46,28 @@ router = APIRouter(prefix="/blobs", tags=["blobs"])
     "/{schedule_name}",
     dependencies=[Depends(require_permission(namespace="schedules", name="create"))],
 )
-async def create_blob(
+def create_blob(
     schedule_name: Annotated[NotEmptyString, Path()],
     request: CreateBlobRequest,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> BlobSchema:
     "Create a blob for schedule"
 
+    if request.data.startswith("data:"):
+        _, encoded_data = request.data.split(",", 1)
+    else:
+        encoded_data = request.data
+    value = base64.b64decode(encoded_data)
+
+    if request.kind == "image":
+        blob_data = convert_image_to_png(value)
+    elif request.kind == "illustration":
+        blob_data = create_zim_illustration(value)
+    else:
+        blob_data = value
+
     prepared_blob = prepare_blob(
-        blob_data=request.data, flag_name=request.flag_name, kind=request.kind
+        blob_data=blob_data, flag_name=request.flag_name, kind=request.kind
     )
     schedule = get_schedule(session, schedule_name=schedule_name)
 

@@ -32,7 +32,8 @@ dependencies = [
     "Werkzeug == 3.1.5",
     "cryptography == 45.0.3",
     "pycountry == 24.6.1",
-    "regex == 2025.9.1"
+    "regex == 2025.9.1",
+    "zimscraperlib == 5.2.0",
 ]
 dynamic = ["version"]
 

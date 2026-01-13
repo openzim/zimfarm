@@ -144,7 +144,7 @@ def test_create_blob_returns_existing_if_already_uploaded(
 ):
     test_data = encode_test_data("test content")
     prepared_blob = prepare_blob(
-        blob_data=test_data, flag_name="custom_css", kind="css"
+        blob_data=b"test content", flag_name="custom_css", kind="css"
     )
     blob = Blob(
         flag_name=prepared_blob.flag_name,

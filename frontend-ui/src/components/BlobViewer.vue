@@ -5,15 +5,15 @@
     variant="text"
     color="primary"
     @click="handleView"
-    :title="`View ${kind === 'image' ? 'Image' : kind.toUpperCase()}`"
+    :title="`View ${kind === 'image' || kind === 'illustration' ? 'Image/Illustration' : kind.toUpperCase()}`"
     :loading="loadingBlobContent"
   />
 
   <!-- Image Viewer Dialog -->
-  <v-dialog v-if="kind === 'image'" v-model="showViewer" max-width="600">
+  <v-dialog v-if="kind === 'image' || kind === 'illustration'" v-model="showViewer" max-width="600">
     <v-card>
       <v-card-title class="d-flex justify-space-between align-center">
-        <span>View Image</span>
+        <span>View Image/Illustration</span>
         <v-btn icon="mdi-close" variant="text" @click="handleClose" />
       </v-card-title>
       <v-card-text>
@@ -149,7 +149,7 @@ const handleViewText = async () => {
 }
 
 const handleView = () => {
-  if (props.kind === 'image') {
+  if (props.kind === 'image' || props.kind === 'illustration') {
     handleViewImage()
   } else if (isText.value) {
     handleViewText()

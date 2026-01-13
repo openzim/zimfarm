@@ -11,13 +11,15 @@ from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import OfflinerDefinition
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 
-FLAG_MAPPINGS: dict[str, list[dict[str, Literal["image", "css", "html"]]]] = {
+FLAG_MAPPINGS: dict[
+    str, list[dict[str, Literal["image", "css", "html", "illustration"]]]
+] = {
     "devdocs": [{"logo_format": "image"}],
     "freecodecamp": [{"illustration": "image"}],
     "ifixit": [{"icon": "image"}],
     "kolibri": [{"favicon": "image"}, {"css": "css"}, {"about": "html"}],
     "mindtouch": [{"illustration_url": "image"}],
-    "mwoffliner": [{"customZimFavicon": "image"}],
+    "mwoffliner": [{"customZimFavicon": "illustration"}],
     "nautilus": [
         {"main_logo": "image"},
         {"secondary_logo": "image"},
@@ -34,7 +36,7 @@ FLAG_MAPPINGS: dict[str, list[dict[str, Literal["image", "css", "html"]]]] = {
 def update_offliner_definition_flags(
     offliner_id: str,
     spec: OfflinerSpecSchema,
-    flag_mappings: list[dict[str, Literal["image", "css", "html"]]],
+    flag_mappings: list[dict[str, Literal["image", "css", "html", "illustration"]]],
 ) -> bool:
     """
     Update flags in an offliner definition spec to use blob type with kind.
@@ -56,7 +58,8 @@ def update_offliner_definition_flags(
                 continue
 
             logger.info(
-                f"Changing flag '{flag_name} from {flag_spec.type} to blob ({kind})"
+                f"Changing flag '{flag_name} from {flag_spec.type} ({flag_spec.kind}) "
+                f"to blob ({kind})"
             )
             flag_spec.kind = kind
             flag_spec.type = "blob"

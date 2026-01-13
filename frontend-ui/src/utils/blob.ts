@@ -4,7 +4,7 @@
 
 export const TEXT_KINDS = ['css', 'html', 'txt'] as const
 
-export type BlobKind = 'image' | 'css' | 'html' | 'txt'
+export type BlobKind = 'image' | 'illustration' | 'css' | 'html' | 'txt'
 export type TextKind = (typeof TEXT_KINDS)[number]
 
 /**
@@ -18,5 +18,5 @@ export const isTextKind = (kind: BlobKind): kind is TextKind => {
  * Checks if a blob kind is an image type
  */
 export const isImageKind = (kind: BlobKind): boolean => {
-  return kind === 'image'
+  return kind === 'image' || kind === 'illustration'
 }
