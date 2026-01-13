@@ -109,12 +109,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Define headers for the table
 const headers = [
-  { title: 'Name', value: 'name' },
-  { title: 'Category', value: 'category' },
-  { title: 'Language', value: 'language' },
-  { title: 'Offliner', value: 'offliner' },
-  { title: 'Requested', value: 'requested' },
-  { title: 'Last Task', value: 'last_task' },
+  { title: 'Name', value: 'name', sortable: false },
+  { title: 'Category', value: 'category', sortable: false },
+  { title: 'Language', value: 'language', sortable: false },
+  { title: 'Offliner', value: 'offliner', sortable: false },
+  { title: 'Requested', value: 'requested', sortable: false },
+  { title: 'Last Task', value: 'last_task', sortable: false },
 ]
 
 // Reactive state

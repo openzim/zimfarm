@@ -27,11 +27,14 @@
         :items-per-page="props.paginator.limit"
         :items-length="props.paginator.count"
         :items-per-page-options="limits"
+        :mobile="smAndDown"
+        :density="smAndDown ? 'compact' : 'comfortable'"
         class="elevation-1"
         item-key="id"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
+        disable-sort
       >
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
@@ -110,10 +113,32 @@
         </template>
 
         <template #[`item.resources`]="{ item }">
-          <div class="d-flex flex-sm-column flex-lg-row py-1">
-            <ResourceBadge kind="cpu" :value="item.config.resources.cpu" variant="text" />
-            <ResourceBadge kind="memory" :value="item.config.resources.memory" variant="text" />
-            <ResourceBadge kind="disk" :value="item.config.resources.disk" variant="text" />
+          <div
+            :class="[
+              'd-flex',
+              'flex-row flex-wrap',
+              'flex-md-column',
+              { 'justify-end': smAndDown },
+            ]"
+          >
+            <ResourceBadge
+              kind="cpu"
+              :value="item.config.resources.cpu"
+              variant="text"
+              :custom-class="smAndDown ? 'pa-0' : undefined"
+            />
+            <ResourceBadge
+              kind="memory"
+              :value="item.config.resources.memory"
+              variant="text"
+              :custom-class="smAndDown ? 'pa-0' : undefined"
+            />
+            <ResourceBadge
+              kind="disk"
+              :value="item.config.resources.disk"
+              variant="text"
+              :custom-class="smAndDown ? 'pa-0' : undefined"
+            />
           </div>
         </template>
 
@@ -162,7 +187,10 @@
         </template>
 
         <template #[`item.last_run`]="{ item }">
-          <div v-if="item.schedule_name" class="d-flex align-center">
+          <div
+            v-if="item.schedule_name"
+            :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]"
+          >
             <span v-if="schedulesLastRuns[item.schedule_name]">
               <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
                 {{ schedulesLastRuns[item.schedule_name].status }} </code
@@ -221,9 +249,12 @@ import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useDisplay } from 'vuetify'
 
 const router = useRouter()
 const route = useRoute()
+
+const { smAndDown } = useDisplay()
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
@@ -307,5 +338,16 @@ async function handleLoadAllLastRuns() {
   to {
     transform: rotate(360deg);
   }
+}
+
+:deep(.v-data-table-headers--mobile) {
+  display: none;
+}
+
+:deep(.v-table--density-compact) {
+  --v-table-row-height: 18px;
+}
+:deep(.v-data-table__tr--mobile > td) {
+  grid-template-columns: 1fr 3fr;
 }
 </style>

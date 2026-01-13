@@ -40,7 +40,14 @@
     <!-- Content -->
     <div v-if="ready && schedule">
       <!-- Tabs -->
-      <v-tabs v-model="currentTab" class="mb-4" color="primary" slider-color="primary">
+      <v-tabs
+        v-model="currentTab"
+        class="mb-4"
+        color="primary"
+        slider-color="primary"
+        :grow="!smAndDown"
+        show-arrows
+      >
         <v-tab
           base-color="primary"
           value="details"
@@ -717,6 +724,7 @@ import {
 } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { inject } from 'vue'
+import { useDisplay } from 'vuetify'
 
 // Props
 interface Props {
@@ -749,6 +757,8 @@ const appConfig = inject<Config>(constants.config)
 if (!appConfig) {
   throw new Error('Config is not defined')
 }
+
+const { smAndDown } = useDisplay()
 
 // Reactive data
 

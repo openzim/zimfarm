@@ -14,6 +14,8 @@
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
+        :mobile="smAndDown"
+        :density="smAndDown ? 'compact' : 'comfortable'"
       >
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
@@ -60,6 +62,7 @@ import ErrorMessage from '@/components/ErrorMessage.vue'
 import type { Paginator } from '@/types/base'
 import type { User } from '@/types/user'
 import { useRoute, useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 
 const props = defineProps<{
   headers: { title: string; key: string; sortable?: boolean }[]
@@ -77,6 +80,7 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 const router = useRouter()
 const route = useRoute()
+const { smAndDown } = useDisplay()
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
@@ -106,3 +110,15 @@ const getRoleColor = (role: string): string => {
   return colorMap[role] || 'default'
 }
 </script>
+
+<style scoped>
+:deep(.v-data-table-headers--mobile) {
+  display: none;
+}
+:deep(.v-table--density-compact) {
+  --v-table-row-height: 18px;
+}
+:deep(.v-data-table__tr--mobile > td) {
+  grid-template-columns: 1fr 3fr;
+}
+</style>
