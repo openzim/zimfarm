@@ -25,7 +25,7 @@
     <!-- Title Row -->
     <v-row>
       <v-col>
-        <h2 class="text-h4">
+        <h2 class="text-h6 text-md-h4">
           <code>{{ scheduleName }}</code>
         </h2>
       </v-col>
