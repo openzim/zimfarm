@@ -152,7 +152,7 @@
         <!-- Details Tab -->
         <v-window-item value="details">
           <v-card flat>
-            <v-card-text>
+            <v-card-text class="pa-0">
               <div>
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
@@ -524,7 +524,7 @@
         <!-- Config Tab -->
         <v-window-item value="config">
           <v-card flat>
-            <v-card-text>
+            <v-card-text class="pa-0">
               <div>
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">

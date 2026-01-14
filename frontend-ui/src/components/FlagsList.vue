@@ -1,11 +1,11 @@
 <template>
   <div>
     <v-row v-for="(value, name) in filteredOffliner" :key="name" no-gutters class="py-2 flag-row">
-      <v-col cols="12" sm="4" md="4">
+      <v-col cols="12" sm="4" md="4" class="px-2">
         <code class="text-pink-accent-2">{{ name }}</code>
       </v-col>
       <v-col cols="12" sm="8" md="8">
-        <div class="d-flex align-center ga-2">
+        <div class="d-flex align-center ga-2 px-2">
           <span class="text-break">{{ value }}</span>
           <BlobViewer
             v-if="getBlobField(name)"

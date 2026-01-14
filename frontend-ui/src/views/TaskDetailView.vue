@@ -67,7 +67,7 @@
       <v-window v-model="currentTab">
         <v-window-item value="details">
           <v-card flat>
-            <v-card-text>
+            <v-card-text class="pa-0">
               <div>
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
@@ -299,7 +299,7 @@
         <!-- Debug Tab -->
         <v-window-item value="debug">
           <v-card flat>
-            <v-card-text>
+            <v-card-text class="pa-0">
               <div>
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
