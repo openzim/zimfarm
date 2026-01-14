@@ -352,12 +352,25 @@ async function handleLoadAllLastRuns() {
 
 :deep(.v-data-table__tr--mobile) {
   display: block;
-  margin-bottom: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 4px 0;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 5px;
+}
+
+:deep(.v-data-table__tr--mobile .v-data-table__td) {
+  border-bottom: none !important;
 }
 
 :deep(.v-data-table__tr--mobile > td) {
   grid-template-columns: 1fr 3fr;
+  padding: 2px 8px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:first-child) {
+  padding-top: 4px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:last-child) {
+  padding-bottom: 4px !important;
 }
 </style>

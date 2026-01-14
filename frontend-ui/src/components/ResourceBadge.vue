@@ -1,6 +1,6 @@
 <template>
   <v-chip :size="size" :density="density" :variant="variant" :class="customClass">
-    <v-icon :icon="icon" :size="size" class="mr-1" />
+    <v-icon :icon="icon" :size="size" />
     {{ displayedValue }}
   </v-chip>
 </template>

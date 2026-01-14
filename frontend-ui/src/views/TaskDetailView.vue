@@ -928,15 +928,17 @@ pre {
   --v-table-row-height: 24px;
 }
 
-:deep(.v-data-table__tr--mobile) {
-  display: block;
-  margin-bottom: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 5px;
-}
-
 :deep(.v-data-table__tr--mobile > td) {
   grid-template-columns: 1fr 3fr;
+  padding: 2px 8px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:first-child) {
+  padding-top: 4px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:last-child) {
+  padding-bottom: 4px !important;
 }
 
 .events-table :deep(tbody tr:nth-of-type(odd)) {
@@ -946,6 +948,21 @@ pre {
 .files-table :deep(.v-data-table__td:first-child),
 .files-table :deep(.v-data-table__th:first-child) {
   max-width: 30%;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+:deep(.v-data-table__tr--mobile) {
+  display: block;
+  margin: 4px 0;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 5px;
+}
+
+:deep(.v-data-table__tr--mobile .v-data-table__td) {
+  border-bottom: none !important;
   word-wrap: break-word;
   word-break: break-word;
   white-space: normal;

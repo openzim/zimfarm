@@ -176,19 +176,19 @@
               kind="cpu"
               :value="getResources(item).cpu"
               variant="text"
-              :custom-class="smAndDown ? 'pa-0' : undefined"
+              :custom-class="smAndDown ? 'pa-1' : undefined"
             />
             <ResourceBadge
               kind="memory"
               :value="getResources(item).memory"
               variant="text"
-              :custom-class="smAndDown ? 'pa-0' : undefined"
+              :custom-class="smAndDown ? 'pa-1' : undefined"
             />
             <ResourceBadge
               kind="disk"
               :value="getResources(item).disk"
               variant="text"
-              :custom-class="smAndDown ? 'pa-0' : undefined"
+              :custom-class="smAndDown ? 'pa-1' : undefined"
             />
           </div>
         </template>
@@ -421,8 +421,24 @@ function getResources(item: CombinedRow) {
 
 :deep(.v-data-table__tr--mobile) {
   display: block;
-  margin-bottom: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 4px 0;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 5px;
+}
+
+:deep(.v-data-table__tr--mobile .v-data-table__td) {
+  border-bottom: none !important;
+}
+
+:deep(.v-data-table__tr--mobile > td) {
+  padding: 2px 8px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:first-child) {
+  padding-top: 4px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:last-child) {
+  padding-bottom: 4px !important;
 }
 </style>

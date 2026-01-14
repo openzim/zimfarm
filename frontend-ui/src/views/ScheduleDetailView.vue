@@ -460,7 +460,6 @@
                       ]"
                       :mobile="smAndDown"
                       :density="smAndDown ? 'compact' : 'comfortable'"
-                      class="elevation-1"
                       item-key="id"
                       :hide-default-footer="true"
                       disable-sort
@@ -511,16 +510,15 @@
 
         <!-- History Tab -->
         <v-window-item value="history">
-          <div v-if="canUpdateSchedules" class="pa-4">
-            <ScheduleHistory
-              :history="scheduleHistoryStore.history"
-              :has-more="canLoadMoreHistory"
-              :loading="loadingHistory"
-              :paginator="scheduleHistoryStore.paginator"
-              :schedule-name="scheduleName"
-              @load="loadHistory"
-            />
-          </div>
+          <ScheduleHistory
+            v-if="canUpdateSchedules"
+            :history="scheduleHistoryStore.history"
+            :has-more="canLoadMoreHistory"
+            :loading="loadingHistory"
+            :paginator="scheduleHistoryStore.paginator"
+            :schedule-name="scheduleName"
+            @load="loadHistory"
+          />
         </v-window-item>
 
         <!-- Config Tab -->
@@ -1443,12 +1441,25 @@ watch(
 
 :deep(.v-data-table__tr--mobile) {
   display: block;
-  margin-bottom: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 4px 0;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 5px;
+}
+
+:deep(.v-data-table__tr--mobile .v-data-table__td) {
+  border-bottom: none !important;
 }
 
 :deep(.v-data-table__tr--mobile > td) {
   grid-template-columns: 1fr 3fr;
+  padding: 2px 8px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:first-child) {
+  padding-top: 4px !important;
+}
+
+:deep(.v-data-table__tr--mobile > td:last-child) {
+  padding-bottom: 4px !important;
 }
 </style>
