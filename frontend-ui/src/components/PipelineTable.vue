@@ -2,7 +2,7 @@
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <!-- Load All Last Runs button - only show in failed tab -->
-      <div v-if="showLoadAllButton" class="d-flex justify-end">
+      <div v-if="showLoadAllButton" class="d-flex justify-end mb-2">
         <v-btn
           :loading="loadingAllSchedules"
           :disabled="loadingAllSchedules || tasks.length === 0"
@@ -157,6 +157,7 @@
           <RemoveRequestedTaskButton
             v-if="canUnRequestTasks"
             :id="item.id"
+            :size="smAndDown ? 'x-small' : 'small'"
             @requested-task-removed="emit('loadData', props.paginator.limit, 0)"
           />
         </template>
@@ -165,6 +166,7 @@
           <CancelTaskButton
             v-if="canCancelTasks"
             :id="item.id"
+            :size="smAndDown ? 'x-small' : 'small'"
             @task-canceled="emit('loadData', props.paginator.limit, 0)"
           />
         </template>
@@ -345,8 +347,16 @@ async function handleLoadAllLastRuns() {
 }
 
 :deep(.v-table--density-compact) {
-  --v-table-row-height: 18px;
+  --v-table-row-height: 24px;
 }
+
+:deep(.v-data-table__tr--mobile) {
+  display: block;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 5px;
+}
+
 :deep(.v-data-table__tr--mobile > td) {
   grid-template-columns: 1fr 3fr;
 }

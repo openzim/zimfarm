@@ -230,8 +230,16 @@ function statusClass(status: string) {
 :deep(.v-data-table-headers--mobile) {
   display: none;
 }
+
 :deep(.v-table--density-compact) {
-  --v-table-row-height: 10px;
+  --v-table-row-height: 24px;
+}
+
+:deep(.v-data-table__tr--mobile) {
+  display: block;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 5px;
 }
 
 :deep(.v-data-table__tr--mobile > td) {

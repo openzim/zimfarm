@@ -207,7 +207,7 @@
                       item-key="name"
                       hide-default-footer
                       disable-sort
-                      class="files-table"
+                      :class="smAndDown ? '' : 'files-table'"
                     >
                       <template #[`item.name`]="{ item }">
                         <a
@@ -653,7 +653,7 @@ const eventsHeaders = [
 ]
 
 const filesHeaders = [
-  { title: 'Filename', value: 'name' },
+  { title: 'Filename', value: 'name', width: '30%' },
   { title: 'Size', value: 'size' },
   { title: 'Created After', value: 'created_after' },
   { title: 'Upload Duration', value: 'upload_duration' },
@@ -925,14 +925,30 @@ pre {
 }
 
 :deep(.v-table--density-compact) {
-  --v-table-row-height: 18px;
+  --v-table-row-height: 24px;
+}
+
+:deep(.v-data-table__tr--mobile) {
+  display: block;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 5px;
+}
+
+:deep(.v-data-table__tr--mobile > td) {
+  grid-template-columns: 1fr 3fr;
 }
 
 .events-table :deep(tbody tr:nth-of-type(odd)) {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.files-table :deep(tbody tr:nth-of-type(odd)) {
-  background-color: rgba(0, 0, 0, 0.05);
+.files-table :deep(.v-data-table__td:first-child),
+.files-table :deep(.v-data-table__th:first-child) {
+  max-width: 30%;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 </style>
