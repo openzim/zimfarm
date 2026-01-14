@@ -1,4 +1,3 @@
-import base64
 import hashlib
 import uuid
 from collections.abc import Callable
@@ -67,19 +66,12 @@ def transform_data(data: list[str], transformers: list[TransformerSchema]) -> li
     )
 
 
-def prepare_blob(*, blob_data: str, kind: str, flag_name: str) -> PreparedBlob:
+def prepare_blob(*, blob_data: bytes, kind: str, flag_name: str) -> PreparedBlob:
     """Prepare blob fields for upload"""
 
-    if blob_data.startswith("data:"):
-        _, encoded_data = blob_data.split(",", 1)
-    else:
-        encoded_data = blob_data
-
-    value = base64.b64decode(encoded_data)
-
-    if len(value) > BLOB_MAX_SIZE:
+    if len(blob_data) > BLOB_MAX_SIZE:
         raise ValueError(
-            f"Blob size ({format_size(len(value), binary=True)} bytes) "
+            f"Blob size ({format_size(len(blob_data), binary=True)} bytes) "
             "exceeds maximum allowed size "
             f"({format_size(BLOB_MAX_SIZE, binary=True)})"
         )
@@ -90,8 +82,8 @@ def prepare_blob(*, blob_data: str, kind: str, flag_name: str) -> PreparedBlob:
         private_url=AnyUrl(f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"),
         url=AnyUrl(f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"),
         flag_name=flag_name,
-        checksum=hashlib.sha256(value).hexdigest(),
-        data=value,
+        checksum=hashlib.sha256(blob_data).hexdigest(),
+        data=blob_data,
     )
 
 
@@ -110,7 +102,7 @@ def get_extension_from_kind(kind: str) -> str:
     """Simple extension mapping from kind"""
     if kind == "css":
         return ".css"
-    elif kind == "image":
+    elif kind in ("image", "illustration"):
         return ".png"
     elif kind == "html":
         return ".html"

@@ -19,39 +19,43 @@
         </div>
 
         <!-- Image comparison -->
-        <div v-else-if="kind === 'image'" class="image-comparison">
+        <div v-else-if="isImage" class="image-comparison">
           <v-row no-gutters>
             <v-col cols="6" class="pa-4 border-right">
               <div class="text-caption text-medium-emphasis mb-2">Previous</div>
               <div v-if="!oldBlobUrl" class="pa-4 text-center text-medium-emphasis">
                 <v-icon size="large" class="mb-2">mdi-image-off</v-icon>
-                <div class="text-caption">No previous image</div>
+                <div class="text-caption">No previous image/illustration</div>
               </div>
               <v-img
                 v-else-if="oldBlobContent"
                 :src="oldBlobContent"
                 max-height="400px"
                 contain
-                alt="Previous image"
+                alt="Previous image/illustration"
                 class="border rounded"
               />
-              <div v-else class="text-caption text-error">Failed to load previous image</div>
+              <div v-else class="text-caption text-error">
+                Failed to load previous image/illustration
+              </div>
             </v-col>
             <v-col cols="6" class="pa-4">
               <div class="text-caption text-medium-emphasis mb-2">Current</div>
               <div v-if="!newBlobUrl" class="pa-4 text-center text-medium-emphasis">
                 <v-icon size="large" class="mb-2">mdi-image-off</v-icon>
-                <div class="text-caption">No current image (removed)</div>
+                <div class="text-caption">No current image/illustration (removed)</div>
               </div>
               <v-img
                 v-else-if="newBlobContent"
                 :src="newBlobContent"
                 max-height="400px"
                 contain
-                alt="Current image"
+                alt="Current image/illustration"
                 class="border rounded"
               />
-              <div v-else class="text-caption text-error">Failed to load current image</div>
+              <div v-else class="text-caption text-error">
+                Failed to load current image/illustration
+              </div>
             </v-col>
           </v-row>
         </div>
@@ -74,11 +78,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { createPatch, createTwoFilesPatch } from 'diff'
+import { createPatch } from 'diff'
 import { html } from 'diff2html'
 import 'diff2html/bundles/css/diff2html.min.css'
 import { useNotificationStore } from '@/stores/notification'
-import { isTextKind, type BlobKind } from '@/utils/blob'
+import { isTextKind, isImageKind, type BlobKind } from '@/utils/blob'
 import { ColorSchemeType } from 'diff2html/lib/types'
 
 interface Props {
@@ -102,6 +106,7 @@ const newBlobContent = ref<string>('')
 const diffHtml = ref<string>('')
 
 const isText = computed(() => isTextKind(props.kind))
+const isImage = computed(() => isImageKind(props.kind))
 
 const fetchBlobByUrl = async (url: string): Promise<Blob | null> => {
   const response = await fetch(url)
@@ -153,7 +158,7 @@ const loadBlobsAndGenerateDiff = async () => {
   diffHtml.value = ''
 
   try {
-    if (props.kind === 'image') {
+    if (isImage.value) {
       const promises = []
 
       if (props.oldBlobUrl) {

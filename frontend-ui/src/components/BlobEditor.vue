@@ -29,13 +29,13 @@
             color="primary"
           />
           <v-btn
-            v-else-if="modelValue && kind === 'image'"
+            v-else-if="modelValue && isImageKind"
             icon="mdi-image-edit"
             size="x-small"
             variant="text"
             color="primary"
             @click="handleEditImage"
-            title="Edit Image"
+            title="Edit Image/Illustration"
           />
           <v-btn
             v-else-if="modelValue && isTextKind"
@@ -84,7 +84,7 @@
 
     <!-- Image Editor Dialog -->
     <ImageEditorDialog
-      v-if="kind === 'image'"
+      v-if="isImageKind"
       v-model="showBlobEditor"
       :image-data="blobEditorContent"
       v-model:comment="blobComment"
@@ -124,10 +124,12 @@ if (!config) {
 
 const TEXT_KINDS = ['css', 'html', 'txt'] as const
 
+const IMAGE_KINDS = ['illustration', 'image'] as const
+
 interface Props {
   modelValue: string | null | undefined
   label?: string
-  kind?: 'image' | 'css' | 'html' | 'txt'
+  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
   required?: boolean
   description?: string | null
   scheduleName: string
@@ -165,12 +167,14 @@ const isLoadingBlob = ref(false)
 
 const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT_KINDS)[number]))
 
+const isImageKind = computed(() => IMAGE_KINDS.includes(props.kind as (typeof IMAGE_KINDS)[number]))
+
 const textFileType = computed(() => {
   return isTextKind.value ? (props.kind as 'css' | 'html' | 'txt') : 'txt'
 })
 
 const acceptedTypes = computed(() => {
-  if (props.kind === 'image') {
+  if (isImageKind) {
     return 'image/*'
   } else if (props.kind === 'css') {
     return '.css,text/css'
@@ -248,8 +252,8 @@ const processFile = async (file: File) => {
   }
 
   // Validate file type
-  if (props.kind === 'image' && !file.type.startsWith('image/')) {
-    errorMessage.value = 'File must be an image'
+  if (isImageKind && !file.type.startsWith('image/')) {
+    errorMessage.value = 'File must be an image/illustration'
     hasError.value = true
     return
   }
@@ -477,7 +481,7 @@ const handleEditImage = async () => {
     showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to load image content:', error)
-    errorMessage.value = 'Failed to load image for editing'
+    errorMessage.value = 'Failed to load image/illustration for editing'
     hasError.value = true
   } finally {
     loadingBlobContent.value = false

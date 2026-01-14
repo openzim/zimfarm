@@ -51,7 +51,7 @@ class FlagSchema(BaseFlagSchema):
         "blob",
         "color",
     ]
-    kind: Literal["image", "css", "html", "txt"] | None = None
+    kind: Literal["image", "css", "html", "txt", "illustration"] | None = None
     choices: list[str] | list[Choice] | None = None
     alias: str | None = None
     relaxed_pattern: str | None = Field(validation_alias="relaxedPattern", default=None)

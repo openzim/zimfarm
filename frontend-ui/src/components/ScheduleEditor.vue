@@ -595,7 +595,7 @@ interface FlagField {
   min_length: number | null
   max_length: number | null
   pattern: string | null
-  kind?: 'image' | 'css' | 'html' | 'txt'
+  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
 }
 
 export interface Props {

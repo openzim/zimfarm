@@ -190,7 +190,7 @@ const enhancedDifferences = computed((): EnhancedDiff[] | undefined => {
   }
 
   // Build blob map from both old and new configs
-  const blobMap = new Map<string, 'image' | 'css' | 'html' | 'txt'>()
+  const blobMap = new Map<string, 'image' | 'illustration' | 'css' | 'html' | 'txt'>()
   if (selectedItemsArray.value.length === 2) {
     const oldConfig = selectedItemsArray.value[0].config as { offliner?: Record<string, unknown> }
     const newConfig = selectedItemsArray.value[1].config as { offliner?: Record<string, unknown> }

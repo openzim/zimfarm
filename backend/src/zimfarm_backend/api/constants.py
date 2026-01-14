@@ -8,3 +8,4 @@ JWT_SECRET = getenv("JWT_SECRET", mandatory=True)
 JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
     getenv("JWT_TOKEN_EXPIRY_DURATION", default="1d")
 )
+ZIM_ILLUSTRATION_SIZE = int(getenv("ZIM_ILLUSTRATION_SIZE", default="48"))
