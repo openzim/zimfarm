@@ -329,8 +329,17 @@
             'pt-2',
             {
               'd-none d-md-block':
-                ['text', 'number', 'url', 'email', 'blob', 'select'].includes(field.component) ||
-                field.component === undefined,
+                [
+                  'text',
+                  'number',
+                  'url',
+                  'email',
+                  'blob',
+                  'select',
+                  'multiselect',
+                  'textarea',
+                  'color',
+                ].includes(field.component) || field.component === undefined,
             },
           ]"
         >

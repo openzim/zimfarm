@@ -92,7 +92,6 @@ import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTagStore } from '@/stores/tag'
 import type { ScheduleLight } from '@/types/schedule'
-import { isFirefoxOnIOS } from '@/utils/browsers'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -326,10 +325,6 @@ function handleRestoreCancel() {
 }
 
 function updateUrlFilters(sourceFilters: typeof filters.value) {
-  if (isFirefoxOnIOS()) {
-    return
-  }
-
   // create query object from selected filters
   const query: Record<string, string | string[]> = {}
 
