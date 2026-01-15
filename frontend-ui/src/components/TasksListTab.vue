@@ -1,18 +1,16 @@
 <template>
-  <div>
-    <v-tabs v-model="activeTab" color="primary" slider-color="primary" class="mb-4">
-      <v-tab
-        base-color="primary"
-        v-for="filterOption in filterOptions"
-        :key="filterOption.value"
-        :value="filterOption.value"
-        class="text-none text-subtitle-2"
-        @click="$emit('filter-changed', filterOption.value)"
-      >
-        {{ filterOption.label }}
-      </v-tab>
-    </v-tabs>
-  </div>
+  <v-tabs v-model="activeTab" color="primary" slider-color="primary" class="mb-4" grow>
+    <v-tab
+      base-color="primary"
+      v-for="filterOption in filterOptions"
+      :key="filterOption.value"
+      :value="filterOption.value"
+      class="text-none text-subtitle-2"
+      @click="$emit('filter-changed', filterOption.value)"
+    >
+      {{ filterOption.label }}
+    </v-tab>
+  </v-tabs>
 </template>
 
 <script setup lang="ts">

@@ -1,23 +1,21 @@
 <template>
-  <v-table class="flags-table">
-    <tbody>
-      <tr v-for="(value, name) in filteredOffliner" :key="name">
-        <td>
-          <code class="text-pink-accent-2">{{ name }}</code>
-        </td>
-        <td>
-          <div class="d-flex align-center ga-2">
-            <span>{{ value }}</span>
-            <BlobViewer
-              v-if="getBlobField(name)"
-              :blob-value="String(value)"
-              :kind="getBlobField(name)!.kind || 'image'"
-            />
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </v-table>
+  <div>
+    <v-row v-for="(value, name) in filteredOffliner" :key="name" no-gutters class="py-2 flag-row">
+      <v-col cols="12" sm="4" md="4" class="px-2">
+        <code class="text-pink-accent-2">{{ name }}</code>
+      </v-col>
+      <v-col cols="12" sm="8" md="8">
+        <div class="d-flex align-center ga-2 px-2">
+          <span class="text-break">{{ value }}</span>
+          <BlobViewer
+            v-if="getBlobField(name)"
+            :blob-value="String(value)"
+            :kind="getBlobField(name)!.kind || 'image'"
+          />
+        </div>
+      </v-col>
+    </v-row>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -68,7 +66,7 @@ const getBlobField = (fieldName: string) => {
 </script>
 
 <style scoped>
-.flags-table tbody tr:nth-of-type(odd) {
+.flag-row:nth-of-type(odd) {
   background-color: rgba(0, 0, 0, 0.05);
 }
 </style>

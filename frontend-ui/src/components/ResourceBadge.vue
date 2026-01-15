@@ -1,6 +1,6 @@
 <template>
-  <v-chip size="small" :density="density" :variant="variant" class="mr-2">
-    <v-icon :icon="icon" size="small" class="mr-1" />
+  <v-chip :size="size" :density="density" :variant="variant" :class="customClass">
+    <v-icon :icon="icon" :size="size" />
     {{ displayedValue }}
   </v-chip>
 </template>
@@ -16,12 +16,16 @@ interface Props {
   humanValue?: string
   density?: 'compact' | 'default'
   variant?: 'outlined' | 'text' | 'tonal' | 'plain' | 'elevated' | 'flat'
+  size?: 'x-small' | 'small' | 'default' | 'large' | 'x-large'
+  customClass?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   humanValue: undefined,
   density: 'default',
   variant: 'outlined',
+  size: 'small',
+  customClass: 'mr-2',
 })
 
 // Computed properties
