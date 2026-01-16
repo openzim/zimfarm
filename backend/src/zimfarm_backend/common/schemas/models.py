@@ -79,15 +79,23 @@ class ExpandedScheduleConfigSchema(BaseScheduleConfigSchema):
 
 
 class EventNotificationSchema(BaseModel):
-    mailgun: list[EmailStr] | None = None
-    webhook: list[HttpUrl] | None = None
-    slack: list[SlackTarget] | None = None
+    mailgun: list[EmailStr] | None = Field(default_factory=list)
+    webhook: list[HttpUrl] | None = Field(  # pyright: ignore[reportUnknownVariableType]
+        default_factory=list
+    )
+    slack: list[SlackTarget] | None = Field(default_factory=list)
 
 
 class ScheduleNotificationSchema(BaseModel):
-    requested: EventNotificationSchema | None = None
-    started: EventNotificationSchema | None = None
-    ended: EventNotificationSchema | None = None
+    requested: EventNotificationSchema | None = Field(
+        default_factory=EventNotificationSchema
+    )
+    started: EventNotificationSchema | None = Field(
+        default_factory=EventNotificationSchema
+    )
+    ended: EventNotificationSchema | None = Field(
+        default_factory=EventNotificationSchema
+    )
 
 
 class Paginator(BaseModel):

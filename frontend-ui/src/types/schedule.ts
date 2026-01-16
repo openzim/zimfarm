@@ -34,6 +34,7 @@ export interface BaseScheduleHistorySchema {
   context: string
   archived: boolean
   offliner_definition_version?: string
+  notification: ScheduleNotification | null
 }
 
 export interface ScheduleHistorySchema extends BaseScheduleHistorySchema {
@@ -91,6 +92,7 @@ export interface ScheduleUpdateSchema {
   artifacts_globs: string[] | null
   context: string | null
   comment: string | null
+  notification: ScheduleNotification | null
   version: string
 }
 

@@ -295,6 +295,7 @@ class ScheduleHistorySchema(BaseModel):
     # because the entry is possibly outdated and would fail validation as the
     # offliner schema evolves
     config: dict[str, Any]
+    notification: dict[str, Any] | None = None
 
 
 class ScheduleFullSchema(BaseModel):
