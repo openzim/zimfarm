@@ -381,9 +381,7 @@ def update_schedule(
     offliner_definition: OfflinerDefinitionSchema
 
     if (
-        request.offliner
-        and request.offliner
-        != schedule_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+        request.offliner and request.offliner != schedule_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
     ):
         # Case 1: Attempting to change the offliner
         if not request.flags:
@@ -560,6 +558,7 @@ def update_schedule(
         is_valid=True,
         context=request.context,
         offliner_definition=offliner_definition,
+        notification=request.notification,
     )
 
     schedule = create_schedule_full_schema(schedule, offliner)
