@@ -80,9 +80,9 @@ class ExpandedScheduleConfigSchema(BaseScheduleConfigSchema):
 
 class EventNotificationSchema(BaseModel):
     mailgun: list[EmailStr] | None = Field(default_factory=list)
-    webhook: list[HttpUrl] | None = Field(
+    webhook: list[HttpUrl] | None = Field(  # pyright: ignore[reportUnknownVariableType]
         default_factory=list
-    )  # pyright: ignore[reportUnknownVariableType]
+    )
     slack: list[SlackTarget] | None = Field(default_factory=list)
 
 
