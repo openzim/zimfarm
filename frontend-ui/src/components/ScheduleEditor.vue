@@ -308,6 +308,31 @@
 
     <v-divider class="my-4" />
 
+    <template v-if="editSchedule.notification">
+      <v-row>
+        <v-col cols="12">
+          <h2>Notification Settings</h2>
+        </v-col>
+      </v-row>
+
+      <NotificationEventFields
+        v-model="editSchedule.notification.requested"
+        event-title="Requested Event"
+      />
+
+      <NotificationEventFields
+        v-model="editSchedule.notification.started"
+        event-title="Started Event"
+      />
+
+      <NotificationEventFields
+        v-model="editSchedule.notification.ended"
+        event-title="Ended Event"
+      />
+    </template>
+
+    <v-divider class="my-4" />
+
     <v-row v-if="flagsFields.length > 0">
       <v-col cols="9">
         <h2>
@@ -566,6 +591,7 @@
 import BlobEditor from '@/components/BlobEditor.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
+import NotificationEventFields from '@/components/NotificationEventFields.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import constants from '@/constants'
 import { useNotificationStore } from '@/stores/notification'
@@ -574,7 +600,13 @@ import type { Resources } from '@/types/base'
 
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
-import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
+import type {
+  EventNotification,
+  Schedule,
+  ScheduleConfig,
+  ScheduleNotification,
+  ScheduleUpdateSchema,
+} from '@/types/schedule'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
@@ -625,6 +657,7 @@ const emit = defineEmits<Emits>()
 const scheduleStore = useScheduleStore()
 const notificationStore = useNotificationStore()
 const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(
   JSON.parse(JSON.stringify(props.schedule.config.offliner)),
@@ -771,6 +804,70 @@ const taskName = computed(() => {
   )
 })
 
+// Helper function to compare event notifications
+const eventNotificationsEqual = (
+  a: EventNotification | null,
+  b: EventNotification | null,
+): boolean => {
+  // Both null or undefined
+  if (!a && !b) return true
+  // One is null, other is not
+  if (!a || !b) return false
+
+  const arraysEqual = (arr1: string[] | null, arr2: string[] | null): boolean => {
+    const a = arr1 && arr1.length > 0 ? arr1 : []
+    const b = arr2 && arr2.length > 0 ? arr2 : []
+    if (a.length === 0 && b.length === 0) return true
+    return stringArrayEqual(a, b)
+  }
+
+  return (
+    arraysEqual(a.mailgun, b.mailgun) &&
+    arraysEqual(a.webhook, b.webhook) &&
+    arraysEqual(a.slack, b.slack)
+  )
+}
+
+// Helper function to compare schedule notifications
+const notificationsEqual = (
+  a: ScheduleNotification | null,
+  b: ScheduleNotification | null,
+): boolean => {
+  // Both null or undefined
+  if (!a && !b) return true
+  // One is null, other is not
+  if (!a || !b) return false
+
+  return (
+    eventNotificationsEqual(a.requested, b.requested) &&
+    eventNotificationsEqual(a.started, b.started) &&
+    eventNotificationsEqual(a.ended, b.ended)
+  )
+}
+
+// Helper function to clean notification payload (convert empty arrays to null)
+const cleanNotificationPayload = (
+  notification: ScheduleNotification | null,
+): ScheduleNotification | null => {
+  if (!notification) return null
+
+  const cleanEventNotification = (event: EventNotification | null): EventNotification | null => {
+    if (!event) return null
+
+    return {
+      mailgun: event.mailgun && event.mailgun.length > 0 ? event.mailgun : null,
+      webhook: event.webhook && event.webhook.length > 0 ? event.webhook : null,
+      slack: event.slack && event.slack.length > 0 ? event.slack : null,
+    }
+  }
+
+  return {
+    requested: cleanEventNotification(notification.requested),
+    started: cleanEventNotification(notification.started),
+    ended: cleanEventNotification(notification.ended),
+  }
+}
+
 // Helper function to validate a single field value against its rules
 const validateFieldValue = (field: FlagField, value: unknown): boolean => {
   const rules = getFieldRules(field)
@@ -884,6 +981,9 @@ const hasChanges = computed<boolean>(() => {
   const artifacts_globs = processArtifactsGlobs(editSchedule.value.config.artifacts_globs_str)
 
   if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) return true
+
+  // Check notifications
+  if (!notificationsEqual(editSchedule.value.notification, props.schedule.notification)) return true
 
   let changes = diff(props.schedule.config.offliner, editFlags.value)
 
@@ -1374,6 +1474,11 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
 
   if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) {
     payload.artifacts_globs = artifacts_globs
+  }
+
+  // Notifications
+  if (!notificationsEqual(editSchedule.value.notification, props.schedule.notification)) {
+    payload.notification = cleanNotificationPayload(editSchedule.value.notification)
   }
 
   // Flags

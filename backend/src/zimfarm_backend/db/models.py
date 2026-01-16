@@ -319,6 +319,9 @@ class ScheduleHistory(Base):
     offliner_definition_version: Mapped[str | None]
     context: Mapped[str] = mapped_column(default="", server_default="")
     archived: Mapped[bool] = mapped_column(default=False, server_default=false())
+    notification: Mapped[dict[str, Any] | None] = mapped_column(
+        default_factory=dict, server_default="{}"
+    )
 
     schedule: Mapped["Schedule"] = relationship(
         back_populates="history_entries", init=False
