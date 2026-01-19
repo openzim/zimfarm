@@ -583,24 +583,26 @@
                     <div class="text-subtitle-2">Resources</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <ResourceBadge kind="cpu" :value="config.resources.cpu" />
-                    <ResourceBadge kind="memory" :value="config.resources.memory" />
-                    <ResourceBadge kind="disk" :value="config.resources.disk" />
-                    <ResourceBadge
-                      kind="shm"
-                      :value="config.resources.shm"
-                      v-if="config.resources.shm"
-                    />
-                    <v-chip
-                      v-if="config.monitor || false"
-                      size="small"
-                      color="warning"
-                      variant="tonal"
-                      class="ml-2"
-                    >
-                      <v-icon size="small" class="mr-1">mdi-bug</v-icon>
-                      monitored
-                    </v-chip>
+                    <div class="d-flex flex-row flex-wrap ga-1">
+                      <ResourceBadge kind="cpu" :value="config.resources.cpu" />
+                      <ResourceBadge kind="memory" :value="config.resources.memory" />
+                      <ResourceBadge kind="disk" :value="config.resources.disk" />
+                      <ResourceBadge
+                        kind="shm"
+                        :value="config.resources.shm"
+                        v-if="config.resources.shm"
+                      />
+                      <v-chip
+                        v-if="config.monitor || false"
+                        size="small"
+                        color="warning"
+                        variant="tonal"
+                        class="ml-2"
+                      >
+                        <v-icon size="small" class="mr-1">mdi-bug</v-icon>
+                        monitored
+                      </v-chip>
+                    </div>
                   </v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
