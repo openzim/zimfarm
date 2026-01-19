@@ -920,27 +920,6 @@ pre {
   vertical-align: top;
 }
 
-:deep(.v-data-table-headers--mobile) {
-  display: none;
-}
-
-:deep(.v-table--density-compact) {
-  --v-table-row-height: 24px;
-}
-
-:deep(.v-data-table__tr--mobile > td) {
-  grid-template-columns: 1fr 3fr;
-  padding: 2px 8px !important;
-}
-
-:deep(.v-data-table__tr--mobile > td:first-child) {
-  padding-top: 4px !important;
-}
-
-:deep(.v-data-table__tr--mobile > td:last-child) {
-  padding-bottom: 4px !important;
-}
-
 .events-table :deep(tbody tr:nth-of-type(odd)) {
   background-color: rgba(0, 0, 0, 0.05);
 }
@@ -954,15 +933,8 @@ pre {
   overflow-wrap: break-word;
 }
 
-:deep(.v-data-table__tr--mobile) {
-  display: block;
-  margin: 4px 0;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 5px;
-}
-
+/* Additional word-wrap styles for mobile table cells in this view */
 :deep(.v-data-table__tr--mobile .v-data-table__td) {
-  border-bottom: none !important;
   word-wrap: break-word;
   word-break: break-word;
   white-space: normal;

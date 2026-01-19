@@ -411,34 +411,4 @@ function getResources(item: CombinedRow) {
   width: 100%;
   overflow-x: auto; /* allows horizontal scroll */
 }
-:deep(.v-data-table-headers--mobile) {
-  display: none;
-}
-
-:deep(.v-table--density-compact) {
-  --v-table-row-height: 24px;
-}
-
-:deep(.v-data-table__tr--mobile) {
-  display: block;
-  margin: 4px 0;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 5px;
-}
-
-:deep(.v-data-table__tr--mobile .v-data-table__td) {
-  border-bottom: none !important;
-}
-
-:deep(.v-data-table__tr--mobile > td) {
-  padding: 2px 8px !important;
-}
-
-:deep(.v-data-table__tr--mobile > td:first-child) {
-  padding-top: 4px !important;
-}
-
-:deep(.v-data-table__tr--mobile > td:last-child) {
-  padding-bottom: 4px !important;
-}
 </style>

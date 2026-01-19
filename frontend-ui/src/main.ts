@@ -1,3 +1,5 @@
+import 'vuetify/styles'
+import '@/assets/data-table.css'
 import '@/assets/styles.css'
 import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
 
@@ -6,7 +8,6 @@ import { createApp } from 'vue'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
-import 'vuetify/styles'
 
 import { createPinia } from 'pinia'
 import VueMatomo from 'vue-matomo'
