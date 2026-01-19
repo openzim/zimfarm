@@ -235,63 +235,66 @@
             <v-col cols="12" sm="9">
               <v-sheet rounded border class="pa-3">
                 <div class="text-subtitle-2 mb-2">Running tasks</div>
-                <v-table density="compact">
-                  <thead>
-                    <tr>
-                      <th>Schedule</th>
-                      <th>Resources</th>
-                      <th>Task</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="worker.running_tasks.length === 0">
-                      <td colspan="3" class="text-medium-emphasis">No running tasks</td>
-                    </tr>
-                    <tr v-for="t in worker.running_tasks" :key="t.id">
-                      <td>
-                        <span v-if="t.schedule_name === null">N/A</span>
-                        <router-link
-                          v-else
-                          :to="{
-                            name: 'schedule-detail',
-                            params: { scheduleName: t.schedule_name },
-                          }"
-                        >
-                          {{ t.schedule_name }}
-                        </router-link>
-                      </td>
-                      <td>
-                        <div class="d-flex flex-sm-column flex-lg-row py-1">
-                          <ResourceBadge
-                            kind="cpu"
-                            :value="t.config.resources.cpu"
-                            variant="text"
-                          />
-                          <ResourceBadge
-                            kind="memory"
-                            :value="t.config.resources.memory"
-                            variant="text"
-                          />
-                          <ResourceBadge
-                            kind="disk"
-                            :value="t.config.resources.disk"
-                            variant="text"
-                          />
-                        </div>
-                      </td>
-                      <td>
-                        <TaskLink
-                          v-if="t.id && t.updated_at"
-                          :id="t.id"
-                          :updatedAt="t.updated_at"
-                          :status="t.status"
-                          :timestamp="t.timestamp"
-                        />
-                        <span v-else class="text-caption">-</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
+                <v-data-table
+                  :headers="runningTasksHeaders"
+                  :items="worker.running_tasks"
+                  :mobile="smAndDown"
+                  :density="smAndDown ? 'compact' : 'comfortable'"
+                  item-key="id"
+                  hide-default-footer
+                  disable-sort
+                >
+                  <template #no-data>
+                    <div class="text-center pa-4 text-medium-emphasis">No running tasks</div>
+                  </template>
+
+                  <template #[`item.schedule_name`]="{ item }">
+                    <span v-if="item.schedule_name === null">N/A</span>
+                    <router-link
+                      v-else
+                      :to="{
+                        name: 'schedule-detail',
+                        params: { scheduleName: item.schedule_name },
+                      }"
+                    >
+                      {{ item.schedule_name }}
+                    </router-link>
+                  </template>
+
+                  <template #[`item.resources`]="{ item }">
+                    <div :class="['d-flex', 'flex-row flex-wrap', { 'justify-end': smAndDown }]">
+                      <ResourceBadge
+                        kind="cpu"
+                        :value="item.config.resources.cpu"
+                        variant="text"
+                        :custom-class="smAndDown ? 'pa-0' : undefined"
+                      />
+                      <ResourceBadge
+                        kind="memory"
+                        :value="item.config.resources.memory"
+                        variant="text"
+                        :custom-class="smAndDown ? 'pa-0' : undefined"
+                      />
+                      <ResourceBadge
+                        kind="disk"
+                        :value="item.config.resources.disk"
+                        variant="text"
+                        :custom-class="smAndDown ? 'pa-0' : undefined"
+                      />
+                    </div>
+                  </template>
+
+                  <template #[`item.task`]="{ item }">
+                    <TaskLink
+                      v-if="item.id && item.updated_at"
+                      :id="item.id"
+                      :updatedAt="item.updated_at"
+                      :status="item.status"
+                      :timestamp="item.timestamp"
+                    />
+                    <span v-else class="text-caption">-</span>
+                  </template>
+                </v-data-table>
               </v-sheet>
             </v-col>
           </v-row>
@@ -464,6 +467,7 @@ import { fuzzyFilter } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import diff from 'deep-diff'
 import { computed, inject, onMounted, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 
 interface Props {
   workerName: string
@@ -484,6 +488,7 @@ const workersStore = useWorkersStore()
 const contextStore = useContextStore()
 const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
+const { smAndDown } = useDisplay()
 
 const error = ref<string | null>(null)
 const worker = ref<WorkerMetrics | null>(null)
@@ -497,6 +502,12 @@ const editContexts = ref<Array<{ name: string; ip: string | null }>>([])
 const showConfirmDialog = ref(false)
 
 const canUpdateWorkers = computed(() => authStore.hasPermission('workers', 'update'))
+
+const runningTasksHeaders = [
+  { title: 'Schedule', value: 'schedule_name' },
+  { title: 'Resources', value: 'resources' },
+  { title: 'Task', value: 'task' },
+]
 
 const hasChanges = computed(() => {
   if (!worker.value) return false

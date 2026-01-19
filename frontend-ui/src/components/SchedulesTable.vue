@@ -45,6 +45,8 @@
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
+        :mobile="smAndDown"
+        :density="smAndDown ? 'compact' : 'comfortable'"
       >
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
@@ -55,7 +57,7 @@
 
         <template #[`item.name`]="{ item }">
           <router-link :to="{ name: 'schedule-detail', params: { scheduleName: item.name } }">
-            <span class="d-flex align-center">
+            <span class="['d-flex' 'align-center', { 'justify-end': smAndDown">
               {{ item.name }}
               <v-icon v-if="!item.enabled" size="small" color="orange" class="ml-1">
                 mdi-pause
@@ -81,11 +83,20 @@
         </template>
 
         <template #[`item.last_task`]="{ item }">
-          <div v-if="item.most_recent_task">
+          <div
+            v-if="item.most_recent_task"
+            :class="[
+              'd-flex',
+              'flex-row',
+              'flex wrap',
+              'flex-md-column',
+              'ga-1',
+              { 'justify-end': smAndDown },
+            ]"
+          >
             <code :class="statusClass(item.most_recent_task.status)">
               {{ item.most_recent_task.status }}
             </code>
-            <br />
             <TaskLink
               :id="item.most_recent_task.id"
               :updatedAt="item.most_recent_task.updated_at"
@@ -113,6 +124,7 @@ import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 
 // Props
 interface Props {
@@ -142,6 +154,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter()
 const route = useRoute()
+const { smAndDown } = useDisplay()
 
 // Define emits
 const emit = defineEmits<{
@@ -212,5 +225,9 @@ function statusClass(status: string) {
 
 .schedule-running {
   color: #ff9800;
+}
+
+:deep(.v-data-table__tr--mobile > td) {
+  grid-template-columns: 1fr 3fr !important;
 }
 </style>

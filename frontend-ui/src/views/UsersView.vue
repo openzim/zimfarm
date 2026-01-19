@@ -225,9 +225,9 @@ const isFormValid = computed(() => {
 
 // Table headers
 const headers = [
-  { title: 'Username', key: 'username' },
-  { title: 'Role', key: 'role' },
-  { title: 'Email', key: 'email' },
+  { title: 'Username', key: 'username', sortable: false },
+  { title: 'Role', key: 'role', sortable: false },
+  { title: 'Email', key: 'email', sortable: false },
 ]
 
 // Form validation rules

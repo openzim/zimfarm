@@ -12,12 +12,13 @@
       v-if="canCancelTasks"
       color="error"
       variant="outlined"
-      size="small"
+      :size="props.size"
       :loading="isCanceling"
       :disabled="isCanceling"
       @click="showConfirmDialog"
+      class="ma-1"
     >
-      <v-icon size="small" class="mr-1">mdi-cancel</v-icon>
+      <v-icon :size="props.size">mdi-cancel</v-icon>
       {{ isCanceling ? 'Canceling...' : 'Cancel' }}
     </v-btn>
 
@@ -47,9 +48,12 @@ import { computed, ref } from 'vue'
 // Props
 interface Props {
   id: string
+  size?: 'x-small' | 'small' | 'default' | 'large' | 'x-large'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  size: 'small',
+})
 
 // Emits
 const emit = defineEmits<{

@@ -25,7 +25,7 @@
     <!-- Title Row -->
     <v-row>
       <v-col>
-        <h2 class="text-h4">
+        <h2 class="text-h6 text-md-h4">
           <code>{{ scheduleName }}</code>
         </h2>
       </v-col>
@@ -40,7 +40,14 @@
     <!-- Content -->
     <div v-if="ready && schedule">
       <!-- Tabs -->
-      <v-tabs v-model="currentTab" class="mb-4" color="primary" slider-color="primary">
+      <v-tabs
+        v-model="currentTab"
+        class="mb-4"
+        color="primary"
+        slider-color="primary"
+        :grow="!smAndDown"
+        show-arrows
+      >
         <v-tab
           base-color="primary"
           value="details"
@@ -145,60 +152,85 @@
         <!-- Details Tab -->
         <v-window-item value="details">
           <v-card flat>
-            <v-card-text>
-              <v-table>
-                <tbody>
-                  <tr>
-                    <th class="text-left" style="width: 200px">API</th>
-                    <td>
-                      <a
-                        target="_blank"
-                        :href="webApiUrl + '/schedules/' + scheduleName"
-                        class="text-decoration-none"
-                      >
-                        document
-                        <v-icon size="small" class="ml-1">mdi-open-in-new</v-icon>
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Category</th>
-                    <td>{{ schedule.category }}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Language</th>
-                    <td>
-                      {{ schedule.language.name }} (<code>{{ schedule.language.code }}</code
-                      >)
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Enabled</th>
-                    <td>
-                      <v-chip
-                        :color="schedule?.enabled ? 'success' : 'error'"
-                        size="small"
-                        variant="tonal"
-                      >
-                        {{ schedule?.enabled }}
-                      </v-chip>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Archived</th>
-                    <td>
-                      {{ schedule?.archived ? 'Yes' : 'No' }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Periodicity</th>
-                    <td>
-                      <code>{{ schedule?.periodicity }}</code>
-                    </td>
-                  </tr>
-                  <tr v-if="schedule?.tags?.length">
-                    <th class="text-left">Tags</th>
-                    <td>
+            <v-card-text class="pa-0">
+              <div>
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">API</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <a
+                      target="_blank"
+                      :href="webApiUrl + '/schedules/' + scheduleName"
+                      class="text-decoration-none"
+                    >
+                      document
+                      <v-icon size="small" class="ml-1">mdi-open-in-new</v-icon>
+                    </a>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Category</div>
+                  </v-col>
+                  <v-col cols="12" md="8">{{ schedule.category }}</v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Language</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    {{ schedule.language.name }}
+                    (<code>{{ schedule.language.code }}</code
+                    >)
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Enabled</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <v-chip
+                      :color="schedule?.enabled ? 'success' : 'error'"
+                      size="small"
+                      variant="tonal"
+                    >
+                      {{ schedule?.enabled }}
+                    </v-chip>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Archived</div>
+                  </v-col>
+                  <v-col cols="12" md="8">{{ schedule?.archived ? 'Yes' : 'No' }}</v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Periodicity</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <code>{{ schedule?.periodicity }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row v-if="schedule?.tags?.length" no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Tags</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <div class="d-flex flex-row flex-wrap">
                       <v-chip
                         v-for="tag in schedule?.tags || []"
                         :key="tag"
@@ -210,26 +242,36 @@
                       >
                         {{ tag }}
                       </v-chip>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Context</th>
-                    <td>
-                      <v-chip
-                        v-if="schedule.context"
-                        size="small"
-                        variant="outlined"
-                        density="comfortable"
-                        color="primary"
-                        class="mr-2 mb-1 text-caption text-uppercase"
-                      >
-                        {{ schedule.context }}
-                      </v-chip>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Last run</th>
-                    <td v-if="lastRun">
+                    </div>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="schedule?.tags?.length" class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Context</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <v-chip
+                      v-if="schedule.context"
+                      size="small"
+                      variant="outlined"
+                      density="comfortable"
+                      color="primary"
+                      class="mr-2 mb-1 text-caption text-uppercase"
+                    >
+                      {{ schedule.context }}
+                    </v-chip>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Last run</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <div v-if="lastRun" class="d-flex align-center flex-wrap">
                       <v-chip
                         :color="getStatusColor(lastRun.status)"
                         size="small"
@@ -244,117 +286,137 @@
                         :status="lastRun.status"
                         :timestamp="lastRun.timestamp"
                       />
-                    </td>
-                    <td v-else>
+                    </div>
+                    <div v-else>
                       <v-chip size="small" variant="outlined" color="grey"> None 🙁 </v-chip>
-                    </td>
-                  </tr>
-                  <tr v-if="scheduleDurationDict">
-                    <th class="text-left">Scraper Duration</th>
-                    <td>
-                      <span v-if="scheduleDurationDict.single">
-                        {{ scheduleDurationDict.formattedDuration }}
-                        (<router-link
+                    </div>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row v-if="scheduleDurationDict" no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Scraper Duration</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <span v-if="scheduleDurationDict.single">
+                      {{ scheduleDurationDict.formattedDuration }}
+                      (<router-link
+                        :to="{
+                          name: 'worker-detail',
+                          params: { workerName: scheduleDurationDict.worker },
+                        }"
+                      >
+                        {{ scheduleDurationDict.worker }}
+                      </router-link>
+                      on
+                      {{ formatDt(scheduleDurationDict.on) }})
+                    </span>
+                    <span v-else>
+                      between
+                      {{ scheduleDurationDict.formattedMinDuration }}
+                      (<template
+                        v-for="(worker, index) in scheduleDurationDict.minWorkers || []"
+                        :key="worker.worker_name"
+                      >
+                        <router-link
                           :to="{
                             name: 'worker-detail',
-                            params: { workerName: scheduleDurationDict.worker },
+                            params: { workerName: worker.worker_name },
                           }"
                         >
-                          {{ scheduleDurationDict.worker }}
-                        </router-link>
-                        on
-                        {{ formatDt(scheduleDurationDict.on) }})
-                      </span>
-                      <span v-else>
-                        between
-                        {{ scheduleDurationDict.formattedMinDuration }} (<template
-                          v-for="(worker, index) in scheduleDurationDict.minWorkers || []"
-                          :key="worker.worker_name"
-                        >
-                          <router-link
-                            :to="{
-                              name: 'worker-detail',
-                              params: { workerName: worker.worker_name },
-                            }"
-                          >
-                            {{ worker.worker_name }} </router-link
-                          ><span v-if="index < (scheduleDurationDict.minWorkers?.length || 0) - 1"
-                            >,
-                          </span> </template
-                        >) and {{ scheduleDurationDict.formattedMaxDuration }} (<template
-                          v-for="(worker, index) in scheduleDurationDict.maxWorkers || []"
-                          :key="worker.worker_name"
-                        >
-                          <router-link
-                            :to="{
-                              name: 'worker-detail',
-                              params: { workerName: worker.worker_name },
-                            }"
-                          >
-                            {{ worker.worker_name }} </router-link
-                          ><span v-if="index < (scheduleDurationDict.maxWorkers?.length || 0) - 1"
-                            >,
-                          </span> </template
-                        >)
-                      </span>
-                    </td>
-                  </tr>
-                  <tr v-if="totalDurationDict">
-                    <th class="text-left">Total Duration</th>
-                    <td>
-                      <span v-if="totalDurationDict.single">
-                        {{ totalDurationDict.formattedDuration }}
-                        (<router-link
+                          {{ worker.worker_name }} </router-link
+                        ><span v-if="index < (scheduleDurationDict.minWorkers?.length || 0) - 1"
+                          >,
+                        </span> </template
+                      >) and
+                      {{ scheduleDurationDict.formattedMaxDuration }}
+                      (<template
+                        v-for="(worker, index) in scheduleDurationDict.maxWorkers || []"
+                        :key="worker.worker_name"
+                      >
+                        <router-link
                           :to="{
                             name: 'worker-detail',
-                            params: { workerName: totalDurationDict.worker },
+                            params: { workerName: worker.worker_name },
                           }"
                         >
-                          {{ totalDurationDict.worker }}
-                        </router-link>
-                        on
-                        {{ formatDt(totalDurationDict.on) }})
-                      </span>
-                      <span v-else>
-                        between
-                        {{ totalDurationDict.formattedMinDuration }} (<template
-                          v-for="(worker, index) in totalDurationDict.minWorkers || []"
-                          :key="worker.worker_name"
+                          {{ worker.worker_name }} </router-link
+                        ><span v-if="index < (scheduleDurationDict.maxWorkers?.length || 0) - 1"
+                          >,
+                        </span> </template
+                      >)
+                    </span>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="scheduleDurationDict" class="my-2"></v-divider>
+
+                <v-row v-if="totalDurationDict" no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Total Duration</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <span v-if="totalDurationDict.single">
+                      {{ totalDurationDict.formattedDuration }}
+                      (<router-link
+                        :to="{
+                          name: 'worker-detail',
+                          params: { workerName: totalDurationDict.worker },
+                        }"
+                      >
+                        {{ totalDurationDict.worker }}
+                      </router-link>
+                      on
+                      {{ formatDt(totalDurationDict.on) }})
+                    </span>
+                    <span v-else>
+                      between
+                      {{ totalDurationDict.formattedMinDuration }}
+                      (<template
+                        v-for="(worker, index) in totalDurationDict.minWorkers || []"
+                        :key="worker.worker_name"
+                      >
+                        <router-link
+                          :to="{
+                            name: 'worker-detail',
+                            params: { workerName: worker.worker_name },
+                          }"
                         >
-                          <router-link
-                            :to="{
-                              name: 'worker-detail',
-                              params: { workerName: worker.worker_name },
-                            }"
-                          >
-                            {{ worker.worker_name }} </router-link
-                          ><span v-if="index < (totalDurationDict.minWorkers?.length || 0) - 1"
-                            >,
-                          </span> </template
-                        >) and {{ totalDurationDict.formattedMaxDuration }} (<template
-                          v-for="(worker, index) in totalDurationDict.maxWorkers || []"
-                          :key="worker.worker_name"
+                          {{ worker.worker_name }} </router-link
+                        ><span v-if="index < (totalDurationDict.minWorkers?.length || 0) - 1"
+                          >,
+                        </span> </template
+                      >) and
+                      {{ totalDurationDict.formattedMaxDuration }}
+                      (<template
+                        v-for="(worker, index) in totalDurationDict.maxWorkers || []"
+                        :key="worker.worker_name"
+                      >
+                        <router-link
+                          :to="{
+                            name: 'worker-detail',
+                            params: { workerName: worker.worker_name },
+                          }"
                         >
-                          <router-link
-                            :to="{
-                              name: 'worker-detail',
-                              params: { workerName: worker.worker_name },
-                            }"
-                          >
-                            {{ worker.worker_name }} </router-link
-                          ><span v-if="index < (totalDurationDict.maxWorkers?.length || 0) - 1"
-                            >,
-                          </span> </template
-                        >)
-                      </span>
-                    </td>
-                  </tr>
-                  <tr v-if="!canRequestTasks">
-                    <th class="text-left">Requested</th>
-                    <td v-if="requestedTask === null">
+                          {{ worker.worker_name }} </router-link
+                        ><span v-if="index < (totalDurationDict.maxWorkers?.length || 0) - 1"
+                          >,
+                        </span> </template
+                      >)
+                    </span>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="totalDurationDict" class="my-2"></v-divider>
+
+                <v-row v-if="!canRequestTasks" no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Requested</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <div v-if="requestedTask === null">
                       <v-progress-circular indeterminate size="16" />
-                    </td>
-                    <td v-else-if="requestedTask">
+                    </div>
+                    <div v-else-if="requestedTask">
                       <code>{{ shortId(requestedTask.id) }}</code
                       >,
                       {{
@@ -370,163 +432,202 @@
                         <v-icon size="small" class="mr-1">mdi-fire</v-icon>
                         {{ requestedTask.priority }}
                       </v-chip>
-                    </td>
-                    <td v-else>
+                    </div>
+                    <div v-else>
                       <v-chip size="small" variant="outlined" color="grey"> No </v-chip>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left align-top pa-4">History</th>
-                    <td v-if="historyRuns.length">
-                      <v-table density="compact">
-                        <thead>
-                          <tr>
-                            <th class="text-left">Worker</th>
-                            <th class="text-left">Status</th>
-                            <th class="text-left">Task</th>
-                            <th class="text-left">Total Duration</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="run in historyRuns" :key="run.id">
-                            <td>
-                              <router-link
-                                :to="{
-                                  name: 'worker-detail',
-                                  params: { workerName: run.worker_name },
-                                }"
-                                class="text-decoration-none"
-                              >
-                                {{ run.worker_name }}
-                              </router-link>
-                            </td>
-                            <td>
-                              <v-chip
-                                :color="getStatusColor(run.status)"
-                                size="small"
-                                variant="tonal"
-                              >
-                                {{ run.status }}
-                              </v-chip>
-                            </td>
-                            <td>
-                              <span class="text-no-wrap">
-                                <TaskLink
-                                  :id="run.id"
-                                  :updatedAt="run.updated_at"
-                                  :status="run.status"
-                                  :timestamp="run.timestamp"
-                                />
-                              </span>
-                            </td>
-                            <td>
-                              <span>{{ calculateTaskDuration(run) }}</span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </v-table>
-                    </td>
-                    <td v-else>
-                      <v-chip size="small" variant="outlined" color="grey"> None 🙁 </v-chip>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
+                    </div>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="!canRequestTasks" class="my-2"></v-divider>
+
+                <div>
+                  <v-row no-gutters class="py-2">
+                    <v-col cols="12" md="4">
+                      <div class="text-subtitle-2">History</div>
+                    </v-col>
+                    <v-col cols="12" md="8">
+                      <div class="text-grey-darken-1"></div>
+                    </v-col>
+                  </v-row>
+                  <div>
+                    <v-data-table
+                      :items="historyRuns"
+                      :headers="[
+                        { title: 'Worker', value: 'worker' },
+                        { title: 'Status', value: 'status' },
+                        { title: 'Task', value: 'task' },
+                        { title: 'Total Duration', value: 'total_duration' },
+                      ]"
+                      :mobile="smAndDown"
+                      :density="smAndDown ? 'compact' : 'comfortable'"
+                      item-key="id"
+                      :hide-default-footer="true"
+                      disable-sort
+                    >
+                      <template #no-data>
+                        <div class="text-center pa-4">
+                          <v-icon size="x-large" class="mb-2">mdi-format-list-bulleted</v-icon>
+                          <div class="text-h6 text-grey-darken-1 mb-2">No history</div>
+                        </div>
+                      </template>
+
+                      <template #[`item.worker`]="{ item }">
+                        <router-link
+                          :to="{ name: 'worker-detail', params: { workerName: item.worker_name } }"
+                          class="text-decoration-none"
+                        >
+                          {{ item.worker_name }}
+                        </router-link>
+                      </template>
+
+                      <template #[`item.status`]="{ item }">
+                        <v-chip :color="getStatusColor(item.status)" size="small" variant="tonal">
+                          {{ item.status }}
+                        </v-chip>
+                      </template>
+
+                      <template #[`item.task`]="{ item }">
+                        <span class="text-no-wrap">
+                          <TaskLink
+                            :id="item.id"
+                            :updatedAt="item.updated_at"
+                            :status="item.status"
+                            :timestamp="item.timestamp"
+                          />
+                        </span>
+                      </template>
+
+                      <template #[`item.total_duration`]="{ item }">
+                        <span>{{ calculateTaskDuration(item) }}</span>
+                      </template>
+                    </v-data-table>
+                  </div>
+                </div>
+              </div>
             </v-card-text>
           </v-card>
         </v-window-item>
 
         <!-- History Tab -->
         <v-window-item value="history">
-          <div v-if="canUpdateSchedules" class="pa-4">
-            <ScheduleHistory
-              :history="scheduleHistoryStore.history"
-              :has-more="canLoadMoreHistory"
-              :loading="loadingHistory"
-              :paginator="scheduleHistoryStore.paginator"
-              :schedule-name="scheduleName"
-              @load="loadHistory"
-            />
-          </div>
+          <ScheduleHistory
+            v-if="canUpdateSchedules"
+            :history="scheduleHistoryStore.history"
+            :has-more="canLoadMoreHistory"
+            :loading="loadingHistory"
+            :paginator="scheduleHistoryStore.paginator"
+            :schedule-name="scheduleName"
+            @load="loadHistory"
+          />
         </v-window-item>
 
         <!-- Config Tab -->
         <v-window-item value="config">
           <v-card flat>
-            <v-card-text>
-              <v-table>
-                <tbody>
-                  <tr>
-                    <th class="text-left" style="width: 200px">Offliner</th>
-                    <td>
-                      <code>{{ offliner }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Offliner Definition</th>
-                    <td>
-                      <code>{{ schedule.version }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Platform</th>
-                    <td>
-                      <code>{{ platform || '-' }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Warehouse Path</th>
-                    <td>
-                      <code>{{ warehousePath }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Image</th>
-                    <td>
-                      <a target="_blank" :href="imageUrl" class="text-decoration-none">
-                        <code>{{ imageHuman }}</code>
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Resources</th>
-                    <td>
-                      <ResourceBadge kind="cpu" :value="config.resources.cpu" />
-                      <ResourceBadge kind="memory" :value="config.resources.memory" />
-                      <ResourceBadge kind="disk" :value="config.resources.disk" />
-                      <ResourceBadge
-                        kind="shm"
-                        :value="config.resources.shm"
-                        v-if="config.resources.shm"
-                      />
-                      <v-chip
-                        v-if="config.monitor || false"
-                        size="small"
-                        color="warning"
-                        variant="tonal"
-                        class="ml-2"
-                      >
-                        <v-icon size="small" class="mr-1">mdi-bug</v-icon>
-                        monitored
-                      </v-chip>
-                    </td>
-                  </tr>
-                  <tr v-if="schedule?.config?.artifacts_globs">
-                    <th class="text-left">Artifacts</th>
-                    <td>
-                      <code class="text-pink-accent-2">{{
-                        schedule?.config?.artifacts_globs
-                      }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left pa-4 align-top">Config</th>
-                    <td>
-                      <FlagsList :offliner="config.offliner" :flags-definition="flagsDefinition" />
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left pa-4 align-top">
+            <v-card-text class="pa-0">
+              <div>
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Offliner</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <code>{{ offliner }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Offliner Definition</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <code>{{ schedule.version }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Platform</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <code>{{ platform || '-' }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Warehouse Path</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <code>{{ warehousePath }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Image</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <a target="_blank" :href="imageUrl" class="text-decoration-none">
+                      <code>{{ imageHuman }}</code>
+                    </a>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Resources</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <ResourceBadge kind="cpu" :value="config.resources.cpu" />
+                    <ResourceBadge kind="memory" :value="config.resources.memory" />
+                    <ResourceBadge kind="disk" :value="config.resources.disk" />
+                    <ResourceBadge
+                      kind="shm"
+                      :value="config.resources.shm"
+                      v-if="config.resources.shm"
+                    />
+                    <v-chip
+                      v-if="config.monitor || false"
+                      size="small"
+                      color="warning"
+                      variant="tonal"
+                      class="ml-2"
+                    >
+                      <v-icon size="small" class="mr-1">mdi-bug</v-icon>
+                      monitored
+                    </v-chip>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row v-if="schedule?.config?.artifacts_globs" no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Artifacts</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <code class="text-pink-accent-2">{{ schedule?.config?.artifacts_globs }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="schedule?.config?.artifacts_globs" class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Config</div>
+                  </v-col>
+                  <v-col cols="12" md="8" class="text-break">
+                    <FlagsList :offliner="config.offliner" :flags-definition="flagsDefinition" />
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">
                       Command
                       <v-btn
                         size="small"
@@ -537,13 +638,17 @@
                         <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
                         Copy
                       </v-btn>
-                    </th>
-                    <td class="py-2">
-                      <code class="text-pink-accent-2">{{ command }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left pa-4 align-top">
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="8" class="text-break">
+                    <code class="text-pink-accent-2">{{ command }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">
                       Offliner Command
                       <v-btn
                         size="small"
@@ -554,13 +659,13 @@
                         <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
                         Copy
                       </v-btn>
-                    </th>
-                    <td class="py-2">
-                      <code class="text-pink-accent-2">{{ offlinerCommand }}</code>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="8" class="text-break">
+                    <code class="text-pink-accent-2">{{ offlinerCommand }}</code>
+                  </v-col>
+                </v-row>
+              </div>
             </v-card-text>
           </v-card>
         </v-window-item>
@@ -717,6 +822,7 @@ import {
 } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { inject } from 'vue'
+import { useDisplay } from 'vuetify'
 
 // Props
 interface Props {
@@ -749,6 +855,8 @@ const appConfig = inject<Config>(constants.config)
 if (!appConfig) {
   throw new Error('Config is not defined')
 }
+
+const { smAndDown } = useDisplay()
 
 // Reactive data
 

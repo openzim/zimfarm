@@ -44,6 +44,8 @@
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
+        :mobile="smAndDown"
+        :density="smAndDown ? 'compact' : 'comfortable'"
       >
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
@@ -74,7 +76,17 @@
 
         <template #[`item.status`]="{ item }">
           <template v-if="item.kind === 'worker'">
-            <div class="d-flex flex-column flex-sm-row flex-wrap ga-1 py-1">
+            <div
+              :class="[
+                'd-flex',
+                'ga-1',
+                'py-1',
+                'flex-wrap',
+                'flex-row',
+                'flex-md-column',
+                { 'justify-end': smAndDown },
+              ]"
+            >
               <v-chip
                 :color="item.status === 'online' ? 'success' : 'dark-grey'"
                 size="x-small"
@@ -151,26 +163,38 @@
         </template>
 
         <template #[`item.resources`]="{ item }">
-          <div class="d-flex flex-column flex-md-row py-1">
-            <template v-if="item.kind === 'worker'">
-              <ResourceBadge kind="cpu" :value="item.resources.cpu" variant="text" />
-              <ResourceBadge kind="memory" :value="item.resources.memory" variant="text" />
-              <ResourceBadge kind="disk" :value="item.resources.disk" variant="text" />
-            </template>
-            <template v-else>
-              <ResourceBadge kind="cpu" :value="item.task.config.resources.cpu" variant="text" />
-              <ResourceBadge
-                kind="memory"
-                :value="item.task.config.resources.memory"
-                variant="text"
-              />
-              <ResourceBadge kind="disk" :value="item.task.config.resources.disk" variant="text" />
-            </template>
+          <div
+            :class="[
+              'd-flex',
+              'flex-row',
+              'flex-wrap',
+              'flex-md-column',
+              { 'justify-end': smAndDown },
+            ]"
+          >
+            <ResourceBadge
+              kind="cpu"
+              :value="getResources(item).cpu"
+              variant="text"
+              :custom-class="smAndDown ? 'pa-1' : undefined"
+            />
+            <ResourceBadge
+              kind="memory"
+              :value="getResources(item).memory"
+              variant="text"
+              :custom-class="smAndDown ? 'pa-1' : undefined"
+            />
+            <ResourceBadge
+              kind="disk"
+              :value="getResources(item).disk"
+              variant="text"
+              :custom-class="smAndDown ? 'pa-1' : undefined"
+            />
           </div>
         </template>
 
         <template #[`item.contexts`]="{ item }">
-          <div class="d-flex flex-wrap ga-1 py-1">
+          <div :class="['d-flex', 'flex-wrap', 'ga-1', 'py-1', { 'justify-end': smAndDown }]">
             <template v-if="item.kind === 'worker'">
               <v-chip
                 v-for="(ip, ctx) in item.contexts"
@@ -208,7 +232,8 @@
               slim
               @click="toggleWorkerRow(item.name)"
             >
-              <span class="d-none d-md-inline">
+              <!-- Text: hidden on medium and up, shown on small and down -->
+              <span :class="smAndDown ? '' : 'd-none d-md-inline'">
                 {{
                   expanded.includes(item.name)
                     ? `Collapse (${item.tasks?.length || 0})`
@@ -216,8 +241,8 @@
                 }}
               </span>
 
-              <!-- Icon always visible -->
-              <v-icon size="small" class="mr-1">
+              <!-- Icon: shown on medium and up, hidden on small and down -->
+              <v-icon v-if="!smAndDown" size="small" class="mr-1">
                 {{ expanded.includes(item.name) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
               </v-icon>
             </v-btn>
@@ -245,6 +270,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue'
 import type { VueCookies } from 'vue-cookies'
 import { useTheme } from 'vuetify'
 import { useRoute, useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 
 const props = defineProps<{
   workerHeaders: { title: string; value: string }[]
@@ -264,6 +290,7 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 const router = useRouter()
 const route = useRoute()
+const { smAndDown } = useDisplay()
 const expanded = ref<string[]>([])
 const theme = useTheme()
 
@@ -372,6 +399,10 @@ function getRowProps({
     return { class: isDark ? 'bg-grey-darken-3' : 'bg-grey-lighten-4' }
   }
   return {}
+}
+
+function getResources(item: CombinedRow) {
+  return item.kind === 'worker' ? item.resources : item.task.config.resources
 }
 </script>
 

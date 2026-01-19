@@ -1,0 +1,32 @@
+/* Global Vuetify Data Table Mobile Customization Styles */
+
+.v-data-table-headers--mobile {
+  display: none !important;
+}
+
+.v-table--density-compact {
+  --v-table-row-height: 24px !important;
+}
+
+.v-data-table__tr--mobile {
+  display: block !important;
+  margin: 4px 0 !important;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  border-radius: 5px !important;
+}
+
+.v-data-table__tr--mobile .v-data-table__td {
+  border-bottom: none !important;
+}
+
+.v-data-table__tr--mobile > td {
+  padding: 2px 8px !important;
+}
+
+.v-data-table__tr--mobile > td:first-child {
+  padding-top: 4px !important;
+}
+
+.v-data-table__tr--mobile > td:last-child {
+  padding-bottom: 4px !important;
+}

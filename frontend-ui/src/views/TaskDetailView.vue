@@ -66,400 +66,513 @@
       <!-- Details Tab -->
       <v-window v-model="currentTab">
         <v-window-item value="details">
-          <v-card>
-            <v-card-text>
-              <v-table>
-                <tbody>
-                  <tr>
-                    <th class="text-left w-20">ID</th>
-                    <td>
-                      <code>{{ id }}</code
-                      >,
-                      <a target="_blank" :href="webApiUrl + '/tasks/' + id">
-                        document <v-icon size="small">mdi-open-in-new</v-icon>
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left w-20">Recipe</th>
-                    <td>
-                      <span v-if="task.schedule_name === null || task.schedule_name === 'none'">
-                        {{ task.original_schedule_name }}
-                      </span>
-                      <router-link
-                        v-else
-                        :to="{
-                          name: 'schedule-detail',
-                          params: { scheduleName: task.schedule_name },
-                        }"
-                      >
-                        {{ task.schedule_name }}
-                      </router-link>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left w-20">Status</th>
-                    <td>
-                      <code class="text-pink-accent-2">{{ task.status }}</code>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left w-20">Worker</th>
-                    <td>
-                      <router-link
-                        :to="{ name: 'worker-detail', params: { workerName: task.worker_name } }"
-                        class="text-decoration-none"
-                      >
-                        {{ task.worker_name }}
-                      </router-link>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left w-20">Started On</th>
-                    <td>
-                      {{ formatDt(startedOn) }}, after
-                      <strong>{{ pipeDuration }} in pipe</strong>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left w-20">Duration</th>
-                    <td>
-                      {{ taskDuration }}<span v-if="isRunning"> (<strong>Ongoing</strong>)</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th class="text-left align-top pa-4 w-20">Events</th>
-                    <td>
-                      <v-table density="compact" class="events-table">
-                        <tbody>
-                          <tr v-for="event in task.events" :key="event.code">
-                            <td>
-                              <code class="text-pink-accent-2">{{ event.code }}</code>
-                            </td>
-                            <td>{{ formatDt(event.timestamp) }}</td>
-                            <td v-if="event.code === 'requested'">
-                              {{ task.requested_by }}
-                            </td>
-                            <td
-                              v-else-if="
-                                event.code === 'cancel_requested' &&
-                                task.status === 'cancel_requested'
-                              "
-                            >
-                              {{ task.canceled_by }}
-                            </td>
-                            <td v-else-if="event.code === 'canceled'">
-                              {{ task.canceled_by }}
-                            </td>
-                            <td v-else />
-                          </tr>
-                        </tbody>
-                      </v-table>
-                    </td>
-                  </tr>
-                  <tr v-if="task.files">
-                    <th class="text-left w-20">Files</th>
-                    <td>
-                      <v-table density="compact">
-                        <thead>
-                          <tr>
-                            <th>Filename</th>
-                            <th>Size</th>
-                            <th>Created After</th>
-                            <th>Upload Duration</th>
-                            <th>Quality</th>
-                            <th>Info</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="file in sortedFiles" :key="file.name">
-                            <td>
-                              <a
-                                target="_blank"
-                                :href="
-                                  kiwixDownloadUrl + task.config.warehouse_path + '/' + file.name
-                                "
+          <v-card flat>
+            <v-card-text class="pa-0">
+              <div>
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">ID</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <code>{{ id }}</code
+                    >,
+                    <a target="_blank" :href="webApiUrl + '/tasks/' + id">
+                      document <v-icon size="small">mdi-open-in-new</v-icon>
+                    </a>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Recipe</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <span v-if="task.schedule_name === null || task.schedule_name === 'none'">
+                      {{ task.original_schedule_name }}
+                    </span>
+                    <router-link
+                      v-else
+                      :to="{
+                        name: 'schedule-detail',
+                        params: { scheduleName: task.schedule_name },
+                      }"
+                    >
+                      {{ task.schedule_name }}
+                    </router-link>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Status</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <code class="text-pink-accent-2">{{ task.status }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Worker</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <router-link
+                      :to="{ name: 'worker-detail', params: { workerName: task.worker_name } }"
+                      class="text-decoration-none"
+                    >
+                      {{ task.worker_name }}
+                    </router-link>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Started On</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    {{ formatDt(startedOn) }}, after
+                    <strong>{{ pipeDuration }} in pipe</strong>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Duration</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    {{ taskDuration }}<span v-if="isRunning"> (<strong>Ongoing</strong>)</span>
+                  </v-col>
+                </v-row>
+                <v-divider class="my-2"></v-divider>
+
+                <v-row no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Events</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <v-data-table
+                      :headers="eventsHeaders"
+                      :items="task.events"
+                      :mobile="smAndDown"
+                      :density="smAndDown ? 'compact' : 'comfortable'"
+                      item-key="code"
+                      hide-default-footer
+                      disable-sort
+                      class="events-table"
+                    >
+                      <template #[`item.code`]="{ item }">
+                        <code class="text-pink-accent-2">{{ item.code }}</code>
+                      </template>
+
+                      <template #[`item.timestamp`]="{ item }">
+                        {{ formatDt(item.timestamp) }}
+                      </template>
+
+                      <template #[`item.user`]="{ item }">
+                        <span v-if="item.code === 'requested'">
+                          {{ task.requested_by }}
+                        </span>
+                        <span
+                          v-else-if="
+                            item.code === 'cancel_requested' && task.status === 'cancel_requested'
+                          "
+                        >
+                          {{ task.canceled_by }}
+                        </span>
+                        <span v-else-if="item.code === 'canceled'">
+                          {{ task.canceled_by }}
+                        </span>
+                        <span v-else>-</span>
+                      </template>
+                    </v-data-table>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="task.files" class="my-2"></v-divider>
+
+                <v-row v-if="task.files" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Files</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <v-data-table
+                      :headers="filesHeaders"
+                      :items="sortedFiles"
+                      :mobile="smAndDown"
+                      :density="smAndDown ? 'compact' : 'comfortable'"
+                      item-key="name"
+                      hide-default-footer
+                      disable-sort
+                      :class="smAndDown ? '' : 'files-table'"
+                    >
+                      <template #[`item.name`]="{ item }">
+                        <a
+                          target="_blank"
+                          :href="kiwixDownloadUrl + task.config.warehouse_path + '/' + item.name"
+                        >
+                          {{ item.name }}
+                        </a>
+                      </template>
+
+                      <template #[`item.size`]="{ item }">
+                        {{ formattedBytesSize(item.size) }}
+                      </template>
+
+                      <template #[`item.created_after`]="{ item }">
+                        <v-tooltip :text="formatDt(item.created_timestamp)">
+                          <template #activator="{ props }">
+                            <span v-bind="props">{{ createdAfter(item, task) }}</span>
+                          </template>
+                        </v-tooltip>
+                      </template>
+
+                      <template #[`item.upload_duration`]="{ item }">
+                        <v-tooltip
+                          v-if="item.uploaded_timestamp"
+                          :text="formatDt(item.uploaded_timestamp)"
+                        >
+                          <template #activator="{ props }">
+                            <span v-bind="props">{{ uploadDuration(item) }}</span>
+                          </template>
+                        </v-tooltip>
+                        <span v-else>-</span>
+                      </template>
+
+                      <template #[`item.quality`]="{ item }">
+                        <div
+                          v-if="item.check_result !== undefined"
+                          :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]"
+                        >
+                          <v-tooltip :text="`Return code: ${item.check_result}`">
+                            <template #activator="{ props }">
+                              <v-icon
+                                v-bind="props"
+                                :color="item.check_result === 0 ? 'success' : 'error'"
+                                size="small"
                               >
-                                {{ file.name }}
-                              </a>
-                            </td>
-                            <td>{{ formattedBytesSize(file.size) }}</td>
-                            <td>
-                              <v-tooltip :text="formatDt(file.created_timestamp)">
-                                <template #activator="{ props }">
-                                  <span v-bind="props">{{ createdAfter(file, task) }}</span>
-                                </template>
-                              </v-tooltip>
-                            </td>
-                            <td v-if="file.uploaded_timestamp">
-                              <v-tooltip :text="formatDt(file.uploaded_timestamp)">
-                                <template #activator="{ props }">
-                                  <span v-bind="props">{{ uploadDuration(file) }}</span>
-                                </template>
-                              </v-tooltip>
-                            </td>
-                            <td v-else>-</td>
-                            <td v-if="file.check_result !== undefined">
-                              <div class="d-flex flex-sm-column flex-lg-row align-center">
-                                <v-tooltip :text="`Return code: ${file.check_result}`">
-                                  <template #activator="{ props }">
-                                    <v-icon
-                                      v-bind="props"
-                                      :color="file.check_result === 0 ? 'success' : 'error'"
-                                      size="small"
-                                    >
-                                      {{
-                                        file.check_result === 0
-                                          ? 'mdi-check-circle'
-                                          : 'mdi-close-circle'
-                                      }}
-                                    </v-icon>
-                                  </template>
-                                </v-tooltip>
-                                <v-btn
-                                  v-if="file.check_filename"
-                                  variant="text"
-                                  size="small"
-                                  class="ml-2"
-                                  :href="zimfarmChecksUrl(file.check_filename)"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <v-icon>mdi-download</v-icon>
-                                </v-btn>
-                              </div>
-                            </td>
-                            <td v-else>-</td>
-                            <td v-if="file.info">
-                              <v-menu location="left" :close-on-content-click="false">
-                                <template #activator="{ props }">
-                                  <v-btn v-bind="props" variant="text" size="small">
-                                    <v-icon>mdi-information</v-icon>
-                                  </v-btn>
-                                </template>
-                                <FileInfoTable :file-info="file.info" />
-                              </v-menu>
-                            </td>
-                            <td v-else>-</td>
-                          </tr>
-                        </tbody>
-                      </v-table>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
+                                {{
+                                  item.check_result === 0 ? 'mdi-check-circle' : 'mdi-close-circle'
+                                }}
+                              </v-icon>
+                            </template>
+                          </v-tooltip>
+                          <v-btn
+                            v-if="item.check_filename"
+                            variant="text"
+                            size="small"
+                            class="ml-2"
+                            :href="zimfarmChecksUrl(item.check_filename)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <v-icon>mdi-download</v-icon>
+                          </v-btn>
+                        </div>
+                        <span v-else>-</span>
+                      </template>
+
+                      <template #[`item.info`]="{ item }">
+                        <div :class="['d-flex', { 'justify-end': smAndDown }]">
+                          <v-menu v-if="item.info" location="left" :close-on-content-click="false">
+                            <template #activator="{ props }">
+                              <v-btn v-bind="props" variant="text" size="small">
+                                <v-icon>mdi-information</v-icon>
+                              </v-btn>
+                            </template>
+                            <FileInfoTable :file-info="item.info" />
+                          </v-menu>
+                          <span v-else>-</span>
+                        </div>
+                      </template>
+                    </v-data-table>
+                  </v-col>
+                </v-row>
+              </div>
             </v-card-text>
           </v-card>
         </v-window-item>
 
         <!-- Debug Tab -->
         <v-window-item value="debug">
-          <v-card>
-            <v-card-text>
-              <v-table>
-                <tbody>
-                  <tr v-if="task.config">
-                    <th class="text-left w-20">Offliner</th>
-                    <td>
-                      <a target="_blank" :href="imageUrl">
-                        <code>{{ imageHuman }}</code>
+          <v-card flat>
+            <v-card-text class="pa-0">
+              <div>
+                <v-row v-if="task.config" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Offliner</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <a target="_blank" :href="imageUrl">
+                      <code>{{ imageHuman }}</code>
+                    </a>
+                    (<code>{{ task.config.offliner.offliner_id }}</code
+                    >)
+                  </v-col>
+                </v-row>
+                <v-divider v-if="task.config" class="my-2"></v-divider>
+
+                <v-row v-if="task.config" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Offliner Definition</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <code>{{ task.version }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="task.config" class="my-2"></v-divider>
+
+                <v-row v-if="task.config" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Resources</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
+                    <ResourceBadge kind="memory" :value="task.config.resources.memory" />
+                    <ResourceBadge kind="disk" :value="task.config.resources.disk" />
+                    <ResourceBadge
+                      kind="shm"
+                      :value="task.config.resources.shm"
+                      v-if="task.config.resources.shm"
+                    />
+                    <v-chip v-if="task.config.monitor" color="warning" size="small" class="ml-2">
+                      <a target="_blank" :href="monitoringUrl" class="text-decoration-none">
+                        <v-icon size="small" class="mr-1">mdi-bug</v-icon>
+                        monitored
                       </a>
-                      (<code>{{ task.config.offliner.offliner_id }}</code
-                      >)
-                    </td>
-                  </tr>
-                  <tr v-if="task.config">
-                    <th class="text-left w-20">Offliner Definition</th>
-                    <td>
-                      <code>{{ task.version }}</code>
-                    </td>
-                  </tr>
-                  <tr v-if="task.config">
-                    <th class="text-left w-20">Resources</th>
-                    <td>
-                      <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
-                      <ResourceBadge kind="memory" :value="task.config.resources.memory" />
-                      <ResourceBadge kind="disk" :value="task.config.resources.disk" />
-                      <ResourceBadge
-                        kind="shm"
-                        :value="task.config.resources.shm"
-                        v-if="task.config.resources.shm"
-                      />
-                      <v-chip v-if="task.config.monitor" color="warning" size="small" class="ml-2">
-                        <a target="_blank" :href="monitoringUrl" class="text-decoration-none">
-                          <v-icon size="small" class="mr-1">mdi-bug</v-icon>
-                          monitored
-                        </a>
-                      </v-chip>
-                    </td>
-                  </tr>
-                  <tr v-if="task.config">
-                    <th class="text-left w-20">Platform</th>
-                    <td>{{ task.config.platform || '-' }}</td>
-                  </tr>
-                  <tr v-if="task.config">
-                    <th class="text-left align-top pa-4 w-20">Config</th>
-                    <td>
-                      <FlagsList
-                        :offliner="task.config.offliner"
-                        :flags-definition="flagsDefinition"
-                        :shrink="false"
-                      />
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.command">
-                    <th class="text-left align-top pa-4 w-20">
+                    </v-chip>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="task.config" class="my-2"></v-divider>
+
+                <v-row v-if="task.config" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Platform</div>
+                  </v-col>
+                  <v-col cols="12" md="9">{{ task.config.platform || '-' }}</v-col>
+                </v-row>
+                <v-divider v-if="task.config" class="my-2"></v-divider>
+
+                <v-row v-if="task.config" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Config</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <FlagsList
+                      :offliner="task.config.offliner"
+                      :flags-definition="flagsDefinition"
+                      :shrink="false"
+                    />
+                  </v-col>
+                </v-row>
+                <v-divider v-if="task.config" class="my-2"></v-divider>
+
+                <v-row v-if="taskContainer?.command" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">
                       Command
-                      <v-btn variant="text" size="small" class="ml-2" @click="copyCommand(command)">
-                        <v-icon>mdi-content-copy</v-icon>
+                      <v-btn
+                        size="small"
+                        variant="outlined"
+                        class="ml-2"
+                        @click="copyCommand(command)"
+                      >
+                        <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
+                        Copy
                       </v-btn>
-                    </th>
-                    <td class="py-2">
-                      <code class="command text-pink-accent-2 text-wrap">{{ command }}</code>
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.exit_code != null">
-                    <th class="text-left w-20">Exit-code</th>
-                    <td>
-                      <code class="text-pink-accent-2">{{ taskContainer.exit_code }}</code>
-                    </td>
-                  </tr>
-                  <tr v-if="hasStats">
-                    <th class="text-left w-20">Stats</th>
-                    <td>
-                      <div class="d-flex flex-wrap ga-2">
-                        <v-tooltip
-                          v-if="maxMemory"
-                          text="Maximum memory used during task execution"
-                        >
-                          <template #activator="{ props }">
-                            <v-chip v-bind="props" size="small">
-                              <v-icon size="small" class="mr-1">mdi-memory</v-icon>
-                              {{ maxMemory }} (max)
-                            </v-chip>
-                          </template>
-                        </v-tooltip>
-                        <v-tooltip
-                          v-if="maxDisk"
-                          text="Maximum disk space used during task execution"
-                        >
-                          <template #activator="{ props }">
-                            <v-chip v-bind="props" size="small">
-                              <v-icon size="small" class="mr-1">mdi-harddisk</v-icon>
-                              {{ maxDisk }} (max)
-                            </v-chip>
-                          </template>
-                        </v-tooltip>
-                        <v-tooltip
-                          v-if="hasCpuStats && cpuStats && cpuStats.max !== null"
-                          text="Maximum CPU usage percentage during task execution"
-                        >
-                          <template #activator="{ props }">
-                            <v-chip v-bind="props" size="small">
-                              <v-icon size="small" class="mr-1">mdi-cpu-64-bit</v-icon>
-                              {{ cpuStats.max.toFixed(1) }}% (max)
-                            </v-chip>
-                          </template>
-                        </v-tooltip>
-                        <v-tooltip
-                          v-if="hasCpuStats && cpuStats && cpuStats.avg !== null"
-                          text="Average CPU usage percentage during task execution"
-                        >
-                          <template #activator="{ props }">
-                            <v-chip v-bind="props" size="small">
-                              <v-icon size="small" class="mr-1">mdi-chart-line</v-icon>
-                              {{ cpuStats.avg.toFixed(1) }}% (avg)
-                            </v-chip>
-                          </template>
-                        </v-tooltip>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="taskProgress">
-                    <th class="text-left w-20">Scraper progress</th>
-                    <td>
-                      {{ taskProgress.overall }}% ({{ taskProgress.done }} /
-                      {{ taskProgress.total }})
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.stdout || taskContainer?.stderr || taskContainer?.log">
-                    <td colspan="2">
-                      <small>Logs uses UTC Timezone. {{ offsetString }}</small>
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.stdout">
-                    <th class="text-left w-20">
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="9" class="text-break">
+                    <code class="text-pink-accent-2">{{ command }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskContainer?.command" class="my-2"></v-divider>
+
+                <v-row v-if="taskContainer?.exit_code != null" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Exit-code</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <code class="text-pink-accent-2">{{ taskContainer.exit_code }}</code>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskContainer?.exit_code != null" class="my-2"></v-divider>
+
+                <v-row v-if="hasStats" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Stats</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <div class="d-flex flex-wrap ga-2">
+                      <v-tooltip v-if="maxMemory" text="Maximum memory used during task execution">
+                        <template #activator="{ props }">
+                          <v-chip v-bind="props" size="small">
+                            <v-icon size="small" class="mr-1">mdi-memory</v-icon>
+                            {{ maxMemory }} (max)
+                          </v-chip>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip
+                        v-if="maxDisk"
+                        text="Maximum disk space used during task execution"
+                      >
+                        <template #activator="{ props }">
+                          <v-chip v-bind="props" size="small">
+                            <v-icon size="small" class="mr-1">mdi-harddisk</v-icon>
+                            {{ maxDisk }} (max)
+                          </v-chip>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip
+                        v-if="hasCpuStats && cpuStats && cpuStats.max !== null"
+                        text="Maximum CPU usage percentage during task execution"
+                      >
+                        <template #activator="{ props }">
+                          <v-chip v-bind="props" size="small">
+                            <v-icon size="small" class="mr-1">mdi-cpu-64-bit</v-icon>
+                            {{ cpuStats.max.toFixed(1) }}% (max)
+                          </v-chip>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip
+                        v-if="hasCpuStats && cpuStats && cpuStats.avg !== null"
+                        text="Average CPU usage percentage during task execution"
+                      >
+                        <template #activator="{ props }">
+                          <v-chip v-bind="props" size="small">
+                            <v-icon size="small" class="mr-1">mdi-chart-line</v-icon>
+                            {{ cpuStats.avg.toFixed(1) }}% (avg)
+                          </v-chip>
+                        </template>
+                      </v-tooltip>
+                    </div>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="hasStats" class="my-2"></v-divider>
+
+                <v-row v-if="taskProgress" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Scraper progress</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    {{ taskProgress.overall }}% ({{ taskProgress.done }} / {{ taskProgress.total }})
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskProgress" class="my-2"></v-divider>
+
+                <v-row
+                  v-if="taskContainer?.stdout || taskContainer?.stderr || taskContainer?.log"
+                  no-gutters
+                  class="py-2"
+                >
+                  <v-col cols="12">
+                    <small>Logs uses UTC Timezone. {{ offsetString }}</small>
+                  </v-col>
+                </v-row>
+
+                <v-row v-if="taskContainer?.stdout" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">
                       Scraper stdout
                       <v-btn
-                        variant="text"
                         size="small"
+                        variant="outlined"
                         class="ml-2"
                         @click="copyOutput(taskContainer.stdout, 'stdout')"
                       >
-                        <v-icon>mdi-content-copy</v-icon>
+                        <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
+                        Copy
                       </v-btn>
-                    </th>
-                    <td>
-                      <pre class="stdout">{{ taskContainer.stdout }}</pre>
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.stderr">
-                    <th class="text-left w-20">
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <pre class="stdout">{{ taskContainer.stdout }}</pre>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskContainer?.stdout" class="my-2"></v-divider>
+
+                <v-row v-if="taskContainer?.stderr" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">
                       Scraper stderr
                       <v-btn
-                        variant="text"
                         size="small"
+                        variant="outlined"
                         class="ml-2"
                         @click="copyOutput(taskContainer.stderr, 'stderr')"
                       >
-                        <v-icon>mdi-content-copy</v-icon>
+                        <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
+                        Copy
                       </v-btn>
-                    </th>
-                    <td>
-                      <pre class="stderr">{{ taskContainer.stderr }}</pre>
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.log">
-                    <th class="text-left w-20">Scraper Log</th>
-                    <td>
-                      <v-btn variant="outlined" size="small" target="_blank" :href="zimfarmLogsUrl">
-                        Download log
-                      </v-btn>
-                    </td>
-                  </tr>
-                  <tr v-if="taskContainer?.artifacts">
-                    <th class="text-left w-20 align-top pa-4">Scraper Artifacts</th>
-                    <td>
-                      <v-btn
-                        variant="outlined"
-                        size="small"
-                        target="_blank"
-                        :href="zimfarmArtifactsUrl"
-                      >
-                        Download artifacts
-                      </v-btn>
-                    </td>
-                  </tr>
-                  <tr v-if="taskDebug.exception">
-                    <th class="text-left w-20 align-top pa-4">Exception</th>
-                    <td>
-                      <pre>{{ taskDebug.exception }}</pre>
-                    </td>
-                  </tr>
-                  <tr v-if="taskDebug.traceback">
-                    <th class="text-left w-20 align-top pa-4">Traceback</th>
-                    <td>
-                      <pre>{{ taskDebug.traceback }}</pre>
-                    </td>
-                  </tr>
-                  <tr v-if="taskDebug.log">
-                    <th class="text-left w-20 align-top pa-4">Task-worker Log</th>
-                    <td>
-                      <pre>{{ taskDebug.log }}</pre>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
+                    </div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <pre class="stderr">{{ taskContainer.stderr }}</pre>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskContainer?.stderr" class="my-2"></v-divider>
+
+                <v-row v-if="taskContainer?.log" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Scraper Log</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <v-btn variant="outlined" size="small" target="_blank" :href="zimfarmLogsUrl">
+                      Download log
+                    </v-btn>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskContainer?.log" class="my-2"></v-divider>
+
+                <v-row v-if="taskContainer?.artifacts" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Scraper Artifacts</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <v-btn
+                      variant="outlined"
+                      size="small"
+                      target="_blank"
+                      :href="zimfarmArtifactsUrl"
+                    >
+                      Download artifacts
+                    </v-btn>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskContainer?.artifacts" class="my-2"></v-divider>
+
+                <v-row v-if="taskDebug.exception" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Exception</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <pre>{{ taskDebug.exception }}</pre>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskDebug.exception" class="my-2"></v-divider>
+
+                <v-row v-if="taskDebug.traceback" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Traceback</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <pre>{{ taskDebug.traceback }}</pre>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="taskDebug.traceback" class="my-2"></v-divider>
+
+                <v-row v-if="taskDebug.log" no-gutters class="py-2">
+                  <v-col cols="12" md="3">
+                    <div class="text-subtitle-2">Task-worker Log</div>
+                  </v-col>
+                  <v-col cols="12" md="9">
+                    <pre>{{ taskDebug.log }}</pre>
+                  </v-col>
+                </v-row>
+              </div>
             </v-card-text>
           </v-card>
         </v-window-item>
@@ -500,6 +613,7 @@ import {
 } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 
 // Props
 interface Props {
@@ -524,11 +638,28 @@ const notificationStore = useNotificationStore()
 const tasksStore = useTasksStore()
 const offlinerStore = useOfflinerStore()
 
+const { smAndDown } = useDisplay()
+
 // Reactive data
 const task = ref<Task | null>(null)
 const error = ref<string | null>(null)
 const currentTab = ref(props.selectedTab)
 const flagsDefinition = ref<OfflinerDefinition[]>([])
+
+const eventsHeaders = [
+  { title: 'Event', value: 'code' },
+  { title: 'Timestamp', value: 'timestamp' },
+  { title: 'User', value: 'user' },
+]
+
+const filesHeaders = [
+  { title: 'Filename', value: 'name', width: '30%' },
+  { title: 'Size', value: 'size' },
+  { title: 'Created After', value: 'created_after' },
+  { title: 'Upload Duration', value: 'upload_duration' },
+  { title: 'Quality', value: 'quality' },
+  { title: 'Info', value: 'info' },
+]
 
 // Computed properties
 const offsetString = computed(() => {
@@ -789,7 +920,24 @@ pre {
   vertical-align: top;
 }
 
-.events-table tbody tr:nth-of-type(odd) {
+.events-table :deep(tbody tr:nth-of-type(odd)) {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+.files-table :deep(.v-data-table__td:first-child),
+.files-table :deep(.v-data-table__th:first-child) {
+  max-width: 30%;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Additional word-wrap styles for mobile table cells in this view */
+:deep(.v-data-table__tr--mobile .v-data-table__td) {
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 </style>
