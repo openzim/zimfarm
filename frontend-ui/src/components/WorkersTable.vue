@@ -83,7 +83,6 @@
                 'py-1',
                 'flex-wrap',
                 'flex-row',
-                'flex-md-column',
                 { 'justify-end': smAndDown },
               ]"
             >

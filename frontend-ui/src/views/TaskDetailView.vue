@@ -330,20 +330,22 @@
                     <div class="text-subtitle-2">Resources</div>
                   </v-col>
                   <v-col cols="12" md="9">
-                    <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
-                    <ResourceBadge kind="memory" :value="task.config.resources.memory" />
-                    <ResourceBadge kind="disk" :value="task.config.resources.disk" />
-                    <ResourceBadge
-                      kind="shm"
-                      :value="task.config.resources.shm"
-                      v-if="task.config.resources.shm"
-                    />
-                    <v-chip v-if="task.config.monitor" color="warning" size="small" class="ml-2">
-                      <a target="_blank" :href="monitoringUrl" class="text-decoration-none">
-                        <v-icon size="small" class="mr-1">mdi-bug</v-icon>
-                        monitored
-                      </a>
-                    </v-chip>
+                    <div class="d-flex flex-row flex-wrap ga-1">
+                      <ResourceBadge kind="cpu" :value="task.config.resources.cpu" />
+                      <ResourceBadge kind="memory" :value="task.config.resources.memory" />
+                      <ResourceBadge kind="disk" :value="task.config.resources.disk" />
+                      <ResourceBadge
+                        kind="shm"
+                        :value="task.config.resources.shm"
+                        v-if="task.config.resources.shm"
+                      />
+                      <v-chip v-if="task.config.monitor" color="warning" size="small" class="ml-2">
+                        <a target="_blank" :href="monitoringUrl" class="text-decoration-none">
+                          <v-icon size="small" class="mr-1">mdi-bug</v-icon>
+                          monitored
+                        </a>
+                      </v-chip>
+                    </div>
                   </v-col>
                 </v-row>
                 <v-divider v-if="task.config" class="my-2"></v-divider>
