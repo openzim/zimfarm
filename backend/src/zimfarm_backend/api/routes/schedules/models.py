@@ -70,6 +70,7 @@ class ScheduleUpdateSchema(BaseModel):
     context: str | None = None
     version: str | None = None
     comment: str | None = None  # Optional comment for history tracking
+    notification: ScheduleNotificationSchema | None = None
 
 
 class CloneSchema(BaseModel):

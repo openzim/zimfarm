@@ -344,6 +344,17 @@ def get_schedules(
     return results
 
 
+def _create_schedule_notification_schema(
+    notification: dict[str, Any] | None,
+) -> ScheduleNotificationSchema:
+    """Create schedule notification schema"""
+    if notification:
+        obj = ScheduleNotificationSchema.model_validate(notification)
+    else:
+        obj = ScheduleNotificationSchema()
+    return obj
+
+
 def create_schedule(
     session: OrmSession,
     author: str,
@@ -400,6 +411,7 @@ def create_schedule(
         periodicity=schedule.periodicity,
         context=schedule.context,
         offliner_definition_version=offliner_definition.version,
+        notification=schedule.notification,
     )
     schedule.history_entries.append(history_entry)
 
@@ -459,11 +471,7 @@ def create_schedule_full_schema(
         tags=schedule.tags,
         periodicity=schedule.periodicity,
         similarity_data=schedule.similarity_data,
-        notification=(
-            ScheduleNotificationSchema.model_validate(schedule.notification)
-            if schedule.notification
-            else None
-        ),
+        notification=_create_schedule_notification_schema(schedule.notification),
         most_recent_task=(
             MostRecentTaskSchema(
                 id=schedule.most_recent_task.id,
@@ -559,6 +567,7 @@ def update_schedule(
     periodicity: SchedulePeriodicity | None = None,
     context: str | None = None,
     comment: str | None = None,
+    notification: ScheduleNotificationSchema | None = None,
 ) -> Schedule:
     """Update a schedule with the given values that are set."""
     schedule = get_schedule(session, schedule_name=schedule_name)
@@ -589,6 +598,9 @@ def update_schedule(
         periodicity if periodicity is not None else schedule.periodicity
     )
     schedule.is_valid = is_valid if is_valid is not None else schedule.is_valid
+    schedule.notification = (
+        notification.model_dump() if notification else schedule.notification
+    )
 
     schedule.context = context if context is not None else schedule.context
 
@@ -606,6 +618,7 @@ def update_schedule(
         context=schedule.context,
         archived=schedule.archived,
         offliner_definition_version=offliner_definition.version,
+        notification=schedule.notification,
     )
     schedule.history_entries.append(history_entry)
 
@@ -650,6 +663,7 @@ def create_schedule_history_schema(
         config=history_entry.config,
         archived=history_entry.archived,
         offliner_definition_version=history_entry.offliner_definition_version,
+        notification=history_entry.notification,
     )
 
 

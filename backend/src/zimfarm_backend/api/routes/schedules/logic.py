@@ -560,6 +560,7 @@ def update_schedule(
         is_valid=True,
         context=request.context,
         offliner_definition=offliner_definition,
+        notification=request.notification,
     )
 
     schedule = create_schedule_full_schema(schedule, offliner)
