@@ -941,6 +941,27 @@ class TaskWorker(BaseWorker):
             )
         )
 
+    @property
+    def zim_file_uploads_complete(self) -> bool:
+        """Check if all ZIM file uploads are complete"""
+        if len(self.zim_files_actions_status) == 0:
+            return False
+
+        for _, actions in self.zim_files_actions_status.items():
+            # ZIM upload must be DONE
+            if actions[ZIM_UPLOAD] != DONE:
+                return False
+
+            # zimcheck must be DONE or SKIPPED
+            if actions[ZIM_CHECK] not in (DONE, SKIPPED):
+                return False
+
+            # chk_upload must be DONE or SKIPPED
+            if actions[CHK_UPLOAD] not in (DONE, SKIPPED):
+                return False
+
+        return True
+
     def check_zims(self):
         if not self.task:
             logger.error("No task to check files")
@@ -1206,7 +1227,7 @@ class TaskWorker(BaseWorker):
         # done with processing, cleaning-up and exiting
         self.shutdown(
             "succeeded"
-            if (self.scraper_succeeded and len(self.zim_files_actions_status) > 0)
+            if (self.scraper_succeeded and self.zim_file_uploads_complete)
             else "failed"
         )
 

@@ -135,6 +135,40 @@
               {{ workers.success|status_text }}
             </td>
           </tr>
+          <tr>
+            <th>Logs Upload</th>
+            <td>Last completed task has logs uploaded</td>
+            {% if logs_and_artifacts.data %}
+            <td
+              class="text-right {{ logs_and_artifacts.data.logs_uploaded|status_class }}"
+            >
+              {{ logs_and_artifacts.data.logs_uploaded|status_text }}
+            </td>
+            {% else %}
+            <td
+              class="text-right {{ logs_and_artifacts.success|status_class }}"
+            >
+              {{ logs_and_artifacts.success|status_text }}
+            </td>
+            {% endif %}
+          </tr>
+          <tr>
+            <th>Artifacts Upload</th>
+            <td>Last completed task has artifacts uploaded</td>
+            {% if logs_and_artifacts.data %}
+            <td
+              class="text-right {{ logs_and_artifacts.data.artifacts_uploaded|status_class }}"
+            >
+              {{ logs_and_artifacts.data.artifacts_uploaded|status_text }}
+            </td>
+            {% else %}
+            <td
+              class="text-right {{ logs_and_artifacts.success|status_class }}"
+            >
+              {{ logs_and_artifacts.success|status_text }}
+            </td>
+            {% endif %}
+          </tr>
         </table>
       </section>
     </div>
