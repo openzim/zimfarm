@@ -1,13 +1,18 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="900" persistent scrollable>
+  <v-dialog v-model="isOpen" max-width="600" persistent scrollable>
     <v-card>
-      <v-card-title class="text-h6 bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-image-edit</v-icon>
-        Edit Image
+      <v-card-title class="text-h6 bg-primary">
+        <div class="d-flex align-center justify-space-between w-100">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-image-edit</v-icon>
+            Edit Image
+          </div>
+          <v-btn icon="mdi-close" variant="text" @click="handleCancel" size="small" />
+        </div>
+      </v-card-title>
 
-        <template v-if="imageLoaded">
-          <v-divider vertical class="mx-3" />
-
+      <div v-if="imageLoaded" class="bg-primary pa-2">
+        <div class="d-flex align-center flex-wrap gap-2">
           <!-- Rotation controls -->
           <v-btn
             icon="mdi-rotate-left"
@@ -24,7 +29,7 @@
             title="Rotate Right 90°"
           />
 
-          <v-divider vertical class="mx-2" />
+          <v-divider vertical class="mx-1" />
 
           <!-- Flip controls -->
           <v-btn
@@ -42,7 +47,7 @@
             title="Flip Vertical"
           />
 
-          <v-divider vertical class="mx-2" />
+          <v-divider vertical class="mx-1" />
 
           <!-- Zoom controls -->
           <v-btn
@@ -60,28 +65,16 @@
             title="Zoom In"
           />
 
-          <v-divider vertical class="mx-2" />
+          <v-divider vertical class="mx-1" />
 
           <!-- Reset -->
           <v-btn icon="mdi-restore" size="x-small" variant="text" @click="reset" title="Reset" />
 
           <!-- Image dimensions info -->
-          <div v-if="croppedDimensions" class="text-caption text-white ml-3">
+          <div v-if="croppedDimensions" class="text-caption text-white ml-2">
             {{ croppedDimensions.width }} × {{ croppedDimensions.height }} px
           </div>
-        </template>
-
-        <v-spacer />
-        <v-btn icon="mdi-close" variant="text" @click="handleCancel" size="small" />
-      </v-card-title>
-
-      <div class="pa-4 pb-0">
-        <v-alert type="info" variant="tonal" density="compact">
-          <template #prepend>
-            <v-icon>mdi-information</v-icon>
-          </template>
-          Modifying the image or comment may create a new blob and update the URL.
-        </v-alert>
+        </div>
       </div>
 
       <div class="pa-4">
@@ -138,12 +131,29 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <ConfirmDialog
+    v-model="showConfirmDialog"
+    :max-width="400"
+    title="Save Changes?"
+    confirm-text="Save"
+    cancel-text="Cancel"
+    confirm-color="primary"
+    icon="mdi-content-save"
+    icon-color="primary"
+    @confirm="handleConfirmSave"
+    @cancel="handleCancelSave"
+  >
+    <template #content>
+      <p>This will save your changes.</p>
+    </template>
+  </ConfirmDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 interface Props {
   modelValue: boolean
@@ -172,6 +182,10 @@ const processing = ref(false)
 const cropperRef = ref<InstanceType<typeof Cropper> | null>(null)
 const croppedDimensions = ref<{ width: number; height: number } | null>(null)
 const detectedMimeType = ref<string>('image/png')
+const hasEdits = ref(false)
+const originalImageDimensions = ref<{ width: number; height: number } | null>(null)
+const showConfirmDialog = ref(false)
+const pendingImageData = ref<string>('')
 
 // Watch for prop changes
 watch(
@@ -181,6 +195,7 @@ watch(
     if (newValue) {
       loadImage()
       errorMessage.value = ''
+      hasEdits.value = false
     }
   },
 )
@@ -201,6 +216,8 @@ watch(isOpen, (newValue) => {
     imageLoaded.value = false
     imageSource.value = ''
     croppedDimensions.value = null
+    hasEdits.value = false
+    originalImageDimensions.value = null
   }
 })
 
@@ -265,6 +282,13 @@ const loadImage = () => {
 
   detectedMimeType.value = detectMimeTypeFromDataUrl(props.imageData)
 
+  // Get original image dimensions
+  const img = new Image()
+  img.onload = () => {
+    originalImageDimensions.value = { width: img.width, height: img.height }
+  }
+  img.src = props.imageData
+
   // Give the cropper time to initialize
   setTimeout(() => {
     imageLoaded.value = true
@@ -283,36 +307,42 @@ const handleCropperChange = (event: { coordinates?: { width: number; height: num
 const rotate = (angle: number) => {
   if (cropperRef.value) {
     cropperRef.value.rotate(angle)
+    hasEdits.value = true
   }
 }
 
 const flipHorizontal = () => {
   if (cropperRef.value) {
     cropperRef.value.flip(true, false)
+    hasEdits.value = true
   }
 }
 
 const flipVertical = () => {
   if (cropperRef.value) {
     cropperRef.value.flip(false, true)
+    hasEdits.value = true
   }
 }
 
 const zoomIn = () => {
   if (cropperRef.value) {
     cropperRef.value.zoom(1.2)
+    hasEdits.value = true
   }
 }
 
 const zoomOut = () => {
   if (cropperRef.value) {
     cropperRef.value.zoom(0.8)
+    hasEdits.value = true
   }
 }
 
 const reset = () => {
   if (cropperRef.value) {
     cropperRef.value.reset()
+    hasEdits.value = false
   }
 }
 
@@ -327,19 +357,46 @@ const handleDone = async () => {
 
   try {
     const { canvas } = cropperRef.value.getResult()
-    if (canvas) {
-      // Convert canvas to base64 using the detected MIME type to preserve original format
-      const croppedImageData = canvas.toDataURL(detectedMimeType.value)
-      emit('save', croppedImageData)
-    } else {
+    if (!canvas) {
       errorMessage.value = 'Failed to process image'
+      processing.value = false
+      return
     }
+
+    if (!hasEdits.value && originalImageDimensions.value) {
+      const dimensionsMatch =
+        canvas.width === originalImageDimensions.value.width &&
+        canvas.height === originalImageDimensions.value.height
+
+      if (dimensionsMatch) {
+        // No edits detected, return original to preserve checksum
+        emit('save', props.imageData)
+        processing.value = false
+        return
+      }
+    }
+
+    // User made edits, so re-encode the image from canvas
+    const croppedImageData = canvas.toDataURL(detectedMimeType.value)
+
+    // Store pending data and show confirmation
+    pendingImageData.value = croppedImageData
+    showConfirmDialog.value = true
   } catch (error) {
     console.error('Error processing image:', error)
     errorMessage.value = 'Failed to process image. Please try again.'
   } finally {
     processing.value = false
   }
+}
+
+const handleConfirmSave = () => {
+  emit('save', pendingImageData.value)
+  pendingImageData.value = ''
+}
+
+const handleCancelSave = () => {
+  pendingImageData.value = ''
 }
 
 const handleCancel = () => {
@@ -351,16 +408,16 @@ const handleCancel = () => {
 
 <style scoped>
 .cropper-container {
-  width: 100%;
-  height: 600px;
-  max-height: 70vh;
-  border-radius: 4px;
-  overflow: hidden;
+  max-width: 550px;
+  max-height: 500px;
+  margin: 0 auto;
+  position: relative;
 }
 
 .cropper {
-  height: 100%;
   width: 100%;
+  min-height: 300px;
+  max-height: 500px;
 }
 
 .cropper :deep(.vue-handler) {
