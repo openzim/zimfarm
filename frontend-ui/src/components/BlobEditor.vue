@@ -174,7 +174,7 @@ const textFileType = computed(() => {
 })
 
 const acceptedTypes = computed(() => {
-  if (isImageKind) {
+  if (isImageKind.value) {
     return 'image/*'
   } else if (props.kind === 'css') {
     return '.css,text/css'
@@ -252,7 +252,7 @@ const processFile = async (file: File) => {
   }
 
   // Validate file type
-  if (isImageKind && !file.type.startsWith('image/')) {
+  if (isImageKind.value && !file.type.startsWith('image/')) {
     errorMessage.value = 'File must be an image/illustration'
     hasError.value = true
     return
