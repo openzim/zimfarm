@@ -21,11 +21,16 @@ ENV MAILGUN_FROM="Zimfarm <info@farm.openzim.org>"
 # multiple notification for same event separated with pipe `|`
 # ENV suffixed with event: `GLOBAL_NOTIFICATION_started` or `GLOBAL_NOTIFICATION_ended`
 # ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|mailgun,reg@kiwix.org
-# curl needed for healthcheck
-RUN apt-get update && apt-get install -y curl libmagic1 wget ffmpeg \
+
+# - curl needed for healthcheck
+# - zimscraperlib: We only install the binaries needed to make zimscraperlib image manipulation work, not
+# the whole list as recommended on the installation page. This is because the installing all
+# the prerequisites binaries blow up the image size by over 1Gb and we don't need all those
+# functionalities.
+RUN apt-get update && apt-get install -y curl libmagic1 wget \
     libtiff5-dev libjpeg62-turbo-dev libopenjp2-7-dev zlib1g-dev \
-    libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk \
-    libharfbuzz-dev libfribidi-dev libxcb1-dev gifsicle && \
+    libfreetype6-dev liblcms2-dev libwebp-dev libcairo2-dev \
+    libharfbuzz-dev libfribidi-dev libxcb1-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # install Python dependencies first (since they change more rarely than src code)

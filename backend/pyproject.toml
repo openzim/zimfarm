@@ -32,14 +32,14 @@ dependencies = [
     "Werkzeug == 3.1.5",
     "cryptography == 45.0.3",
     "pycountry == 24.6.1",
-    "regex == 2025.9.1",
-    "zimscraperlib == 5.2.0",
+    "regex == 2025.9.1"
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 api = [
     "fastapi[all] == 0.115.2",
+    "zimscraperlib == 5.2.0"
 ]
 scripts = [
     "invoke == 2.2.0",
