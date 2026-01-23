@@ -15,7 +15,7 @@
     <!-- Navigation Links -->
     <v-tabs class="d-none d-md-flex" color="white" slider-color="white">
       <v-tab
-        v-for="item in navigationItems"
+        v-for="item in visibleNavigationItems"
         :key="item.name"
         :disabled="item.disabled"
         :to="{ name: item.name }"
@@ -55,7 +55,7 @@
   <v-navigation-drawer v-model="drawer" temporary location="left" class="d-md-none">
     <v-list>
       <v-list-item
-        v-for="item in navigationItems"
+        v-for="item in visibleNavigationItems"
         :key="item.name"
         :disabled="item.disabled"
         :prepend-icon="item.icon"
@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import Loading from '@/components/Loading.vue'
 import UserButton from '@/components/UserButton.vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 // Props
 export interface NavigationItem {
@@ -91,7 +91,7 @@ export interface NavigationItem {
   show: boolean
 }
 
-defineProps<{
+const props = defineProps<{
   navigationItems: NavigationItem[]
   username: string | null
   isLoggedIn: boolean
@@ -106,6 +106,10 @@ defineEmits<{
 
 // Reactive data
 const drawer = ref(false)
+
+const visibleNavigationItems = computed(() => {
+  return props.navigationItems.filter((item) => item.show)
+})
 </script>
 
 <style scoped>
