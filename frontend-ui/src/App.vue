@@ -46,7 +46,7 @@ const canDeleteSchedules = computed(() => {
   return authStore.hasPermission('schedules', 'delete')
 })
 
-const navigationItems: NavigationItem[] = [
+const navigationItems = computed<NavigationItem[]>(() => [
   {
     name: 'pipeline',
     label: 'Pipeline',
@@ -87,7 +87,7 @@ const navigationItems: NavigationItem[] = [
     disabled: false,
     show: canReadUsers.value,
   },
-]
+])
 
 const handleSignOut = () => {
   authStore.logout()
