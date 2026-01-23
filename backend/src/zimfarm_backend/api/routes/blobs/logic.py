@@ -6,10 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.image import (
-    convert_image_to_png,
-    create_zim_illustration,
-)
+from zimfarm_backend.api.image import convert_image_to_png, create_zim_illustration
 from zimfarm_backend.api.routes.blobs.models import (
     BlobsGetSchema,
     CreateBlobRequest,
