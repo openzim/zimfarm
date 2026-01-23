@@ -4,6 +4,7 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     LimitFieldMax200,
+    NotEmptyString,
     PriorityField,
     ScheduleNameField,
     SkipField,
@@ -20,7 +21,7 @@ class RequestedTaskSchema(BaseModel):
 
     worker: WorkerField | None = None
     priority: PriorityField | None = None
-    schedule_name: list[ScheduleNameField] | None = None
+    schedule_name: list[NotEmptyString] | None = None
 
     matching_cpu: ZIMCPU | None = None
     matching_memory: ZIMMemory | None = None

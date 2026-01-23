@@ -413,7 +413,7 @@
                     <div class="text-subtitle-2">Requested</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <div v-if="requestedTask === null">
+                    <div v-if="loadingRequestedTask">
                       <v-progress-circular indeterminate size="16" />
                     </div>
                     <div v-else-if="requestedTask">
@@ -433,9 +433,7 @@
                         {{ requestedTask.priority }}
                       </v-chip>
                     </div>
-                    <div v-else>
-                      <v-chip size="small" variant="outlined" color="grey"> No </v-chip>
-                    </div>
+                    <div v-else>No</div>
                   </v-col>
                 </v-row>
                 <v-divider v-if="!canRequestTasks" class="my-2"></v-divider>
@@ -877,6 +875,7 @@ const helpUrl = ref<string>('')
 const ready = ref<boolean>(false)
 const schedule = ref<Schedule | null>(null)
 const loadingHistory = ref<boolean>(false)
+const loadingRequestedTask = ref<boolean>(false)
 // existing requested task for this schedule
 const requestedTask = ref<RequestedTaskLight | null>(null)
 // existing running task for this schedule
@@ -968,6 +967,7 @@ const fetchWorkers = async () => {
 
 const fetchScheduleTasks = async (onSuccess?: () => void) => {
   // Reset state
+  loadingRequestedTask.value = true
   requestedTask.value = null
   task.value = null
 
@@ -976,6 +976,7 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
     scheduleName: [props.scheduleName],
   })
   if (response) {
+    loadingRequestedTask.value = false
     if (response.length > 0) {
       requestedTask.value = response[0]
     }
@@ -1010,6 +1011,7 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
       }
     }
   } else {
+    loadingRequestedTask.value = false
     if (requestedTasksStore.errors.length > 0) {
       for (const error of requestedTasksStore.errors) {
         notificationStore.showError(error)
