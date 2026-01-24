@@ -520,6 +520,24 @@
               {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
             </template>
           </v-text-field>
+          <div v-if="showYoutubeLinks && isIdentField(field)" class="mt-2">
+            <div class="text-caption text-medium-emphasis">YouTube links</div>
+            <div class="d-flex flex-column ga-1">
+              <div v-for="item in youtubeLinkItems" :key="`${item.raw}-${item.kind}`">
+                <template v-if="item.url">
+                  <a :href="item.url" target="_blank" rel="noopener noreferrer">
+                    {{ item.url }}
+                  </a>
+                  <span class="text-caption text-medium-emphasis"> ({{ item.kind }})</span>
+                </template>
+                <template v-else>
+                  <span class="text-caption text-medium-emphasis">
+                    {{ item.raw }} (unknown)
+                  </span>
+                </template>
+              </div>
+            </div>
+          </div>
         </v-col>
         <v-divider class="mt-1"></v-divider>
       </v-row>
@@ -627,6 +645,7 @@ import type {
 } from '@/types/schedule'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
+import { buildYoutubeLinks } from '@/utils/youtube'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
@@ -1096,6 +1115,41 @@ const flagsFields = computed(() => {
     }
   })
 })
+
+const isYoutubeOffliner = computed(() => {
+  const selected = editSchedule.value.config.offliner.offliner_id
+  const fallback = props.schedule.config.offliner.offliner_id
+  return (selected || fallback) === 'youtube'
+})
+
+const youtubeIdentField = computed(() => {
+  if (!isYoutubeOffliner.value) return null
+  return (
+    flagsFields.value.find((field) => field.key === 'ident' || field.dataKey === 'id') || null
+  )
+})
+
+const youtubeIdentValue = computed(() => {
+  const field = youtubeIdentField.value
+  if (!field) return ''
+  const value = editFlags.value[field.dataKey]
+  return typeof value === 'string' ? value : ''
+})
+
+const youtubeLinkItems = computed(() => buildYoutubeLinks(youtubeIdentValue.value))
+
+const showYoutubeLinks = computed(() => {
+  return (
+    isYoutubeOffliner.value &&
+    !!youtubeIdentField.value &&
+    youtubeIdentValue.value.trim().length > 0 &&
+    youtubeLinkItems.value.length > 0
+  )
+})
+
+const isIdentField = (field: FlagField) => {
+  return field === youtubeIdentField.value
+}
 
 const getFieldRules = (field: FlagField) => {
   const rules: Array<(value: unknown) => boolean | string> = []
