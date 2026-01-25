@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar color="primary" dark elevation="2">
+  <v-app-bar color="primary" dark elevation="2" class="navbar">
     <!-- Logo and Brand -->
     <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
 
@@ -109,6 +109,10 @@ const drawer = ref(false)
 </script>
 
 <style scoped>
+.navbar.v-theme--dark {
+  background-color: rgb(37, 59, 106) !important;
+}
+
 .branding {
   font-weight: 500;
 }

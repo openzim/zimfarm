@@ -321,12 +321,13 @@
 
     <v-table v-if="flagsFields.length > 0" class="flags-table">
       <tbody>
-        <tr v-for="field in flagsFields" :key="field.dataKey">
-          <th class="w-25 align-top pa-4 font-weight-bold">
-            {{ field.label }}
-            <span v-if="field.required" class="text-red font-weight-bold text-subtitle-1">*</span>
-          </th>
-          <td class="align-top py-2">
+        <template v-for="field in flagsFields" :key="field.dataKey">
+          <tr>
+            <th class="w-25 align-top pa-4 font-weight-bold">
+              {{ field.label }}
+              <span v-if="field.required" class="text-red font-weight-bold text-subtitle-1">*</span>
+            </th>
+            <td class="align-top py-2">
             <SwitchButton
               v-if="field.component === 'switch'"
               v-model="editFlags[field.dataKey]"
@@ -472,40 +473,43 @@
               </template>
             </v-text-field>
             <!-- YouTube link helper for ident field -->
-            <div
+            <template
               v-if="
                 taskName === 'youtube' &&
                 (field.dataKey === 'ident' || field.dataKey === 'id') &&
-                editFlags[field.dataKey] &&
-                getYouTubeUrls(editFlags[field.dataKey]).length > 0
+                editFlags[field.dataKey]
               "
-              class="mt-2"
             >
-              <div class="d-flex flex-wrap ga-2 align-center">
-                <span class="text-caption text-medium-emphasis">Open on YouTube:</span>
-                <template
-                  v-for="item in getYouTubeUrls(editFlags[field.dataKey])"
-                  :key="item.url"
-                >
-                  <v-btn
-                    :href="item.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    variant="outlined"
-                    color="primary"
-                    density="compact"
-                    class="text-none"
-                  >
-                    <v-icon start size="small">mdi-youtube</v-icon>
-                    {{ item.id.length > 20 ? item.id.substring(0, 20) + '...' : item.id }}
-                    <v-icon end size="small">mdi-open-in-new</v-icon>
-                  </v-btn>
-                </template>
-              </div>
-            </div>
+              <template
+                v-for="(youtubeUrls, idx) in [getYouTubeUrls(editFlags[field.dataKey])]"
+                :key="'youtube-' + field.dataKey + '-' + idx"
+              >
+                <div v-if="youtubeUrls.length > 0" class="mt-2">
+                  <div class="d-flex flex-wrap ga-2 align-center">
+                    <span class="text-caption text-medium-emphasis">Open on YouTube:</span>
+                    <template v-for="item in youtubeUrls" :key="item.url">
+                      <v-btn
+                        :href="item.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        density="compact"
+                        class="text-none"
+                      >
+                        <v-icon start size="small">mdi-youtube</v-icon>
+                        {{ item.id.length > 20 ? item.id.substring(0, 20) + '...' : item.id }}
+                        <v-icon end size="small">mdi-open-in-new</v-icon>
+                      </v-btn>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </template>
           </td>
         </tr>
+        </template>
       </tbody>
     </v-table>
 
@@ -610,7 +614,7 @@ import type { OfflinerDefinition } from '@/types/offliner'
 import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
-import { generateYouTubeUrls } from '@/utils/youtube'
+import { getYouTubeUrls } from '@/utils/youtube'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
@@ -629,7 +633,7 @@ interface FlagField {
   min_length: number | null
   max_length: number | null
   pattern: string | null
-  kind?: 'image' | 'css'
+  kind?: 'image' | 'css' | 'html' | 'txt'
 }
 
 export interface Props {
@@ -1146,12 +1150,7 @@ const getGraphemeCount = (value: unknown): number => {
   return 0
 }
 
-const getYouTubeUrls = (value: unknown): Array<{ id: string; url: string }> => {
-  if (typeof value === 'string' && value.trim()) {
-    return generateYouTubeUrls(value)
-  }
-  return []
-}
+
 
 const truncateToMaxGraphemes = (value: string, maxLength: number): string => {
   const graphemes = value.split(byGrapheme)
@@ -1270,7 +1269,7 @@ const handleSubmit = async () => {
 
   // Fetch similar recipes count before showing confirmation dialog
   await fetchSimilarRecipesCount()
-  console.log('similarRecipesCount', similarRecipesCount.value)
+
 
   // Show confirmation dialog instead of directly submitting
   showConfirmDialog.value = true

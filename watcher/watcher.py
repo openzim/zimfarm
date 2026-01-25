@@ -334,7 +334,8 @@ class WatcherRunner:
         # filter by recipe name exactly starting with domain name, since API call
         # search for the domain "anywhere" in the recipe name
         return [
-            recipe["name"] for recipe in payload.get("items", [])
+            recipe["name"]
+            for recipe in payload.get("items", [])
             if recipe["enabled"] and recipe["name"].startswith(f"{domain}_")
         ]
 

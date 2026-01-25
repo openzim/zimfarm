@@ -112,6 +112,7 @@ import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
 import type { ScheduleLight } from '@/types/schedule'
 import { computed, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 // Props
 interface Props {
@@ -147,9 +148,11 @@ const emit = defineEmits<{
   selectionChanged: [selectedSchedules: string[]]
 }>()
 
+const router = useRouter()
+const route = useRoute()
+
 const limits = [10, 20, 50, 100]
 const selectedLimit = ref(props.paginator.limit)
-const currentPage = ref(1)
 
 const selectedSchedules = computed(() => props.selectedSchedules)
 
@@ -160,6 +163,8 @@ const computedPage = computed(() => {
   }
   return 1
 })
+
+const currentPage = ref(computedPage.value)
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
@@ -172,19 +177,25 @@ const hasActiveFilters = computed(() => {
 })
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
-  // page is 1-indexed, we need to calculate the skip for the request
-  const page = options.page > 1 ? options.page - 1 : 0
-  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
+  // Only update if the values actually changed to avoid infinite loops
+  if (
+    Number(route.query.page) === options.page &&
+    Number(route.query.limit) === options.itemsPerPage
+  ) {
+    return
+  }
+  router.replace({
+    query: { ...route.query, limit: options.itemsPerPage.toString(), page: options.page.toString() }
+  })
 }
 
+// Sync with route query changes to emit loadData once
 watch(
   () => props.paginator,
   (newPaginator) => {
     selectedLimit.value = newPaginator.limit
-    // Sync current page with paginator
-    currentPage.value = computedPage.value
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 // Watch computed page to sync with paginator changes
