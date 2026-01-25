@@ -472,8 +472,6 @@
                 {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
               </template>
             </v-text-field>
-<<<<<<< Updated upstream
-=======
             <!-- YouTube link helper for ident field -->
             <template
               v-if="
@@ -483,8 +481,8 @@
               "
             >
               <template
-                v-for="youtubeUrls in [getYouTubeUrls(editFlags[field.dataKey])]"
-                :key="'youtube-' + field.dataKey"
+                v-for="(youtubeUrls, idx) in [getYouTubeUrls(editFlags[field.dataKey])]"
+                :key="'youtube-' + field.dataKey + '-' + idx"
               >
                 <div v-if="youtubeUrls.length > 0" class="mt-2">
                   <div class="d-flex flex-wrap ga-2 align-center">
@@ -509,9 +507,9 @@
                 </div>
               </template>
             </template>
->>>>>>> Stashed changes
           </td>
         </tr>
+        </template>
       </tbody>
     </v-table>
 
@@ -616,6 +614,7 @@ import type { OfflinerDefinition } from '@/types/offliner'
 import type { Schedule, ScheduleConfig, ScheduleUpdateSchema } from '@/types/schedule'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
+import { getYouTubeUrls } from '@/utils/youtube'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
@@ -1268,7 +1267,7 @@ const handleSubmit = async () => {
 
   // Fetch similar recipes count before showing confirmation dialog
   await fetchSimilarRecipesCount()
-  console.log('similarRecipesCount', similarRecipesCount.value)
+
 
   // Show confirmation dialog instead of directly submitting
   showConfirmDialog.value = true

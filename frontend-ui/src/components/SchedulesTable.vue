@@ -164,6 +164,8 @@ const computedPage = computed(() => {
   return 1
 })
 
+const currentPage = ref(computedPage.value)
+
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
   return (

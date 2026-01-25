@@ -38,7 +38,6 @@ def get_en_shelves() -> list[Shelve]:
 
 
 def get_all_lang_codes() -> list[str]:
-
     resp = requests.get(
         "https://www.gutenberg.org/ebooks/",
         allow_redirects=True,
