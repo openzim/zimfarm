@@ -476,7 +476,7 @@
             <template
               v-if="
                 taskName === 'youtube' &&
-                (field.dataKey === 'ident' || field.dataKey === 'id') &&
+                field.dataKey === 'id' &&
                 editFlags[field.dataKey]
               "
             >

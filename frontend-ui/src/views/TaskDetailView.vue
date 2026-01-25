@@ -302,7 +302,7 @@
                     <td>
                       <FlagsList
                         :offliner="task.config.offliner"
-                        :flags-definition="flagsDefinition"
+                        :secret-fields="secretFields"
                         :shrink="false"
                       />
                     </td>
@@ -494,6 +494,7 @@ import {
 import {
   artifactsUrl,
   checkUrl,
+  getSecretFields,
   imageHuman as imageHumanFn,
   imageUrl as imageUrlFn,
   logsUrl,
@@ -555,6 +556,8 @@ const taskContainer = computed(() => {
 const taskProgress = computed(() => {
   return taskContainer.value?.progress || null
 })
+
+const secretFields = computed(() => getSecretFields(flagsDefinition.value))
 
 const taskDebug = computed(() => {
   return task.value?.debug || {}
@@ -738,7 +741,7 @@ const refreshData = async () => {
 
 // Lifecycle
 onMounted(async () => {
-  await refreshData()
+  refreshData()
   if (task.value) {
     const offlinerDefinition = await offlinerStore.fetchOfflinerDefinitionByVersion(
       task.value.offliner,

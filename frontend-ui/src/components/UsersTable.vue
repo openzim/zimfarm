@@ -8,7 +8,6 @@
         :items-per-page="selectedLimit"
         :items-length="props.paginator.count"
         :items-per-page-options="limits"
-        v-model:page="currentPage"
         class="elevation-1"
         item-key="username"
         @update:options="onUpdateOptions"
@@ -60,7 +59,6 @@ import ErrorMessage from '@/components/ErrorMessage.vue'
 import type { Paginator } from '@/types/base'
 import type { User } from '@/types/user'
 import { ref, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
 
 const props = defineProps<{
   headers: { title: string; key: string; sortable?: boolean }[]
@@ -76,43 +74,24 @@ const emit = defineEmits<{
   loadData: [limit: number, skip: number]
 }>()
 
-const router = useRouter()
-const route = useRoute()
-
 const limits = [10, 20, 50, 100]
-const selectedLimit = ref(Number(route.query.limit) || props.paginator.limit)
-const currentPage = ref(Number(route.query.page) || 1)
+const selectedLimit = ref(props.paginator.limit)
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
-  // Only update if the values actually changed to avoid infinite loops
-  if (
-    Number(route.query.page) === options.page &&
-    Number(route.query.limit) === options.itemsPerPage
-  ) {
-    return
-  }
-  router.replace({
-    query: { ...route.query, limit: options.itemsPerPage.toString(), page: options.page.toString() }
-  })
+  // Calculate the skip for the request
+  const page = options.page > 1 ? options.page - 1 : 0
+  emit('loadData', options.itemsPerPage, page * options.itemsPerPage)
 }
 
-// Sync with route query changes to emit loadData once
 watch(
-  () => route.query,
-  (newQuery) => {
-    const limit = Number(newQuery.limit) || props.paginator.limit
-    const page = Number(newQuery.page) || 1
-    const skip = (page - 1) * limit
-
-    currentPage.value = page
-    selectedLimit.value = limit
-
-    emit('loadData', limit, skip)
+  () => props.paginator,
+  (newPaginator) => {
+    selectedLimit.value = newPaginator.limit
   },
-  { immediate: true }
+  { immediate: true },
 )
 
-function getRoleColor(role: string): string {
+const getRoleColor = (role: string): string => {
   const colorMap: Record<string, string> = {
     admin: 'error',
     editor: 'primary',
