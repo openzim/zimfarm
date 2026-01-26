@@ -531,9 +531,7 @@
                   <span class="text-caption text-medium-emphasis"> ({{ item.kind }})</span>
                 </template>
                 <template v-else>
-                  <span class="text-caption text-medium-emphasis">
-                    {{ item.raw }} (unknown)
-                  </span>
+                  <span class="text-caption text-medium-emphasis"> {{ item.raw }} (unknown) </span>
                 </template>
               </div>
             </div>
@@ -1124,9 +1122,7 @@ const isYoutubeOffliner = computed(() => {
 
 const youtubeIdentField = computed(() => {
   if (!isYoutubeOffliner.value) return null
-  return (
-    flagsFields.value.find((field) => field.key === 'ident' || field.dataKey === 'id') || null
-  )
+  return flagsFields.value.find((field) => field.key === 'ident' || field.dataKey === 'id') || null
 })
 
 const youtubeIdentValue = computed(() => {
