@@ -3,7 +3,7 @@
     <!-- Logo and Brand -->
     <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
 
-    <v-app-bar-title class="d-flex align-center">
+    <v-app-bar-title class="d-flex align-center title-no-shrink">
       <router-link :to="{ name: 'home' }" class="branding d-flex align-center text-decoration-none">
         <div class="icon position-relative">
           <img src="/assets/logo.svg" width="32" height="32" alt="Zimfarm Logo" class="logo-img" />
@@ -12,6 +12,7 @@
         <span class="ml-2 text-white">Zimfarm</span>
       </router-link>
     </v-app-bar-title>
+    <v-spacer class="d-flex"></v-spacer>
     <!-- Navigation Links -->
     <v-tabs class="d-none d-md-flex" color="white" slider-color="white">
       <v-tab
@@ -26,7 +27,7 @@
       </v-tab>
     </v-tabs>
 
-    <v-spacer class="d-none d-sm-flex"></v-spacer>
+    <v-spacer class="d-none d-md-flex"></v-spacer>
 
     <!-- Support Us Button -->
     <v-btn
@@ -119,6 +120,12 @@ const visibleNavigationItems = computed(() => {
 
 .branding {
   font-weight: 500;
+  white-space: nowrap;
+}
+
+.title-no-shrink {
+  flex: 0 0 auto;
+  min-width: max-content;
 }
 
 .icon {
