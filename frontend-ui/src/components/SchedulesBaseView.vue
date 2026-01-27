@@ -7,6 +7,7 @@
       :languages="languages"
       :tags="tags"
       @filters-changed="handleFiltersChange"
+      @clear-filters="clearFilters"
     />
     <SchedulesTable
       v-if="ready"
@@ -19,10 +20,8 @@
       :filters="filters"
       :selected-schedules="selectedSchedules"
       :show-selection="true"
-      :show-filters="true"
       @limit-changed="handleLimitChange"
       @load-data="loadData"
-      @clear-filters="clearFilters"
       @selection-changed="handleSelectionChanged"
     >
       <template #actions>

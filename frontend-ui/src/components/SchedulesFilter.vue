@@ -58,6 +58,16 @@
             @update:model-value="emitFilters"
           />
         </v-col>
+        <v-col
+          v-if="hasActiveFilters"
+          cols="12"
+          class="d-flex flex-sm-row flex-column align-sm-center"
+        >
+          <v-btn size="small" variant="outlined" @click="handleClearFilters">
+            <v-icon size="small" class="mr-1">mdi-close-circle</v-icon>
+            clear filters
+          </v-btn>
+        </v-col>
       </v-row>
     </v-card-text>
   </v-card>
@@ -92,6 +102,7 @@ const emit = defineEmits<{
       tags: string[]
     },
   ]
+  clearFilters: []
 }>()
 
 // Local filters state
@@ -137,6 +148,15 @@ const tagsOptions = computed(() => {
   }))
 })
 
+const hasActiveFilters = computed(() => {
+  return (
+    props.filters.name.length > 0 ||
+    props.filters.categories.length > 0 ||
+    props.filters.languages.length > 0 ||
+    props.filters.tags.length > 0
+  )
+})
+
 // Emit filters when they change
 function emitFilters() {
   emit('filtersChanged', {
@@ -145,5 +165,9 @@ function emitFilters() {
     languages: localFilters.value.languages,
     tags: localFilters.value.tags,
   })
+}
+
+function handleClearFilters() {
+  emit('clearFilters')
 }
 </script>
