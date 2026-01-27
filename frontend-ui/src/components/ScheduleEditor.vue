@@ -520,22 +520,49 @@
               {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
             </template>
           </v-text-field>
-          <div v-if="showYoutubeLinks && isIdentField(field)" class="mt-2">
-            <div class="d-flex flex-wrap ga-2">
+          <div v-if="showYoutubeLinks && isIdentField(field)" class="mt-1">
+            <div class="d-flex flex-wrap align-center" style="gap: 6px">
               <template v-for="item in youtubeLinkItems" :key="`${item.raw}-${item.kind}`">
-                <v-chip
-                  v-if="item.url"
-                  :href="item.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="text"
-                  color="primary"
-                >
-                  {{ item.url }}
-                </v-chip>
-                <v-chip v-else disabled variant="outlined" color="grey">
-                  {{ item.raw }}
-                </v-chip>
+                <v-tooltip v-if="item.url" location="top">
+                  <template #activator="{ props: tooltipProps }">
+                    <v-chip
+                      v-bind="tooltipProps"
+                      :href="item.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="tonal"
+                      size="small"
+                      :color="getYoutubeLinkColor(item.kind)"
+                      :prepend-icon="getYoutubeLinkIcon(item.kind)"
+                      class="youtube-link-chip"
+                    >
+                      {{
+                        item.kind === 'handle'
+                          ? item.raw
+                          : item.raw.substring(0, 12) + (item.raw.length > 12 ? '...' : '')
+                      }}
+                    </v-chip>
+                  </template>
+                  <div class="text-caption">
+                    {{ item.url }}
+                  </div>
+                </v-tooltip>
+                <v-tooltip v-else location="top">
+                  <template #activator="{ props: tooltipProps }">
+                    <v-chip
+                      v-bind="tooltipProps"
+                      disabled
+                      variant="outlined"
+                      size="small"
+                      color="grey"
+                      prepend-icon="mdi-help-circle"
+                      class="youtube-link-chip"
+                    >
+                      {{ item.raw.substring(0, 12) + (item.raw.length > 12 ? '...' : '') }}
+                    </v-chip>
+                  </template>
+                  <span class="text-caption">Unknown YouTube ID format</span>
+                </v-tooltip>
               </template>
             </div>
           </div>
@@ -646,7 +673,7 @@ import type {
 } from '@/types/schedule'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
-import { buildYoutubeLinks } from '@/utils/youtube'
+import { buildYoutubeLinks, type YoutubeLinkKind } from '@/utils/youtube'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch } from 'vue'
@@ -1150,6 +1177,36 @@ const isIdentField = (field: FlagField) => {
   return field === youtubeIdentField.value
 }
 
+const getYoutubeLinkColor = (kind: YoutubeLinkKind): string => {
+  switch (kind) {
+    case 'channel':
+      return 'red'
+    case 'playlist':
+      return 'blue'
+    case 'video':
+      return 'green'
+    case 'handle':
+      return 'purple'
+    case 'unknown':
+      return 'grey'
+  }
+}
+
+const getYoutubeLinkIcon = (kind: YoutubeLinkKind): string => {
+  switch (kind) {
+    case 'channel':
+      return 'mdi-account-circle'
+    case 'playlist':
+      return 'mdi-playlist-play'
+    case 'video':
+      return 'mdi-play-circle'
+    case 'handle':
+      return 'mdi-at'
+    case 'unknown':
+      return 'mdi-help-circle'
+  }
+}
+
 const getFieldRules = (field: FlagField) => {
   const rules: Array<(value: unknown) => boolean | string> = []
 
@@ -1605,6 +1662,15 @@ const cleanFlagsPayload = (flags: Record<string, any>) => {
 
 <style type="text/css" scoped>
 .align-top {
-  vertical-align: top;
+  align-self: start;
+}
+
+.youtube-link-chip {
+  font-size: 0.8125rem;
+  height: 24px;
+}
+
+.youtube-link-chip:hover {
+  opacity: 0.85;
 }
 </style>
