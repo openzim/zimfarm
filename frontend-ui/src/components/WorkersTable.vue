@@ -111,7 +111,7 @@
                 variant="tonal"
                 prepend-icon="mdi-pause-circle"
               >
-                Cordoned by worker owner
+                Cordoned
               </v-chip>
 
               <!-- Admin scheduling status -->
@@ -122,7 +122,7 @@
                 variant="tonal"
                 prepend-icon="mdi-shield-alert"
               >
-                Disabled by Zimfarm Administrator
+                Disabled
               </v-chip>
 
               <!-- Selfish worker status -->
