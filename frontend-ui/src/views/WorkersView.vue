@@ -2,9 +2,9 @@
   <div>
     <v-card v-if="!errors.length" class="mb-4" flat>
       <v-card-text>
-        <v-row>
-          <v-col cols="12" sm="6" md="3">
-            <v-sheet rounded border class="pa-2 d-flex align-center">
+        <v-row align="stretch">
+          <v-col cols="12" sm="6" md="3" class="d-flex">
+            <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
               <div class="d-flex align-center">
                 <v-icon class="mr-2" color="success">mdi-server</v-icon>
                 <div>
@@ -15,8 +15,12 @@
             </v-sheet>
           </v-col>
 
-          <v-col cols="12" sm="6" md="3">
-            <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
+          <v-col cols="12" sm="6" md="3" class="d-flex">
+            <v-sheet
+              rounded
+              border
+              class="pa-2 d-flex align-center justify-space-between flex-grow-1"
+            >
               <div class="d-flex align-center">
                 <v-progress-circular
                   :model-value="percentCpu"
@@ -34,8 +38,12 @@
             </v-sheet>
           </v-col>
 
-          <v-col cols="12" sm="6" md="3">
-            <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
+          <v-col cols="12" sm="6" md="3" class="d-flex">
+            <v-sheet
+              rounded
+              border
+              class="pa-2 d-flex align-center justify-space-between flex-grow-1"
+            >
               <div class="d-flex align-center">
                 <v-progress-circular
                   :model-value="percentMemory"
@@ -53,8 +61,12 @@
             </v-sheet>
           </v-col>
 
-          <v-col cols="12" sm="6" md="3">
-            <v-sheet rounded border class="pa-2 d-flex align-center justify-space-between">
+          <v-col cols="12" sm="6" md="3" class="d-flex">
+            <v-sheet
+              rounded
+              border
+              class="pa-2 d-flex align-center justify-space-between flex-grow-1"
+            >
               <div class="d-flex align-center">
                 <v-progress-circular
                   :model-value="percentDisk"
