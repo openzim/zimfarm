@@ -521,19 +521,22 @@
             </template>
           </v-text-field>
           <div v-if="showYoutubeLinks && isIdentField(field)" class="mt-2">
-            <div class="text-caption text-medium-emphasis">YouTube links</div>
-            <div class="d-flex flex-column ga-1">
-              <div v-for="item in youtubeLinkItems" :key="`${item.raw}-${item.kind}`">
-                <template v-if="item.url">
-                  <a :href="item.url" target="_blank" rel="noopener noreferrer">
-                    {{ item.url }}
-                  </a>
-                  <span class="text-caption text-medium-emphasis"> ({{ item.kind }})</span>
-                </template>
-                <template v-else>
-                  <span class="text-caption text-medium-emphasis"> {{ item.raw }} (unknown) </span>
-                </template>
-              </div>
+            <div class="d-flex flex-wrap ga-2">
+              <template v-for="item in youtubeLinkItems" :key="`${item.raw}-${item.kind}`">
+                <v-chip
+                  v-if="item.url"
+                  :href="item.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="text"
+                  color="primary"
+                >
+                  {{ item.url }}
+                </v-chip>
+                <v-chip v-else disabled variant="outlined" color="grey">
+                  {{ item.raw }}
+                </v-chip>
+              </template>
             </div>
           </div>
         </v-col>

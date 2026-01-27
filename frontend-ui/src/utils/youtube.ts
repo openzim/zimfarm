@@ -1,19 +1,13 @@
 /**
  * Classifies YouTube IDs and generates corresponding YouTube URLs.
  *
- * This is a heuristic-based approach that may not always be accurate since YouTube's
- * ID format isn't officially documented. The classification is based on common patterns:
- * - Channel IDs typically start with "UC"
- * - Playlist IDs typically start with "PL", "RD", "UU", "LL", "FL", or "WL"
- * - Video IDs are typically 11 characters long
- * - Handles start with "@"
+ * This is a heuristic-based approach since YouTube ID formats
+ * are not officially documented.
  *
  * References:
  * - https://stackoverflow.com/questions/19795987/youtube-channel-and-playlist-id-prefixes
- * - https://github.com/openzim/zimfarm/issues/477
- *
- * Note: This approach could fail and lead to links that don't work. The field values are always YouTube IDs, not URLs.
  */
+
 export type YoutubeLinkKind = 'channel' | 'playlist' | 'video' | 'handle' | 'unknown'
 
 export interface YoutubeLinkItem {
@@ -22,10 +16,6 @@ export interface YoutubeLinkItem {
   url?: string
 }
 
-/**
- * Classifies a YouTube ID and generates the corresponding YouTube URL.
- * Based on heuristic patterns - may not always be accurate.
- */
 function classifyYoutubeId(raw: string): YoutubeLinkItem {
   const value = raw.trim()
   if (!value) return { raw, kind: 'unknown' }
@@ -41,7 +31,6 @@ function classifyYoutubeId(raw: string): YoutubeLinkItem {
   }
 
   // Playlist IDs typically start with these prefixes
-  // See: https://stackoverflow.com/questions/19795987/youtube-channel-and-playlist-id-prefixes
   const playlistPrefixes = ['PL', 'RD', 'UU', 'LL', 'FL', 'WL']
   if (playlistPrefixes.some((prefix) => value.startsWith(prefix))) {
     return { raw, kind: 'playlist', url: `https://www.youtube.com/playlist?list=${value}` }
