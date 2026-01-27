@@ -100,8 +100,15 @@ router = APIRouter(prefix="/schedules", tags=["schedules"])
 @router.get("")
 def get_schedules(
     params: Annotated[SchedulesGetSchema, Query()],
+    current_user: User | None = Depends(get_current_user_or_none),
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[ScheduleLightSchema]:
+    if params.archived and not (
+        current_user
+        and check_user_permission(current_user, namespace="schedules", name="archive")
+    ):
+        raise UnauthorizedError("You are not allowed to view archived schedules.")
+
     results = db_get_schedules(
         session,
         skip=params.skip,
