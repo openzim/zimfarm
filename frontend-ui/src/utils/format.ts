@@ -1,5 +1,6 @@
 import { filesize } from 'filesize'
-import { DateTime, Duration, Interval, type DurationUnit } from 'luxon'
+import { DateTime, Duration, Interval, type DurationUnit, Settings } from 'luxon'
+Settings.defaultLocale = 'en'
 
 function getUnits(interval: Interval<true>) {
   const units: string[] = []
