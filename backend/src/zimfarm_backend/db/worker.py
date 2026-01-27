@@ -3,7 +3,7 @@ from ipaddress import IPv4Address, IPv6Address
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import asc, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
@@ -133,7 +133,7 @@ def get_workers(
             )
             | (hide_offlines is False),
         )
-        .order_by(desc(Worker.last_seen), asc(Worker.name))
+        .order_by(asc(Worker.name))
         .offset(skip)
         .limit(limit)
     )
