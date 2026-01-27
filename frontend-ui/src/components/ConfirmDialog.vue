@@ -47,8 +47,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   title: 'Please Confirm',
   message: '',
-  confirmText: 'YES',
-  cancelText: 'NO',
+  confirmText: 'Continue',
+  cancelText: 'Cancel',
   confirmColor: 'error',
   icon: 'mdi-alert-circle',
   iconColor: 'warning',

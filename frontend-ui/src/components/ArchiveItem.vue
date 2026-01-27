@@ -76,16 +76,9 @@
           <v-textarea
             v-model="comment"
             label="Comment (optional)"
-            :hint="
-              isArchived
-                ? 'Describe the reason for restoring this recipe'
-                : 'Describe the reason for archiving this recipe'
-            "
-            placeholder="e.g., Archived due to maintenance, Restored after review, etc."
             variant="outlined"
             auto-grow
             rows="3"
-            persistent-hint
           />
         </div>
       </template>
