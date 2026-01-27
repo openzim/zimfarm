@@ -45,6 +45,7 @@
       v-model="showRestoreCommentDialog"
       title="Restore Recipes"
       confirm-text="Restore"
+      cancel-text="Cancel"
       confirm-color="success"
       :max-width="600"
       icon="mdi-archive-arrow-up"
@@ -66,12 +67,9 @@
           <v-textarea
             v-model="restoreComment"
             label="Comment (optional)"
-            hint="Describe the reason for restoring these recipes"
-            placeholder="e.g., Restored after review, Maintenance completed, etc."
             variant="outlined"
             auto-grow
             rows="3"
-            persistent-hint
           />
         </div>
       </template>
