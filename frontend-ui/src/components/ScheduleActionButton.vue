@@ -39,7 +39,7 @@
     <!-- Request Button -->
     <v-btn
       v-show="canRequest"
-      color="info"
+      color="primary"
       variant="elevated"
       size="small"
       class="mr-2"

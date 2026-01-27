@@ -1,21 +1,15 @@
 <template>
   <v-form @submit.prevent="handleSubmit" v-if="schedule">
-    <div class="d-flex flex-column flex-sm-row justify-end ga-2">
+    <div class="d-flex flex-column flex-sm-row justify-end ga-2 schedule-actions">
       <v-btn
         :disabled="!canSubmit"
+        :color="canSubmit ? 'primary' : undefined"
         type="submit"
-        :color="canSubmit ? 'primary' : 'secondary'"
         variant="elevated"
       >
         Update Offliner details
       </v-btn>
-      <v-btn
-        type="button"
-        :disabled="!hasChanges"
-        :color="hasChanges ? 'dark' : 'secondary'"
-        variant="outlined"
-        @click="handleReset"
-      >
+      <v-btn type="button" :disabled="!hasChanges" variant="outlined" @click="handleReset">
         Reset
       </v-btn>
     </div>
@@ -534,19 +528,13 @@
     <div class="d-flex flex-column flex-sm-row justify-end ga-2">
       <v-btn
         :disabled="!canSubmit"
+        :color="canSubmit ? 'primary' : undefined"
         type="submit"
-        :color="canSubmit ? 'primary' : 'secondary'"
         variant="elevated"
       >
         Update Offliner details
       </v-btn>
-      <v-btn
-        type="button"
-        :disabled="!hasChanges"
-        :color="hasChanges ? 'dark' : 'secondary'"
-        variant="outlined"
-        @click="handleReset"
-      >
+      <v-btn type="button" :disabled="!hasChanges" variant="outlined" @click="handleReset">
         Reset
       </v-btn>
     </div>
