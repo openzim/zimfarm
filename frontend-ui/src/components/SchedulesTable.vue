@@ -2,7 +2,7 @@
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title
-        v-if="showSelection || showFilters || $slots.actions"
+        v-if="showSelection || $slots.actions"
         class="d-flex flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
       >
         <slot name="actions" />
@@ -16,16 +16,6 @@
         >
           <v-icon size="small" class="mr-1">mdi-checkbox-multiple-blank-outline</v-icon>
           clear selections
-        </v-btn>
-        <v-btn
-          v-if="showFilters"
-          size="small"
-          variant="outlined"
-          :disabled="!hasActiveFilters"
-          @click="handleClearFilters"
-        >
-          <v-icon size="small" class="mr-1">mdi-close-circle</v-icon>
-          clear filters
         </v-btn>
       </v-card-title>
 
@@ -142,14 +132,12 @@ interface Props {
   }
   selectedSchedules?: string[]
   showSelection?: boolean
-  showFilters?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   filters: () => ({ name: '', categories: [], languages: [], tags: [] }),
   selectedSchedules: () => [],
   showSelection: true,
-  showFilters: true,
 })
 
 const router = useRouter()
@@ -160,23 +148,12 @@ const { smAndDown } = useDisplay()
 const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
-  clearFilters: []
   selectionChanged: [selectedSchedules: string[]]
 }>()
 
 const limits = [10, 20, 50, 100]
 
 const selectedSchedules = computed(() => props.selectedSchedules)
-
-// Check if any filters are active
-const hasActiveFilters = computed(() => {
-  return (
-    props.filters.name.length > 0 ||
-    props.filters.categories.length > 0 ||
-    props.filters.languages.length > 0 ||
-    props.filters.tags.length > 0
-  )
-})
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
@@ -201,10 +178,6 @@ function handleSelectionChange(selection: string[]) {
 
 function clearSelections() {
   emit('selectionChanged', [])
-}
-
-function handleClearFilters() {
-  emit('clearFilters')
 }
 
 function statusClass(status: string) {
