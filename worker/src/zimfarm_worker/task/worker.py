@@ -53,6 +53,8 @@ MAX_CHK_UPLOAD_RETRIES = 5
 ZIM_UPLOAD = "zim_upload"
 ZIM_CHECK = "check"
 CHK_UPLOAD = "check_upload"
+LOG_UPLOAD = "log_upload"
+ARTIFACTS_UPLOAD = "artifacts_upload"
 
 
 class TaskWorker(BaseWorker):
@@ -119,6 +121,12 @@ class TaskWorker(BaseWorker):
         self.zimcheck_upload_retries: defaultdict[str, int] = defaultdict(
             int
         )  # mapping of zimcheck file to number of upload retries
+
+        # Upload status tracking for logs and artifacts
+        self.upload_status: dict[str, str] = {
+            LOG_UPLOAD: PENDING,
+            ARTIFACTS_UPLOAD: PENDING,
+        }
 
         self.zim_uploader: Container | None = None  # zim-files uploader container
         self.checker: Container | None = None  # zim-files checker container
@@ -545,9 +553,78 @@ class TaskWorker(BaseWorker):
                 logger.warning(f"Failed to stop {step}: {exc}")
                 logger.exception(exc)
 
+    def wait_for_upload_containers(self, containers: list[str]):
+        """Wait for upload containers to complete."""
+
+        if not containers:
+            return
+
+        logger.debug(f"Waiting for uploads to complete: {', '.join(containers)}")
+
+        check_methods = {
+            "log_uploader": self.check_scraper_log_upload,
+            "artifacts_uploader": self.check_scraper_artifacts_upload,
+        }
+
+        while True:
+            # Check upload status and send updates to API
+            for container in containers:
+                if container in check_methods:
+                    check_methods[container]()
+
+            still_running: list[str] = []
+            for container in containers:
+                if self.container_running(container):
+                    still_running.append(container)
+
+            if not still_running:
+                logger.info("All upload containers completed")
+                break
+
+            logger.debug(f"Still waiting for: {', '.join(still_running)}")
+            time.sleep(5)
+
     def exit_gracefully(self, signum: int, _: Any):
         signame = signal.strsignal(signum)
         logger.info(f"received exit signal ({signame}), shutting down…")
+
+        # Try to upload logs and artifacts before stopping everything
+        logger.info("Attempting to upload logs and artifacts before cancellation...")
+        try:
+            if self.scraper:
+                try:
+                    self.scraper.reload()
+
+                    containers_to_wait: list[str] = []
+
+                    if self.upload_status[LOG_UPLOAD] == PENDING:
+                        self.upload_scraper_log()
+
+                    if self.upload_status[LOG_UPLOAD] == DOING:
+                        containers_to_wait.append("log_uploader")
+
+                    if self.upload_status[ARTIFACTS_UPLOAD] == PENDING:
+                        self.upload_scraper_artifacts()
+
+                    if self.upload_status[ARTIFACTS_UPLOAD] == DOING:
+                        containers_to_wait.append("artifacts_uploader")
+
+                    self.wait_for_upload_containers(containers_to_wait)
+                except NotFound:
+                    logger.warning(
+                        "Scraper container not found, skipping log/artifact upload"
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        f"Error during log/artifact upload on cancellation: {exc}"
+                    )
+                    logger.exception(exc)
+            else:
+                logger.warning("No scraper container, skipping log/artifact upload")
+        except Exception as exc:
+            logger.error(f"Unexpected error during cancellation upload attempt: {exc}")
+            logger.exception(exc)
+
         self.stop()
         self.cleanup_workdir()
         self.mark_task_completed("canceled", canceled_by=f"task shutdown ({signame})")
@@ -699,12 +776,19 @@ class TaskWorker(BaseWorker):
         return container.status in RUNNING_STATUSES
 
     def upload_scraper_log(self):
+        # Skip if already done or in progress
+        if self.upload_status[LOG_UPLOAD] in (DONE, DOING, FAILED):
+            logger.debug(f"Log upload already {self.upload_status[LOG_UPLOAD]}")
+            return
+
         if not self.scraper:
             logger.error("No scraper to upload it's logs…")
+            self.upload_status[LOG_UPLOAD] = SKIPPED
             return  # scraper gone, we can't access log
 
         if not self.task:
             logger.error("No task to upload scraper log")
+            self.upload_status[LOG_UPLOAD] = SKIPPED
             return
 
         logger.debug("Dumping docker logs to file…")
@@ -729,12 +813,16 @@ class TaskWorker(BaseWorker):
         except Exception as exc:
             logger.error(f"Unable to dump logs to {fpath}")
             logger.exception(exc)
-            return False
+            self.upload_status[LOG_UPLOAD] = FAILED
+            return
 
         logger.debug("Starting log uploader container…")
         if not self.task or not self.host_task_workdir:
             logger.error("No task or host task workdir to start log uploader")
+            self.upload_status[LOG_UPLOAD] = SKIPPED
             return
+
+        self.upload_status[LOG_UPLOAD] = DOING
         self.log_uploader = start_uploader(
             self.docker,
             task=self.task,
@@ -749,9 +837,17 @@ class TaskWorker(BaseWorker):
             resume=True,
         )
 
-    def check_scraper_log_upload(self):
-        if not self.log_uploader or self.container_running("log_uploader"):
-            return
+    def check_scraper_log_upload(self) -> bool:
+        """Check if log upload is complete and update status."""
+        # Already processed
+        if self.upload_status[LOG_UPLOAD] in (DONE, FAILED, SKIPPED):
+            return True
+
+        if not self.log_uploader:
+            return False
+
+        if self.container_running("log_uploader"):
+            return False
 
         try:
             self.log_uploader.reload()
@@ -761,30 +857,45 @@ class TaskWorker(BaseWorker):
             ]
         except NotFound:
             # prevent race condition if re-entering between this and container removal
-            return
+            return False
+
         logger.info(f"Scraper log upload complete: {exit_code}")
-        if exit_code != 0:
+
+        if exit_code == 0:
+            self.upload_status[LOG_UPLOAD] = DONE
+            logger.info(f"Sending scraper log filename: {filename}")
+            self.patch_task(
+                {
+                    "event": "update",
+                    "payload": {"log": filename},
+                }
+            )
+        else:
+            self.upload_status[LOG_UPLOAD] = FAILED
             logger.error(
                 f"Log Uploader:: "
                 f"{get_container_logs(self.docker, self.log_uploader.name)}"  # pyright: ignore[reportArgumentType]
             )
-        self.stop_container("log_uploader")
 
-        logger.info(f"Sending scraper log filename: {filename}")
-        self.patch_task(
-            {
-                "event": "update",
-                "payload": {"log": filename},
-            }
-        )
+        self.stop_container("log_uploader")
+        return True
 
     def upload_scraper_artifacts(self):
+        # Skip if already done or in progress
+        if self.upload_status[ARTIFACTS_UPLOAD] in (DONE, DOING, FAILED):
+            logger.debug(
+                f"Artifacts upload already {self.upload_status[ARTIFACTS_UPLOAD]}"
+            )
+            return
+
         if not self.scraper:
             logger.error("No scraper to upload its artifacts…")
+            self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
             return  # scraper gone, we can't access artifacts
 
         if not self.task:
             logger.error("No task to upload scraper artifacts")
+            self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
             return
 
         if (
@@ -794,11 +905,13 @@ class TaskWorker(BaseWorker):
             or not self.task["upload"]["artifacts"]["upload_uri"]
         ):
             logger.debug("No artifacts upload URI configured")
+            self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
             return
 
         artifacts_globs = self.task["config"].get("artifacts_globs", None)
         if not artifacts_globs:
             logger.debug("No artifacts configured for upload")
+            self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
             return
         else:
             logger.debug(f"Archiving files matching {artifacts_globs}")
@@ -809,6 +922,7 @@ class TaskWorker(BaseWorker):
         )
         if not self.task_workdir:
             logger.error("No task workdir to upload scraper artifacts")
+            self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
             return
 
         fpath = self.task_workdir / filename
@@ -820,6 +934,7 @@ class TaskWorker(BaseWorker):
             ]
             if len(files_to_archive) == 0:
                 logger.debug("No files found to archive")
+                self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
                 return
 
             with tarfile.open(fpath, "w") as tar:
@@ -834,12 +949,16 @@ class TaskWorker(BaseWorker):
         except Exception as exc:
             logger.error(f"Unable to archive artifacts to {fpath}")
             logger.exception(exc)
+            self.upload_status[ARTIFACTS_UPLOAD] = FAILED
             return
 
         logger.debug("Starting artifacts uploader container…")
         if not self.task or not self.host_task_workdir:
             logger.error("No task or host task workdir to start artifacts uploader")
+            self.upload_status[ARTIFACTS_UPLOAD] = SKIPPED
             return
+
+        self.upload_status[ARTIFACTS_UPLOAD] = DOING
         self.artifacts_uploader = start_uploader(
             self.docker,
             task=self.task,
@@ -854,9 +973,19 @@ class TaskWorker(BaseWorker):
             resume=True,
         )
 
-    def check_scraper_artifacts_upload(self):
-        if not self.artifacts_uploader or self.container_running("artifacts_uploader"):
-            return
+    def check_scraper_artifacts_upload(self) -> bool:
+        """Check if artifacts upload is complete and update status."""
+        # Already processed
+        if self.upload_status[ARTIFACTS_UPLOAD] in (DONE, FAILED, SKIPPED):
+            return True
+
+        # Not started yet
+        if not self.artifacts_uploader:
+            return False
+
+        # Still running
+        if self.container_running("artifacts_uploader"):
+            return False
 
         try:
             self.artifacts_uploader.reload()
@@ -866,9 +995,21 @@ class TaskWorker(BaseWorker):
             ]
         except NotFound:
             # prevent race condition if re-entering between this and container removal
-            return
+            return False
+
         logger.info(f"Scraper artifacts upload complete: {exit_code}")
-        if exit_code != 0:
+
+        if exit_code == 0:
+            self.upload_status[ARTIFACTS_UPLOAD] = DONE
+            logger.info(f"Sending scraper artifacts filename: {filename}")
+            self.patch_task(
+                {
+                    "event": "update",
+                    "payload": {"artifacts": filename},
+                }
+            )
+        else:
+            self.upload_status[ARTIFACTS_UPLOAD] = FAILED
             logger.error(
                 f"Artifacts Uploader:: "
                 f"{
@@ -878,15 +1019,9 @@ class TaskWorker(BaseWorker):
                     )
                 }"
             )
-        self.stop_container("artifacts_uploader")
 
-        logger.info(f"Sending scraper artifacts filename: {filename}")
-        self.patch_task(
-            {
-                "event": "update",
-                "payload": {"artifacts": filename},
-            }
-        )
+        self.stop_container("artifacts_uploader")
+        return True
 
     def refresh_files_list(self):
         if not self.task_workdir:

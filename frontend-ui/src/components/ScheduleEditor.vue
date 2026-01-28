@@ -639,8 +639,6 @@
         <v-textarea
           v-model.trim="pendingComment"
           label="Comment (optional)"
-          hint="Describe the changes you made to help track modifications"
-          placeholder="e.g., Updated memory allocation, changed offliner version, etc."
           variant="outlined"
           auto-grow
           rows="3"
