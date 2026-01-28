@@ -90,6 +90,37 @@ def test_get_schedules(
     assert len(data["items"]) <= 5
 
 
+@pytest.mark.parametrize(
+    "permission,expected_status_code",
+    [
+        pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+    ],
+)
+def test_get_archived_schedules(
+    client: TestClient,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    permission: RoleEnum,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+        username=user.username,
+        email=user.email,
+        scope=user.scope,
+    )
+    create_schedule(name="test_schedule", archived=True)
+
+    response = client.get(
+        "/v2/schedules?skip=0&limit=1&archived=true",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == expected_status_code
+
+
 def test_get_similar_schedules(
     client: TestClient,
     dbsession: OrmSession,

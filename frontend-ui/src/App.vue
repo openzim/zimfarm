@@ -42,9 +42,6 @@ onMounted(async () => {
 const canReadUsers = computed(() => {
   return authStore.hasPermission('users', 'read')
 })
-const canDeleteSchedules = computed(() => {
-  return authStore.hasPermission('schedules', 'delete')
-})
 
 const navigationItems = computed<NavigationItem[]>(() => [
   {
@@ -62,14 +59,6 @@ const navigationItems = computed<NavigationItem[]>(() => [
     icon: 'mdi-book-open-variant',
     disabled: false,
     show: true,
-  },
-  {
-    name: 'archived-schedules',
-    label: 'Archives',
-    route: 'archived-schedules',
-    icon: 'mdi-archive',
-    disabled: false,
-    show: canDeleteSchedules.value,
   },
   {
     name: 'workers',

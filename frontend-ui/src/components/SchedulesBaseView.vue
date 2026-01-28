@@ -104,6 +104,13 @@ const props = withDefaults(defineProps<Props>(), {
   canRequestTasks: false,
 })
 
+// Emits
+const emit = defineEmits<{
+  'filters-updated': [
+    filters: { name: string; categories: string[]; languages: string[]; tags: string[] },
+  ]
+}>()
+
 // Define headers for the table
 const headers = [
   { title: 'Name', value: 'name', sortable: false },
@@ -388,6 +395,7 @@ watch(
     }
     const newSkip = (page - 1) * paginator.value.limit
     await loadData(paginator.value.limit, newSkip)
+    emit('filters-updated', filters.value)
   },
   { deep: true, immediate: true },
 )
