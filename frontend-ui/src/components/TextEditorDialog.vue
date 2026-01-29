@@ -8,24 +8,12 @@
         <v-btn icon="mdi-close" variant="text" @click="handleCancel" size="small" />
       </v-card-title>
 
-      <div class="pa-4 pb-0">
-        <v-alert type="info" variant="tonal" density="compact">
-          <template #prepend>
-            <v-icon>mdi-information</v-icon>
-          </template>
-          Modifying the content or comment may create a new blob and update the URL.
-        </v-alert>
-      </div>
-
       <div class="pa-4">
-        <v-textarea
+        <CodeEditor
           v-model="editedContent"
-          variant="outlined"
-          auto-grow
-          :rows="20"
+          :file-type="fileType"
           :placeholder="`Enter your ${fileTypeLabel} code here...`"
-          hide-details
-          spellcheck="false"
+          height="500px"
         />
       </div>
 
@@ -60,6 +48,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import CodeEditor from '@/components/CodeEditor.vue'
 
 interface Props {
   modelValue: boolean
