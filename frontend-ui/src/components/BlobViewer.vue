@@ -44,13 +44,11 @@
       <v-card-text>
         <v-progress-circular v-if="loadingBlobContent" indeterminate />
         <div v-else-if="blobContent">
-          <v-textarea
+          <CodeEditor
             :model-value="blobContent"
+            :file-type="kind as TextKind"
             readonly
-            variant="outlined"
-            auto-grow
-            rows="15"
-            :class="textFileClass"
+            height="500px"
           />
         </div>
         <div v-else class="text-error">Failed to load content</div>
@@ -66,7 +64,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useNotificationStore } from '@/stores/notification'
-import { isTextKind, type BlobKind } from '@/utils/blob'
+import { isTextKind, type BlobKind, type TextKind } from '@/utils/blob'
+import CodeEditor from '@/components/CodeEditor.vue'
 
 const notificationStore = useNotificationStore()
 
@@ -84,12 +83,6 @@ const blobContent = ref('')
 const loadingBlobContent = ref(false)
 
 const isText = computed(() => isTextKind(props.kind))
-
-const textFileClass = computed(() => {
-  if (props.kind === 'css') return 'language-css'
-  if (props.kind === 'html') return 'language-html'
-  return ''
-})
 
 const fetchBlobByUrl = async (url: string): Promise<Blob | null> => {
   const response = await fetch(url)
@@ -160,10 +153,3 @@ const handleClose = () => {
   showViewer.value = false
 }
 </script>
-
-<style scoped>
-.language-css,
-.language-html {
-  font-family: monospace;
-}
-</style>
