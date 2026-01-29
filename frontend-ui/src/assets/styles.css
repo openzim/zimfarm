@@ -1,3 +1,7 @@
+@import url('highlight.js/styles/github.css') screen and (prefers-color-scheme: light);
+
+@import url('highlight.js/styles/github-dark.css') screen and (prefers-color-scheme: dark);
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
@@ -8,4 +12,10 @@ body {
 a {
   text-decoration: none !important;
   color: rgb(var(--v-theme-primary));
+}
+
+/* Ensure hljs background stays transparent for your overlay approach */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
 }
