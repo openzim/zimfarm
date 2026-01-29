@@ -2,7 +2,7 @@
   <div class="code-editor-wrapper" :style="{ height: height }">
     <highlightjs
       :language="highlightLanguage"
-      :code="modelValue || ' '"
+      :code="highlightedCode"
       class="code-highlight-backdrop"
     />
     <textarea
@@ -14,7 +14,6 @@
       spellcheck="false"
       @scroll="handleScroll"
       @input="handleInput"
-      ref="textareaRef"
     ></textarea>
   </div>
 </template>
@@ -44,7 +43,6 @@ const emit = defineEmits<{
 }>()
 
 const internalValue = ref(props.modelValue)
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 const highlightLanguage = computed(() => {
   switch (props.fileType) {
@@ -56,6 +54,13 @@ const highlightLanguage = computed(() => {
     default:
       return 'plaintext'
   }
+})
+
+// Ensures that trailing newlines are rendered correctly in the highlight backdrop
+// to maintain vertical synchronization with the textarea.
+const highlightedCode = computed(() => {
+  const code = internalValue.value || ' '
+  return code.endsWith('\n') ? code + '\n' : code
 })
 
 const theme = useTheme()
@@ -103,10 +108,6 @@ watch(
     internalValue.value = newValue
   },
 )
-
-defineExpose({
-  textareaRef,
-})
 </script>
 
 <style scoped>
@@ -120,18 +121,24 @@ defineExpose({
 
 .code-highlight-backdrop {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow-y: scroll; /* Force vertical scrollbar to ensure layout match with textarea */
+  overflow-x: hidden; /* Hide horizontal scrollbar to remove unused bottom space */
   pointer-events: none;
   margin: 0;
+  padding: 12px; /* Must match textarea padding */
+  background: transparent !important;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
+/* Ensure any nested pre elements (if any) don't add extra margin/padding */
 .code-highlight-backdrop :deep(pre) {
   margin: 0;
-  padding: 12px;
+  padding: 0;
   height: 100%;
   background: transparent !important;
   border-radius: 0;
@@ -143,15 +150,18 @@ defineExpose({
   line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
+  padding: 0 !important; /* Override highlight.js theme padding */
+  background: transparent !important;
+  font-variant-ligatures: none;
+  letter-spacing: normal;
 }
 
 .code-textarea {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  padding: 12px;
+  padding: 12px; /* Must match backdrop padding */
   margin: 0;
   border: none;
   outline: none;
@@ -164,7 +174,11 @@ defineExpose({
   white-space: pre-wrap;
   word-wrap: break-word;
   resize: none;
-  overflow: auto;
+  overflow-y: scroll; /* Force vertical scrollbar to ensure layout match with backdrop */
+  overflow-x: hidden;
+  box-sizing: border-box;
+  font-variant-ligatures: none;
+  letter-spacing: normal;
 }
 
 .code-textarea.readonly-textarea {
@@ -182,5 +196,6 @@ defineExpose({
 /* Force highlight.js backgrounds to be transparent to avoid white box in dark mode */
 .code-highlight-backdrop :deep(.hljs) {
   background: transparent !important;
+  padding: 0 !important; /* Ensure no extra padding from theme on .hljs class */
 }
 </style>
