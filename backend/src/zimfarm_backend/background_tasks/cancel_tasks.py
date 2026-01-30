@@ -182,6 +182,17 @@ def cancel_stale_tasks(session: OrmSession):
                 f"`{TaskStatus.cancel_requested}`"
             )
 
+    # `canceling` statuses
+    with session.begin_nested():
+        try:
+            cancel_stale_tasks_with_status(
+                session, TaskStatus.canceling, now, STALLED_CANCELREQ_TIMEOUT
+            )
+        except Exception:
+            logger.exception(
+                f"Failed to cancel stale tasks with status `{TaskStatus.canceling}`"
+            )
+
     # `scraper_completed` statuses: either success or failure
     with session.begin_nested():
         try:
