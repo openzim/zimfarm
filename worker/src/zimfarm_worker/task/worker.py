@@ -609,6 +609,18 @@ class TaskWorker(BaseWorker):
                     if self.upload_status[ARTIFACTS_UPLOAD] == DOING:
                         containers_to_wait.append("artifacts_uploader")
 
+                    if containers_to_wait:
+                        logger.info(
+                            "Notifying API of cancellation with "
+                            "pending uploads of logs/artifacts"
+                        )
+                        self.patch_task(
+                            {
+                                "event": "canceling",
+                                "payload": {},
+                            }
+                        )
+
                     self.wait_for_upload_containers(containers_to_wait)
                 except NotFound:
                     logger.warning(
