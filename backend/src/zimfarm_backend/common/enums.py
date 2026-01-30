@@ -13,6 +13,7 @@ class TaskStatus(StrEnum):
     failed = "failed"
     cancel_requested = "cancel_requested"
     canceled = "canceled"
+    canceling = "canceling"
     succeeded = "succeeded"
 
     update = "update"
@@ -34,6 +35,7 @@ class TaskStatus(StrEnum):
             cls.scraper_running,
             cls.scraper_killed,
             cls.cancel_requested,
+            cls.canceling,
         ]
 
     @classmethod
@@ -60,6 +62,7 @@ class TaskStatus(StrEnum):
             cls.scraper_completed,
             cls.scraper_killed,
             cls.cancel_requested,
+            cls.canceling,
             cls.canceled,
             cls.succeeded,
             cls.failed,
