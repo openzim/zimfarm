@@ -479,6 +479,12 @@
                   <v-col cols="12" md="3">
                     <div class="text-subtitle-2">
                       Scraper stdout
+                      <v-progress-circular
+                        v-if="debugRefreshInProgress"
+                        indeterminate
+                        size="small"
+                        class="ml-1"
+                      />
                       <v-btn
                         size="small"
                         variant="outlined"
@@ -614,7 +620,7 @@ import {
   logsUrl,
 } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
-import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 
 // Props
@@ -647,6 +653,8 @@ const task = ref<Task | null>(null)
 const error = ref<string | null>(null)
 const currentTab = ref(props.selectedTab)
 const flagsDefinition = ref<OfflinerDefinition[]>([])
+const debugRefreshInProgress = ref(false)
+const debugRefreshIntervalId = ref<ReturnType<typeof setInterval> | null>(null)
 
 const eventsHeaders = [
   { title: 'Event', value: 'code' },
@@ -851,8 +859,10 @@ const scrollLogsToBottom = () => {
   })
 }
 
-const refreshData = async () => {
-  loadingStore.startLoading('Fetching task...')
+const refreshData = async (options?: { hideLoading?: boolean }) => {
+  if (!options?.hideLoading) {
+    loadingStore.startLoading('Fetching task...')
+  }
   const response = await tasksStore.fetchTask(props.id, !canViewTaskSecrets.value)
   if (response) {
     task.value = response
@@ -861,12 +871,26 @@ const refreshData = async () => {
       scrollLogsToBottom()
     })
   } else {
-    error.value = 'Failed to fetch task'
-    for (const error of tasksStore.errors) {
-      notificationStore.showError(error)
+    if (!options?.hideLoading) {
+      error.value = 'Failed to fetch task'
+      for (const error of tasksStore.errors) {
+        notificationStore.showError(error)
+      }
     }
   }
-  loadingStore.stopLoading()
+  if (!options?.hideLoading) {
+    loadingStore.stopLoading()
+  }
+}
+
+const refreshDebugOnly = async () => {
+  if (debugRefreshInProgress.value) return
+  debugRefreshInProgress.value = true
+  try {
+    await refreshData({ hideLoading: true })
+  } finally {
+    debugRefreshInProgress.value = false
+  }
 }
 
 // Lifecycle
@@ -891,6 +915,27 @@ watch(
     refreshData()
   },
 )
+
+watch(
+  () => [currentTab.value, task.value, isRunning.value] as const,
+  ([tab, t, running]) => {
+    if (debugRefreshIntervalId.value) {
+      clearInterval(debugRefreshIntervalId.value)
+      debugRefreshIntervalId.value = null
+    }
+    if (tab === 'debug' && t && running) {
+      debugRefreshIntervalId.value = window.setInterval(refreshDebugOnly, 60000)
+    }
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  if (debugRefreshIntervalId.value) {
+    clearInterval(debugRefreshIntervalId.value)
+    debugRefreshIntervalId.value = null
+  }
+})
 </script>
 
 <style scoped>
