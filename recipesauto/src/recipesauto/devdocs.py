@@ -106,6 +106,18 @@ def group_items_by_type(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [definition_for_name(items=items, name=name) for name in names]
 
 
+def _parse_version(version_str: str) -> tuple[int, ...]:
+    """Parse version into tuple of integers for sorting
+
+    Parse version string like '4.1' or '3' into a tuple of integers for proper
+    sorting.
+    """
+    try:
+        return tuple(int(part) for part in version_str.split("."))
+    except (ValueError, AttributeError):
+        return (0,)
+
+
 def definition_for_name(items: list[dict[str, Any]], name: str) -> dict[str, Any]:
     if name == "GCC":
         # Do not publish GCC CPP for now
@@ -125,7 +137,9 @@ def definition_for_name(items: list[dict[str, Any]], name: str) -> dict[str, Any
     else:
         variants = filter(lambda item: item["name"] == name, items)
     variant = sorted(
-        variants, key=lambda variant: variant.get("release", "aaa"), reverse=True
+        variants,
+        key=lambda variant: _parse_version(variant.get("release", "")),
+        reverse=True,
     )[0]
     logger.debug(f"{name}: {variant['slug']}")
     return {"name": name, "slug": variant["slug"]}
