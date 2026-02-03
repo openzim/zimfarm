@@ -34,10 +34,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "output": "/output",
                     "slug": item["slug"],
                     "file-name-format": f"devdocs_en_"
-                    f"{_get_cleaned(_get_slug_with_version(item['slug']))}"
+                    f"{_get_cleaned(_get_slug_without_version(item['slug']))}"
                     "_{period}",
                     "name-format": check_zim_name(
-                        f"devdocs_en_{_get_cleaned(_get_slug_with_version(item['slug']))}"
+                        f"devdocs_en_{_get_cleaned(_get_slug_without_version(item['slug']))}"
                     ),
                     "description-format": f"{item['name']} documentation, by DevDocs",
                     "title-format": f"{item['name']} Docs",
@@ -59,7 +59,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             },
             "enabled": True,
             "language": "eng",
-            "name": f"devdocs_en_{_get_cleaned(_get_slug_with_version(item['slug']))}",
+            "name": "devdocs_en_"
+            f"{_get_cleaned(_get_slug_without_version(item['slug']))}",
             "periodicity": "quarterly",
             "tags": [
                 "devdocs",
@@ -74,7 +75,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
 
 def _get_icon_url_for_slug(slug: str) -> str:
-    slug_no_version = _get_slug_with_version(slug)
+    slug_no_version = _get_slug_without_version(slug)
     if slug_no_version == "moment_timezone":
         filename = "moment"
     elif slug_no_version == "vue_router":
@@ -95,10 +96,10 @@ def _get_icon_url_for_slug(slug: str) -> str:
         "graphite",
         "mongoose",
     ]:
-        filename = "_generic"
+        filename = "zzz-generic"
     else:
         filename = slug_no_version
-    return f"https://drive.farm.openzim.org/devdocs/{filename}.png"
+    return f"https://drive.farm.openzim.org/devdocs/{_get_cleaned(filename)}.png"
 
 
 def group_items_by_type(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -149,5 +150,5 @@ def _get_cleaned(value: str) -> str:
     return re.sub(r"[^.a-zA-Z0-9]", "-", value)
 
 
-def _get_slug_with_version(slug: str) -> str:
+def _get_slug_without_version(slug: str) -> str:
     return slug.split("~", maxsplit=1)[0]
