@@ -64,6 +64,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "devdocs",
             ],
+            "version": "initial",
+            "archived": False,
+            "context": "",
+            "offliner": "devdocs",
         }
         for item in group_items_by_type(items)
     ]
