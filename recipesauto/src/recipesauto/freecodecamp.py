@@ -150,6 +150,14 @@ static_data = {
         "take-home projects you can use to strengthen your skills, or add to your "
         "portfolio.",
     },
+    "freecodecamp_es_coding-interview-prep": {
+        "title": "FreeCodeCamp Entrevista",
+        "description": "Ejercicios de codificación",
+        "long_description": "Docenas de desafíos de codificación que prueban su "
+        "conocimiento de algoritmos, estructuras de datos y matemáticas. También tiene "
+        "una serie de proyectos para llevar a casa que puede usar para fortalecer sus "
+        "habilidades o agregar a su portafolio.",
+    },
     "freecodecamp_it_coding-interview-prep": {
         "title": "Intervista di FreeCodeCamp",
         "description": "Esercizi di codifica",
@@ -188,6 +196,15 @@ static_data = {
         " knowledge. They range in difficulty and, for many, the experience is "
         "inductive chain learning as solving one problem will expose you to a new "
         "concept that allows you to undertake a previously inaccessible challenge",
+    },
+    "freecodecamp_es_project-euler": {
+        "title": "Proyecto Euler",
+        "description": "Desafíos de programación",
+        "long_description": "Estos problemas fortalecerán sus conocimientos de "
+        "algoritmos y matemáticas. Varían en dificultad y, para muchos, la "
+        "experiencia es un aprendizaje en cadena inductiva, ya que resolver un "
+        "problema lo expondrá a un nuevo concepto que le permitirá abordar un "
+        "desafío previamente inaccesible.",
     },
     "freecodecamp_it_project-euler": {
         "title": "Progetto Eulero",
@@ -357,7 +374,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         for member in zip_ref.namelist():
             if not member.endswith("/") and (
                 member.startswith("freeCodeCamp-main/curriculum/structure/superblocks")
-                or member == "freeCodeCamp-main/shared/config/curriculum.ts"
+                or member
+                == "freeCodeCamp-main/packages/shared/src/config/curriculum.ts"
             ):
                 target_path = extract_folder / member[len("freeCodeCamp-main/") :]
                 target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -660,11 +678,11 @@ def _get_all_long_description(language: SpokenLanguage) -> str:
     return long_description
 
 
-def _get_image_version(language: SpokenLanguage) -> str:
+def _get_image_version(language: SpokenLanguage) -> str:  # noqa: ARG001
     return "2.0.3"
 
 
-def _get_warehouse_path(language: SpokenLanguage) -> str:
+def _get_warehouse_path(language: SpokenLanguage) -> str:  # noqa: ARG001
     return "/freecodecamp"
 
 
