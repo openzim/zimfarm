@@ -334,7 +334,8 @@ class WatcherRunner:
         # filter by recipe name exactly starting with domain name, since API call
         # search for the domain "anywhere" in the recipe name
         return [
-            recipe["name"] for recipe in payload.get("items", [])
+            recipe["name"]
+            for recipe in payload.get("items", [])
             if recipe["enabled"] and recipe["name"].startswith(f"{domain}_")
         ]
 
@@ -380,10 +381,10 @@ class WatcherRunner:
             return False
 
         success, status, payload = self.query_api(
-            "GET", "/requested-tasks/", params={"schedule_name": recipes}
+            "GET", "/requested-tasks", params={"schedule_name": recipes}
         )
         if not success:
-            logger.error(f"{prefix} Can't get equested-tasks from zimfarm")
+            logger.error(f"{prefix} Can't get requested-tasks from zimfarm")
             return False
 
         tasks = payload.get("items", [])
@@ -403,7 +404,7 @@ class WatcherRunner:
             return False
 
         success, status, payload = self.query_api(
-            "POST", "/requested-tasks/", payload={"schedule_names": recipes}
+            "POST", "/requested-tasks", payload={"schedule_names": recipes}
         )
         if not success:
             logger.error(f"Failed to schedule {recipes} with HTTP {status}: {payload}")
