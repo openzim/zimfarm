@@ -87,7 +87,11 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
 
     def __init__(self):
         """Initialize OAuth token decoder."""
-        self._jwks_client = PyJWKClient(OAUTH_JWKS_URI, cache_keys=True)
+        self._jwks_client = PyJWKClient(
+            OAUTH_JWKS_URI,
+            cache_keys=True,
+            headers={"User-Agent": "PyJWT/2.11.0"},
+        )
 
     def decode(self, token: str) -> JWTClaims:
         """
@@ -135,7 +139,11 @@ class OAuthSessionTokenDecoder(TokenDecoder):
 
     def __init__(self):
         """Initialize OAuth token decoder."""
-        self._jwks_client = PyJWKClient(OAUTH_JWKS_URI, cache_keys=True)
+        self._jwks_client = PyJWKClient(
+            OAUTH_JWKS_URI,
+            cache_keys=True,
+            headers={"User-Agent": "PyJWT/2.11.0"},
+        )
 
     def decode(self, token: str) -> JWTClaims:
         """
