@@ -17,6 +17,9 @@ def get_recipe_tag() -> str:
     return "ted-by-topic"
 
 
+TED_TAGS = {"gaming": "gaming", "conducting": "Music"}
+
+
 def get_expected_recipes() -> list[dict[str, Any]]:
     data = [
         {
@@ -66,10 +69,11 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "subtitles": "all",
                     "publisher": "openZIM",
                     "offliner_id": "ted",
+                    "tags": TED_TAGS.get(topic),
                 },
                 "image": {
                     "name": "ghcr.io/openzim/ted",
-                    "tag": "3.0.3",
+                    "tag": "3.1.0",
                 },
                 "monitor": False,
                 "platform": "ted",
@@ -87,6 +91,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "ted-by-topic",
             ],
+            "version": "initial",
+            "archived": False,
+            "context": "",
+            "offliner": "ted",
         }
         for topic in topics
     ]
@@ -98,4 +106,6 @@ def _get_clean_topic_name(ted_topic_name: str) -> str:
         clean_topic = clean_topic.replace("lgbtqia+", "lgbtqia")
     if "español" in clean_topic:
         clean_topic = clean_topic.replace("español", "espanol")
+    if "audacious-project" in clean_topic:
+        clean_topic = "audacious-project"
     return clean_topic
