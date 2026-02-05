@@ -41,6 +41,7 @@ def task_event_handler(
         TaskStatus.failed: task_failed_event_handler,
         TaskStatus.cancel_requested: task_cancel_requested_event_handler,
         TaskStatus.canceled: task_canceled_event_handler,
+        TaskStatus.canceling: task_canceling_event_handler,
         TaskStatus.scraper_started: task_scraper_started_event_handler,
         TaskStatus.scraper_running: task_scraper_running_event_handler,
         TaskStatus.scraper_completed: task_scraper_completed_event_handler,
@@ -260,6 +261,19 @@ def task_failed_event_handler(
         exception=payload.get("exception"),
         traceback=payload.get("traceback"),
         task_log=payload.get("log"),
+    )
+
+
+def task_canceling_event_handler(
+    session: so.Session, task_id: UUID, payload: dict[str, Any]
+):
+    logger.info(f"Task Cancellation in progress: {task_id}")
+
+    save_event(
+        session,
+        task_id,
+        TaskStatus.canceling,
+        get_timestamp_from_event(payload),
     )
 
 
