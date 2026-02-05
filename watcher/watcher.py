@@ -113,7 +113,11 @@ def query_api(token, method, url, payload=None, params=None, headers=None, attem
     try:
         req_headers.update({"Authorization": f"Bearer {token}"})
         req = getattr(requests, method.lower(), "get")(
-            url=url, headers=req_headers, json=payload, params=params
+            url=url,
+            headers=req_headers,
+            json=payload,
+            params=params,
+            allow_redirects=False,
         )
     except Exception as exc:
         attempt += 1
