@@ -143,7 +143,7 @@ async def get_offliner(
         content={
             "flags": [flag.model_dump(mode="json", by_alias=True) for flag in flags],
             "help": (  # dynamic + sourced from backend because it might be custom
-                f"https://github.com/openzim/{offliner}/wiki/Frequently-Asked-Questions"
+                f"https://github.com/openzim/{offliner_id}/wiki/Frequently-Asked-Questions"
             ),
         }
     )
