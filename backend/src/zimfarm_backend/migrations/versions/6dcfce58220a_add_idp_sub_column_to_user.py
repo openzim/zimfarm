@@ -74,6 +74,16 @@ def upgrade() -> None:
             {"username": username},
         )
 
+    session.execute(
+        sa.text(
+            """
+            UPDATE schedule_history
+            SET author = 'maint-scripts'
+            WHERE author = 'admin'
+            """
+        )
+    )
+
     # Populate UUID columns by looking up usernames in user table
 
     # For task.requested_by
