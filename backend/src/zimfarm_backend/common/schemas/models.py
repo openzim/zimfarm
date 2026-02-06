@@ -2,7 +2,7 @@ import datetime
 import math
 import pathlib
 import re
-from typing import Any
+from typing import Any, Self
 from uuid import UUID
 
 from pydantic import (
@@ -12,9 +12,11 @@ from pydantic import (
     HttpUrl,
     SerializeAsAny,
     field_validator,
+    model_validator,
 )
 
 from zimfarm_backend.common.enums import DockerImageName
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     NotEmptyString,
@@ -146,3 +148,20 @@ class FileCreateUpdateSchema(BaseModel):
     check_filename: str | None = None
     check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)
+
+
+class UserUpdateSchema(BaseModel):
+    """
+    Schema for updating a user
+    """
+
+    email: EmailStr | None = None
+    role: RoleEnum | None = None
+    scope: dict[str, dict[str, bool]] | None = None
+    idp_sub: str | None = None
+
+    @model_validator(mode="after")
+    def check_exclusive_fields(self) -> Self:
+        if self.role is not None and self.scope is not None:
+            raise ValueError("Only one of role/scope must be set")
+        return self

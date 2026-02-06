@@ -154,9 +154,6 @@ def test_authentication_token(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     response = client.get(
@@ -164,3 +161,16 @@ def test_authentication_token(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
+
+
+def test_get_current_user(client: TestClient, user: User):
+    url = "/v2/auth/me"
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+    )
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.OK
+
+    response_json = response.json()
+    assert response_json["username"] == user.username

@@ -115,9 +115,6 @@ def test_create_blob(
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
-        username=user.username,
-        email=user.email,
-        scope=user.scope,
     )
 
     test_data = encode_test_data("test css content")

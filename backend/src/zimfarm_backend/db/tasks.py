@@ -32,10 +32,18 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
-from zimfarm_backend.db.models import File, OfflinerDefinition, Schedule, Task, Worker
+from zimfarm_backend.db.models import (
+    File,
+    OfflinerDefinition,
+    Schedule,
+    Task,
+    User,
+    Worker,
+)
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import get_schedule_duration
+from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 
@@ -78,7 +86,11 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
-        .options(selectinload(Task.files))
+        .options(
+            selectinload(Task.files),
+            selectinload(Task.requested_by),
+            selectinload(Task.canceled_by),
+        )
         .join(OfflinerDefinition, Task.offliner_definition)
         .join(Schedule, Task.schedule, isouter=True)
         .join(Worker, Task.worker, isouter=True)
@@ -120,8 +132,8 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             ),
             events=task.events,
             debug=task.debug,
-            requested_by=task.requested_by,
-            canceled_by=task.canceled_by,
+            requested_by=task.requested_by.username,
+            canceled_by=task.canceled_by.username if task.canceled_by else None,
             container=TaskContainerSchema.model_validate(task.container),
             priority=task.priority,
             notification=(
@@ -172,10 +184,11 @@ def get_tasks(
                 Task.config["resources"].label("resources"),
             ),
             Task.updated_at,
-            Task.requested_by,
+            User.username.label("requested_by"),
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )
+        .join(User, Task.requested_by)
         .join(Worker, Task.worker, isouter=True)
         .join(Schedule, Task.schedule, isouter=True)
         .where(
@@ -241,8 +254,6 @@ def create_task(
         debug={},
         status=requested_task.status,
         timestamp=requested_task.timestamp,
-        requested_by=requested_task.requested_by,
-        canceled_by=None,
         container={},
         priority=requested_task.priority,
         config=requested_task.config.model_dump(
@@ -258,6 +269,9 @@ def create_task(
         context=requested_task.context,
     )
     task.id = requested_task.id
+    task.requested_by_id = get_user_by_username(
+        session, username=requested_task.requested_by
+    ).id
     task.schedule_id = requested_task.schedule_id
     task.worker_id = worker_id
     task.offliner_definition_id = requested_task.offliner_definition_id

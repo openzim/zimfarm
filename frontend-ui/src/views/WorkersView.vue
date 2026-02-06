@@ -106,7 +106,7 @@
 <script setup lang="ts">
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import WorkersTable from '@/components/WorkersTable.vue'
-import constants from '@/constants'
+
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useTasksStore } from '@/stores/tasks'
@@ -114,11 +114,8 @@ import { useWorkersStore } from '@/stores/workers'
 import type { TaskLight } from '@/types/tasks'
 import { formattedBytesSize } from '@/utils/format'
 
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import type { VueCookies } from 'vue-cookies'
-
-const $cookies = inject<VueCookies>('$cookies')
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 // Stores
 const workersStore = useWorkersStore()
@@ -222,12 +219,12 @@ const colorDisk = computed(() => pctColor(percentDisk.value))
 // Methods
 
 function getOnlinesOnlyPreference(): boolean {
-  const value = $cookies?.get('onlines-only')
+  const value = localStorage.getItem('onlines-only')
   return value === null ? false : JSON.parse(value)
 }
 
 function saveOnlinesOnlyPreference(value: boolean): void {
-  $cookies?.set('onlines-only', JSON.stringify(value), constants.COOKIE_LIFETIME_EXPIRY)
+  localStorage.setItem('onlines-only', JSON.stringify(value))
 }
 
 function toggleWorkersList(): void {

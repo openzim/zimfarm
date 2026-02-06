@@ -28,19 +28,11 @@ from zimfarm_worker.common.requests import Response, get_token, query_api
 
 
 @dataclass(kw_only=True)
-class JwtUser:
-    username: str
-    email: str
-    scope: dict[str, Any]
-
-
-@dataclass(kw_only=True)
 class JwtPayload:
     iss: str
     exp: float
     iat: float
     subject: str
-    user: JwtUser
 
 
 @dataclass(kw_only=True)
@@ -117,7 +109,6 @@ class BaseWorker:
                     exp=0,
                     iat=0,
                     subject="",
-                    user=JwtUser(username="", email="", scope={}),
                 ),
                 authenticated_on=datetime.datetime(2019, 1, 1),
                 authentication_expires_on=datetime.datetime(2019, 1, 1),
@@ -181,11 +172,6 @@ class BaseWorker:
                     exp=jwt_payload["exp"],
                     iat=jwt_payload["iat"],
                     subject=jwt_payload["subject"],
-                    user=JwtUser(
-                        username=jwt_payload["user"]["username"],
-                        email=jwt_payload["user"]["email"],
-                        scope=jwt_payload["user"]["scope"],
-                    ),
                 )
                 self.connections[uri].authenticated_on = getnow()
                 self.connections[uri].authentication_expires_on = (

@@ -17,9 +17,11 @@ from zimfarm_backend.api.routes.users.models import (
     PasswordUpdateSchema,
     UserCreateSchema,
     UsersGetSchema,
-    UserUpdateSchema,
 )
-from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
+from zimfarm_backend.common.schemas.models import (
+    UserUpdateSchema,
+    calculate_pagination_metadata,
+)
 from zimfarm_backend.common.schemas.orms import (
     BaseUserWithSshKeysSchema,
     SshKeyList,
@@ -132,7 +134,7 @@ def get_user(
 @router.patch("/{username}")
 def update_user(
     username: Annotated[str, Path()],
-    user_schema: UserUpdateSchema,
+    request: UserUpdateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
@@ -146,9 +148,7 @@ def update_user(
     db_update_user(
         db_session,
         user_id=user.id,
-        email=user_schema.email,
-        role=user_schema.role,
-        scope=user_schema.scope,
+        request=request,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 

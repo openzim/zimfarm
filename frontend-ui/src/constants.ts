@@ -4,9 +4,7 @@ import type { InjectionKey } from 'vue'
 export default {
   config: Symbol() as InjectionKey<Config>,
   CONTACT_EMAIL: 'contact@kiwix.org',
-  TOKEN_COOKIE_NAME: 'auth',
-  TOKEN_COOKIE_EXPIRY: '6m', // 6 months
-  COOKIE_LIFETIME_EXPIRY: '10y', // 10 years
+  TOKEN_STORAGE_KEY: 'auth',
   TASKS_LOAD_SCHEDULES_DELAY: 100,
   MAX_SCHEDULES_IN_SELECTION_REQUEST: 200,
   // Notification constants

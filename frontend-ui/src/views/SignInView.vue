@@ -4,7 +4,7 @@
   - athenticates on the API
   - retrieve and store token in store
   - handles own login/error
-  - save token info in cookie if asked to remember -->
+  - supports Ory.sh OAuth2 authentication -->
 
 <template>
   <v-container class="fill-height">
@@ -20,7 +20,7 @@
             <h1 class="text-h5 mb-4 font-weight-medium">Please sign in</h1>
 
             <!-- Sign In Form -->
-            <v-form @submit.prevent="authenticate" ref="form">
+            <v-form v-if="showLocalLogin" @submit.prevent="authenticate" ref="form">
               <!-- Error Snackbar -->
               <v-alert
                 v-for="error in errors"
@@ -44,13 +44,12 @@
                 label="Username"
                 prepend-inner-icon="mdi-account"
                 variant="outlined"
-                :rules="[rules.required, rules.min(username, 3)]"
+                :rules="[rules.required, rules.minLength(3)]"
                 required
-                autofocus
                 class="mb-3"
                 density="compact"
                 hide-details="auto"
-                validate-on="blur"
+                validate-on="blur lazy"
               />
 
               <v-text-field
@@ -59,12 +58,12 @@
                 prepend-inner-icon="mdi-lock"
                 variant="outlined"
                 type="password"
-                :rules="[rules.required, rules.min(password, 3)]"
+                :rules="[rules.required, rules.minLength(3)]"
                 required
                 class="mb-3"
                 density="compact"
                 hide-details="auto"
-                validate-on="blur"
+                validate-on="blur lazy"
               />
 
               <v-checkbox
@@ -85,9 +84,26 @@
                 :disabled="working"
                 class="mb-3"
               >
-                Sign in
+                Sign in with Username
               </v-btn>
             </v-form>
+
+            <v-divider v-if="showDivider" class="my-4">
+              <span class="text-medium-emphasis px-2">OR</span>
+            </v-divider>
+
+            <v-btn
+              v-if="showOAuthLogin"
+              variant="outlined"
+              color="primary"
+              size="large"
+              block
+              class="mb-4 kiwix-btn"
+              @click="signInWithKiwix"
+            >
+              <span class="flex-grow-1">Sign in with Kiwix</span>
+              <img src="/assets/kiwix-icon.svg" alt="Kiwix" class="kiwix-icon" />
+            </v-btn>
 
             <!-- Contact Email -->
             <div class="text-caption text-medium-emphasis">
@@ -107,7 +123,7 @@ import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
 import { computed, inject, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 // Inject config
 const config = inject<Config>(constants.config)
@@ -117,6 +133,7 @@ if (!config) {
 
 // Router and stores
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 // Form ref
@@ -127,7 +144,7 @@ const username = ref('')
 const password = ref('')
 const remember = ref(true)
 const working = ref(false)
-const errors = computed(() => authStore.errors)
+const errors = ref<string[]>([])
 
 // Computed properties
 const contactEmail = computed(() => {
@@ -135,17 +152,29 @@ const contactEmail = computed(() => {
   return 'contact@kiwix.org'
 })
 
+const showLocalLogin = computed(() => {
+  return config.LOGIN_MODES.includes('local')
+})
+
+const showOAuthLogin = computed(() => {
+  return config.LOGIN_MODES.includes('oauth')
+})
+
+const showDivider = computed(() => {
+  return showLocalLogin.value && showOAuthLogin.value
+})
+
 // Form validation rules
 const rules = {
   required: (value: string) => !!value || 'This field is required',
-  min: (value: string, minLength: number) =>
+  minLength: (minLength: number) => (value: string) =>
     value.length >= minLength || `This field must be at least ${minLength} characters long`,
 }
 
-// Watch for input changes to clear error
+// Watch for input changes to clear errors
 watch([username, password], () => {
-  if (authStore.errors.length > 0) {
-    authStore.errors = []
+  if (errors.value.length > 0) {
+    errors.value = []
   }
 })
 
@@ -155,12 +184,33 @@ const authenticate = async () => {
   if (!valid) return
 
   working.value = true
+  errors.value = []
 
-  await authStore.authenticate(username.value, password.value)
-  working.value = false
-  if (authStore.isLoggedIn) {
-    router.back()
+  try {
+    const success = await authStore.authenticate('local', username.value, password.value)
+
+    if (success && authStore.isLoggedIn) {
+      router.back()
+    } else {
+      // Copy errors from auth store to component errors
+      errors.value = [...authStore.errors]
+    }
+  } catch (err) {
+    console.error('Authentication error:', err)
+    errors.value =
+      authStore.errors.length > 0 ? [...authStore.errors] : ['An unexpected error occurred']
+  } finally {
+    working.value = false
   }
+}
+
+const signInWithKiwix = async () => {
+  // Store current route for redirect after authentication
+  const redirect = route.query.redirect as string
+  if (redirect) {
+    sessionStorage.setItem('auth_redirect', redirect)
+  }
+  await authStore.authenticate('oauth')
 }
 </script>
 
@@ -177,5 +227,15 @@ const authenticate = async () => {
   border-radius: 6px;
   text-transform: none;
   font-weight: 500;
+}
+
+.v-divider {
+  color: rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.kiwix-icon {
+  width: 24px;
+  height: 24px;
+  margin-left: 8px;
 }
 </style>
