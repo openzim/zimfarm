@@ -15,21 +15,21 @@ FLAG_MAPPINGS: dict[
     str, list[dict[str, Literal["image", "css", "html", "illustration"]]]
 ] = {
     "devdocs": [{"logo_format": "image"}],
-    "freecodecamp": [{"illustration": "image"}],
-    "ifixit": [{"icon": "image"}],
-    "kolibri": [{"favicon": "image"}, {"css": "css"}, {"about": "html"}],
-    "mindtouch": [{"illustration_url": "image"}],
+    "freecodecamp": [{"illustration": "illustration"}],
+    "ifixit": [{"icon": "illustration"}],
+    "kolibri": [{"favicon": "illustration"}, {"css": "css"}, {"about": "html"}],
+    "mindtouch": [{"illustration_url": "illustration"}],
     "mwoffliner": [{"customZimFavicon": "illustration"}],
     "nautilus": [
         {"main_logo": "image"},
         {"secondary_logo": "image"},
-        {"favicon": "image"},
+        {"favicon": "illustration"},
         {"about": "html"},
     ],
-    "openedx": [{"favicon_url": "image"}],
-    "sotoki": [{"favicon": "image"}],
+    "openedx": [{"favicon_url": "illustration"}],
+    "sotoki": [{"favicon": "illustration"}],
     "youtube": [{"profile": "image"}, {"banner": "image"}],
-    "zimit": [{"favicon": "image"}, {"custom_css": "css"}],
+    "zimit": [{"favicon": "illustration"}, {"custom_css": "css"}],
 }
 
 
