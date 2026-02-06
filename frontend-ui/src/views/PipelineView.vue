@@ -161,7 +161,14 @@ async function loadData(
       await tasksStore.fetchTasks({
         limit,
         skip,
-        status: ['reserved', 'started', 'scraper_started', 'scraper_completed', 'cancel_requested'],
+        status: [
+          'reserved',
+          'started',
+          'scraper_started',
+          'scraper_completed',
+          'cancel_requested',
+          'canceling',
+        ],
       })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
