@@ -163,8 +163,14 @@
         </template>
 
         <template #[`item.cancel`]="{ item }">
+          <code
+            v-if="item.status === 'canceling' || item.status === 'cancel_requested'"
+            class="text-pink-accent-2"
+          >
+            {{ item.status }}
+          </code>
           <CancelTaskButton
-            v-if="canCancelTasks"
+            v-else-if="canCancelTasks"
             :id="item.id"
             :size="smAndDown ? 'x-small' : 'small'"
             @task-canceled="emit('loadData', props.paginator.limit, 0)"
