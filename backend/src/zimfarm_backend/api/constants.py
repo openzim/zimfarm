@@ -10,8 +10,11 @@ JWT_TOKEN_EXPIRY_DURATION = parse_timespan(
 )
 ZIM_ILLUSTRATION_SIZE = int(getenv("ZIM_ILLUSTRATION_SIZE", default="48"))
 
+# List of authentication modes. Allowed values are "local", "oauth-oidc",
+# "oauth-session"
 AUTH_MODES: list[str] = getenv(
-    "AUTH_MODES", default="local,oauth-oidc,oauth-session"
+    "AUTH_MODES",
+    default="local",
 ).split(",")
 
 # OAuth/OIDC configuration
@@ -21,13 +24,13 @@ OAUTH_JWKS_URI = getenv(
 )
 OAUTH_ISSUER = getenv("OAUTH_ISSUER", default="https://login.kiwix.org")
 OAUTH_OIDC_CLIENT_ID = getenv(
-    "OAUTH_OIDC_CLIENT_ID", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
+    "OAUTH_OIDC_CLIENT_ID", default="38302485-7f3d-4e88-b1b3-ec02fb92ec8c"
 )
 OAUTH_OIDC_LOGIN_REQUIRE_2FA = parse_bool(
     getenv("OAUTH_OIDC_LOGIN_REQUIRE_2FA", default="true")
 )
 OAUTH_SESSION_AUDIENCE_ID = getenv(
-    "OAUTH_SESSION_AUDIENCE_ID", default="d87a31d2-874e-44c4-9dc2-63fad523bf1b"
+    "OAUTH_SESSION_AUDIENCE_ID", default="bada4130-5143-4524-a0bb-0d69671beee2"
 )
 OAUTH_SESSION_LOGIN_REQUIRE_2FA = parse_bool(
     getenv("OAUTH_SESSION_LOGIN_REQUIRE_2FA", default="true")
