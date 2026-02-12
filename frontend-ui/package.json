@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@highlightjs/vue-plugin": "^2.1.0",
-    "axios": "^1.12.0",
+    "axios": "^1.13.5",
     "deep-diff": "^1.0.2",
     "diff": "^8.0.3",
     "diff2html": "^3.4.55",
