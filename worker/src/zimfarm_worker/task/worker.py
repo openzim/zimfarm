@@ -594,6 +594,8 @@ class TaskWorker(BaseWorker):
             if self.scraper:
                 try:
                     self.scraper.reload()
+                    # Stop the scraper before uploading it's logs and artificats
+                    self.scraper.stop()
 
                     containers_to_wait: list[str] = []
 
@@ -622,6 +624,7 @@ class TaskWorker(BaseWorker):
                         )
 
                     self.wait_for_upload_containers(containers_to_wait)
+                    self.scraper.remove()
                 except NotFound:
                     logger.warning(
                         "Scraper container not found, skipping log/artifact upload"
