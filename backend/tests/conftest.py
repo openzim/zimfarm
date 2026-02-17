@@ -63,6 +63,7 @@ def dbsession() -> Generator[OrmSession]:
     engine = session.get_bind()
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+
     yield session
     session.rollback()
     session.close()
