@@ -25,7 +25,7 @@ def get_zim_info(fpath: pathlib.Path) -> dict[str, Any]:
     for size in zim.get_illustration_sizes():
         payload["metadata"].update(
             {
-                f"Illustration_{size}x{size}": base64.standard_b64encode(
+                f"Illustration_{size}x{size}@1": base64.standard_b64encode(
                     zim.get_illustration_item(size).content
                 ).decode("ASCII")
             }
