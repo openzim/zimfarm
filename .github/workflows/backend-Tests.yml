@@ -70,18 +70,26 @@ jobs:
       - name: Run API container
         run: |
           docker run -d --name zimfarm-backend-test \
+            --network host \
             -e POSTGRES_URI=$POSTGRES_URI \
+            -e JWT_SECRET=DH8kSxcflUVfNRdkEiJJCn2dOOKI3qfw \
             -p 8000:80 \
             zimfarm-backend:test
-          # wait for container to be ready
+
           for i in {1..10}; do
-            if curl -fsSL http://localhost:8000/v2/healthcheck > /dev/null; then
-              echo "Backend is up!"
-              break
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" 'http://localhost:80/v2/healthcheck' || echo 0000)
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+              echo "Backend API is up!"
+              exit 0
+            else
+              echo "Waiting for backend API... ($i/10)"
+              sleep 3
             fi
-            echo "Waiting for backend..."
-            sleep 3
           done
+
+          echo "Backend API failed to start:"
+          docker logs zimfarm-backend-test
+          exit 1
 
       - name: Run background tasks container
         run: |
