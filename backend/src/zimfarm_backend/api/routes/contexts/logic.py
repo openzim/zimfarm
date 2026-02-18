@@ -13,7 +13,7 @@ router = APIRouter(prefix="/contexts", tags=["contexts"])
 
 
 @router.get("")
-async def get_contexts(
+def get_contexts(
     session: OrmSession = Depends(gen_dbsession),
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax500, Query()] = 500,

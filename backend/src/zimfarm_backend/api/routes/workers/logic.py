@@ -39,7 +39,7 @@ router = APIRouter(prefix="/workers", tags=["workers"])
 
 
 @router.get("")
-async def get_workers(
+def get_workers(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
     skip: Annotated[SkipField, Query()] = 0,
@@ -68,7 +68,7 @@ async def get_workers(
 
 
 @router.put("/{name}")
-async def update_worker(
+def update_worker(
     name: Annotated[str, Path()],
     request: WorkerUpdateSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
@@ -97,7 +97,7 @@ async def update_worker(
 
 
 @router.get("/{name}")
-async def get_worker(
+def get_worker(
     name: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
@@ -112,7 +112,7 @@ async def get_worker(
 
 
 @router.put("/{name}/check-in")
-async def check_in_worker(
+def check_in_worker(
     name: Annotated[str, Path()],
     worker_checkin: WorkerCheckInSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],

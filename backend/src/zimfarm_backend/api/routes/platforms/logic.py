@@ -8,7 +8,7 @@ router = APIRouter(prefix="/platforms", tags=["platforms"])
 
 
 @router.get("")
-async def get_platforms():
+def get_platforms():
     """Get a list of supported platforms."""
     platforms = Platform.all()
     return ListResponse[Platform](

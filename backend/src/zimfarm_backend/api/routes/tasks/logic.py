@@ -52,7 +52,7 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 @router.get("")
-async def get_tasks(
+def get_tasks(
     db_session: Annotated[Session, Depends(gen_dbsession)],
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 20,
@@ -75,7 +75,7 @@ async def get_tasks(
 
 
 @router.get("/{task_id}")
-async def get_task(
+def get_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User | None, Depends(get_current_user_or_none)],
@@ -114,7 +114,7 @@ async def get_task(
 
 
 @router.post("/{requested_task_id}")
-async def create_task(
+def create_task(
     requested_task_id: Annotated[UUID, Path()],
     task_create_schema: TaskCreateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
@@ -154,7 +154,7 @@ async def create_task(
 
 
 @router.patch("/{task_id}")
-async def update_task(
+def update_task(
     task_id: Annotated[UUID, Path()],
     task_update_schema: TaskUpdateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
@@ -174,7 +174,7 @@ async def update_task(
 
 
 @router.post("/{task_id}/cancel")
-async def cancel_task(
+def cancel_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
