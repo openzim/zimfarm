@@ -144,7 +144,7 @@ const handleImageError = () => {
 
 const parseIllustrationSize = (key: string): { width: number; height: number } | null => {
   const lower = key.toLowerCase()
-  const match = lower.match(/^illustration_(\d+)x(\d+)$/)
+  const match = lower.match(/^illustration_(\d+)x(\d+).*$/)
   if (!match) return null
   const width = parseInt(match[1], 10)
   const height = parseInt(match[2], 10)
