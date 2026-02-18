@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.orm import Session as OrmSession
@@ -9,6 +9,7 @@ from zimfarm_backend.background_tasks import (
     send_cms_notifications as send_cms_notifications_module,
 )
 from zimfarm_backend.background_tasks.send_cms_notifications import (
+    CMSClientTokenProvider,
     notify_cms_for_checked_files,
 )
 from zimfarm_backend.common import getnow
@@ -361,3 +362,78 @@ def test_send_cms_notifications_coalesce_uses_created_timestamp(
         notify_cms_for_checked_files(dbsession)
         # Should be notified - recent created_timestamp + has check field
         mock_advertise.assert_called_once()
+
+
+def test_cms_client_token_provider_initial_token_request():
+    """Test that initial access token is requested from OAuth server"""
+    provider = CMSClientTokenProvider()
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "access_token": "test_token_123",
+        "expires_in": 3600,
+    }
+
+    with patch("requests.post", return_value=mock_response) as mock_post:
+        token = provider.get_access_token()
+
+        assert token == "test_token_123"
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+        assert "/oauth2/token" in call_args[0][0]
+        assert call_args[1]["data"] == {
+            "grant_type": "client_credentials",
+            "audience": "",
+        }
+
+
+def test_cms_client_token_provider_reuses_valid_token():
+    """Test that valid token is reused without making new requests"""
+    provider = CMSClientTokenProvider()
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "access_token": "test_token_123",
+        "expires_in": 3600,
+    }
+
+    with patch("requests.post", return_value=mock_response) as mock_post:
+        # First call - should make request
+        token1 = provider.get_access_token()
+        assert token1 == "test_token_123"
+        assert mock_post.call_count == 1
+
+        # Second call - should reuse token without new request
+        token2 = provider.get_access_token()
+        assert token2 == "test_token_123"
+        assert mock_post.call_count == 1
+
+
+def test_cms_client_token_provider_refreshes_expired_token():
+    """Test that expired token triggers a new token request"""
+    provider = CMSClientTokenProvider()
+
+    mock_response1 = MagicMock()
+    mock_response1.json.return_value = {
+        "access_token": "old_token",
+        "expires_in": 0,  # Token expires immediately
+    }
+
+    mock_response2 = MagicMock()
+    mock_response2.json.return_value = {
+        "access_token": "new_token",
+        "expires_in": 3600,
+    }
+
+    with patch(
+        "requests.post", side_effect=[mock_response1, mock_response2]
+    ) as mock_post:
+        # First call - gets old token that expires immediately
+        token1 = provider.get_access_token()
+        assert token1 == "old_token"
+        assert mock_post.call_count == 1
+
+        # Second call - token expired, should get new token
+        token2 = provider.get_access_token()
+        assert token2 == "new_token"
+        assert mock_post.call_count == 2

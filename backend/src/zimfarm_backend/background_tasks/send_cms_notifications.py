@@ -1,17 +1,146 @@
-from typing import cast
+import datetime
+from http import HTTPStatus
+from typing import Any, cast
 
+import requests
 import sqlalchemy as sa
+from requests.auth import HTTPBasicAuth
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.background_tasks import logger
 from zimfarm_backend.background_tasks.constants import (
     CMS_MAXIMUM_RETRY_INTERVAL,
+    CMS_OAUTH_AUDIENCE_ID,
+    CMS_OAUTH_CLIENT_ID,
+    CMS_OAUTH_CLIENT_SECRET,
+    CMS_OAUTH_ISSUER,
+    CMS_TOKEN_RENEWAL_WINDOW,
 )
-from zimfarm_backend.common.constants import INFORM_CMS
-from zimfarm_backend.common.external import advertise_book_to_cms
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import (
+    CMS_ENDPOINT,
+    INFORM_CMS,
+    REQ_TIMEOUT_CMS,
+    REQUESTS_TIMEOUT,
+)
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
+from zimfarm_backend.common.schemas.orms import (
+    TaskFileSchema,
+    TaskFullSchema,
+)
+from zimfarm_backend.common.upload import upload_url
 from zimfarm_backend.db.models import File, Task
-from zimfarm_backend.db.tasks import get_task_by_id
+from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id
+
+
+class CMSClientTokenProvider:
+    """Client to generate access tokens to authenticate with CMS"""
+
+    def __init__(self):
+        self._access_token: str | None = None
+        self._expires_at: datetime.datetime = datetime.datetime.fromtimestamp(
+            0
+        ).replace(tzinfo=None)
+
+    def get_access_token(self) -> str:
+        """Retrieve or generate access token depending on if token has expired."""
+        now = getnow()
+        if self._access_token is None or now >= (
+            self._expires_at - CMS_TOKEN_RENEWAL_WINDOW
+        ):
+            response = requests.post(
+                f"{CMS_OAUTH_ISSUER}/oauth2/token",
+                data={
+                    "grant_type": "client_credentials",
+                    "audience": CMS_OAUTH_AUDIENCE_ID,
+                },
+                auth=HTTPBasicAuth(CMS_OAUTH_CLIENT_ID, CMS_OAUTH_CLIENT_SECRET),
+                timeout=REQUESTS_TIMEOUT,
+            )
+            response.raise_for_status()
+
+            payload = response.json()
+            self._access_token = cast(str, payload["access_token"])
+            self._expires_at = getnow() + datetime.timedelta(
+                seconds=payload["expires_in"]
+            )
+        return self._access_token
+
+
+cms_client_token_provider = CMSClientTokenProvider()
+
+
+def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: str):
+    """inform openZIM CMS (or compatible) of a created ZIM in the farm
+
+    Safe to re-run as successful requests are skipped
+    """
+
+    file_data = task.files[file_name]
+
+    if file_data.cms_notified:
+        logger.warning(f"Book {file_data.name} already advertised to CMS")
+        return
+    try:
+        access_token = cms_client_token_provider.get_access_token()
+    except Exception:
+        logger.exception("Unable to generate access token to authenticate with CMS")
+        return
+
+    file_data.cms_on = getnow()
+    file_data.cms_notified = False
+    try:
+        resp = requests.post(
+            CMS_ENDPOINT,
+            json=get_openzimcms_payload(
+                file_data,
+                task.upload.check.upload_uri if task.upload.check else None,
+            ),
+            timeout=REQ_TIMEOUT_CMS,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+    except Exception:
+        logger.exception(f"Unable to advertise book to CMS at {CMS_ENDPOINT}")
+    else:
+        status_code = HTTPStatus(resp.status_code)
+        file_data.cms_notified = status_code.is_success
+        if not status_code.is_success:
+            logger.error(
+                f"CMS returned an error {resp.status_code} for book"
+                f"{file_data.info['id']}"
+            )
+
+    # record request result
+    create_or_update_task_file(
+        session,
+        FileCreateUpdateSchema(
+            task_id=task.id,
+            name=file_name,
+            status=file_data.status,
+            cms_on=file_data.cms_on,
+            cms_notified=file_data.cms_notified,
+        ),
+    )
+
+
+def get_openzimcms_payload(
+    file: TaskFileSchema, zimcheck_base_url: str | None
+) -> dict[str, Any]:
+    payload = {
+        "id": file.info["id"],
+        "counter": file.info.get("counter"),
+        "article_count": file.info.get("article_count"),
+        "media_count": file.info.get("media_count"),
+        "size": file.info.get("size"),
+        "metadata": file.info.get("metadata"),
+        "zimcheck_url": (
+            upload_url(zimcheck_base_url, file.check_filename)
+            if zimcheck_base_url and file.check_filename
+            else None
+        ),
+    }
+    return payload
 
 
 def notify_cms_for_checked_files(session: OrmSession):

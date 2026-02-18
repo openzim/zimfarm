@@ -8,7 +8,7 @@ from zimfarm_backend.common.constants import getenv, parse_bool
 HISTORY_TASK_PER_SCHEDULE = int(getenv("HISTORY_TASK_PER_SCHEDULE", default=10))
 
 # Stalled task timeouts
-STALLED_GONE_TIMEOUT = parse_timespan(getenv("STALLED_GONE_TIMEOUT", default="1h"))
+STALLED_GONE_TIMEOUT = parse_timespan(getenv("STALLED_GONE_IMEOUT", default="1h"))
 # when launching worker, it sets status to `started` then start scraper and
 # change status to `scraper_started` so it's a minutes max duration
 STALLED_STARTED_TIMEOUT = parse_timespan(
@@ -71,4 +71,13 @@ CMS_MAXIMUM_RETRY_INTERVAL = parse_timespan(
 )
 DELETE_ORPHANED_BLOBS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("DELETE_ORPHANED_BLOBS_INTERVAL", default="24h"))
+)
+
+CMS_OAUTH_ISSUER = getenv("CMS_OAUTH_ISSUER", default="https://login.kiwix.org")
+CMS_OAUTH_CLIENT_ID = getenv("CMS_OAUTH_CLIENT_ID", default="")
+CMS_OAUTH_CLIENT_SECRET = getenv("CMS_OAUTH_CLIENT_SECRET", default="")
+CMS_OAUTH_AUDIENCE_ID = getenv("CMS_OAUTH_AUDIENCE_ID", default="")
+# Number of seconds before the access token expires at which it should be renewed
+CMS_TOKEN_RENEWAL_WINDOW = datetime.timedelta(
+    seconds=parse_timespan(getenv("CMS_TOKEN_RENEWAL_WINDOW", default="5m"))
 )

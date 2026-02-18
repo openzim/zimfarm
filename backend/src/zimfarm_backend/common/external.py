@@ -1,10 +1,8 @@
 import ipaddress
 import json
 import logging
-from http import HTTPStatus
 from typing import Any, cast
 
-import requests
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from kiwixstorage import (  # pyright: ignore[reportMissingTypeStubs]
@@ -13,11 +11,7 @@ from kiwixstorage import (  # pyright: ignore[reportMissingTypeStubs]
 )
 
 import zimfarm_backend.db.models as dbm
-from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
-    CMS_ENDPOINT,
-    CMS_ZIM_DOWNLOAD_URL,
-    REQ_TIMEOUT_CMS,
     WASABI_MAX_WHITELIST_VERSIONS,
     WASABI_REQUEST_TIMEOUT,
     WASABI_URL,
@@ -25,13 +19,6 @@ from zimfarm_backend.common.constants import (
     WASABI_WHITELIST_STATEMENT_ID,
     WHITELISTED_IPS,
 )
-from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
-from zimfarm_backend.common.schemas.orms import (
-    TaskFileSchema,
-    TaskFullSchema,
-)
-from zimfarm_backend.common.upload import upload_url
-from zimfarm_backend.db.tasks import create_or_update_task_file
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -171,81 +158,3 @@ def update_wasabi_whitelist(ip_addresses: list[str]):
         PolicyDocument=new_policy,
         SetAsDefault=True,
     )
-
-
-def advertise_book_to_cms(session: so.Session, task: TaskFullSchema, file_name: str):
-    """inform openZIM CMS (or compatible) of a created ZIM in the farm
-
-    Safe to re-run as successful requests are skipped"""
-
-    file_data = task.files[file_name]
-
-    # skip if already advertised to CMS
-    if file_data.cms_notified:
-        logger.warning(f"Book {file_data.name} already advertised to CMS")
-        return
-
-    # prepare payload and submit request to CMS
-    download_prefix = f"{CMS_ZIM_DOWNLOAD_URL}{task.config.warehouse_path}"
-    file_data.cms_on = getnow()
-    file_data.cms_notified = False
-    try:
-        resp = requests.post(
-            CMS_ENDPOINT,
-            json=get_openzimcms_payload(
-                file_data,
-                download_prefix,
-                task.upload.check.upload_uri if task.upload.check else None,
-            ),
-            timeout=REQ_TIMEOUT_CMS,
-        )
-    except Exception as exc:
-        logger.error(f"Unable to query CMS at {CMS_ENDPOINT}: {exc}")
-        logger.exception(exc)
-    else:
-        status_code = HTTPStatus(resp.status_code)
-        file_data.cms_notified = status_code.is_success
-        if status_code.is_success:
-            try:
-                resp.json()
-            except Exception as exc:
-                logger.error(f"Unable to parse CMS response: {exc}")
-                logger.exception(exc)
-        else:
-            logger.error(
-                f"CMS returned an error {resp.status_code} for book"
-                f"{file_data.info['id']}"
-            )
-
-    # record request result
-    create_or_update_task_file(
-        session,
-        FileCreateUpdateSchema(
-            task_id=task.id,
-            name=file_name,
-            status=file_data.status,
-            cms_on=file_data.cms_on,
-            cms_notified=file_data.cms_notified,
-        ),
-    )
-
-
-def get_openzimcms_payload(
-    file: TaskFileSchema, download_prefix: str, zimcheck_base_url: str | None
-) -> dict[str, Any]:
-    payload = {
-        "id": file.info["id"],
-        "period": file.info.get("metadata", {}).get("Date"),
-        "counter": file.info.get("counter"),
-        "article_count": file.info.get("article_count"),
-        "media_count": file.info.get("media_count"),
-        "size": file.info.get("size"),
-        "metadata": file.info.get("metadata"),
-        "url": f"{download_prefix}/{file.name}",
-        "zimcheck_url": (
-            upload_url(zimcheck_base_url, file.check_filename)
-            if zimcheck_base_url and file.check_filename
-            else None
-        ),
-    }
-    return payload
