@@ -42,7 +42,7 @@ router = APIRouter(prefix="/offliners", tags=["offliners"])
 
 
 @router.get("")
-async def get_offliners(
+def get_offliners(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> ListResponse[str]:
     """Get a list of offliners"""
@@ -59,7 +59,7 @@ async def get_offliners(
 
 
 @router.post("")
-async def create_offliner(
+def create_offliner(
     request: OfflinerCreateSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: User = Depends(get_current_user),
@@ -81,7 +81,7 @@ async def create_offliner(
 
 
 @router.get("/{offliner_id}/versions")
-async def get_offliner_versions(
+def get_offliner_versions(
     offliner_id: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     skip: Annotated[SkipField, Query()] = 0,
@@ -103,7 +103,7 @@ async def get_offliner_versions(
 
 
 @router.post("/{offliner_id}/versions")
-async def create_offliner_version(
+def create_offliner_version(
     offliner_id: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     request: Annotated[OfflinerDefinitionCreateSchema, Body()],
@@ -123,7 +123,7 @@ async def create_offliner_version(
 
 
 @router.get("/{offliner_id}/{version}")
-async def get_offliner(
+def get_offliner(
     offliner_id: Annotated[str, Path()],
     version: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
@@ -150,7 +150,7 @@ async def get_offliner(
 
 
 @router.get("/{offliner_id}/{version}/spec")
-async def get_offliner_spec(
+def get_offliner_spec(
     offliner_id: Annotated[str, Path()],
     version: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],

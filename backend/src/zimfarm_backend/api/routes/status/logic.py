@@ -15,7 +15,7 @@ router = APIRouter(prefix="/status", tags=["status"])
 
 
 @router.get("/{monitor_name}")
-async def get_status(
+def get_status(
     monitor_name: Annotated[StatusMonitorName, Path(..., description="Monitor name")],
     threshold_secs: Annotated[int, Query(..., description="Threshold in seconds")],
     status: Annotated[TaskStatus, Query(..., description=" Task status")],

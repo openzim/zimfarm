@@ -101,7 +101,7 @@ def create_blob(
     "/{schedule_name}",
     dependencies=[Depends(require_permission(namespace="schedules", name="read"))],
 )
-async def get_blobs(
+def get_blobs(
     schedule_name: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     params: Annotated[BlobsGetSchema, Query()],
@@ -128,7 +128,7 @@ async def get_blobs(
     "/{blob_id}",
     dependencies=[Depends(require_permission(namespace="schedules", name="create"))],
 )
-async def update_blob(
+def update_blob(
     blob_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     request: UpdateBlobRequest,
@@ -165,7 +165,7 @@ async def update_blob(
     "/{blob_id}",
     dependencies=[Depends(require_permission(namespace="schedules", name="create"))],
 )
-async def delete_blob(
+def delete_blob(
     blob_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ):
@@ -180,7 +180,7 @@ async def delete_blob(
     "/{schedule_name}/{flag_name}/{checksum}",
     dependencies=[Depends(require_permission(namespace="schedules", name="read"))],
 )
-async def get_blob(
+def get_blob(
     schedule_name: Annotated[NotEmptyString, Path()],
     flag_name: Annotated[NotEmptyString, Path()],
     checksum: Annotated[NotEmptyString, Path()],

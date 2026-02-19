@@ -44,7 +44,10 @@ from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import get_schedule_duration
 from zimfarm_backend.db.user import get_user_by_username
-from zimfarm_backend.utils.timestamp import get_timestamp_for_status
+from zimfarm_backend.utils.timestamp import (
+    get_status_timestamp_expr,
+    get_timestamp_for_status,
+)
 
 
 class TaskListResult(BaseModel):
@@ -195,7 +198,11 @@ def get_tasks(
             (Schedule.name == schedule_name) | (schedule_name is None),
             (Task.status.in_(status)),
         )
-        .order_by(Task.updated_at.desc())
+        .order_by(
+            get_status_timestamp_expr(Task.timestamp, TaskStatus.started).desc(),
+            get_status_timestamp_expr(Task.timestamp, TaskStatus.reserved).desc(),
+            Task.updated_at.desc(),
+        )
         .offset(skip)
         .limit(limit)
     )

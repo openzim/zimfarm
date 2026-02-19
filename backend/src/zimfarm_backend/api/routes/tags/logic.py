@@ -13,7 +13,7 @@ router = APIRouter(prefix="/tags", tags=["tags"])
 
 
 @router.get("")
-async def get_tags(
+def get_tags(
     session: OrmSession = Depends(gen_dbsession),
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,

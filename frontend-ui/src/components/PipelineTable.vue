@@ -78,11 +78,27 @@
             <template #activator="{ props }">
               <span v-bind="props" class="text-no-wrap">
                 <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
-                  {{ fromNow(getTimestampStringForStatus(item.timestamp, 'reserved')) }}
+                  {{
+                    fromNow(
+                      getTimestampStringForStatus(
+                        item.timestamp,
+                        'started',
+                        getTimestampStringForStatus(item.timestamp, 'reserved'),
+                      ),
+                    )
+                  }}
                 </router-link>
               </span>
             </template>
-            <span>{{ formatDt(getTimestampStringForStatus(item.timestamp, 'reserved')) }}</span>
+            <span>{{
+              formatDt(
+                getTimestampStringForStatus(
+                  item.timestamp,
+                  'started',
+                  getTimestampStringForStatus(item.timestamp, 'reserved'),
+                ),
+              )
+            }}</span>
           </v-tooltip>
         </template>
 
