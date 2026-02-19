@@ -141,11 +141,7 @@ WASABI_MAX_WHITELIST_VERSIONS = int(
 # openZIM CMS can be called upon receival of each ZIM
 INFORM_CMS = parse_bool(getenv("INFORM_CMS", default="false"))
 CMS_ENDPOINT = getenv(
-    "CMS_ENDPOINT", default="https://api.cms.openzim.org/v1/books/add"
-)
-# URL to tell the CMS where to download ZIM from
-CMS_ZIM_DOWNLOAD_URL = getenv(
-    "CMS_ZIM_DOWNLOAD_URL", default="https://download.kiwix.org/zim"
+    "CMS_ENDPOINT", default="https://api.cms.openzim.org/v1/zimfarm-notifications"
 )
 
 # [DEBUG] prevent scraper containers from running wit extended capabilities
