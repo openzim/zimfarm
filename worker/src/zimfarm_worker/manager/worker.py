@@ -275,20 +275,27 @@ class WorkerManager(BaseWorker):
                 for event in self.tasks.get(task_ident, {}).get("events", [])
             }
             cancel_events = {CANCEL_REQUESTED, CANCELED}
-            if (
-                self.tasks.get(task_ident, {}).get("status") in cancel_events
-                or event_codes & cancel_events
-            ):
-                self.cancel_and_remove_task(task_ident)
+            task_status = self.tasks.get(task_ident, {}).get("status", CANCELED)
+            if task_status in cancel_events or event_codes & cancel_events:
+                # If a task is CANCEL_REQUESTED, then, we don't want to remove it
+                # from the list of tasks as it would already by handling cancellation
+                # signal
+                self.cancel_task(task_ident, remove=task_status == CANCELED)
 
-    def cancel_and_remove_task(self, task_ident: TaskIdent):
+    def cancel_task(self, task_ident: TaskIdent, *, remove: bool = True):
+        """Cancel task and optionally remove task from list of tasks.
+
+        Removing a task from list of tasks marks it's containers and workdir folders
+        for deletion.
+        """
         logger.debug(f"canceling task: {task_ident}")
         try:
             self.tasks[task_ident]["status"] = CANCELING
         except KeyError:
             pass
         self.stop_task_worker(task_ident, timeout=60)
-        self.tasks.pop(task_ident, None)
+        if remove:
+            self.tasks.pop(task_ident, None)
 
     def update_task_data(self, task_ident: TaskIdent):
         """request task object from server and update locally"""
@@ -305,7 +312,7 @@ class WorkerManager(BaseWorker):
 
         if response.status_code == HTTPStatus.NOT_FOUND:
             logger.warning(f"task {task_ident.id} is gone. cancelling it")
-            self.cancel_and_remove_task(task_ident)
+            self.cancel_task(task_ident)
         else:
             logger.warning(f"couldn't retrieve task detail for {task_ident.id}")
         return response.success
