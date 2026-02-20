@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query, Response
@@ -58,10 +58,18 @@ def get_tasks(
     limit: Annotated[LimitFieldMax200, Query()] = 20,
     status: Annotated[list[TaskStatus] | None, Query()] = None,
     schedule_name: Annotated[str | None, Query()] = None,
+    sort_criteria: Annotated[
+        Literal["done", "doing", "failed", "updated_at"], Query()
+    ] = "updated_at",
 ) -> ListResponse[TaskLightSchema]:
     """Get a list of tasks"""
     results = db_get_tasks(
-        db_session, skip=skip, limit=limit, status=status, schedule_name=schedule_name
+        db_session,
+        skip=skip,
+        limit=limit,
+        status=status,
+        schedule_name=schedule_name,
+        sort_criteria=sort_criteria,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
