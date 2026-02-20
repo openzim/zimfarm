@@ -307,6 +307,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Fetch user info from backend using the Kiwix token
       await fetchUserInfo(newToken.access_token)
+      if (!user.value) return false
 
       errors.value = []
       provider.saveToken(newToken)
