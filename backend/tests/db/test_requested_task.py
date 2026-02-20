@@ -584,10 +584,10 @@ def test_get_requested_tasks(
     # Sort the tasks as they are done in the get_requested_tasks function
     requested_tasks.sort(
         key=lambda x: (
-            -x.priority,
-            get_timestamp_for_status(x.timestamp, TaskStatus.reserved),
+            x.priority,
             get_timestamp_for_status(x.timestamp, TaskStatus.requested),
-        )
+        ),
+        reverse=True,
     )
 
     for task, requested_task in zip(

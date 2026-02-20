@@ -169,6 +169,7 @@ async function loadData(
           'cancel_requested',
           'canceling',
         ],
+        sort_criteria: 'doing',
       })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
@@ -176,14 +177,19 @@ async function loadData(
       paginator.value = { ...tasksStore.paginator }
       break
     case 'done':
-      await tasksStore.fetchTasks({ limit, skip, status: ['succeeded'] })
+      await tasksStore.fetchTasks({ limit, skip, status: ['succeeded'], sort_criteria: 'done' })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)
       paginator.value = { ...tasksStore.paginator }
       break
     case 'failed':
-      await tasksStore.fetchTasks({ limit, skip, status: ['scraper_killed', 'failed', 'canceled'] })
+      await tasksStore.fetchTasks({
+        limit,
+        skip,
+        status: ['scraper_killed', 'failed', 'canceled'],
+        sort_criteria: 'failed',
+      })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
       tasksStore.savePaginatorLimit(limit)

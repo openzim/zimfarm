@@ -31,14 +31,22 @@ export const useTasksStore = defineStore('tasks', () => {
       skip?: number
       status?: string[]
       scheduleName?: string
+      sort_criteria?: string
     } = {},
   ) => {
-    const { limit = 100, skip = 0, status = [], scheduleName = null } = params
+    const {
+      limit = 100,
+      skip = 0,
+      status = [],
+      scheduleName = null,
+      sort_criteria = 'updated_at',
+    } = params
     const cleanedParams = Object.fromEntries(
       Object.entries({
         limit,
         skip,
         status,
+        sort_criteria,
         schedule_name: scheduleName,
       }).filter(([, value]) => !!value),
     )

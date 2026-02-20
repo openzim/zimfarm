@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -171,7 +171,23 @@ def get_tasks(
     limit: int,
     status: list[TaskStatus] | None = None,
     schedule_name: str | None = None,
+    sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
 ):
+    # Determine the event/column to sort the results based on sort_criteria
+    match sort_criteria:
+        case "done":
+            order_by = get_status_timestamp_expr(
+                Task.timestamp, TaskStatus.succeeded
+            ).desc()
+        case "doing":
+            order_by = get_status_timestamp_expr(
+                Task.timestamp, TaskStatus.reserved
+            ).desc()
+        case "failed" | "updated_at":
+            order_by = Task.updated_at.desc()
+        case _:
+            order_by = Task.updated_at.desc()
+
     status = status or list(TaskStatus)
     stmt = (  # pyright: ignore[reportUnknownVariableType]
         select(
@@ -198,11 +214,7 @@ def get_tasks(
             (Schedule.name == schedule_name) | (schedule_name is None),
             (Task.status.in_(status)),
         )
-        .order_by(
-            get_status_timestamp_expr(Task.timestamp, TaskStatus.started).desc(),
-            get_status_timestamp_expr(Task.timestamp, TaskStatus.reserved).desc(),
-            Task.updated_at.desc(),
-        )
+        .order_by(order_by)
         .offset(skip)
         .limit(limit)
     )

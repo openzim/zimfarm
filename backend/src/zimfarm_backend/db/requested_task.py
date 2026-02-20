@@ -370,8 +370,9 @@ def get_requested_tasks(
         )
         .order_by(
             RequestedTask.priority.desc(),
-            get_status_timestamp_expr(RequestedTask.timestamp, TaskStatus.reserved),
-            get_status_timestamp_expr(RequestedTask.timestamp, TaskStatus.requested),
+            get_status_timestamp_expr(
+                RequestedTask.timestamp, TaskStatus.requested
+            ).desc(),
         )
     )
 
