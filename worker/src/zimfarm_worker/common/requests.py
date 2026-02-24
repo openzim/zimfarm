@@ -78,7 +78,7 @@ def query_api(
         return Response(
             status_code=resp.status_code,
             success=resp.ok,
-            json=resp.json() if resp.text else {},
+            json=resp.json() if resp.text and resp.text.strip() else {},
         )
     except (JSONDecodeError, Exception) as exc:
         logger.exception(

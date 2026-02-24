@@ -42,6 +42,8 @@ from zimfarm_worker.task.zim import get_zim_info
 SLEEP_INTERVAL = 60  # nb of seconds to sleep before watching
 CPU_EWMA_ALPHA = 0.01  # EWMA smoothing factor for CPU percentage samples (0..1)
 
+MAX_LOG_SIZE = 1000 * 1000  # Number of log characters to store on API
+
 
 PENDING = "pending"
 DOING = "doing"
@@ -302,8 +304,15 @@ class TaskWorker(BaseWorker):
             logger.error("No scraper to update")
             return
         self.scraper.reload()
-        stdout = self.scraper.logs(stdout=True, stderr=False, tail=5000).decode("utf-8")
-        stderr = self.scraper.logs(stdout=False, stderr=True, tail=5000).decode("utf-8")
+        # Cap the scraper logs at MAX_LOG_SIZE to avoid exceeding the API payload
+        # limit. The full scraper logs will inadvertently be uploaded whether the
+        # scraper is stopped or succeeded (unless killed manually by user)
+        stdout = (
+            self.scraper.logs(stdout=True, stderr=False, tail=5000)[-MAX_LOG_SIZE:]
+        ).decode("utf-8", errors="replace")
+        stderr = (
+            self.scraper.logs(stdout=False, stderr=True, tail=5000)[-MAX_LOG_SIZE:]
+        ).decode("utf-8", errors="replace")
         scraper_stats = self.scraper.stats(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
             stream=False
         )
@@ -1294,8 +1303,12 @@ class TaskWorker(BaseWorker):
             return
         self.scraper.reload()
         exit_code = self.scraper.attrs["State"]["ExitCode"]
-        stdout = self.scraper.logs(stdout=True, stderr=False, tail=100).decode("utf-8")
-        stderr = self.scraper.logs(stdout=False, stderr=True, tail=100).decode("utf-8")
+        stdout = (
+            self.scraper.logs(stdout=True, stderr=False, tail=100)[-MAX_LOG_SIZE:]
+        ).decode("utf-8", errors="replace")
+        stderr = (
+            self.scraper.logs(stdout=False, stderr=True, tail=100)[-MAX_LOG_SIZE:]
+        ).decode("utf-8", errors="replace")
         self.mark_scraper_completed(exit_code, stdout, stderr)
         self.scraper_succeeded = exit_code == 0
         self.upload_scraper_log()
