@@ -8,7 +8,7 @@
 set -e
 
 # List of offliners to register
-OFFLINERS=("devdocs" "freecodecamp" "gutenberg" "ifixit" "kolibri" "mindtouch" "mwoffliner" "nautilus" "openedx" "phet" "sotoki" "ted" "youtube" "zimit")
+OFFLINERS=("devdocs" "freecodecamp" "gutenberg" "ifixit" "kolibri" "maps" "mindtouch" "mwoffliner" "nautilus" "openedx" "phet" "sotoki" "ted" "youtube" "zimit")
 
 # Base URL for offliner definitions
 BASE_URL="https://raw.githubusercontent.com/openzim"
@@ -31,6 +31,7 @@ setup_offliner_configs() {
     offliner_configs["openedx"]='{"base_model":"DashModel","docker_image_name":"openzim/openedx","command_name":"openedx2zim"}'
     offliner_configs["nautilus"]='{"base_model":"DashModel","docker_image_name":"openzim/nautilus","command_name":"nautiluszim"}'
     offliner_configs["kolibri"]='{"base_model":"DashModel","docker_image_name":"openzim/kolibri","command_name":"kolibri2zim"}'
+    offliner_configs["maps"]='{"base_model":"DashModel","docker_image_name":"openzim/maps","command_name":"maps2zim"}'
     offliner_configs["mindtouch"]='{"base_model":"DashModel","docker_image_name":"openzim/mindtouch","command_name":"mindtouch2zim"}'
     offliner_configs["phet"]='{"base_model":"DashModel","docker_image_name":"openzim/phet","command_name":"phet2zim"}'
 
