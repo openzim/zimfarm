@@ -8,6 +8,7 @@ mkdir -p \
     /jail/zim/ifixit \
     /jail/zim/devdocs \
     /jail/zim/libretexts \
+    /jail/zim/maps \
     /jail/zim/mindtouch \
     /jail/zim/mooc \
     /jail/zim/other \
@@ -33,6 +34,7 @@ chmod 777 \
     /jail/zim/ifixit \
     /jail/zim/devdocs \
     /jail/zim/libretexts \
+    /jail/zim/maps \
     /jail/zim/mindtouch \
     /jail/zim/mooc \
     /jail/zim/other \

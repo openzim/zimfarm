@@ -130,6 +130,7 @@ export default {
     'wikivoyage',
     'wiktionary',
     'mindtouch',
+    'maps',
   ],
   WAREHOUSE_PATHS: [
     '/mindtouch',
@@ -143,6 +144,7 @@ export default {
     '/psiram',
     '/stack_exchange',
     '/ted',
+    '/maps',
     '/mooc',
     '/videos',
     '/vikidia',

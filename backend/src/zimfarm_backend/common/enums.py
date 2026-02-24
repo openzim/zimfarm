@@ -144,6 +144,7 @@ class ScheduleCategory(StrEnum):
     freecodecamp = "freecodecamp"
     devdocs = "devdocs"
     mindtouch = "mindtouch"
+    maps = "maps"
 
     @classmethod
     def all(cls):
@@ -170,6 +171,7 @@ class ScheduleCategory(StrEnum):
             cls.freecodecamp,
             cls.devdocs,
             cls.mindtouch,
+            cls.maps,
         ]
 
     @classmethod
@@ -203,6 +205,7 @@ class DockerImageName(StrEnum):
     freecodecamp = "openzim/freecodecamp"
     devdocs = "openzim/devdocs"
     mindtouch = "openzim/mindtouch"
+    maps = "openzim/maps"
 
     @classmethod
     def all(cls) -> set[str]:
@@ -222,6 +225,7 @@ class DockerImageName(StrEnum):
             cls.freecodecamp,
             cls.devdocs,
             cls.mindtouch,
+            cls.maps,
         }
 
 
