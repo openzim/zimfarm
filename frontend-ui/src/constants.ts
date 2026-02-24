@@ -141,7 +141,6 @@ export default {
     '/ifixit',
     '/other',
     '/phet',
-    '/psiram',
     '/stack_exchange',
     '/ted',
     '/maps',
