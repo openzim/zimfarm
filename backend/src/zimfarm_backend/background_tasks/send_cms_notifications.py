@@ -10,16 +10,19 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.background_tasks import logger
 from zimfarm_backend.background_tasks.constants import (
+    CMS_AUTH_MODE,
     CMS_MAXIMUM_RETRY_INTERVAL,
     CMS_OAUTH_AUDIENCE_ID,
     CMS_OAUTH_CLIENT_ID,
     CMS_OAUTH_CLIENT_SECRET,
     CMS_OAUTH_ISSUER,
+    CMS_PASSWORD,
     CMS_TOKEN_RENEWAL_WINDOW,
+    CMS_USERNAME,
 )
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
-    CMS_ENDPOINT,
+    CMS_BASE_URL,
     INFORM_CMS,
     REQ_TIMEOUT_CMS,
     REQUESTS_TIMEOUT,
@@ -39,8 +42,52 @@ class CMSClientTokenProvider:
 
     def __init__(self):
         self._access_token: str | None = None
+        self._refresh_token: str | None = None
         self._expires_at: datetime.datetime = datetime.datetime.fromtimestamp(
             0
+        ).replace(tzinfo=None)
+
+    def _generate_oauth_access_token(self) -> None:
+        """Generate oauth access token and update expires_at."""
+        response = requests.post(
+            f"{CMS_OAUTH_ISSUER}/oauth2/token",
+            data={
+                "grant_type": "client_credentials",
+                "audience": CMS_OAUTH_AUDIENCE_ID,
+            },
+            auth=HTTPBasicAuth(CMS_OAUTH_CLIENT_ID, CMS_OAUTH_CLIENT_SECRET),
+            timeout=REQUESTS_TIMEOUT,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        self._access_token = cast(str, payload["access_token"])
+        self._expires_at = getnow() + datetime.timedelta(seconds=payload["expires_in"])
+
+    def _generate_local_access_token(self) -> None:
+        if self._refresh_token:
+            response = requests.post(
+                f"{CMS_BASE_URL}/auth/refresh",
+                json={
+                    "refresh_token": self._refresh_token,
+                },
+                timeout=REQUESTS_TIMEOUT,
+            )
+        else:
+            response = requests.post(
+                f"{CMS_BASE_URL}/auth/authorize",
+                json={
+                    "username": CMS_USERNAME,
+                    "password": CMS_PASSWORD,
+                },
+                timeout=REQUESTS_TIMEOUT,
+            )
+
+        response.raise_for_status()
+        payload = response.json()
+        self._access_token = cast(str, payload["access_token"])
+        self._refresh_token = cast(str, payload["refresh_token"])
+        self._expires_at = datetime.datetime.fromisoformat(
+            payload["expires_time"]
         ).replace(tzinfo=None)
 
     def get_access_token(self) -> str:
@@ -49,22 +96,17 @@ class CMSClientTokenProvider:
         if self._access_token is None or now >= (
             self._expires_at - CMS_TOKEN_RENEWAL_WINDOW
         ):
-            response = requests.post(
-                f"{CMS_OAUTH_ISSUER}/oauth2/token",
-                data={
-                    "grant_type": "client_credentials",
-                    "audience": CMS_OAUTH_AUDIENCE_ID,
-                },
-                auth=HTTPBasicAuth(CMS_OAUTH_CLIENT_ID, CMS_OAUTH_CLIENT_SECRET),
-                timeout=REQUESTS_TIMEOUT,
-            )
-            response.raise_for_status()
-
-            payload = response.json()
-            self._access_token = cast(str, payload["access_token"])
-            self._expires_at = getnow() + datetime.timedelta(
-                seconds=payload["expires_in"]
-            )
+            if CMS_AUTH_MODE == "oauth":
+                self._generate_oauth_access_token()
+            elif CMS_AUTH_MODE == "local":
+                self._generate_local_access_token()
+            else:
+                raise ValueError(
+                    f"Unknown cms authentication mode: {CMS_AUTH_MODE}. "
+                    "Allowed values are: 'local', 'oauth'"
+                )
+        if self._access_token is None:
+            raise ValueError("Failed to generate access token.")
         return self._access_token
 
 
@@ -90,9 +132,10 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
 
     file_data.cms_on = getnow()
     file_data.cms_notified = False
+    url = f"{CMS_BASE_URL}/zimfarm-notifications"
     try:
         resp = requests.post(
-            CMS_ENDPOINT,
+            url,
             json=get_openzimcms_payload(
                 file_data,
                 task.upload.check.upload_uri if task.upload.check else None,
@@ -101,7 +144,7 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
             headers={"Authorization": f"Bearer {access_token}"},
         )
     except Exception:
-        logger.exception(f"Unable to advertise book to CMS at {CMS_ENDPOINT}")
+        logger.exception(f"Unable to advertise book to CMS at {url}")
     else:
         status_code = HTTPStatus(resp.status_code)
         file_data.cms_notified = status_code.is_success
