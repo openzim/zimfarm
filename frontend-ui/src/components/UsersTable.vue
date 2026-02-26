@@ -39,12 +39,6 @@
           </v-chip>
         </template>
 
-        <template #[`item.email`]="{ item }">
-          <a :href="`mailto:${item.email}`" class="text-decoration-none text-primary">
-            {{ item.email }}
-          </a>
-        </template>
-
         <template #no-data>
           <div class="text-center pa-4">
             <v-icon size="large" class="mb-2">mdi-account-group-outline</v-icon>

@@ -24,15 +24,14 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('users-table-limit', limit.toString())
   }
 
-  const createUser = async (username: string, email: string, role: string, password: string) => {
+  const createUser = async (username: string, role: string, password: string) => {
     const service = await authStore.getApiService('users')
     try {
       const response = await service.post<
-        { username: string; email: string; role: string; password: string },
+        { username: string; role: string; password: string },
         UserWithSshKeys
       >('', {
         username,
-        email,
         role,
         password,
       })
@@ -120,7 +119,6 @@ export const useUserStore = defineStore('user', () => {
     username: string,
     payload: {
       role?: string
-      email?: string
       scope?: Record<string, Record<string, boolean>>
       idp_sub?: string
     },
@@ -133,7 +131,6 @@ export const useUserStore = defineStore('user', () => {
       await service.patch<
         {
           role?: string
-          email?: string
           scope?: Record<string, Record<string, boolean>>
           idp_sub?: string
         },

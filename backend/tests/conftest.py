@@ -696,7 +696,6 @@ def create_user(
         user = User(
             username=username or data_gen.first_name(),
             password_hash=generate_password_hash("testpassword"),
-            email=data_gen.safe_email(),
             scope=None,
             role=permission,
             idp_sub=idp_sub,

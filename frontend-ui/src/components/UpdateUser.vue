@@ -16,16 +16,6 @@
             </v-col>
             <v-col cols="12" sm="6" md="4">
               <v-text-field
-                v-model="form.email"
-                type="email"
-                label="Email"
-                placeholder="Email"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12" sm="6" md="4">
-              <v-text-field
                 v-model="form.idp_sub"
                 label="IDP Sub (UUID)"
                 hint="Identifier issued by external identity provider."
@@ -173,7 +163,6 @@ const notificationStore = useNotificationStore()
 interface Props {
   user: {
     username: string
-    email: string
     role?: string
     scope?: Record<string, Record<string, boolean>>
     idp_sub?: string
@@ -187,7 +176,6 @@ const emit = defineEmits<{
     e: 'update-user',
     payload: {
       role?: (typeof constants.ROLES)[number]
-      email?: string
       scope?: Record<string, Record<string, boolean>>
       idp_sub?: string
     },
@@ -200,7 +188,6 @@ const roles = constants.ROLES
 
 // Reactive data
 const form = ref({
-  email: '',
   role: '' as (typeof constants.ROLES)[number],
   password: '',
   customScope: '',
@@ -221,7 +208,6 @@ const isCustomRole = computed(() => form.value.role === 'custom')
 const payload = computed(() => {
   const result: {
     role?: (typeof constants.ROLES)[number]
-    email?: string
     scope?: Record<string, Record<string, boolean>>
     idp_sub?: string
   } = {}
@@ -244,18 +230,13 @@ const payload = computed(() => {
     }
   }
 
-  // Only include email if it has changed
-  if (form.value.email !== props.user.email) {
-    result.email = form.value.email
-  }
-
   // Only include idp_sub if it has changed
   if (form.value.idp_sub !== (props.user.idp_sub || '')) {
     result.idp_sub = form.value.idp_sub || undefined
   }
 
   // Return null if no changes were made
-  if (!result.role && !result.scope && !result.email && !result.idp_sub) {
+  if (!result.role && !result.scope && !result.idp_sub) {
     return null
   }
 
@@ -406,7 +387,6 @@ onMounted(() => {
     }
 
     form.value = {
-      email: props.user.email,
       role,
       password: genPassword(),
       customScope,

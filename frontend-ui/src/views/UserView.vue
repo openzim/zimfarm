@@ -57,13 +57,6 @@
               <v-window-item value="details">
                 <v-card flat>
                   <v-card-text>
-                    <!-- Email -->
-                    <p v-if="user.email" class="mb-4">
-                      <a :href="'mailto:' + user.email" class="text-decoration-none text-primary">
-                        {{ user.email }}
-                      </a>
-                    </p>
-
                     <!-- IDP Sub -->
                     <p v-if="user.idp_sub" class="mb-4">
                       <strong>IDP Sub:</strong> <code>{{ user.idp_sub }}</code>
@@ -386,11 +379,10 @@ const changePassword = async (password: string) => {
 
 const updateUser = async (payload: {
   role?: string
-  email?: string
   scope?: Record<string, Record<string, boolean>>
   idp_sub?: string
 }) => {
-  if (!(payload.role || payload.email || payload.scope || payload.idp_sub)) return
+  if (!(payload.role || payload.scope || payload.idp_sub)) return
 
   loadingStore.startLoading('updating user…')
   const success = await userStore.updateUser(props.username, payload)

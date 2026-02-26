@@ -500,7 +500,6 @@ class UserSchema(BaseUserSchema):
     Schema for reading a user model
     """
 
-    email: str | None
     role: str | None
     scope: dict[str, dict[str, bool]]
     idp_sub: UUID | None
