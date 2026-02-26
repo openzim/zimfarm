@@ -140,9 +140,7 @@ WASABI_MAX_WHITELIST_VERSIONS = int(
 
 # openZIM CMS can be called upon receival of each ZIM
 INFORM_CMS = parse_bool(getenv("INFORM_CMS", default="false"))
-CMS_ENDPOINT = getenv(
-    "CMS_ENDPOINT", default="https://api.cms.openzim.org/v1/zimfarm-notifications"
-)
+CMS_BASE_URL = getenv("CMS_BASE_URL", default="https://api.cms.openzim.org/v1")
 
 # [DEBUG] prevent scraper containers from running wit extended capabilities
 DISALLOW_CAPABILITIES = parse_bool(

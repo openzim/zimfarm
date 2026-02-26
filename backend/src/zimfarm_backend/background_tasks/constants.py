@@ -73,6 +73,11 @@ DELETE_ORPHANED_BLOBS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("DELETE_ORPHANED_BLOBS_INTERVAL", default="24h"))
 )
 
+# Mode of authentication to CMS. Allowed values are: "oauth", "local"
+CMS_AUTH_MODE = getenv("CMS_AUTH_MODE", default="oauth")
+# Credentials for local authentication to cms
+CMS_USERNAME = getenv("CMS_USERNAME", default="")
+CMS_PASSWORD = getenv("CMS_PASSWORD", default="")
 CMS_OAUTH_ISSUER = getenv("CMS_OAUTH_ISSUER", default="https://login.kiwix.org")
 CMS_OAUTH_CLIENT_ID = getenv("CMS_OAUTH_CLIENT_ID", default="")
 CMS_OAUTH_CLIENT_SECRET = getenv("CMS_OAUTH_CLIENT_SECRET", default="")
