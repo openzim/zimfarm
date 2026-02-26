@@ -15,6 +15,7 @@ from zimfarm_backend.common.constants import (
 )
 from zimfarm_backend.common.enums import SchedulePeriodicity, TaskStatus
 from zimfarm_backend.db.requested_task import request_task
+from zimfarm_backend.db.user import get_user_by_identifier
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,9 @@ def request_tasks_using_schedule(session: OrmSession):
                         result = request_task(
                             session=session,
                             schedule_name=schedule.name,
-                            requested_by=requester,
+                            requested_by=get_user_by_identifier(
+                                session, user_identifier=requester
+                            ).id,
                             worker_name=worker,
                             priority=priority,
                         )

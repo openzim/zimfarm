@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from zimfarm_backend.api.routes.dependencies import get_current_user
+from zimfarm_backend.api.routes.dependencies import (
+    get_current_user,
+    require_permission_if_not_self,
+)
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
-    NotFoundError,
     UnauthorizedError,
 )
 from zimfarm_backend.api.routes.models import ListResponse
@@ -41,8 +43,7 @@ from zimfarm_backend.db.ssh_key import (
 from zimfarm_backend.db.user import (
     check_user_permission,
     create_user_schema,
-    get_user_by_username,
-    get_user_by_username_or_none,
+    get_user_by_identifier,
 )
 from zimfarm_backend.db.user import create_user as db_create_user
 from zimfarm_backend.db.user import delete_user as db_delete_user
@@ -96,6 +97,7 @@ def create_user(
         user = db_create_user(
             db_session,
             username=user_schema.username,
+            display_name=user_schema.username,
             password_hash=generate_password_hash(user_schema.password),
             scope=None,
             role=user_schema.role,
@@ -109,20 +111,20 @@ def create_user(
     )
 
 
-@router.get("/{username}")
+@router.get(
+    "/{user_identifier}",
+    dependencies=[
+        Depends(require_permission_if_not_self(namespace="users", name="read"))
+    ],
+)
 def get_user(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> UserSchemaWithSshKeys:
     """Get a specific user"""
-    if username != current_user.username:
-        if not check_user_permission(current_user, namespace="users", name="read"):
-            raise UnauthorizedError("You are not allowed to access this resource")
-
-    user = get_user_by_username_or_none(db_session, username=username)
-    if not user:
-        raise NotFoundError("User not found")
+    user = get_user_by_identifier(
+        db_session, user_identifier=user_identifier, fetch_ssh_keys=True
+    )
 
     return UserSchemaWithSshKeys(
         **create_user_schema(user).model_dump(),
@@ -130,57 +132,57 @@ def get_user(
     )
 
 
-@router.patch("/{username}")
+@router.patch(
+    "/{user_identifier}",
+    dependencies=[
+        Depends(require_permission_if_not_self(namespace="users", name="update"))
+    ],
+)
 def update_user(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     request: UserUpdateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Update a specific user"""
-    user = get_user_by_username(db_session, username=username)
-
-    if username != current_user.username:
-        if not check_user_permission(current_user, namespace="users", name="update"):
-            raise UnauthorizedError("You are not allowed to access this resource")
-
     db_update_user(
         db_session,
-        user_id=user.id,
+        user_id=user_identifier,
         request=request,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.delete("/{username}")
+@router.delete(
+    "/{user_identifier}",
+    dependencies=[
+        Depends(require_permission_if_not_self(namespace="users", name="delete"))
+    ],
+)
 def delete_user(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Delete a specific user"""
-    user = get_user_by_username(db_session, username=username)
-
-    if not check_user_permission(current_user, namespace="users", name="delete"):
-        raise UnauthorizedError("You are not allowed to access this resource")
-
+    user = get_user_by_identifier(db_session, user_identifier=user_identifier)
     db_delete_user(db_session, user_id=user.id)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.post("/{username}/keys")
+@router.post(
+    "/{user_identifier}/keys",
+    dependencies=[
+        Depends(require_permission_if_not_self(namespace="users", name="ssh_keys"))
+    ],
+)
 def create_user_key(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     ssh_key: KeySchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> SshKeyRead:
     """Create a new SSH key for a user"""
-    user = get_user_by_username(db_session, username=username)
-
-    if username != current_user.username:
-        if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
-            raise UnauthorizedError("You are not allowed to access this resource")
+    user = get_user_by_identifier(db_session, user_identifier=user_identifier)
+    if not user.username:
+        raise BadRequestError("Only users with username can have SSH keys.")
 
     try:
         public_key = load_public_key(bytes(ssh_key.key, encoding="ascii"))
@@ -206,58 +208,66 @@ def create_user_key(
     return SshKeyRead.model_validate(db_ssh_key)
 
 
-@router.get("/{username}/keys")
+@router.get(
+    "/{user_identifier}/keys",
+    dependencies=[
+        Depends(require_permission_if_not_self(namespace="users", name="ssh_keys"))
+    ],
+)
 def get_user_keys(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> SshKeyList:
     """Get a list of SSH keys for a user"""
-    if username != current_user.username:
-        if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
-            raise UnauthorizedError("You are not allowed to access this resource")
-
-    user = get_user_by_username(db_session, username=username, fetch_ssh_keys=True)
-
+    user = get_user_by_identifier(
+        db_session, user_identifier=user_identifier, fetch_ssh_keys=True
+    )
     return SshKeyList(
         ssh_keys=[SshKeyRead.model_validate(ssh_key) for ssh_key in user.ssh_keys]
     )
 
 
-@router.patch("/{username}/password")
+@router.patch(
+    "/{user_identifier}/password",
+    dependencies=[
+        Depends(
+            require_permission_if_not_self(namespace="users", name="change_password")
+        )
+    ],
+)
 def update_user_password(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     password_update: PasswordUpdateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Update a user's password"""
-    user = get_user_by_username(db_session, username=username)
+    user = get_user_by_identifier(db_session, user_identifier=user_identifier)
+    if not user.username:
+        raise BadRequestError("Only users with username can have passwords.")
 
-    if current_user.username == username:
+    # Users changing their own password must provide their password if one exists and
+    # it must match the existing one
+    if current_user.id == user.id and user.password_hash is not None:
         if password_update.current is None:
             raise BadRequestError("You must enter your current password.")
 
-        if not check_password_hash(
-            current_user.password_hash or "", password_update.current
-        ):
+        if not check_password_hash(user.password_hash, password_update.current):
             raise BadRequestError()
-    elif not check_user_permission(
-        current_user, namespace="users", name="change_password"
-    ):
-        raise UnauthorizedError("You are not allowed to access this resource")
 
     db_update_user_password(
         db_session,
         user_id=user.id,
-        password_hash=generate_password_hash(password_update.new),
+        password_hash=(
+            generate_password_hash(password_update.new) if password_update.new else None
+        ),
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{username}/keys/{fingerprint:path}")
+@router.get("/{user_identifier}/keys/{fingerprint:path}")
 def get_user_key(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     fingerprint: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
     with_permission: Annotated[list[str] | None, Query()] = None,
@@ -265,8 +275,8 @@ def get_user_key(
     """Get a specific SSH key for a user"""
     db_ssh_key = get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
 
-    if username != "-":
-        get_user_by_username(db_session, username=username)
+    if user_identifier != "-":
+        get_user_by_identifier(db_session, user_identifier=user_identifier)
 
     requested_permissions = with_permission or []
     for permission in requested_permissions:
@@ -277,26 +287,30 @@ def get_user_key(
             raise UnauthorizedError(permission)
 
     return BaseUserWithSshKeysSchema(
+        id=db_ssh_key.user.id,
         username=db_ssh_key.user.username,
+        has_ssh_keys=True,
+        has_password=db_ssh_key.user.password_hash is not None,
+        display_name=db_ssh_key.user.display_name,
         key=db_ssh_key.key,
         name=db_ssh_key.name,
         type=db_ssh_key.type,
     )
 
 
-@router.delete("/{username}/keys/{fingerprint:path}")
+@router.delete(
+    "/{user_identifier}/keys/{fingerprint:path}",
+    dependencies=[
+        Depends(require_permission_if_not_self(namespace="users", name="ssh_keys"))
+    ],
+)
 def delete_user_key(
-    username: Annotated[str, Path()],
+    user_identifier: Annotated[str, Path()],
     fingerprint: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     """Delete a specific SSH key for a user"""
-    if current_user.username != username:
-        if not check_user_permission(current_user, namespace="users", name="ssh_keys"):
-            raise UnauthorizedError("You are not allowed to access this resource")
-
-    user = get_user_by_username(db_session, username=username)
+    user = get_user_by_identifier(db_session, user_identifier=user_identifier)
 
     get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
 

@@ -124,7 +124,7 @@ def test_create_schedule(
         session=dbsession,
         name="test_schedule",
         category=ScheduleCategory.other,
-        author=user.username,
+        author_id=user.id,
         language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
         tags=["test"],
@@ -167,7 +167,7 @@ def test_create_duplicate_schedule_with_existing_name(
     create_schedule(
         session=dbsession,
         name=schedule_name,
-        author=user.username,
+        author_id=user.id,
         category=ScheduleCategory.other,
         language=LanguageSchema(code="eng", name="English"),
         config=schedule_config,
@@ -181,7 +181,7 @@ def test_create_duplicate_schedule_with_existing_name(
         create_schedule(
             session=dbsession,
             name=schedule_name,
-            author=user.username,
+            author_id=user.id,
             category=ScheduleCategory.other,
             language=LanguageSchema(code="eng", name="English"),
             config=schedule_config,
@@ -221,7 +221,7 @@ def test_update_schedule(
     updated_schedule = create_schedule_full_schema(
         update_schedule(
             dbsession,
-            author=user.username,
+            author_id=user.id,
             schedule_name=old_schedule.name,
             new_schedule_config=new_schedule_config,
             name=old_schedule.name + "_updated",
@@ -567,7 +567,7 @@ def test_toggle_schedule_archive_status(
             dbsession,
             schedule_name=schedule.name,
             archived=new_archive_status,
-            actor=user.username,
+            actor_id=user.id,
         )
 
 
@@ -592,4 +592,4 @@ def test_restore_schedules(
     create_schedule(name="testschedule", archived=True)
 
     with expected:
-        restore_schedules(dbsession, schedule_names=schedule_names, actor=user.username)
+        restore_schedules(dbsession, schedule_names=schedule_names, actor_id=user.id)

@@ -1,5 +1,9 @@
 export interface BaseUser {
-  username: string
+  id: string
+  username: string | null
+  display_name: string
+  has_password?: boolean
+  has_ssh_keys?: boolean
 }
 
 export interface JWTUser extends BaseUser {

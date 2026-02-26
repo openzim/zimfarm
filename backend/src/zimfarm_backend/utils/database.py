@@ -41,6 +41,7 @@ def create_initial_user():
             logger.info(f"creating initial user `{username}`")
             orm_user = User(
                 username=username,
+                display_name=username,
                 password_hash=generate_password_hash(password),
                 scope=None,
                 role="admin",

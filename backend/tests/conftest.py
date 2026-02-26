@@ -693,8 +693,10 @@ def create_user(
         permission: RoleEnum = RoleEnum.ADMIN,
         idp_sub: UUID | None = None,
     ):
+        username = username or data_gen.first_name()
         user = User(
-            username=username or data_gen.first_name(),
+            username=username,
+            display_name=username,
             password_hash=generate_password_hash("testpassword"),
             scope=None,
             role=permission,

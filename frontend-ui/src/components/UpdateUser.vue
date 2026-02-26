@@ -4,8 +4,35 @@
     <v-card class="mb-4">
       <v-card-text>
         <v-form @submit.prevent="updateUser">
-          <v-row>
-            <v-col cols="12" sm="6" md="4">
+          <v-row class="justify-end">
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="form.username"
+                label="Username"
+                hint="Username for authentication"
+                placeholder="username"
+                variant="outlined"
+                density="compact"
+                persistent-hint
+                :error-messages="usernameError ? [usernameError] : []"
+              />
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="form.display_name"
+                label="Display Name"
+                hint="User's display name"
+                placeholder="Display Name"
+                variant="outlined"
+                density="compact"
+                persistent-hint
+                :error-messages="displayNameError ? [displayNameError] : []"
+                required
+              />
+            </v-col>
+
+            <v-col cols="12" md="6">
               <v-select
                 v-model="form.role"
                 :items="roles"
@@ -14,7 +41,7 @@
                 density="compact"
               />
             </v-col>
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" md="6">
               <v-text-field
                 v-model="form.idp_sub"
                 label="IDP Sub (UUID)"
@@ -25,9 +52,9 @@
                 persistent-hint
               />
             </v-col>
-            <v-col cols="12" sm="12" md="4" class="d-flex align-end">
+            <v-col cols="12" md="6">
               <v-btn type="submit" color="primary" variant="elevated" :disabled="!payload" block>
-                Update User
+                Update User Profile
               </v-btn>
             </v-col>
           </v-row>
@@ -52,30 +79,27 @@
       </v-card-text>
     </v-card>
 
-    <!-- Change Password Form -->
-    <v-card class="mb-4">
+    <!-- Change Password Form (only if user has username) -->
+    <v-card v-if="props.user.username" class="mb-4">
       <v-card-text>
-        <v-form @submit.prevent="emit('change-password', form.password)">
+        <v-form
+          @submit.prevent="
+            emit('change-password', form.password.trim() ? form.password.trim() : null)
+          "
+        >
           <v-row>
             <v-col cols="12" sm="8" md="6">
               <v-text-field
                 v-model="form.password"
-                label="Password (generated)"
-                placeholder="Password"
+                label="Password"
+                placeholder="Enter new password or leave empty to clear"
                 variant="outlined"
                 density="compact"
                 hide-details
-                required
               />
             </v-col>
             <v-col>
-              <v-btn
-                type="submit"
-                color="primary"
-                variant="elevated"
-                :disabled="!form.password"
-                block
-              >
+              <v-btn type="submit" color="primary" variant="elevated" block>
                 Change Password
               </v-btn>
             </v-col>
@@ -84,8 +108,8 @@
       </v-card-text>
     </v-card>
 
-    <!-- Add SSH Key Form (only for workers) -->
-    <v-card v-if="form.role === 'worker'">
+    <!-- Add SSH Key Form (only for workers with username) -->
+    <v-card v-if="props.user.username && form.role === 'worker'">
       <v-card-text>
         <v-form @submit.prevent="addKey">
           <v-row>
@@ -155,18 +179,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import constants from '@/constants'
 import { useNotificationStore } from '@/stores/notification'
 import { generatePassword } from '@/utils/browsers'
+import type { User } from '@/types/user'
 
 // Stores and services
 const notificationStore = useNotificationStore()
 
 // Props
 interface Props {
-  user: {
-    username: string
-    role?: string
-    scope?: Record<string, Record<string, boolean>>
-    idp_sub?: string
-  }
+  user: User
 }
 
 const props = defineProps<Props>()
@@ -175,12 +195,14 @@ const emit = defineEmits<{
   (
     e: 'update-user',
     payload: {
+      username?: string | null
+      display_name?: string
       role?: (typeof constants.ROLES)[number]
       scope?: Record<string, Record<string, boolean>>
-      idp_sub?: string
+      idp_sub?: string | null
     },
   ): void
-  (e: 'change-password', password: string): void
+  (e: 'change-password', password: string | null): void
   (e: 'add-key', keyPayload: { name: string; key: string }): void
 }>()
 
@@ -188,6 +210,8 @@ const roles = constants.ROLES
 
 // Reactive data
 const form = ref({
+  username: '',
+  display_name: '',
   role: '' as (typeof constants.ROLES)[number],
   password: '',
   customScope: '',
@@ -205,12 +229,44 @@ const keyInputMode = ref<'file' | 'text'>('file')
 // Computed properties
 const isCustomRole = computed(() => form.value.role === 'custom')
 
+const usernameError = computed(() => {
+  // If user has password or SSH keys, username cannot be empty
+  if ((props.user.has_password || props.user.has_ssh_keys) && !form.value.username.trim()) {
+    return 'Username is required for users with password or SSH keys'
+  }
+  return null
+})
+
+const displayNameError = computed(() => {
+  if (!form.value.display_name.trim()) {
+    return 'Display name is required'
+  }
+  return null
+})
+
 const payload = computed(() => {
   const result: {
+    username?: string | null
+    display_name?: string
     role?: (typeof constants.ROLES)[number]
     scope?: Record<string, Record<string, boolean>>
-    idp_sub?: string
+    idp_sub?: string | null
   } = {}
+
+  // Only include username if it has changed
+  if (form.value.username !== (props.user.username || '')) {
+    if (usernameError.value) {
+      return null
+    }
+    result.username = form.value.username.trim() ? form.value.username.trim() : null
+  }
+
+  if (form.value.display_name !== props.user.display_name) {
+    if (displayNameError.value) {
+      return null
+    }
+    result.display_name = form.value.display_name
+  }
 
   // If role is custom, we send scope instead of role
   if (form.value.role === 'custom') {
@@ -232,11 +288,10 @@ const payload = computed(() => {
 
   // Only include idp_sub if it has changed
   if (form.value.idp_sub !== (props.user.idp_sub || '')) {
-    result.idp_sub = form.value.idp_sub || undefined
+    result.idp_sub = form.value.idp_sub.trim() ? form.value.idp_sub : null
   }
 
-  // Return null if no changes were made
-  if (!result.role && !result.scope && !result.idp_sub) {
+  if (Object.keys(result).length === 0) {
     return null
   }
 
@@ -373,25 +428,38 @@ const updateUser = () => {
   emit('update-user', payload.value)
 }
 
-// Lifecycle
-onMounted(() => {
-  if (props.user) {
-    const role = constants.ROLES.includes(props.user.role as (typeof constants.ROLES)[number])
-      ? (props.user.role as (typeof constants.ROLES)[number])
-      : 'editor'
+const initializeForm = () => {
+  if (!props.user) return
 
-    // Initialize custom scope with user's current scope if role is custom
-    let customScope = ''
-    if (role === 'custom' && props.user.scope) {
-      customScope = JSON.stringify(props.user.scope, null, 2)
-    }
+  const role = constants.ROLES.includes(props.user.role as (typeof constants.ROLES)[number])
+    ? (props.user.role as (typeof constants.ROLES)[number])
+    : 'editor'
 
-    form.value = {
-      role,
-      password: genPassword(),
-      customScope,
-      idp_sub: props.user.idp_sub || '',
-    }
+  let customScope = ''
+  if (role === 'custom' && props.user.scope) {
+    customScope = JSON.stringify(props.user.scope, null, 2)
   }
+
+  form.value = {
+    username: props.user.username || '',
+    display_name: props.user.display_name || '',
+    role,
+    password: genPassword(),
+    customScope,
+    idp_sub: props.user.idp_sub || '',
+  }
+}
+
+// Watch for user changes to reinitialize form
+watch(
+  () => props.user,
+  () => {
+    initializeForm()
+  },
+  { deep: true },
+)
+
+onMounted(() => {
+  initializeForm()
 })
 </script>

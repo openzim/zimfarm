@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import Depends
+from fastapi import Depends, Path
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import exceptions as jwt_exceptions
 from sqlalchemy.orm import Session as OrmSession
@@ -8,15 +8,18 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.api.constants import (
     CREATE_NEW_OAUTH_ACCOUNT,
 )
-from zimfarm_backend.api.routes.http_errors import UnauthorizedError
+from zimfarm_backend.api.routes.http_errors import ForbiddenError, UnauthorizedError
 from zimfarm_backend.api.token import JWTClaims, token_decoder
+from zimfarm_backend.common import is_valid_uuid
 from zimfarm_backend.common.roles import RoleEnum
+from zimfarm_backend.common.schemas.models import UserUpdateSchema
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.user import (
     check_user_permission,
     create_user,
     get_user_by_id_or_none,
+    update_user,
 )
 
 security = HTTPBearer(description="Access Token", auto_error=False)
@@ -61,18 +64,28 @@ def get_current_user_or_none_with_session(
     ) -> User | None:
         if claims is None:
             return None
-        user = get_user_by_id_or_none(session, user_id=claims.sub)
+        user = get_user_by_id_or_none(session, user_id=claims.sub, fetch_ssh_keys=True)
         # If this is a kiwix token, we create a new user account
         if user is None and CREATE_NEW_OAUTH_ACCOUNT:
             if not claims.name:
                 raise UnauthorizedError("Token is missing 'profile' scope")
             create_user(
                 session,
-                username=claims.name,
+                display_name=claims.name,
                 role=RoleEnum.VIEWER,
                 idp_sub=claims.sub,
             )
-            user = get_user_by_id_or_none(session, user_id=claims.sub)
+            user = get_user_by_id_or_none(
+                session, user_id=claims.sub, fetch_ssh_keys=True
+            )
+
+        # if token contains a "name" attribute and display_name is different, update it
+        if user and claims.name and claims.name != user.display_name:
+            update_user(
+                session,
+                user_id=user.id,
+                request=UserUpdateSchema(display_name=claims.name),
+            )
 
         return user
 
@@ -125,3 +138,19 @@ def require_permission(*, namespace: str, name: str):
         return current_user
 
     return _check_permission
+
+
+def require_permission_if_not_self(namespace: str, name: str):
+    """Ensure that a user has permission to access another user's resource."""
+
+    def _require_permission_if_not_self(
+        user_identifier: Annotated[str, Path()],
+        current_user: Annotated[User, Depends(get_current_user)],
+    ):
+        if (
+            is_valid_uuid(user_identifier) and user_identifier != str(current_user.id)
+        ) or (user_identifier != current_user.username):
+            if not check_user_permission(current_user, namespace=namespace, name=name):
+                raise ForbiddenError("You are not allowed to access this resource")
+
+    return _require_permission_if_not_self

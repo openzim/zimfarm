@@ -1122,7 +1122,7 @@ def test_get_schedule_history_pagination(
     for i in range(9):
         update_schedule(
             session=dbsession,
-            author=user.username,
+            author_id=user.id,
             schedule_name=schedule.name,
             comment=f"test_comment_{i}",
             tags=[*schedule.tags, f"test_tag_{i}"],

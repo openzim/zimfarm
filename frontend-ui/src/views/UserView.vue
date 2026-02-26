@@ -16,7 +16,7 @@
       <v-row>
         <v-col cols="12">
           <h2 class="text-h4 mb-4">
-            <code>{{ username }}</code>
+            <code>{{ user?.display_name }}</code>
             <span v-if="user">
               (<code>{{ user.role }}</code
               >)</span
@@ -26,14 +26,14 @@
           <div v-if="!error && user">
             <!-- Tabs -->
             <v-tabs v-model="selectedTab" color="primary" class="mb-4">
-              <v-tab value="details" :to="{ name: 'user-detail', params: { username: username } }">
+              <v-tab value="details" :to="{ name: 'user-detail', params: { userId: userId } }">
                 Profile
               </v-tab>
               <v-tab
                 value="edit"
                 :to="{
                   name: 'user-detail-tab',
-                  params: { username: username, selectedTab: 'edit' },
+                  params: { userId: userId, selectedTab: 'edit' },
                 }"
               >
                 Edit
@@ -43,7 +43,7 @@
                 value="delete"
                 :to="{
                   name: 'user-detail-tab',
-                  params: { username: username, selectedTab: 'delete' },
+                  params: { userId: userId, selectedTab: 'delete' },
                 }"
                 color="error"
               >
@@ -188,9 +188,9 @@
               <!-- Delete Tab -->
               <v-window-item value="delete">
                 <DeleteItem
-                  :name="user.username"
+                  :name="user.id"
                   description="user account"
-                  property="username"
+                  property="user ID"
                   @delete-item="deleteUser"
                 />
               </v-window-item>
@@ -235,7 +235,7 @@ import type { UserWithSshKeys } from '@/types/user'
 
 // Props
 interface Props {
-  username: string
+  userId: string
   selectedTab?: string
 }
 
@@ -343,7 +343,7 @@ const deleteKey = async (sshKey: { name: string; fingerprint: string }) => {
   loadingStore.startLoading('Deleting key...')
 
   try {
-    const success = await userStore.deleteSshKey(props.username, sshKey.fingerprint)
+    const success = await userStore.deleteSshKey(props.userId, sshKey.fingerprint)
     if (success) {
       notificationStore.showSuccess(`Key Removed! SSH Key "${sshKey.name}" has been removed.`)
       await loadUser()
@@ -360,15 +360,23 @@ const deleteKey = async (sshKey: { name: string; fingerprint: string }) => {
   }
 }
 
-const changePassword = async (password: string) => {
+const changePassword = async (password: string | null) => {
   loadingStore.startLoading('Changing password...')
 
-  const success = await userStore.changePassword(props.username, { new: password })
+  const success = await userStore.changePassword(props.userId, { new: password })
   if (success) {
-    notificationStore.showSuccess(
-      `Password for ${props.username} has been changed to ${password}.`,
-      10000,
-    )
+    if (password === null) {
+      notificationStore.showSuccess(
+        `Password for ${user.value?.display_name} has been cleared.`,
+        10000,
+      )
+    } else {
+      notificationStore.showSuccess(
+        `Password for ${user.value?.display_name} has been changed to ${password}.`,
+        10000,
+      )
+    }
+    await refreshData()
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)
@@ -378,17 +386,20 @@ const changePassword = async (password: string) => {
 }
 
 const updateUser = async (payload: {
+  username?: string | null
+  display_name?: string
   role?: string
   scope?: Record<string, Record<string, boolean>>
-  idp_sub?: string
+  idp_sub?: string | null
 }) => {
-  if (!(payload.role || payload.scope || payload.idp_sub)) return
+  // Check if payload has any keys (not just truthy values, since null is valid)
+  if (Object.keys(payload).length === 0) return
 
   loadingStore.startLoading('updating user…')
-  const success = await userStore.updateUser(props.username, payload)
+  const success = await userStore.updateUser(props.userId, payload)
   if (success) {
-    notificationStore.showSuccess(`User account ${props.username} has been updated.`)
-    router.push({ name: 'users-list' })
+    notificationStore.showSuccess(`User account ${user.value?.display_name} has been updated.`)
+    await refreshData()
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)
@@ -399,10 +410,10 @@ const updateUser = async (payload: {
 
 const addKey = async (payload: { name: string; key: string }) => {
   loadingStore.startLoading('Adding key...')
-  const success = await userStore.addSshKey(props.username, payload)
+  const success = await userStore.addSshKey(props.userId, payload)
   if (success) {
     notificationStore.showSuccess(`Key added! SSH Key "${payload.name}" has been added.`)
-    router.push({ name: 'users-list' })
+    await refreshData()
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)
@@ -413,9 +424,9 @@ const addKey = async (payload: { name: string; key: string }) => {
 
 const deleteUser = async () => {
   loadingStore.startLoading('Deleting user...')
-  const success = await userStore.deleteUser(props.username)
+  const success = await userStore.deleteUser(props.userId)
   if (success) {
-    notificationStore.showSuccess(`User account ${props.username} has been deleted.`)
+    notificationStore.showSuccess(`User account ${user.value?.display_name} has been deleted.`)
     router.push({ name: 'users-list' })
   } else {
     for (const error of userStore.errors) {
@@ -429,7 +440,7 @@ const loadUser = async () => {
   loadingStore.startLoading('Fetching user...')
 
   try {
-    const userData = await userStore.fetchUser(props.username)
+    const userData = await userStore.fetchUser(props.userId)
     if (userData) {
       error.value = null
       user.value = userData
@@ -448,7 +459,26 @@ const loadUser = async () => {
   }
 }
 
-// Watch for route changes to update selected tab
+const refreshData = async () => {
+  if (!user.value) {
+    dataLoaded.value = false
+  }
+
+  await loadUser()
+}
+
+watch(
+  () => props.selectedTab,
+  async (newTab) => {
+    selectedTab.value = newTab
+    // Refresh data when switching tabs (except when on delete tab)
+    if (user.value && newTab !== 'delete') {
+      await refreshData()
+    }
+  },
+)
+
+// Watch for route params to update selected tab
 watch(
   () => route.params.selectedTab,
   (newTab) => {
@@ -457,6 +487,16 @@ watch(
     }
   },
   { immediate: true },
+)
+
+watch(
+  () => props.userId,
+  async () => {
+    // Reset data and reload the new user
+    user.value = null
+    selectedTab.value = 'details'
+    await refreshData()
+  },
 )
 
 // Lifecycle

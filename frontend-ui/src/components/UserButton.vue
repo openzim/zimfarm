@@ -1,7 +1,7 @@
 <!-- Sign-in button that transforms into a user menu
   - send to sign-in if not logged-in
   - copy token to clipboard
-  - send to change-password (TBI)
+  - send to change-password (only for users with username)
   - log-out -->
 
 <template>
@@ -16,7 +16,7 @@
           size="small"
           prepend-icon="mdi-account-circle"
         >
-          {{ username }}
+          {{ displayName }}
         </v-btn>
       </template>
 
@@ -25,7 +25,7 @@
           <v-list-item-title>Copy token</v-list-item-title>
         </v-list-item>
 
-        <v-list-item prepend-icon="mdi-wrench" :to="{ name: 'change-password' }">
+        <v-list-item v-if="hasPassword" prepend-icon="mdi-wrench" :to="{ name: 'change-password' }">
           <v-list-item-title>Change password</v-list-item-title>
         </v-list-item>
 
@@ -59,9 +59,10 @@ defineOptions({
 })
 
 const props = defineProps<{
-  username: string | null
+  displayName: string | null
   isLoggedIn: boolean
   accessToken: string | null
+  hasPassword: boolean
 }>()
 
 defineEmits<{

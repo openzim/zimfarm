@@ -492,7 +492,11 @@ class BaseUserSchema(BaseModel):
     Base schema for reading a user model
     """
 
-    username: str
+    id: UUID
+    username: str | None
+    display_name: str
+    has_ssh_keys: bool
+    has_password: bool
 
 
 class UserSchema(BaseUserSchema):

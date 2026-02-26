@@ -76,7 +76,7 @@ def create_worker_schema(
             disk=worker.disk,
             memory=worker.memory,
         ),
-        username=worker.user.username,
+        username=worker.user.display_name,
         contexts=_deserialize_worker_context(worker.contexts),
         cordoned=worker.cordoned,
         admin_disabled=worker.admin_disabled,
@@ -170,7 +170,7 @@ def get_worker_metrics(
         last_ip=worker.last_ip,
         selfish=worker.selfish,
         last_seen=worker.last_seen,
-        username=worker.user.username,
+        username=worker.user.display_name,
         resources=ConfigResourcesSchema(
             cpu=worker.cpu,
             disk=worker.disk,

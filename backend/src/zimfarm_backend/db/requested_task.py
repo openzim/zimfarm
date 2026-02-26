@@ -49,7 +49,6 @@ from zimfarm_backend.db.offliner_definition import (
 )
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
-from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.db.worker import get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.timestamp import (
@@ -97,7 +96,7 @@ def _resource_mismatch_message(
 def _create_new_requested_task(
     session: OrmSession,
     *,
-    requested_by: str,
+    requested_by: UUID,
     schedule: Schedule,
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema,
@@ -152,9 +151,7 @@ def _create_new_requested_task(
         # as schedule might be deleted from DB
         context=schedule.context,
     )
-    requested_task.requested_by_id = get_user_by_username(
-        session, username=requested_by
-    ).id
+    requested_task.requested_by_id = requested_by
     requested_task.schedule = schedule
     if worker:
         requested_task.worker = worker
@@ -239,7 +236,7 @@ def request_task(
     session: OrmSession,
     *,
     schedule_name: str,
-    requested_by: str,
+    requested_by: UUID,
     worker_name: str | None = None,
     priority: int = 0,
 ) -> RequestTaskResult:
@@ -520,7 +517,7 @@ def get_tasks_doable_by_worker(
                     context={"skip_validation": True},
                 ),
                 timestamp=task.timestamp,
-                requested_by=task.requested_by.username,
+                requested_by=task.requested_by.display_name,
                 priority=task.priority,
                 worker_name=task.worker.name if task.worker else worker.name,
                 context=task.context,
@@ -616,7 +613,7 @@ def _can_run(task: RequestedTaskWithDuration, resources: dict[str, int]) -> bool
 def find_requested_task_for_worker(
     session: OrmSession,
     *,
-    username: str,
+    user_id: UUID,
     worker_name: str,
     avail_cpu: int,
     avail_memory: int,
@@ -632,9 +629,7 @@ def find_requested_task_for_worker(
     """
 
     worker = session.scalars(
-        select(Worker)
-        .join(User)
-        .where(Worker.name == worker_name, User.username == username)
+        select(Worker).join(User).where(Worker.name == worker_name, User.id == user_id)
     ).one_or_none()
 
     if worker is None:
@@ -744,7 +739,7 @@ def create_requested_task_full_schema(
             context={"skip_validation": True},
         ),
         timestamp=requested_task.timestamp,
-        requested_by=requested_task.requested_by.username,
+        requested_by=requested_task.requested_by.display_name,
         priority=requested_task.priority,
         schedule_name=(
             requested_task.schedule.name if requested_task.schedule else None

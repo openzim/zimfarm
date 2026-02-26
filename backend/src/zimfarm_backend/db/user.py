@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
+from zimfarm_backend.common import is_valid_uuid
 from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import UserUpdateSchema
@@ -81,7 +82,7 @@ def update_user_password(
     session: OrmSession,
     *,
     user_id: UUID,
-    password_hash: str,
+    password_hash: str | None,
 ) -> None:
     """Update a user's password"""
     session.execute(
@@ -96,12 +97,16 @@ class UserList(BaseModel):
 
 def create_user_schema(user: User) -> UserSchema:
     return UserSchema(
+        id=user.id,
         username=user.username,
+        display_name=user.display_name,
         role=user.role,
         scope=merge_scopes(
             ROLES.get(user.role, user.scope or {}), ROLES[RoleEnum.ADMIN]
         ),
         idp_sub=user.idp_sub,
+        has_ssh_keys=len(user.ssh_keys) > 0,
+        has_password=user.password_hash is not None,
     )
 
 
@@ -116,12 +121,13 @@ def get_users(
         )
         .where(
             User.deleted.is_(False),
-            (User.username.ilike(f"%{username if username is not None else ''}%"))
+            (User.display_name.ilike(f"%{username if username is not None else ''}%"))
             | (username is None),
         )
+        .options(selectinload(User.ssh_keys))
         .offset(skip)
         .limit(limit)
-        .order_by(User.username.asc(), User.id.asc())
+        .order_by(User.display_name.asc(), User.id.asc())
     )
 
     results = UserList(nb_records=0, users=[])
@@ -134,7 +140,8 @@ def get_users(
 def create_user(
     session: OrmSession,
     *,
-    username: str,
+    display_name: str,
+    username: str | None = None,
     password_hash: str | None = None,
     scope: dict[str, Any] | None = None,
     role: str = "custom",
@@ -145,6 +152,7 @@ def create_user(
         raise ValueError("No scopes should be defined for non-custom roles")
     user = User(
         username=username,
+        display_name=display_name,
         password_hash=password_hash,
         scope=scope,
         role=role,
@@ -160,14 +168,26 @@ def create_user(
 
 
 def update_user(
-    session: OrmSession, *, user_id: UUID, request: UserUpdateSchema
+    session: OrmSession, *, user_id: str | UUID, request: UserUpdateSchema
 ) -> None:
     """Update a user"""
+    user = get_user_by_identifier(
+        session, user_identifier=str(user_id), fetch_ssh_keys=True
+    )
 
     if request.role is not None and request.scope is not None:
         raise ValueError("Only one of role/scope must be set.")
 
     values = request.model_dump(exclude_unset=True)
+
+    if "display_name" in values and not values["display_name"]:
+        raise ValueError("User must have a display name.")
+
+    # Allow blank username only if a user does not have ssh key or password set.
+    if (len(user.ssh_keys) > 0 or user.password_hash is not None) and (
+        "username" in values and not values["username"]
+    ):
+        raise ValueError("User with password/ssh key must have a username.")
 
     if (role := values.get("role")) is not None:
         values["role"] = role
@@ -179,7 +199,8 @@ def update_user(
 
     if not values:
         return
-    session.execute(update(User).where(User.id == user_id).values(**values))
+
+    session.execute(update(User).where(User.id == user.id).values(**values))
 
 
 def delete_user(
@@ -189,3 +210,35 @@ def delete_user(
 ) -> None:
     """Delete a user"""
     session.execute(update(User).where(User.id == user_id).values(deleted=True))
+
+
+def get_user_by_identifier_or_none(
+    session: OrmSession, *, user_identifier: str, fetch_ssh_keys: bool = False
+) -> User | None:
+    """Get a user or None by either username (str) or user_id (UUID)"""
+    if is_valid_uuid(user_identifier):
+        return get_user_by_id_or_none(
+            session, user_id=UUID(user_identifier), fetch_ssh_keys=fetch_ssh_keys
+        )
+
+    return get_user_by_username_or_none(
+        session, username=user_identifier, fetch_ssh_keys=fetch_ssh_keys
+    )
+
+
+def get_user_by_identifier(
+    session: OrmSession, *, user_identifier: str, fetch_ssh_keys: bool = False
+):
+    """Get a user by either username(str) or user_id(UUID).
+
+    Raises RecordDoestNotExistError if user not found.
+    """
+    if (
+        user := get_user_by_identifier_or_none(
+            session, user_identifier=user_identifier, fetch_ssh_keys=fetch_ssh_keys
+        )
+    ) is None:
+        raise RecordDoesNotExistError(
+            f"User with identifier {user_identifier} does not exist"
+        )
+    return user

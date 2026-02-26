@@ -2,7 +2,8 @@
 
   - gets current and new password
   - send to API
-  - handles own login/error -->
+  - handles own login/error
+  - only accessible to users with username -->
 
 <template>
   <v-container class="fill-height">
@@ -121,7 +122,7 @@ const changePassword = async () => {
   const validation = await form.value?.validate()
   if (!validation?.valid) return
 
-  if (!authStore.username) {
+  if (!authStore.user?.id) {
     error.value = '<strong>Refused</strong>: You must be signed-in to change your password…'
     return
   }
@@ -129,7 +130,7 @@ const changePassword = async () => {
   working.value = true
   error.value = null
 
-  const success = await userStore.changePassword(authStore.username, {
+  const success = await userStore.changePassword(authStore.user.id, {
     current: currentPassword.value,
     new: newPassword.value,
   })
@@ -168,6 +169,17 @@ watch([currentPassword, newPassword], () => {
 onMounted(() => {
   if (!authStore.isLoggedIn) {
     router.push({ name: 'sign-in' })
+    return
+  }
+
+  // Prevent access for users without username
+  if (!authStore.user?.has_password) {
+    notificationStore.showError('User does not have a password.')
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push({ name: 'home' })
+    }
   }
 })
 </script>

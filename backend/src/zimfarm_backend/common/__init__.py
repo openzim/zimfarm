@@ -1,6 +1,7 @@
 import datetime
 from collections import defaultdict
 from typing import ClassVar
+from uuid import UUID
 
 import pytz
 
@@ -20,6 +21,15 @@ def to_naive_utc(timestamp_or_iso: datetime.datetime | int | str) -> datetime.da
         new_date = timestamp_or_iso
 
     return new_date.astimezone(pytz.utc).replace(tzinfo=None)
+
+
+def is_valid_uuid(identifier: str) -> bool:
+    """Check if string is a valid UUID"""
+    try:
+        UUID(identifier)
+    except ValueError:
+        return False
+    return True
 
 
 class WorkersIpChangesCounts:

@@ -121,21 +121,21 @@ const routes = [
     meta: { title: 'Zimfarm | Archived Recipes' },
   },
   {
-    path: '/users/:username',
+    path: '/users/:userId',
     name: 'user-detail',
     component: UserView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.username}`,
+      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.userId}`,
     },
   },
   {
-    path: '/users/:username/:selectedTab',
+    path: '/users/:userId/:selectedTab',
     name: 'user-detail-tab',
     component: UserView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.username}`,
+      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.userId}`,
     },
   },
   {

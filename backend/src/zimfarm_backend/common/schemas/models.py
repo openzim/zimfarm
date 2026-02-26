@@ -156,8 +156,10 @@ class UserUpdateSchema(BaseModel):
     """
 
     role: RoleEnum | None = None
+    username: NotEmptyString | None = None
     scope: dict[str, dict[str, bool]] | None = None
-    idp_sub: str | None = None
+    idp_sub: NotEmptyString | None = None
+    display_name: NotEmptyString | None = None
 
     @model_validator(mode="after")
     def check_exclusive_fields(self) -> Self:

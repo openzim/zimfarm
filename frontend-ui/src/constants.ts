@@ -20,6 +20,7 @@ export default {
     'processor',
     'worker',
     'custom',
+    'viewer',
   ] as const,
   MEMORY_VALUES: [
     536870912, // 512MiB

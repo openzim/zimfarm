@@ -210,7 +210,7 @@ const isFormValid = computed(() => {
 
 // Table headers
 const headers = [
-  { title: 'Username', key: 'username', sortable: false },
+  { title: 'Name', key: 'display_name', sortable: false },
   { title: 'Role', key: 'role', sortable: false },
 ]
 
@@ -238,7 +238,7 @@ const createUser = async () => {
   if (response) {
     // Show success notification
     notificationStore.showSuccess(
-      `User "${response.username}" has been created with password "${form.value.password}".`,
+      `User "${response.display_name}" has been created with password "${form.value.password}".`,
       8000,
     )
 
