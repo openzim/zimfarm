@@ -97,7 +97,6 @@ class UserList(BaseModel):
 def create_user_schema(user: User) -> UserSchema:
     return UserSchema(
         username=user.username,
-        email=user.email,
         role=user.role,
         scope=merge_scopes(
             ROLES.get(user.role, user.scope or {}), ROLES[RoleEnum.ADMIN]
@@ -136,7 +135,6 @@ def create_user(
     session: OrmSession,
     *,
     username: str,
-    email: str | None = None,
     password_hash: str | None = None,
     scope: dict[str, Any] | None = None,
     role: str = "custom",
@@ -147,7 +145,6 @@ def create_user(
         raise ValueError("No scopes should be defined for non-custom roles")
     user = User(
         username=username,
-        email=email,
         password_hash=password_hash,
         scope=scope,
         role=role,

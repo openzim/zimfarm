@@ -1,4 +1,4 @@
-from pydantic import EmailStr, computed_field, field_validator
+from pydantic import computed_field, field_validator
 
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
@@ -47,7 +47,6 @@ class UserCreateSchema(BaseModel):
 
     username: NotEmptyString
     password: NotEmptyString
-    email: EmailStr
     role: RoleEnum
 
 

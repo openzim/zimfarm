@@ -3,7 +3,6 @@ export interface BaseUser {
 }
 
 export interface JWTUser extends BaseUser {
-  email: string
   scope: Record<string, Record<string, boolean>>
 }
 

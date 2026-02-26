@@ -96,7 +96,6 @@ def create_user(
         user = db_create_user(
             db_session,
             username=user_schema.username,
-            email=user_schema.email,
             password_hash=generate_password_hash(user_schema.password),
             scope=None,
             role=user_schema.role,

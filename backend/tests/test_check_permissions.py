@@ -11,7 +11,6 @@ def test_check_permission_from_role(dbsession: OrmSession, data_gen: Faker):
     user = User(
         username=data_gen.first_name(),
         password_hash=generate_password_hash("testpassword"),
-        email=data_gen.safe_email(),
         scope=None,
         role=RoleEnum.EDITOR,
     )
@@ -25,7 +24,6 @@ def test_check_permission_from_custom_scope(dbsession: OrmSession, data_gen: Fak
     user = User(
         username=data_gen.first_name(),
         password_hash=generate_password_hash("testpassword"),
-        email=data_gen.safe_email(),
         scope={
             "zim": {"upload": True},
             "tasks": {

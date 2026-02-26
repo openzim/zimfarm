@@ -79,20 +79,6 @@
               </v-col>
 
               <v-col cols="12">
-                <v-text-field
-                  v-model="form.email"
-                  label="Email"
-                  type="email"
-                  placeholder="Enter email"
-                  variant="outlined"
-                  density="compact"
-                  :validate-on="'blur'"
-                  hide-details="auto"
-                  :rules="[rules.required, rules.email]"
-                />
-              </v-col>
-
-              <v-col cols="12">
                 <v-select
                   v-model="form.role"
                   :items="roles"
@@ -207,7 +193,6 @@ const paginator = ref({
 // Form data
 const form = ref({
   username: '',
-  email: '',
   role: 'editor' as const,
   password: '',
 })
@@ -220,23 +205,18 @@ const canReadUsers = computed(() => authStore.hasPermission('users', 'read'))
 const canCreateUsers = computed(() => authStore.hasPermission('users', 'create'))
 
 const isFormValid = computed(() => {
-  return form.value.username && form.value.email && form.value.role && form.value.password
+  return form.value.username && form.value.role && form.value.password
 })
 
 // Table headers
 const headers = [
   { title: 'Username', key: 'username', sortable: false },
   { title: 'Role', key: 'role', sortable: false },
-  { title: 'Email', key: 'email', sortable: false },
 ]
 
 // Form validation rules
 const rules = {
   required: (value: string) => !!value || 'This field is required',
-  email: (value: string) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return pattern.test(value) || 'Please enter a valid email address'
-  },
   minLength: (min: number) => (value: string) =>
     value.length >= min || `This field must be at least ${min} characters long`,
 }
@@ -251,7 +231,6 @@ const createUser = async () => {
 
   const response = await userStore.createUser(
     form.value.username,
-    form.value.email,
     form.value.role,
     form.value.password,
   )
@@ -266,7 +245,6 @@ const createUser = async () => {
     // Reset form
     form.value = {
       username: '',
-      email: '',
       role: 'editor' as const,
       password: '',
     }
@@ -322,7 +300,6 @@ const closeCreateDialog = () => {
   showCreateDialog.value = false
   form.value = {
     username: '',
-    email: '',
     role: 'editor' as const,
     password: '',
   }

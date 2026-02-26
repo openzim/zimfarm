@@ -67,7 +67,6 @@ class User(Base):
     )
     username: Mapped[str] = mapped_column(unique=True, index=True)
     password_hash: Mapped[str | None]
-    email: Mapped[str | None]
     scope: Mapped[dict[str, Any] | None]
     role: Mapped[str] = mapped_column(server_default="custom")
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())

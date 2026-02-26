@@ -155,7 +155,6 @@ class UserUpdateSchema(BaseModel):
     Schema for updating a user
     """
 
-    email: EmailStr | None = None
     role: RoleEnum | None = None
     scope: dict[str, dict[str, bool]] | None = None
     idp_sub: str | None = None

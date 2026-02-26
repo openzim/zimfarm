@@ -75,13 +75,11 @@ def test_create_user(dbsession: OrmSession):
     user = create_user(
         dbsession,
         username="newuser",
-        email="new@example.com",
         password_hash="hash",
         scope=None,
         role=RoleEnum.EDITOR,
     )
     assert user.username == "newuser"
-    assert user.email == "new@example.com"
     assert user.password_hash == "hash"
     assert user.role == "editor"
     assert not user.deleted
@@ -92,7 +90,6 @@ def test_create_user_with_non_custom_role_and_scope(dbsession: OrmSession):
         create_user(
             dbsession,
             username="newuser",
-            email="new@example.com",
             password_hash="hash",
             scope=ROLES["editor"],
             role="editor",
@@ -105,7 +102,6 @@ def test_create_user_duplicate(dbsession: OrmSession, user: User):
         create_user(
             dbsession,
             username=user.username,
-            email="new@example.com",
             password_hash="hash",
             scope={},
             role="custom",
@@ -116,10 +112,9 @@ def test_update_user_role(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        request=UserUpdateSchema(email="updated@example.com", role=RoleEnum.EDITOR),
+        request=UserUpdateSchema(role=RoleEnum.EDITOR),
     )
     dbsession.refresh(user)
-    assert user.email == "updated@example.com"
     assert user.role == RoleEnum.EDITOR
     assert user.scope is None
 
@@ -130,13 +125,11 @@ def test_update_user_scope(dbsession: OrmSession, user: User):
         dbsession,
         user_id=user.id,
         request=UserUpdateSchema(
-            email="updated@example.com",
             role=None,
             scope=scope,
         ),
     )
     dbsession.refresh(user)
-    assert user.email == "updated@example.com"
     assert user.role == "custom"
     assert user.scope == scope
 
@@ -183,7 +176,6 @@ def test_update_user_scope_and_role(dbsession: OrmSession, user: User):
             dbsession,
             user_id=user.id,
             request=UserUpdateSchema(
-                email="updated@example.com",
                 role=RoleEnum.EDITOR,
                 scope=scope,
             ),
@@ -192,14 +184,12 @@ def test_update_user_scope_and_role(dbsession: OrmSession, user: User):
 
 def test_update_user_partial(dbsession: OrmSession, user: User):
     """Test that update_user can update partial fields"""
-    original_email = user.email
     update_user(
         dbsession,
         user_id=user.id,
         request=UserUpdateSchema(role=RoleEnum.EDITOR),
     )
     dbsession.refresh(user)
-    assert user.email == original_email
     assert user.role == RoleEnum.EDITOR
     assert user.scope is None
 

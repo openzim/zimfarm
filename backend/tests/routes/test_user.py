@@ -36,7 +36,6 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
     for item in response_json["items"]:
         item_keys = item.keys()
         assert "username" in item_keys
-        assert "email" in item_keys
         assert "role" in item_keys
         assert "scope" in item_keys
         assert "idp_sub" in item_keys
@@ -120,50 +119,6 @@ def test_get_user_by_username_not_found(
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_patch_user_email(client: TestClient, user: User):
-    url = f"/v2/users/{user.username}"
-    access_token = generate_access_token(
-        issue_time=getnow(),
-        user_id=str(user.id),
-    )
-    response = client.patch(
-        url,
-        headers={"Authorization": f"Bearer {access_token}"},
-        json={"email": "test@test.com"},
-    )
-    assert response.status_code == HTTPStatus.NO_CONTENT
-
-
-@pytest.mark.num_users(2)
-def test_delete_user(client: TestClient, users: list[User]):
-    user = users[0]
-    url = f"/v2/users/{user.username}"
-    access_token = generate_access_token(
-        issue_time=getnow(),
-        user_id=str(user.id),
-    )
-    response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
-    assert response.status_code == HTTPStatus.NO_CONTENT
-
-    # We still shouldn't be able to create a user with same username
-    user = users[1]
-    access_token = generate_access_token(
-        issue_time=getnow(),
-        user_id=str(user.id),
-    )
-    response = client.post(
-        "/v2/users",
-        headers={"Authorization": f"Bearer {access_token}"},
-        json={
-            "username": users[0].username,
-            "email": "test@test.com",
-            "password": "test",
-            "role": "admin",
-        },
-    )
-    assert response.status_code == HTTPStatus.BAD_REQUEST
-
-
 def test_create_user(client: TestClient, user: User):
     url = "/v2/users/"
     access_token = generate_access_token(
@@ -175,7 +130,6 @@ def test_create_user(client: TestClient, user: User):
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "username": "test",
-            "email": "test@test.com",
             "password": "test",
             "role": "admin",
         },
@@ -194,7 +148,6 @@ def test_create_user_duplicate(client: TestClient, user: User):
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "username": user.username,
-            "email": "test@test.com",
             "password": "test",
             "role": "admin",
         },
