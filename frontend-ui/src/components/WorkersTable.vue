@@ -155,7 +155,7 @@
             <TaskLink
               :id="item.task.id"
               :updatedAt="item.task.updated_at"
-              :status="item.task.status"
+              :status="'started'"
               :timestamp="item.task.timestamp"
             />
           </template>
