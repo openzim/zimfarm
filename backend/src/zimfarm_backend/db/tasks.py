@@ -402,10 +402,14 @@ def create_or_update_task_file(
     request: FileCreateUpdateSchema,
 ):
     """Create or update a task file using insert with on conflict update."""
-    values = request.model_dump(exclude_unset=True)
+    values = request.model_dump(exclude_unset=True, mode="json")
     stmt = insert(File).values(**values)
     stmt = stmt.on_conflict_do_update(
         index_elements=[File.task_id, File.name],
-        set_={**request.model_dump(exclude_unset=True, exclude={"task_id", "name"})},
+        set_={
+            **request.model_dump(
+                exclude_unset=True, exclude={"task_id", "name"}, mode="json"
+            )
+        },
     )
     session.execute(stmt)
