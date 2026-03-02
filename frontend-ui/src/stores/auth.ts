@@ -42,8 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
     return token.value !== null && user.value !== null
   })
 
-  const username = computed(() => {
-    return user.value?.username || null
+  const displayName = computed(() => {
+    return user.value?.display_name || null
   })
 
   const accessToken = computed(() => {
@@ -334,7 +334,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Computed
     isLoggedIn,
-    username,
+    displayName,
     accessToken,
     refreshToken,
     permissions,

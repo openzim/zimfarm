@@ -18,7 +18,8 @@ export interface Worker extends BaseWorker {
   status: 'online' | 'offline'
   resources: Resources
   tasks: TaskLight[] // Will be populated with running tasks
-  username: string
+  user_id: string
+  display_name: string
 }
 
 export interface RunningTask {
@@ -37,7 +38,8 @@ export interface RunningTask {
 export interface WorkerMetrics extends BaseWorker {
   status: 'online' | 'offline'
   resources: Resources
-  username: string
+  user_id: string
+  display_name: string
   running_tasks: RunningTask[]
   nb_tasks_total: number
   nb_tasks_completed: number

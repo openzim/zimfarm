@@ -189,7 +189,7 @@ def create_schedule(
 
     db_schedule = db_create_schedule(
         session,
-        author=current_user.username,
+        author_id=current_user.id,
         name=request.name,
         offliner_definition=offliner_definition,
         category=ScheduleCategory(request.category),
@@ -266,7 +266,7 @@ def restore_archived_schedules(
     db_restore_schedules(
         session,
         schedule_names=request.schedule_names,
-        actor=current_user.username,
+        actor_id=current_user.id,
         comment=request.comment,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
@@ -554,7 +554,7 @@ def update_schedule(
     schedule = db_update_schedule(
         session,
         schedule_name=schedule_name,
-        author=current_user.username,
+        author_id=current_user.id,
         comment=request.comment,
         new_schedule_config=new_schedule_config,
         language=language,
@@ -654,7 +654,7 @@ def clone_schedule(
 
     new_schedule = db_create_schedule(
         session,
-        author=current_user.username,
+        author_id=current_user.id,
         comment=request.comment,
         name=request.name,
         category=ScheduleCategory(schedule.category),
@@ -695,7 +695,7 @@ def clone_schedule(
         db_update_schedule(
             session,
             schedule_name=new_schedule.name,
-            author=current_user.username,
+            author_id=current_user.id,
             is_valid=False,
             offliner_definition=create_offliner_definition_schema(
                 new_schedule.offliner_definition
@@ -725,7 +725,7 @@ def archive_schedule(
         session,
         schedule_name=schedule_name,
         archived=True,
-        actor=current_user.username,
+        actor_id=current_user.id,
         comment=request.comment,
     )
     return JSONResponse(
@@ -752,7 +752,7 @@ def restore_archived_schedule(
         session,
         schedule_name=schedule_name,
         archived=False,
-        actor=current_user.username,
+        actor_id=current_user.id,
         comment=request.comment,
     )
     return JSONResponse(

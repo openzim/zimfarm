@@ -8,8 +8,10 @@ from zimfarm_backend.db.user import check_user_permission
 
 
 def test_check_permission_from_role(dbsession: OrmSession, data_gen: Faker):
+    username = data_gen.first_name()
     user = User(
-        username=data_gen.first_name(),
+        username=username,
+        display_name=username,
         password_hash=generate_password_hash("testpassword"),
         scope=None,
         role=RoleEnum.EDITOR,
@@ -21,8 +23,10 @@ def test_check_permission_from_role(dbsession: OrmSession, data_gen: Faker):
 
 
 def test_check_permission_from_custom_scope(dbsession: OrmSession, data_gen: Faker):
+    username = data_gen.first_name()
     user = User(
-        username=data_gen.first_name(),
+        username=username,
+        display_name=username,
         password_hash=generate_password_hash("testpassword"),
         scope={
             "zim": {"upload": True},

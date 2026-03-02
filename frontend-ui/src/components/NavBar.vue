@@ -44,9 +44,10 @@
     <!-- User Button -->
     <div class="user-button-container">
       <UserButton
-        :username="username"
+        :display-name="displayName"
         :is-logged-in="isLoggedIn"
         :access-token="accessToken"
+        :has-password="hasPassword"
         @sign-out="$emit('sign-out')"
       />
     </div>
@@ -94,9 +95,10 @@ export interface NavigationItem {
 
 const props = defineProps<{
   navigationItems: NavigationItem[]
-  username: string | null
+  displayName: string | null
   isLoggedIn: boolean
   accessToken: string | null
+  hasPassword: boolean
   isLoading: boolean
   loadingText: string
 }>()

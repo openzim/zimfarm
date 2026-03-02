@@ -90,9 +90,10 @@ const handleSignOut = () => {
     <header>
       <NavBar
         :navigation-items="navigationItems"
-        :username="authStore.user?.username ?? null"
+        :display-name="authStore.user?.display_name ?? null"
         :is-logged-in="authStore.isLoggedIn"
         :access-token="authStore.accessToken"
+        :has-password="!!authStore.user?.has_password"
         :is-loading="loadingStore.isLoading"
         :loading-text="loadingStore.loadingText"
         @sign-out="handleSignOut"

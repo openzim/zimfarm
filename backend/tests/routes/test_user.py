@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from http import HTTPStatus
 
 import pytest
@@ -36,6 +37,8 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
     for item in response_json["items"]:
         item_keys = item.keys()
         assert "username" in item_keys
+        assert "id" in item_keys
+        assert "display_name" in item_keys
         assert "role" in item_keys
         assert "scope" in item_keys
         assert "idp_sub" in item_keys
@@ -179,7 +182,7 @@ def test_list_user_keys(client: TestClient, user: User):
 
 
 @pytest.mark.num_users(2, permission="editor")
-def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
+def test_list_user_keys_forbidden(client: TestClient, users: list[User]):
     """Test listing another user's SSH keys without permission"""
     user = users[0]
     access_token = generate_access_token(
@@ -188,7 +191,7 @@ def test_list_user_keys_unauthorized(client: TestClient, users: list[User]):
     )
     url = f"/v2/users/{users[1].username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
-    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_create_user_key(client: TestClient, user: User):
@@ -293,7 +296,7 @@ def test_delete_user_key(client: TestClient, user: User):
 
 
 @pytest.mark.num_users(2, permission="editor")
-def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
+def test_delete_user_key_forbidden(client: TestClient, users: list[User]):
     """Test deleting another user's SSH key without permission"""
     user = users[0]
     url = f"/v2/users/{users[1].username}/keys/some-fingerprint"
@@ -302,7 +305,7 @@ def test_delete_user_key_unauthorized(client: TestClient, users: list[User]):
         user_id=str(user.id),
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
-    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_update_user_role(client: TestClient, user: User):
@@ -361,7 +364,7 @@ def test_update_user_role_and_scope(client: TestClient, user: User):
 
 
 @pytest.mark.num_users(2, permission="editor")
-def test_update_user_password(client: TestClient, users: list[User]):
+def test_update_user_password_wrong_permission(client: TestClient, users: list[User]):
     """Test updating a user's password without permission"""
     user = users[0]
     access_token = generate_access_token(
@@ -373,23 +376,33 @@ def test_update_user_password(client: TestClient, users: list[User]):
         headers={"Authorization": f"Bearer {access_token}"},
         json={"current": "test", "new": "test2"},
     )
-    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.parametrize(
     "current,new,expected",
     [
-        ("invalid", "test2", HTTPStatus.BAD_REQUEST),
-        (None, "test2", HTTPStatus.BAD_REQUEST),
-        ("testpassword", "test2", HTTPStatus.NO_CONTENT),
+        pytest.param(
+            "invalid", "test2", HTTPStatus.BAD_REQUEST, id="invalid-current-password"
+        ),
+        pytest.param(None, "test2", HTTPStatus.BAD_REQUEST, id="no-current-password"),
+        pytest.param(
+            "testpassword", "test2", HTTPStatus.NO_CONTENT, id="change-password"
+        ),
+        pytest.param(
+            "testpassword", None, HTTPStatus.NO_CONTENT, id="set-password-to-None"
+        ),
     ],
 )
-@pytest.mark.num_users(1, permission="editor")
-def test_update_user_password_invalid(
-    client: TestClient, users: list[User], current: str, new: str, expected: HTTPStatus
+def test_update_user_own_password(
+    client: TestClient,
+    create_user: Callable[..., User],
+    current: str,
+    new: str,
+    expected: HTTPStatus,
 ):
-    """Test updating a user's password with an invalid current password"""
-    user = users[0]
+    """Test updating a user's own password"""
+    user = create_user(permission="editor")
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),

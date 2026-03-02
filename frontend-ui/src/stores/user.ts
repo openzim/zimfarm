@@ -76,10 +76,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const fetchUser = async (username: string) => {
+  const fetchUser = async (userId: string) => {
     const service = await authStore.getApiService('users')
     try {
-      const response = await service.get<null, UserWithSshKeys>(`/${username}`)
+      const response = await service.get<null, UserWithSshKeys>(`/${userId}`)
       errors.value = []
       return response
     } catch (error) {
@@ -89,10 +89,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const deleteSshKey = async (username: string, fingerprint: string) => {
+  const deleteSshKey = async (userId: string, fingerprint: string) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.delete(`/${username}/keys/${fingerprint}`)
+      await service.delete(`/${userId}/keys/${fingerprint}`)
       errors.value = []
       return true
     } catch (error) {
@@ -102,10 +102,13 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const changePassword = async (username: string, body: { current?: string; new: string }) => {
+  const changePassword = async (userId: string, body: { current?: string; new: string | null }) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.patch<{ current?: string; new: string }, null>(`/${username}/password`, body)
+      await service.patch<{ current?: string; new: string | null }, null>(
+        `/${userId}/password`,
+        body,
+      )
       errors.value = []
       return true
     } catch (error) {
@@ -116,26 +119,30 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const updateUser = async (
-    username: string,
+    userId: string,
     payload: {
+      username?: string | null
+      display_name?: string
       role?: string
       scope?: Record<string, Record<string, boolean>>
-      idp_sub?: string
+      idp_sub?: string | null
     },
   ) => {
     const service = await authStore.getApiService('users')
     const cleanedPayload = Object.fromEntries(
-      Object.entries(payload).filter(([, value]) => value !== null || value != undefined),
+      Object.entries(payload).filter(([, value]) => value !== undefined),
     )
     try {
       await service.patch<
         {
+          username?: string | null
+          display_name?: string
           role?: string
           scope?: Record<string, Record<string, boolean>>
-          idp_sub?: string
+          idp_sub?: string | null
         },
         null
-      >(`/${username}`, cleanedPayload)
+      >(`/${userId}`, cleanedPayload)
       errors.value = []
       return true
     } catch (error) {
@@ -145,10 +152,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const addSshKey = async (username: string, payload: { key: string }) => {
+  const addSshKey = async (userId: string, payload: { key: string }) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.post<{ key: string }, SshKeyRead>(`/${username}/keys`, payload)
+      await service.post<{ key: string }, SshKeyRead>(`/${userId}/keys`, payload)
       errors.value = []
       return true
     } catch (error) {
@@ -158,10 +165,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const deleteUser = async (username: string) => {
+  const deleteUser = async (userId: string) => {
     const service = await authStore.getApiService('users')
     try {
-      await service.delete(`/${username}`)
+      await service.delete(`/${userId}`)
       errors.value = []
       return true
     } catch (error) {

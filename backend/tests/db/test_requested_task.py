@@ -51,7 +51,7 @@ def test_request_task_nonexistent_schedule(dbsession: OrmSession, worker: Worker
     result = request_task(
         session=dbsession,
         schedule_name="nonexistent",
-        requested_by="testuser",
+        requested_by=uuid4(),
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -62,7 +62,7 @@ def test_request_task_nonexistent_worker(dbsession: OrmSession, schedule: Schedu
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
-        requested_by="testuser",
+        requested_by=uuid4(),
         worker_name="nonexistent",
     )
     assert result.requested_task is None
@@ -79,7 +79,7 @@ def test_request_task_disabled_schedule(
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
-        requested_by="testuser",
+        requested_by=uuid4(),
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -96,7 +96,7 @@ def test_request_task_archived_schedule(
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
-        requested_by="testuser",
+        requested_by=uuid4(),
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -117,7 +117,7 @@ def test_request_task_already_requested(
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
-        requested_by="testuser",
+        requested_by=uuid4(),
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -324,7 +324,7 @@ def test_request_task_for_worker(
     result = request_task(
         session=dbsession,
         schedule_name=schedule.name,
-        requested_by=requested_by.username,
+        requested_by=requested_by.id,
         worker_name=worker.name,
     )
     assert bool(result.requested_task) == result_bool
@@ -913,7 +913,7 @@ def test_does_platform_allow_worker_to_run(
         status=TaskStatus.requested,
         config=expanded_config(schedule_config, mwoffliner, mwoffliner_definition),
         timestamp=[("requested", getnow()), ("reserved", getnow())],
-        requested_by=worker.user.username,
+        requested_by=worker.user.display_name,
         priority=0,
         schedule_name="test_schedule",
         original_schedule_name="test_schedule",
@@ -1074,7 +1074,7 @@ def test_find_requested_task_for_worker(
     with expect_exception:
         found = find_requested_task_for_worker(
             session=dbsession,
-            username=worker.user.username,
+            user_id=worker.user.id,
             worker_name=worker_name,
             avail_cpu=avail_cpu,
             avail_memory=avail_memory,
@@ -1177,7 +1177,7 @@ def test_find_requested_task_for_worker_with_schedule(
     # Test finding task with sufficient resources
     found_task = find_requested_task_for_worker(
         session=dbsession,
-        username=user.username,
+        user_id=user.id,
         worker_name=worker.name,
         avail_cpu=worker.cpu,
         avail_memory=worker.memory,

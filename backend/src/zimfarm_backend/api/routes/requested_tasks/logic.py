@@ -108,7 +108,7 @@ def create_request_task(
         result = request_task(
             session,
             schedule_name=schedule_name,
-            requested_by=current_user.username,
+            requested_by=current_user.id,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
         )
@@ -230,7 +230,7 @@ def get_requested_tasks_for_worker(
     task = find_requested_task_for_worker(
         session=session,
         worker_name=worker_name,
-        username=current_user.username,
+        user_id=current_user.id,
         avail_cpu=avail_cpu,
         avail_memory=avail_memory,
         avail_disk=avail_disk,

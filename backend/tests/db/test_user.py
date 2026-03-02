@@ -55,7 +55,7 @@ def test_get_user_by_username_not_found(dbsession: OrmSession):
 
 def test_get_user_by_username(dbsession: OrmSession, user: User):
     """Test that get_user_by_username returns the user if the user exists"""
-    db_user = get_user_by_username(dbsession, username=user.username)
+    db_user = get_user_by_username(dbsession, username=user.display_name)
     assert db_user is not None
     assert db_user.id == user.id
     assert db_user.username == user.username
@@ -75,12 +75,14 @@ def test_create_user(dbsession: OrmSession):
     user = create_user(
         dbsession,
         username="newuser",
+        display_name="New User",
         password_hash="hash",
         scope=None,
         role=RoleEnum.EDITOR,
     )
     assert user.username == "newuser"
     assert user.password_hash == "hash"
+    assert user.display_name == "New User"
     assert user.role == "editor"
     assert not user.deleted
 
@@ -90,6 +92,7 @@ def test_create_user_with_non_custom_role_and_scope(dbsession: OrmSession):
         create_user(
             dbsession,
             username="newuser",
+            display_name="New User",
             password_hash="hash",
             scope=ROLES["editor"],
             role="editor",
@@ -101,7 +104,8 @@ def test_create_user_duplicate(dbsession: OrmSession, user: User):
     with pytest.raises(RecordAlreadyExistsError):
         create_user(
             dbsession,
-            username=user.username,
+            username=user.display_name,
+            display_name=user.display_name,
             password_hash="hash",
             scope={},
             role="custom",
@@ -187,11 +191,43 @@ def test_update_user_partial(dbsession: OrmSession, user: User):
     update_user(
         dbsession,
         user_id=user.id,
-        request=UserUpdateSchema(role=RoleEnum.EDITOR),
+        request=UserUpdateSchema(role=RoleEnum.EDITOR, display_name="newdisplay"),
     )
     dbsession.refresh(user)
     assert user.role == RoleEnum.EDITOR
     assert user.scope is None
+    assert user.display_name == "newdisplay"
+
+
+def test_update_user_no_display_name(dbsession: OrmSession, user: User):
+    with pytest.raises(ValueError, match="User must have a display name."):
+        update_user(
+            dbsession, user_id=user.id, request=UserUpdateSchema(display_name=None)
+        )
+
+
+def test_update_user_with_password_set_blank_username(
+    dbsession: OrmSession, user: User
+):
+    with pytest.raises(
+        ValueError, match="User with password/ssh key must have a username"
+    ):
+        update_user(dbsession, user_id=user.id, request=UserUpdateSchema(username=None))
+
+
+def test_update_user_with_no_password_set_blank_username(
+    dbsession: OrmSession, user: User
+):
+    user.password_hash = None
+    for ssh_key in user.ssh_keys:
+        dbsession.delete(ssh_key)
+    user.ssh_keys = []
+    dbsession.add(user)
+
+    dbsession.flush()
+    update_user(dbsession, user_id=user.id, request=UserUpdateSchema(username=None))
+    dbsession.refresh(user)
+    assert user.username is None
 
 
 def test_delete_user(dbsession: OrmSession, user: User):

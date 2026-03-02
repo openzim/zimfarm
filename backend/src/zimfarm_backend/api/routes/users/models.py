@@ -37,7 +37,7 @@ class PasswordUpdateSchema(BaseModel):
 
     # users with elevated permissions can omit the current password
     current: NotEmptyString | None = None
-    new: NotEmptyString
+    new: NotEmptyString | None
 
 
 class UserCreateSchema(BaseModel):

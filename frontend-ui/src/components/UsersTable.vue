@@ -10,7 +10,7 @@
         :items-length="paginator.count"
         :items-per-page-options="limits"
         class="elevation-1"
-        item-key="username"
+        item-key="id"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
         :hide-default-header="props.paginator.count === 0"
@@ -24,12 +24,12 @@
           </div>
         </template>
 
-        <template #[`item.username`]="{ item }">
+        <template #[`item.display_name`]="{ item }">
           <router-link
-            :to="{ name: 'user-detail', params: { username: item.username } }"
+            :to="{ name: 'user-detail', params: { userId: item.id } }"
             class="text-decoration-none text-primary"
           >
-            {{ item.username }}
+            {{ item.display_name }}
           </router-link>
         </template>
 

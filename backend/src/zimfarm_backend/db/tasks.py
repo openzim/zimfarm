@@ -135,7 +135,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             ),
             events=task.events,
             debug=task.debug,
-            requested_by=task.requested_by.username,
+            requested_by=task.requested_by.display_name,
             canceled_by=task.canceled_by.username if task.canceled_by else None,
             container=TaskContainerSchema.model_validate(task.container),
             priority=task.priority,
