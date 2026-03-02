@@ -599,7 +599,7 @@ def update_schedule(
     )
     schedule.is_valid = is_valid if is_valid is not None else schedule.is_valid
     schedule.notification = (
-        notification.model_dump() if notification else schedule.notification
+        notification.model_dump(mode="json") if notification else schedule.notification
     )
 
     schedule.context = context if context is not None else schedule.context

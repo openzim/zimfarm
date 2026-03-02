@@ -178,7 +178,7 @@ def update_user(
     if request.role is not None and request.scope is not None:
         raise ValueError("Only one of role/scope must be set.")
 
-    values = request.model_dump(exclude_unset=True)
+    values = request.model_dump(exclude_unset=True, mode="json")
 
     if "display_name" in values and not values["display_name"]:
         raise ValueError("User must have a display name.")
