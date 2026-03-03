@@ -135,7 +135,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             events=task.events,
             debug=task.debug,
             requested_by=task.requested_by.display_name,
-            canceled_by=task.canceled_by.username if task.canceled_by else None,
+            canceled_by=task.canceled_by.display_name if task.canceled_by else None,
             container=TaskContainerSchema.model_validate(task.container),
             priority=task.priority,
             notification=(
@@ -202,7 +202,7 @@ def get_tasks(
                 Task.config["resources"].label("resources"),
             ),
             Task.updated_at,
-            User.username.label("requested_by"),
+            User.display_name.label("requested_by"),
             Schedule.name.label("schedule_name"),
             Worker.name.label("worker_name"),
         )

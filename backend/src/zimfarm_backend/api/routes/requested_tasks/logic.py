@@ -188,7 +188,7 @@ def get_requested_tasks_for_worker(
 
     fallback_ip = request.client.host if request.client else None
     x_forwarded_for = request.headers.get("X-Forwarded-For", fallback_ip)
-    if worker.user.username == current_user.username:
+    if worker.user.id == current_user.id:
         ip_changed = str(worker.last_ip) != x_forwarded_for
 
         if ip_changed:
