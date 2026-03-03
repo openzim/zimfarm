@@ -43,7 +43,6 @@ from zimfarm_backend.db.models import (
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import get_schedule_duration
-from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -288,9 +287,7 @@ def create_task(
         context=requested_task.context,
     )
     task.id = requested_task.id
-    task.requested_by_id = get_user_by_username(
-        session, username=requested_task.requested_by
-    ).id
+    task.requested_by_id = requested_task.requester_id
     task.schedule_id = requested_task.schedule_id
     task.worker_id = worker_id
     task.offliner_definition_id = requested_task.offliner_definition_id

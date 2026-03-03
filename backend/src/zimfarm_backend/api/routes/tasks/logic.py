@@ -200,7 +200,7 @@ def cancel_task(
         db_session,
         task.id,
         TaskStatus.cancel_requested,
-        {"canceled_by": current_user.username},
+        {"canceled_by": str(current_user.id)},
     )
 
     return Response(status_code=HTTPStatus.NO_CONTENT)

@@ -329,7 +329,8 @@ def get_requested_tasks(
             RequestedTask.status,
             RequestedTask.config,
             RequestedTask.timestamp,
-            User.username.label("requested_by"),
+            User.display_name.label("requested_by"),
+            User.id.label("requester_id"),
             RequestedTask.priority,
             RequestedTask.original_schedule_name,
             RequestedTask.updated_at,
@@ -384,6 +385,7 @@ def get_requested_tasks(
         config,
         timestamp,
         requested_by,
+        requester_id,
         _priority,
         original_schedule_name,
         updated_at,
@@ -408,6 +410,7 @@ def get_requested_tasks(
                 ),
                 timestamp=timestamp,
                 requested_by=requested_by,
+                requester_id=requester_id,
                 priority=_priority,
                 original_schedule_name=original_schedule_name,
                 updated_at=updated_at,
@@ -426,6 +429,7 @@ class RequestedTaskWithDuration(BaseModel):
     config: ExpandedScheduleConfigSchema
     timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
+    requester_id: UUID = Field(exclude=True)
     priority: int
     schedule_name: str | None
     original_schedule_name: str
@@ -518,6 +522,7 @@ def get_tasks_doable_by_worker(
                 ),
                 timestamp=task.timestamp,
                 requested_by=task.requested_by.display_name,
+                requester_id=task.requested_by.id,
                 priority=task.priority,
                 worker_name=task.worker.name if task.worker else worker.name,
                 context=task.context,
@@ -740,6 +745,7 @@ def create_requested_task_full_schema(
         ),
         timestamp=requested_task.timestamp,
         requested_by=requested_task.requested_by.display_name,
+        requester_id=requested_task.requested_by.id,
         priority=requested_task.priority,
         schedule_name=(
             requested_task.schedule.name if requested_task.schedule else None

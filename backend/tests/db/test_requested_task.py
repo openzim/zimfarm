@@ -914,6 +914,7 @@ def test_does_platform_allow_worker_to_run(
         config=expanded_config(schedule_config, mwoffliner, mwoffliner_definition),
         timestamp=[("requested", getnow()), ("reserved", getnow())],
         requested_by=worker.user.display_name,
+        requester_id=worker.user.id,
         priority=0,
         schedule_name="test_schedule",
         original_schedule_name="test_schedule",

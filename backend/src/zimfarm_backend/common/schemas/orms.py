@@ -189,6 +189,7 @@ class BaseRequestedTaskSchema(BaseModel):
     status: str
     timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
+    requester_id: UUID = Field(exclude=True)
     priority: int
     schedule_name: str | None
     original_schedule_name: str
