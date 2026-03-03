@@ -87,8 +87,11 @@ def build_task_upload_uris(
     return task
 
 
-def upload_url(uri: str, filename: str) -> str:
-    """Generate a display URL for an upload based on the URI scheme."""
+def generate_http_upload_url(uri: str, filename: str) -> str:
+    """Generate a HTTP(S) URL for HTTP/S3 upload URLs.
+
+    Raises ValueError if upload uri scheme is not HTTP(S) or S3.
+    """
     url = urllib.parse.urlparse(uri)
     scheme = url.scheme
 
@@ -122,4 +125,4 @@ def upload_url(uri: str, filename: str) -> str:
 
         return f"{url.scheme}://{url.netloc}{path}{filename}"
 
-    return filename
+    raise ValueError(f"Unsupported scheme '{scheme}' in URI.")

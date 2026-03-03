@@ -7,9 +7,9 @@ import pytest
 from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.upload import (
     build_task_upload_uris,
+    generate_http_upload_url,
     rebuild_uri,
     safe_upload_uri,
-    upload_url,
 )
 
 
@@ -334,10 +334,10 @@ def test_build_task_upload_uris_no_secrets_in_uri():
 )
 def test_upload_url(uri: str, filename: str, expected: str):
     """Test upload_url function with various URI schemes and filenames."""
-    result = upload_url(uri, filename)
+    result = generate_http_upload_url(uri, filename)
     assert result == expected
 
 
 def test_upload_url_with_invalid_uri():
-    result = upload_url("not a valid uri at all", "file.zim")
-    assert result == "file.zim"
+    with pytest.raises(ValueError):
+        generate_http_upload_url("not a valid uri at all", "file.zim")

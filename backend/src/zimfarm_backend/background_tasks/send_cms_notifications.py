@@ -32,7 +32,7 @@ from zimfarm_backend.common.schemas.orms import (
     TaskFileSchema,
     TaskFullSchema,
 )
-from zimfarm_backend.common.upload import upload_url
+from zimfarm_backend.common.upload import generate_http_upload_url
 from zimfarm_backend.db.models import File, Task
 from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id
 
@@ -137,8 +137,11 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
         resp = requests.post(
             url,
             json=get_openzimcms_payload(
-                file_data,
-                task.upload.check.upload_uri if task.upload.check else None,
+                file=file_data,
+                warehouse_path=task.config.warehouse_path,
+                zimcheck_base_url=(
+                    task.upload.check.upload_uri if task.upload.check else None
+                ),
             ),
             timeout=REQ_TIMEOUT_CMS,
             headers={"Authorization": f"Bearer {access_token}"},
@@ -168,17 +171,19 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
 
 
 def get_openzimcms_payload(
-    file: TaskFileSchema, zimcheck_base_url: str | None
+    *, file: TaskFileSchema, zimcheck_base_url: str | None, warehouse_path: str
 ) -> dict[str, Any]:
     payload = {
         "id": file.info["id"],
         "counter": file.info.get("counter"),
         "article_count": file.info.get("article_count"),
+        "folder_name": warehouse_path,
+        "filename": file.name,
         "media_count": file.info.get("media_count"),
         "size": file.info.get("size"),
         "metadata": file.info.get("metadata"),
         "zimcheck_url": (
-            upload_url(zimcheck_base_url, file.check_filename)
+            generate_http_upload_url(zimcheck_base_url, file.check_filename)
             if zimcheck_base_url and file.check_filename
             else None
         ),

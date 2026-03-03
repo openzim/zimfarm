@@ -262,6 +262,7 @@ def get_requested_tasks_for_worker(
                     ),
                     timestamp=task.timestamp,
                     requested_by=task.requested_by,
+                    requester_id=task.requester_id,
                     priority=task.priority,
                     original_schedule_name=task.original_schedule_name,
                     worker_name=task.worker_name,
