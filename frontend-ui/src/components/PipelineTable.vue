@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
+    <v-card v-if="!errors.length" :class="{ loading: loading }" flat color="transparent">
       <!-- Load All Last Runs button - only show in failed tab -->
       <div v-if="showLoadAllButton" class="d-flex justify-end mb-2">
         <v-btn
@@ -29,7 +29,7 @@
         :items-per-page-options="limits"
         :mobile="smAndDown"
         :density="smAndDown ? 'compact' : 'comfortable'"
-        class="elevation-1"
+        class="pipeline-table"
         item-key="id"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
@@ -346,5 +346,52 @@ async function handleLoadAllLastRuns() {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* make the table itself transparent so grey appears only on rows */
+.pipeline-table {
+  background: transparent !important;
+}
+
+/* border-collapse: separate for spacing on rows */
+.pipeline-table :deep(.v-table__wrapper > table) {
+  border-collapse: separate !important;
+  border-spacing: 0 6px !important;
+}
+
+/* themed background for each row */
+.pipeline-table :deep(tbody tr) {
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
+}
+
+/* counteract outer top/bottom gaps from border-spacing */
+.pipeline-table :deep(tbody) {
+  margin-top: -6px;
+  margin-bottom: -6px;
+}
+
+/* remove cell borders since spacing handles separation */
+.pipeline-table :deep(tbody tr td) {
+  border-bottom: none !important;
+}
+
+/* make the table header row transparent to remove grey bg for header */
+.pipeline-table :deep(thead) {
+  background: transparent !important;
+}
+
+.pipeline-table :deep(thead tr th) {
+  border-bottom: none !important;
+}
+
+/* removes the separator between the tiles and pagination */
+.pipeline-table :deep(.v-data-table-footer) {
+  background: transparent !important;
+  border-top: none !important;
+}
+
+/* removes any divider/border from the table wrapper */
+.pipeline-table :deep(.v-table__wrapper) {
+  border-bottom: none !important;
 }
 </style>
