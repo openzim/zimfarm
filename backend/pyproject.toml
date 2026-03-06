@@ -130,7 +130,7 @@ target-version = ['py313']
 [tool.ruff]
 line-length = 88
 target-version = "py313"
-src = ["src"]
+src = ["src", "maint-scripts"]
 
 [tool.ruff.lint]
 select = [
@@ -258,7 +258,7 @@ exclude_lines = [
 ]
 
 [tool.pyright]
-include = ["src", "tests", "tasks.py"]
+include = ["src", "tests", "tasks.py", "maint-scripts"]
 exclude = [".env/**", ".venv/**"]
 extraPaths = ["src"]
 pythonVersion = "3.13"

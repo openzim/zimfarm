@@ -2,8 +2,8 @@ import sys
 from typing import Any
 
 import requests
-from get_token import get_token, get_token_headers, get_url
 
+from get_token import get_token, get_token_headers, get_url
 from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 
 running_statuses = [

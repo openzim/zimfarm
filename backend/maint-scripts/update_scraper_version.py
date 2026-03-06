@@ -69,6 +69,7 @@ from zimfarm_backend.db.offliner_definition import (
 )
 from zimfarm_backend.db.requested_task import create_requested_task_full_schema
 from zimfarm_backend.db.schedule import create_schedule_full_schema, update_schedule
+from zimfarm_backend.db.user import get_user_by_username
 
 
 def parse_name_mappings(value: str) -> dict[str, str]:
@@ -157,7 +158,7 @@ def update_schedules(
         update_schedule(
             session,
             offliner_definition=offliner_definition,
-            author="maint-scripts",
+            author_id=get_user_by_username(session, username="maint-scripts").id,
             schedule_name=schedule.name,
             new_schedule_config=schedule_config,
             comment="updates made via update_scraper_version",
