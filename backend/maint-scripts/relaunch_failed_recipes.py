@@ -20,6 +20,7 @@ from zimfarm_backend import logger
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.requested_task import request_task
+from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 
@@ -93,7 +94,9 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
         )
 
         result = request_task(
-            session=session, schedule_name=schedule_name, requested_by="benoit"
+            session=session,
+            schedule_name=schedule_name,
+            requested_by=get_user_by_username(session, username="maint-scripts").id,
         )
         if result.requested_task:
             logger.debug(f"Successfully requested {schedule_name}")

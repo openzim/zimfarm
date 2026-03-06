@@ -4,8 +4,8 @@ import sys
 from http import HTTPStatus
 
 import requests
-from get_token import get_token, get_token_headers, get_url
 
+from get_token import get_token, get_token_headers, get_url
 from zimfarm_backend import logger
 from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 
