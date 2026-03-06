@@ -101,7 +101,6 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
             read=True,
             create=True,
             update=True,
-            validate=True,
             archive=True,
             secrets=True,
         ),
@@ -121,12 +120,14 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
     },
     RoleEnum.EDITOR: {
         "schedules": SchedulePermissions.get(
-            read=True, create=True, update=True, secrets=True
+            read=True, create=True, update=True, secrets=True, archive=True
         ),
     },
     RoleEnum.EDITOR_REQUESTER.value: {
         "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
-        "schedules": SchedulePermissions.get(create=True, update=True, secrets=True),
+        "schedules": SchedulePermissions.get(
+            read=True, create=True, update=True, secrets=True, archive=True
+        ),
         "requested_tasks": RequestedTaskPermissions.get(
             read=True, create=True, delete=True, secrets=True
         ),
