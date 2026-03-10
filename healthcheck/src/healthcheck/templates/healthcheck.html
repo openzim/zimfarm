@@ -169,6 +169,45 @@
             </td>
             {% endif %}
           </tr>
+          <tr>
+            <th>CMS Availability</th>
+            <td>
+              CMS API is available {% if not cms_enabled %}
+              <br />
+              <small class="text-muted">
+                <em>(CMS disabled - check ignored)</em>
+              </small>
+              {% endif %}
+            </td>
+            <td class="text-right {{ cms_availability.success|status_class }}">
+              {{ cms_availability.success|status_text }}
+            </td>
+          </tr>
+
+          <tr>
+            <th>CMS Pending Notifications</th>
+            <td>
+              Files pending CMS notification for too long {% if not cms_enabled
+              %}
+              <br />
+              <small class="text-muted">
+                <em>(CMS disabled - check ignored)</em>
+              </small>
+              {% elif cms_pending_notifications.data %}
+              <br />
+              <small class="text-muted">
+                Total pending: {{ cms_pending_notifications.data.total_pending
+                }}, Pending too long: {{
+                cms_pending_notifications.data.pending_too_long }}
+              </small>
+              {% endif %}
+            </td>
+            <td
+              class="text-right {{ cms_pending_notifications.success|status_class }}"
+            >
+              {{ cms_pending_notifications.success|status_text }}
+            </td>
+          </tr>
         </table>
       </section>
     </div>

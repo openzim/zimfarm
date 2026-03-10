@@ -3,9 +3,7 @@ from http import HTTPStatus
 from typing import Any, cast
 
 import requests
-import sqlalchemy as sa
 from requests.auth import HTTPBasicAuth
-from sqlalchemy import func, or_
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.background_tasks import logger
@@ -33,8 +31,11 @@ from zimfarm_backend.common.schemas.orms import (
     TaskFullSchema,
 )
 from zimfarm_backend.common.upload import generate_http_upload_url
-from zimfarm_backend.db.models import File, Task
-from zimfarm_backend.db.tasks import create_or_update_task_file, get_task_by_id
+from zimfarm_backend.db.files import get_files_to_notify
+from zimfarm_backend.db.tasks import (
+    create_or_update_task_file,
+    get_task_by_id,
+)
 
 
 class CMSClientTokenProvider:
@@ -200,45 +201,25 @@ def notify_cms_for_checked_files(session: OrmSession):
 
     logger.info(":: checking for files needing CMS notification")
 
-    files_to_notify = session.execute(
-        sa.select(File, Task.id.label("task_id"))
-        .join(Task, Task.id == File.task_id)
-        .where(
-            # We should send notifications for files that meet the following criteria:
-            # - have not been successfully notified
-            # - have  check_result or check_filename
-            # - are not older than CMS_MAXIMUM_RETRY_INTERVAL since check_timestamp
-            #   so we don't discard notifying CMS about a file because the zimcheck
-            #   results were not uploaded due to another issue.
-            or_(File.cms_notified.is_(None), File.cms_notified.is_(False)),
-            or_(File.check_result.is_not(None), File.check_filename.is_not(None)),
-            func.extract(
-                "epoch",
-                func.now()
-                - func.coalesce(File.check_timestamp, File.created_timestamp),
-            )
-            < CMS_MAXIMUM_RETRY_INTERVAL,
-        )
-    ).all()
+    results = get_files_to_notify(session, retry_interval=CMS_MAXIMUM_RETRY_INTERVAL)
 
-    nb_files = len(files_to_notify)
-    if nb_files == 0:
+    if results.nb_records == 0:
         logger.info("::: no files need CMS notification")
         return
 
-    logger.info(f"::: found {nb_files} file(s) needing CMS notification")
+    logger.info(f"::: found {len(results.files)} file(s) needing CMS notification")
 
     nb_notified = 0
 
     try:
-        for row in files_to_notify:
-            file = cast(File, row.File)
-            task_full = get_task_by_id(session, row.task_id)
-
-            advertise_book_to_cms(session, task_full, file.name)
+        for file in results.files:
+            task_full = get_task_by_id(session, file.task_id)
+            advertise_book_to_cms(session, task_full, file.filename)
             nb_notified += 1
 
-            logger.debug(f"Notified CMS for file {file.name} from task {row.task_id}")
+            logger.debug(
+                f"Notified CMS for file {file.filename} from task {file.task_id}"
+            )
     except Exception:
         logger.exception(
             f"Failed to send CMS notification, sent {nb_notified} notifications to CMS"

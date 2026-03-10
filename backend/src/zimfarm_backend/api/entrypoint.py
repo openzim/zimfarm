@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from zimfarm_backend.api.routes.auth.logic import router as auth_router
 from zimfarm_backend.api.routes.blobs.logic import router as blobs_router
 from zimfarm_backend.api.routes.contexts.logic import router as contexts_router
+from zimfarm_backend.api.routes.files.logic import router as files_router
 from zimfarm_backend.api.routes.healthcheck.logic import router as healthcheck_router
 from zimfarm_backend.api.routes.http_errors import BadRequestError
 from zimfarm_backend.api.routes.languages.logic import router as languages_router
@@ -84,6 +85,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=tags_router)
     main_router.include_router(router=status_router)
     main_router.include_router(router=schedules_router)
+    main_router.include_router(router=files_router)
 
     app.include_router(router=main_router)
 
