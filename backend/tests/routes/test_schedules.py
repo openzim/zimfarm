@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -720,11 +721,15 @@ def test_delete_schedule(
     assert response.status_code == expected_status_code
 
 
+@patch("zimfarm_backend.api.routes.schedules.logic.get_schedule_image_tags")
 def test_get_schedule_image_names(
+    mock_get_tags: MagicMock,
     client: TestClient,
     dbsession: OrmSession,
     create_schedule: Callable[..., Schedule],
 ):
+    mock_get_tags.return_value = ["latest", "1.0.0", "1.0.1"]
+
     schedule = create_schedule(name="test_schedule")
     dbsession.add(schedule)
     dbsession.flush()
@@ -737,6 +742,8 @@ def test_get_schedule_image_names(
     assert "items" in data
     for item in data["items"]:
         assert isinstance(item, str)
+
+    mock_get_tags.assert_called_once_with("openzim/mwoffliner")
 
 
 @pytest.mark.parametrize(
