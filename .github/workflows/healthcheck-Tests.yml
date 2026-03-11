@@ -30,7 +30,10 @@ jobs:
       - name: Run healthcheck container
         run: |
           docker run -d --name zimfarm-healthcheck-test \
+            --network host \
             -e ZIMFARM_API_URL=http://localhost:8001 \
+            -e ZIMFARM_FRONTEND_URL=http://localhost:8001 \
+            -e CMS_API_URL=http://localhost:8001 \
             -e ZIMFARM_USERNAME=admin \
             -e ZIMFARM_PASSWORD=admin_pass \
             -e ZIMFARM_DATABASE_URL=postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest \
@@ -38,10 +41,16 @@ jobs:
             zimfarm-healthcheck:test
           # wait for container to be ready
           for i in {1..10}; do
-            if curl -s http://localhost:8000 > /dev/null; then
-              echo "Healthcheck is up!"
-              break
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" 'http://localhost:80/docs' || echo 0000)
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+              echo "Healthcheck API is up!"
+              exit 0
+            else
+              echo "Waiting for healthcheck API... ($i/10)"
+              sleep 3
             fi
-            echo "Waiting for Healthcheck..."
-            sleep 3
           done
+
+          echo "Healthcheck API failed to start:"
+          docker logs zimfarm-healthcheck-test
+          exit 1

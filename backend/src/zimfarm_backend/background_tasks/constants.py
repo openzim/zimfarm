@@ -66,9 +66,6 @@ REQUEST_TASKS_INTERVAL = datetime.timedelta(
 CMS_NOTIFICATIONS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("CMS_NOTIFICATIONS_INTERVAL", default="10m"))
 )
-CMS_MAXIMUM_RETRY_INTERVAL = parse_timespan(
-    getenv("CMS_MAXIMUM_RETRY_INTERVAL", default="24h")
-)
 DELETE_ORPHANED_BLOBS_INTERVAL = datetime.timedelta(
     seconds=parse_timespan(getenv("DELETE_ORPHANED_BLOBS_INTERVAL", default="24h"))
 )
@@ -85,4 +82,7 @@ CMS_OAUTH_AUDIENCE_ID = getenv("CMS_OAUTH_AUDIENCE_ID", default="")
 # Number of seconds before the access token expires at which it should be renewed
 CMS_TOKEN_RENEWAL_WINDOW = datetime.timedelta(
     seconds=parse_timespan(getenv("CMS_TOKEN_RENEWAL_WINDOW", default="5m"))
+)
+CMS_MAXIMUM_RETRY_INTERVAL = parse_timespan(
+    getenv("CMS_MAXIMUM_RETRY_INTERVAL", default="24h")
 )

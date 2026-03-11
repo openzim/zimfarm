@@ -7,7 +7,12 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
+from healthcheck.constants import CMS_ENABLED
 from healthcheck.status.auth import authenticate
+from healthcheck.status.cms import (
+    check_cms_availability,
+    check_cms_pending_notifications,
+)
 from healthcheck.status.database import (
     check_database_connection,
 )
@@ -46,13 +51,26 @@ async def healthcheck(request: Request) -> HTMLResponse:
         frontend_check,
         workers_check,
         logs_and_artifacts_upload_check,
+        cms_availability_check,
+        cms_pending_notifications_check,
     ) = await gather(
         authenticate(),
         check_database_connection(),
         check_frontend(),
         get_workers_status(),
         check_log_and_artifacts_upload_status(),
+        check_cms_availability(),
+        check_cms_pending_notifications(),
     )
+    # If CMS checks fail and CMS is disabled, consider them as successful
+    if not (CMS_ENABLED or cms_availability_check.success):
+        cms_availability_check = cms_availability_check.model_copy(
+            update={"success": True}
+        )
+    if not (CMS_ENABLED or cms_pending_notifications_check.success):
+        cms_pending_notifications_check = cms_pending_notifications_check.model_copy(
+            update={"success": True}
+        )
 
     global_status = all(
         [
@@ -61,6 +79,8 @@ async def healthcheck(request: Request) -> HTMLResponse:
             frontend_check.success,
             workers_check.success,
             logs_and_artifacts_upload_check.success,
+            cms_availability_check.success,
+            cms_pending_notifications_check.success,
         ]
     )
 
@@ -74,6 +94,9 @@ async def healthcheck(request: Request) -> HTMLResponse:
             "frontend": frontend_check,
             "workers": workers_check,
             "logs_and_artifacts": logs_and_artifacts_upload_check,
+            "cms_availability": cms_availability_check,
+            "cms_pending_notifications": cms_pending_notifications_check,
+            "cms_enabled": CMS_ENABLED,
         },
         status_code=HTTPStatus.OK if global_status else HTTPStatus.SERVICE_UNAVAILABLE,
     )
