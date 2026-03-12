@@ -1,9 +1,20 @@
 import pathlib
 import urllib.parse
 
+import requests
+
 from zimfarm_backend import logger
-from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
-from zimfarm_backend.common.schemas.orms import RequestedTaskFullSchema, TaskFullSchema
+from zimfarm_backend.common.constants import (
+    CMS_BASE_URL,
+    REQ_TIMEOUT_CMS,
+    SECRET_STRING_LENGTH,
+)
+from zimfarm_backend.common.schemas.orms import (
+    RequestedTaskFullSchema,
+    TaskFileSchema,
+    TaskFullSchema,
+    ZimUrlSchema,
+)
 
 
 def rebuild_uri(
@@ -126,3 +137,28 @@ def generate_http_upload_url(uri: str, filename: str) -> str:
         return f"{url.scheme}://{url.netloc}{path}{filename}"
 
     raise ValueError(f"Unsupported scheme '{scheme}' in URI.")
+
+
+def populate_zim_urls(task: TaskFullSchema) -> None:
+    """Populate the zim_urls for task ZIM files."""
+    zim_ids: dict[str, TaskFileSchema] = {}  # mapping of zim_id to the file
+
+    for _, file in task.files.items():
+        if file.info and file.info.get("id"):
+            zim_ids[file.info["id"]] = file
+
+    try:
+        response = requests.get(
+            f"{CMS_BASE_URL}/books/zims",
+            timeout=REQ_TIMEOUT_CMS,
+            params={"zim_ids": list(zim_ids.keys())},
+        )
+        response.raise_for_status()
+    except Exception:
+        logger.exception("An unexepceted error occurred while fetching ZIM URLs")
+    else:
+        data = response.json()["urls"]
+        for zim_id, entries in data.items():
+            zim_ids[zim_id].zim_urls = [
+                ZimUrlSchema.model_validate(entry) for entry in entries
+            ]

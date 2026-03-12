@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from http import HTTPStatus
 from typing import Literal
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -39,12 +40,19 @@ def test_get_tasks(
 
 
 @pytest.mark.parametrize("hide_secrets", ["true", "false"])
+@patch("zimfarm_backend.common.upload.requests.get")
 def test_get_task_no_auth(
+    mock_requests_get: Mock,
     client: TestClient,
     task: Task,
     hide_secrets: str,
 ):
     """Test successful retrieval of a single task"""
+    mock_response = Mock()
+    mock_response.json.return_value = {"urls": {}}
+    mock_response.raise_for_status = Mock()
+    mock_requests_get.return_value = mock_response
+
     response = client.get(
         f"/v2/tasks/{task.id}?hide_secrets={hide_secrets}",
     )
@@ -61,13 +69,20 @@ def test_get_task_no_auth(
 
 
 @pytest.mark.parametrize("hide_secrets", ["true", "false"])
+@patch("zimfarm_backend.common.upload.requests.get")
 def test_get_task_with_auth(
+    mock_requests_get: Mock,
     client: TestClient,
     task: Task,
     access_token: str,
     hide_secrets: Literal["true", "false"],
 ):
     """Test successful retrieval of a single task"""
+    mock_response = Mock()
+    mock_response.json.return_value = {"urls": {}}
+    mock_response.raise_for_status = Mock()
+    mock_requests_get.return_value = mock_response
+
     response = client.get(
         f"/v2/tasks/{task.id}?hide_secrets={hide_secrets}",
         headers={"Authorization": f"Bearer {access_token}"},
@@ -87,12 +102,19 @@ def test_get_task_with_auth(
         assert config["offliner"]["mwPassword"] == "test-password"
 
 
+@patch("zimfarm_backend.common.upload.requests.get")
 def test_get_obsolete_task(
+    mock_requests_get: Mock,
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
     create_task: Callable[..., Task],
 ):
+    mock_response = Mock()
+    mock_response.json.return_value = {"urls": {}}
+    mock_response.raise_for_status = Mock()
+    mock_requests_get.return_value = mock_response
+
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),

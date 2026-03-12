@@ -210,12 +210,7 @@
                       :class="smAndDown ? '' : 'files-table'"
                     >
                       <template #[`item.name`]="{ item }">
-                        <a
-                          target="_blank"
-                          :href="kiwixDownloadUrl + task.config.warehouse_path + '/' + item.name"
-                        >
-                          {{ item.name }}
-                        </a>
+                        {{ item.name }}
                       </template>
 
                       <template #[`item.size`]="{ item }">
@@ -286,6 +281,33 @@
                             <FileInfoTable :file-info="item.info" />
                           </v-menu>
                           <span v-else>-</span>
+                        </div>
+                      </template>
+
+                      <template #[`item.urls`]="{ item }">
+                        <div :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]">
+                          <ZimUrlButtons
+                            v-if="item.zim_urls && item.zim_urls.length > 0"
+                            :urls="item.zim_urls"
+                            :icon-only="!smAndDown"
+                          />
+                          <v-tooltip v-else location="bottom">
+                            <template #activator="{ props: tooltipProps }">
+                              <v-btn
+                                v-bind="tooltipProps"
+                                :href="
+                                  kiwixDownloadUrl + task.config.warehouse_path + '/' + item.name
+                                "
+                                target="_blank"
+                                variant="text"
+                                icon
+                                size="small"
+                              >
+                                <v-icon size="small">mdi-download</v-icon>
+                              </v-btn>
+                            </template>
+                            <span>Download</span>
+                          </v-tooltip>
                         </div>
                       </template>
                     </v-data-table>
@@ -597,6 +619,7 @@ import ErrorMessage from '@/components/ErrorMessage.vue'
 import FileInfoTable from '@/components/FileInfoTable.vue'
 import FlagsList from '@/components/FlagsList.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
+import ZimUrlButtons from '@/components/ZimUrlButtons.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
@@ -669,6 +692,7 @@ const filesHeaders = [
   { title: 'Upload Duration', value: 'upload_duration' },
   { title: 'Quality', value: 'quality' },
   { title: 'Info', value: 'info' },
+  { title: 'URLs', value: 'urls' },
 ]
 
 // Computed properties
