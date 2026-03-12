@@ -71,10 +71,7 @@ def create_offliner_instance(
     if isinstance(offliner_definition, OfflinerDefinition):
         offliner_definition = create_offliner_definition_schema(offliner_definition)
     model = build_offliner_model(offliner, offliner_definition.schema_, extra=extra)
-    if skip_validation:
-        return model.model_construct(**data)
-    else:
-        return model.model_validate(data, context={"skip_validation": skip_validation})
+    return model.build_model(data, skip_validation=skip_validation)
 
 
 def get_offliner_definition_or_none(
