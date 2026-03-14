@@ -21,7 +21,7 @@ dependencies = [
     "pydantic[email] == 2.11.4",
     "pydantic-extra-types == 2.10.6",
     "SQLAlchemy == 2.0.41",
-    "PyJWT == 2.10.1",
+    "PyJWT == 2.12.0",
     "pymongo == 4.13.0",
     "pytz == 2025.2",
     "requests == 2.32.4",
