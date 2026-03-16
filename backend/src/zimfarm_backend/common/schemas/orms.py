@@ -1,7 +1,7 @@
 import datetime
 from collections import defaultdict
 from ipaddress import IPv4Address, IPv6Address
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 import pytz
@@ -82,6 +82,14 @@ class TaskLightSchema(BaseTaskSchema):
     config: ConfigWithOnlyResourcesSchema
 
 
+class ZimUrlSchema(BaseModel):
+    """Schema for a single zim URL"""
+
+    kind: Literal["view", "download"]
+    url: AnyUrl
+    collection: str
+
+
 class TaskFileSchema(BaseModel):
     """
     Schema for reading the files associated with a task
@@ -102,6 +110,9 @@ class TaskFileSchema(BaseModel):
     check_filename: str | None = None
     check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)
+    zim_urls: list[ZimUrlSchema] = Field(  # pyright: ignore[reportUnknownVariableType]
+        default_factory=list
+    )
 
 
 class TaskContainerProgressSchema(BaseModel):

@@ -17,7 +17,7 @@ from zimfarm_backend.api.routes.http_errors import (
 )
 from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.api.routes.tasks.models import TaskCreateSchema, TaskUpdateSchema
-from zimfarm_backend.common.constants import ENABLED_SCHEDULER
+from zimfarm_backend.common.constants import ENABLED_SCHEDULER, INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
@@ -27,8 +27,8 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     calculate_pagination_metadata,
 )
-from zimfarm_backend.common.schemas.orms import TaskLightSchema
-from zimfarm_backend.common.upload import build_task_upload_uris
+from zimfarm_backend.common.schemas.orms import TaskFullSchema, TaskLightSchema
+from zimfarm_backend.common.upload import build_task_upload_uris, populate_zim_urls
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
@@ -116,6 +116,8 @@ def get_task(
     task = build_task_upload_uris(
         task, keys=["secretAccessKey", "keyId"], show_secrets=show_secrets
     )
+    if INFORM_CMS:
+        populate_zim_urls(cast(TaskFullSchema, task))
     return JSONResponse(
         content=task.model_dump(mode="json", context={"show_secrets": show_secrets})
     )

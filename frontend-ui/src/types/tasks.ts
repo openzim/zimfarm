@@ -10,6 +10,12 @@ export interface TaskEvent {
   timestamp: string
 }
 
+export interface ZimUrl {
+  kind: 'view' | 'download'
+  url: string
+  collection: string
+}
+
 export interface TaskFileInfo {
   id: string
   counter: Record<string, number>
@@ -30,6 +36,7 @@ export interface TaskFile {
   check_filename?: string
   check_upload_timestamp?: string
   info?: TaskFileInfo
+  zim_urls: ZimUrl[]
 }
 
 export interface TaskResourceUsage {
