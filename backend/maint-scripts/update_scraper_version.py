@@ -56,7 +56,10 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend import logger
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import (
+    DockerImageSchema,
+    ScheduleConfigSchema,
+)
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import RequestedTask, Schedule
@@ -122,8 +125,8 @@ def update_schedules(
                 f"setting {offliner.id} image tag for schedule {obj.name} "
                 f"to {args.image_tag}..."
             )
-            schedule_config = schedule_config.model_copy(
-                update={"image": {"name": schedule_config.image.name, "tag": image_tag}}
+            schedule_config.image = DockerImageSchema(
+                name=schedule_config.image.name, tag=image_tag
             )
 
         if offliner_definition.id != schedule.offliner_definition_id:
