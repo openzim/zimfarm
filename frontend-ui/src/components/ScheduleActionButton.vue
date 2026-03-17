@@ -14,27 +14,12 @@
 <template>
   <div v-if="visible" class="d-flex justify-end">
     <!-- Worker Selection Dropdown -->
-    <v-menu v-if="canSelectWorker" location="bottom end" offset-y>
-      <template v-slot:activator="{ props }">
-        <v-btn v-bind="props" variant="outlined" color="primary" size="small" class="mr-2">
-          <v-icon size="small" class="mr-1">mdi-server</v-icon>
-          {{ selectedWorker }}
-        </v-btn>
-      </template>
-
-      <v-list max-height="250" class="overflow-y-auto">
-        <v-list-item
-          v-for="worker in allWorkers"
-          :key="worker.name"
-          @click="changeWorker(worker.name)"
-          :color="worker.status === 'online' ? 'success' : 'secondary'"
-        >
-          <v-list-item-title :class="{ 'text-success': worker.status === 'online' }">{{
-            worker.name
-          }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+    <WorkerSelector
+      v-if="canSelectWorker"
+      v-model="selectedWorker"
+      :workers="workers"
+      :visible="canSelectWorker"
+    />
 
     <!-- Request Button -->
     <v-btn
@@ -45,7 +30,7 @@
       class="mr-2"
       :loading="working"
       :disabled="working"
-      @click="emit('request-task', cleanedSelectedWorker)"
+      @click="emit('request-task', selectedWorker)"
     >
       <v-tooltip activator="parent" location="top"> Request with normal priority </v-tooltip>
       <v-icon size="small" class="mr-1">mdi-plus-circle</v-icon>
@@ -92,7 +77,7 @@
       class="mr-2"
       :loading="working"
       :disabled="working"
-      @click="emit('request-task', cleanedSelectedWorker, true)"
+      @click="emit('request-task', selectedWorker, true)"
     >
       <v-tooltip activator="parent" location="top"> Request with high priority </v-tooltip>
       <v-icon size="small" class="mr-1">mdi-priority-high</v-icon>
@@ -123,6 +108,7 @@
 </template>
 
 <script setup lang="ts">
+import WorkerSelector from '@/components/WorkerSelector.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
@@ -148,13 +134,11 @@ const emit = defineEmits<{
   (e: 'unrequest-task'): void
 }>()
 
-// Constants
-const ANY_WORKER_NAME = 'Any'
-
 // Stores
 const authStore = useAuthStore()
+
 // Reactive data
-const selectedWorker = ref<string>(ANY_WORKER_NAME)
+const selectedWorker = ref<string | null>(null)
 
 // Computed properties
 const taskId = computed(() => (props.task ? props.task.id : null))
@@ -173,25 +157,13 @@ const canFire = computed(() => !working.value && canRequest.value)
 const canFireExisting = computed(() => !working.value && isScheduled.value)
 const canCancel = computed(() => !working.value && isRunning.value && taskId.value)
 const canUnRequest = computed(() => !working.value && isScheduled.value)
-const allWorkers = computed(() => [
-  { name: ANY_WORKER_NAME, status: 'offline' as const },
-  ...props.workers,
-])
 const canSelectWorker = computed(() => canRequest.value || canFire.value)
-const cleanedSelectedWorker = computed(() =>
-  selectedWorker.value === ANY_WORKER_NAME ? null : selectedWorker.value,
-)
 const requestedTaskId = computed(() => props.requestedTask?.id || null)
 
 // Permission computed properties
 const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
 const canUnRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'delete'))
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
-
-// Methods
-const changeWorker = (workerName: string) => {
-  selectedWorker.value = workerName
-}
 </script>
 
 <style scoped>

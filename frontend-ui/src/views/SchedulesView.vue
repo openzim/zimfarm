@@ -8,13 +8,14 @@
       :can-request-tasks="canRequestTasks"
       @filters-updated="handleFiltersUpdated"
     >
-      <template #actions="{ selectedSchedules, requestingText, handleFetchSchedules }">
+      <template #actions="{ selectedSchedules, requestingText, workers, handleRequestTasks }">
         <RequestSelectionButton
           v-if="canRequestTasks"
           :can-request-tasks="canRequestTasks"
           :requesting-text="requestingText"
           :count="selectedSchedules.length"
-          @fetch-schedules="handleFetchSchedules"
+          :workers="workers"
+          @request-tasks="handleRequestTasks"
         />
       </template>
     </SchedulesBaseView>

@@ -3,7 +3,7 @@
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title
         v-if="showSelection || $slots.actions"
-        class="d-flex flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
+        class="d-flex flex-sm-wrap flex-grow-1 flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
       >
         <slot name="actions" />
         <v-btn
