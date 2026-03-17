@@ -9,7 +9,7 @@ docker run -p 1622:22 \
     -v /data/warehouse/zim:/jail/zim:rw \
     -v /data/zim:/mnt/zim:rw \
     -v /data/quarantine:/mnt/quarantine:rw \
-    -v /data/check_logs:/mnt/check_logs:rw
+    -v /data/move_logs:/mnt/move_logs:rw
     ghcr.io/openzim/zimfarm-receiver
 ```
 
@@ -24,15 +24,17 @@ A dedicated SSH server to serve for ZIM and logs files uploads using SCP.
 - Using `uploader` user, with an rssh shell.
 - Supports both SCP and SFTP.
 
-## ZIM Quarantaine
+## ZIM Move
 
-A file events watcher that moves incoming ZIM files to final location after a successful check
+A file events watcher that moves incoming ZIM files to final location.
 
 - Running every minute on `/jail/zim` via a cron task
 - Moving files to `/mnt/zim` if file is not in the root of the source directory, `/mnt/quarantine` otherwise.
 
 Previously, it used `zimcheck` from libzim tools to check that ZIMs are valid and move them to quarantine folder if check fails. Now, it just checks that they are in appropriate
 subfolder and moves them to final destination.
+
+To disable the movement of ZIM files and leave them in the upload jail, set `ENABLE_ZIM_MOVE` to any value other than `1`.
 
 ### Volumes
 

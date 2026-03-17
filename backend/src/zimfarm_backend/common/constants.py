@@ -135,7 +135,7 @@ WASABI_MAX_WHITELIST_VERSIONS = int(
 )
 
 
-# openZIM CMS can be called upon receival of each ZIM
+# openZIM CMS can be called upon receival of each ZIM.
 INFORM_CMS = parse_bool(getenv("INFORM_CMS", default="false"))
 CMS_BASE_URL = getenv("CMS_BASE_URL", default="https://api.cms.openzim.org/v1")
 
@@ -167,3 +167,8 @@ BLOB_PUBLIC_STORAGE_URL = getenv("BLOB_PUBLIC_STORAGE_URL")
 BLOB_STORAGE_USERNAME = getenv("BLOB_STORAGE_USERNAME")
 BLOB_STORAGE_PASSWORD = getenv("BLOB_STORAGE_PASSWORD")
 BLOB_MAX_SIZE = parse_size(getenv("BLOB_MAX_SIZE", default="1MB"), binary=True)
+
+# When DISABLE_WAREHOUSE_PATH is set to true, tasks are configured to use their root
+# warehouse path and ignore the one from their config. As a consequence, the worker
+# manager will rename the file to the form <zim_uuid>.zim to prevent filename collision
+DISABLE_WAREHOUSE_PATH = parse_bool(getenv("DISABLE_WAREHOUSE_PATH", default="false"))

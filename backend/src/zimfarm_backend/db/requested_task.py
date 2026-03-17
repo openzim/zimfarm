@@ -13,6 +13,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
     ARTIFACTS_EXPIRATION,
     ARTIFACTS_UPLOAD_URI,
+    DISABLE_WAREHOUSE_PATH,
     LOGS_EXPIRATION,
     LOGS_UPLOAD_URI,
     ZIM_EXPIRATION,
@@ -21,7 +22,7 @@ from zimfarm_backend.common.constants import (
     ZIMCHECK_RESULTS_EXPIRATION,
     ZIMCHECK_RESULTS_UPLOAD_URI,
 )
-from zimfarm_backend.common.enums import Platform, TaskStatus
+from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import (
     ExpandedScheduleConfigSchema,
@@ -116,6 +117,11 @@ def _create_new_requested_task(
             config=ScheduleConfigSchema.model_validate(
                 {
                     **schedule.config,
+                    "warehouse_path": (
+                        WarehousePath.root
+                        if DISABLE_WAREHOUSE_PATH
+                        else schedule.config["warehouse_path"]
+                    ),
                     "offliner": create_offliner_instance(
                         offliner=offliner,
                         offliner_definition=offliner_definition,
@@ -130,6 +136,7 @@ def _create_new_requested_task(
                 "upload_uri": ZIM_UPLOAD_URI,
                 "expiration": ZIM_EXPIRATION,
                 "zimcheck": ZIMCHECK_OPTION,
+                "disable_warehouse_path": DISABLE_WAREHOUSE_PATH,
             },
             "logs": {
                 "upload_uri": LOGS_UPLOAD_URI,

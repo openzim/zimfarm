@@ -161,6 +161,7 @@ class TaskUploadConfigSchema(BaseModel):
 
 class ZimUploadConfigSchema(TaskUploadConfigSchema):
     zimcheck: str | None = None
+    disable_warehouse_path: bool | None = None
 
 
 class TaskUploadSchema(BaseModel):

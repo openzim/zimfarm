@@ -93,6 +93,7 @@ class TaskStatus(StrEnum):
 
 
 class WarehousePath(StrEnum):
+    root = ""
     hidden_dev = "/.hidden/dev"
     hidden_endless = "/.hidden/endless"
     hidden_bard = "/.hidden/bard"
@@ -118,6 +119,7 @@ class WarehousePath(StrEnum):
             cls.hidden_bsf,
             cls.hidden_datacup,
             cls.hidden_custom_apps,
+            cls.root,
         ]
 
 

@@ -16,6 +16,7 @@ export interface Config {
   OAUTH_BASE_URL: string
   OAUTH_MODE: 'oidc' | 'session'
   LOGIN_MODES: Array<string>
+  DISABLE_WAREHOUSE_PATH: boolean
 }
 
 export const ConfigService = {

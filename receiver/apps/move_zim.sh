@@ -2,7 +2,7 @@
 #
 # Author : Florent Kaisser
 #
-# Usage : check_zim.sh <zimFilePath> <zimSrcDir> <zimDstDir> <zimQuarantineDir>
+# Usage : move_zim.sh <zimFilePath> <zimSrcDir> <zimDstDir> <zimQuarantineDir>
 #
 
 ZIMFILE=$1

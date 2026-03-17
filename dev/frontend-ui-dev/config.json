@@ -5,5 +5,6 @@
   "BLOB_MAX_SIZE": 1048576,
   "OAUTH_BASE_URL": "https://login-staging.kiwix.org",
   "OAUTH_MODE": "session",
-  "LOGIN_MODES": ["local"]
+  "LOGIN_MODES": ["local"],
+  "DISABLE_WAREHOUSE_PATH": true
 }

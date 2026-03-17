@@ -10,5 +10,6 @@
   "OAUTH_BASE_URL": "https://login.kiwix.org",
   "BLOB_MAX_SIZE": 1048576,
   "OAUTH_MODE": "session",
-  "LOGIN_MODES": ["local", "oauth"]
+  "LOGIN_MODES": ["local", "oauth"],
+  "DISABLE_WAREHOUSE_PATH": false
 }

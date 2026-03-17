@@ -27,7 +27,12 @@ from zimfarm_backend.api.routes.tags.logic import router as tags_router
 from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
 from zimfarm_backend.api.routes.users.logic import router as users_router
 from zimfarm_backend.api.routes.workers.logic import router as workers_router
-from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START, DEBUG
+from zimfarm_backend.common.constants import (
+    ALEMBIC_UPGRADE_HEAD_ON_START,
+    DEBUG,
+    DISABLE_WAREHOUSE_PATH,
+    ZIMCHECK_OPTION,
+)
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -42,6 +47,13 @@ from zimfarm_backend.utils.database import (
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Fail to start application if we do not use warehouse paths but zimcheck option
+    # is disabled
+    if DISABLE_WAREHOUSE_PATH and not ZIMCHECK_OPTION:
+        raise ValueError(
+            "ZIMCHECK_OPTION must be set if DISABLE_WAREHOUSE_PATH is set to true."
+        )
+
     if ALEMBIC_UPGRADE_HEAD_ON_START:
         upgrade_db_schema()
 

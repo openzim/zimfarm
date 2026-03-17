@@ -555,7 +555,7 @@
                 </v-row>
                 <v-divider class="my-2"></v-divider>
 
-                <v-row no-gutters class="py-2">
+                <v-row no-gutters class="py-2" v-if="!appConfig.DISABLE_WAREHOUSE_PATH">
                   <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Warehouse Path</div>
                   </v-col>
@@ -563,7 +563,7 @@
                     <code>{{ warehousePath }}</code>
                   </v-col>
                 </v-row>
-                <v-divider class="my-2"></v-divider>
+                <v-divider class="my-2" v-if="!appConfig.DISABLE_WAREHOUSE_PATH"></v-divider>
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">

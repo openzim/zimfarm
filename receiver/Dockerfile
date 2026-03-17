@@ -49,11 +49,11 @@ VOLUME /mnt/zim
 ENV ZIM_SRC_DIR /jail/zim
 ENV ZIM_DST_DIR /mnt/zim
 ENV ZIM_QUAR_DIR /mnt/quarantine
-ENV ZIMCHECK_PARALLEL_JOBS 2
+ENV ZIM_MOVE_PARALLEL_JOBS 2
 
-COPY apps/check_zims.sh /usr/local/bin/
-COPY apps/check_zim.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/check_zim.sh /usr/local/bin/check_zims.sh
+COPY apps/move_zims.sh /usr/local/bin/
+COPY apps/move_zim.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/move_zim.sh /usr/local/bin/move_zims.sh
 
 # OpenSSH public-key auth relay
 ENV ZIMFARM_WEBAPI https://api.farm.openzim.org/v2

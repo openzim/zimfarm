@@ -82,7 +82,7 @@
           variant="outlined"
         />
       </v-col>
-      <v-col cols="12" sm="4">
+      <v-col cols="12" sm="4" v-if="!appConfig.DISABLE_WAREHOUSE_PATH">
         <v-select
           v-model="editSchedule.config.warehouse_path"
           :items="warehousePathsOptions"
@@ -103,9 +103,6 @@
           details="Disabled recipes are not scheduled, but can be run manually."
         />
       </v-col>
-    </v-row>
-
-    <v-row>
       <v-col cols="12" sm="4">
         <v-select
           v-model="editSchedule.periodicity"
@@ -655,6 +652,7 @@
 import BlobEditor from '@/components/BlobEditor.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
+import type { Config } from '@/config'
 import NotificationEventFields from '@/components/NotificationEventFields.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import constants from '@/constants'
@@ -676,7 +674,7 @@ import { formattedBytesSize } from '@/utils/format'
 import { buildYoutubeLinks, type YoutubeLinkKind } from '@/utils/youtube'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch, inject } from 'vue'
 import { useDisplay } from 'vuetify'
 
 interface FlagField {
@@ -714,6 +712,12 @@ interface Emits {
   (e: 'image-name-change', imageName: string): void
   (e: 'offliner-change', offliner: string): void
   (e: 'offliner-version-change', offliner: string, version: string): void
+}
+
+// Config
+const appConfig = inject<Config>(constants.config)
+if (!appConfig) {
+  throw new Error('Config is not defined')
 }
 
 const props = defineProps<Props>()
