@@ -30,7 +30,8 @@
           :selected-schedules="selectedSchedules"
           :requesting-text="requestingText"
           :restoring-text="restoringText"
-          :handle-fetch-schedules="handleFetchSchedules"
+          :workers="workers"
+          :handle-request-tasks="handleRequestTasks"
           :handle-restore-schedules="handleRestoreSchedules"
         />
       </template>
@@ -88,7 +89,9 @@ import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTagStore } from '@/stores/tag'
+import { useWorkersStore } from '@/stores/workers'
 import type { ScheduleLight } from '@/types/schedule'
+import type { Worker } from '@/types/workers'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -164,6 +167,7 @@ const intervalId = ref<number | null>(null)
 const selectedSchedules = ref<string[]>([])
 const showRestoreCommentDialog = ref<boolean>(false)
 const restoreComment = ref<string>('')
+const workers = ref<Worker[]>([])
 
 // Stores
 const router = useRouter()
@@ -174,6 +178,7 @@ const tagStore = useTagStore()
 const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
 const requestedTasksStore = useRequestedTasksStore()
+const workersStore = useWorkersStore()
 
 // Computed properties
 const languages = computed(() => languageStore.languages)
@@ -252,7 +257,19 @@ function handleSelectionChanged(newSelection: string[]) {
   selectedSchedules.value = newSelection
 }
 
-async function handleFetchSchedules() {
+async function fetchWorkers() {
+  const response = await workersStore.fetchWorkers()
+  if (response) {
+    workers.value = response
+  } else {
+    for (const error of workersStore.errors) {
+      notificationStore.showError(error)
+    }
+    workers.value = []
+  }
+}
+
+async function handleRequestTasks(workerName: string | null, highPriority: boolean) {
   if (!props.canRequestTasks) {
     return
   }
@@ -265,9 +282,12 @@ async function handleFetchSchedules() {
   } else {
     const scheduleNames = selectedSchedules.value.filter((name) => !!name)
     if (scheduleNames.length > 0) {
-      const requestedTasks = await requestedTasksStore.requestTasks({
+      const body = {
         scheduleNames: scheduleNames,
-      })
+        worker: workerName,
+        priority: highPriority ? constants.DEFAULT_FIRE_PRIORITY : null,
+      }
+      const requestedTasks = await requestedTasksStore.requestTasks(body)
       if (requestedTasks) {
         notificationStore.showSuccess(
           `Exactly ${requestedTasks.requested.length} selected recipe${requestedTasks.requested.length !== 1 ? 's' : ''} have been requested`,
@@ -362,6 +382,11 @@ onMounted(async () => {
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
+
+  // Fetch workers if can request tasks
+  if (props.canRequestTasks) {
+    await fetchWorkers()
+  }
 
   // Filters are derived from the route; no manual load needed
 
