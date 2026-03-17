@@ -24,7 +24,7 @@ from zimfarm_worker.common.cryptography import (
     load_private_key_from_path,
 )
 from zimfarm_worker.common.docker import list_containers
-from zimfarm_worker.common.requests import Response, get_token, query_api
+from zimfarm_worker.common.requests import Response, Token, query_api
 
 
 @dataclass(kw_only=True)
@@ -159,7 +159,32 @@ class BaseWorker:
             try:
                 private_key = load_private_key_from_path(PRIVATE_KEY)
                 auth_message = generate_auth_message(self.username, private_key)
-                token = get_token(uri, auth_message)
+                token_response = query_api(
+                    f"{uri}/auth/ssh-authorize",
+                    method="POST",
+                    headers={
+                        "X-SSHAuth-Message": auth_message.body,
+                        "X-SSHAuth-Signature": auth_message.signature,
+                    },
+                    timeout=30,
+                )
+                if not token_response.success:
+                    logger.error(
+                        "failed to authenticate with API: "
+                        f"status_code={token_response.status_code} "
+                        f"mesage={token_response.json.get('message')}"
+                    )
+                    return False
+
+                token = Token(
+                    access_token=token_response.json["access_token"],
+                    expires_time=datetime.datetime.fromisoformat(
+                        token_response.json["expires_time"]
+                    ),
+                    refresh_token=token_response.json["refresh_token"],
+                    token_type=token_response.json["token_type"],
+                )
+
                 self.connections[uri].access_token = token.access_token
                 self.connections[uri].refresh_token = token.refresh_token
                 jwt_payload = jwt.decode(
