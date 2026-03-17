@@ -8,6 +8,7 @@ ENV DO_NOT_TRACK=1
 ENV STREAM_WHITELIST=""
 ENV NETDATA_HOSTNAME=monitoring.openzim.org
 ENV STREAM_KEY=7DC0DDB8-8EAA-4391-AF5D-BE017EECF0EE
+ENV ZIMFARM_API_URL=https://api.farm.openzim.org/v2
 
 COPY netdata.conf /etc/netdata/netdata.conf
 COPY update-stream-whitelist.sh /usr/local/bin/update-stream-whitelist.sh

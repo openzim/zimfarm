@@ -11,7 +11,10 @@ import urllib.request
 from http import HTTPStatus
 from typing import Any, Tuple, Union
 
-API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v2")
+API_URL = os.getenv("ZIMFARM_API_URL")
+if not API_URL:
+    raise OSError("Please set the ZIMFARM_API_URL environment variable")
+
 TEMPLATE = """[__KEY__]
  enabled = yes
  retention = 30d
