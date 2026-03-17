@@ -234,6 +234,7 @@ def get_schedules(
     archived: bool | None = None,
     omit_names: list[str] | None = None,
     similarity_data: list[str] | None = None,
+    offliners: list[str] | None = None,
 ) -> ScheduleListResult:
     """Get a list of schedules"""
     subquery = (
@@ -283,6 +284,8 @@ def get_schedules(
                 | (name is None)
             ),
             (Schedule.name.not_in(omit_names or []) | (omit_names is None)),
+            (Schedule.config["offliner"]["offliner_id"].astext.in_(offliners or []))
+            | (offliners is None),
         )
         .offset(skip)
         .limit(limit)

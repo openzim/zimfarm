@@ -171,6 +171,7 @@ def get_tasks(
     status: list[TaskStatus] | None = None,
     schedule_name: str | None = None,
     sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
+    offliner: str | None = None,
 ):
     # Determine the event/column to sort the results based on sort_criteria
     match sort_criteria:
@@ -211,6 +212,8 @@ def get_tasks(
         .join(Schedule, Task.schedule, isouter=True)
         .where(
             (Schedule.name == schedule_name) | (schedule_name is None),
+            (Schedule.config["offliner"]["offliner_id"].astext == offliner)
+            | (offliner is None),
             (Task.status.in_(status)),
         )
         .order_by(order_by)

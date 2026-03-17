@@ -3,7 +3,7 @@ import base64
 import datetime
 from collections.abc import Callable, Generator
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
 import pytest
@@ -845,9 +845,14 @@ def language() -> LanguageSchema:
 def create_schedule_config(
     mwoffliner_schema_cls: type[BaseModel],
     mwoffliner: OfflinerSchema,
+    ted_flags_schema_cls: type[BaseModel],
+    ted_offliner: OfflinerSchema,
 ) -> Callable[..., ScheduleConfigSchema]:
     def _create_schedule_config(
-        cpu: int = 2, memory: int = 2**30, disk: int = 2**30
+        cpu: int = 2,
+        memory: int = 2**30,
+        disk: int = 2**30,
+        offliner: Literal["mwoffliner", "ted"] = "mwoffliner",
     ) -> ScheduleConfigSchema:
         return ScheduleConfigSchema(
             warehouse_path=WarehousePath.videos,
@@ -860,13 +865,23 @@ def create_schedule_config(
                 memory=memory,
                 disk=disk,
             ),
-            offliner=mwoffliner_schema_cls.model_validate(
-                {
-                    "offliner_id": mwoffliner.id,
-                    "mwUrl": "https://en.wikipedia.org",
-                    "adminEmail": "test@kiwix.org",
-                    "mwPassword": "test-password",
-                }
+            offliner=(
+                mwoffliner_schema_cls.model_validate(
+                    {
+                        "offliner_id": mwoffliner.id,
+                        "mwUrl": "https://en.wikipedia.org",
+                        "adminEmail": "test@kiwix.org",
+                        "mwPassword": "test-password",
+                    }
+                )
+                if offliner == "mwoffliner"
+                else ted_flags_schema_cls.model_validate(
+                    {
+                        "offliner_id": ted_offliner.id,
+                        "name": "ted_mul_africa",
+                        "topics": "africa",
+                    }
+                )
             ),
             platform=Platform.wikimedia,
             monitor=True,
@@ -986,14 +1001,15 @@ def create_event():
 def create_requested_task(
     dbsession: OrmSession,
     create_schedule: Callable[..., Schedule],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
     worker: Worker,
     create_event: Callable[..., Any],
-    schedule_config: ScheduleConfigSchema,
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
+    ted_offliner: OfflinerSchema,
+    tedoffliner_definition: OfflinerDefinitionSchema,
     user: User,
 ):
-    _schedule_config = schedule_config
     _worker = worker
     _user = user
 
@@ -1006,6 +1022,7 @@ def create_requested_task(
         worker: Worker | None = None,
         request_date: datetime.datetime | None = None,
         schedule_config: ScheduleConfigSchema | None = None,
+        offliner: Literal["mwoffliner", "ted"] = "mwoffliner",
     ):
         now = getnow()
         events = list(TaskStatus)
@@ -1017,7 +1034,9 @@ def create_requested_task(
         ]
 
         schedule_config = (
-            _schedule_config if schedule_config is None else schedule_config
+            create_schedule_config(offliner=offliner)
+            if schedule_config is None
+            else schedule_config
         )
 
         schedule = get_schedule_or_none(dbsession, schedule_name=schedule_name)
@@ -1033,7 +1052,13 @@ def create_requested_task(
             events=events,
             priority=priority,
             config=expanded_config(
-                schedule_config, mwoffliner, mwoffliner_definition
+                schedule_config,
+                mwoffliner if offliner == "mwoffliner" else ted_offliner,
+                (
+                    mwoffliner_definition
+                    if offliner == "mwoffliner"
+                    else tedoffliner_definition
+                ),
             ).model_dump(mode="json", context={"show_secrets": True}),
             upload={},
             notification={},
@@ -1098,10 +1123,13 @@ def create_task(
         status: TaskStatus = TaskStatus.requested,
         worker: Worker | None = None,
         requested_task: RequestedTask | None = None,
+        offliner: Literal["mwoffliner", "ted"] = "mwoffliner",
     ) -> Task:
         if requested_task is None:
             requested_task = create_requested_task(
-                schedule_name=schedule_name, status=status
+                schedule_name=schedule_name,
+                status=status,
+                offliner=offliner,
             )
         task = Task(
             updated_at=requested_task.updated_at,

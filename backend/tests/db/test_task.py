@@ -51,18 +51,20 @@ def test_get_task_by_id_not_found(dbsession: OrmSession):
 
 
 @pytest.mark.parametrize(
-    "skip,limit,status,schedule_name,expected_nb_records",
+    "skip,limit,status,schedule_name,offliner, expected_nb_records",
     [
         # No filter
-        (0, 5, None, None, 3),
+        (0, 5, None, None, None, 3),
         # Filter by status
-        (0, 5, [TaskStatus.started], None, 1),
-        (0, 5, [TaskStatus.started, TaskStatus.requested], None, 2),
+        (0, 5, [TaskStatus.started], None, None, 1),
+        (0, 5, [TaskStatus.started, TaskStatus.requested], None, None, 2),
         # Filter by schedule name
-        (0, 5, None, "schedule_1", 1),
-        (0, 5, None, "nonexistent", 0),
+        (0, 5, None, "schedule_1", None, 1),
+        (0, 5, None, "nonexistent", None, 0),
         # Combined filters
-        (0, 5, [TaskStatus.requested], "schedule_1", 1),
+        (0, 5, [TaskStatus.requested], "schedule_1", None, 1),
+        # Filter by offliner
+        (0, 5, None, None, "ted", 1),
     ],
     ids=[
         "no_filter",
@@ -71,6 +73,7 @@ def test_get_task_by_id_not_found(dbsession: OrmSession):
         "filter_schedule_name_schedule_1",
         "filter_schedule_name_nonexistent",
         "filter_status_requested_schedule_1",
+        "filter_ted_tasks",
     ],
 )
 def test_get_tasks(
@@ -80,14 +83,12 @@ def test_get_tasks(
     limit: int,
     status: list[TaskStatus] | None,
     schedule_name: str | None,
+    offliner: str | None,
     expected_nb_records: int,
 ):
     """Test that get_tasks returns the correct list of tasks"""
 
-    create_task(
-        schedule_name="schedule_1",
-        status=TaskStatus.requested,
-    )
+    create_task(schedule_name="schedule_1", status=TaskStatus.requested, offliner="ted")
 
     create_task(
         schedule_name="schedule_2",
@@ -105,6 +106,7 @@ def test_get_tasks(
         limit=limit,
         status=status,
         schedule_name=schedule_name,
+        offliner=offliner,
     )
     assert result.nb_records == expected_nb_records
     assert len(result.tasks) <= limit

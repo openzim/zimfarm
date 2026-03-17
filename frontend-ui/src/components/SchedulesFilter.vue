@@ -58,6 +58,21 @@
             @update:model-value="emitFilters"
           />
         </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-select
+            v-model="localFilters.offliners"
+            :items="offlinersOptions"
+            label="Offliners"
+            placeholder="Select offliners"
+            variant="outlined"
+            density="compact"
+            hide-details
+            multiple
+            chips
+            closable-chips
+            @update:model-value="emitFilters"
+          />
+        </v-col>
         <v-col
           v-if="hasActiveFilters"
           cols="12"
@@ -84,10 +99,12 @@ interface Props {
     categories: string[]
     languages: string[]
     tags: string[]
+    offliners: string[]
   }
   categories: string[]
   languages: Language[]
   tags: string[]
+  offliners: string[]
 }
 
 const props = defineProps<Props>()
@@ -100,6 +117,7 @@ const emit = defineEmits<{
       categories: string[]
       languages: string[]
       tags: string[]
+      offliners: string[]
     },
   ]
   clearFilters: []
@@ -111,6 +129,7 @@ const localFilters = ref({
   categories: [...props.filters.categories],
   languages: [...props.filters.languages],
   tags: [...props.filters.tags],
+  offliners: [...props.filters.offliners],
 })
 
 // Watch for prop changes and update local state
@@ -122,6 +141,7 @@ watch(
       categories: [...newFilters.categories],
       languages: [...newFilters.languages],
       tags: [...newFilters.tags],
+      offliners: [...newFilters.offliners],
     }
   },
 )
@@ -148,12 +168,20 @@ const tagsOptions = computed(() => {
   }))
 })
 
+const offlinersOptions = computed(() => {
+  return props.offliners.map((offliner) => ({
+    title: offliner,
+    value: offliner,
+  }))
+})
+
 const hasActiveFilters = computed(() => {
   return (
     props.filters.name.length > 0 ||
     props.filters.categories.length > 0 ||
     props.filters.languages.length > 0 ||
-    props.filters.tags.length > 0
+    props.filters.tags.length > 0 ||
+    props.filters.offliners.length > 0
   )
 })
 
@@ -164,6 +192,7 @@ function emitFilters() {
     categories: localFilters.value.categories,
     languages: localFilters.value.languages,
     tags: localFilters.value.tags,
+    offliners: localFilters.value.offliners,
   })
 }
 

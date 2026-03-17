@@ -32,6 +32,7 @@ class SchedulesGetSchema(BaseModel):
     lang: list[NotEmptyString] | None = None
     name: NotEmptyString | None = None
     archived: bool = False
+    offliner: list[NotEmptyString] | None = None
 
 
 class ScheduleCreateSchema(BaseModel):
