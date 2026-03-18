@@ -64,6 +64,23 @@ export const useScheduleHistoryStore = defineStore('scheduleHistory', () => {
     }
   }
 
+  const revertToHistory = async (scheduleName: string, historyId: string, comment?: string) => {
+    const service = await authStore.getApiService('schedules')
+    try {
+      const data = { comment: comment ? comment : null }
+      await service.patch<{ comment?: string } | null, { message: string }>(
+        `/${scheduleName}/revert/${historyId}`,
+        data,
+      )
+      errors.value = []
+      return true
+    } catch (_error) {
+      console.error(`Failed to revert to schedule history entry ${historyId}`, _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
   const clearHistory = () => {
     history.value = []
     errors.value = []
@@ -85,5 +102,6 @@ export const useScheduleHistoryStore = defineStore('scheduleHistory', () => {
     fetchHistory,
     fetchHistoryEntry,
     clearHistory,
+    revertToHistory,
   }
 })

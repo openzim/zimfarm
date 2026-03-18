@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,7 +11,11 @@ from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import (
+    EventNotificationSchema,
+    ScheduleConfigSchema,
+    ScheduleNotificationSchema,
+)
 from zimfarm_backend.common.schemas.orms import (
     LanguageSchema,
     OfflinerDefinitionSchema,
@@ -720,11 +725,14 @@ def test_delete_schedule(
     assert response.status_code == expected_status_code
 
 
+@patch("zimfarm_backend.api.routes.schedules.logic.get_schedule_image_tags")
 def test_get_schedule_image_names(
+    mock_get_tags: MagicMock,
     client: TestClient,
     dbsession: OrmSession,
     create_schedule: Callable[..., Schedule],
 ):
+    mock_get_tags.return_value = ["latest", "1.0.0", "1.0.1"]
     schedule = create_schedule(name="test_schedule")
     dbsession.add(schedule)
     dbsession.flush()
@@ -732,11 +740,12 @@ def test_get_schedule_image_names(
     response = client.get(
         f"/v2/schedules/{schedule.name}/image-names?hub_name=openzim/mwoffliner",
     )
+    mock_get_tags.assert_called_once_with("openzim/mwoffliner")
+
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert "items" in data
-    for item in data["items"]:
-        assert isinstance(item, str)
+    assert data["items"] == ["latest", "1.0.0", "1.0.1"]
 
 
 @pytest.mark.parametrize(
@@ -1284,6 +1293,66 @@ def test_restore_schedule(
 
     response = client.patch(
         f"/v2/schedules/{schedule.name}/restore",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={},
+    )
+    assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "permission,expected_status_code",
+    [
+        pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+    ],
+)
+def test_revert_schedule_history(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_user: Callable[..., User],
+    create_schedule: Callable[..., Schedule],
+    schedule_config: ScheduleConfigSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    permission: RoleEnum,
+    expected_status_code: HTTPStatus,
+):
+    user = create_user(permission=permission)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        user_id=str(user.id),
+    )
+
+    schedule = create_schedule(
+        name="test_schedule",
+        enabled=True,
+        tags=["tag1", "tag2"],
+        category="wikipedia",
+        periodicity="monthly",
+        context="initial context",
+        schedule_config=schedule_config,
+    )
+    initial_history_id = schedule.history_entries[0].id
+
+    update_schedule(
+        dbsession,
+        author_id=user.id,
+        schedule_name="test_schedule",
+        offliner_definition=mwoffliner_definition,
+        tags=["tag3", "tag4"],
+        category=ScheduleCategory.other,
+        periodicity=SchedulePeriodicity.quarterly,
+        context="updated context",
+        enabled=False,
+        comment="Update all fields",
+        notification=ScheduleNotificationSchema(
+            requested=EventNotificationSchema(
+                mailgun=["updated@example.com", "another@example.com"]
+            )
+        ),
+    )
+
+    response = client.patch(
+        f"/v2/schedules/{schedule.name}/revert/{initial_history_id}",
         headers={"Authorization": f"Bearer {access_token}"},
         json={},
     )

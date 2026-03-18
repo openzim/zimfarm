@@ -86,3 +86,7 @@ class RestoreSchedulesSchema(BaseModel):
 
 class ToggleArchiveStatusSchema(BaseModel):
     comment: str | None = None
+
+
+class RevertScheduleSchema(BaseModel):
+    comment: str | None = None

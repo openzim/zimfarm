@@ -14,6 +14,7 @@ from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
     get_current_user,
     get_current_user_or_none,
+    require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
@@ -25,6 +26,7 @@ from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.api.routes.schedules.models import (
     CloneSchema,
     RestoreSchedulesSchema,
+    RevertScheduleSchema,
     ScheduleCreateResponseSchema,
     ScheduleCreateSchema,
     SchedulesGetSchema,
@@ -82,6 +84,7 @@ from zimfarm_backend.db.schedule import get_schedules as db_get_schedules
 from zimfarm_backend.db.schedule import (
     restore_schedules as db_restore_schedules,
 )
+from zimfarm_backend.db.schedule import revert_schedule as db_revert_schedule
 from zimfarm_backend.db.schedule import (
     toggle_archive_status as db_toggle_archive_status,
 )
@@ -823,3 +826,28 @@ def get_schedule_history_entry(
         session, schedule_name=schedule_name, history_id=history_id
     )
     return create_schedule_history_schema(history_entry)
+
+
+@router.patch(
+    "/{schedule_name}/revert/{history_id}",
+    dependencies=[Depends(require_permission(namespace="schedules", name="update"))],
+)
+def revert_schedule(
+    schedule_name: Annotated[NotEmptyString, Path()],
+    history_id: Annotated[UUID, Path()],
+    request: RevertScheduleSchema,
+    session: OrmSession = Depends(gen_dbsession),
+    current_user: User = Depends(get_current_user),
+) -> JSONResponse:
+    """Revert a schedule to a previous history."""
+    db_revert_schedule(
+        session,
+        schedule_name=schedule_name,
+        history_id=history_id,
+        author_id=current_user.id,
+        comment=request.comment,
+    )
+    return JSONResponse(
+        content={"message": f"Schedule '{schedule_name}' has been restored"},
+        status_code=HTTPStatus.OK,
+    )

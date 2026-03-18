@@ -49,7 +49,10 @@ from zimfarm_backend.db.models import (
     Worker,
 )
 from zimfarm_backend.db.offliner import get_offliner
-from zimfarm_backend.db.offliner_definition import create_offliner_instance
+from zimfarm_backend.db.offliner_definition import (
+    create_offliner_instance,
+    get_offliner_definition,
+)
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -554,6 +557,37 @@ def toggle_archive_status(
     return schedule
 
 
+def create_schedule_history_entry(
+    session: OrmSession,
+    *,
+    schedule: Schedule,
+    offliner_definition: OfflinerDefinitionSchema,
+    comment: str | None,
+    author_id: UUID,
+) -> ScheduleHistory:
+    """Create a schedule history entry from a schedule."""
+    history_entry = ScheduleHistory(
+        created_at=getnow(),
+        comment=comment,
+        config=schedule.config,
+        name=schedule.name,
+        category=schedule.category,
+        enabled=schedule.enabled,
+        language_code=schedule.language_code,
+        tags=schedule.tags,
+        periodicity=schedule.periodicity,
+        context=schedule.context,
+        archived=schedule.archived,
+        offliner_definition_version=offliner_definition.version,
+        notification=schedule.notification,
+    )
+    history_entry.author_id = author_id
+    schedule.history_entries.append(history_entry)
+    session.add(history_entry)
+
+    return history_entry
+
+
 def update_schedule(
     session: OrmSession,
     *,
@@ -606,26 +640,14 @@ def update_schedule(
     )
 
     schedule.context = context if context is not None else schedule.context
-
-    history_entry = ScheduleHistory(
-        created_at=getnow(),
-        comment=comment,
-        config=schedule.config,
-        name=schedule.name,
-        category=schedule.category,
-        enabled=schedule.enabled,
-        language_code=schedule.language_code,
-        tags=schedule.tags,
-        periodicity=schedule.periodicity,
-        context=schedule.context,
-        archived=schedule.archived,
-        offliner_definition_version=offliner_definition.version,
-        notification=schedule.notification,
-    )
-    history_entry.author_id = author_id
-    schedule.history_entries.append(history_entry)
-
     session.add(schedule)
+    create_schedule_history_entry(
+        session,
+        schedule=schedule,
+        offliner_definition=offliner_definition,
+        comment=comment,
+        author_id=author_id,
+    )
     try:
         session.flush()
     except IntegrityError as exc:
@@ -732,3 +754,88 @@ def restore_schedules(
             archived=False,
             comment=comment,
         )
+
+
+def revert_schedule(
+    session: OrmSession,
+    *,
+    schedule_name: str,
+    history_id: UUID,
+    author_id: UUID,
+    comment: str | None = None,
+) -> Schedule:
+    """Revert the schedule configuration and settings to those defined in history_id"""
+    schedule = get_schedule(session, schedule_name=schedule_name)
+    if schedule.archived:
+        raise RecordDoesNotExistError(f"Schedule with name {schedule_name} is archived")
+
+    history_entry = get_schedule_history_entry(
+        session, schedule_name=schedule_name, history_id=history_id
+    )
+    if history_entry.offliner_definition_version is None:
+        raise ValueError(
+            "Cannot revert to history with no offliner definition version."
+        )
+
+    offliner = get_offliner(
+        session, offliner_id=history_entry.config["offliner"]["offliner_id"]
+    )
+    offliner_definition = get_offliner_definition(
+        session,
+        offliner_id=offliner.id,
+        version=history_entry.offliner_definition_version,
+    )
+    old_schedule_config = ScheduleConfigSchema.model_validate(
+        {
+            **history_entry.config,
+            "offliner": create_offliner_instance(
+                offliner=offliner,
+                offliner_definition=offliner_definition,
+                data={**history_entry.config["offliner"]},
+            ),
+        }
+    )
+    # Copy over the attributes from the history entry to the schedule as both db
+    # models are the same.
+    schedule.config = old_schedule_config.model_dump(
+        mode="json", context={"show_secrets": True}
+    )
+    schedule.similarity_data = generate_similarity_data(
+        old_schedule_config.model_dump(mode="json", exclude={"offliner_id"}),
+        offliner,
+        offliner_definition.schema_,
+    )
+    schedule.language_code = history_entry.language_code
+    schedule.offliner_definition_id = offliner_definition.id
+    schedule.name = history_entry.name
+    schedule.category = history_entry.category
+    schedule.tags = history_entry.tags
+    schedule.enabled = history_entry.enabled
+    schedule.periodicity = history_entry.periodicity
+    schedule.notification = history_entry.notification
+    schedule.context = history_entry.context
+    session.add(schedule)
+
+    create_schedule_history_entry(
+        session,
+        schedule=schedule,
+        offliner_definition=offliner_definition,
+        author_id=author_id,
+        comment=comment,
+    )
+
+    # Ensure that the schedule is valid
+    create_schedule_full_schema(schedule, offliner, skip_validation=False)
+
+    try:
+        session.flush()
+    except IntegrityError as exc:
+        if isinstance(exc.orig, UniqueViolation):
+            raise RecordAlreadyExistsError(
+                f"Schedule with name {schedule.name} already exists"
+            ) from exc
+        logger.exception("Unknown exception encountered while updating schedule")
+        raise
+    session.refresh(schedule)
+
+    return schedule

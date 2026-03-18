@@ -922,6 +922,7 @@ def create_schedule(
         context: str | None = None,
         schedule_config: ScheduleConfigSchema | None = None,
         raw_schedule_config: dict[str, Any] | None = None,
+        enabled: bool = True,
         worker: Worker | None = None,
         user: User | None = None,
         archived: bool = False,
@@ -942,7 +943,7 @@ def create_schedule(
                     mode="json", context={"show_secrets": True}
                 )
             ),
-            enabled=True,
+            enabled=enabled,
             language_code=language.code,
             periodicity=periodicity,
             notification=notification,
@@ -970,6 +971,7 @@ def create_schedule(
             tags=schedule.tags,
             periodicity=schedule.periodicity,
             context=schedule.context,
+            notification=notification,
             offliner_definition_version=offliner_definition.version,
         )
         history_entry.author_id = user.id if user else _user.id
