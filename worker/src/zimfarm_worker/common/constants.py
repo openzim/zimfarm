@@ -196,3 +196,7 @@ DOCKER_API_RETRIES = int(getenv("DOCKER_API_RETRIES", default=5))
 DOCKER_API_RETRY_SECONDS = humanfriendly.parse_timespan(
     getenv("DOCKER_API_RETRY_DURATION", default="5s")
 )
+
+REQUESTS_TIMEOUT = int(
+    humanfriendly.parse_timespan(getenv("REQUESTS_TIMEOUT", default="30s"))
+)

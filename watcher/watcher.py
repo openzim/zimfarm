@@ -84,7 +84,7 @@ SUMMARY_FILENAME = "summary.json"
 
 def get_last_modified_for(url):
     """the Last-Modified header for an URL"""
-    with requests.head(url, allow_redirects=True) as resp:
+    with requests.head(url, allow_redirects=True, timeout=HTTP_REQUEST_TIMEOUT) as resp:
         if resp.status_code == 404:
             raise FileNotFoundError(url)
         return resp.headers.get("last-modified")
@@ -101,6 +101,7 @@ def get_token(api_url, username, password):
             "username": username,
             "password": password,
         },
+        timeout=HTTP_REQUEST_TIMEOUT,
     )
     req.raise_for_status()
     return req.json().get("access_token"), req.json().get("refresh_token")
