@@ -6,6 +6,7 @@ from typing import Any
 import requests
 
 from zimfarm_worker.common import logger
+from zimfarm_worker.common.constants import REQUESTS_TIMEOUT
 
 
 @dataclass
@@ -34,7 +35,7 @@ def query_api(
     headers: dict[str, Any] | None = None,
     payload: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
-    timeout: int | None = None,
+    timeout: int = REQUESTS_TIMEOUT,
 ) -> Response:
     req_headers: dict[str, Any] = {}
 

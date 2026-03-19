@@ -19,6 +19,8 @@ import sys
 
 import requests
 
+REQUESTS_TIMEOUT = 30
+
 default_environ = {
     "ZIMFARM_WEBAPI": "https://api.farm.openzim.org/v2",
     "ZIMFARM_USERNAME": "uploader",
@@ -57,6 +59,7 @@ def fetch_public_keys_for(username, fingerprint):
     req = requests.get(
         url=f"{environ['ZIMFARM_WEBAPI']}/users/-/keys/{fingerprint}",
         params={"with_permission": ["zim.upload"]},
+        timeout=REQUESTS_TIMEOUT,
     )
     try:
         response = req.json()
