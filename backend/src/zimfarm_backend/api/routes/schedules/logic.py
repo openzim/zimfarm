@@ -118,6 +118,7 @@ def get_schedules(
         tags=params.tag,
         name=params.name,
         archived=params.archived,
+        offliners=params.offliner,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(

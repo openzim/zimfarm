@@ -57,6 +57,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     tag: string[] | undefined,
     name: string | undefined,
     archived: boolean | undefined,
+    offliner: string[] | undefined,
   ) => {
     const service = await authStore.getApiService('schedules')
     // filter out undefined values from params
@@ -69,6 +70,7 @@ export const useScheduleStore = defineStore('schedule', () => {
         tag,
         name,
         archived,
+        offliner,
       }).filter(([, value]) => !!value),
     )
     try {

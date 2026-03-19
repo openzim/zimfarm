@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated, Literal, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query, Response
@@ -16,13 +16,13 @@ from zimfarm_backend.api.routes.http_errors import (
     NotFoundError,
 )
 from zimfarm_backend.api.routes.models import ListResponse
-from zimfarm_backend.api.routes.tasks.models import TaskCreateSchema, TaskUpdateSchema
+from zimfarm_backend.api.routes.tasks.models import (
+    TaskCreateSchema,
+    TasksGetSchema,
+    TaskUpdateSchema,
+)
 from zimfarm_backend.common.constants import ENABLED_SCHEDULER, INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.schemas.fields import (
-    LimitFieldMax200,
-    SkipField,
-)
 from zimfarm_backend.common.schemas.models import (
     ScheduleConfigSchema,
     calculate_pagination_metadata,
@@ -54,28 +54,23 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 @router.get("")
 def get_tasks(
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    skip: Annotated[SkipField, Query()] = 0,
-    limit: Annotated[LimitFieldMax200, Query()] = 20,
-    status: Annotated[list[TaskStatus] | None, Query()] = None,
-    schedule_name: Annotated[str | None, Query()] = None,
-    sort_criteria: Annotated[
-        Literal["done", "doing", "failed", "updated_at"], Query()
-    ] = "updated_at",
+    params: Annotated[TasksGetSchema, Query()],
 ) -> ListResponse[TaskLightSchema]:
     """Get a list of tasks"""
     results = db_get_tasks(
         db_session,
-        skip=skip,
-        limit=limit,
-        status=status,
-        schedule_name=schedule_name,
-        sort_criteria=sort_criteria,
+        skip=params.skip,
+        limit=params.limit,
+        status=params.status,
+        schedule_name=params.schedule_name,
+        sort_criteria=params.sort_criteria,
+        offliner=params.offliner,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
-            skip=skip,
-            limit=limit,
+            skip=params.skip,
+            limit=params.limit,
             page_size=len(results.tasks),
         ),
         items=results.tasks,

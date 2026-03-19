@@ -6,6 +6,7 @@
       :categories="categories"
       :languages="languages"
       :tags="tags"
+      :offliners="offliners"
       @filters-changed="handleFiltersChange"
       @clear-filters="clearFilters"
     />
@@ -86,6 +87,7 @@ import constants from '@/constants'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
+import { useOfflinerStore } from '@/stores/offliner'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useScheduleStore } from '@/stores/schedule'
 import { useTagStore } from '@/stores/tag'
@@ -109,7 +111,13 @@ const props = withDefaults(defineProps<Props>(), {
 // Emits
 const emit = defineEmits<{
   'filters-updated': [
-    filters: { name: string; categories: string[]; languages: string[]; tags: string[] },
+    filters: {
+      name: string
+      categories: string[]
+      languages: string[]
+      tags: string[]
+      offliners: string[]
+    },
   ]
 }>()
 
@@ -137,6 +145,7 @@ const filters = computed(() => {
     categories: [] as string[],
     languages: [] as string[],
     tags: [] as string[],
+    offliners: [] as string[],
   }
 
   if (query.name && typeof query.name === 'string') {
@@ -158,6 +167,11 @@ const filters = computed(() => {
     derived.tags = tagValue.filter((t): t is string => t !== null)
   }
 
+  if (query.offliner) {
+    const offlinerValue = Array.isArray(query.offliner) ? query.offliner : [query.offliner]
+    derived.offliners = offlinerValue.filter((o): o is string => o !== null)
+  }
+
   return derived
 })
 
@@ -175,6 +189,7 @@ const route = useRoute()
 const scheduleStore = useScheduleStore()
 const languageStore = useLanguageStore()
 const tagStore = useTagStore()
+const offlinerStore = useOfflinerStore()
 const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
 const requestedTasksStore = useRequestedTasksStore()
@@ -183,6 +198,7 @@ const workersStore = useWorkersStore()
 // Computed properties
 const languages = computed(() => languageStore.languages)
 const tags = computed(() => tagStore.tags)
+const offliners = computed(() => offlinerStore.offliners)
 const categories = constants.CATEGORIES
 
 const paginator = ref<Paginator>({
@@ -206,6 +222,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
     filters.value.tags.length > 0 ? filters.value.tags : undefined,
     filters.value.name || undefined,
     props.archived,
+    filters.value.offliners.length > 0 ? filters.value.offliners : undefined,
   )
 
   schedules.value = scheduleStore.schedules
@@ -249,6 +266,7 @@ async function clearFilters() {
     categories: [],
     languages: [],
     tags: [],
+    offliners: [],
   }
   updateUrlFilters(emptyFilters)
 }
@@ -370,6 +388,11 @@ function updateUrlFilters(sourceFilters: typeof filters.value) {
   } else if (sourceFilters.tags.length > 1) {
     query.tag = sourceFilters.tags
   }
+  if (sourceFilters.offliners.length === 1) {
+    query.offliner = sourceFilters.offliners[0]
+  } else if (sourceFilters.offliners.length > 1) {
+    query.offliner = sourceFilters.offliners
+  }
 
   router.push({
     name: props.routeName,
@@ -382,6 +405,7 @@ onMounted(async () => {
   // Load initial data
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
+  await offlinerStore.fetchOffliners()
 
   // Fetch workers if can request tasks
   if (props.canRequestTasks) {

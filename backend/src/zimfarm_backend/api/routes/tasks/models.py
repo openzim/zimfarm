@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import field_validator
 
@@ -6,6 +6,7 @@ from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
+    NotEmptyString,
     ScheduleNameField,
     SkipField,
     WorkerField,
@@ -17,6 +18,15 @@ class TasksSchema(BaseModel):
     limit: LimitFieldMax200
     status: list[TaskStatus] | None = None
     schedule_name: ScheduleNameField
+
+
+class TasksGetSchema(BaseModel):
+    skip: SkipField = 0
+    limit: LimitFieldMax200 = 20
+    status: list[TaskStatus] | None = None
+    schedule_name: NotEmptyString | None = None
+    sort_criteria: Literal["done", "doing", "failed", "updated_at"] = "updated_at"
+    offliner: NotEmptyString | None = None
 
 
 class TaskCreateSchema(BaseModel):

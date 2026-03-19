@@ -59,6 +59,7 @@ const currentFilters = ref({
   categories: [] as string[],
   languages: [] as string[],
   tags: [] as string[],
+  offliners: [] as string[],
 })
 const archivedCount = ref(0)
 const loadingArchivedCount = ref(false)
@@ -94,6 +95,7 @@ async function fetchArchivedCount(filters: typeof currentFilters.value) {
       filters.tags.length > 0 ? filters.tags : undefined,
       filters.name || undefined,
       true, // archived
+      filters.offliners.length > 0 ? filters.offliners : undefined,
     )
     archivedCount.value = scheduleStore.paginator.count
   } catch (error) {
@@ -129,6 +131,11 @@ function navigateToArchives() {
     query.tag = currentFilters.value.tags[0]
   } else if (currentFilters.value.tags.length > 1) {
     query.tag = currentFilters.value.tags
+  }
+  if (currentFilters.value.offliners.length === 1) {
+    query.offliner = currentFilters.value.offliners[0]
+  } else if (currentFilters.value.offliners.length > 1) {
+    query.offliner = currentFilters.value.offliners
   }
 
   router.push({
