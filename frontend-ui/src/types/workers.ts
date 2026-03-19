@@ -2,6 +2,11 @@ import type { Resources, ScheduleDuration } from '@/types/base'
 import type { ExpandedScheduleConfig } from '@/types/schedule'
 import type { TaskLight } from '@/types/tasks'
 
+export interface DockerImageVersion {
+  hash: string
+  created_at: string
+}
+
 interface BaseWorker {
   name: string
   offliners: string[]
@@ -12,6 +17,7 @@ interface BaseWorker {
   last_ip?: string
   ip_changed: boolean
   selfish: boolean
+  docker_image: DockerImageVersion | null
 }
 
 export interface Worker extends BaseWorker {

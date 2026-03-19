@@ -1,6 +1,7 @@
 import datetime
 from collections.abc import Callable
 from ipaddress import IPv4Address, IPv6Address
+from uuid import uuid4
 
 import pytest
 from pytest import MonkeyPatch
@@ -133,6 +134,8 @@ def test_check_in_new_worker(
         offliners=[mwoffliner.id],
         user_id=user.id,
         cordoned=False,
+        docker_image_hash=str(uuid4()),
+        docker_image_created_at=getnow(),
     )
 
     worker = get_worker(dbsession, worker_name=worker_name)
@@ -174,6 +177,8 @@ def test_check_in_worker_update(
         platforms=worker.platforms,
         user_id=worker.user_id,
         cordoned=True,
+        docker_image_hash=str(uuid4()),
+        docker_image_created_at=getnow(),
     )
 
     # Expire the worker to force a reload of the worker
@@ -274,5 +279,6 @@ def test_worker_ip_changed(
         contexts=contexts,
         last_ip=last_ip,
         selfish=False,
+        docker_image=None,
     )
     assert worker.ip_changed is ip_changed

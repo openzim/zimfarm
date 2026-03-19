@@ -1,6 +1,8 @@
+import datetime
 from collections.abc import Callable
 from http import HTTPStatus
 from ipaddress import IPv4Address, IPv6Address
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,6 +12,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import Task, User, Worker
+from zimfarm_backend.utils.github_registry import WorkerManagerVersion
 
 
 def test_get_active_workers_success(
@@ -35,11 +38,16 @@ def test_get_active_workers_success(
     assert len(data["items"]) == 5
 
 
+@patch("zimfarm_backend.api.routes.workers.logic.get_latest_worker_manager_version")
+@patch("zimfarm_backend.api.routes.workers.logic.GITHUB_TOKEN", "test_token")
 def test_check_in_worker_not_found(
+    mock_get_version: MagicMock,
     client: TestClient,
     access_token: str,
 ):
     """Test that check_in_worker creates new worker when it does not exists"""
+    mock_get_version.return_value = None
+
     response = client.put(
         "/v2/workers/a-new-worker/check-in",
         json={
@@ -47,20 +55,30 @@ def test_check_in_worker_not_found(
             "cpu": 1,
             "memory": 1024,
             "disk": 2048,
+            "docker_image": {
+                "hash": "test-image-id",
+                "created_at": "2026-03-19T11:27:59Z",
+            },
             "offliners": ["mwoffliner"],
             "platforms": None,
         },
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.NO_CONTENT
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert "worker_manager" in data
+    assert data["worker_manager"] is None
 
 
+@patch("zimfarm_backend.api.routes.workers.logic.get_latest_worker_manager_version")
 def test_check_in_worker_deleted(
+    mock_get_version: MagicMock,
     client: TestClient,
     access_token: str,
     create_worker: Callable[..., Worker],
 ):
     """Test that check_in_worker raises BadRequestError for deleted worker"""
+    mock_get_version.return_value = None
     worker = create_worker(deleted=True)
 
     response = client.put(
@@ -70,6 +88,10 @@ def test_check_in_worker_deleted(
             "cpu": 1,
             "memory": 1024,
             "disk": 2048,
+            "docker_image": {
+                "hash": "test-image-id",
+                "created_at": "2026-03-19T11:27:59Z",
+            },
             "offliners": ["mwoffliner"],
             "platforms": None,
         },
@@ -78,13 +100,16 @@ def test_check_in_worker_deleted(
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
+@patch("zimfarm_backend.api.routes.workers.logic.get_latest_worker_manager_version")
 def test_check_in_worker_impersonate_user(
+    mock_get_version: MagicMock,
     client: TestClient,
     access_token: str,
     create_worker: Callable[..., Worker],
     create_user: Callable[..., User],
 ):
     """Test that check_in_worker raises BadRequestError for deleted worker"""
+    mock_get_version.return_value = None
     worker = create_worker(user=create_user())
 
     response = client.put(
@@ -94,6 +119,10 @@ def test_check_in_worker_impersonate_user(
             "cpu": 1,
             "memory": 1024,
             "disk": 2048,
+            "docker_image": {
+                "hash": "test-image-id",
+                "created_at": "2026-03-19T11:27:59Z",
+            },
             "offliners": ["mwoffliner"],
             "platforms": None,
         },
@@ -102,13 +131,22 @@ def test_check_in_worker_impersonate_user(
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
+@patch("zimfarm_backend.api.routes.workers.logic.get_latest_worker_manager_version")
+@patch("zimfarm_backend.api.routes.workers.logic.GITHUB_TOKEN", "test_token")
 def test_check_in_worker_success(
+    mock_get_version: MagicMock,
     client: TestClient,
     access_token: str,
     create_worker: Callable[..., Worker],
 ):
     """Test successful check-in of a worker"""
     worker = create_worker()
+
+    mock_version = WorkerManagerVersion(
+        hash="sha256:8ff3888516bfd2150a5e26fea2472e296da09d2de54fc91e2256e2e17c69769c",
+        created_at=datetime.datetime(2026, 3, 19, 11, 27, 59),
+    )
+    mock_get_version.return_value = mock_version
 
     response = client.put(
         f"/v2/workers/{worker.name}/check-in",
@@ -117,12 +155,24 @@ def test_check_in_worker_success(
             "cpu": 1,
             "memory": 1024,
             "disk": 2048,
+            "docker_image": {
+                "hash": "test-image-id",
+                "created_at": "2026-03-19T11:27:59Z",
+            },
             "offliners": ["mwoffliner"],
             "platforms": None,
         },
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.NO_CONTENT
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert "worker_manager" in data
+    assert data["worker_manager"] is not None
+    assert (
+        data["worker_manager"]["hash"]
+        == "sha256:8ff3888516bfd2150a5e26fea2472e296da09d2de54fc91e2256e2e17c69769c"
+    )
+    assert "created_at" in data["worker_manager"]
 
 
 def test_get_worker_metrics_no_tasks(client: TestClient, worker: Worker):

@@ -166,3 +166,12 @@ class UserUpdateSchema(BaseModel):
         if self.role is not None and self.scope is not None:
             raise ValueError("Only one of role/scope must be set")
         return self
+
+
+class DockerImageVersionSchema(BaseModel):
+    """
+    Schema for worker manager version information from GitHub Container Registry.
+    """
+
+    hash: str
+    created_at: datetime.datetime

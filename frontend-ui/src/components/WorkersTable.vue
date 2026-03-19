@@ -103,6 +103,15 @@
                 </template>
                 <span>IP discrepancy detected between worker IP and context IPs</span>
               </v-tooltip>
+              <!-- Outdated Docker image indicator -->
+              <v-tooltip v-if="isImageOutdated(item.docker_image)" location="bottom">
+                <template #activator="{ props }">
+                  <v-icon v-bind="props" size="small" color="warning" class="ml-1">
+                    mdi-home-alert
+                  </v-icon>
+                </template>
+                <span>Worker image is outdated</span>
+              </v-tooltip>
               <!-- Local scheduling status -->
               <v-chip
                 v-if="item.cordoned"
@@ -262,7 +271,7 @@ import ResourceBadge from '@/components/ResourceBadge.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
 import type { TaskLight } from '@/types/tasks'
-import type { Worker } from '@/types/workers'
+import type { Worker, DockerImageVersion } from '@/types/workers'
 import { formatDt, fromNow } from '@/utils/format'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useTheme } from 'vuetify'
@@ -277,6 +286,7 @@ const props = defineProps<{
   errors: string[]
   loadingText: string
   toggleText: string
+  latestWorkerImage: DockerImageVersion | null
 }>()
 
 const emit = defineEmits<{
@@ -398,6 +408,11 @@ function getRowProps({
 
 function getResources(item: CombinedRow) {
   return item.kind === 'worker' ? item.resources : item.task.config.resources
+}
+
+function isImageOutdated(workerImage: DockerImageVersion | null): boolean {
+  if (!workerImage || !props.latestWorkerImage) return false
+  return workerImage.hash !== props.latestWorkerImage.hash
 }
 </script>
 

@@ -230,6 +230,54 @@
                     {{ off }}
                   </v-chip>
                 </div>
+
+                <v-divider class="my-3" />
+
+                <div class="text-subtitle-2 mb-2">
+                  <v-icon size="small" class="mr-1">mdi-docker</v-icon>
+                  Docker Image
+                  <v-chip
+                    v-if="worker.docker_image"
+                    :color="isImageOutdated ? 'warning' : 'success'"
+                    size="x-small"
+                    variant="tonal"
+                    class="ml-2"
+                    :prepend-icon="isImageOutdated ? 'mdi-alert' : 'mdi-check-circle'"
+                  >
+                  </v-chip>
+                </div>
+
+                <!-- Current image -->
+                <div class="text-caption text-medium-emphasis mb-1">Current</div>
+                <div v-if="worker.docker_image" class="text-body-2">
+                  <div class="mb-1 d-flex align-center ga-1">
+                    <span class="text-medium-emphasis">ID:</span>
+                    <code class="text-break">{{ worker.docker_image.hash?.substring(7, 19) }}</code>
+                  </div>
+                  <div class="text-caption text-medium-emphasis">
+                    Built {{ fromNow(worker.docker_image.created_at) }}
+                  </div>
+                  <div v-if="isImageOutdated" class="text-caption text-warning mt-1">
+                    <v-icon size="x-small" color="warning">mdi-clock-alert-outline</v-icon>
+                    {{ imageAge }} behind latest
+                  </div>
+                </div>
+                <div v-else class="text-body-2 text-medium-emphasis">N/A</div>
+
+                <!-- Latest image -->
+                <template v-if="latestImage">
+                  <v-divider class="my-2" />
+                  <div class="text-caption text-medium-emphasis mb-1">Latest</div>
+                  <div class="text-body-2">
+                    <div class="mb-1 d-flex align-center ga-1">
+                      <span class="text-medium-emphasis">ID:</span>
+                      <code class="text-break">{{ latestImage.hash?.substring(7, 19) }}</code>
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      Released {{ fromNow(latestImage.created_at) }}
+                    </div>
+                  </div>
+                </template>
               </v-sheet>
             </v-col>
             <v-col cols="12" sm="9">
@@ -462,9 +510,9 @@ import { useContextStore } from '@/stores/context'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useWorkersStore } from '@/stores/workers'
-import type { WorkerMetrics } from '@/types/workers'
+import type { DockerImageVersion, WorkerMetrics } from '@/types/workers'
 import { fuzzyFilter } from '@/utils/cmp'
-import { formattedBytesSize } from '@/utils/format'
+import { formattedBytesSize, formatDurationBetween, fromNow } from '@/utils/format'
 import diff from 'deep-diff'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useDisplay } from 'vuetify'
@@ -492,6 +540,7 @@ const { smAndDown } = useDisplay()
 
 const error = ref<string | null>(null)
 const worker = ref<WorkerMetrics | null>(null)
+const latestImage = ref<DockerImageVersion | null>(null)
 const contexts = ref<string[]>([])
 const currentTab = ref(props.selectedTab)
 const saving = ref(false)
@@ -502,6 +551,16 @@ const editContexts = ref<Array<{ name: string; ip: string | null }>>([])
 const showConfirmDialog = ref(false)
 
 const canUpdateWorkers = computed(() => authStore.hasPermission('workers', 'update'))
+
+const isImageOutdated = computed(() => {
+  if (!worker.value?.docker_image || !latestImage.value) return false
+  return worker.value.docker_image.hash !== latestImage.value.hash
+})
+
+const imageAge = computed(() => {
+  if (!worker.value?.docker_image?.created_at || !latestImage.value?.created_at) return ''
+  return formatDurationBetween(worker.value.docker_image.created_at, latestImage.value.created_at)
+})
 
 const runningTasksHeaders = [
   { title: 'Schedule', value: 'schedule_name' },
@@ -639,7 +698,10 @@ const colorDisk = computed(() => pctColor(percentDisk.value))
 
 async function refreshData() {
   loadingStore.startLoading('Fetching worker...')
-  const res = await workersStore.fetchWorkerMetrics(workerName.value)
+  const [res, latest] = await Promise.all([
+    workersStore.fetchWorkerMetrics(workerName.value),
+    workersStore.fetchLatestWorkerImage(),
+  ])
   if (res) {
     worker.value = res
     editContexts.value = convertFromContextRecord(res.contexts || {})
@@ -649,6 +711,7 @@ async function refreshData() {
     error.value = workersStore.errors[0] || 'Failed to fetch worker'
     notificationStore.showError(error.value)
   }
+  latestImage.value = latest
   loadingStore.stopLoading()
 }
 

@@ -6,6 +6,7 @@ import shutil
 import signal
 import time
 import urllib.parse
+from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -29,6 +30,8 @@ from zimfarm_worker.common.constants import (
 )
 from zimfarm_worker.common.docker import (
     get_label_value,
+    get_running_container_name,
+    inspect_container,
     list_containers,
     query_host_stats,
     remove_container,
@@ -53,6 +56,12 @@ def ident_repr(self: TaskIdent):
 TaskIdent.__str__ = ident_repr
 
 
+@dataclass
+class WorkerManagerVersion:
+    hash: str
+    created_at: datetime.datetime
+
+
 class WorkerManager(BaseWorker):
     poll_interval = int(
         getenv("POLL_INTERVAL", default=180)
@@ -73,6 +82,9 @@ class WorkerManager(BaseWorker):
     ):
         super().__init__(username, webapi_uris, workdir)
         self.worker_name = worker_name
+        # worker manager versions from API and the one we have locally
+        self.api_worker_manager_version: WorkerManagerVersion | None = None
+        self.local_worker_manager_version: WorkerManagerVersion | None = None
 
         self.print_config(
             username=username,
@@ -241,27 +253,75 @@ class WorkerManager(BaseWorker):
         logger.info(f"checking-in with the API at {netloc}…")
 
         host_stats = query_host_stats(self.docker, self.workdir)
+        try:
+            container_info = inspect_container(
+                self.docker, get_running_container_name()
+            )
+            if container_info.get("Created") and container_info.get("Image"):
+                self.local_worker_manager_version = WorkerManagerVersion(
+                    hash=container_info["Image"],
+                    created_at=datetime.datetime.fromisoformat(
+                        container_info["Created"]
+                    ),
+                )
+        except Exception:
+            logger.exception("Failed to retreive docker image information.")
+
+        payload: dict[str, Any] = {
+            "username": self.username,
+            "selfish": self.selfish,
+            "cpu": host_stats.cpu.total,
+            "memory": host_stats.memory.total,
+            "disk": host_stats.disk.total,
+            "offliners": SUPPORTED_OFFLINERS,
+            "platforms": PLATFORMS_TASKS,
+            "cordoned": CORDONED,
+        }
+        if self.local_worker_manager_version:
+            payload["docker_image"] = {
+                "hash": self.local_worker_manager_version.hash,
+                "created_at": self.local_worker_manager_version.created_at.isoformat(),
+            }
+
         response = self.query_api(
             method="PUT",
             path=f"/workers/{self.worker_name}/check-in",
-            payload={
-                "username": self.username,
-                "selfish": self.selfish,
-                "cpu": host_stats.cpu.total,
-                "memory": host_stats.memory.total,
-                "disk": host_stats.disk.total,
-                "offliners": SUPPORTED_OFFLINERS,
-                "platforms": PLATFORMS_TASKS,
-                "cordoned": CORDONED,
-            },
             webapi_uri=webapi_uri,
+            payload=payload,
         )
         if not response.success:
             logger.error("\tunable to check-in with the API.")
             logger.debug(response.status_code)
             logger.debug(response.json)
             raise SystemExit()
+
         logger.info("\tchecked-in!")
+
+        if response.json.get("worker_manager"):
+            self.api_worker_manager_version = WorkerManagerVersion(
+                hash=response.json["worker_manager"]["hash"],
+                created_at=datetime.datetime.fromisoformat(
+                    response.json["worker_manager"]["created_at"]
+                ),
+            )
+
+        if (
+            self.local_worker_manager_version
+            and self.api_worker_manager_version
+            and self.local_worker_manager_version.hash
+            != self.api_worker_manager_version.hash
+            and self.local_worker_manager_version.created_at
+            < self.api_worker_manager_version.created_at
+        ):
+            logger.warning(
+                "Local worker manager image is out of date: "
+                f"\n\tLatest Image Hash={self.api_worker_manager_version.hash}"
+                f"\n\t\tCreated={self.api_worker_manager_version.created_at.isoformat()}"
+                f"\n\tLocal Image Hash={self.local_worker_manager_version.hash}"
+                f"\n\t\tCreated={self.local_worker_manager_version.created_at.isoformat()}"
+                "\nPlease, update the worker manager to the latest "
+                "version using the `zimfarm start` command."
+            )
 
     def check_cancellation(self):
         for task_ident in list(self.tasks.keys()):

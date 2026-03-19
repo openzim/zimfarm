@@ -141,6 +141,8 @@ class Worker(Base):
     cordoned: Mapped[bool] = mapped_column(default=False, server_default=false())
     # admin disabled the worker from requesting new tasks
     admin_disabled: Mapped[bool] = mapped_column(default=False, server_default=false())
+    docker_image_hash: Mapped[str | None] = mapped_column(default=None)
+    docker_image_created_at: Mapped[datetime | None] = mapped_column(default=None)
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
 

@@ -1,3 +1,4 @@
+import datetime
 import os
 from pathlib import Path
 from typing import Any
@@ -148,6 +149,17 @@ DISALLOW_CAPABILITIES = parse_bool(
 REQ_TIMEOUT_NOTIFICATIONS = int(getenv("REQ_TIMEOUT_NOTIFICATIONS", default="5"))
 REQ_TIMEOUT_CMS = int(getenv("REQ_TIMEOUT_CMS", default="10"))
 REQ_TIMEOUT_GHCR = int(getenv("REQ_TIMEOUT_GHCR", default="10"))
+
+# Credentials for fetching zimfarm-worker-manager package versions
+# To access package metadata, token must include the `read:packages` scope
+GITHUB_TOKEN = getenv("GITHUB_TOKEN", default="")
+GITHUB_API_VERSION = getenv("GITHUB_API_VERSION", default="2026-03-10")
+GITHUB_PACKAGE_REGISTRY_CACHE_DURATION = datetime.timedelta(
+    seconds=parse_timespan(
+        getenv("GITHUB_PACKAGE_REGISTRY_CACHE_DURATION", default="5m")
+    )
+)
+
 
 REQUESTS_TIMEOUT = parse_timespan(getenv("REQUESTS_TIMEOUT_DURATION", default="30s"))
 

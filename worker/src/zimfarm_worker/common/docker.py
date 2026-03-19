@@ -135,6 +135,13 @@ def prune_containers(client: DockerClient, **kwargs: Any):
 
 
 @retry
+def inspect_container(client: DockerClient, container: str) -> dict[str, Any]:
+    return client.api.inspect_container(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        container
+    )
+
+
+@retry
 def stop_container(client: DockerClient, container: str, **kwargs: Any):
     """container="", timeout=None"""
     return client.api.stop(

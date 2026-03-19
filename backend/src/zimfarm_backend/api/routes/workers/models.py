@@ -6,6 +6,7 @@ from zimfarm_backend.common.schemas.fields import (
     ZIMDisk,
     ZIMMemory,
 )
+from zimfarm_backend.common.schemas.models import DockerImageVersionSchema
 
 
 class WorkerCheckInSchema(BaseModel):
@@ -17,9 +18,18 @@ class WorkerCheckInSchema(BaseModel):
     cpu: ZIMCPU
     memory: ZIMMemory
     disk: ZIMDisk
+    docker_image: DockerImageVersionSchema | None = None
     offliners: list[str]
     platforms: dict[str, int] | None = None  # mapping of platforms to max tasks
     cordoned: bool | None = None
+
+
+class WorkerCheckInResponse(BaseModel):
+    """
+    Response schema for worker check-in.
+    """
+
+    worker_manager: DockerImageVersionSchema | None = None
 
 
 class WorkerUpdateSchema(BaseModel):
