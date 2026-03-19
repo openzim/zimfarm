@@ -52,6 +52,20 @@
                   </div>
                 </v-list-item-subtitle>
               </v-list-item-content>
+
+              <template v-slot:append>
+                <v-btn
+                  icon="mdi-restore"
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  @click.stop="confirmRevert(item, index)"
+                  :disabled="index === 0"
+                  :title="index === 0 ? 'This is the current version' : 'Revert to this version'"
+                >
+                  <v-icon>mdi-restore</v-icon>
+                </v-btn>
+              </template>
             </v-list-item>
             <v-divider />
           </template>
@@ -101,11 +115,55 @@
         </v-col>
       </v-row>
     </template>
+
+    <!-- Revert Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showRevertDialog"
+      title="Revert to Previous Version"
+      confirm-text="Revert"
+      cancel-text="Cancel"
+      confirm-color="info"
+      icon="mdi-restore"
+      icon-color="info"
+      :max-width="600"
+      :loading="isReverting"
+      @confirm="handleRevertConfirm"
+      @cancel="handleCancelRevert"
+    >
+      <template #content>
+        <div v-if="selectedHistoryItem">
+          <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+            You are about to revert recipe <strong>{{ scheduleName }}</strong> to a previous
+            version. Review the changes below:
+          </v-alert>
+
+          <div v-if="loadingOfflinerDef" class="d-flex justify-center align-center pa-8">
+            <v-progress-circular indeterminate color="primary" />
+            <span class="ml-4">Loading differences...</span>
+          </div>
+
+          <DiffViewer v-else :differences="enhancedDifferences" />
+
+          <!-- Comment Input -->
+          <div class="mt-4">
+            <v-textarea
+              v-model="revertComment"
+              label="Comment (optional)"
+              variant="outlined"
+              auto-grow
+              rows="3"
+              placeholder="Add a note about why you're reverting to this version..."
+            />
+          </div>
+        </div>
+      </template>
+    </ConfirmDialog>
   </v-container>
 </template>
 
 <script setup lang="ts">
 import DiffViewer from '@/components/DiffViewer.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useNotificationStore } from '@/stores/notification'
 import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
 import { useOfflinerStore } from '@/stores/offliner'
@@ -129,6 +187,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   load: [{ limit: number; skip: number }]
+  revert: []
 }>()
 
 const route = useRoute()
@@ -143,12 +202,24 @@ const showDiffViewer = ref(false)
 const oldFlagsDefinition = ref<OfflinerDefinition[]>([])
 const newFlagsDefinition = ref<OfflinerDefinition[]>([])
 const loadingOfflinerDef = ref(false)
+const showRevertDialog = ref(false)
+const selectedHistoryItem = ref<ScheduleHistorySchema | null>(null)
+const isReverting = ref(false)
+const isRevertMode = ref(false)
+const revertComment = ref('')
 
 const selectedItemsArray = computed(() => {
-  return Array.from(selectedItems.value)
+  const items = Array.from(selectedItems.value)
     .map((index) => props.history[index])
     .filter(Boolean)
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+  // In revert mode, sort current->previous (descending)
+  // In normal compare mode, sort previous->current (ascending)
+  if (isRevertMode.value) {
+    return items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }
+
+  return items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 })
 
 const scheduleDifferences = computed(
@@ -408,6 +479,68 @@ const backToHistoryList = () => {
   showDiffViewer.value = false
   selectedItems.value.clear()
   updateUrlQueryParams()
+}
+
+const confirmRevert = async (item: ScheduleHistorySchema, index: number) => {
+  selectedHistoryItem.value = item
+  isRevertMode.value = true
+
+  // Select current (0) and target (index) to trigger diff computation
+  selectedItems.value = new Set([0, index])
+
+  // Fetch offliner definitions for both versions
+  await fetchOfflinerDefinitions()
+
+  // Check if there are any differences
+  if (!scheduleDifferences.value || scheduleDifferences.value.length === 0) {
+    selectedHistoryItem.value = null
+    isRevertMode.value = false
+    selectedItems.value.clear()
+    notificationStore.showInfo(
+      'No differences found between current and selected version. Nothing to revert.',
+    )
+    return
+  }
+
+  showRevertDialog.value = true
+}
+
+const handleCancelRevert = () => {
+  showRevertDialog.value = false
+  isRevertMode.value = false
+  revertComment.value = ''
+  selectedItems.value.clear()
+}
+
+const handleRevertConfirm = async () => {
+  if (!selectedHistoryItem.value) {
+    return
+  }
+
+  isReverting.value = true
+  const comment = revertComment.value.trim() || undefined
+  const success = await scheduleHistoryStore.revertToHistory(
+    props.scheduleName,
+    selectedHistoryItem.value.id,
+    comment,
+  )
+
+  if (success) {
+    notificationStore.showSuccess(
+      `Successfully reverted to version ${selectedHistoryItem.value.id.substring(0, 8)}`,
+    )
+    showRevertDialog.value = false
+    selectedHistoryItem.value = null
+    isRevertMode.value = false
+    revertComment.value = ''
+    selectedItems.value.clear()
+    emit('revert')
+  } else {
+    for (const error of scheduleHistoryStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+  isReverting.value = false
 }
 
 // Load more history items

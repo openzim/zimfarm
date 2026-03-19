@@ -1,10 +1,12 @@
 import datetime
 from collections.abc import Callable
 from contextlib import nullcontext as does_not_raise
+from copy import deepcopy
 from uuid import uuid4
 
 import pytest
 from _pytest.python_api import RaisesContext
+from faker import Faker
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
@@ -12,8 +14,13 @@ from zimfarm_backend.common.enums import (
     ScheduleCategory,
     SchedulePeriodicity,
     TaskStatus,
+    WarehousePath,
 )
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import (
+    EventNotificationSchema,
+    ScheduleConfigSchema,
+    ScheduleNotificationSchema,
+)
 from zimfarm_backend.common.schemas.orms import (
     LanguageSchema,
     OfflinerDefinitionSchema,
@@ -32,6 +39,7 @@ from zimfarm_backend.db.models import (
     User,
     Worker,
 )
+from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.schedule import (
     DEFAULT_SCHEDULE_DURATION,
     count_enabled_schedules,
@@ -46,6 +54,7 @@ from zimfarm_backend.db.schedule import (
     get_schedule_or_none,
     get_schedules,
     restore_schedules,
+    revert_schedule,
     toggle_archive_status,
     update_schedule,
     update_schedule_duration,
@@ -593,3 +602,149 @@ def test_restore_schedules(
 
     with expected:
         restore_schedules(dbsession, schedule_names=schedule_names, actor_id=user.id)
+
+
+def test_revert_schedule_archived_schedule(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    user: User,
+):
+    """Test that reverting an archived schedule raises an error"""
+    schedule = create_schedule(name="archived_schedule", archived=True)
+    history_id = schedule.history_entries[0].id
+
+    with pytest.raises(
+        RecordDoesNotExistError,
+    ):
+        revert_schedule(
+            dbsession,
+            schedule_name="archived_schedule",
+            history_id=history_id,
+            author_id=user.id,
+        )
+
+
+def test_revert_schedule_no_offliner_definition_version(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    user: User,
+):
+    """Test that reverting to history with no offliner definition version
+    raises error"""
+    schedule = create_schedule(name="test_schedule")
+    history_entry = schedule.history_entries[0]
+
+    history_entry.offliner_definition_version = None
+    dbsession.add(history_entry)
+
+    with pytest.raises(
+        ValueError,
+    ):
+        revert_schedule(
+            dbsession,
+            schedule_name="test_schedule",
+            history_id=history_entry.id,
+            author_id=user.id,
+        )
+
+
+def test_revert_schedule_all_fields(
+    dbsession: OrmSession,
+    create_schedule: Callable[..., Schedule],
+    schedule_config: ScheduleConfigSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    mwoffliner: OfflinerSchema,
+    user: User,
+    data_gen: Faker,
+):
+    """Test that all schedule fields are properly reverted"""
+    initial_notification: dict[str, dict[str, list[str]]] = {
+        "requested": {"mailgun": ["test@example.com"]},
+        "started": {"mailgun": []},
+        "ended": {"mailgun": []},
+    }
+    schedule = create_schedule(
+        name="test_schedule",
+        enabled=True,
+        tags=["tag1", "tag2"],
+        category="wikipedia",
+        periodicity="monthly",
+        context="initial context",
+        schedule_config=schedule_config,
+        notification=initial_notification,
+    )
+    initial_history_id = schedule.history_entries[0].id
+    initial_config = deepcopy(schedule.config)
+    initial_tags = deepcopy(schedule.tags)
+    initial_category = schedule.category
+    initial_periodicity = schedule.periodicity
+    initial_context = schedule.context
+    initial_enabled = schedule.enabled
+
+    new_schedule_config = ScheduleConfigSchema.model_validate(
+        {
+            **schedule_config.model_dump(
+                mode="json",
+                exclude={"offliner"},
+                context={"show_secrets": True},
+            ),
+            "image": {
+                "name": mwoffliner.docker_image_name,
+                "tag": "1.17",
+            },
+            "warehouse_path": WarehousePath.libretexts,
+            "offliner": create_offliner_instance(
+                offliner=mwoffliner,
+                offliner_definition=mwoffliner_definition,
+                data={
+                    "offliner_id": mwoffliner_definition.offliner,
+                    "mwUrl": data_gen.uri(),
+                    "adminEmail": data_gen.email(),
+                    "mwPassword": "new-password",
+                },
+            ),
+        }
+    )
+    update_schedule(
+        dbsession,
+        author_id=user.id,
+        schedule_name="test_schedule",
+        new_schedule_config=new_schedule_config,
+        offliner_definition=mwoffliner_definition,
+        tags=["tag3", "tag4"],
+        category=ScheduleCategory.other,
+        periodicity=SchedulePeriodicity.quarterly,
+        context="updated context",
+        enabled=False,
+        comment="Update all fields",
+        notification=ScheduleNotificationSchema(
+            requested=EventNotificationSchema(
+                mailgun=["updated@example.com", "another@example.com"]
+            )
+        ),
+    )
+
+    updated_schedule = get_schedule(dbsession, schedule_name="test_schedule")
+
+    assert updated_schedule.config != initial_config
+    assert updated_schedule.tags != initial_tags
+    assert updated_schedule.category != initial_category
+    assert updated_schedule.periodicity != initial_periodicity
+    assert updated_schedule.context != initial_context
+    assert updated_schedule.enabled != initial_enabled
+    assert updated_schedule.notification != initial_notification
+
+    reverted_schedule = revert_schedule(
+        dbsession,
+        schedule_name="test_schedule",
+        history_id=initial_history_id,
+        author_id=user.id,
+    )
+
+    assert reverted_schedule.config == initial_config
+    assert reverted_schedule.tags == initial_tags
+    assert reverted_schedule.category == initial_category
+    assert reverted_schedule.periodicity == initial_periodicity
+    assert reverted_schedule.context == initial_context
+    assert reverted_schedule.enabled == initial_enabled
+    assert reverted_schedule.notification == initial_notification

@@ -516,6 +516,7 @@
             :paginator="scheduleHistoryStore.paginator"
             :schedule-name="scheduleName"
             @load="loadHistory"
+            @revert="handleRevert"
           />
         </v-window-item>
 
@@ -1261,6 +1262,11 @@ const restoreSchedule = async (comment?: string) => {
       notificationStore.showError(error)
     }
   }
+}
+
+const handleRevert = async () => {
+  // Reload schedule data after revert
+  await refreshData(true, true)
 }
 
 const refreshData = async (forceReload: boolean = false, fetchHistory: boolean = false) => {
