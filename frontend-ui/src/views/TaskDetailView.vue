@@ -210,7 +210,7 @@
                       :class="smAndDown ? '' : 'files-table'"
                     >
                       <template #[`item.name`]="{ item }">
-                        {{ item.name }}
+                        {{ getDisplayFilename(item) }}
                       </template>
 
                       <template #[`item.size`]="{ item }">
@@ -761,6 +761,28 @@ const sortedFiles = computed(() => {
     return new Date(a.created_timestamp).getTime() - new Date(b.created_timestamp).getTime()
   })
 })
+
+const getDisplayFilename = (file: TaskFile) => {
+  // If there's file info with metadata, build the filename from Name, Date, and Flavour
+  if (file.info?.metadata) {
+    const metadata = file.info.metadata
+    const name = metadata.Name
+    const date = metadata.Date
+    const flavour = metadata.Flavour
+
+    if (name && date) {
+      const parts = [name]
+      if (flavour) {
+        parts.push(flavour)
+      }
+      parts.push(date)
+      return parts.join('/')
+    }
+  }
+
+  // Default to the name attribute
+  return file.name
+}
 
 const command = computed(() => {
   return taskContainer.value?.command?.join(' ') || ''

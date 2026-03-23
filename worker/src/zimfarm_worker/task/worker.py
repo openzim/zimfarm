@@ -13,6 +13,7 @@ from typing import Any, cast
 import ujson
 from docker.errors import NotFound
 from docker.models.containers import Container
+from libzim.reader import Archive  # pyright: ignore[reportMissingModuleSource]
 
 from zimfarm_worker.common import getnow, logger
 from zimfarm_worker.common.constants import (
@@ -1056,10 +1057,16 @@ class TaskWorker(BaseWorker):
             return
         for fpath in self.task_workdir.glob("*.zim"):
             if fpath.name not in self.zim_files_actions_status.keys():
+                # Rename file to <zim_uuid>.zim if we are ignoring warehouse path
+                if bool(self.task["upload"]["zim"].get("disable_warehouse_path")):
+                    zim = Archive(fpath)
+                    target = fpath.rename(f"{fpath.parent}/{zim.uuid!s}.zim")
+                else:
+                    target = fpath
                 # append file to our watchlist
                 self.zim_files_actions_status.update(
                     {
-                        fpath.name: {
+                        target.name: {
                             ZIM_UPLOAD: PENDING,
                             ZIM_CHECK: (
                                 PENDING
@@ -1075,7 +1082,7 @@ class TaskWorker(BaseWorker):
                     }
                 )
                 # inform API about new file
-                self.mark_file_created(fpath.name, fpath.stat().st_size)
+                self.mark_file_created(target.name, target.stat().st_size)
 
     def pending_zim_files(self, kind: str) -> list[tuple[str, dict[str, str]]]:
         """shortcut list of watched file in PENDING status for upload or check"""
