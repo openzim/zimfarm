@@ -10,6 +10,11 @@ build [ZIM files](http://www.openzim.org/) efficiently. This means scraping Web 
 packaging them into a ZIM file and uploading the result to an online
 ZIM files repository.
 
+## Documentation
+
+- **[Editors Guide](EDITORS_GUIDE.md)**: For recipe managers - learn about recipes, tasks, workers, and how to manage content creation
+- **[Contributing Guide](CONTRIBUTING.md)**: How to contribute to Zimfarm development
+
 ## How does it work?
 
 The Zimfarm platform is a combination of different tools:
@@ -72,8 +77,21 @@ Scrapers are not part of the Zimfarm. Those are completely independent projects 
 - Arguments should be set on the command line
 - ZIM output folder should be settable via an argument
 
-# How do I request a ZIM file?
+## How do I request a ZIM file?
 
 ZIM file requests are handled on [zim-requests](https://github.com/openzim/zim-requests/issues/new/choose) repository.
 
 If there's already a scraper for the website you want to convert to ZIM, someone with editor access to the Zimfarm will create the recipe and in a few days, a ZIM file should be available.
+
+## Getting Started
+
+- **Recipe Managers/Editors**: Start with the [Editors Guide](EDITORS_GUIDE.md) to learn how to create and manage recipes
+- **Workers**: Follow the [Worker README](worker/README.md) to set up a worker node
+- **Contributors**: Check [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines
+
+## Support
+
+For questions or issues:
+
+- **Email**: [contact+zimfarm@kiwix.org](mailto:contact+zimfarm@kiwix.org)
+- **GitHub Issues**: [github.com/openzim/zimfarm/issues](https://github.com/openzim/zimfarm/issues)
