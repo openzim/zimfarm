@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { TaskLight } from '@/types/tasks'
-import type { Worker, WorkerMetrics, WorkerUpdateSchema } from '@/types/workers'
+import type { DockerImageVersion, Worker, WorkerMetrics, WorkerUpdateSchema } from '@/types/workers'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -89,6 +89,19 @@ export const useWorkersStore = defineStore('workers', () => {
     }
   }
 
+  const fetchLatestWorkerImage = async () => {
+    try {
+      const service = await authStore.getApiService('workers')
+      const response = await service.get<null, DockerImageVersion>('/image/latest')
+      errors.value = []
+      return response
+    } catch (_error) {
+      console.error('Failed to fetch latest worker image', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return null
+    }
+  }
+
   return {
     // State
     workers,
@@ -102,5 +115,6 @@ export const useWorkersStore = defineStore('workers', () => {
     savePaginatorLimit,
     fetchWorkerMetrics,
     updateWorker,
+    fetchLatestWorkerImage,
   }
 })

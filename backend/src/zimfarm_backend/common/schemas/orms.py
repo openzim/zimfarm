@@ -13,6 +13,7 @@ from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import ZIMCPU, ZIMDisk, ZIMMemory
 from zimfarm_backend.common.schemas.models import (
+    DockerImageVersionSchema,
     ExpandedScheduleConfigSchema,
     LanguageSchema,
     ScheduleConfigSchema,
@@ -375,6 +376,7 @@ class BaseWorkerSchema(BaseModel):
     contexts: dict[str, IPv4Address | IPv6Address | None]
     last_ip: IPv4Address | None = Field(exclude=True)
     selfish: bool
+    docker_image: DockerImageVersionSchema | None
 
     @computed_field
     @property

@@ -1,6 +1,5 @@
 # Zimfarm Workers
 
-
 # Resources & load expectations
 
 When setting-up a worker, you'll be joining the
@@ -138,8 +137,8 @@ Send your worker information to to Zimfarm Admins via mail [contact+zimfarm@kiwi
 Zimfarm Admin will create and configure your worker account.
 
 ### Management script
-> **Note:** TThere is also a legacy `workers/` folder (plural) in the repository that contains a symlink of the `zimfarm.sh` script for backwards compatibility because the folder name was changed from `workers` to `worker` and older versions of the script needed to fetch their updates from that folder.
 
+> **Note:** TThere is also a legacy `workers/` folder (plural) in the repository that contains a symlink of the `zimfarm.sh` script for backwards compatibility because the folder name was changed from `workers` to `worker` and older versions of the script needed to fetch their updates from that folder.
 
 A Zimfarm worker is just a Docker container spawning other containers.
 
@@ -219,6 +218,45 @@ If you feel like you want to meet these expectations, feel free to tell Zimfarm 
 - **`zimfarm prune`**: removes unused containers and volumes to save space. you can put that in a cron task daily. ⚠️ it removes all unused images and containers.
 - **`zimfarm update`**: displays a command you could use update this very script.
 - **`zimfarm update do`**: attempt to tun the `zimfarm update` command.
+
+## Automated Updates
+
+It is recommended to set up automated tasks to keep your worker updated and running
+smoothly. Worker owners should set up two crontab entries:
+
+- **Daily restart**: Run `zimfarm restart` once per day to pull the latest version of the and restart the manager. This has no effect on running tasks as task workers are
+  independent of the task manager.
+  worker manager image apply any configuration changes and ensure a fresh start
+
+- **Weekly update**: Run `zimfarm update do` once per week to keep the worker management
+  script up to date. The zimfarm is an evolving project and new variables are set up
+  to improve worker manager behaviour without sacrificing worker owner control.
+
+**Important**: Choose your maintenance windows wisely so that you can be available should something break. In the event that something breaks, please, contact the zimfarm
+administrators either via Slack or email.
+
+### Sample Crontab Entries
+
+To edit your crontab:
+
+```bash
+sudo crontab -e
+```
+
+Add these entries (adjust times to your preference and timezone):
+
+```crontab
+# Zimfarm daily restart - runs at 9:00 AM local time
+0 9 * * * /usr/local/bin/zimfarm restart >> /var/log/zimfarm-restart.log 2>&1
+
+# Zimfarm weekly update - runs every Monday at 10:00 AM local time
+0 10 * * 1 /usr/local/bin/zimfarm update do >> /var/log/zimfarm-update.log 2>&1
+```
+
+```bash
+tail -f /var/log/zimfarm-restart.log
+tail -f /var/log/zimfarm-update.log
+```
 
 ## Clean Worker Shutdown
 

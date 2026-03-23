@@ -1,3 +1,4 @@
+import datetime
 import ipaddress
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any
@@ -7,10 +8,11 @@ from sqlalchemy import asc, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common import getnow
+from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.models import DockerImageVersionSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     WorkerLightSchema,
@@ -80,6 +82,13 @@ def create_worker_schema(
         contexts=_deserialize_worker_context(worker.contexts),
         cordoned=worker.cordoned,
         admin_disabled=worker.admin_disabled,
+        docker_image=(
+            DockerImageVersionSchema(
+                hash=worker.docker_image_hash, created_at=worker.docker_image_created_at
+            )
+            if worker.docker_image_hash and worker.docker_image_created_at
+            else None
+        ),
     )
 
 
@@ -186,6 +195,13 @@ def get_worker_metrics(
         cordoned=worker.cordoned,
         admin_disabled=worker.admin_disabled,
         show_secrets=show_secrets,
+        docker_image=(
+            DockerImageVersionSchema(
+                hash=worker.docker_image_hash, created_at=worker.docker_image_created_at
+            )
+            if worker.docker_image_hash and worker.docker_image_created_at
+            else None
+        ),
     )
 
 
@@ -199,6 +215,8 @@ def check_in_worker(
     selfish: bool,
     offliners: list[str],
     cordoned: bool,
+    docker_image_hash: str | None = None,
+    docker_image_created_at: datetime.datetime | None = None,
     platforms: dict[str, int] | None = None,
     user_id: UUID,
 ) -> None:
@@ -215,6 +233,10 @@ def check_in_worker(
         last_ip=None,
         last_seen=getnow(),
         user_id=user_id,
+        docker_image_hash=docker_image_hash,
+        docker_image_created_at=(
+            to_naive_utc(docker_image_created_at) if docker_image_created_at else None
+        ),
     )
     stmt = stmt.on_conflict_do_update(
         index_elements=[Worker.name],
@@ -227,6 +249,8 @@ def check_in_worker(
             Worker.platforms: stmt.excluded.platforms,
             Worker.cordoned: stmt.excluded.cordoned,
             Worker.last_seen: stmt.excluded.last_seen,
+            Worker.docker_image_hash: stmt.excluded.docker_image_hash,
+            Worker.docker_image_created_at: stmt.excluded.docker_image_created_at,
         },
     )
     session.execute(stmt)

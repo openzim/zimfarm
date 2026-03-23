@@ -95,6 +95,7 @@
       :loading-text="loadingStore.loadingText"
       :errors="errors"
       :toggle-text="toggleText"
+      :latest-worker-image="latestWorkerImage"
       @limit-changed="handleLimitChange"
       @toggle-workers-list="toggleWorkersList"
     />
@@ -112,6 +113,7 @@ import { useNotificationStore } from '@/stores/notification'
 import { useTasksStore } from '@/stores/tasks'
 import { useWorkersStore } from '@/stores/workers'
 import type { TaskLight } from '@/types/tasks'
+import type { DockerImageVersion } from '@/types/workers'
 import { formattedBytesSize } from '@/utils/format'
 
 import { useRouter, useRoute } from 'vue-router'
@@ -129,6 +131,7 @@ const route = useRoute()
 const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
 const runningTasks = ref<TaskLight[]>([])
+const latestWorkerImage = ref<DockerImageVersion | null>(null)
 const showingAll = ref<boolean>(!getOnlinesOnlyPreference())
 const workerHeaders = [
   { title: 'Name', value: 'name' },
@@ -270,6 +273,13 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   for (const error of errors.value) {
     notificationStore.showError(error)
   }
+
+  // Fetch latest worker image for comparison
+  const latestImage = await workersStore.fetchLatestWorkerImage()
+  if (latestImage) {
+    latestWorkerImage.value = latestImage
+  }
+
   await loadRunningTasks()
   if (loadingStore.isLoading) {
     loadingStore.stopLoading()

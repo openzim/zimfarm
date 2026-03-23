@@ -37,7 +37,7 @@ MONITORING_KEY=""  # UUID
 SOURCE_URL="https://farm.openzim.org/contrib/zimfarm.sh"
 WORKER_MANAGER_NAME="zimfarm-manager"
 SCRIPT_VERSION="1.0.2"
-CORDONED=""
+CORDONE=""
 
 function die() {
     echo $1
@@ -209,6 +209,7 @@ function restart() {
         --env MONITORING_DEST=$MONITORING_DEST \
         --env MONITORING_KEY=$MONITORING_KEY \
     $MANAGER_IMAGE worker-manager
+
 }
 
 # stop the manager and all the workers
