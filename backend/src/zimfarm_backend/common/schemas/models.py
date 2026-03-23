@@ -17,6 +17,7 @@ from pydantic import (
 
 from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.roles import RoleEnum
+from zimfarm_backend.common.schemas import BaseModel as ZimfarmBaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
     NotEmptyString,
@@ -168,7 +169,7 @@ class UserUpdateSchema(BaseModel):
         return self
 
 
-class DockerImageVersionSchema(BaseModel):
+class DockerImageVersionSchema(ZimfarmBaseModel):
     """
     Schema for worker manager version information from GitHub Container Registry.
     """
