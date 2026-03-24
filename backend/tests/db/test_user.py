@@ -124,7 +124,7 @@ def test_update_user_role(dbsession: OrmSession, user: User):
 
 
 def test_update_user_scope(dbsession: OrmSession, user: User):
-    scope = {"schedules": {"create": True, "delete": False, "update": True}}
+    scope = {"recipes": {"create": True, "delete": False, "update": True}}
     update_user(
         dbsession,
         user_id=user.id,
@@ -142,24 +142,24 @@ def test_update_user_scope(dbsession: OrmSession, user: User):
     ["custom_scope", "all_scopes", "expected"],
     [
         (
-            {"schedules": {"read": True}},
+            {"recipes": {"read": True}},
             {
-                "schedules": {"read": True, "write": True},
+                "recipes": {"read": True, "write": True},
                 "users": {"read": True, "write": True},
             },
             {
-                "schedules": {"read": True, "write": False},
+                "recipes": {"read": True, "write": False},
                 "users": {"read": False, "write": False},
             },
         ),
         (
             {},
             {
-                "schedules": {"read": True, "write": True},
+                "recipes": {"read": True, "write": True},
                 "users": {"read": True, "write": True},
             },
             {
-                "schedules": {"read": False, "write": False},
+                "recipes": {"read": False, "write": False},
                 "users": {"read": False, "write": False},
             },
         ),
@@ -174,7 +174,7 @@ def test_merge_scopes(
 
 
 def test_update_user_scope_and_role(dbsession: OrmSession, user: User):
-    scope = {"schedules": {"create": True, "delete": False, "update": True}}
+    scope = {"recipes": {"create": True, "delete": False, "update": True}}
     with pytest.raises(ValueError):
         update_user(
             dbsession,

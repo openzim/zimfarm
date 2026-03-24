@@ -7,7 +7,7 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     NotEmptyString,
-    ScheduleNameField,
+    RecipeNameField,
     SkipField,
     WorkerField,
 )
@@ -17,14 +17,14 @@ class TasksSchema(BaseModel):
     skip: SkipField
     limit: LimitFieldMax200
     status: list[TaskStatus] | None = None
-    schedule_name: ScheduleNameField
+    recipe_name: RecipeNameField
 
 
 class TasksGetSchema(BaseModel):
     skip: SkipField = 0
     limit: LimitFieldMax200 = 20
     status: list[TaskStatus] | None = None
-    schedule_name: NotEmptyString | None = None
+    recipe_name: NotEmptyString | None = None
     sort_criteria: Literal["done", "doing", "failed", "updated_at"] = "updated_at"
     offliner: NotEmptyString | None = None
 

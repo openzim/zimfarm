@@ -18,7 +18,7 @@ def get_contexts(
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax500, Query()] = 500,
 ):
-    """Get a list of all available contexts from schedules and workers"""
+    """Get a list of all available contexts from recipes and workers"""
     result = db_get_contexts(session, skip, limit)
     return ListResponse(
         items=result.contexts,

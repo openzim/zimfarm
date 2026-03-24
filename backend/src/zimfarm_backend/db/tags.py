@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.models import Schedule
+from zimfarm_backend.db.models import Recipe
 
 
 class TagListResult(BaseModel):
@@ -12,8 +12,8 @@ class TagListResult(BaseModel):
 
 
 def get_tags(session: OrmSession, skip: int, limit: int) -> TagListResult:
-    """Get a list of schedule tags"""
-    stmt = select(func.unnest(Schedule.tags).label("tag")).distinct().order_by("tag")
+    """Get a list of recipe tags"""
+    stmt = select(func.unnest(Recipe.tags).label("tag")).distinct().order_by("tag")
     return TagListResult(
         nb_records=count_from_stmt(session, stmt),
         tags=[tag for (tag,) in session.execute(stmt.offset(skip).limit(limit)).all()],

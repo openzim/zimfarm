@@ -23,21 +23,21 @@ from zimfarm_backend.api.routes.http_errors import (
     UnauthorizedError,
 )
 from zimfarm_backend.api.routes.models import ListResponse
-from zimfarm_backend.api.routes.schedules.models import (
+from zimfarm_backend.api.routes.recipes.models import (
     CloneSchema,
-    RestoreSchedulesSchema,
-    RevertScheduleSchema,
-    ScheduleCreateResponseSchema,
-    ScheduleCreateSchema,
-    SchedulesGetSchema,
-    ScheduleUpdateSchema,
+    RecipeCreateResponseSchema,
+    RecipeCreateSchema,
+    RecipesGetSchema,
+    RecipeUpdateSchema,
+    RestoreRecipesSchema,
+    RevertRecipeSchema,
     ToggleArchiveStatusSchema,
 )
-from zimfarm_backend.api.routes.utils import get_schedule_image_tags
+from zimfarm_backend.api.routes.utils import get_recipe_image_tags
 from zimfarm_backend.common.enums import (
     DockerImageName,
-    ScheduleCategory,
-    SchedulePeriodicity,
+    RecipeCategory,
+    RecipePeriodicity,
 )
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
@@ -46,15 +46,15 @@ from zimfarm_backend.common.schemas.fields import (
 )
 from zimfarm_backend.common.schemas.models import (
     LanguageSchema,
-    ScheduleNotificationSchema,
+    RecipeNotificationSchema,
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
-    ScheduleConfigSchema,
-    ScheduleFullSchema,
-    ScheduleHistorySchema,
-    ScheduleLightSchema,
+    RecipeConfigSchema,
+    RecipeFullSchema,
+    RecipeHistorySchema,
+    RecipeLightSchema,
 )
 from zimfarm_backend.db.exceptions import (
     RecordDoesNotExistError,
@@ -68,27 +68,27 @@ from zimfarm_backend.db.offliner_definition import (
     get_offliner_definition,
     get_offliner_definition_by_id,
 )
-from zimfarm_backend.db.schedule import create_schedule as db_create_schedule
-from zimfarm_backend.db.schedule import (
-    create_schedule_full_schema,
-    create_schedule_history_schema,
-    get_all_schedules,
+from zimfarm_backend.db.recipe import create_recipe as db_create_recipe
+from zimfarm_backend.db.recipe import (
+    create_recipe_full_schema,
+    create_recipe_history_schema,
+    get_all_recipes,
 )
-from zimfarm_backend.db.schedule import delete_schedule as db_delete_schedule
-from zimfarm_backend.db.schedule import get_schedule as db_get_schedule
-from zimfarm_backend.db.schedule import get_schedule_history as db_get_schedule_history
-from zimfarm_backend.db.schedule import (
-    get_schedule_history_entry as db_get_schedule_history_entry,
+from zimfarm_backend.db.recipe import delete_recipe as db_delete_recipe
+from zimfarm_backend.db.recipe import get_recipe as db_get_recipe
+from zimfarm_backend.db.recipe import get_recipe_history as db_get_recipe_history
+from zimfarm_backend.db.recipe import (
+    get_recipe_history_entry as db_get_recipe_history_entry,
 )
-from zimfarm_backend.db.schedule import get_schedules as db_get_schedules
-from zimfarm_backend.db.schedule import (
-    restore_schedules as db_restore_schedules,
+from zimfarm_backend.db.recipe import get_recipes as db_get_recipes
+from zimfarm_backend.db.recipe import (
+    restore_recipes as db_restore_recipes,
 )
-from zimfarm_backend.db.schedule import revert_schedule as db_revert_schedule
-from zimfarm_backend.db.schedule import (
+from zimfarm_backend.db.recipe import revert_recipe as db_revert_recipe
+from zimfarm_backend.db.recipe import (
     toggle_archive_status as db_toggle_archive_status,
 )
-from zimfarm_backend.db.schedule import update_schedule as db_update_schedule
+from zimfarm_backend.db.recipe import update_recipe as db_update_recipe
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.utils.offliners import (
     expanded_config,
@@ -97,22 +97,22 @@ from zimfarm_backend.utils.offliners import (
     get_key_differences,
 )
 
-router = APIRouter(prefix="/schedules", tags=["schedules"])
+router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 
 @router.get("")
-def get_schedules(
-    params: Annotated[SchedulesGetSchema, Query()],
+def get_recipes(
+    params: Annotated[RecipesGetSchema, Query()],
     current_user: User | None = Depends(get_current_user_or_none),
     session: OrmSession = Depends(gen_dbsession),
-) -> ListResponse[ScheduleLightSchema]:
+) -> ListResponse[RecipeLightSchema]:
     if params.archived and not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="archive")
+        and check_user_permission(current_user, namespace="recipes", name="archive")
     ):
-        raise UnauthorizedError("You are not allowed to view archived schedules.")
+        raise UnauthorizedError("You are not allowed to view archived recipes.")
 
-    results = db_get_schedules(
+    results = db_get_recipes(
         session,
         skip=params.skip,
         limit=params.limit,
@@ -128,21 +128,21 @@ def get_schedules(
             nb_records=results.nb_records,
             skip=params.skip,
             limit=params.limit,
-            page_size=len(results.schedules),
+            page_size=len(results.recipes),
         ),
-        items=cast(list[ScheduleLightSchema], results.schedules),
+        items=cast(list[RecipeLightSchema], results.recipes),
     )
 
 
 @router.post("")
-def create_schedule(
-    request: ScheduleCreateSchema,
+def create_recipe(
+    request: RecipeCreateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
-    """Create a new schedule"""
-    if not check_user_permission(current_user, namespace="schedules", name="create"):
-        raise UnauthorizedError("You are not allowed to create a schedule")
+    """Create a new recipe"""
+    if not check_user_permission(current_user, namespace="recipes", name="create"):
+        raise UnauthorizedError("You are not allowed to create a recipe")
 
     if offliner_id := request.config.get("offliner", {}).get("offliner_id"):
         offliner_definition = get_offliner_definition(
@@ -159,7 +159,7 @@ def create_schedule(
             ]
         )
 
-    config = ScheduleConfigSchema.model_validate(
+    config = RecipeConfigSchema.model_validate(
         {
             **request.config,
             "offliner": create_offliner_instance(
@@ -191,12 +191,12 @@ def create_schedule(
 
     language = get_language_from_code(request.language)
 
-    db_schedule = db_create_schedule(
+    db_recipe = db_create_recipe(
         session,
         author_id=current_user.id,
         name=request.name,
         offliner_definition=offliner_definition,
-        category=ScheduleCategory(request.category),
+        category=RecipeCategory(request.category),
         language=language,
         config=config,
         tags=request.tags,
@@ -208,24 +208,24 @@ def create_schedule(
     )
 
     return JSONResponse(
-        content=ScheduleCreateResponseSchema(
-            id=db_schedule.id,
+        content=RecipeCreateResponseSchema(
+            id=db_recipe.id,
         ).model_dump(mode="json")
     )
 
 
 @router.get("/backup")
-def get_schedules_backup(
+def get_recipes_backup(
     session: OrmSession = Depends(gen_dbsession),
     current_user: User | None = Depends(get_current_user_or_none),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
     archived: Annotated[bool, Query()] = False,
 ) -> JSONResponse:
-    """Get a list of schedules"""
+    """Get a list of recipes"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="secrets")
+        and check_user_permission(current_user, namespace="recipes", name="secrets")
     ):
         exclude_notifications = True
     else:
@@ -235,114 +235,114 @@ def get_schedules_backup(
     # does not matter
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="secrets")
+        and check_user_permission(current_user, namespace="recipes", name="secrets")
     ):
         show_secrets = False
     else:
         show_secrets = not hide_secrets
 
-    results = get_all_schedules(session, archived=archived)
-    schedules = cast(list[ScheduleFullSchema], results.schedules)
+    results = get_all_recipes(session, archived=archived)
+    recipes = cast(list[RecipeFullSchema], results.recipes)
     content: list[dict[str, Any]] = []
-    for schedule in schedules:
+    for recipe in recipes:
         if exclude_notifications:
-            schedule.notification = None
+            recipe.notification = None
 
         content.append(
-            schedule.model_dump(mode="json", context={"show_secrets": show_secrets})
+            recipe.model_dump(mode="json", context={"show_secrets": show_secrets})
         )
 
     return JSONResponse(content=content)
 
 
 @router.post("/restore")
-def restore_archived_schedules(
-    request: RestoreSchedulesSchema,
+def restore_archived_recipes(
+    request: RestoreRecipesSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> Response:
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="archive")
+        and check_user_permission(current_user, namespace="recipes", name="archive")
     ):
-        raise UnauthorizedError("You are not allowed to restore schedules")
+        raise UnauthorizedError("You are not allowed to restore recipes")
 
-    db_restore_schedules(
+    db_restore_recipes(
         session,
-        schedule_names=request.schedule_names,
+        recipe_names=request.recipe_names,
         actor_id=current_user.id,
         comment=request.comment,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{schedule_name}")
-def get_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.get("/{recipe_name}")
+def get_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User | None = Depends(get_current_user_or_none),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
-    db_schedule = db_get_schedule(session, schedule_name=schedule_name)
+    db_recipe = db_get_recipe(session, recipe_name=recipe_name)
 
-    if current_user is None and db_schedule.archived:
+    if current_user is None and db_recipe.archived:
         raise UnauthorizedError(
-            "You do not have permissions to view an archived schedule."
+            "You do not have permissions to view an archived recipe."
         )
 
-    offliner = get_offliner(session, db_schedule.config["offliner"]["offliner_id"])
+    offliner = get_offliner(session, db_recipe.config["offliner"]["offliner_id"])
 
     try:
-        schedule = create_schedule_full_schema(db_schedule, offliner)
+        recipe = create_recipe_full_schema(db_recipe, offliner)
     except Exception as exc:
-        logger.exception("error retrieving schedule")
+        logger.exception("error retrieving recipe")
         raise exc
     offliner_definition = get_offliner_definition_by_id(
-        session, db_schedule.offliner_definition_id
+        session, db_recipe.offliner_definition_id
     )
 
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="secrets")
+        and check_user_permission(current_user, namespace="recipes", name="secrets")
     ):
-        schedule.notification = None
+        recipe.notification = None
 
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="secrets")
+        and check_user_permission(current_user, namespace="recipes", name="secrets")
     ):
         show_secrets = False
     else:
         show_secrets = not hide_secrets
 
-    # validity field in DB might not reflect the actual validity of the schedule
+    # validity field in DB might not reflect the actual validity of the recipe
     # as constraints evolve
     try:
-        create_schedule_full_schema(db_schedule, offliner, skip_validation=False)
+        create_recipe_full_schema(db_recipe, offliner, skip_validation=False)
     except ValidationError:
-        schedule.is_valid = False
+        recipe.is_valid = False
 
-    schedule.config = expanded_config(
-        cast(ScheduleConfigSchema, schedule.config),
+    recipe.config = expanded_config(
+        cast(RecipeConfigSchema, recipe.config),
         offliner=offliner,
         offliner_definition=offliner_definition,
         show_secrets=show_secrets,
     )
 
     return JSONResponse(
-        content=schedule.model_dump(mode="json", context={"show_secrets": show_secrets})
+        content=recipe.model_dump(mode="json", context={"show_secrets": show_secrets})
     )
 
 
-@router.get("/{schedule_name}/similar")
-def get_similar_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
-    params: Annotated[SchedulesGetSchema, Query()],
+@router.get("/{recipe_name}/similar")
+def get_similar_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
+    params: Annotated[RecipesGetSchema, Query()],
     session: OrmSession = Depends(gen_dbsession),
-) -> ListResponse[ScheduleLightSchema]:
-    schedule = db_get_schedule(session, schedule_name=schedule_name)
-    results = db_get_schedules(
+) -> ListResponse[RecipeLightSchema]:
+    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    results = db_get_recipes(
         session,
         skip=params.skip,
         limit=params.limit,
@@ -350,51 +350,51 @@ def get_similar_schedule(
         categories=params.category,
         tags=params.tag,
         archived=params.archived,
-        similarity_data=schedule.similarity_data,
-        omit_names=[schedule.name],
+        similarity_data=recipe.similarity_data,
+        omit_names=[recipe.name],
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
             skip=params.skip,
             limit=params.limit,
-            page_size=len(results.schedules),
+            page_size=len(results.recipes),
         ),
-        items=cast(list[ScheduleLightSchema], results.schedules),
+        items=cast(list[RecipeLightSchema], results.recipes),
     )
 
 
-@router.patch("/{schedule_name}")
-def update_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
-    request: ScheduleUpdateSchema,
+@router.patch("/{recipe_name}")
+def update_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
+    request: RecipeUpdateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="update")
+        and check_user_permission(current_user, namespace="recipes", name="update")
     ):
-        raise UnauthorizedError("You are not allowed to update a schedule")
+        raise UnauthorizedError("You are not allowed to update a recipe")
 
-    db_schedule = db_get_schedule(session, schedule_name=schedule_name)
-    if db_schedule.archived:
-        raise BadRequestError("Cannot update an archived schedule")
-    offliner = get_offliner(session, db_schedule.config["offliner"]["offliner_id"])
-    schedule = create_schedule_full_schema(db_schedule, offliner)
+    db_recipe = db_get_recipe(session, recipe_name=recipe_name)
+    if db_recipe.archived:
+        raise BadRequestError("Cannot update an archived recipe")
+    offliner = get_offliner(session, db_recipe.config["offliner"]["offliner_id"])
+    recipe = create_recipe_full_schema(db_recipe, offliner)
 
-    schedule_config = cast(ScheduleConfigSchema, schedule.config)
+    recipe_config = cast(RecipeConfigSchema, recipe.config)
     if not request.model_dump(exclude_unset=True):
         raise BadRequestError(
-            "No changes were made to the schedule because no fields being set"
+            "No changes were made to the recipe because no fields being set"
         )
-    # track the defintion to be used for updating the schedule
+    # track the defintion to be used for updating the recipe
     offliner_definition: OfflinerDefinitionSchema
 
     if (
         request.offliner
         and request.offliner
-        != schedule_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+        != recipe_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
     ):
         # Case 1: Attempting to change the offliner
         if not request.flags:
@@ -413,11 +413,11 @@ def update_schedule(
             session, request.offliner, request.version
         )
 
-        # create a new schedule config for the new offliner validating the new flags
-        new_schedule_config = ScheduleConfigSchema.model_validate(
+        # create a new recipe config for the new offliner validating the new flags
+        new_recipe_config = RecipeConfigSchema.model_validate(
             {
                 # reuse the existing config except for the offliner and image
-                **schedule_config.model_dump(
+                **recipe_config.model_dump(
                     mode="json",
                     exclude={"offliner", "image"},
                     context={"show_secrets": True},
@@ -439,7 +439,7 @@ def update_schedule(
         # determine if the caller passed extra fields for the new offliner config
         if extra_keys := get_key_differences(
             request.flags,
-            new_schedule_config.offliner.model_dump(mode="json"),
+            new_recipe_config.offliner.model_dump(mode="json"),
         ):
             raise RequestValidationError(
                 [
@@ -457,7 +457,7 @@ def update_schedule(
             session,
             cast(
                 str,
-                schedule_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                recipe_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
             ),
         )
         if request.version:
@@ -470,12 +470,12 @@ def update_schedule(
         else:
             # Reuse the existing defintion to validate
             offliner_definition = get_offliner_definition_by_id(
-                session, schedule.offliner_definition_id
+                session, recipe.offliner_definition_id
             )
 
-        new_schedule_config = ScheduleConfigSchema.model_validate(
+        new_recipe_config = RecipeConfigSchema.model_validate(
             {
-                **schedule_config.model_dump(
+                **recipe_config.model_dump(
                     mode="json",
                     exclude={"offliner"},
                     context={"show_secrets": True},
@@ -493,7 +493,7 @@ def update_schedule(
         # determine if the caller passed extra fields for the offliner version
         if extra_keys := get_key_differences(
             request.flags,
-            new_schedule_config.offliner.model_dump(mode="json"),
+            new_recipe_config.offliner.model_dump(mode="json"),
         ):
             raise RequestValidationError(
                 [
@@ -508,16 +508,16 @@ def update_schedule(
     else:
         # Case 3: Attempting to change a top level configuration that doesn't
         # affect the offliner
-        new_schedule_config = schedule_config
+        new_recipe_config = recipe_config
         offliner_definition = get_offliner_definition_by_id(
-            session, schedule.offliner_definition_id
+            session, recipe.offliner_definition_id
         )
 
     if request.image is not None:
         # Ensure the image for the offliner is a valid preset
         new_offliner_name = cast(
             str,
-            new_schedule_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+            new_recipe_config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
         )
         try:
             DockerImageName[new_offliner_name]
@@ -530,7 +530,7 @@ def update_schedule(
         ):
             raise BadRequestError("Image name must match selected offliner")
 
-    # update the top-level schedule config attributes from the request but
+    # update the top-level recipe config attributes from the request but
     # exclude offliner as it means different things in request payload and config
     update_data = request.model_dump(
         exclude_unset=True,
@@ -543,7 +543,7 @@ def update_schedule(
             "resources",
         },
     )
-    new_schedule_config = new_schedule_config.model_copy(update=update_data)
+    new_recipe_config = new_recipe_config.model_copy(update=update_data)
 
     if request.language:
         try:
@@ -555,66 +555,66 @@ def update_schedule(
     else:
         language = None
 
-    schedule = db_update_schedule(
+    recipe = db_update_recipe(
         session,
-        schedule_name=schedule_name,
+        recipe_name=recipe_name,
         author_id=current_user.id,
         comment=request.comment,
-        new_schedule_config=new_schedule_config,
+        new_recipe_config=new_recipe_config,
         language=language,
         name=request.name,
         category=request.category,
         tags=request.tags,
         enabled=request.enabled,
         periodicity=request.periodicity,
-        # schedule must be valid if it has not failed validation yet
+        # recipe must be valid if it has not failed validation yet
         is_valid=True,
         context=request.context,
         offliner_definition=offliner_definition,
         notification=request.notification,
     )
 
-    schedule = create_schedule_full_schema(schedule, offliner)
-    schedule.config = expanded_config(
-        cast(ScheduleConfigSchema, schedule.config),
+    recipe = create_recipe_full_schema(recipe, offliner)
+    recipe.config = expanded_config(
+        cast(RecipeConfigSchema, recipe.config),
         offliner=offliner,
         offliner_definition=offliner_definition,
         show_secrets=True,
     )
     return JSONResponse(
-        content=schedule.model_dump(mode="json", context={"show_secrets": True})
+        content=recipe.model_dump(mode="json", context={"show_secrets": True})
     )
 
 
-@router.delete("/{schedule_name}")
-def delete_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.delete("/{recipe_name}")
+def delete_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> Response:
-    """Delete a schedule"""
+    """Delete a recipe"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="delete")
+        and check_user_permission(current_user, namespace="recipes", name="delete")
     ):
-        raise UnauthorizedError("You are not allowed to delete a schedule")
+        raise UnauthorizedError("You are not allowed to delete a recipe")
 
-    db_delete_schedule(session, schedule_name=schedule_name)
+    db_delete_recipe(session, recipe_name=recipe_name)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{schedule_name}/image-names")
-def get_schedule_image_names(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.get("/{recipe_name}/image-names")
+def get_recipe_image_names(
+    recipe_name: Annotated[NotEmptyString, Path()],
     hub_name: Annotated[str, Query()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[Any]:
-    db_get_schedule(session, schedule_name=schedule_name)
+    db_get_recipe(session, recipe_name=recipe_name)
     try:
-        tags = get_schedule_image_tags(hub_name)
+        tags = get_recipe_image_tags(hub_name)
     except requests.HTTPError as exc:
         if exc.response.status_code == HTTPStatus.NOT_FOUND:
-            raise NotFoundError("Image tags not found for schedule") from exc
+            raise NotFoundError("Image tags not found for recipe") from exc
         raise ServerError(
             "An unexpected error occured while fetching image tags: "
             f"{exc.response.reason}"
@@ -632,174 +632,174 @@ def get_schedule_image_names(
     )
 
 
-@router.post("/{schedule_name}/clone")
-def clone_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.post("/{recipe_name}/clone")
+def clone_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     request: CloneSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
-) -> ScheduleCreateResponseSchema:
-    if not check_user_permission(current_user, namespace="schedules", name="create"):
-        raise UnauthorizedError("You are not allowed to clone a schedule")
+) -> RecipeCreateResponseSchema:
+    if not check_user_permission(current_user, namespace="recipes", name="create"):
+        raise UnauthorizedError("You are not allowed to clone a recipe")
 
-    schedule = db_get_schedule(session, schedule_name=schedule_name)
-    if schedule.archived:
-        raise BadRequestError("You cannot clone an archived schedule.")
+    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    if recipe.archived:
+        raise BadRequestError("You cannot clone an archived recipe.")
 
-    # Skip validation while cloning a schedule
+    # Skip validation while cloning a recipe
     try:
-        language = get_language_from_code(schedule.language_code)
+        language = get_language_from_code(recipe.language_code)
     except RecordDoesNotExistError:
         language = LanguageSchema.model_validate(
-            {"code": schedule.language_code, "name": schedule.language_code},
+            {"code": recipe.language_code, "name": recipe.language_code},
             context={"skip_validation": True},
         )
-    offliner = get_offliner(session, schedule.config["offliner"]["offliner_id"])
+    offliner = get_offliner(session, recipe.config["offliner"]["offliner_id"])
 
-    new_schedule = db_create_schedule(
+    new_recipe = db_create_recipe(
         session,
         author_id=current_user.id,
         comment=request.comment,
         name=request.name,
-        category=ScheduleCategory(schedule.category),
-        config=ScheduleConfigSchema.model_validate(
+        category=RecipeCategory(recipe.category),
+        config=RecipeConfigSchema.model_validate(
             {
-                **schedule.config,
+                **recipe.config,
                 "offliner": create_offliner_instance(
                     offliner=offliner,
                     offliner_definition=create_offliner_definition_schema(
-                        schedule.offliner_definition
+                        recipe.offliner_definition
                     ),
-                    data=schedule.config["offliner"],
+                    data=recipe.config["offliner"],
                     skip_validation=True,
                 ),
             },
             context={"skip_validation": True},
         ),
-        tags=schedule.tags,
+        tags=recipe.tags,
         enabled=False,
         notification=(
-            ScheduleNotificationSchema.model_validate(schedule.notification)
-            if schedule.notification
+            RecipeNotificationSchema.model_validate(recipe.notification)
+            if recipe.notification
             else None
         ),
-        periodicity=SchedulePeriodicity(schedule.periodicity),
+        periodicity=RecipePeriodicity(recipe.periodicity),
         language=language,
-        context=schedule.context,
+        context=recipe.context,
         offliner_definition=create_offliner_definition_schema(
-            schedule.offliner_definition
+            recipe.offliner_definition
         ),
     )
 
-    # validate the new schedule as we skipped validation to allow users clone
-    # an invalid schedule. If validation fails, mark as invalid
+    # validate the new recipe as we skipped validation to allow users clone
+    # an invalid recipe. If validation fails, mark as invalid
     try:
-        create_schedule_full_schema(new_schedule, offliner, skip_validation=False)
+        create_recipe_full_schema(new_recipe, offliner, skip_validation=False)
     except ValidationError:
-        db_update_schedule(
+        db_update_recipe(
             session,
-            schedule_name=new_schedule.name,
+            recipe_name=new_recipe.name,
             author_id=current_user.id,
             is_valid=False,
             offliner_definition=create_offliner_definition_schema(
-                new_schedule.offliner_definition
+                new_recipe.offliner_definition
             ),
         )
 
-    return ScheduleCreateResponseSchema(
-        id=new_schedule.id,
+    return RecipeCreateResponseSchema(
+        id=new_recipe.id,
     )
 
 
-@router.patch("/{schedule_name}/archive")
-def archive_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.patch("/{recipe_name}/archive")
+def archive_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
-    """Archive a schedule"""
+    """Archive a recipe"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="archive")
+        and check_user_permission(current_user, namespace="recipes", name="archive")
     ):
-        raise UnauthorizedError("You are not allowed to archive a schedule")
+        raise UnauthorizedError("You are not allowed to archive a recipe")
 
     db_toggle_archive_status(
         session,
-        schedule_name=schedule_name,
+        recipe_name=recipe_name,
         archived=True,
         actor_id=current_user.id,
         comment=request.comment,
     )
     return JSONResponse(
-        content={"message": f"Schedule '{schedule_name}' has been archived"},
+        content={"message": f"Recipe '{recipe_name}' has been archived"},
         status_code=HTTPStatus.OK,
     )
 
 
-@router.patch("/{schedule_name}/restore")
-def restore_archived_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.patch("/{recipe_name}/restore")
+def restore_archived_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
-    """Restore an archived schedule"""
+    """Restore an archived recipe"""
     if not (
         current_user
-        and check_user_permission(current_user, namespace="schedules", name="archive")
+        and check_user_permission(current_user, namespace="recipes", name="archive")
     ):
-        raise UnauthorizedError("You are not allowed to restore a schedule")
+        raise UnauthorizedError("You are not allowed to restore a recipe")
 
     db_toggle_archive_status(
         session,
-        schedule_name=schedule_name,
+        recipe_name=recipe_name,
         archived=False,
         actor_id=current_user.id,
         comment=request.comment,
     )
     return JSONResponse(
-        content={"message": f"Schedule '{schedule_name}' has been restored"},
+        content={"message": f"Recipe '{recipe_name}' has been restored"},
         status_code=HTTPStatus.OK,
     )
 
 
-@router.get("/{schedule_name}/validate")
-def validate_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.get("/{recipe_name}/validate")
+def validate_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> JSONResponse:
-    if not check_user_permission(current_user, namespace="schedules", name="update"):
-        raise UnauthorizedError("You are not allowed to validate a schedule")
+    if not check_user_permission(current_user, namespace="recipes", name="update"):
+        raise UnauthorizedError("You are not allowed to validate a recipe")
 
-    schedule = db_get_schedule(session, schedule_name=schedule_name)
-    offliner = get_offliner(session, schedule.config["offliner"]["offliner_id"])
+    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    offliner = get_offliner(session, recipe.config["offliner"]["offliner_id"])
 
     try:
-        create_schedule_full_schema(schedule, offliner, skip_validation=False)
+        create_recipe_full_schema(recipe, offliner, skip_validation=False)
     except ValidationError as exc:
         raise RequestValidationError(exc.errors()) from exc
 
-    return JSONResponse(content={"message": "Schedule validated with success"})
+    return JSONResponse(content={"message": "Recipe validated with success"})
 
 
-@router.get("/{schedule_name}/history")
-def get_schedule_history(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.get("/{recipe_name}/history")
+def get_recipe_history(
+    recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,
-) -> ListResponse[ScheduleHistorySchema]:
-    if not check_user_permission(current_user, namespace="schedules", name="secrets"):
-        raise UnauthorizedError("You are not allowed to view a schedule's history")
+) -> ListResponse[RecipeHistorySchema]:
+    if not check_user_permission(current_user, namespace="recipes", name="secrets"):
+        raise UnauthorizedError("You are not allowed to view a recipe's history")
 
-    schedule = db_get_schedule(session, schedule_name=schedule_name)
+    recipe = db_get_recipe(session, recipe_name=recipe_name)
 
-    results = db_get_schedule_history(
-        session, schedule_id=schedule.id, skip=skip, limit=limit
+    results = db_get_recipe_history(
+        session, recipe_id=recipe.id, skip=skip, limit=limit
     )
     return ListResponse(
         items=results.history_entries,
@@ -812,42 +812,42 @@ def get_schedule_history(
     )
 
 
-@router.get("/{schedule_name}/history/{history_id}")
-def get_schedule_history_entry(
-    schedule_name: Annotated[NotEmptyString, Path()],
+@router.get("/{recipe_name}/history/{history_id}")
+def get_recipe_history_entry(
+    recipe_name: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
-) -> ScheduleHistorySchema:
-    if not check_user_permission(current_user, namespace="schedules", name="secrets"):
-        raise UnauthorizedError("You are not allowed to view a schedule's history")
+) -> RecipeHistorySchema:
+    if not check_user_permission(current_user, namespace="recipes", name="secrets"):
+        raise UnauthorizedError("You are not allowed to view a recipe's history")
 
-    history_entry = db_get_schedule_history_entry(
-        session, schedule_name=schedule_name, history_id=history_id
+    history_entry = db_get_recipe_history_entry(
+        session, recipe_name=recipe_name, history_id=history_id
     )
-    return create_schedule_history_schema(history_entry)
+    return create_recipe_history_schema(history_entry)
 
 
 @router.patch(
-    "/{schedule_name}/revert/{history_id}",
-    dependencies=[Depends(require_permission(namespace="schedules", name="update"))],
+    "/{recipe_name}/revert/{history_id}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
-def revert_schedule(
-    schedule_name: Annotated[NotEmptyString, Path()],
+def revert_recipe(
+    recipe_name: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
-    request: RevertScheduleSchema,
+    request: RevertRecipeSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
-    """Revert a schedule to a previous history."""
-    db_revert_schedule(
+    """Revert a recipe to a previous history."""
+    db_revert_recipe(
         session,
-        schedule_name=schedule_name,
+        recipe_name=recipe_name,
         history_id=history_id,
         author_id=current_user.id,
         comment=request.comment,
     )
     return JSONResponse(
-        content={"message": f"Schedule '{schedule_name}' has been restored"},
+        content={"message": f"Recipe '{recipe_name}' has been restored"},
         status_code=HTTPStatus.OK,
     )

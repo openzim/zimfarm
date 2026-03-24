@@ -14,10 +14,10 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import ZIMCPU, ZIMDisk, ZIMMemory
 from zimfarm_backend.common.schemas.models import (
     DockerImageVersionSchema,
-    ExpandedScheduleConfigSchema,
+    ExpandedRecipeConfigSchema,
     LanguageSchema,
-    ScheduleConfigSchema,
-    ScheduleNotificationSchema,
+    RecipeConfigSchema,
+    RecipeNotificationSchema,
 )
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 
@@ -66,11 +66,11 @@ class BaseTaskSchema(BaseModel):
     id: UUID
     status: str
     timestamp: list[tuple[str, datetime.datetime]]
-    schedule_name: str | None
+    recipe_name: str | None
     worker_name: str
     updated_at: datetime.datetime
     requested_by: str
-    original_schedule_name: str
+    original_recipe_name: str
     context: str
     priority: int
 
@@ -177,13 +177,13 @@ class TaskFullSchema(BaseTaskSchema):
     Schema for reading a task model with all fields
     """
 
-    config: ExpandedScheduleConfigSchema
+    config: ExpandedRecipeConfigSchema
     events: list[dict[str, str | datetime.datetime]]
     debug: dict[str, Any]
     canceled_by: str | None
     container: TaskContainerSchema = Field(default_factory=TaskContainerSchema)
     priority: int
-    notification: ScheduleNotificationSchema | None
+    notification: RecipeNotificationSchema | None
     files: dict[str, TaskFileSchema]
     upload: TaskUploadSchema
     offliner_definition_id: UUID = Field(exclude=True)
@@ -191,9 +191,9 @@ class TaskFullSchema(BaseTaskSchema):
     version: str
 
 
-class ScheduleAwareTaskFullSchema(TaskFullSchema):
+class RecipeAwareTaskFullSchema(TaskFullSchema):
     """
-    Schema for reading a task model with all fields and its schedule name
+    Schema for reading a task model with all fields and its recipe name
     """
 
 
@@ -204,8 +204,8 @@ class BaseRequestedTaskSchema(BaseModel):
     requested_by: str
     requester_id: UUID = Field(exclude=True)
     priority: int
-    schedule_name: str | None
-    original_schedule_name: str
+    recipe_name: str | None
+    original_recipe_name: str
     worker_name: str | None
     updated_at: datetime.datetime
     context: str
@@ -224,12 +224,12 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     Schema for reading a requested task model with all fields
     """
 
-    config: ExpandedScheduleConfigSchema
+    config: ExpandedRecipeConfigSchema
     events: list[dict[str, str | datetime.datetime]]
     upload: TaskUploadSchema
-    notification: ScheduleNotificationSchema | None
+    notification: RecipeNotificationSchema | None
     rank: int | None = None
-    schedule_id: UUID | None = Field(exclude=True)
+    recipe_id: UUID | None = Field(exclude=True)
     context: str
     offliner_definition_id: UUID = Field(exclude=True)
     offliner: str
@@ -255,9 +255,9 @@ class ConfigOfflinerOnlySchema(BaseModel):
     offliner: str
 
 
-class ScheduleLightSchema(BaseModel):
+class RecipeLightSchema(BaseModel):
     """
-    Schema for reading a schedule model with some fields
+    Schema for reading a recipe model with some fields
     """
 
     name: str
@@ -276,9 +276,9 @@ class ScheduleLightSchema(BaseModel):
         return self.nb_requested_tasks > 0
 
 
-class ScheduleDurationSchema(BaseModel):
+class RecipeDurationSchema(BaseModel):
     """
-    Schema for reading a schedule duration model
+    Schema for reading a recipe duration model
     """
 
     value: int
@@ -287,9 +287,9 @@ class ScheduleDurationSchema(BaseModel):
     default: bool
 
 
-class ScheduleHistorySchema(BaseModel):
+class RecipeHistorySchema(BaseModel):
     """
-    Schema for reading a schedule history model
+    Schema for reading a recipe history model
     """
 
     id: UUID
@@ -305,27 +305,27 @@ class ScheduleHistorySchema(BaseModel):
     context: str
     archived: bool
     offliner_definition_version: str | None = None
-    # entries are serialized as dict[str, Any] instead of ScheduleConfigSchema
+    # entries are serialized as dict[str, Any] instead of RecipeConfigSchema
     # because the entry is possibly outdated and would fail validation as the
     # offliner schema evolves
     config: dict[str, Any]
     notification: dict[str, Any] | None = None
 
 
-class ScheduleFullSchema(BaseModel):
+class RecipeFullSchema(BaseModel):
     """
-    Schema for reading a schedule model with all fields
+    Schema for reading a recipe model with all fields
     """
 
     language: LanguageSchema
-    durations: list[ScheduleDurationSchema] = Field(exclude=True)
+    durations: list[RecipeDurationSchema] = Field(exclude=True)
     name: str
     category: str
-    config: ScheduleConfigSchema | ExpandedScheduleConfigSchema
+    config: RecipeConfigSchema | ExpandedRecipeConfigSchema
     enabled: bool
     tags: list[str]
     periodicity: str
-    notification: ScheduleNotificationSchema | None
+    notification: RecipeNotificationSchema | None
     most_recent_task: MostRecentTaskSchema | None
     nb_requested_tasks: int = Field(exclude=True)
     is_valid: bool
@@ -350,13 +350,13 @@ class ScheduleFullSchema(BaseModel):
         workers_duration: dict[str, dict[str, Any]] = defaultdict(dict)
         for duration in self.durations:
             if duration.default:
-                duration_res["default"] = ScheduleDurationSchema.model_validate(
+                duration_res["default"] = RecipeDurationSchema.model_validate(
                     duration
                 ).model_dump(mode="json")
             if duration.worker_name:
                 duration_res["available"] = True
                 workers_duration["workers"][duration.worker_name] = (
-                    ScheduleDurationSchema.model_validate(duration).model_dump(
+                    RecipeDurationSchema.model_validate(duration).model_dump(
                         mode="json"
                     )
                 )
@@ -438,12 +438,12 @@ class WorkerLightSchema(BaseWorkerSchema):
 class RunningTask(BaseModel):
     id: UUID
     updated_at: datetime.datetime
-    config: ExpandedScheduleConfigSchema
-    schedule_name: str | None
+    config: ExpandedRecipeConfigSchema
+    recipe_name: str | None
     status: str
     timestamp: list[tuple[str, datetime.datetime]]
     worker_name: str
-    duration: ScheduleDurationSchema
+    duration: RecipeDurationSchema
     remaining: float
     eta: datetime.datetime
 
@@ -575,5 +575,5 @@ class CreateBlobSchema(BaseModel):
 
 class BlobSchema(CreateBlobSchema):
     id: UUID
-    schedule_id: UUID | None = Field(exclude=True, default=None)
+    recipe_id: UUID | None = Field(exclude=True, default=None)
     created_at: datetime.datetime

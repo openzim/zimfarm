@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 """
-Script to update schedules and requested tasks with new image tags or offliner
+Script to update recipes and requested tasks with new image tags or offliner
 definitions.
 
 EXAMPLES:
 
-1. Update image tag for all schedules and requested tasks using a specific offliner:
+1. Update image tag for all recipes and requested tasks using a specific offliner:
    ./update_scraper_version.py -o mwoffliner -t 2.1.0
 
 2. Update recipe and requested tasks to a new offliner definition version:
@@ -58,11 +58,11 @@ from sqlalchemy.orm.attributes import flag_modified
 from zimfarm_backend import logger
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
-    ScheduleConfigSchema,
+    RecipeConfigSchema,
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import RequestedTask, Schedule
+from zimfarm_backend.db.models import RequestedTask, Recipe
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
@@ -71,7 +71,7 @@ from zimfarm_backend.db.offliner_definition import (
     update_offliner_flags,
 )
 from zimfarm_backend.db.requested_task import create_requested_task_full_schema
-from zimfarm_backend.db.schedule import create_schedule_full_schema, update_schedule
+from zimfarm_backend.db.recipe import create_recipe_full_schema, update_recipe
 from zimfarm_backend.db.user import get_user_by_username
 
 
@@ -96,7 +96,7 @@ def parse_name_mappings(value: str) -> dict[str, str]:
     return mappings
 
 
-def update_schedules(
+def update_recipes(
     session: OrmSession,
     *,
     offliner: OfflinerSchema,
@@ -107,30 +107,30 @@ def update_schedules(
     nb_modified: int = 0
 
     for obj in session.execute(
-        sa.select(Schedule).where(
-            Schedule.config["offliner"]["offliner_id"].astext == offliner.id,
-            Schedule.archived.is_(False),
+        sa.select(Recipe).where(
+            Recipe.config["offliner"]["offliner_id"].astext == offliner.id,
+            Recipe.archived.is_(False),
         )
     ).scalars():
-        schedule = create_schedule_full_schema(obj, offliner)
-        schedule_config = cast(ScheduleConfigSchema, schedule.config)
+        recipe = create_recipe_full_schema(obj, offliner)
+        recipe_config = cast(RecipeConfigSchema, recipe.config)
 
         if offliner_definition is None:
             offliner_definition = get_offliner_definition_by_id(
-                session, schedule.offliner_definition_id
+                session, recipe.offliner_definition_id
             )
 
         if image_tag:
             logger.info(
-                f"setting {offliner.id} image tag for schedule {obj.name} "
+                f"setting {offliner.id} image tag for recipe {obj.name} "
                 f"to {args.image_tag}..."
             )
-            schedule_config.image = DockerImageSchema(
-                name=schedule_config.image.name, tag=image_tag
+            recipe_config.image = DockerImageSchema(
+                name=recipe_config.image.name, tag=image_tag
             )
 
-        if offliner_definition.id != schedule.offliner_definition_id:
-            logger.info(f"setting offliner definition for schedule {obj.name}...")
+        if offliner_definition.id != recipe.offliner_definition_id:
+            logger.info(f"setting offliner definition for recipe {obj.name}...")
 
         data = update_offliner_flags(
             offliner=offliner,
@@ -139,10 +139,10 @@ def update_schedules(
             name_mappings=name_mappings,
         )
 
-        schedule_config = ScheduleConfigSchema.model_validate(
+        recipe_config = RecipeConfigSchema.model_validate(
             # reuse the existing config except for the offliner and image
             {
-                **schedule_config.model_dump(
+                **recipe_config.model_dump(
                     mode="json",
                     exclude={"offliner"},
                     context={"show_secrets": True},
@@ -158,12 +158,12 @@ def update_schedules(
             context={"skip_validation": True},
         )
 
-        update_schedule(
+        update_recipe(
             session,
             offliner_definition=offliner_definition,
             author_id=get_user_by_username(session, username="maint-scripts").id,
-            schedule_name=schedule.name,
-            new_schedule_config=schedule_config,
+            recipe_name=recipe.name,
+            new_recipe_config=recipe_config,
             comment="updates made via update_scraper_version",
         )
 
@@ -213,7 +213,7 @@ def update_requested_tasks(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Update schedules and requested tasks image tag "
+        description="Update recipes and requested tasks image tag "
         "or offliner definition",
     )
 
@@ -256,14 +256,14 @@ if __name__ == "__main__":
         else:
             offliner_definition = None
 
-        nb_schedules_modified = update_schedules(
+        nb_recipes_modified = update_recipes(
             session,
             offliner=offliner,
             offliner_definition=offliner_definition,
             image_tag=args.image_tag,
             name_mappings=args.name_mappings,
         )
-        logger.info(f"updated {nb_schedules_modified} schedule(s) ")
+        logger.info(f"updated {nb_recipes_modified} recipe(s) ")
 
         nb_requested_tasks_modified = update_requested_tasks(
             session,

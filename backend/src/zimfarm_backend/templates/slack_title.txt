@@ -1,1 +1,1 @@
-Task #{{ task.id|short_id }} for {{ task.schedule_name }} {{ task.status }}
+Task #{{ task.id|short_id }} for {{ task.recipe_name }} {{ task.status }}

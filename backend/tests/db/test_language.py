@@ -3,27 +3,27 @@ from collections.abc import Callable
 import pytest
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import RecipeConfigSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.language import get_language_from_code, get_languages
-from zimfarm_backend.db.models import Schedule
-from zimfarm_backend.db.schedule import create_schedule_full_schema, get_schedule
+from zimfarm_backend.db.models import Recipe
+from zimfarm_backend.db.recipe import create_recipe_full_schema, get_recipe
 
 
 def test_get_languages_empty(dbsession: OrmSession):
-    """Test getting languages when no schedules exist."""
+    """Test getting languages when no recipes exist."""
     results = get_languages(dbsession, skip=0, limit=100)
     assert results.nb_languages == 0
     assert len(results.languages) == 0
 
 
 @pytest.fixture
-def english_schedule(
+def english_recipe(
     dbsession: OrmSession, mwoffliner_definition: OfflinerDefinitionSchema
 ):
-    """Create a test schedule with English language code."""
-    schedule = Schedule(
+    """Create a test recipe with English language code."""
+    recipe = Recipe(
         language_code="eng",
         name="test",
         category="test",
@@ -33,19 +33,19 @@ def english_schedule(
         periodicity="test",
         notification={"test": "test"},
     )
-    schedule.offliner_definition_id = mwoffliner_definition.id
-    dbsession.add(schedule)
+    recipe.offliner_definition_id = mwoffliner_definition.id
+    dbsession.add(recipe)
     dbsession.flush()
-    return schedule
+    return recipe
 
 
-def test_get_languages_single(dbsession: OrmSession, english_schedule: Schedule):
-    """Test getting languages with a single schedule."""
+def test_get_languages_single(dbsession: OrmSession, english_recipe: Recipe):
+    """Test getting languages with a single recipe."""
     results = get_languages(dbsession, skip=0, limit=100)
     assert results.nb_languages == 1
     assert len(results.languages) == 1
-    # Check that the returned language is the English schedule
-    assert results.languages[0].code == english_schedule.language_code
+    # Check that the returned language is the English recipe
+    assert results.languages[0].code == english_recipe.language_code
     # The name should come from pycountry, not the database
     assert results.languages[0].name == "English"
 
@@ -54,9 +54,9 @@ def test_get_languages_pagination(
     dbsession: OrmSession, mwoffliner_definition: OfflinerDefinitionSchema
 ):
     """Test getting languages with pagination."""
-    # Create test schedules with valid language codes
-    schedules = [
-        Schedule(
+    # Create test recipes with valid language codes
+    recipes = [
+        Recipe(
             language_code="eng",  # English
             name="test1",
             category="test",
@@ -66,7 +66,7 @@ def test_get_languages_pagination(
             periodicity="test",
             notification={"test": "test"},
         ),
-        Schedule(
+        Recipe(
             language_code="fra",  # French
             name="test2",
             category="test",
@@ -76,7 +76,7 @@ def test_get_languages_pagination(
             periodicity="test",
             notification={"test": "test"},
         ),
-        Schedule(
+        Recipe(
             language_code="spa",  # Spanish
             name="test3",
             category="test",
@@ -86,7 +86,7 @@ def test_get_languages_pagination(
             periodicity="test",
             notification={"test": "test"},
         ),
-        Schedule(
+        Recipe(
             language_code="eng",  # English
             name="test4",
             category="test",
@@ -96,7 +96,7 @@ def test_get_languages_pagination(
             periodicity="test",
             notification={"test": "test"},
         ),
-        Schedule(
+        Recipe(
             language_code="spa",  # Spanish
             name="test5",
             category="test",
@@ -107,9 +107,9 @@ def test_get_languages_pagination(
             notification={"test": "test"},
         ),
     ]
-    for schedule in schedules:
-        schedule.offliner_definition_id = mwoffliner_definition.id
-    dbsession.add_all(schedules)
+    for recipe in recipes:
+        recipe.offliner_definition_id = mwoffliner_definition.id
+    dbsession.add_all(recipes)
     dbsession.flush()
 
     results = get_languages(dbsession, skip=0, limit=2)
@@ -121,8 +121,8 @@ def test_get_invalid_languages(
     dbsession: OrmSession, mwoffliner_definition: OfflinerDefinitionSchema
 ):
     """Test getting languages with invalid codes"""
-    schedules = [
-        Schedule(
+    recipes = [
+        Recipe(
             language_code="en",  # English
             name="test1",
             category="test",
@@ -132,7 +132,7 @@ def test_get_invalid_languages(
             periodicity="test",
             notification={"test": "test"},
         ),
-        Schedule(
+        Recipe(
             language_code="fr",  # French
             name="test2",
             category="test",
@@ -142,7 +142,7 @@ def test_get_invalid_languages(
             periodicity="test",
             notification={"test": "test"},
         ),
-        Schedule(
+        Recipe(
             language_code="jp",  # Japanase
             name="test3",
             category="test",
@@ -153,9 +153,9 @@ def test_get_invalid_languages(
             notification={"test": "test"},
         ),
     ]
-    for schedule in schedules:
-        schedule.offliner_definition_id = mwoffliner_definition.id
-    dbsession.add_all(schedules)
+    for recipe in recipes:
+        recipe.offliner_definition_id = mwoffliner_definition.id
+    dbsession.add_all(recipes)
     dbsession.flush()
 
     results = get_languages(dbsession, skip=0, limit=5)
@@ -169,34 +169,34 @@ def test_get_invalid_languages(
     "code",
     ["en", "fr", "invalid"],
 )
-def test_get_schedule_with_invalid_language_from_db(
+def test_get_recipe_with_invalid_language_from_db(
     dbsession: OrmSession,
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
     code: str,
 ):
-    # Create test schedule with invalid language code
-    schedule = Schedule(
+    # Create test recipe with invalid language code
+    recipe = Recipe(
         language_code=code,
         name="test1",
         category="test",
-        config=create_schedule_config().model_dump(mode="json"),
+        config=create_recipe_config().model_dump(mode="json"),
         enabled=True,
         tags=["test"],
         periodicity="test",
         notification={"test": "test"},
     )
-    schedule.offliner_definition_id = mwoffliner_definition.id
-    dbsession.add(schedule)
+    recipe.offliner_definition_id = mwoffliner_definition.id
+    dbsession.add(recipe)
     dbsession.flush()
-    # assert we can read schedules with invalid codes from db
-    schedule = get_schedule(dbsession, schedule_name="test1")
-    assert schedule.language_code == code
-    schedule_schema = create_schedule_full_schema(schedule, mwoffliner)
+    # assert we can read recipes with invalid codes from db
+    recipe = get_recipe(dbsession, recipe_name="test1")
+    assert recipe.language_code == code
+    recipe_schema = create_recipe_full_schema(recipe, mwoffliner)
     # for unknown languages, the code and name should be the same
-    assert schedule_schema.language.code == code
-    assert schedule_schema.language.name == code
+    assert recipe_schema.language.code == code
+    assert recipe_schema.language.name == code
 
 
 @pytest.mark.parametrize(

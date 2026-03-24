@@ -338,7 +338,7 @@ def test_update_user_scope(client: TestClient, user: User):
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"scope": {"schedules": {"read": True}}},
+        json={"scope": {"recipes": {"read": True}}},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
 
@@ -358,7 +358,7 @@ def test_update_user_role_and_scope(client: TestClient, user: User):
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"scope": {"schedules": {"read": True}}, "role": "editor"},
+        json={"scope": {"recipes": {"read": True}}, "role": "editor"},
     )
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 

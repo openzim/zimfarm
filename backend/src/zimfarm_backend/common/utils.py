@@ -16,7 +16,7 @@ from zimfarm_backend.common.notifications import handle_notification
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Task
-from zimfarm_backend.db.schedule import update_schedule_duration
+from zimfarm_backend.db.recipe import update_recipe_duration
 from zimfarm_backend.db.tasks import create_or_update_task_file
 from zimfarm_backend.db.user import get_user_by_identifier
 from zimfarm_backend.db.worker import get_worker
@@ -127,7 +127,7 @@ def save_event(
     task = session.scalars(select(Task).where(Task.id == task_id)).one_or_none()
     if task is None:
         raise RecordDoesNotExistError(f"Task {task_id} does not exist")
-    schedule = task.schedule
+    recipe = task.recipe
 
     # neither file events nor scraper_running should update timestamp list (not unique)
     if code not in TaskStatus.silent_events():
@@ -202,11 +202,11 @@ def save_event(
             )
 
     session.flush()  # we have to flush first to avoid circular dependency
-    if schedule and code == TaskStatus.reserved:
-        schedule.most_recent_task = task
+    if recipe and code == TaskStatus.reserved:
+        recipe.most_recent_task = task
 
-    if code == TaskStatus.scraper_completed and schedule:
-        update_schedule_duration(session, schedule_name=schedule.name)
+    if code == TaskStatus.scraper_completed and recipe:
+        update_recipe_duration(session, recipe_name=recipe.name)
 
 
 def task_requested_event_handler(

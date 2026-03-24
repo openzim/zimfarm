@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-"""Relaunch schedules which have failed recently
+"""Relaunch recipes which have failed recently
 
-Relaunch schedules which have failed since start_date and have not
+Relaunch recipes which have failed since start_date and have not
 failed more than 1 time in a row.
 
 Typically used when a bug occured in production at start_date and all
@@ -44,19 +44,19 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
 
     max_scraper_duration = 60
     for task in tasks:
-        schedule_name = task.schedule.name if task.schedule else "unknown"
+        recipe_name = task.recipe.name if task.recipe else "unknown"
         scraper_duration = (
             get_timestamp_for_status(task.timestamp, "scraper_completed")
             - get_timestamp_for_status(task.timestamp, "scraper_started")
         ).total_seconds()
         if scraper_duration > max_scraper_duration:
             logger.info(
-                f"Ignoring schedule {schedule_name}, duration was {scraper_duration}"
+                f"Ignoring recipe {recipe_name}, duration was {scraper_duration}"
             )
             continue
 
         all_tasks = sorted(
-            task.schedule.tasks if task.schedule else [],
+            task.recipe.tasks if task.recipe else [],
             key=lambda t: t.updated_at,
             reverse=True,
         )
@@ -67,7 +67,7 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
 
         if nb_success == 0:
             logger.info(
-                f"Ignoring schedule {schedule_name}, never succeeded out of "
+                f"Ignoring recipe {recipe_name}, never succeeded out of "
                 f"{total} attempts"
             )
             continue
@@ -81,25 +81,25 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
 
         if nb_failures_in_a_row > 1:
             logger.info(
-                f"Ignoring schedule {schedule_name}, too many failures in a row,"
+                f"Ignoring recipe {recipe_name}, too many failures in a row,"
                 f" failed: {nb_failed}, failure_in_a_row: {nb_failures_in_a_row},"
                 f" nb_success: {nb_success}, total: {total}"
             )
             continue
 
         logger.info(
-            f"Requesting schedule {schedule_name} failed: {nb_failed}, "
+            f"Requesting recipe {recipe_name} failed: {nb_failed}, "
             f"failure_in_a_row: {nb_failures_in_a_row}, nb_success: {nb_success},"
             f" total: {total}"
         )
 
         result = request_task(
             session=session,
-            schedule_name=schedule_name,
+            recipe_name=recipe_name,
             requested_by=get_user_by_username(session, username="maint-scripts").id,
         )
         if result.requested_task:
-            logger.debug(f"Successfully requested {schedule_name}")
+            logger.debug(f"Successfully requested {recipe_name}")
 
         if result.error:
             logger.warning(

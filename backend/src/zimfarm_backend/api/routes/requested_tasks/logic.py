@@ -48,6 +48,7 @@ from zimfarm_backend.common.schemas.orms import (
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.models import User
+from zimfarm_backend.db.recipe import count_enabled_recipes
 from zimfarm_backend.db.requested_task import (
     compute_requested_task_rank,
     find_requested_task_for_worker,
@@ -63,7 +64,6 @@ from zimfarm_backend.db.requested_task import (
 from zimfarm_backend.db.requested_task import (
     update_requested_task_priority as db_update_requested_task_priority,
 )
-from zimfarm_backend.db.schedule import count_enabled_schedules
 from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import get_worker, update_worker
 
@@ -91,29 +91,29 @@ def create_request_task(
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ):
-    """Create requested task from a list of schedule_names"""
+    """Create requested task from a list of recipe_names"""
     if not check_user_permission(
         current_user, namespace="requested_tasks", name="create"
     ):
         raise ForbiddenError("You are not allowed to request tasks")
 
-    if count_enabled_schedules(session, new_requested_task.schedule_names) == 0:
+    if count_enabled_recipes(session, new_requested_task.recipe_names) == 0:
         raise NotFoundError(
-            "No enabled schedules found for the given names",
+            "No enabled recipes found for the given names",
         )
 
     requested_tasks: list[RequestedTaskFullSchema] = []
     errors: dict[str, str] = {}
-    for schedule_name in new_requested_task.schedule_names:
+    for recipe_name in new_requested_task.recipe_names:
         result = request_task(
             session,
-            schedule_name=schedule_name,
+            recipe_name=recipe_name,
             requested_by=current_user.id,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
         )
         if result.error:
-            errors[schedule_name] = result.error
+            errors[recipe_name] = result.error
 
         if result.requested_task:
             requested_tasks.append(result.requested_task)
@@ -153,7 +153,7 @@ def get_requested_tasks(
             if requested_task_schema.matching_offliners is not None
             else None
         ),
-        schedule_name=requested_task_schema.schedule_name,
+        recipe_name=requested_task_schema.recipe_name,
         priority=requested_task_schema.priority,
         cpu=requested_task_schema.matching_cpu,
         memory=requested_task_schema.matching_memory,
@@ -248,7 +248,7 @@ def get_requested_tasks_for_worker(
                 RequestedTaskLightSchema(
                     id=task.id,
                     status=task.status,
-                    schedule_name=task.schedule_name,
+                    recipe_name=task.recipe_name,
                     config=ConfigWithOnlyOfflinerAndResourcesSchema(
                         offliner=cast(
                             str,
@@ -264,7 +264,7 @@ def get_requested_tasks_for_worker(
                     requested_by=task.requested_by,
                     requester_id=task.requester_id,
                     priority=task.priority,
-                    original_schedule_name=task.original_schedule_name,
+                    original_recipe_name=task.original_recipe_name,
                     worker_name=task.worker_name,
                     updated_at=task.updated_at,
                     context=task.context,
@@ -289,12 +289,12 @@ def get_requested_task(
 
     # also fetch all requested tasks IDs to compute estimated task rank ; this is
     # only an indicator for zimit.kiwix.org where duration is unknown because
-    # schedule is created on-demand and all tasks have access to same worker(s) ;
+    # recipe is created on-demand and all tasks have access to same worker(s) ;
     # sorting by priority and updated_at won't give a good indicator in other cases
     requested_task.rank = compute_requested_task_rank(session, requested_task_id)
 
     # exclude notification to not expose private information (privacy)
-    # on anonymous requests and requests for users without schedules_update
+    # on anonymous requests and requests for users without recipes_update
     if not (
         current_user
         and check_user_permission(

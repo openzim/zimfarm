@@ -17,11 +17,11 @@ from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
-    ExpandedScheduleConfigSchema,
+    ExpandedRecipeConfigSchema,
     OfflinerDefinitionSchema,
     RequestedTaskFullSchema,
     RunningTask,
-    ScheduleNotificationSchema,
+    RecipeNotificationSchema,
     TaskContainerSchema,
     TaskFileSchema,
     TaskFullSchema,
@@ -35,14 +35,14 @@ from zimfarm_backend.db.exceptions import (
 from zimfarm_backend.db.models import (
     File,
     OfflinerDefinition,
-    Schedule,
+    Recipe,
     Task,
     User,
     Worker,
 )
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
-from zimfarm_backend.db.schedule import get_schedule_duration
+from zimfarm_backend.db.recipe import get_recipe_duration
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -85,7 +85,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             OfflinerDefinition.schema.label("offliner_schema"),
             OfflinerDefinition.version.label("offliner_version"),
             OfflinerDefinition.created_at.label("offliner_definition_created_at"),
-            Schedule.name.label("schedule_name"),
+            Recipe.name.label("recipe_name"),
             Worker.name.label("worker_name"),
         )
         .options(
@@ -94,7 +94,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             selectinload(Task.canceled_by),
         )
         .join(OfflinerDefinition, Task.offliner_definition)
-        .join(Schedule, Task.schedule, isouter=True)
+        .join(Recipe, Task.recipe, isouter=True)
         .join(Worker, Task.worker, isouter=True)
         .where(Task.id == task_id)
     )
@@ -104,7 +104,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             id=task.id,
             status=task.status,
             timestamp=task.timestamp,
-            config=ExpandedScheduleConfigSchema.model_validate(
+            config=ExpandedRecipeConfigSchema.model_validate(
                 {
                     "warehouse_path": task.config["warehouse_path"],
                     "resources": task.config["resources"],
@@ -139,15 +139,15 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             container=TaskContainerSchema.model_validate(task.container),
             priority=task.priority,
             notification=(
-                ScheduleNotificationSchema.model_validate(task.notification)
+                RecipeNotificationSchema.model_validate(task.notification)
                 if task.notification
                 else None
             ),
             files={file.name: create_task_file_schema(file) for file in task.files},
             upload=TaskUploadSchema.model_validate(task.upload),
             updated_at=task.updated_at,
-            original_schedule_name=task.original_schedule_name,
-            schedule_name=row.schedule_name,
+            original_recipe_name=task.original_recipe_name,
+            recipe_name=row.recipe_name,
             worker_name=row.worker_name,
             context=task.context,
             offliner_definition_id=row.offliner_definition_id,
@@ -169,7 +169,7 @@ def get_tasks(
     skip: int,
     limit: int,
     status: list[TaskStatus] | None = None,
-    schedule_name: str | None = None,
+    recipe_name: str | None = None,
     sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
     offliner: str | None = None,
 ):
@@ -195,7 +195,7 @@ def get_tasks(
             Task.id,
             Task.status,
             Task.timestamp,
-            Task.original_schedule_name,
+            Task.original_recipe_name,
             Task.context,
             Task.priority,
             Bundle(  # pyright: ignore[reportUnknownArgumentType]
@@ -204,15 +204,15 @@ def get_tasks(
             ),
             Task.updated_at,
             User.display_name.label("requested_by"),
-            Schedule.name.label("schedule_name"),
+            Recipe.name.label("recipe_name"),
             Worker.name.label("worker_name"),
         )
         .join(User, Task.requested_by)
         .join(Worker, Task.worker, isouter=True)
-        .join(Schedule, Task.schedule, isouter=True)
+        .join(Recipe, Task.recipe, isouter=True)
         .where(
-            (Schedule.name == schedule_name) | (schedule_name is None),
-            (Schedule.config["offliner"]["offliner_id"].astext == offliner)
+            (Recipe.name == recipe_name) | (recipe_name is None),
+            (Recipe.config["offliner"]["offliner_id"].astext == offliner)
             | (offliner is None),
             (Task.status.in_(status)),
         )
@@ -227,13 +227,13 @@ def get_tasks(
         _id,
         _status,
         timestamp,
-        original_schedule_name,
+        original_recipe_name,
         context,
         priority,
         config,
         updated_at,
         requested_by,
-        _schedule_name,
+        _recipe_name,
         worker_name,
     ) in session.execute(
         stmt  # pyright: ignore[reportUnknownArgumentType]
@@ -244,7 +244,7 @@ def get_tasks(
                 id=_id,
                 status=_status,
                 timestamp=timestamp,
-                original_schedule_name=original_schedule_name,
+                original_recipe_name=original_recipe_name,
                 context=context,
                 priority=priority,
                 config=ConfigWithOnlyResourcesSchema(
@@ -256,7 +256,7 @@ def get_tasks(
                 ),
                 updated_at=updated_at,
                 requested_by=requested_by,
-                schedule_name=_schedule_name,
+                recipe_name=_recipe_name,
                 worker_name=worker_name,
             )
         )
@@ -286,12 +286,12 @@ def create_task(
             else {}
         ),
         upload=requested_task.upload.model_dump(mode="json"),
-        original_schedule_name=requested_task.original_schedule_name,
+        original_recipe_name=requested_task.original_recipe_name,
         context=requested_task.context,
     )
     task.id = requested_task.id
     task.requested_by_id = requested_task.requester_id
-    task.schedule_id = requested_task.schedule_id
+    task.recipe_id = requested_task.recipe_id
     task.worker_id = worker_id
     task.offliner_definition_id = requested_task.offliner_definition_id
     session.add(task)
@@ -334,7 +334,7 @@ def get_currently_running_tasks(
     return [
         RunningTask(
             id=task.id,
-            config=ExpandedScheduleConfigSchema.model_validate(
+            config=ExpandedRecipeConfigSchema.model_validate(
                 {
                     **task.config,
                     "offliner": create_offliner_instance(
@@ -348,7 +348,7 @@ def get_currently_running_tasks(
                 },
                 context={"skip_validation": True},
             ),
-            schedule_name=task.schedule.name if task.schedule else None,
+            recipe_name=task.recipe.name if task.recipe else None,
             timestamp=task.timestamp,
             updated_at=task.updated_at,
             worker_name=task.worker.name,
@@ -362,9 +362,9 @@ def get_currently_running_tasks(
 def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
     """compute task duration (dict), remaining (seconds) and eta (datetime)"""
     now = getnow()
-    duration = get_schedule_duration(
+    duration = get_recipe_duration(
         session,
-        schedule_name=task.schedule.name if task.schedule else None,
+        recipe_name=task.recipe.name if task.recipe else None,
         worker=task.worker,
     )
     elapsed = now - get_timestamp_for_status(

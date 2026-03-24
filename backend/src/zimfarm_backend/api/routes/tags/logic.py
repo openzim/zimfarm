@@ -18,7 +18,7 @@ def get_tags(
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,
 ):
-    """Get a list of schedule tags"""
+    """Get a list of recipe tags"""
     result = db_get_tags(session, skip, limit)
     return ListResponse(
         items=result.tags,

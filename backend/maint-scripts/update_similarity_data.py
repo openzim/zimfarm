@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Script to update similarity data of offliner definitions and schedules
+Script to update similarity data of offliner definitions and recipes
 
 EXAMPLES:
 
@@ -43,15 +43,15 @@ from zimfarm_backend.common.schemas.offliners.models import (
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import OfflinerDefinition, Schedule
+from zimfarm_backend.db.models import OfflinerDefinition, Recipe
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_definition_schema,
 )
-from zimfarm_backend.db.schedule import create_schedule_full_schema
+from zimfarm_backend.db.recipe import create_recipe_full_schema
 
 
-def update_schedules(
+def update_recipes(
     session: OrmSession,
     *,
     offliner: OfflinerSchema,
@@ -59,25 +59,25 @@ def update_schedules(
 ) -> int:
     nb_modified: int = 0
 
-    for schedule in session.execute(
-        sa.select(Schedule).where(
-            Schedule.config["offliner"]["offliner_id"].astext == offliner.id,
-            Schedule.offliner_definition_id == offliner_definition.id,
+    for recipe in session.execute(
+        sa.select(Recipe).where(
+            Recipe.config["offliner"]["offliner_id"].astext == offliner.id,
+            Recipe.offliner_definition_id == offliner_definition.id,
         )
     ).scalars():
-        logger.info(f"seting similarity data for schedule {schedule.name}")
-        schedule.similarity_data = generate_similarity_data(
-            schedule.config["offliner"], offliner, offliner_definition.schema_
+        logger.info(f"seting similarity data for recipe {recipe.name}")
+        recipe.similarity_data = generate_similarity_data(
+            recipe.config["offliner"], offliner, offliner_definition.schema_
         )
-        flag_modified(schedule, "config")
-        create_schedule_full_schema(schedule, offliner)
+        flag_modified(recipe, "config")
+        create_recipe_full_schema(recipe, offliner)
         nb_modified += 1
     return nb_modified
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Update schedules and requested tasks image tag "
+        description="Update recipes and requested tasks image tag "
         "or offliner definition",
     )
 
@@ -123,13 +123,13 @@ if __name__ == "__main__":
                 offliner_spec.similarity_data = similarity_data
                 # update the db offliner definition and all of its associated recipes
                 offliner_definition.schema = offliner_spec.model_dump(mode="json")
-                nb_schedules_modified = update_schedules(
+                nb_recipes_modified = update_recipes(
                     session,
                     offliner=offliner,
                     offliner_definition=create_offliner_definition_schema(
                         offliner_definition
                     ),
                 )
-                logger.info(f"updated {nb_schedules_modified} schedule(s) ")
+                logger.info(f"updated {nb_recipes_modified} recipe(s) ")
 
     logger.info("FINISH!")

@@ -6,7 +6,7 @@ from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     NotEmptyString,
     PriorityField,
-    ScheduleNameField,
+    RecipeNameField,
     SkipField,
     WorkerField,
     ZIMDisk,
@@ -21,7 +21,7 @@ class RequestedTaskSchema(BaseModel):
 
     worker: WorkerField | None = None
     priority: PriorityField | None = None
-    schedule_name: list[NotEmptyString] | None = None
+    recipe_name: list[NotEmptyString] | None = None
 
     matching_cpu: ZIMCPU | None = None
     matching_memory: ZIMMemory | None = None
@@ -30,7 +30,7 @@ class RequestedTaskSchema(BaseModel):
 
 
 class NewRequestedTaskSchema(BaseModel):
-    schedule_names: list[ScheduleNameField]
+    recipe_names: list[RecipeNameField]
     priority: PriorityField | None = None
     worker: WorkerField | None = None
 

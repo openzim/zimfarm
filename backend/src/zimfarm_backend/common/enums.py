@@ -108,7 +108,7 @@ class WarehousePath(StrEnum):
     @classmethod
     def all(cls) -> list[str]:
         return [
-            *ScheduleCategory.all_warehouse_paths(),
+            *RecipeCategory.all_warehouse_paths(),
             cls.videos,
             cls.zimit,
             cls.libretexts,
@@ -123,7 +123,7 @@ class WarehousePath(StrEnum):
         ]
 
 
-class ScheduleCategory(StrEnum):
+class RecipeCategory(StrEnum):
     gutenberg = "gutenberg"
     other = "other"
     phet = "phet"
@@ -231,7 +231,7 @@ class DockerImageName(StrEnum):
         }
 
 
-class SchedulePeriodicity(StrEnum):
+class RecipePeriodicity(StrEnum):
     manually = "manually"
     monthly = "monthly"
     quarterly = "quarterly"

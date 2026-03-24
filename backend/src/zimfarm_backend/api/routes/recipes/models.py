@@ -4,15 +4,15 @@ from uuid import UUID
 from pydantic import Field
 
 from zimfarm_backend.common.enums import (
-    ScheduleCategory,
-    SchedulePeriodicity,
+    RecipeCategory,
+    RecipePeriodicity,
 )
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     NotEmptyString,
     PlatformField,
-    ScheduleNameField,
+    RecipeNameField,
     SkipField,
     WarehousePathField,
     ZIMLangCode,
@@ -20,14 +20,14 @@ from zimfarm_backend.common.schemas.fields import (
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     ResourcesSchema,
-    ScheduleNotificationSchema,
+    RecipeNotificationSchema,
 )
 
 
-class SchedulesGetSchema(BaseModel):
+class RecipesGetSchema(BaseModel):
     skip: SkipField = 0
     limit: LimitFieldMax200 = 20
-    category: list[ScheduleCategory] | None = None
+    category: list[RecipeCategory] | None = None
     tag: list[NotEmptyString] | None = None
     lang: list[NotEmptyString] | None = None
     name: NotEmptyString | None = None
@@ -35,29 +35,29 @@ class SchedulesGetSchema(BaseModel):
     offliner: list[NotEmptyString] | None = None
 
 
-class ScheduleCreateSchema(BaseModel):
-    name: ScheduleNameField
+class RecipeCreateSchema(BaseModel):
+    name: RecipeNameField
     language: ZIMLangCode
-    category: ScheduleCategory
-    periodicity: SchedulePeriodicity
+    category: RecipeCategory
+    periodicity: RecipePeriodicity
     tags: list[NotEmptyString] = Field(default_factory=list)
     enabled: bool
     version: NotEmptyString
     config: dict[str, Any]  # will be validated in the route
-    notification: ScheduleNotificationSchema | None = None
+    notification: RecipeNotificationSchema | None = None
     context: str | None = None
     comment: str | None = None
 
 
-class ScheduleCreateResponseSchema(BaseModel):
+class RecipeCreateResponseSchema(BaseModel):
     id: UUID
 
 
-class ScheduleUpdateSchema(BaseModel):
-    name: ScheduleNameField | None = None
+class RecipeUpdateSchema(BaseModel):
+    name: RecipeNameField | None = None
     language: ZIMLangCode | None = None
-    category: ScheduleCategory | None = None
-    periodicity: SchedulePeriodicity | None = None
+    category: RecipeCategory | None = None
+    periodicity: RecipePeriodicity | None = None
     tags: list[NotEmptyString] | None = None
     enabled: bool | None = None
     offliner: str | None = None
@@ -71,16 +71,16 @@ class ScheduleUpdateSchema(BaseModel):
     context: str | None = None
     version: str | None = None
     comment: str | None = None  # Optional comment for history tracking
-    notification: ScheduleNotificationSchema | None = None
+    notification: RecipeNotificationSchema | None = None
 
 
 class CloneSchema(BaseModel):
-    name: ScheduleNameField
+    name: RecipeNameField
     comment: str | None = None
 
 
-class RestoreSchedulesSchema(BaseModel):
-    schedule_names: list[ScheduleNameField]
+class RestoreRecipesSchema(BaseModel):
+    recipe_names: list[RecipeNameField]
     comment: str | None = None
 
 
@@ -88,5 +88,5 @@ class ToggleArchiveStatusSchema(BaseModel):
     comment: str | None = None
 
 
-class RevertScheduleSchema(BaseModel):
+class RevertRecipeSchema(BaseModel):
     comment: str | None = None

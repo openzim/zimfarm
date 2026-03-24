@@ -15,23 +15,23 @@ def get_timestamp(task: dict[str, Any], status: str) -> str:
 
 
 def main(username: str, password: str):
-    """Print in STDOUT a markdown table of schedule most recent tasks"""
+    """Print in STDOUT a markdown table of recipe most recent tasks"""
     access_token, _ = get_token(username, password)
     response = requests.get(
-        url=get_url("/schedules/?limit=20&name=wikihow"),
+        url=get_url("/recipes/?limit=20&name=wikihow"),
         headers=get_token_headers(access_token),
         timeout=REQUESTS_TIMEOUT,
     )
-    schedules = response.json()["items"]
+    recipes = response.json()["items"]
     print(  # noqa: T201
-        "| Schedule name | Task ID | status | started | scraper_completed |"
+        "| Recipe name | Task ID | status | started | scraper_completed |"
     )
     print("|--|--|--|--|--|")  # noqa: T201
 
     datas: list[dict[str, Any]] = []
-    for schedule in sorted(schedules, key=lambda schedule: schedule["name"]):
+    for recipe in sorted(recipes, key=lambda recipe: recipe["name"]):
         response = requests.get(
-            f"{get_url('/tasks')}/{schedule['most_recent_task']['_id']}",
+            f"{get_url('/tasks')}/{recipe['most_recent_task']['_id']}",
             headers=get_token_headers(access_token),
             timeout=REQUESTS_TIMEOUT,
         )
@@ -39,7 +39,7 @@ def main(username: str, password: str):
 
         datas.append(
             {
-                "schedule": schedule,
+                "recipe": recipe,
                 "most_recent_task": most_recent_task,
                 "scraper_completed": get_timestamp(
                     most_recent_task, "scraper_completed"
@@ -48,11 +48,11 @@ def main(username: str, password: str):
         )
 
     for data in sorted(datas, key=lambda data: data["scraper_completed"]):
-        schedule = data["schedule"]
+        recipe = data["recipe"]
         most_recent_task = data["most_recent_task"]
         print(  # noqa: T201
-            f"| [{schedule['name']}]"
-            f"(https://farm.openzim.org/recipes/{schedule['name']}) "
+            f"| [{recipe['name']}]"
+            f"(https://farm.openzim.org/recipes/{recipe['name']}) "
             f"| [{most_recent_task['_id']}]"
             f"(https://farm.openzim.org/pipeline/{most_recent_task['_id']}) "
             f"| {most_recent_task['status']} "

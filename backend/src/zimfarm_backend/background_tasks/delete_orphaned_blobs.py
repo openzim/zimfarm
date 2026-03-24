@@ -34,17 +34,17 @@ def delete_orphaned_blobs(session: OrmSession):
     """
     Delete orphaned blobs from the blob storage.
 
-    A blob is considered orphaned when its schedule_id is NULL.
+    A blob is considered orphaned when its recipe_id is NULL.
     This function:
-    1. Finds all blobs with schedule_id = NULL
+    1. Finds all blobs with recipe_id = NULL
     2. Attempts to delete them from the blob storage via HTTP DELETE
     3. Removes successfully deleted blobs from the database
     """
-    logger.info(":: checking for orphaned blobs (schedule_id is NULL)")
+    logger.info(":: checking for orphaned blobs (recipe_id is NULL)")
 
     # Find all orphaned blobs
     orphaned_blobs = session.execute(
-        select(Blob).where(Blob.schedule_id.is_(None))
+        select(Blob).where(Blob.recipe_id.is_(None))
     ).scalars()
 
     nb_deleted_from_storage = 0

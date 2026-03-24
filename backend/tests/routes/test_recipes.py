@@ -9,21 +9,21 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import ScheduleCategory, SchedulePeriodicity
+from zimfarm_backend.common.enums import RecipeCategory, RecipePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import (
     EventNotificationSchema,
-    ScheduleConfigSchema,
-    ScheduleNotificationSchema,
+    RecipeConfigSchema,
+    RecipeNotificationSchema,
 )
 from zimfarm_backend.common.schemas.orms import (
     LanguageSchema,
     OfflinerDefinitionSchema,
     OfflinerSchema,
 )
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User
+from zimfarm_backend.db.models import RequestedTask, Recipe, Task, User
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
-from zimfarm_backend.db.schedule import get_schedule, update_schedule
+from zimfarm_backend.db.recipe import get_recipe, update_recipe
 
 
 @pytest.mark.parametrize(
@@ -32,13 +32,13 @@ from zimfarm_backend.db.schedule import get_schedule, update_schedule
         pytest.param("", 10, id="all"),
         pytest.param("&name=wiki&lang=eng", 10, id="wiki_eng"),
         pytest.param("&name=wiki&lang=fra", 0, id="wiki_fra"),
-        pytest.param("&name=schedule&category=wikipedia", 0, id="schedule_wikipedia"),
-        pytest.param("&name=schedule&lang=eng&tag=important", 0, id="eng_important"),
+        pytest.param("&name=recipe&category=wikipedia", 0, id="recipe_wikipedia"),
+        pytest.param("&name=recipe&lang=eng&tag=important", 0, id="eng_important"),
         pytest.param("&name=nonexistent", 0, id="nonexistent"),
         pytest.param(
-            "&name=schedule&lang=eng&category=other&tag=test",
+            "&name=recipe&lang=eng&category=other&tag=test",
             0,
-            id="schedule_eng_other_test",
+            id="recipe_eng_other_test",
         ),
         pytest.param(
             "&name=wiki&lang=eng&category=wikipedia&tag=important",
@@ -47,11 +47,11 @@ from zimfarm_backend.db.schedule import get_schedule, update_schedule
         ),
     ],
 )
-def test_get_schedules(
+def test_get_recipes(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_requested_task: Callable[..., RequestedTask],
     create_task: Callable[..., Task],
     query_string: str,
@@ -64,20 +64,20 @@ def test_get_schedules(
     )
 
     for i in range(10):
-        schedule = create_schedule(
+        recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=ScheduleCategory.wikipedia,
+            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
-        requested_task = create_requested_task(schedule_name=schedule.name)
+        requested_task = create_requested_task(recipe_name=recipe.name)
         task = create_task(requested_task=requested_task)
-        schedule.most_recent_task = task
-        schedule.similarity_data = ["hello", "world"]
-        dbsession.add(schedule)
+        recipe.most_recent_task = task
+        recipe.similarity_data = ["hello", "world"]
+        dbsession.add(recipe)
         dbsession.flush()
 
-    url = "/v2/schedules?skip=0&limit=5"
+    url = "/v2/recipes?skip=0&limit=5"
     response = client.get(
         url + query_string,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -99,10 +99,10 @@ def test_get_schedules(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_get_archived_schedules(
+def test_get_archived_recipes(
     client: TestClient,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -111,20 +111,20 @@ def test_get_archived_schedules(
         issue_time=getnow(),
         user_id=str(user.id),
     )
-    create_schedule(name="test_schedule", archived=True)
+    create_recipe(name="test_recipe", archived=True)
 
     response = client.get(
-        "/v2/schedules?skip=0&limit=1&archived=true",
+        "/v2/recipes?skip=0&limit=1&archived=true",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
 
 
-def test_get_similar_schedules(
+def test_get_similar_recipes(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_requested_task: Callable[..., RequestedTask],
     create_task: Callable[..., Task],
 ):
@@ -135,20 +135,20 @@ def test_get_similar_schedules(
     )
 
     for i in range(10):
-        schedule = create_schedule(
+        recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=ScheduleCategory.wikipedia,
+            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
-        requested_task = create_requested_task(schedule_name=schedule.name)
+        requested_task = create_requested_task(recipe_name=recipe.name)
         task = create_task(requested_task=requested_task)
-        schedule.most_recent_task = task
-        schedule.similarity_data = ["hello", "world"]
-        dbsession.add(schedule)
+        recipe.most_recent_task = task
+        recipe.similarity_data = ["hello", "world"]
+        dbsession.add(recipe)
         dbsession.flush()
 
-    url = "/v2/schedules/wiki_eng_0/similar?skip=0&limit=5"
+    url = "/v2/recipes/wiki_eng_0/similar?skip=0&limit=5"
     response = client.get(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -161,7 +161,7 @@ def test_get_similar_schedules(
     assert "skip" in data["meta"]
     for item in data["items"]:
         assert item["name"] != "wiki_eng_0"
-    assert data["meta"]["count"] == 9  # schedule itself is not included
+    assert data["meta"]["count"] == 9  # recipe itself is not included
     assert len(data["items"]) <= 5
 
 
@@ -170,8 +170,8 @@ def test_get_similar_schedules(
     [
         pytest.param(
             {
-                "name": "test_schedule",
-                "category": ScheduleCategory.wikipedia.value,
+                "name": "test_recipe",
+                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -194,7 +194,7 @@ def test_get_similar_schedules(
                     "monitor": True,
                 },
                 "enabled": True,
-                "periodicity": SchedulePeriodicity.manually.value,
+                "periodicity": RecipePeriodicity.manually.value,
                 "version": "initial",
             },
             HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -202,8 +202,8 @@ def test_get_similar_schedules(
         ),
         pytest.param(
             {
-                "name": "test_schedule",
-                "category": ScheduleCategory.wikipedia.value,
+                "name": "test_recipe",
+                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -228,7 +228,7 @@ def test_get_similar_schedules(
                     "monitor": True,
                 },
                 "enabled": True,
-                "periodicity": SchedulePeriodicity.manually.value,
+                "periodicity": RecipePeriodicity.manually.value,
                 "version": "initial",
             },
             HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -236,8 +236,8 @@ def test_get_similar_schedules(
         ),
         pytest.param(
             {
-                "name": "test_schedule",
-                "category": ScheduleCategory.wikipedia.value,
+                "name": "test_recipe",
+                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -261,7 +261,7 @@ def test_get_similar_schedules(
                     "monitor": True,
                 },
                 "enabled": True,
-                "periodicity": SchedulePeriodicity.manually.value,
+                "periodicity": RecipePeriodicity.manually.value,
                 "version": "notfound",
             },
             HTTPStatus.NOT_FOUND,
@@ -269,8 +269,8 @@ def test_get_similar_schedules(
         ),
         pytest.param(
             {
-                "name": "test_schedule",
-                "category": ScheduleCategory.wikipedia.value,
+                "name": "test_recipe",
+                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -294,7 +294,7 @@ def test_get_similar_schedules(
                     "monitor": True,
                 },
                 "enabled": True,
-                "periodicity": SchedulePeriodicity.manually.value,
+                "periodicity": RecipePeriodicity.manually.value,
                 "context": "test",
                 "version": "initial",
             },
@@ -303,14 +303,14 @@ def test_get_similar_schedules(
         ),
     ],
 )
-def test_create_schedule(
+def test_create_recipe(
     client: TestClient,
     create_user: Callable[..., User],
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001
     payload: dict[str, Any],
     expected_status_code: HTTPStatus,
 ):
-    """Test that create_schedule raises Unprocessable Entity with invalid config"""
+    """Test that create_recipe raises Unprocessable Entity with invalid config"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -318,7 +318,7 @@ def test_create_schedule(
     )
 
     response = client.post(
-        "/v2/schedules",
+        "/v2/recipes",
         headers={"Authorization": f"Bearer {access_token}"},
         json=payload,
     )
@@ -332,100 +332,98 @@ def test_create_schedule(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_create_schedule_with_permssions(
+def test_create_recipe_with_permssions(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    """Test that create_schedule raises ForbiddenError without permission"""
+    """Test that create_recipe raises ForbiddenError without permission"""
     user = create_user(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
     )
 
-    schedule_config = create_schedule_config()
+    recipe_config = create_recipe_config()
 
     response = client.post(
-        "/v2/schedules",
+        "/v2/recipes",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "name": "test_schedule",
-            "category": ScheduleCategory.wikipedia.value,
+            "name": "test_recipe",
+            "category": RecipeCategory.wikipedia.value,
             "language": "eng",
             "tags": ["important"],
-            "config": schedule_config.model_dump(
+            "config": recipe_config.model_dump(
                 mode="json", context={"show_secrets": True}
             ),
             "enabled": True,
-            "periodicity": SchedulePeriodicity.manually.value,
+            "periodicity": RecipePeriodicity.manually.value,
             "version": mwoffliner_definition.version,
             "context": "test",
         },
     )
     assert response.status_code == expected_status_code
     if response.status_code == HTTPStatus.OK:
-        # assert top-level scalar attributes of the schedule with the payload
-        schedule = get_schedule(dbsession, schedule_name="test_schedule")
-        assert schedule.language_code == "eng"
-        assert schedule.tags == ["important"]
-        assert schedule.enabled is True
-        assert schedule.context == "test"
-        assert schedule.periodicity == SchedulePeriodicity.manually.value
-        assert schedule.category == ScheduleCategory.wikipedia.value
+        # assert top-level scalar attributes of the recipe with the payload
+        recipe = get_recipe(dbsession, recipe_name="test_recipe")
+        assert recipe.language_code == "eng"
+        assert recipe.tags == ["important"]
+        assert recipe.enabled is True
+        assert recipe.context == "test"
+        assert recipe.periodicity == RecipePeriodicity.manually.value
+        assert recipe.category == RecipeCategory.wikipedia.value
 
 
 @pytest.mark.parametrize(
-    "schedule_name,expected_status_code",
+    "recipe_name,expected_status_code",
     [
-        pytest.param("test_schedule", HTTPStatus.OK, id="valid-schedule-name"),
+        pytest.param("test_recipe", HTTPStatus.OK, id="valid-recipe-name"),
         pytest.param(
-            "test-schedule/",
+            "test-recipe/",
             HTTPStatus.UNPROCESSABLE_ENTITY,
-            id="slash-in-schedule-name",
+            id="slash-in-recipe-name",
         ),
+        pytest.param("none", HTTPStatus.UNPROCESSABLE_ENTITY, id="none-as-recipe-name"),
         pytest.param(
-            "none", HTTPStatus.UNPROCESSABLE_ENTITY, id="none-as-schedule-name"
-        ),
-        pytest.param(
-            "testSchedule", HTTPStatus.UNPROCESSABLE_ENTITY, id="uppercase-char"
+            "testRecipe", HTTPStatus.UNPROCESSABLE_ENTITY, id="uppercase-char"
         ),
     ],
 )
-def test_schedule_name(
+def test_recipe_name(
     client: TestClient,
     create_user: Callable[..., User],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
-    schedule_name: str,
+    recipe_name: str,
     expected_status_code: int,
 ):
-    """Test that create_schedule raises Unprocessable entity with invalid name"""
+    """Test that create_recipe raises Unprocessable entity with invalid name"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
     )
 
-    schedule_config = create_schedule_config()
+    recipe_config = create_recipe_config()
 
     response = client.post(
-        "/v2/schedules",
+        "/v2/recipes",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "name": schedule_name,
-            "category": ScheduleCategory.wikipedia.value,
+            "name": recipe_name,
+            "category": RecipeCategory.wikipedia.value,
             "language": "eng",
             "tags": ["important"],
-            "config": schedule_config.model_dump(
+            "config": recipe_config.model_dump(
                 mode="json", context={"show_secrets": True}
             ),
             "enabled": True,
-            "periodicity": SchedulePeriodicity.manually.value,
+            "periodicity": RecipePeriodicity.manually.value,
             "version": mwoffliner_definition.version,
         },
     )
@@ -439,11 +437,11 @@ def test_schedule_name(
         pytest.param(RoleEnum.ADMIN, True, id="admin-hide-secrets"),
     ],
 )
-def test_get_schedule(
+def test_get_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     *,
     hide_secrets: bool,
@@ -454,13 +452,13 @@ def test_get_schedule(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     _hide_secrets = "true" if hide_secrets else "false"
     response = client.get(
-        f"/v2/schedules/{schedule.name}?hide_secrets={_hide_secrets}",
+        f"/v2/recipes/{recipe.name}?hide_secrets={_hide_secrets}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     data = response.json()
@@ -475,12 +473,12 @@ def test_get_schedule(
         assert data["config"]["offliner"]["mwPassword"] == "test-password"
 
 
-def test_get_obsolete_schedule(
+def test_get_obsolete_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
 ):
@@ -490,38 +488,36 @@ def test_get_obsolete_schedule(
         user_id=str(user.id),
     )
 
-    schedule_config = create_schedule_config()
-    raw_schedule_config = schedule_config.model_dump(
+    recipe_config = create_recipe_config()
+    raw_recipe_config = recipe_config.model_dump(
         mode="json", context={"show_secrets": True}
     )
-    raw_schedule_config["offliner"]["mwUrl"] = None  # Unset mandatory field
-    raw_schedule_config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
-    schedule = create_schedule(
-        name="test_schedule", raw_schedule_config=raw_schedule_config
-    )
-    dbsession.add(schedule)
+    raw_recipe_config["offliner"]["mwUrl"] = None  # Unset mandatory field
+    raw_recipe_config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
+    recipe = create_recipe(name="test_recipe", raw_recipe_config=raw_recipe_config)
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.get(
-        f"/v2/schedules/{schedule.name}",
+        f"/v2/recipes/{recipe.name}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
-    schedule_data = response.json()
-    assert "config" in schedule_data
-    assert "offliner" in schedule_data["config"]
-    assert "mwUrl" in schedule_data["config"]["offliner"]
-    assert schedule_data["config"]["offliner"]["mwUrl"] is None
-    assert "oldFlag" in schedule_data["config"]["offliner"]
-    assert schedule_data["config"]["offliner"]["oldFlag"] == "anyValue"
+    recipe_data = response.json()
+    assert "config" in recipe_data
+    assert "offliner" in recipe_data["config"]
+    assert "mwUrl" in recipe_data["config"]["offliner"]
+    assert recipe_data["config"]["offliner"]["mwUrl"] is None
+    assert "oldFlag" in recipe_data["config"]["offliner"]
+    assert recipe_data["config"]["offliner"]["oldFlag"] == "anyValue"
 
 
-def test_patch_obsolete_schedule(
+def test_patch_obsolete_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
 ):
@@ -531,20 +527,18 @@ def test_patch_obsolete_schedule(
         user_id=str(user.id),
     )
 
-    schedule_config = create_schedule_config()
-    raw_schedule_config = schedule_config.model_dump(
+    recipe_config = create_recipe_config()
+    raw_recipe_config = recipe_config.model_dump(
         mode="json", context={"show_secrets": True}
     )
-    raw_schedule_config["offliner"]["mwUrl"] = None  # Unset mandatory field
-    raw_schedule_config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
-    schedule = create_schedule(
-        name="test_schedule", raw_schedule_config=raw_schedule_config
-    )
-    dbsession.add(schedule)
+    raw_recipe_config["offliner"]["mwUrl"] = None  # Unset mandatory field
+    raw_recipe_config["offliner"]["oldFlag"] = "anyValue"  # Set unknown field
+    recipe = create_recipe(name="test_recipe", raw_recipe_config=raw_recipe_config)
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.patch(
-        f"/v2/schedules/{schedule.name}",
+        f"/v2/recipes/{recipe.name}",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "flags": {"mwUrl": "http://fr.wikipedia.org", "adminEmail": "bob@acme.com"},
@@ -552,19 +546,19 @@ def test_patch_obsolete_schedule(
     )
 
     assert response.status_code == HTTPStatus.OK
-    schedule_data = response.json()
-    assert "config" in schedule_data
-    assert "offliner" in schedule_data["config"]
-    assert "mwUrl" in schedule_data["config"]["offliner"]
-    assert schedule_data["config"]["offliner"]["mwUrl"] == "http://fr.wikipedia.org/"
-    assert "oldFlag" not in schedule_data["config"]["offliner"]
+    recipe_data = response.json()
+    assert "config" in recipe_data
+    assert "offliner" in recipe_data["config"]
+    assert "mwUrl" in recipe_data["config"]["offliner"]
+    assert recipe_data["config"]["offliner"]["mwUrl"] == "http://fr.wikipedia.org/"
+    assert "oldFlag" not in recipe_data["config"]["offliner"]
 
 
-def test_update_schedule_unauthorized(
+def test_update_recipe_unauthorized(
     client: TestClient,
     create_user: Callable[..., User],
 ):
-    """Test that update_schedule raises ForbiddenError without permission"""
+    """Test that update_recipe raises ForbiddenError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -572,11 +566,11 @@ def test_update_schedule_unauthorized(
     )
 
     response = client.patch(
-        "/v2/schedules/nonexistent",
+        "/v2/recipes/nonexistent",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "name": "test_schedule",
-            "category": ScheduleCategory.wikipedia.value,
+            "name": "test_recipe",
+            "category": RecipeCategory.wikipedia.value,
         },
     )
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -663,11 +657,11 @@ def test_update_schedule_unauthorized(
         ),
     ],
 )
-def test_update_schedule(
+def test_update_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
     tedoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
@@ -681,12 +675,12 @@ def test_update_schedule(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.patch(
-        f"/v2/schedules/{schedule.name}",
+        f"/v2/recipes/{recipe.name}",
         headers={"Authorization": f"Bearer {access_token}"},
         json=payload,
     )
@@ -700,11 +694,11 @@ def test_update_schedule(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_delete_schedule(
+def test_delete_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -714,31 +708,31 @@ def test_delete_schedule(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.delete(
-        f"/v2/schedules/{schedule.name}",
+        f"/v2/recipes/{recipe.name}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
 
 
-@patch("zimfarm_backend.api.routes.schedules.logic.get_schedule_image_tags")
-def test_get_schedule_image_names(
+@patch("zimfarm_backend.api.routes.recipes.logic.get_recipe_image_tags")
+def test_get_recipe_image_names(
     mock_get_tags: MagicMock,
     client: TestClient,
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
 ):
     mock_get_tags.return_value = ["latest", "1.0.0", "1.0.1"]
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.get(
-        f"/v2/schedules/{schedule.name}/image-names?hub_name=openzim/mwoffliner",
+        f"/v2/recipes/{recipe.name}/image-names?hub_name=openzim/mwoffliner",
     )
     mock_get_tags.assert_called_once_with("openzim/mwoffliner")
 
@@ -755,11 +749,11 @@ def test_get_schedule_image_names(
         pytest.param("eng", True, id="valid-language-code"),
     ],
 )
-def test_clone_schedule(
+def test_clone_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     new_language_code: str,
     *,
     expected_validity_status: bool,
@@ -770,24 +764,24 @@ def test_clone_schedule(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    schedule.language_code = new_language_code
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    recipe.language_code = new_language_code
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.post(
-        f"/v2/schedules/{schedule.name}/clone",
+        f"/v2/recipes/{recipe.name}/clone",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"name": "test_schedule_clone"},
+        json={"name": "test_recipe_clone"},
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert "id" in data
     assert data["id"] is not None
-    assert str(data["id"]) != str(schedule.id)
+    assert str(data["id"]) != str(recipe.id)
 
-    new_schedule = get_schedule(dbsession, schedule_name="test_schedule_clone")
-    assert new_schedule.is_valid == expected_validity_status
+    new_recipe = get_recipe(dbsession, recipe_name="test_recipe_clone")
+    assert new_recipe.is_valid == expected_validity_status
 
 
 @pytest.mark.parametrize(
@@ -813,11 +807,11 @@ def test_clone_schedule(
         ),
     ],
 )
-def test_validate_schedule(
+def test_validate_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     new_language_code: str,
     *,
@@ -828,29 +822,29 @@ def test_validate_schedule(
         issue_time=getnow(),
         user_id=str(user.id),
     )
-    schedule = create_schedule(name="test_schedule")
+    recipe = create_recipe(name="test_recipe")
     # set the new language code in the db
-    schedule.language_code = new_language_code
-    dbsession.add(schedule)
+    recipe.language_code = new_language_code
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.get(
-        f"/v2/schedules/{schedule.name}/validate",
+        f"/v2/recipes/{recipe.name}/validate",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
 
 
-def test_create_duplicate_schedule(
+def test_create_duplicate_recipe(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
-    schedule_config = create_schedule_config()
-    schedule = create_schedule(name="test_schedule", schedule_config=schedule_config)
-    dbsession.add(schedule)
+    recipe_config = create_recipe_config()
+    recipe = create_recipe(name="test_recipe", recipe_config=recipe_config)
+    dbsession.add(recipe)
     dbsession.flush()
 
     user = create_user(permission=RoleEnum.ADMIN)
@@ -860,30 +854,30 @@ def test_create_duplicate_schedule(
     )
 
     response = client.post(
-        "/v2/schedules",
+        "/v2/recipes",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "name": "test_schedule",
-            "category": ScheduleCategory.wikipedia.value,
+            "name": "test_recipe",
+            "category": RecipeCategory.wikipedia.value,
             "language": "eng",
             "tags": ["important"],
-            "config": schedule_config.model_dump(
+            "config": recipe_config.model_dump(
                 mode="json", context={"show_secrets": True}
             ),
             "enabled": True,
-            "periodicity": SchedulePeriodicity.manually.value,
+            "periodicity": RecipePeriodicity.manually.value,
             "version": "initial",
         },
     )
     assert response.status_code == HTTPStatus.CONFLICT
 
 
-def test_clone_existing_schedule_with_name_unchanged(
+def test_clone_existing_recipe_with_name_unchanged(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
@@ -891,47 +885,47 @@ def test_clone_existing_schedule_with_name_unchanged(
         user_id=str(user.id),
     )
 
-    schedule_config = create_schedule_config()
-    schedule = create_schedule(name="test_schedule", schedule_config=schedule_config)
-    dbsession.add(schedule)
+    recipe_config = create_recipe_config()
+    recipe = create_recipe(name="test_recipe", recipe_config=recipe_config)
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.post(
-        f"/v2/schedules/{schedule.name}/clone",
+        f"/v2/recipes/{recipe.name}/clone",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"name": "test_schedule"},
+        json={"name": "test_recipe"},
     )
     assert response.status_code == HTTPStatus.CONFLICT
 
 
-def test_update_existing_schedule_with_existing_name(
+def test_update_existing_recipe_with_existing_name(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
-    """Test that updating a schedule name with another existing schedule name fails"""
+    """Test that updating a recipe name with another existing recipe name fails"""
     user = create_user(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
         user_id=str(user.id),
     )
 
-    schedule_config = create_schedule_config()
-    schedules = [
-        create_schedule(name=f"test_schedule_{i}", schedule_config=schedule_config)
+    recipe_config = create_recipe_config()
+    recipes = [
+        create_recipe(name=f"test_recipe_{i}", recipe_config=recipe_config)
         for i in range(3)
     ]
-    dbsession.add_all(schedules)
+    dbsession.add_all(recipes)
     dbsession.flush()
 
-    # attempt to update schedule_1 with the name of schedule_2
+    # attempt to update recipe_1 with the name of recipe_2
     response = client.patch(
-        "/v2/schedules/test_schedule_1",
+        "/v2/recipes/test_recipe_1",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "name": "test_schedule_2",
+            "name": "test_recipe_2",
         },
     )
     assert response.status_code == HTTPStatus.CONFLICT
@@ -1027,11 +1021,11 @@ def test_update_existing_schedule_with_existing_name(
         ),
     ],
 )
-def test_update_schedule_config_top_level_attributes(
+def test_update_recipe_config_top_level_attributes(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     payload: dict[str, Any],
     check_attrs: set[str],
     expected_status_code: HTTPStatus,
@@ -1042,12 +1036,12 @@ def test_update_schedule_config_top_level_attributes(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.patch(
-        f"/v2/schedules/{schedule.name}",
+        f"/v2/recipes/{recipe.name}",
         headers={"Authorization": f"Bearer {access_token}"},
         json=payload,
     )
@@ -1073,11 +1067,11 @@ def test_update_schedule_config_top_level_attributes(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_get_schedule_history(
+def test_get_recipe_history(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -1087,12 +1081,12 @@ def test_get_schedule_history(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.get(
-        f"/v2/schedules/{schedule.name}/history?limit=10&skip=0",
+        f"/v2/recipes/{recipe.name}/history?limit=10&skip=0",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
@@ -1107,11 +1101,11 @@ def test_get_schedule_history(
         pytest.param("limit=10&skip=10", 0, id="third-page"),
     ],
 )
-def test_get_schedule_history_pagination(
+def test_get_recipe_history_pagination(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     query_string: str,
     expected_count: int,
 ):
@@ -1120,27 +1114,27 @@ def test_get_schedule_history_pagination(
         issue_time=getnow(),
         user_id=str(user.id),
     )
-    schedule = create_schedule(
-        name="test_schedule",
-        category=ScheduleCategory.wikipedia,
+    recipe = create_recipe(
+        name="test_recipe",
+        category=RecipeCategory.wikipedia,
         language=LanguageSchema(code="eng", name="English"),
         tags=["important"],
     )
 
-    #  When we created a schedule, we created 1 history entry
+    #  When we created a recipe, we created 1 history entry
     for i in range(9):
-        update_schedule(
+        update_recipe(
             session=dbsession,
             author_id=user.id,
-            schedule_name=schedule.name,
+            recipe_name=recipe.name,
             comment=f"test_comment_{i}",
-            tags=[*schedule.tags, f"test_tag_{i}"],
+            tags=[*recipe.tags, f"test_tag_{i}"],
             offliner_definition=create_offliner_definition_schema(
-                schedule.offliner_definition
+                recipe.offliner_definition
             ),
         )
 
-    url = f"/v2/schedules/{schedule.name}/history?{query_string}"
+    url = f"/v2/recipes/{recipe.name}/history?{query_string}"
     response = client.get(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -1162,11 +1156,11 @@ def test_get_schedule_history_pagination(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_get_schedule_history_entry(
+def test_get_recipe_history_entry(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -1176,22 +1170,22 @@ def test_get_schedule_history_entry(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
-    dbsession.add(schedule)
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.get(
-        f"/v2/schedules/{schedule.name}/history/{schedule.history_entries[0].id}",
+        f"/v2/recipes/{recipe.name}/history/{recipe.history_entries[0].id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
 
 
-def test_get_schedule_backups(
+def test_get_recipe_backups(
     client: TestClient,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
 ):
     user = create_user(permission=RoleEnum.ADMIN)
@@ -1200,10 +1194,10 @@ def test_get_schedule_backups(
         user_id=str(user.id),
     )
 
-    create_schedule(schedule_config=create_schedule_config())
+    create_recipe(recipe_config=create_recipe_config())
 
     response = client.get(
-        "/v2/schedules/backup",
+        "/v2/recipes/backup",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -1216,10 +1210,10 @@ def test_get_schedule_backups(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_restore_schedules(
+def test_restore_recipes(
     client: TestClient,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -1229,12 +1223,12 @@ def test_restore_schedules(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule", archived=True)
+    recipe = create_recipe(name="test_recipe", archived=True)
 
     response = client.post(
-        "/v2/schedules/restore",
+        "/v2/recipes/restore",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"schedule_names": [schedule.name]},
+        json={"recipe_names": [recipe.name]},
     )
     assert response.status_code == expected_status_code
 
@@ -1246,10 +1240,10 @@ def test_restore_schedules(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_archive_schedule(
+def test_archive_recipe(
     client: TestClient,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -1259,10 +1253,10 @@ def test_archive_schedule(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule")
+    recipe = create_recipe(name="test_recipe")
 
     response = client.patch(
-        f"/v2/schedules/{schedule.name}/archive",
+        f"/v2/recipes/{recipe.name}/archive",
         headers={"Authorization": f"Bearer {access_token}"},
         json={},
     )
@@ -1276,10 +1270,10 @@ def test_archive_schedule(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_restore_schedule(
+def test_restore_recipe(
     client: TestClient,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
@@ -1289,10 +1283,10 @@ def test_restore_schedule(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(name="test_schedule", archived=True)
+    recipe = create_recipe(name="test_recipe", archived=True)
 
     response = client.patch(
-        f"/v2/schedules/{schedule.name}/restore",
+        f"/v2/recipes/{recipe.name}/restore",
         headers={"Authorization": f"Bearer {access_token}"},
         json={},
     )
@@ -1306,12 +1300,12 @@ def test_restore_schedule(
         pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
     ],
 )
-def test_revert_schedule_history(
+def test_revert_recipe_history(
     client: TestClient,
     dbsession: OrmSession,
     create_user: Callable[..., User],
-    create_schedule: Callable[..., Schedule],
-    schedule_config: ScheduleConfigSchema,
+    create_recipe: Callable[..., Recipe],
+    recipe_config: RecipeConfigSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
@@ -1322,29 +1316,29 @@ def test_revert_schedule_history(
         user_id=str(user.id),
     )
 
-    schedule = create_schedule(
-        name="test_schedule",
+    recipe = create_recipe(
+        name="test_recipe",
         enabled=True,
         tags=["tag1", "tag2"],
         category="wikipedia",
         periodicity="monthly",
         context="initial context",
-        schedule_config=schedule_config,
+        recipe_config=recipe_config,
     )
-    initial_history_id = schedule.history_entries[0].id
+    initial_history_id = recipe.history_entries[0].id
 
-    update_schedule(
+    update_recipe(
         dbsession,
         author_id=user.id,
-        schedule_name="test_schedule",
+        recipe_name="test_recipe",
         offliner_definition=mwoffliner_definition,
         tags=["tag3", "tag4"],
-        category=ScheduleCategory.other,
-        periodicity=SchedulePeriodicity.quarterly,
+        category=RecipeCategory.other,
+        periodicity=RecipePeriodicity.quarterly,
         context="updated context",
         enabled=False,
         comment="Update all fields",
-        notification=ScheduleNotificationSchema(
+        notification=RecipeNotificationSchema(
             requested=EventNotificationSchema(
                 mailgun=["updated@example.com", "another@example.com"]
             )
@@ -1352,7 +1346,7 @@ def test_revert_schedule_history(
     )
 
     response = client.patch(
-        f"/v2/schedules/{schedule.name}/revert/{initial_history_id}",
+        f"/v2/recipes/{recipe.name}/revert/{initial_history_id}",
         headers={"Authorization": f"Bearer {access_token}"},
         json={},
     )

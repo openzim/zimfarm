@@ -25,30 +25,30 @@ from zimfarm_backend.common.constants import (
 from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import (
-    ExpandedScheduleConfigSchema,
+    ExpandedRecipeConfigSchema,
+    RecipeConfigSchema,
+    RecipeNotificationSchema,
     ResourcesSchema,
-    ScheduleConfigSchema,
-    ScheduleNotificationSchema,
 )
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyOfflinerAndResourcesSchema,
     OfflinerDefinitionSchema,
     OfflinerSchema,
+    RecipeDurationSchema,
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
-    ScheduleDurationSchema,
     TaskUploadSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
+from zimfarm_backend.db.models import Recipe, RequestedTask, User, Worker
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
     get_offliner_definition_by_id,
 )
-from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
+from zimfarm_backend.db.recipe import get_recipe_duration, get_recipe_or_none
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
 from zimfarm_backend.db.worker import get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
@@ -71,24 +71,24 @@ class RequestTaskResult(BaseModel):
 
 
 def _resource_mismatch_message(
-    worker: Worker, schedule_resource: ResourcesSchema
+    worker: Worker, recipe_resource: ResourcesSchema
 ) -> list[str]:
     mismatched_message: list[str] = []
-    if worker.cpu < schedule_resource.cpu:
+    if worker.cpu < recipe_resource.cpu:
         mismatched_message.append(
-            f"cpu: required={format_size(schedule_resource.cpu, binary=True)}, "
+            f"cpu: required={format_size(recipe_resource.cpu, binary=True)}, "
             f"available={format_size(worker.cpu, binary=True)}"
         )
 
-    if worker.disk < schedule_resource.disk:
+    if worker.disk < recipe_resource.disk:
         mismatched_message.append(
-            f"disk: required={format_size(schedule_resource.disk, binary=True)}, "
+            f"disk: required={format_size(recipe_resource.disk, binary=True)}, "
             f"available={format_size(worker.disk, binary=True)}"
         )
 
-    if worker.memory < schedule_resource.memory:
+    if worker.memory < recipe_resource.memory:
         mismatched_message.append(
-            f"memory: required={format_size(schedule_resource.memory, binary=True)}, "
+            f"memory: required={format_size(recipe_resource.memory, binary=True)}, "
             f"available={format_size(worker.memory, binary=True)}"
         )
     return mismatched_message
@@ -98,7 +98,7 @@ def _create_new_requested_task(
     session: OrmSession,
     *,
     requested_by: UUID,
-    schedule: Schedule,
+    recipe: Recipe,
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema,
     worker: Worker | None,
@@ -114,18 +114,18 @@ def _create_new_requested_task(
         config=expanded_config(
             offliner=offliner,
             offliner_definition=offliner_definition,
-            config=ScheduleConfigSchema.model_validate(
+            config=RecipeConfigSchema.model_validate(
                 {
-                    **schedule.config,
+                    **recipe.config,
                     "warehouse_path": (
                         WarehousePath.root
                         if DISABLE_WAREHOUSE_PATH
-                        else schedule.config["warehouse_path"]
+                        else recipe.config["warehouse_path"]
                     ),
                     "offliner": create_offliner_instance(
                         offliner=offliner,
                         offliner_definition=offliner_definition,
-                        data=schedule.config["offliner"],
+                        data=recipe.config["offliner"],
                         skip_validation=False,
                     ),
                 }
@@ -151,31 +151,31 @@ def _create_new_requested_task(
                 "expiration": ZIMCHECK_RESULTS_EXPIRATION,
             },
         },
-        notification=schedule.notification if schedule.notification else {},
+        notification=recipe.notification if recipe.notification else {},
         updated_at=now,
-        original_schedule_name=schedule.name,
-        # Track the worker context requirement for this schedule (from the schedule)
-        # as schedule might be deleted from DB
-        context=schedule.context,
+        original_recipe_name=recipe.name,
+        # Track the worker context requirement for this recipe (from the recipe)
+        # as recipe might be deleted from DB
+        context=recipe.context,
     )
     requested_task.requested_by_id = requested_by
-    requested_task.schedule = schedule
+    requested_task.recipe = recipe
     if worker:
         requested_task.worker = worker
-    requested_task.offliner_definition = schedule.offliner_definition
+    requested_task.offliner_definition = recipe.offliner_definition
 
     session.add(requested_task)
     session.flush()
     return requested_task
 
 
-def _validate_schedule_request_uniqueness(
-    session: OrmSession, *, schedule_name: str, worker_name: str | None
+def _validate_recipe_request_uniqueness(
+    session: OrmSession, *, recipe_name: str, worker_name: str | None
 ):
     query = (
-        select(RequestedTask, Schedule)
-        .join(Schedule, RequestedTask.schedule)
-        .where(Schedule.name == schedule_name)
+        select(RequestedTask, Recipe)
+        .join(Recipe, RequestedTask.recipe)
+        .where(Recipe.name == recipe_name)
     )
     if worker_name is not None:
         query = query.join(Worker, RequestedTask.worker).where(
@@ -183,58 +183,55 @@ def _validate_schedule_request_uniqueness(
         )
 
     if count_from_stmt(session, query) > 0:
-        return f"Schedule '{schedule_name}' already requested"
+        return f"Recipe '{recipe_name}' already requested"
     return None
 
 
-def _validate_schedule_state(
-    session: OrmSession, schedule_name: str
-) -> tuple[Schedule | None, str | None]:
-    schedule = get_schedule_or_none(session, schedule_name=schedule_name)
-    if schedule is None or not schedule.enabled:
-        return None, f"Schedule '{schedule_name}' not found or disabled"
-    if schedule.archived:
-        return None, f"Schedule '{schedule_name}' is archived"
-    return schedule, None
+def _validate_recipe_state(
+    session: OrmSession, recipe_name: str
+) -> tuple[Recipe | None, str | None]:
+    recipe = get_recipe_or_none(session, recipe_name=recipe_name)
+    if recipe is None or not recipe.enabled:
+        return None, f"Recipe '{recipe_name}' not found or disabled"
+    if recipe.archived:
+        return None, f"Recipe '{recipe_name}' is archived"
+    return recipe, None
 
 
-def _validate_worker_context(worker: Worker, schedule: Schedule) -> str | None:
-    if not schedule.context:
+def _validate_worker_context(worker: Worker, recipe: Recipe) -> str | None:
+    if not recipe.context:
         return None
-    if schedule.context not in worker.contexts:
-        return (
-            f"Worker does not have required context to run schedule '{schedule.name}'."
-        )
+    if recipe.context not in worker.contexts:
+        return f"Worker does not have required context to run recipe '{recipe.name}'."
 
-    allowed_ip = worker.contexts[schedule.context]
+    allowed_ip = worker.contexts[recipe.context]
     if allowed_ip is not None and allowed_ip != str(worker.last_ip):
         return (
             "Worker has required context but IP is not whitelisted to run "
-            f"schedule '{schedule.name}'."
+            f"recipe '{recipe.name}'."
         )
     return None
 
 
-def _validate_worker_offliner(worker: Worker, schedule: Schedule) -> str | None:
-    if schedule.config["offliner"]["offliner_id"] not in worker.offliners:
+def _validate_worker_offliner(worker: Worker, recipe: Recipe) -> str | None:
+    if recipe.config["offliner"]["offliner_id"] not in worker.offliners:
         return (
-            f"Worker's offliners do not match the offliner for schedule "
-            f"'{schedule.name}'."
+            f"Worker's offliners do not match the offliner for recipe '{recipe.name}'."
         )
     return None
 
 
-def _validate_worker_resources(worker: Worker, schedule: Schedule) -> str | None:
-    schedule_resource = ResourcesSchema.model_validate(schedule.config["resources"])
+def _validate_worker_resources(worker: Worker, recipe: Recipe) -> str | None:
+    recipe_resource = ResourcesSchema.model_validate(recipe.config["resources"])
     if (
-        worker.cpu < schedule_resource.cpu
-        or worker.memory < schedule_resource.memory
-        or worker.disk < schedule_resource.disk
+        worker.cpu < recipe_resource.cpu
+        or worker.memory < recipe_resource.memory
+        or worker.disk < recipe_resource.disk
     ):
-        mismatched_message = _resource_mismatch_message(worker, schedule_resource)
+        mismatched_message = _resource_mismatch_message(worker, recipe_resource)
         return (
-            "Worker does not have enough resources to run schedule "
-            f"'{schedule.name}'. Insufficient: {'; '.join(mismatched_message)}"
+            "Worker does not have enough resources to run recipe "
+            f"'{recipe.name}'. Insufficient: {'; '.join(mismatched_message)}"
         )
     return None
 
@@ -242,25 +239,25 @@ def _validate_worker_resources(worker: Worker, schedule: Schedule) -> str | None
 def request_task(
     session: OrmSession,
     *,
-    schedule_name: str,
+    recipe_name: str,
     requested_by: UUID,
     worker_name: str | None = None,
     priority: int = 0,
 ) -> RequestTaskResult:
-    """Request a task for the given schedule name if possible else None
+    """Request a task for the given recipe name if possible else None
 
-    Schedule can't be requested if already requested on same worker.
-    Schedule can't be requested if it's disabled.
-    Schedule can't be requested if worker does not have appropriate context.
+    Recipe can't be requested if already requested on same worker.
+    Recipe can't be requested if it's disabled.
+    Recipe can't be requested if worker does not have appropriate context.
     """
 
-    if error := _validate_schedule_request_uniqueness(
-        session, schedule_name=schedule_name, worker_name=worker_name
+    if error := _validate_recipe_request_uniqueness(
+        session, recipe_name=recipe_name, worker_name=worker_name
     ):
         return RequestTaskResult(requested_task=None, error=error)
 
-    schedule, error = _validate_schedule_state(session, schedule_name)
-    if schedule is None:
+    recipe, error = _validate_recipe_state(session, recipe_name)
+    if recipe is None:
         return RequestTaskResult(requested_task=None, error=error)
 
     worker = None
@@ -280,11 +277,11 @@ def request_task(
             _validate_worker_offliner,
             _validate_worker_resources,
         ):
-            if error := validator(worker, schedule):
+            if error := validator(worker, recipe):
                 return RequestTaskResult(requested_task=None, error=error)
 
     offliner_definition = get_offliner_definition_by_id(
-        session, schedule.offliner_definition_id
+        session, recipe.offliner_definition_id
     )
     offliner = get_offliner(session, offliner_definition.offliner)
 
@@ -292,7 +289,7 @@ def request_task(
     requested_task = _create_new_requested_task(
         session,
         requested_by=requested_by,
-        schedule=schedule,
+        recipe=recipe,
         offliner=offliner,
         offliner_definition=offliner_definition,
         worker=worker,
@@ -312,7 +309,7 @@ def get_requested_tasks(
     skip: int,
     limit: int,
     matching_offliners: list[str] | None = None,
-    schedule_name: list[str] | None = None,
+    recipe_name: list[str] | None = None,
     priority: int | None = None,
     cpu: int | None = None,
     memory: int | None = None,
@@ -339,21 +336,21 @@ def get_requested_tasks(
             User.display_name.label("requested_by"),
             User.id.label("requester_id"),
             RequestedTask.priority,
-            RequestedTask.original_schedule_name,
+            RequestedTask.original_recipe_name,
             RequestedTask.updated_at,
             RequestedTask.context,
-            Schedule.name.label("schedule_name"),
+            Recipe.name.label("recipe_name"),
             Worker.name.label("worker_name"),
         )
         .join(User, RequestedTask.requested_by)
         .join(Worker, RequestedTask.worker, isouter=True)
-        .join(Schedule, RequestedTask.schedule, isouter=True)
+        .join(Recipe, RequestedTask.recipe, isouter=True)
         .where(
             # If a client provides an argument i.e it is not None, we compare the
             # corresponding model field against the argument, otherwise, we compare the
             # argument to its default in param which translates to a SQL true i.e
             # we don't filter based on this argument.
-            (Schedule.name.in_(schedule_name or [])) | (schedule_name is None),
+            (Recipe.name.in_(recipe_name or [])) | (recipe_name is None),
             (RequestedTask.priority >= priority),
             (RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger) <= cpu),
             (
@@ -394,10 +391,10 @@ def get_requested_tasks(
         requested_by,
         requester_id,
         _priority,
-        original_schedule_name,
+        original_recipe_name,
         updated_at,
         context,
-        _schedule_name,
+        _recipe_name,
         _worker_name,
     ) in session.execute(query).all():
         # Because the SQL window function returns the total_records
@@ -419,10 +416,10 @@ def get_requested_tasks(
                 requested_by=requested_by,
                 requester_id=requester_id,
                 priority=_priority,
-                original_schedule_name=original_schedule_name,
+                original_recipe_name=original_recipe_name,
                 updated_at=updated_at,
                 worker_name=_worker_name,
-                schedule_name=_schedule_name,
+                recipe_name=_recipe_name,
                 context=context,
             )
         )
@@ -433,16 +430,16 @@ def get_requested_tasks(
 class RequestedTaskWithDuration(BaseModel):
     id: UUID
     status: str
-    config: ExpandedScheduleConfigSchema
+    config: ExpandedRecipeConfigSchema
     timestamp: list[tuple[str, datetime.datetime]]
     requested_by: str
     requester_id: UUID = Field(exclude=True)
     priority: int
-    schedule_name: str | None
-    original_schedule_name: str
+    recipe_name: str | None
+    original_recipe_name: str
     worker_name: str
     context: str = Field(exclude=True)
-    duration: ScheduleDurationSchema
+    duration: RecipeDurationSchema
     updated_at: datetime.datetime
 
 
@@ -511,9 +508,9 @@ def get_tasks_doable_by_worker(
             RequestedTaskWithDuration(
                 id=task.id,
                 status=task.status,
-                schedule_name=task.schedule.name if task.schedule else None,
-                original_schedule_name=task.original_schedule_name,
-                config=ExpandedScheduleConfigSchema.model_validate(
+                recipe_name=task.recipe.name if task.recipe else None,
+                original_recipe_name=task.original_recipe_name,
+                config=ExpandedRecipeConfigSchema.model_validate(
                     {
                         **task.config,
                         "offliner": create_offliner_instance(
@@ -533,9 +530,9 @@ def get_tasks_doable_by_worker(
                 priority=task.priority,
                 worker_name=task.worker.name if task.worker else worker.name,
                 context=task.context,
-                duration=get_schedule_duration(
+                duration=get_recipe_duration(
                     session,
-                    schedule_name=task.schedule.name if task.schedule else None,
+                    recipe_name=task.recipe.name if task.recipe else None,
                     worker=worker,
                 ),
                 updated_at=task.updated_at,
@@ -603,13 +600,10 @@ def get_possible_task_with_resources(
     for temp_candidate in tasks_worker_could_do:
         if _can_run(temp_candidate, available_resources):
             if temp_candidate.duration.value <= available_time:
-                logger.debug(
-                    f"{temp_candidate.id}@{temp_candidate.schedule_name} it is!"
-                )
+                logger.debug(f"{temp_candidate.id}@{temp_candidate.recipe_name} it is!")
                 return temp_candidate
             logger.debug(
-                f"{temp_candidate.id}"
-                f"@{temp_candidate.schedule_name} would take too long"
+                f"{temp_candidate.id}@{temp_candidate.recipe_name} would take too long"
             )
     return None
 
@@ -736,7 +730,7 @@ def create_requested_task_full_schema(
     return RequestedTaskFullSchema(
         id=requested_task.id,
         status=requested_task.status,
-        config=ExpandedScheduleConfigSchema.model_validate(
+        config=ExpandedRecipeConfigSchema.model_validate(
             {
                 **requested_task.config,
                 "offliner": create_offliner_instance(
@@ -754,22 +748,20 @@ def create_requested_task_full_schema(
         requested_by=requested_task.requested_by.display_name,
         requester_id=requested_task.requested_by.id,
         priority=requested_task.priority,
-        schedule_name=(
-            requested_task.schedule.name if requested_task.schedule else None
-        ),
-        original_schedule_name=requested_task.original_schedule_name,
+        recipe_name=(requested_task.recipe.name if requested_task.recipe else None),
+        original_recipe_name=requested_task.original_recipe_name,
         worker_name=requested_task.worker.name if requested_task.worker else None,
         context=requested_task.context,
         events=requested_task.events,
         upload=TaskUploadSchema.model_validate(requested_task.upload),
         notification=(
-            ScheduleNotificationSchema.model_validate(requested_task.notification)
+            RecipeNotificationSchema.model_validate(requested_task.notification)
             if requested_task.notification
             else None
         ),
         rank=compute_requested_task_rank(session, requested_task.id),
         updated_at=requested_task.updated_at,
-        schedule_id=requested_task.schedule_id,
+        recipe_id=requested_task.recipe_id,
         offliner_definition_id=requested_task.offliner_definition_id,
         version=requested_task.offliner_definition.version,
         offliner=requested_task.offliner_definition.offliner,

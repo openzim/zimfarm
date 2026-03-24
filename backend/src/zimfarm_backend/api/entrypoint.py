@@ -18,10 +18,10 @@ from zimfarm_backend.api.routes.http_errors import BadRequestError
 from zimfarm_backend.api.routes.languages.logic import router as languages_router
 from zimfarm_backend.api.routes.offliners.logic import router as offliners_router
 from zimfarm_backend.api.routes.platforms.logic import router as platforms_router
+from zimfarm_backend.api.routes.recipes.logic import router as recipes_router
 from zimfarm_backend.api.routes.requested_tasks.logic import (
     router as requested_tasks_router,
 )
-from zimfarm_backend.api.routes.schedules.logic import router as schedules_router
 from zimfarm_backend.api.routes.status.logic import router as status_router
 from zimfarm_backend.api.routes.tags.logic import router as tags_router
 from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
@@ -54,12 +54,12 @@ async def lifespan(_: FastAPI):
             "ZIMCHECK_OPTION must be set if DISABLE_WAREHOUSE_PATH is set to true."
         )
 
-    if ALEMBIC_UPGRADE_HEAD_ON_START:
-        upgrade_db_schema()
+    # if ALEMBIC_UPGRADE_HEAD_ON_START:
+    #     upgrade_db_schema()
 
-    check_if_schema_is_up_to_date()
-    create_initial_user()
-    load_offliners()
+    # check_if_schema_is_up_to_date()
+    # create_initial_user()
+    # load_offliners()
     yield
 
 
@@ -96,7 +96,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=tasks_router)
     main_router.include_router(router=tags_router)
     main_router.include_router(router=status_router)
-    main_router.include_router(router=schedules_router)
+    main_router.include_router(router=recipes_router)
     main_router.include_router(router=files_router)
 
     app.include_router(router=main_router)
