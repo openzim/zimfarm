@@ -53,7 +53,7 @@ two distinct Docker images.
 
 The backend is responsible for:
 
-- persisting users, workers, schedules (recipes), and tasks.
+- persisting users, workers, recipes, and tasks.
 - handling requests to create intermediary "requested tasks" from a recipe's configuration
 - assigning available requested tasks to workers based on a sophisticated matching algorithm.
 - exposing background tasks to
@@ -69,7 +69,7 @@ The backend is responsible for:
   environment variables for the different upload URIs and the different schemes
   they can take.
 - `ENABLED_SCHEDULER`: Set to `"true"` to enable the background task that creates
-  requested tasks from active schedules. When set to false, it also prevents the
+  requested tasks from active recipes. When set to false, it also prevents the
   backend from creating tasks from requested tasks.
 - `USES_WORKERS_IPS_WHITELIST`: Set to `"true"` if your architecture relies on strict IP whitelisting for worker nodes.
 - `INFORM_CMS`: Set to `"true"` to notify the OpenZIM CMS upon successful task
@@ -308,7 +308,7 @@ The watcher runs as a long-lived daemon process and handles version detection ba
 
 Zimfarm implements a role-based access control (RBAC) system to manage user permissions
 across the platform. Users authenticate via local credentials or OAuth/OIDC, and their
-assigned role determines what actions they can perform on schedules, tasks, workers,
+assigned role determines what actions they can perform on recipes, tasks, workers,
 and other resources.
 
 ### Authentication Methods
@@ -336,18 +336,18 @@ Local users authenticate with username/password and workers authenticate using S
 ### Roles & Permissions
 
 Each role grants specific permissions across different resource namespaces. Permissions
-are organized into categories: `tasks`, `schedules`, `requested_tasks`, `users`,
+are organized into categories: `tasks`, `recipes`, `requested_tasks`, `users`,
 `workers`, `zim`, and `offliners`. The table below summarizes what each role can do:
 
-| Role                 | Primary Use Case              | Key Permissions                                                                                                                                |
-| -------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **admin**            | System administrators         | Full access to all resources including user management, all CRUD operations on schedules/tasks, worker configuration, and ZIM uploads          |
-| **manager**          | Platform managers             | Can manage users, create/update/archive schedules, view and cancel tasks, request tasks, view workers (but cannot delete tasks or upload ZIMs) |
-| **editor**           | Content editors               | Can create, update, and archive schedules.                                                                                                     |
-| **editor-requester** | Editors who can trigger tasks | Same as editor, but can cancel tasks and create/delete requested tasks                                                                         |
-| **worker**           | Worker nodes (machines)       | Can read/update/create tasks, manage requested tasks, register workers, and upload ZIMs. Used by automated worker accounts                     |
-| **processor**        | Background processors         | Limited to updating tasks and requested tasks. Designed for automated background services                                                      |
-| **viewer**           | Read-only observers           | No permissions. Can authenticate but cannot perform any actions                                                                                |
+| Role                 | Primary Use Case              | Key Permissions                                                                                                                              |
+| -------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **admin**            | System administrators         | Full access to all resources including user management, all CRUD operations on recipes/tasks, worker configuration, and ZIM uploads          |
+| **manager**          | Platform managers             | Can manage users, create/update/archive recipes, view and cancel tasks, request tasks, view workers (but cannot delete tasks or upload ZIMs) |
+| **editor**           | Content editors               | Can create, update, and archive recipes.                                                                                                     |
+| **editor-requester** | Editors who can trigger tasks | Same as editor, but can cancel tasks and create/delete requested tasks                                                                       |
+| **worker**           | Worker nodes (machines)       | Can read/update/create tasks, manage requested tasks, register workers, and upload ZIMs. Used by automated worker accounts                   |
+| **processor**        | Background processors         | Limited to updating tasks and requested tasks. Designed for automated background services                                                    |
+| **viewer**           | Read-only observers           | No permissions. Can authenticate but cannot perform any actions                                                                              |
 
 ### Custom Scopes
 
@@ -360,7 +360,7 @@ Example custom scope structure:
 
 ```sh
 {
-  "schedules": {
+  "recipes": {
     "read": true,
     "create": true,
     "update": false,
@@ -376,7 +376,7 @@ permissions are evaluated from the scope object rather than the predefined role.
 
 Zimfarm provides a flexible notification system to alert users and teams about task
 events. The platform supports multiple delivery channels (email, Slack,
-webhooks) and can be configured both globally (for all tasks) and per-schedule (for
+webhooks) and can be configured both globally (for all tasks) and per-recipe (for
 specific recipes).
 
 ### When Notifications Are Triggered
@@ -385,7 +385,7 @@ The notification system recognizes three lifecycle events:
 
 | Event         | Trigger Condition                      | Description                                                                                                   |
 | ------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **requested** | When a requested task is created       | Fired when a schedule generates a new requested task (either manually or via periodic scheduling)             |
+| **requested** | When a requested task is created       | Fired when a recipe generates a new requested task (either manually or via periodic scheduling)               |
 | **started**   | When a worker begins executing a task  | Fired when a requested task is assigned to a worker and execution begins                                      |
 | **ended**     | When a task reaches any terminal state | Fired when a task completes successfully, fails, or is canceled. This is an alias for all completion statuses |
 
@@ -456,14 +456,14 @@ GLOBAL_NOTIFICATION_requested=webhook,https://api.example.com/zimfarm/requested
 GLOBAL_NOTIFICATION_ended=webhook,https://api.example.com/zimfarm/completed
 ```
 
-#### Per-Schedule Notifications
+#### Per-recipe Notifications
 
-Individual schedules can define their own notification preferences via the `notification`
-field in the schedule configuration. This is useful for routing alerts for specific
+Individual recipes can define their own notification preferences via the `notification`
+field in the recipe configuration. This is useful for routing alerts for specific
 content types to the appropriate teams or channels.
 
-Per-schedule notifications are configured through the Backend API when creating or
-updating a schedule.
+Per-recipe notifications are configured through the Backend API when creating or
+updating a recipe.
 
 ## External Dependencies & Requirements
 
@@ -473,7 +473,7 @@ properly.
 ### PostgreSQL Database
 
 The Backend API and background tasks require a PostgreSQL database for persistent
-storage of all platform data including users, schedules, tasks, workers, and files.
+storage of all platform data including users, recipes, tasks, workers, and files.
 
 The `uuid-ossp` extension must be enabled on the database as UUID primary keys are
 genereted on the database side.

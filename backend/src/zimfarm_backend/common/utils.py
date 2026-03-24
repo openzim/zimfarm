@@ -106,11 +106,12 @@ def handle_file_event(
     elif fstatus == "checked":
         values.check_result = file_data.get("check_result")
         values.check_timestamp = timestamp
-        values.info = file_data.get("info", {})
-
     elif fstatus == "check_results_uploaded":
         values.check_filename = file_data.get("check_filename")
         values.check_upload_timestamp = timestamp
+
+    if file_data.get("info"):
+        values.info = file_data["info"]
 
     create_or_update_task_file(session, values)
 
