@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SchedulesFilter
+    <RecipesFilter
       v-if="ready"
       :filters="filters"
       :categories="categories"
@@ -10,16 +10,16 @@
       @filters-changed="handleFiltersChange"
       @clear-filters="clearFilters"
     />
-    <SchedulesTable
+    <RecipesTable
       v-if="ready"
       :headers="headers"
-      :schedules="schedules"
+      :recipes="recipes"
       :paginator="paginator"
       :loading="loadingStore.isLoading"
       :loading-text="loadingStore.loadingText"
       :errors="errors"
       :filters="filters"
-      :selected-schedules="selectedSchedules"
+      :selected-recipes="selectedRecipes"
       :show-selection="true"
       @limit-changed="handleLimitChange"
       @load-data="loadData"
@@ -28,20 +28,20 @@
       <template #actions>
         <slot
           name="actions"
-          :selected-schedules="selectedSchedules"
+          :selected-recipes="selectedRecipes"
           :requesting-text="requestingText"
           :restoring-text="restoringText"
           :workers="workers"
           :handle-request-tasks="handleRequestTasks"
-          :handle-restore-schedules="handleRestoreSchedules"
+          :handle-restore-recipes="handleRestoreRecipes"
         />
       </template>
-    </SchedulesTable>
+    </RecipesTable>
     <div v-else class="d-flex align-center justify-center" style="height: 60vh">
       <v-progress-circular indeterminate size="70" width="7" color="primary" />
     </div>
 
-    <!-- Comment Dialog for Restore Schedule-->
+    <!-- Comment Dialog for Restore Recipe-->
     <ConfirmDialog
       v-model="showRestoreCommentDialog"
       title="Restore Recipes"
@@ -80,8 +80,8 @@
 
 <script setup lang="ts">
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import SchedulesFilter from '@/components/SchedulesFilter.vue'
-import SchedulesTable from '@/components/SchedulesTable.vue'
+import RecipesFilter from '@/components/RecipesFilter.vue'
+import RecipesTable from '@/components/RecipesTable.vue'
 import type { Paginator } from '@/types/base'
 import constants from '@/constants'
 import { useLanguageStore } from '@/stores/language'
@@ -89,10 +89,10 @@ import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useOfflinerStore } from '@/stores/offliner'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
-import { useScheduleStore } from '@/stores/schedule'
+import { useRecipeStore } from '@/stores/recipe'
 import { useTagStore } from '@/stores/tag'
 import { useWorkersStore } from '@/stores/workers'
-import type { ScheduleLight } from '@/types/schedule'
+import type { RecipeLight } from '@/types/recipe'
 import type { Worker } from '@/types/workers'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -132,7 +132,7 @@ const headers = [
 ]
 
 // Reactive state
-const schedules = ref<ScheduleLight[]>([])
+const recipes = ref<RecipeLight[]>([])
 
 const ready = ref<boolean>(false)
 
@@ -178,7 +178,7 @@ const filters = computed(() => {
 const requestingText = ref<string | null>(null)
 const restoringText = ref<string | null>(null)
 const intervalId = ref<number | null>(null)
-const selectedSchedules = ref<string[]>([])
+const selectedRecipes = ref<string[]>([])
 const showRestoreCommentDialog = ref<boolean>(false)
 const restoreComment = ref<string>('')
 const workers = ref<Worker[]>([])
@@ -186,7 +186,7 @@ const workers = ref<Worker[]>([])
 // Stores
 const router = useRouter()
 const route = useRoute()
-const scheduleStore = useScheduleStore()
+const recipeStore = useRecipeStore()
 const languageStore = useLanguageStore()
 const tagStore = useTagStore()
 const offlinerStore = useOfflinerStore()
@@ -203,9 +203,9 @@ const categories = constants.CATEGORIES
 
 const paginator = ref<Paginator>({
   page: Number(route.query.page) || 1,
-  page_size: scheduleStore.defaultLimit,
+  page_size: recipeStore.defaultLimit,
   skip: 0,
-  limit: scheduleStore.defaultLimit,
+  limit: recipeStore.defaultLimit,
   count: 0,
 })
 
@@ -214,7 +214,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   if (!hideLoading) {
     loadingStore.startLoading('Fetching recipes...')
   }
-  await scheduleStore.fetchSchedules(
+  await recipeStore.fetchRecipes(
     limit,
     skip,
     filters.value.categories.length > 0 ? filters.value.categories : undefined,
@@ -225,10 +225,10 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
     filters.value.offliners.length > 0 ? filters.value.offliners : undefined,
   )
 
-  schedules.value = scheduleStore.schedules
-  paginator.value = { ...scheduleStore.paginator }
-  scheduleStore.savePaginatorLimit(limit)
-  errors.value = scheduleStore.errors
+  recipes.value = recipeStore.recipes
+  paginator.value = { ...recipeStore.paginator }
+  recipeStore.savePaginatorLimit(limit)
+  errors.value = recipeStore.errors
   for (const error of errors.value) {
     notificationStore.showError(error)
   }
@@ -242,7 +242,7 @@ async function handleFiltersChange(newFilters: typeof filters.value) {
 }
 
 async function handleLimitChange(newLimit: number) {
-  scheduleStore.savePaginatorLimit(newLimit)
+  recipeStore.savePaginatorLimit(newLimit)
   // When a limit changes, we can update the data in two ways.
   // - resetting the paginator page number to 1. The update would be emitted
   // by the table's onUpdateOptions which updates the route.
@@ -272,7 +272,7 @@ async function clearFilters() {
 }
 
 function handleSelectionChanged(newSelection: string[]) {
-  selectedSchedules.value = newSelection
+  selectedRecipes.value = newSelection
 }
 
 async function fetchWorkers() {
@@ -298,10 +298,10 @@ async function handleRequestTasks(workerName: string | null, highPriority: boole
     notificationStore.showError('Not requested!')
     notificationStore.showError(`Unable to fetch recipe names: ${errors.value.join(', ')}`)
   } else {
-    const scheduleNames = selectedSchedules.value.filter((name) => !!name)
-    if (scheduleNames.length > 0) {
+    const recipeNames = selectedRecipes.value.filter((name) => !!name)
+    if (recipeNames.length > 0) {
       const body = {
-        scheduleNames: scheduleNames,
+        recipeNames: recipeNames,
         worker: workerName,
         priority: highPriority ? constants.DEFAULT_FIRE_PRIORITY : null,
       }
@@ -311,7 +311,7 @@ async function handleRequestTasks(workerName: string | null, highPriority: boole
           `Exactly ${requestedTasks.requested.length} selected recipe${requestedTasks.requested.length !== 1 ? 's' : ''} have been requested`,
         )
         // Clear selections after successful request
-        selectedSchedules.value = []
+        selectedRecipes.value = []
         await loadData(paginator.value.limit, paginator.value.skip)
       } else {
         for (const error of requestedTasksStore.errors) {
@@ -323,7 +323,7 @@ async function handleRequestTasks(workerName: string | null, highPriority: boole
   requestingText.value = null
 }
 
-async function handleRestoreSchedules() {
+async function handleRestoreRecipes() {
   if (!props.archived) {
     return
   }
@@ -338,21 +338,21 @@ async function handleRestoreConfirm() {
     notificationStore.showError('Not restored!')
     notificationStore.showError(`Unable to fetch recipe names: ${errors.value.join(', ')}`)
   } else {
-    const scheduleNames = selectedSchedules.value.filter((name) => !!name)
-    if (scheduleNames.length > 0) {
-      const success = await scheduleStore.restoreSchedules(
-        scheduleNames,
+    const recipeNames = selectedRecipes.value.filter((name) => !!name)
+    if (recipeNames.length > 0) {
+      const success = await recipeStore.restoreRecipes(
+        recipeNames,
         restoreComment.value.trim() || undefined,
       )
       if (success) {
         notificationStore.showSuccess(
-          `Exactly ${scheduleNames.length} selected recipe${scheduleNames.length !== 1 ? 's' : ''} have been restored`,
+          `Exactly ${recipeNames.length} selected recipe${recipeNames.length !== 1 ? 's' : ''} have been restored`,
         )
         // Clear selections after successful restore
-        selectedSchedules.value = []
+        selectedRecipes.value = []
         await loadData(paginator.value.limit, paginator.value.skip)
       } else {
-        for (const error of scheduleStore.errors) {
+        for (const error of recipeStore.errors) {
           notificationStore.showError(error)
         }
       }

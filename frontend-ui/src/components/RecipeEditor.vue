@@ -1,6 +1,6 @@
 <template>
-  <v-form @submit.prevent="handleSubmit" v-if="schedule">
-    <div class="d-flex flex-column flex-sm-row justify-end ga-2 schedule-actions">
+  <v-form @submit.prevent="handleSubmit" v-if="recipe">
+    <div class="d-flex flex-column flex-sm-row justify-end ga-2 recipe-actions">
       <v-btn
         :disabled="!canSubmit"
         :color="canSubmit ? 'primary' : undefined"
@@ -35,7 +35,7 @@
     <v-row>
       <v-col cols="12" sm="4">
         <v-text-field
-          v-model.trim="editSchedule.name"
+          v-model.trim="editRecipe.name"
           label="Recipe Name"
           hint="Recipe's identifier."
           placeholder="wikipedia_fr_all"
@@ -47,7 +47,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.language.code"
+          v-model="editRecipe.language.code"
           :items="languagesOptions"
           label="Language"
           hint="Use API if wanted language not present."
@@ -58,7 +58,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.tags"
+          v-model="editRecipe.tags"
           :items="tags"
           label="Tags"
           hint="Recipe tags, not ZIM tags. Use API to create others."
@@ -75,7 +75,7 @@
     <v-row>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.category"
+          v-model="editRecipe.category"
           :items="categoriesOptions"
           label="Category"
           density="compact"
@@ -84,7 +84,7 @@
       </v-col>
       <v-col cols="12" sm="4" v-if="!appConfig.DISABLE_WAREHOUSE_PATH">
         <v-select
-          v-model="editSchedule.config.warehouse_path"
+          v-model="editRecipe.config.warehouse_path"
           :items="warehousePathsOptions"
           label="Warehouse Path"
           hint="Where to upload files. Usually matches category."
@@ -97,7 +97,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <SwitchButton
-          v-model="editSchedule.enabled"
+          v-model="editRecipe.enabled"
           label="Status"
           density="compact"
           details="Disabled recipes are not scheduled, but can be run manually."
@@ -105,7 +105,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.periodicity"
+          v-model="editRecipe.periodicity"
           :items="periodicityOptions"
           label="Periodicity"
           hint="How often to automatically request recipe"
@@ -118,12 +118,12 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-combobox
-          v-model.trim="editSchedule.context"
+          v-model.trim="editRecipe.context"
           :items="contexts"
           label="Context"
-          hint="Execute schedule only on workers associated with this context"
+          hint="Execute recipe only on workers associated with this context"
           placeholder="Context"
-          :clearable="!!editSchedule.context"
+          :clearable="!!editRecipe.context"
           density="compact"
           variant="outlined"
           persistent-hint
@@ -154,7 +154,7 @@
     <v-row>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.config.offliner.offliner_id"
+          v-model="editRecipe.config.offliner.offliner_id"
           :items="offlinersOptions"
           label="Offliner"
           hint="The kind of task to be run"
@@ -166,7 +166,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.config.platform"
+          v-model="editRecipe.config.platform"
           :items="platformsOptions"
           label="Platform"
           hint="The platform targetted by the offliner"
@@ -178,7 +178,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.version"
+          v-model="editRecipe.version"
           :items="offlinerVersions"
           label="Offliner Definition"
           hint="Version of the offliner definition flags to use"
@@ -187,10 +187,7 @@
           variant="outlined"
           persistent-hint
           @update:model-value="
-            handleOfflinerVersionChange(
-              editSchedule.config.offliner.offliner_id,
-              editSchedule.version,
-            )
+            handleOfflinerVersionChange(editRecipe.config.offliner.offliner_id, editRecipe.version)
           "
         />
       </v-col>
@@ -199,7 +196,7 @@
     <v-row>
       <v-col cols="12" sm="4">
         <v-text-field
-          v-model.trim="editSchedule.config.image.name"
+          v-model.trim="editRecipe.config.image.name"
           label="Image Name"
           hint="Image name without tag (docker_repo/name)"
           placeholder="openzim/mwoffliner"
@@ -207,13 +204,13 @@
           density="compact"
           variant="outlined"
           @update:model-value="debouncedImageNameChange"
-          @blur="() => handleImageNameBlur(editSchedule.config.image.name)"
+          @blur="() => handleImageNameBlur(editRecipe.config.image.name)"
           persistent-hint
         />
       </v-col>
       <v-col cols="12" sm="4">
         <v-select
-          v-model="editSchedule.config.image.tag"
+          v-model="editRecipe.config.image.tag"
           :items="imageTagOptions"
           label="Image Tag"
           hint="Set image name first to get existing values"
@@ -225,7 +222,7 @@
       </v-col>
       <v-col cols="12" sm="4">
         <SwitchButton
-          v-model="editSchedule.config.monitor"
+          v-model="editRecipe.config.monitor"
           details="Attach a monitoring companion to scraper"
           density="compact"
           label="Monitoring"
@@ -236,7 +233,7 @@
     <v-row>
       <v-col cols="12" sm="3">
         <v-text-field
-          v-model.trim="editSchedule.config.resources.cpu"
+          v-model.trim="editRecipe.config.resources.cpu"
           label="CPU"
           hint="Number of CPU shares to use"
           type="number"
@@ -251,7 +248,7 @@
       </v-col>
       <v-col cols="12" sm="3">
         <v-select
-          v-model="editSchedule.config.resources.memory"
+          v-model="editRecipe.config.resources.memory"
           :items="memoryOptions"
           label="Memory"
           hint="Required memory. Use API for custom value."
@@ -262,7 +259,7 @@
       </v-col>
       <v-col cols="12" sm="3">
         <v-select
-          v-model="editSchedule.config.resources.disk"
+          v-model="editRecipe.config.resources.disk"
           :items="diskOptions"
           label="Disk"
           hint="Required disk space. Use API for custom value."
@@ -273,7 +270,7 @@
       </v-col>
       <v-col cols="12" sm="3">
         <v-select
-          v-model="editSchedule.config.resources.shm"
+          v-model="editRecipe.config.resources.shm"
           :items="memoryOptions"
           label="RAM fs"
           hint="Amount of RAM to mount as /dev/shm. Constrained by RAM & Offliner."
@@ -287,7 +284,7 @@
     <v-row>
       <v-col>
         <v-textarea
-          v-model.trim="editSchedule.config.artifacts_globs_str"
+          v-model.trim="editRecipe.config.artifacts_globs_str"
           label="Artifacts"
           hint="! Experts only ! Beware to not include your ZIM files and logs ! Globs of artifacts to archive, one glob expression per line."
           variant="outlined"
@@ -299,7 +296,7 @@
 
     <v-divider class="my-4" />
 
-    <template v-if="editSchedule.notification">
+    <template v-if="editRecipe.notification">
       <v-row>
         <v-col cols="12">
           <h2>Notification Settings</h2>
@@ -307,19 +304,16 @@
       </v-row>
 
       <NotificationEventFields
-        v-model="editSchedule.notification.requested"
+        v-model="editRecipe.notification.requested"
         event-title="Requested Event"
       />
 
       <NotificationEventFields
-        v-model="editSchedule.notification.started"
+        v-model="editRecipe.notification.started"
         event-title="Started Event"
       />
 
-      <NotificationEventFields
-        v-model="editSchedule.notification.ended"
-        event-title="Ended Event"
-      />
+      <NotificationEventFields v-model="editRecipe.notification.ended" event-title="Ended Event" />
     </template>
 
     <v-divider class="my-4" />
@@ -497,7 +491,7 @@
             :kind="field.kind"
             :required="field.required"
             :description="field.description ?? undefined"
-            :schedule-name="schedule.name"
+            :recipe-name="recipe.name"
             :flag-key="field.key"
           />
           <v-text-field
@@ -586,10 +580,10 @@
   </v-form>
   <p v-else>Loading…</p>
 
-  <!-- Schedule Update Confirmation Dialog -->
+  <!-- Recipe Update Confirmation Dialog -->
   <ConfirmDialog
     v-model="showConfirmDialog"
-    title="Confirm Schedule Update"
+    title="Confirm Recipe Update"
     confirm-text="Save Changes"
     cancel-text="Cancel"
     confirm-color="primary"
@@ -630,7 +624,7 @@
 
       <!-- Diff Viewer -->
       <div class="mb-4">
-        <DiffViewer :differences="scheduleDifferences" />
+        <DiffViewer :differences="recipeDifferences" />
       </div>
 
       <!-- Comment Input -->
@@ -657,18 +651,18 @@ import NotificationEventFields from '@/components/NotificationEventFields.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import constants from '@/constants'
 import { useNotificationStore } from '@/stores/notification'
-import { useScheduleStore } from '@/stores/schedule'
+import { useRecipeStore } from '@/stores/recipe'
 import type { Resources } from '@/types/base'
 
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type {
   EventNotification,
-  Schedule,
-  ScheduleConfig,
-  ScheduleNotification,
-  ScheduleUpdateSchema,
-} from '@/types/schedule'
+  Recipe,
+  RecipeConfig,
+  RecipeNotification,
+  RecipeUpdateSchema,
+} from '@/types/recipe'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import { buildYoutubeLinks, type YoutubeLinkKind } from '@/utils/youtube'
@@ -695,7 +689,7 @@ interface FlagField {
 }
 
 export interface Props {
-  schedule: Schedule
+  recipe: Recipe
   languages: Language[]
   tags: string[]
   contexts: string[]
@@ -708,7 +702,7 @@ export interface Props {
 }
 
 interface Emits {
-  (e: 'submit', payload: ScheduleUpdateSchema): void
+  (e: 'submit', payload: RecipeUpdateSchema): void
   (e: 'image-name-change', imageName: string): void
   (e: 'offliner-change', offliner: string): void
   (e: 'offliner-version-change', offliner: string, version: string): void
@@ -724,15 +718,13 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // Stores
-const scheduleStore = useScheduleStore()
+const recipeStore = useRecipeStore()
 const notificationStore = useNotificationStore()
 const { smAndDown } = useDisplay()
-const editSchedule = ref<Schedule>(JSON.parse(JSON.stringify(props.schedule)))
+const editRecipe = ref<Recipe>(JSON.parse(JSON.stringify(props.recipe)))
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const editFlags = ref<Record<string, any>>(
-  JSON.parse(JSON.stringify(props.schedule.config.offliner)),
-)
+const editFlags = ref<Record<string, any>>(JSON.parse(JSON.stringify(props.recipe.config.offliner)))
 
 // Confirmation dialog state
 const showConfirmDialog = ref(false)
@@ -774,15 +766,15 @@ const handleImageNameBlur = (imageName: string) => {
   }
 }
 
-// Initialize edit data when schedule changes
+// Initialize edit data when recipe changes
 watch(
-  () => props.schedule,
-  (newSchedule) => {
-    if (newSchedule) {
-      editSchedule.value = JSON.parse(JSON.stringify(newSchedule))
-      editFlags.value = JSON.parse(JSON.stringify(newSchedule.config.offliner))
-      // Initialize lastEmittedImageName with current schedule's image name
-      lastEmittedImageName.value = newSchedule.config.image.name
+  () => props.recipe,
+  (newRecipe) => {
+    if (newRecipe) {
+      editRecipe.value = JSON.parse(JSON.stringify(newRecipe))
+      editFlags.value = JSON.parse(JSON.stringify(newRecipe.config.offliner))
+      // Initialize lastEmittedImageName with current recipe's image name
+      lastEmittedImageName.value = newRecipe.config.image.name
     }
   },
   { deep: true, immediate: true },
@@ -792,9 +784,9 @@ watch(
   () => props.flagsDefinition,
   () => {
     const validDataKeys = new Set(props.flagsDefinition.map((field) => field.data_key))
-    const sourceFlags: Record<string, unknown> = props.schedule.config.offliner
+    const sourceFlags: Record<string, unknown> = props.recipe.config.offliner
     const updatedFlags: Record<string, unknown> = {
-      offliner_id: editSchedule.value.config.offliner.offliner_id,
+      offliner_id: editRecipe.value.config.offliner.offliner_id,
     }
 
     for (const [key, value] of Object.entries(sourceFlags)) {
@@ -824,41 +816,36 @@ watch(
     if (!versions || !versions.length) return
     // offliner versions are updated when the offliner changes or the version dropdown
     // is changed
-    if (
-      editSchedule.value.config.offliner.offliner_id == props.schedule.config.offliner.offliner_id
-    ) {
+    if (editRecipe.value.config.offliner.offliner_id == props.recipe.config.offliner.offliner_id) {
       // offliner is changed, revert back to the original version
-      editSchedule.value.version = props.schedule.version
+      editRecipe.value.version = props.recipe.version
     } else {
       // offliner is different, set the preferred version as the image tag
-      // or the original version the schedule had. If none exist in new versions,
+      // or the original version the recipe had. If none exist in new versions,
       // use the most recent version. This allows one to change from a different offliner
-      // to the original and be on the same version as the original schedule.
-      const preferred = versions.includes(editSchedule.value.config.image.tag)
-        ? editSchedule.value.config.image.tag
-        : props.schedule.version
+      // to the original and be on the same version as the original recipe.
+      const preferred = versions.includes(editRecipe.value.config.image.tag)
+        ? editRecipe.value.config.image.tag
+        : props.recipe.version
 
       // if the preferred version is not in the new versions, use the most recent version
-      editSchedule.value.version = versions.includes(preferred) ? preferred : versions[0]
+      editRecipe.value.version = versions.includes(preferred) ? preferred : versions[0]
     }
     handleOfflinerVersionChange(
-      editSchedule.value.config.offliner.offliner_id,
-      editSchedule.value.version,
+      editRecipe.value.config.offliner.offliner_id,
+      editRecipe.value.version,
     )
   },
   { deep: true },
 )
 
-// when the image tag changes, update the version if the schedule has the version
+// when the image tag changes, update the version if the recipe has the version
 watch(
-  () => editSchedule.value.config.image.tag,
+  () => editRecipe.value.config.image.tag,
   (newImageTag) => {
-    if (
-      newImageTag !== editSchedule.value.version &&
-      props.offlinerVersions.includes(newImageTag)
-    ) {
-      editSchedule.value.version = newImageTag
-      handleOfflinerVersionChange(editSchedule.value.config.offliner.offliner_id, newImageTag)
+    if (newImageTag !== editRecipe.value.version && props.offlinerVersions.includes(newImageTag)) {
+      editRecipe.value.version = newImageTag
+      handleOfflinerVersionChange(editRecipe.value.config.offliner.offliner_id, newImageTag)
     }
   },
 )
@@ -870,9 +857,7 @@ onUnmounted(() => {
 })
 
 const taskName = computed(() => {
-  return (
-    editSchedule.value.config.offliner.offliner_id || props.schedule.config.offliner.offliner_id
-  )
+  return editRecipe.value.config.offliner.offliner_id || props.recipe.config.offliner.offliner_id
 })
 
 // Helper function to compare event notifications
@@ -899,10 +884,10 @@ const eventNotificationsEqual = (
   )
 }
 
-// Helper function to compare schedule notifications
+// Helper function to compare recipe notifications
 const notificationsEqual = (
-  a: ScheduleNotification | null,
-  b: ScheduleNotification | null,
+  a: RecipeNotification | null,
+  b: RecipeNotification | null,
 ): boolean => {
   // Both null or undefined
   if (!a && !b) return true
@@ -918,8 +903,8 @@ const notificationsEqual = (
 
 // Helper function to clean notification payload (convert empty arrays to null)
 const cleanNotificationPayload = (
-  notification: ScheduleNotification | null,
-): ScheduleNotification | null => {
+  notification: RecipeNotification | null,
+): RecipeNotification | null => {
   if (!notification) return null
 
   const cleanEventNotification = (event: EventNotification | null): EventNotification | null => {
@@ -968,18 +953,18 @@ const areAllFieldsValid = computed(() => {
 })
 
 // Generate differences for the diff viewer
-const scheduleDifferences = computed(() => {
-  if (!(props.schedule && editSchedule.value)) return undefined
+const recipeDifferences = computed(() => {
+  if (!(props.recipe && editRecipe.value)) return undefined
 
-  // Create a copy of the current schedule with the edited flags
-  const currentSchedule = JSON.parse(JSON.stringify(props.schedule))
-  const editedSchedule = JSON.parse(JSON.stringify(editSchedule.value))
+  // Create a copy of the current recipe with the edited flags
+  const currentRecipe = JSON.parse(JSON.stringify(props.recipe))
+  const editedRecipe = JSON.parse(JSON.stringify(editRecipe.value))
 
   // Update the offliner config with the edited flags
-  editedSchedule.config.offliner = JSON.parse(JSON.stringify(editFlags.value))
+  editedRecipe.config.offliner = JSON.parse(JSON.stringify(editFlags.value))
 
   // Generate diff
-  return diff(currentSchedule, editedSchedule)
+  return diff(currentRecipe, editedRecipe)
 })
 
 const canSubmit = computed(() => {
@@ -987,25 +972,25 @@ const canSubmit = computed(() => {
 })
 
 const hasChanges = computed<boolean>(() => {
-  if (!(props.schedule && editSchedule.value)) return false
+  if (!(props.recipe && editRecipe.value)) return false
 
-  // Check basic schedule properties
-  const basicProps: Array<keyof Schedule> = ['category', 'name', 'enabled', 'periodicity']
+  // Check basic recipe properties
+  const basicProps: Array<keyof Recipe> = ['category', 'name', 'enabled', 'periodicity']
   for (const prop of basicProps) {
-    if (editSchedule.value[prop] !== props.schedule[prop]) return true
+    if (editRecipe.value[prop] !== props.recipe[prop]) return true
   }
 
   // Check version
   if (
-    editSchedule.value.version &&
-    props.schedule.version &&
-    editSchedule.value.version !== props.schedule.version
+    editRecipe.value.version &&
+    props.recipe.version &&
+    editRecipe.value.version !== props.recipe.version
   )
     return true
 
   // Check context with null/empty string equivalence
-  const originalContext = props.schedule.context
-  const editedContext = editSchedule.value.context
+  const originalContext = props.recipe.context
+  const editedContext = editRecipe.value.context
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
     if (
@@ -1019,44 +1004,43 @@ const hasChanges = computed<boolean>(() => {
   }
 
   // Check tags
-  if (!stringArrayEqual(editSchedule.value.tags, props.schedule.tags)) return true
+  if (!stringArrayEqual(editRecipe.value.tags, props.recipe.tags)) return true
 
   // Check language
-  if (editSchedule.value.language.code !== props.schedule.language.code) return true
+  if (editRecipe.value.language.code !== props.recipe.language.code) return true
 
   // Check config properties
-  const configProps: Array<keyof ScheduleConfig> = ['warehouse_path', 'platform', 'monitor']
+  const configProps: Array<keyof RecipeConfig> = ['warehouse_path', 'platform', 'monitor']
   for (const prop of configProps) {
-    if (editSchedule.value.config[prop] !== props.schedule.config[prop]) return true
+    if (editRecipe.value.config[prop] !== props.recipe.config[prop]) return true
   }
 
   // Check image
   if (
-    editSchedule.value.config.image.name !== props.schedule.config.image.name ||
-    editSchedule.value.config.image.tag !== props.schedule.config.image.tag
+    editRecipe.value.config.image.name !== props.recipe.config.image.name ||
+    editRecipe.value.config.image.tag !== props.recipe.config.image.tag
   )
     return true
 
   // Check resources
   const resourceProps: Array<keyof Resources> = ['cpu', 'memory', 'disk', 'shm']
   for (const prop of resourceProps) {
-    if (editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop])
-      return true
+    if (editRecipe.value.config.resources[prop] !== props.recipe.config.resources[prop]) return true
   }
 
   // check offliner id
-  if (editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id)
+  if (editRecipe.value.config.offliner.offliner_id !== props.recipe.config.offliner.offliner_id)
     return true
 
   // Check artifacts globs
-  const artifacts_globs = processArtifactsGlobs(editSchedule.value.config.artifacts_globs_str)
+  const artifacts_globs = processArtifactsGlobs(editRecipe.value.config.artifacts_globs_str)
 
-  if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) return true
+  if (!stringArrayEqual(artifacts_globs, props.recipe.config.artifacts_globs || [])) return true
 
   // Check notifications
-  if (!notificationsEqual(editSchedule.value.notification, props.schedule.notification)) return true
+  if (!notificationsEqual(editRecipe.value.notification, props.recipe.notification)) return true
 
-  let changes = diff(props.schedule.config.offliner, editFlags.value)
+  let changes = diff(props.recipe.config.offliner, editFlags.value)
 
   if (!changes) return false
 
@@ -1149,8 +1133,8 @@ const flagsFields = computed(() => {
 })
 
 const isYoutubeOffliner = computed(() => {
-  const selected = editSchedule.value.config.offliner.offliner_id
-  const fallback = props.schedule.config.offliner.offliner_id
+  const selected = editRecipe.value.config.offliner.offliner_id
+  const fallback = props.recipe.config.offliner.offliner_id
   return (selected || fallback) === 'youtube'
 })
 
@@ -1411,8 +1395,8 @@ const periodicityOptions = computed(() => {
 
 const memoryOptions = computed(() => {
   const values = [...constants.MEMORY_VALUES]
-  if (values.indexOf(editSchedule.value.config.resources.memory) === -1) {
-    values.push(editSchedule.value.config.resources.memory)
+  if (values.indexOf(editRecipe.value.config.resources.memory) === -1) {
+    values.push(editRecipe.value.config.resources.memory)
   }
   values.sort((a, b) => a - b)
   return values.map((value) => ({ title: formattedBytesSize(value), value }))
@@ -1420,8 +1404,8 @@ const memoryOptions = computed(() => {
 
 const diskOptions = computed(() => {
   const values = [...constants.DISK_VALUES]
-  if (values.indexOf(editSchedule.value.config.resources.disk) === -1) {
-    values.push(editSchedule.value.config.resources.disk)
+  if (values.indexOf(editRecipe.value.config.resources.disk) === -1) {
+    values.push(editRecipe.value.config.resources.disk)
   }
   values.sort((a, b) => a - b)
   return values.map((value) => ({ title: formattedBytesSize(value), value }))
@@ -1432,13 +1416,13 @@ const imageTagOptions = computed(() => {
 })
 
 const fetchSimilarRecipesCount = async () => {
-  if (!props.schedule) return
+  if (!props.recipe) return
 
   loadingSimilarRecipes.value = true
   similarRecipesCount.value = null
 
   try {
-    const response = await scheduleStore.fetchSimilarSchedules(props.schedule.name, {
+    const response = await recipeStore.fetchSimilarRecipes(props.recipe.name, {
       limit: 1, // We only need the count
       skip: 0,
       archived: false,
@@ -1450,7 +1434,7 @@ const fetchSimilarRecipesCount = async () => {
   } catch (error) {
     console.error('Failed to fetch similar recipes count:', error)
     similarRecipesCount.value = 0
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   } finally {
@@ -1469,11 +1453,11 @@ const handleSubmit = async () => {
 }
 
 const handleReset = () => {
-  if (props.schedule) {
-    editSchedule.value = JSON.parse(JSON.stringify(props.schedule))
-    editFlags.value = JSON.parse(JSON.stringify(props.schedule.config.offliner))
+  if (props.recipe) {
+    editRecipe.value = JSON.parse(JSON.stringify(props.recipe))
+    editFlags.value = JSON.parse(JSON.stringify(props.recipe.config.offliner))
     // reset the flags and fields
-    handleOfflinerVersionChange(props.schedule.config.offliner.offliner_id, props.schedule.version)
+    handleOfflinerVersionChange(props.recipe.config.offliner.offliner_id, props.recipe.version)
   }
 }
 
@@ -1512,30 +1496,30 @@ const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] 
     : []
 }
 
-const buildPayload = (): ScheduleUpdateSchema | null => {
-  const payload: Partial<ScheduleUpdateSchema> = {}
+const buildPayload = (): RecipeUpdateSchema | null => {
+  const payload: Partial<RecipeUpdateSchema> = {}
 
-  payload.name = editSchedule.value.name.trim()
+  payload.name = editRecipe.value.name.trim()
 
   // Basic properties
-  const basicProps: Array<keyof Schedule> = ['name', 'category', 'enabled', 'periodicity']
+  const basicProps: Array<keyof Recipe> = ['name', 'category', 'enabled', 'periodicity']
   for (const prop of basicProps) {
-    if (editSchedule.value[prop] !== props.schedule[prop]) {
+    if (editRecipe.value[prop] !== props.recipe[prop]) {
       if (prop === 'name') {
-        payload.name = editSchedule.value[prop]
+        payload.name = editRecipe.value[prop]
       } else if (prop === 'category') {
-        payload.category = editSchedule.value[prop]
+        payload.category = editRecipe.value[prop]
       } else if (prop === 'enabled') {
-        payload.enabled = editSchedule.value[prop]
+        payload.enabled = editRecipe.value[prop]
       } else if (prop === 'periodicity') {
-        payload.periodicity = editSchedule.value[prop]
+        payload.periodicity = editRecipe.value[prop]
       }
     }
   }
 
   // Context with null/empty string equivalence
-  const originalContext = props.schedule.context
-  const editedContext = editSchedule.value.context
+  const originalContext = props.recipe.context
+  const editedContext = editRecipe.value.context
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
     if (
@@ -1556,63 +1540,61 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   }
 
   // Tags
-  if (!stringArrayEqual(editSchedule.value.tags, props.schedule.tags)) {
-    payload.tags = editSchedule.value.tags
+  if (!stringArrayEqual(editRecipe.value.tags, props.recipe.tags)) {
+    payload.tags = editRecipe.value.tags
   }
 
   // Language
-  if (editSchedule.value.language.code !== props.schedule.language.code) {
-    payload.language = editSchedule.value.language.code
+  if (editRecipe.value.language.code !== props.recipe.language.code) {
+    payload.language = editRecipe.value.language.code
   }
 
   // Config properties
-  const configProps: Array<keyof ScheduleConfig> = ['warehouse_path', 'platform', 'monitor']
+  const configProps: Array<keyof RecipeConfig> = ['warehouse_path', 'platform', 'monitor']
   for (const prop of configProps) {
-    if (editSchedule.value.config[prop] !== props.schedule.config[prop]) {
+    if (editRecipe.value.config[prop] !== props.recipe.config[prop]) {
       if (prop === 'warehouse_path') {
-        payload.warehouse_path = editSchedule.value.config[prop]
+        payload.warehouse_path = editRecipe.value.config[prop]
       } else if (prop === 'platform') {
-        payload.platform = editSchedule.value.config[prop]
+        payload.platform = editRecipe.value.config[prop]
       } else if (prop === 'monitor') {
-        payload.monitor = editSchedule.value.config[prop]
+        payload.monitor = editRecipe.value.config[prop]
       }
     }
   }
 
   // Offliner name
-  if (
-    editSchedule.value.config.offliner.offliner_id !== props.schedule.config.offliner.offliner_id
-  ) {
-    payload.offliner = editSchedule.value.config.offliner.offliner_id as string
+  if (editRecipe.value.config.offliner.offliner_id !== props.recipe.config.offliner.offliner_id) {
+    payload.offliner = editRecipe.value.config.offliner.offliner_id as string
   }
 
   // Image
   if (
-    editSchedule.value.config.image.name !== props.schedule.config.image.name ||
-    editSchedule.value.config.image.tag !== props.schedule.config.image.tag
+    editRecipe.value.config.image.name !== props.recipe.config.image.name ||
+    editRecipe.value.config.image.tag !== props.recipe.config.image.tag
   ) {
-    payload.image = editSchedule.value.config.image
+    payload.image = editRecipe.value.config.image
   }
 
   // Resources
   const resourceProps: Array<keyof Resources> = ['cpu', 'memory', 'disk', 'shm']
   const resourcesChanged = resourceProps.some(
-    (prop) => editSchedule.value.config.resources[prop] !== props.schedule.config.resources[prop],
+    (prop) => editRecipe.value.config.resources[prop] !== props.recipe.config.resources[prop],
   )
   if (resourcesChanged) {
-    payload.resources = editSchedule.value.config.resources
+    payload.resources = editRecipe.value.config.resources
   }
 
   // Artifacts
-  const artifacts_globs = processArtifactsGlobs(editSchedule.value.config.artifacts_globs_str)
+  const artifacts_globs = processArtifactsGlobs(editRecipe.value.config.artifacts_globs_str)
 
-  if (!stringArrayEqual(artifacts_globs, props.schedule.config.artifacts_globs || [])) {
+  if (!stringArrayEqual(artifacts_globs, props.recipe.config.artifacts_globs || [])) {
     payload.artifacts_globs = artifacts_globs
   }
 
   // Notifications
-  if (!notificationsEqual(editSchedule.value.notification, props.schedule.notification)) {
-    payload.notification = cleanNotificationPayload(editSchedule.value.notification)
+  if (!notificationsEqual(editRecipe.value.notification, props.recipe.notification)) {
+    payload.notification = cleanNotificationPayload(editRecipe.value.notification)
   }
 
   // Flags
@@ -1629,9 +1611,9 @@ const buildPayload = (): ScheduleUpdateSchema | null => {
   }
 
   // Version
-  payload.version = editSchedule.value.version
+  payload.version = editRecipe.value.version
 
-  return payload as ScheduleUpdateSchema
+  return payload as RecipeUpdateSchema
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

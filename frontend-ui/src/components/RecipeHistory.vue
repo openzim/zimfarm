@@ -111,7 +111,7 @@
       <v-row>
         <v-col cols="12" class="d-flex flex-column align-center justify-center">
           <v-icon size="x-large" color="grey" class="mb-4">mdi-history</v-icon>
-          <div class="text-h6 text-medium-emphasis">No history available for this schedule</div>
+          <div class="text-h6 text-medium-emphasis">No history available for this recipe</div>
         </v-col>
       </v-row>
     </template>
@@ -133,8 +133,8 @@
       <template #content>
         <div v-if="selectedHistoryItem">
           <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-            You are about to revert recipe <strong>{{ scheduleName }}</strong> to a previous
-            version. Review the changes below:
+            You are about to revert recipe <strong>{{ recipeName }}</strong> to a previous version.
+            Review the changes below:
           </v-alert>
 
           <div v-if="loadingOfflinerDef" class="d-flex justify-center align-center pa-8">
@@ -165,10 +165,10 @@
 import DiffViewer from '@/components/DiffViewer.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useNotificationStore } from '@/stores/notification'
-import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
+import { useRecipeHistoryStore } from '@/stores/recipeHistory'
 import { useOfflinerStore } from '@/stores/offliner'
 import type { Paginator } from '@/types/base'
-import type { ScheduleHistorySchema } from '@/types/schedule'
+import type { RecipeHistorySchema } from '@/types/recipe'
 import type { OfflinerDefinition } from '@/types/offliner'
 import { formatDt } from '@/utils/format'
 import type * as DeepDiff from 'deep-diff'
@@ -178,11 +178,11 @@ import { useRoute, useRouter } from 'vue-router'
 import type { EnhancedDiff } from '@/utils/diff'
 
 const props = defineProps<{
-  history: ScheduleHistorySchema[]
+  history: RecipeHistorySchema[]
   hasMore: boolean
   loading: boolean
   paginator: Paginator
-  scheduleName: string
+  recipeName: string
 }>()
 
 const emit = defineEmits<{
@@ -192,7 +192,7 @@ const emit = defineEmits<{
 
 const route = useRoute()
 const router = useRouter()
-const scheduleHistoryStore = useScheduleHistoryStore()
+const recipeHistoryStore = useRecipeHistoryStore()
 const notificationStore = useNotificationStore()
 const offlinerStore = useOfflinerStore()
 
@@ -203,7 +203,7 @@ const oldFlagsDefinition = ref<OfflinerDefinition[]>([])
 const newFlagsDefinition = ref<OfflinerDefinition[]>([])
 const loadingOfflinerDef = ref(false)
 const showRevertDialog = ref(false)
-const selectedHistoryItem = ref<ScheduleHistorySchema | null>(null)
+const selectedHistoryItem = ref<RecipeHistorySchema | null>(null)
 const isReverting = ref(false)
 const isRevertMode = ref(false)
 const revertComment = ref('')
@@ -222,7 +222,7 @@ const selectedItemsArray = computed(() => {
   return items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 })
 
-const scheduleDifferences = computed(
+const recipeDifferences = computed(
   (): DeepDiff.Diff<Record<string, unknown>, Record<string, unknown>>[] | undefined => {
     if (selectedItemsArray.value.length !== 2) {
       return undefined
@@ -256,7 +256,7 @@ const scheduleDifferences = computed(
 
 // Enhanced differences with blob metadata
 const enhancedDifferences = computed((): EnhancedDiff[] | undefined => {
-  if (!scheduleDifferences.value) {
+  if (!recipeDifferences.value) {
     return undefined
   }
 
@@ -287,7 +287,7 @@ const enhancedDifferences = computed((): EnhancedDiff[] | undefined => {
   }
 
   // Enhance each difference with blob metadata
-  return scheduleDifferences.value.map((diff) => {
+  return recipeDifferences.value.map((diff) => {
     const enhanced: EnhancedDiff = { ...diff }
 
     // Check if any value in this diff is a blob
@@ -321,7 +321,7 @@ const enhancedDifferences = computed((): EnhancedDiff[] | undefined => {
   })
 })
 
-const toggleHistoryItemSelection = async (item: ScheduleHistorySchema, index: number) => {
+const toggleHistoryItemSelection = async (item: RecipeHistorySchema, index: number) => {
   if (selectedItems.value.has(index)) {
     // Remove from selection
     selectedItems.value.delete(index)
@@ -342,7 +342,7 @@ const toggleHistoryItemSelection = async (item: ScheduleHistorySchema, index: nu
   updateUrlQueryParams()
 }
 
-// Fetch both offliner definitions from the selected schedule history items
+// Fetch both offliner definitions from the selected recipe history items
 const fetchOfflinerDefinitions = async () => {
   if (selectedItemsArray.value.length !== 2) {
     return
@@ -448,17 +448,17 @@ const selectHistoryEntriesFromUrl = async () => {
     try {
       // Fetch missing entries in parallel
       const fetchPromises = missingIds.map((id) =>
-        scheduleHistoryStore.fetchHistoryEntry(props.scheduleName, id),
+        recipeHistoryStore.fetchHistoryEntry(props.recipeName, id),
       )
 
       await Promise.all(fetchPromises)
 
       // After fetching, find the indices again
-      const newIndex1 = scheduleHistoryStore.history.findIndex(
-        (item: ScheduleHistorySchema) => item.id === id1,
+      const newIndex1 = recipeHistoryStore.history.findIndex(
+        (item: RecipeHistorySchema) => item.id === id1,
       )
-      const newIndex2 = scheduleHistoryStore.history.findIndex(
-        (item: ScheduleHistorySchema) => item.id === id2,
+      const newIndex2 = recipeHistoryStore.history.findIndex(
+        (item: RecipeHistorySchema) => item.id === id2,
       )
 
       if (newIndex1 !== -1 && newIndex2 !== -1) {
@@ -481,7 +481,7 @@ const backToHistoryList = () => {
   updateUrlQueryParams()
 }
 
-const confirmRevert = async (item: ScheduleHistorySchema, index: number) => {
+const confirmRevert = async (item: RecipeHistorySchema, index: number) => {
   selectedHistoryItem.value = item
   isRevertMode.value = true
 
@@ -492,7 +492,7 @@ const confirmRevert = async (item: ScheduleHistorySchema, index: number) => {
   await fetchOfflinerDefinitions()
 
   // Check if there are any differences
-  if (!scheduleDifferences.value || scheduleDifferences.value.length === 0) {
+  if (!recipeDifferences.value || recipeDifferences.value.length === 0) {
     selectedHistoryItem.value = null
     isRevertMode.value = false
     selectedItems.value.clear()
@@ -519,8 +519,8 @@ const handleRevertConfirm = async () => {
 
   isReverting.value = true
   const comment = revertComment.value.trim() || undefined
-  const success = await scheduleHistoryStore.revertToHistory(
-    props.scheduleName,
+  const success = await recipeHistoryStore.revertToHistory(
+    props.recipeName,
     selectedHistoryItem.value.id,
     comment,
   )
@@ -536,7 +536,7 @@ const handleRevertConfirm = async () => {
     selectedItems.value.clear()
     emit('revert')
   } else {
-    for (const error of scheduleHistoryStore.errors) {
+    for (const error of recipeHistoryStore.errors) {
       notificationStore.showError(error)
     }
   }

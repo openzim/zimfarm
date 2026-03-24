@@ -4,8 +4,8 @@
       <!-- Load All Last Runs button - only show in failed tab -->
       <div v-if="showLoadAllButton" class="d-flex justify-end mb-2">
         <v-btn
-          :loading="loadingAllSchedules"
-          :disabled="loadingAllSchedules || tasks.length === 0"
+          :loading="loadingAllRecipes"
+          :disabled="loadingAllRecipes || tasks.length === 0"
           color="primary"
           variant="tonal"
           prepend-icon="mdi-refresh"
@@ -13,7 +13,7 @@
         >
           Load All Last Runs
           <v-tooltip activator="parent" location="bottom">
-            Load last run status for all schedules on this page
+            Load last run status for all recipes on this page
           </v-tooltip>
         </v-btn>
       </div>
@@ -50,15 +50,15 @@
           </div>
         </template>
 
-        <template #[`item.schedule_name`]="{ item }">
-          <span v-if="item.schedule_name === null">
-            {{ item.original_schedule_name }}
+        <template #[`item.recipe_name`]="{ item }">
+          <span v-if="item.recipe_name === null">
+            {{ item.original_recipe_name }}
           </span>
           <router-link
             v-else
-            :to="{ name: 'schedule-detail', params: { scheduleName: item.schedule_name } }"
+            :to="{ name: 'recipe-detail', params: { recipeName: item.recipe_name } }"
           >
-            {{ item.schedule_name }}
+            {{ item.recipe_name }}
           </router-link>
         </template>
 
@@ -196,39 +196,37 @@
 
         <template #[`item.last_run`]="{ item }">
           <div
-            v-if="item.schedule_name"
+            v-if="item.recipe_name"
             :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]"
           >
-            <span v-if="schedulesLastRuns[item.schedule_name]">
-              <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
-                {{ schedulesLastRuns[item.schedule_name].status }} </code
+            <span v-if="recipesLastRuns[item.recipe_name]">
+              <code :class="statusClass(recipesLastRuns[item.recipe_name].status)">
+                {{ recipesLastRuns[item.recipe_name].status }} </code
               >,
               <TaskLink
-                :id="schedulesLastRuns[item.schedule_name].id"
-                :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
-                :status="schedulesLastRuns[item.schedule_name].status"
-                :timestamp="schedulesLastRuns[item.schedule_name].timestamp"
+                :id="recipesLastRuns[item.recipe_name].id"
+                :updatedAt="recipesLastRuns[item.recipe_name].updated_at"
+                :status="recipesLastRuns[item.recipe_name].status"
+                :timestamp="recipesLastRuns[item.recipe_name].timestamp"
               />
             </span>
             <v-btn
-              :icon="loadingSchedules[item.schedule_name] ? 'mdi-loading' : 'mdi-refresh'"
-              :loading="loadingSchedules[item.schedule_name]"
-              :disabled="loadingSchedules[item.schedule_name]"
+              :icon="loadingRecipes[item.recipe_name] ? 'mdi-loading' : 'mdi-refresh'"
+              :loading="loadingRecipes[item.recipe_name]"
+              :disabled="loadingRecipes[item.recipe_name]"
               size="small"
               variant="text"
               color="primary"
-              @click="handleLoadLastRun(item.schedule_name)"
+              @click="handleLoadLastRun(item.recipe_name)"
               density="comfortable"
               class="ml-2"
             >
-              <v-icon :class="{ 'mdi-spin': loadingSchedules[item.schedule_name] }">
-                {{ loadingSchedules[item.schedule_name] ? 'mdi-loading' : 'mdi-refresh' }}
+              <v-icon :class="{ 'mdi-spin': loadingRecipes[item.recipe_name] }">
+                {{ loadingRecipes[item.recipe_name] ? 'mdi-loading' : 'mdi-refresh' }}
               </v-icon>
               <v-tooltip activator="parent" location="bottom">
                 {{
-                  loadingSchedules[item.schedule_name]
-                    ? 'Loading...'
-                    : 'Load/refresh last run status'
+                  loadingRecipes[item.recipe_name] ? 'Loading...' : 'Load/refresh last run status'
                 }}
               </v-tooltip>
             </v-btn>
@@ -272,20 +270,20 @@ const props = defineProps<{
   loadingText: string // the text to display when the table is loading
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
   paginator: Paginator // the paginator
-  schedulesLastRuns: Record<string, MostRecentTask> // the last runs for each schedule
+  recipesLastRuns: Record<string, MostRecentTask> // the last runs for each recipe
   errors: string[] // the errors to display
 }>()
 
 const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
-  loadLastRun: [scheduleName: string]
+  loadLastRun: [recipeName: string]
   loadAllLastRuns: []
 }>()
 
 const limits = [10, 20, 50, 100]
-const loadingSchedules = ref<Record<string, boolean>>({})
-const loadingAllSchedules = ref(false)
+const loadingRecipes = ref<Record<string, boolean>>({})
+const loadingAllRecipes = ref(false)
 
 // Check if we should show the "Load All Last Runs" button (only in failed tab)
 const showLoadAllButton = computed(() => {
@@ -309,27 +307,27 @@ function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
 }
 
 function statusClass(status: string) {
-  if (status === 'succeeded') return 'schedule-succeeded'
-  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'schedule-failed'
-  else return 'schedule-running'
+  if (status === 'succeeded') return 'recipe-succeeded'
+  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'recipe-failed'
+  else return 'recipe-running'
 }
 
-async function handleLoadLastRun(scheduleName: string) {
-  if (!scheduleName) return
-  loadingSchedules.value[scheduleName] = true
+async function handleLoadLastRun(recipeName: string) {
+  if (!recipeName) return
+  loadingRecipes.value[recipeName] = true
   try {
-    emit('loadLastRun', scheduleName)
+    emit('loadLastRun', recipeName)
   } finally {
-    loadingSchedules.value[scheduleName] = false
+    loadingRecipes.value[recipeName] = false
   }
 }
 
 async function handleLoadAllLastRuns() {
-  loadingAllSchedules.value = true
+  loadingAllRecipes.value = true
   try {
     emit('loadAllLastRuns')
   } finally {
-    loadingAllSchedules.value = false
+    loadingAllRecipes.value = false
   }
 }
 </script>

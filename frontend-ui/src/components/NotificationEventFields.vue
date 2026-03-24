@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import type { EventNotification } from '@/types/schedule'
+import type { EventNotification } from '@/types/recipe'
 
 interface Props {
   modelValue: EventNotification | null

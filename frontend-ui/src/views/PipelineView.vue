@@ -15,7 +15,7 @@
     :errors="errors"
     :canUnRequestTasks="canUnRequestTasks"
     :canCancelTasks="canCancelTasks"
-    :schedulesLastRuns="schedulesLastRuns"
+    :recipesLastRuns="recipesLastRuns"
     @limit-changed="handleLimitChange"
     @load-data="loadData"
     @load-last-run="handleLoadLastRun"
@@ -30,7 +30,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
-import { useScheduleStore } from '@/stores/schedule'
+import { useRecipeStore } from '@/stores/recipe'
 import { useTasksStore } from '@/stores/tasks'
 import type { Paginator, MostRecentTask } from '@/types/base'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
@@ -45,7 +45,7 @@ const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const authStore = useAuthStore()
 const loadingStore = useLoadingStore()
-const scheduleStore = useScheduleStore()
+const recipeStore = useRecipeStore()
 const notificationStore = useNotificationStore()
 
 // Filter options
@@ -60,7 +60,7 @@ const headers = computed(() => {
   switch (currentFilter.value) {
     case 'todo':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Requested', value: 'requested', sortable: false },
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
@@ -69,7 +69,7 @@ const headers = computed(() => {
       ].filter(Boolean) as { title: string; value: string }[]
     case 'doing':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Started', value: 'started', sortable: false },
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
@@ -78,14 +78,14 @@ const headers = computed(() => {
       ].filter(Boolean) as { title: string; value: string }[]
     case 'done':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Completed', value: 'completed', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
         { title: 'Duration', value: 'duration', sortable: false },
       ]
     case 'failed':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Stopped', value: 'stopped', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
         { title: 'Duration', value: 'duration', sortable: false },
@@ -102,7 +102,7 @@ const currentFilter = computed(() => {
   return (Array.isArray(filter) ? filter[0] : filter) || 'todo'
 })
 
-const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
+const recipesLastRuns = ref<Record<string, MostRecentTask>>({})
 
 const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
 const defaultLimit = computed(() =>
@@ -132,7 +132,7 @@ const handleFilterChange = (newFilter: string) => {
 
 // Clear last runs when switching filters
 watch(currentFilter, () => {
-  schedulesLastRuns.value = {}
+  recipesLastRuns.value = {}
 })
 
 async function loadData(
@@ -203,29 +203,29 @@ async function loadData(
   }
 }
 
-async function handleLoadLastRun(scheduleName: string) {
-  if (!scheduleName) return
+async function handleLoadLastRun(recipeName: string) {
+  if (!recipeName) return
 
-  const result = await scheduleStore.fetchSchedule(scheduleName)
+  const result = await recipeStore.fetchRecipe(recipeName)
   if (result && result.most_recent_task) {
-    schedulesLastRuns.value[scheduleName] = result.most_recent_task
+    recipesLastRuns.value[recipeName] = result.most_recent_task
   }
-  if (scheduleStore.errors.length > 0) {
-    for (const error of scheduleStore.errors) {
-      notificationStore.showError(`Failed to load last run for schedule ${scheduleName}: ${error}`)
+  if (recipeStore.errors.length > 0) {
+    for (const error of recipeStore.errors) {
+      notificationStore.showError(`Failed to load last run for recipe ${recipeName}: ${error}`)
     }
   }
 }
 
 async function handleLoadAllLastRuns() {
-  const scheduleNames = new Set<string>()
+  const recipeNames = new Set<string>()
   tasks.value.forEach((task) => {
-    if (task.schedule_name) {
-      scheduleNames.add(task.schedule_name)
+    if (task.recipe_name) {
+      recipeNames.add(task.recipe_name)
     }
   })
 
-  const promises = Array.from(scheduleNames).map((scheduleName) => handleLoadLastRun(scheduleName))
+  const promises = Array.from(recipeNames).map((recipeName) => handleLoadLastRun(recipeName))
 
   await Promise.all(promises)
 }

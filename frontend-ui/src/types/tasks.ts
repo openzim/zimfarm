@@ -1,5 +1,5 @@
 import type { BaseTask, ConfigWithOnlyResources, TaskStatus } from '@/types/base'
-import type { ExpandedScheduleConfig, ScheduleNotification } from '@/types/schedule'
+import type { ExpandedRecipeConfig, RecipeNotification } from '@/types/recipe'
 
 export interface TaskLight extends BaseTask {
   config: ConfigWithOnlyResources
@@ -91,12 +91,12 @@ export interface TaskUpload {
 }
 
 export interface Task extends BaseTask {
-  config: ExpandedScheduleConfig
+  config: ExpandedRecipeConfig
   events: TaskEvent[]
   debug: TaskDebug
   canceled_by: string | null
   container: TaskContainer
-  notification: ScheduleNotification | null
+  notification: RecipeNotification | null
   files: Record<string, TaskFile>
   upload: TaskUpload
   version: string
