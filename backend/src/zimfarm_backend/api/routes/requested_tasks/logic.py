@@ -11,10 +11,10 @@ from zimfarm_backend.api.routes.dependencies import (
     get_current_user,
     get_current_user_or_none,
     get_current_user_with_session,
+    require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
-    ForbiddenError,
     NotFoundError,
     ServiceUnavailableError,
 )
@@ -85,18 +85,18 @@ def record_ip_change(session: OrmSession, worker_name: str):
         )
 
 
-@router.post("")
+@router.post(
+    "",
+    dependencies=[
+        Depends(require_permission(namespace="requested_tasks", name="create"))
+    ],
+)
 def create_request_task(
     new_requested_task: NewRequestedTaskSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ):
     """Create requested task from a list of recipe_names"""
-    if not check_user_permission(
-        current_user, namespace="requested_tasks", name="create"
-    ):
-        raise ForbiddenError("You are not allowed to request tasks")
-
     if count_enabled_recipes(session, new_requested_task.recipe_names) == 0:
         raise NotFoundError(
             "No enabled recipes found for the given names",
@@ -153,7 +153,8 @@ def get_requested_tasks(
             if requested_task_schema.matching_offliners is not None
             else None
         ),
-        recipe_name=requested_task_schema.recipe_name,
+        recipe_name=requested_task_schema.recipe_name
+        or requested_task_schema.schedule_name,
         priority=requested_task_schema.priority,
         cpu=requested_task_schema.matching_cpu,
         memory=requested_task_schema.matching_memory,
@@ -322,38 +323,34 @@ def get_requested_task(
     )
 
 
-@router.patch("/{requested_task_id}")
+@router.patch(
+    "/{requested_task_id}",
+    dependencies=[
+        Depends(require_permission(namespace="requested_tasks", name="update"))
+    ],
+)
 def update_requested_task_priority(
     requested_task_id: Annotated[UUID, Path()],
     update_requested_task_schema: UpdateRequestedTaskSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> RequestedTaskFullSchema:
     """Update the priority of a requested task."""
-    if not check_user_permission(
-        current_user, namespace="requested_tasks", name="update"
-    ):
-        raise ForbiddenError("You are not allowed to update requested tasks")
-
     get_requested_task_by_id(session, requested_task_id)
-
     return db_update_requested_task_priority(
         session, requested_task_id, update_requested_task_schema.priority
     )
 
 
-@router.delete("/{requested_task_id}")
+@router.delete(
+    "/{requested_task_id}",
+    dependencies=[
+        Depends(require_permission(namespace="requested_tasks", name="delete"))
+    ],
+)
 def delete_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> JSONResponse:
     """Delete a requested task by ID."""
-    if not check_user_permission(
-        current_user, namespace="requested_tasks", name="delete"
-    ):
-        raise ForbiddenError("You are not allowed to unrequest tasks")
-
     db_delete_requested_task(session, requested_task_id)
-
     return JSONResponse(content={"deleted": 1})

@@ -41,10 +41,10 @@ from zimfarm_backend.db.exceptions import (
 from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import (
     OfflinerDefinition,
-    RequestedTask,
     Recipe,
     RecipeDuration,
     RecipeHistory,
+    RequestedTask,
     Task,
     Worker,
 )

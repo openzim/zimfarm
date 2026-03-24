@@ -67,10 +67,12 @@ class BaseTaskSchema(BaseModel):
     status: str
     timestamp: list[tuple[str, datetime.datetime]]
     recipe_name: str | None
+    schedule_name: str | None  # Kept for compatibility purposes (used by worker)
     worker_name: str
     updated_at: datetime.datetime
     requested_by: str
     original_recipe_name: str
+    original_schedule_name: str  # Kept for compatibility purposes
     context: str
     priority: int
 

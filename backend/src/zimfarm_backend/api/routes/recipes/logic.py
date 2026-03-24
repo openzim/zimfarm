@@ -98,9 +98,11 @@ from zimfarm_backend.utils.offliners import (
 )
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
+schedules_router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 
 @router.get("")
+@schedules_router.get("")
 def get_recipes(
     params: Annotated[RecipesGetSchema, Query()],
     current_user: User | None = Depends(get_current_user_or_none),
@@ -134,16 +136,18 @@ def get_recipes(
     )
 
 
-@router.post("")
+@router.post(
+    "", dependencies=[Depends(require_permission(namespace="recipes", name="create"))]
+)
+@schedules_router.post(
+    "", dependencies=[Depends(require_permission(namespace="recipes", name="create"))]
+)
 def create_recipe(
     request: RecipeCreateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Create a new recipe"""
-    if not check_user_permission(current_user, namespace="recipes", name="create"):
-        raise UnauthorizedError("You are not allowed to create a recipe")
-
     if offliner_id := request.config.get("offliner", {}).get("offliner_id"):
         offliner_definition = get_offliner_definition(
             session, offliner_id, request.version
@@ -215,6 +219,7 @@ def create_recipe(
 
 
 @router.get("/backup")
+@schedules_router.get("/backup")
 def get_recipes_backup(
     session: OrmSession = Depends(gen_dbsession),
     current_user: User | None = Depends(get_current_user_or_none),
@@ -255,18 +260,19 @@ def get_recipes_backup(
     return JSONResponse(content=content)
 
 
-@router.post("/restore")
+@router.post(
+    "/restore",
+    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
+)
+@schedules_router.post(
+    "/restore",
+    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
+)
 def restore_archived_recipes(
     request: RestoreRecipesSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> Response:
-    if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="archive")
-    ):
-        raise UnauthorizedError("You are not allowed to restore recipes")
-
     db_restore_recipes(
         session,
         recipe_names=request.recipe_names,
@@ -277,6 +283,7 @@ def restore_archived_recipes(
 
 
 @router.get("/{recipe_name}")
+@schedules_router.get("/{recipe_name}")
 def get_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
@@ -336,6 +343,7 @@ def get_recipe(
 
 
 @router.get("/{recipe_name}/similar")
+@schedules_router.get("/{recipe_name}/similar")
 def get_similar_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     params: Annotated[RecipesGetSchema, Query()],
@@ -364,19 +372,20 @@ def get_similar_recipe(
     )
 
 
-@router.patch("/{recipe_name}")
+@router.patch(
+    "/{recipe_name}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
+)
+@schedules_router.patch(
+    "/{recipe_name}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
+)
 def update_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: RecipeUpdateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
-    if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="update")
-    ):
-        raise UnauthorizedError("You are not allowed to update a recipe")
-
     db_recipe = db_get_recipe(session, recipe_name=recipe_name)
     if db_recipe.archived:
         raise BadRequestError("Cannot update an archived recipe")
@@ -586,24 +595,25 @@ def update_recipe(
     )
 
 
-@router.delete("/{recipe_name}")
+@router.delete(
+    "/{recipe_name}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="delete"))],
+)
+@schedules_router.delete(
+    "/{recipe_name}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="delete"))],
+)
 def delete_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
 ) -> Response:
     """Delete a recipe"""
-    if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="delete")
-    ):
-        raise UnauthorizedError("You are not allowed to delete a recipe")
-
     db_delete_recipe(session, recipe_name=recipe_name)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
 @router.get("/{recipe_name}/image-names")
+@schedules_router.get("/{recipe_name}/image-names")
 def get_recipe_image_names(
     recipe_name: Annotated[NotEmptyString, Path()],
     hub_name: Annotated[str, Query()],
@@ -632,16 +642,20 @@ def get_recipe_image_names(
     )
 
 
-@router.post("/{recipe_name}/clone")
+@router.post(
+    "/{recipe_name}/clone",
+    dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
+)
+@schedules_router.post(
+    "/{recipe_name}/clone",
+    dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
+)
 def clone_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: CloneSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_user: User = Depends(get_current_user),
 ) -> RecipeCreateResponseSchema:
-    if not check_user_permission(current_user, namespace="recipes", name="create"):
-        raise UnauthorizedError("You are not allowed to clone a recipe")
-
     recipe = db_get_recipe(session, recipe_name=recipe_name)
     if recipe.archived:
         raise BadRequestError("You cannot clone an archived recipe.")
@@ -711,7 +725,14 @@ def clone_recipe(
     )
 
 
-@router.patch("/{recipe_name}/archive")
+@router.patch(
+    "/{recipe_name}/archive",
+    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
+)
+@schedules_router.patch(
+    "/{recipe_name}/archive",
+    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
+)
 def archive_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
@@ -719,12 +740,6 @@ def archive_recipe(
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Archive a recipe"""
-    if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="archive")
-    ):
-        raise UnauthorizedError("You are not allowed to archive a recipe")
-
     db_toggle_archive_status(
         session,
         recipe_name=recipe_name,
@@ -738,7 +753,14 @@ def archive_recipe(
     )
 
 
-@router.patch("/{recipe_name}/restore")
+@router.patch(
+    "/{recipe_name}/restore",
+    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
+)
+@schedules_router.patch(
+    "/{recipe_name}/restore",
+    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
+)
 def restore_archived_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
@@ -746,12 +768,6 @@ def restore_archived_recipe(
     current_user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Restore an archived recipe"""
-    if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="archive")
-    ):
-        raise UnauthorizedError("You are not allowed to restore a recipe")
-
     db_toggle_archive_status(
         session,
         recipe_name=recipe_name,
@@ -765,15 +781,18 @@ def restore_archived_recipe(
     )
 
 
-@router.get("/{recipe_name}/validate")
+@router.get(
+    "/{recipe_name}/validate",
+    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
+)
+@schedules_router.get(
+    "/{recipe_name}/validate",
+    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
+)
 def validate_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
 ) -> JSONResponse:
-    if not check_user_permission(current_user, namespace="recipes", name="update"):
-        raise UnauthorizedError("You are not allowed to validate a recipe")
-
     recipe = db_get_recipe(session, recipe_name=recipe_name)
     offliner = get_offliner(session, recipe.config["offliner"]["offliner_id"])
 
@@ -785,17 +804,20 @@ def validate_recipe(
     return JSONResponse(content={"message": "Recipe validated with success"})
 
 
-@router.get("/{recipe_name}/history")
+@router.get(
+    "/{recipe_name}/history",
+    dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
+)
+@schedules_router.get(
+    "/{recipe_name}/history",
+    dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
+)
 def get_recipe_history(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,
 ) -> ListResponse[RecipeHistorySchema]:
-    if not check_user_permission(current_user, namespace="recipes", name="secrets"):
-        raise UnauthorizedError("You are not allowed to view a recipe's history")
-
     recipe = db_get_recipe(session, recipe_name=recipe_name)
 
     results = db_get_recipe_history(
@@ -812,16 +834,19 @@ def get_recipe_history(
     )
 
 
-@router.get("/{recipe_name}/history/{history_id}")
+@router.get(
+    "/{recipe_name}/history/{history_id}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
+)
+@schedules_router.get(
+    "/{recipe_name}/history/{history_id}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
+)
 def get_recipe_history_entry(
     recipe_name: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
 ) -> RecipeHistorySchema:
-    if not check_user_permission(current_user, namespace="recipes", name="secrets"):
-        raise UnauthorizedError("You are not allowed to view a recipe's history")
-
     history_entry = db_get_recipe_history_entry(
         session, recipe_name=recipe_name, history_id=history_id
     )
@@ -829,6 +854,10 @@ def get_recipe_history_entry(
 
 
 @router.patch(
+    "/{recipe_name}/revert/{history_id}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
+)
+@schedules_router.patch(
     "/{recipe_name}/revert/{history_id}",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
