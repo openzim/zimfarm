@@ -199,118 +199,24 @@
                     <div class="text-subtitle-2">Files</div>
                   </v-col>
                   <v-col cols="12" md="9">
-                    <v-data-table
-                      :headers="filesHeaders"
-                      :items="sortedFiles"
-                      :mobile="smAndDown"
-                      :density="smAndDown ? 'compact' : 'comfortable'"
-                      item-key="name"
-                      hide-default-footer
-                      disable-sort
-                      :class="smAndDown ? '' : 'files-table'"
-                    >
-                      <template #[`item.name`]="{ item }">
-                        {{ getDisplayFilename(item) }}
-                      </template>
-
-                      <template #[`item.size`]="{ item }">
-                        {{ formattedBytesSize(item.size) }}
-                      </template>
-
-                      <template #[`item.created_after`]="{ item }">
-                        <v-tooltip :text="formatDt(item.created_timestamp)">
-                          <template #activator="{ props }">
-                            <span v-bind="props">{{ createdAfter(item, task) }}</span>
-                          </template>
-                        </v-tooltip>
-                      </template>
-
-                      <template #[`item.upload_duration`]="{ item }">
-                        <v-tooltip
-                          v-if="item.uploaded_timestamp"
-                          :text="formatDt(item.uploaded_timestamp)"
-                        >
-                          <template #activator="{ props }">
-                            <span v-bind="props">{{ uploadDuration(item) }}</span>
-                          </template>
-                        </v-tooltip>
-                        <span v-else>-</span>
-                      </template>
-
-                      <template #[`item.quality`]="{ item }">
-                        <div
-                          v-if="item.check_result !== undefined"
-                          :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]"
-                        >
-                          <v-tooltip :text="`Return code: ${item.check_result}`">
-                            <template #activator="{ props }">
-                              <v-icon
-                                v-bind="props"
-                                :color="item.check_result === 0 ? 'success' : 'error'"
-                                size="small"
-                              >
-                                {{
-                                  item.check_result === 0 ? 'mdi-check-circle' : 'mdi-close-circle'
-                                }}
-                              </v-icon>
-                            </template>
-                          </v-tooltip>
-                          <v-btn
-                            v-if="item.check_filename"
-                            variant="text"
-                            size="small"
-                            class="ml-2"
-                            :href="zimfarmChecksUrl(item.check_filename)"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <v-icon>mdi-download</v-icon>
-                          </v-btn>
-                        </div>
-                        <span v-else>-</span>
-                      </template>
-
-                      <template #[`item.info`]="{ item }">
-                        <div :class="['d-flex', { 'justify-end': smAndDown }]">
-                          <v-menu v-if="item.info" location="left" :close-on-content-click="false">
-                            <template #activator="{ props }">
-                              <v-btn v-bind="props" variant="text" size="small">
-                                <v-icon>mdi-information</v-icon>
-                              </v-btn>
-                            </template>
-                            <FileInfoTable :file-info="item.info" />
-                          </v-menu>
-                          <span v-else>-</span>
-                        </div>
-                      </template>
-
-                      <template #[`item.urls`]="{ item }">
-                        <div :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]">
-                          <ZimUrlButtons
-                            v-if="item.zim_urls && item.zim_urls.length > 0"
-                            :urls="item.zim_urls"
-                            :icon-only="!smAndDown"
-                          />
-                          <v-tooltip v-else location="bottom">
-                            <template #activator="{ props: tooltipProps }">
-                              <v-btn
-                                v-bind="tooltipProps"
-                                :href="
-                                  kiwixDownloadUrl + task.config.warehouse_path + '/' + item.name
-                                "
-                                target="_blank"
-                                variant="text"
-                                icon
-                                size="small"
-                              >
-                                <v-icon size="small">mdi-download</v-icon>
-                              </v-btn>
-                            </template>
-                            <span>Download</span>
-                          </v-tooltip>
-                        </div>
-                      </template>
-                    </v-data-table>
+                    <v-row>
+                      <v-col
+                        v-for="file in sortedFiles"
+                        :key="file.name"
+                        cols="12"
+                        sm="12"
+                        md="6"
+                        lg="4"
+                        xl="4"
+                      >
+                        <TaskFileCard
+                          :file="file"
+                          :task="task"
+                          :kiwix-download-url="kiwixDownloadUrl"
+                          :sm-and-down="smAndDown"
+                        />
+                      </v-col>
+                    </v-row>
                   </v-col>
                 </v-row>
               </div>
@@ -616,10 +522,11 @@
 
 <script setup lang="ts">
 import ErrorMessage from '@/components/ErrorMessage.vue'
-import FileInfoTable from '@/components/FileInfoTable.vue'
+
 import FlagsList from '@/components/FlagsList.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
-import ZimUrlButtons from '@/components/ZimUrlButtons.vue'
+
+import TaskFileCard from '@/components/TaskFileCard.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
@@ -628,7 +535,7 @@ import { useNotificationStore } from '@/stores/notification'
 import { useOfflinerStore } from '@/stores/offliner'
 import { useTasksStore } from '@/stores/tasks'
 import type { OfflinerDefinition } from '@/types/offliner'
-import type { Task, TaskFile } from '@/types/tasks'
+import type { Task } from '@/types/tasks'
 import {
   formatDt,
   formatDurationBetween,
@@ -637,7 +544,6 @@ import {
 } from '@/utils/format'
 import {
   artifactsUrl,
-  checkUrl,
   imageHuman as imageHumanFn,
   imageUrl as imageUrlFn,
   logsUrl,
@@ -683,16 +589,6 @@ const eventsHeaders = [
   { title: 'Event', value: 'code' },
   { title: 'Timestamp', value: 'timestamp' },
   { title: 'User', value: 'user' },
-]
-
-const filesHeaders = [
-  { title: 'Filename', value: 'name', width: '30%' },
-  { title: 'Size', value: 'size' },
-  { title: 'Created After', value: 'created_after' },
-  { title: 'Upload Duration', value: 'upload_duration' },
-  { title: 'Quality', value: 'quality' },
-  { title: 'Info', value: 'info' },
-  { title: 'URLs', value: 'urls' },
 ]
 
 // Computed properties
@@ -761,28 +657,6 @@ const sortedFiles = computed(() => {
     return new Date(a.created_timestamp).getTime() - new Date(b.created_timestamp).getTime()
   })
 })
-
-const getDisplayFilename = (file: TaskFile) => {
-  // If there's file info with metadata, build the filename from Name, Date, and Flavour
-  if (file.info?.metadata) {
-    const metadata = file.info.metadata
-    const name = metadata.Name
-    const date = metadata.Date
-    const flavour = metadata.Flavour
-
-    if (name && date) {
-      const parts = [name]
-      if (flavour) {
-        parts.push(flavour)
-      }
-      parts.push(date)
-      return parts.join('/')
-    }
-  }
-
-  // Default to the name attribute
-  return file.name
-}
 
 const command = computed(() => {
   return taskContainer.value?.command?.join(' ') || ''
@@ -856,19 +730,6 @@ const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel')
 const canViewTaskSecrets = computed(() => authStore.hasPermission('tasks', 'secrets'))
 
 // Methods
-const createdAfter = (file: TaskFile, taskData: Task) => {
-  return formatDurationBetween(
-    getTimestampStringForStatus(taskData.timestamp, 'scraper_started'),
-    file.created_timestamp,
-  )
-}
-
-const zimfarmChecksUrl = (fileName: string) => (task.value ? checkUrl(task.value, fileName) : '')
-
-const uploadDuration = (file: TaskFile) => {
-  if (!file.uploaded_timestamp) return '-'
-  return formatDurationBetween(file.created_timestamp, file.uploaded_timestamp)
-}
 
 const copyCommand = async (command: string) => {
   try {
@@ -1015,15 +876,6 @@ pre {
 
 .events-table :deep(tbody tr:nth-of-type(odd)) {
   background-color: rgba(0, 0, 0, 0.05);
-}
-
-.files-table :deep(.v-data-table__td:first-child),
-.files-table :deep(.v-data-table__th:first-child) {
-  max-width: 30%;
-  word-wrap: break-word;
-  word-break: break-word;
-  white-space: normal;
-  overflow-wrap: break-word;
 }
 
 /* Additional word-wrap styles for mobile table cells in this view */
