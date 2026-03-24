@@ -32,6 +32,7 @@ from zimfarm_worker.common.docker import (
     get_label_value,
     get_running_container_name,
     inspect_container,
+    inspect_image,
     list_containers,
     query_host_stats,
     remove_container,
@@ -257,15 +258,25 @@ class WorkerManager(BaseWorker):
             container_info = inspect_container(
                 self.docker, get_running_container_name()
             )
-            if container_info.get("Created") and container_info.get("Image"):
-                self.local_worker_manager_version = WorkerManagerVersion(
-                    hash=container_info["Image"],
-                    created_at=datetime.datetime.fromisoformat(
-                        container_info["Created"]
-                    ),
+            if container_info.get("Image"):
+                # Retrieve the image info by stripping the sha256 away from the
+                # digest
+                image_info = inspect_image(
+                    self.docker, container_info["Image"].split(":", 1)[1]
                 )
+                if image_info.get("RepoDigests") and image_info.get("Created"):
+                    # RepoDigests is a list with entries of the form
+                    # ghcr.io/...@sha256:...
+                    self.local_worker_manager_version = WorkerManagerVersion(
+                        hash=image_info["RepoDigests"][0].split("@", 1)[1],
+                        created_at=datetime.datetime.fromisoformat(
+                            image_info["Created"]
+                        ),
+                    )
+                else:
+                    logger.warning("Image has no repo digests.")
         except Exception:
-            logger.exception("Failed to retreive docker image information.")
+            logger.exception("Failed to retrieve docker image information.")
 
         payload: dict[str, Any] = {
             "username": self.username,

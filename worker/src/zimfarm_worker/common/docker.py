@@ -142,6 +142,13 @@ def inspect_container(client: DockerClient, container: str) -> dict[str, Any]:
 
 
 @retry
+def inspect_image(client: DockerClient, image: str) -> dict[str, Any]:
+    return client.api.inspect_image(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        image
+    )
+
+
+@retry
 def stop_container(client: DockerClient, container: str, **kwargs: Any):
     """container="", timeout=None"""
     return client.api.stop(
