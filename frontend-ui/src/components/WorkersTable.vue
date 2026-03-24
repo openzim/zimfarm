@@ -62,14 +62,12 @@
           </template>
           <template v-else>
             <v-icon size="x-small" color="primary" class="mr-1">mdi-clipboard-text-outline</v-icon>
-            <span v-if="item.task.schedule_name === null">{{
-              item.task.original_schedule_name
-            }}</span>
+            <span v-if="item.task.recipe_name === null">{{ item.task.original_recipe_name }}</span>
             <router-link
               v-else
-              :to="{ name: 'schedule-detail', params: { scheduleName: item.task.schedule_name } }"
+              :to="{ name: 'recipe-detail', params: { recipeName: item.task.recipe_name } }"
             >
-              {{ item.task.schedule_name }}
+              {{ item.task.recipe_name }}
             </router-link>
           </template>
         </template>

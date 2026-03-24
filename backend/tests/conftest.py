@@ -24,8 +24,8 @@ from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     LanguageSchema,
+    RecipeConfigSchema,
     ResourcesSchema,
-    ScheduleConfigSchema,
 )
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.models import (
@@ -36,10 +36,10 @@ from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import (
     Base,
     OfflinerDefinition,
+    Recipe,
+    RecipeDuration,
+    RecipeHistory,
     RequestedTask,
-    Schedule,
-    ScheduleDuration,
-    ScheduleHistory,
     Sshkey,
     Task,
     User,
@@ -47,7 +47,7 @@ from zimfarm_backend.db.models import (
 )
 from zimfarm_backend.db.offliner import create_offliner
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
-from zimfarm_backend.db.schedule import DEFAULT_SCHEDULE_DURATION, get_schedule_or_none
+from zimfarm_backend.db.recipe import DEFAULT_RECIPE_DURATION, get_recipe_or_none
 from zimfarm_backend.utils.cryptography import (
     get_public_key_fingerprint,
     sign_message_with_rsa_key,
@@ -820,16 +820,16 @@ def worker(create_worker: Callable[..., Worker]) -> Worker:
 
 
 @pytest.fixture
-def schedule_duration(
-    dbsession: OrmSession, schedule: Schedule, worker: Worker
-) -> ScheduleDuration:
-    """Create a schedule duration for testing"""
-    duration = ScheduleDuration(
+def recipe_duration(
+    dbsession: OrmSession, recipe: Recipe, worker: Worker
+) -> RecipeDuration:
+    """Create a recipe duration for testing"""
+    duration = RecipeDuration(
         default=True,
         value=3600,  # 1 hour
         on=getnow(),
     )
-    duration.schedule = schedule
+    duration.recipe = recipe
     duration.worker = worker
     dbsession.add(duration)
     dbsession.flush()
@@ -842,19 +842,19 @@ def language() -> LanguageSchema:
 
 
 @pytest.fixture
-def create_schedule_config(
+def create_recipe_config(
     mwoffliner_schema_cls: type[BaseModel],
     mwoffliner: OfflinerSchema,
     ted_flags_schema_cls: type[BaseModel],
     ted_offliner: OfflinerSchema,
-) -> Callable[..., ScheduleConfigSchema]:
-    def _create_schedule_config(
+) -> Callable[..., RecipeConfigSchema]:
+    def _create_recipe_config(
         cpu: int = 2,
         memory: int = 2**30,
         disk: int = 2**30,
         offliner: Literal["mwoffliner", "ted"] = "mwoffliner",
-    ) -> ScheduleConfigSchema:
-        return ScheduleConfigSchema(
+    ) -> RecipeConfigSchema:
+        return RecipeConfigSchema(
             warehouse_path=WarehousePath.videos,
             image=DockerImageSchema(
                 name=mwoffliner.docker_image_name,
@@ -887,32 +887,32 @@ def create_schedule_config(
             monitor=True,
         )
 
-    return _create_schedule_config
+    return _create_recipe_config
 
 
 @pytest.fixture
-def schedule_config(
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
-) -> ScheduleConfigSchema:
-    return create_schedule_config(cpu=1, memory=2**30, disk=2**30)
+def recipe_config(
+    create_recipe_config: Callable[..., RecipeConfigSchema],
+) -> RecipeConfigSchema:
+    return create_recipe_config(cpu=1, memory=2**30, disk=2**30)
 
 
 @pytest.fixture
-def create_schedule(
+def create_recipe(
     dbsession: OrmSession,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
     language: LanguageSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     user: User,
 ):
     _language = language
-    _schedule_config = schedule_config
+    _recipe_config = recipe_config
     _offliner_definition = mwoffliner_definition
     _user = user
 
-    def _create_schedule(
+    def _create_recipe(
         *,
-        name: str = "testschedule",
+        name: str = "testrecipe",
         category: str = "wikipedia",
         periodicity: str = "monthly",
         notification: dict[str, Any] | None = None,
@@ -920,26 +920,24 @@ def create_schedule(
         language: LanguageSchema | None = None,
         tags: list[str] | None = None,
         context: str | None = None,
-        schedule_config: ScheduleConfigSchema | None = None,
-        raw_schedule_config: dict[str, Any] | None = None,
+        recipe_config: RecipeConfigSchema | None = None,
+        raw_recipe_config: dict[str, Any] | None = None,
         enabled: bool = True,
         worker: Worker | None = None,
         user: User | None = None,
         archived: bool = False,
-    ) -> Schedule:
+    ) -> Recipe:
         offliner_definition = offliner_definition or _offliner_definition
         language = _language if language is None else language
-        schedule_config = (
-            _schedule_config if schedule_config is None else schedule_config
-        )
-        schedule = Schedule(
+        recipe_config = _recipe_config if recipe_config is None else recipe_config
+        recipe = Recipe(
             name=name,
             tags=tags or ["nopic"],
             category=category,
             config=(
-                raw_schedule_config
-                if raw_schedule_config
-                else schedule_config.model_dump(
+                raw_recipe_config
+                if raw_recipe_config
+                else recipe_config.model_dump(
                     mode="json", context={"show_secrets": True}
                 )
             ),
@@ -950,43 +948,43 @@ def create_schedule(
             context=context or "",
             archived=archived,
         )
-        schedule.offliner_definition_id = mwoffliner_definition.id
+        recipe.offliner_definition_id = mwoffliner_definition.id
 
-        schedule_duration = ScheduleDuration(
-            value=DEFAULT_SCHEDULE_DURATION.value,
-            on=DEFAULT_SCHEDULE_DURATION.on,
+        recipe_duration = RecipeDuration(
+            value=DEFAULT_RECIPE_DURATION.value,
+            on=DEFAULT_RECIPE_DURATION.on,
             default=True,
         )
-        schedule_duration.worker = worker
-        schedule.durations.append(schedule_duration)
+        recipe_duration.worker = worker
+        recipe.durations.append(recipe_duration)
 
-        history_entry = ScheduleHistory(
+        history_entry = RecipeHistory(
             created_at=getnow(),
             comment=None,
-            config=schedule.config,
-            name=schedule.name,
-            category=schedule.category,
-            enabled=schedule.enabled,
-            language_code=schedule.language_code,
-            tags=schedule.tags,
-            periodicity=schedule.periodicity,
-            context=schedule.context,
+            config=recipe.config,
+            name=recipe.name,
+            category=recipe.category,
+            enabled=recipe.enabled,
+            language_code=recipe.language_code,
+            tags=recipe.tags,
+            periodicity=recipe.periodicity,
+            context=recipe.context,
             notification=notification,
             offliner_definition_version=offliner_definition.version,
         )
         history_entry.author_id = user.id if user else _user.id
-        schedule.history_entries.append(history_entry)
+        recipe.history_entries.append(history_entry)
 
-        dbsession.add(schedule)
+        dbsession.add(recipe)
         dbsession.flush()
-        return schedule
+        return recipe
 
-    return _create_schedule
+    return _create_recipe
 
 
 @pytest.fixture
-def schedule(create_schedule: Callable[..., Schedule]):
-    return create_schedule()
+def recipe(create_recipe: Callable[..., Recipe]):
+    return create_recipe()
 
 
 @pytest.fixture(scope="module")
@@ -1002,8 +1000,8 @@ def create_event():
 @pytest.fixture
 def create_requested_task(
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     worker: Worker,
     create_event: Callable[..., Any],
     mwoffliner: OfflinerSchema,
@@ -1017,13 +1015,13 @@ def create_requested_task(
 
     def _create_requested_task(
         *,
-        schedule_name: str = "testschedule",
+        recipe_name: str = "testrecipe",
         status: TaskStatus = TaskStatus.requested,
         requested_by: User = _user,
         priority: int = 0,
         worker: Worker | None = None,
         request_date: datetime.datetime | None = None,
-        schedule_config: ScheduleConfigSchema | None = None,
+        recipe_config: RecipeConfigSchema | None = None,
         offliner: Literal["mwoffliner", "ted"] = "mwoffliner",
     ):
         now = getnow()
@@ -1035,17 +1033,15 @@ def create_requested_task(
             for event in events
         ]
 
-        schedule_config = (
-            create_schedule_config(offliner=offliner)
-            if schedule_config is None
-            else schedule_config
+        recipe_config = (
+            create_recipe_config(offliner=offliner)
+            if recipe_config is None
+            else recipe_config
         )
 
-        schedule = get_schedule_or_none(dbsession, schedule_name=schedule_name)
-        if schedule is None:
-            schedule = create_schedule(
-                name=schedule_name, schedule_config=schedule_config
-            )
+        recipe = get_recipe_or_none(dbsession, recipe_name=recipe_name)
+        if recipe is None:
+            recipe = create_recipe(name=recipe_name, recipe_config=recipe_config)
 
         requested_task = RequestedTask(
             status=status,
@@ -1054,7 +1050,7 @@ def create_requested_task(
             events=events,
             priority=priority,
             config=expanded_config(
-                schedule_config,
+                recipe_config,
                 mwoffliner if offliner == "mwoffliner" else ted_offliner,
                 (
                     mwoffliner_definition
@@ -1064,12 +1060,12 @@ def create_requested_task(
             ).model_dump(mode="json", context={"show_secrets": True}),
             upload={},
             notification={},
-            original_schedule_name=schedule_name,
-            context=schedule.context,
+            original_recipe_name=recipe_name,
+            context=recipe.context,
         )
         requested_task.requested_by_id = requested_by.id
-        requested_task.schedule = schedule
-        requested_task.offliner_definition_id = schedule.offliner_definition_id
+        requested_task.recipe = recipe
+        requested_task.offliner_definition_id = recipe.offliner_definition_id
         requested_task.worker = _worker if worker is None else worker
         dbsession.add(requested_task)
         dbsession.flush()
@@ -1081,9 +1077,9 @@ def create_requested_task(
 @pytest.fixture
 def requested_task(
     create_requested_task: Callable[..., RequestedTask],
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
 ):
-    return create_requested_task(schedule_config=schedule_config)
+    return create_requested_task(recipe_config=recipe_config)
 
 
 @pytest.fixture
@@ -1121,7 +1117,7 @@ def create_task(
 
     def _create_task(
         *,
-        schedule_name: str = "testschedule",
+        recipe_name: str = "testrecipe",
         status: TaskStatus = TaskStatus.requested,
         worker: Worker | None = None,
         requested_task: RequestedTask | None = None,
@@ -1129,7 +1125,7 @@ def create_task(
     ) -> Task:
         if requested_task is None:
             requested_task = create_requested_task(
-                schedule_name=schedule_name,
+                recipe_name=recipe_name,
                 status=status,
                 offliner=offliner,
             )
@@ -1144,13 +1140,13 @@ def create_task(
             config=requested_task.config,
             notification=requested_task.notification,
             upload=requested_task.upload,
-            original_schedule_name=requested_task.original_schedule_name,
+            original_recipe_name=requested_task.original_recipe_name,
             context=requested_task.context,
         )
         task.id = requested_task.id
         task.requested_by_id = user.id
         task.offliner_definition_id = requested_task.offliner_definition_id
-        task.schedule_id = requested_task.schedule_id
+        task.recipe_id = requested_task.recipe_id
         task.worker_id = _worker.id if worker is None else worker.id
         dbsession.add(task)
         dbsession.delete(requested_task)

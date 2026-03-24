@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import type { OfflinerFlags } from '@/types/schedule'
+import type { OfflinerFlags } from '@/types/recipe'
 import type { OfflinerDefinition } from '@/types/offliner'
 import { computed } from 'vue'
 import BlobViewer from '@/components/BlobViewer.vue'

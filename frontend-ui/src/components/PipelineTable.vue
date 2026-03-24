@@ -33,15 +33,15 @@
           </div>
         </template>
 
-        <template #[`item.schedule_name`]="{ item }">
-          <span v-if="item.schedule_name === null">
-            {{ item.original_schedule_name }}
+        <template #[`item.recipe_name`]="{ item }">
+          <span v-if="item.recipe_name === null">
+            {{ item.original_recipe_name }}
           </span>
           <router-link
             v-else
-            :to="{ name: 'schedule-detail', params: { scheduleName: item.schedule_name } }"
+            :to="{ name: 'recipe-detail', params: { recipeName: item.recipe_name } }"
           >
-            {{ item.schedule_name }}
+            {{ item.recipe_name }}
           </router-link>
         </template>
 
@@ -191,19 +191,19 @@
 
         <template #[`item.last_run`]="{ item }">
           <div
-            v-if="(item as TaskLight).schedule_most_recent_task"
+            v-if="(item as TaskLight).recipe_most_recent_task"
             :class="['ga-1', 'd-flex', 'align-center', 'flex-wrap', { 'justify-end': smAndDown }]"
           >
             <span>
-              <code :class="statusClass((item as TaskLight).schedule_most_recent_task!.status)">
-                {{ (item as TaskLight).schedule_most_recent_task!.status }} </code
+              <code :class="statusClass((item as TaskLight).recipe_most_recent_task!.status)">
+                {{ (item as TaskLight).recipe_most_recent_task!.status }} </code
               >,
             </span>
             <TaskLink
-              :id="(item as TaskLight).schedule_most_recent_task!.id"
-              :updatedAt="(item as TaskLight).schedule_most_recent_task!.updated_at"
-              :status="(item as TaskLight).schedule_most_recent_task!.status"
-              :timestamp="(item as TaskLight).schedule_most_recent_task!.timestamp"
+              :id="(item as TaskLight).recipe_most_recent_task!.id"
+              :updatedAt="(item as TaskLight).recipe_most_recent_task!.updated_at"
+              :status="(item as TaskLight).recipe_most_recent_task!.status"
+              :timestamp="(item as TaskLight).recipe_most_recent_task!.timestamp"
             />
           </div>
         </template>
@@ -290,9 +290,9 @@ function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
 }
 
 function statusClass(status: string) {
-  if (status === 'succeeded') return 'schedule-succeeded'
-  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'schedule-failed'
-  else return 'schedule-running'
+  if (status === 'succeeded') return 'recipe-succeeded'
+  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'recipe-failed'
+  else return 'recipe-running'
 }
 
 function diagnoseTask(task: RequestedTaskLight) {

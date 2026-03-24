@@ -45,16 +45,33 @@
           </v-tooltip>
         </div>
 
-        <div class="d-flex justify-space-between align-center">
+        <div v-if="file.uploaded_timestamp" class="d-flex justify-space-between align-center">
           <div class="text-body-2 font-weight-medium">Upload Duration</div>
-          <v-tooltip v-if="file.uploaded_timestamp" :text="formatDt(file.uploaded_timestamp)">
+          <v-tooltip :text="formatDt(file.uploaded_timestamp)">
             <template #activator="{ props: tooltipProps }">
               <div v-bind="tooltipProps" class="text-body-2 font-weight-medium">
                 {{ uploadDurationTime }}
               </div>
             </template>
           </v-tooltip>
-          <div v-else class="text-body-2 text-grey">-</div>
+        </div>
+
+        <div
+          v-else-if="file.failed_timestamp || (!file.uploaded_timestamp && isTaskFailed)"
+          class="d-flex justify-space-between align-center"
+        >
+          <div class="text-body-2 font-weight-medium">Upload Status</div>
+          <div class="text-body-2 text-error d-flex align-center ga-1">
+            <span>Failed</span>
+          </div>
+        </div>
+
+        <div v-else class="d-flex justify-space-between align-center">
+          <div class="text-body-2 font-weight-medium">Upload Status</div>
+          <div class="text-body-2 text-grey d-flex align-center ga-1">
+            <v-progress-circular indeterminate size="16" width="2" color="primary" />
+            <span>Uploading...</span>
+          </div>
         </div>
 
         <div class="d-flex justify-space-between align-center">
@@ -107,22 +124,24 @@
         <FileInfoTable :file-info="file.info" />
       </v-menu>
 
-      <ZimUrlButtons v-if="file.zim_urls && file.zim_urls.length > 0" :urls="file.zim_urls" />
-      <v-tooltip v-else location="top">
-        <template #activator="{ props: tooltipProps }">
-          <v-btn
-            v-bind="tooltipProps"
-            :href="fallbackDownloadUrl"
-            target="_blank"
-            variant="text"
-            icon
-            size="small"
-          >
-            <v-icon>mdi-download</v-icon>
-          </v-btn>
-        </template>
-        <span>Download</span>
-      </v-tooltip>
+      <template v-if="file.uploaded_timestamp">
+        <ZimUrlButtons v-if="file.zim_urls && file.zim_urls.length > 0" :urls="file.zim_urls" />
+        <v-tooltip v-else location="top">
+          <template #activator="{ props: tooltipProps }">
+            <v-btn
+              v-bind="tooltipProps"
+              :href="fallbackDownloadUrl"
+              target="_blank"
+              variant="text"
+              icon
+              size="small"
+            >
+              <v-icon>mdi-download</v-icon>
+            </v-btn>
+          </template>
+          <span>Download</span>
+        </v-tooltip>
+      </template>
     </v-card-actions>
   </v-card>
 </template>
@@ -130,6 +149,7 @@
 <script setup lang="ts">
 import FileInfoTable from '@/components/FileInfoTable.vue'
 import ZimUrlButtons from '@/components/ZimUrlButtons.vue'
+import { TaskStatus } from '@/types/base'
 import type { Task, TaskFile } from '@/types/tasks'
 import { formatDt, formatDurationBetween, formattedBytesSize } from '@/utils/format'
 import { checkUrl } from '@/utils/offliner'
@@ -145,6 +165,14 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const isTaskFailed = computed(() => {
+  return (
+    props.task.status === TaskStatus.failed ||
+    props.task.status === TaskStatus.canceled ||
+    props.task.status === TaskStatus.scraper_killed
+  )
+})
 
 const displayName = computed(() => {
   return props.file.info?.metadata?.Name || props.file.name

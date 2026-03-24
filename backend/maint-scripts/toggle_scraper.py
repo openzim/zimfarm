@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-"""enable of disable schedules for a specific scraper. Also removes requested tasks
+"""enable of disable recipes for a specific scraper. Also removes requested tasks
 
 ./toggle_scraper.py enable
 ./toggle_scraper.py disable
@@ -17,16 +17,14 @@ from zimfarm_backend import logger
 
 def toggle_scraper(scraper: str, *, enable: bool):
     logger.info(f"setting {scraper} {enable=}")
-    schedules = client["Zimfarm"][  # pyright: ignore[reportUnknownVariableType]
-        "schedules"
-    ]
+    recipes = client["Zimfarm"]["recipes"]  # pyright: ignore[reportUnknownVariableType]
     requested_tasks = client["Zimfarm"][  # pyright: ignore[reportUnknownVariableType]
         "requested_tasks"
     ]
-    result = schedules.update_many(
+    result = recipes.update_many(
         {"config.task_name": scraper}, {"$set": {"enabled": enable}}
     )
-    logger.info("schedules updated:", result.matched_count)
+    logger.info("recipes updated:", result.matched_count)
     if not enable:
         result = requested_tasks.delete_many(
             {"status": "requested", "config.task_name": scraper}

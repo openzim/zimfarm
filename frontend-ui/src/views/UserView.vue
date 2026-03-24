@@ -273,7 +273,7 @@ const canSSHKeyUsers = computed(() => authStore.hasPermission('users', 'ssh_keys
 const getNamespaceIcon = (namespace: string): string => {
   const iconMap: Record<string, string> = {
     tasks: 'mdi-clipboard-list',
-    schedules: 'mdi-calendar-clock',
+    recipes: 'mdi-calendar-clock',
     requested_tasks: 'mdi-clipboard-check',
     users: 'mdi-account-group',
     workers: 'mdi-server',
@@ -285,7 +285,7 @@ const getNamespaceIcon = (namespace: string): string => {
 const formatNamespaceName = (namespace: string): string => {
   const nameMap: Record<string, string> = {
     tasks: 'Tasks',
-    schedules: 'Schedules',
+    recipes: 'Recipes',
     requested_tasks: 'Requested Tasks',
     users: 'Users',
     workers: 'Workers',

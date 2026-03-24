@@ -13,10 +13,10 @@ from sqlalchemy.orm.attributes import flag_modified
 from zimfarm_backend.api.routes.tasks import logic as tasks_module
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import ScheduleCategory, TaskStatus
+from zimfarm_backend.common.enums import RecipeCategory, TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema, LanguageSchema
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
+from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User, Worker
 from zimfarm_backend.db.tasks import create_or_update_task_file
 
 
@@ -26,20 +26,20 @@ def test_get_tasks(
     client: TestClient,
     access_token: str,
     create_task: Callable[..., Task],
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     fetch_most_recent_tasks: str,
 ):
     """Test successful retrieval of tasks"""
     # Create some tasks
     for i in range(30):
-        schedule = create_schedule(
+        recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=ScheduleCategory.wikipedia,
+            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
-        schedule.most_recent_task = create_task()
-        dbsession.add(schedule)
+        recipe.most_recent_task = create_task()
+        dbsession.add(recipe)
         dbsession.flush()
 
     response = client.get(
@@ -55,7 +55,7 @@ def test_get_tasks(
     assert len(data["items"]) == 5
 
     for item in data["items"]:
-        most_recent_task = item["schedule_most_recent_task"]
+        most_recent_task = item["recipe_most_recent_task"]
         if fetch_most_recent_tasks == "true":
             assert most_recent_task is not None
             assert "id" in most_recent_task

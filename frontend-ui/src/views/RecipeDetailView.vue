@@ -1,14 +1,14 @@
-<!-- Schedule detail view
+<!-- Recipe detail view
   - listing all info
-  - fire schedule button -->
+  - fire recipe button -->
 
 <template>
   <v-container>
     <!-- Action Button Row -->
-    <v-row v-if="schedule">
+    <v-row v-if="recipe">
       <v-col>
-        <ScheduleActionButton
-          :enabled="schedule.enabled && !schedule.archived"
+        <RecipeActionButton
+          :enabled="recipe.enabled && !recipe.archived"
           :ready="ready"
           :task="task"
           :requested-task="requestedTask"
@@ -26,7 +26,7 @@
     <v-row>
       <v-col>
         <h2 class="text-h6 text-md-h4">
-          <code>{{ scheduleName }}</code>
+          <code>{{ recipeName }}</code>
         </h2>
       </v-col>
     </v-row>
@@ -34,11 +34,11 @@
     <!-- Loading State -->
     <div v-if="!ready && !error" class="text-center pa-8">
       <v-progress-circular indeterminate size="64" color="primary" />
-      <div class="mt-4 text-body-1">Loading schedule data...</div>
+      <div class="mt-4 text-body-1">Loading recipe data...</div>
     </div>
 
     <!-- Content -->
-    <div v-if="ready && schedule">
+    <div v-if="ready && recipe">
       <!-- Tabs -->
       <v-tabs
         v-model="currentTab"
@@ -52,8 +52,8 @@
           base-color="primary"
           value="details"
           :to="{
-            name: 'schedule-detail',
-            params: { scheduleName: scheduleName },
+            name: 'recipe-detail',
+            params: { recipeName: recipeName },
           }"
         >
           <v-icon class="mr-2">mdi-information</v-icon>
@@ -63,8 +63,8 @@
           base-color="primary"
           value="config"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'config' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'config' },
           }"
         >
           <v-icon class="mr-2">mdi-cog</v-icon>
@@ -72,11 +72,11 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canUpdateSchedules"
+          v-if="canUpdateRecipes"
           value="history"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'history' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'history' },
           }"
         >
           <v-icon class="mr-2">mdi-history</v-icon>
@@ -84,11 +84,11 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canUpdateSchedules && !schedule?.archived"
+          v-if="canUpdateRecipes && !recipe?.archived"
           value="edit"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'edit' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'edit' },
           }"
         >
           <v-icon class="mr-2">mdi-pencil</v-icon>
@@ -96,11 +96,11 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canCreateSchedules && !schedule?.archived"
+          v-if="canCreateRecipes && !recipe?.archived"
           value="clone"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'clone' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'clone' },
           }"
         >
           <v-icon class="mr-2">mdi-content-copy</v-icon>
@@ -108,25 +108,25 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canDeleteSchedules"
+          v-if="canDeleteRecipes"
           value="archive"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'archive' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'archive' },
           }"
         >
           <v-icon class="mr-2">{{
-            schedule?.archived ? 'mdi-archive-arrow-up' : 'mdi-archive'
+            recipe?.archived ? 'mdi-archive-arrow-up' : 'mdi-archive'
           }}</v-icon>
-          {{ schedule?.archived ? 'Restore' : 'Archive' }}
+          {{ recipe?.archived ? 'Restore' : 'Archive' }}
         </v-tab>
 
         <v-tab
           base-color="primary"
           value="similar"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'similar' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'similar' },
           }"
         >
           <v-icon class="mr-2">mdi-creation</v-icon>
@@ -135,11 +135,11 @@
 
         <v-tab
           base-color="error"
-          v-if="canDeleteSchedules && schedule?.archived"
+          v-if="canDeleteRecipes && recipe?.archived"
           value="delete"
           :to="{
-            name: 'schedule-detail-tab',
-            params: { scheduleName: scheduleName, selectedTab: 'delete' },
+            name: 'recipe-detail-tab',
+            params: { recipeName: recipeName, selectedTab: 'delete' },
           }"
         >
           <v-icon class="mr-2">mdi-delete</v-icon>
@@ -161,7 +161,7 @@
                   <v-col cols="12" md="8">
                     <a
                       target="_blank"
-                      :href="webApiUrl + '/schedules/' + scheduleName"
+                      :href="webApiUrl + '/recipes/' + recipeName"
                       class="text-decoration-none"
                     >
                       document
@@ -175,7 +175,7 @@
                   <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Category</div>
                   </v-col>
-                  <v-col cols="12" md="8">{{ schedule.category }}</v-col>
+                  <v-col cols="12" md="8">{{ recipe.category }}</v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
 
@@ -184,8 +184,8 @@
                     <div class="text-subtitle-2">Language</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    {{ schedule.language.name }}
-                    (<code>{{ schedule.language.code }}</code
+                    {{ recipe.language.name }}
+                    (<code>{{ recipe.language.code }}</code
                     >)
                   </v-col>
                 </v-row>
@@ -197,11 +197,11 @@
                   </v-col>
                   <v-col cols="12" md="8">
                     <v-chip
-                      :color="schedule?.enabled ? 'success' : 'error'"
+                      :color="recipe?.enabled ? 'success' : 'error'"
                       size="small"
                       variant="tonal"
                     >
-                      {{ schedule?.enabled }}
+                      {{ recipe?.enabled }}
                     </v-chip>
                   </v-col>
                 </v-row>
@@ -211,7 +211,7 @@
                   <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Archived</div>
                   </v-col>
-                  <v-col cols="12" md="8">{{ schedule?.archived ? 'Yes' : 'No' }}</v-col>
+                  <v-col cols="12" md="8">{{ recipe?.archived ? 'Yes' : 'No' }}</v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
 
@@ -220,19 +220,19 @@
                     <div class="text-subtitle-2">Periodicity</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <code>{{ schedule?.periodicity }}</code>
+                    <code>{{ recipe?.periodicity }}</code>
                   </v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
 
-                <v-row v-if="schedule?.tags?.length" no-gutters class="py-2">
+                <v-row v-if="recipe?.tags?.length" no-gutters class="py-2">
                   <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Tags</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <div class="d-flex flex-row flex-wrap">
                       <v-chip
-                        v-for="tag in schedule?.tags || []"
+                        v-for="tag in recipe?.tags || []"
                         :key="tag"
                         size="small"
                         color="primary"
@@ -245,7 +245,7 @@
                     </div>
                   </v-col>
                 </v-row>
-                <v-divider v-if="schedule?.tags?.length" class="my-2"></v-divider>
+                <v-divider v-if="recipe?.tags?.length" class="my-2"></v-divider>
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
@@ -253,14 +253,14 @@
                   </v-col>
                   <v-col cols="12" md="8">
                     <v-chip
-                      v-if="schedule.context"
+                      v-if="recipe.context"
                       size="small"
                       variant="outlined"
                       density="comfortable"
                       color="primary"
                       class="mr-2 mb-1 text-caption text-uppercase"
                     >
-                      {{ schedule.context }}
+                      {{ recipe.context }}
                     </v-chip>
                   </v-col>
                 </v-row>
@@ -294,29 +294,29 @@
                 </v-row>
                 <v-divider class="my-2"></v-divider>
 
-                <v-row v-if="scheduleDurationDict" no-gutters class="py-2">
+                <v-row v-if="recipeDurationDict" no-gutters class="py-2">
                   <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Scraper Duration</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <span v-if="scheduleDurationDict.single">
-                      {{ scheduleDurationDict.formattedDuration }}
+                    <span v-if="recipeDurationDict.single">
+                      {{ recipeDurationDict.formattedDuration }}
                       (<router-link
                         :to="{
                           name: 'worker-detail',
-                          params: { workerName: scheduleDurationDict.worker },
+                          params: { workerName: recipeDurationDict.worker },
                         }"
                       >
-                        {{ scheduleDurationDict.worker }}
+                        {{ recipeDurationDict.worker }}
                       </router-link>
                       on
-                      {{ formatDt(scheduleDurationDict.on) }})
+                      {{ formatDt(recipeDurationDict.on) }})
                     </span>
                     <span v-else>
                       between
-                      {{ scheduleDurationDict.formattedMinDuration }}
+                      {{ recipeDurationDict.formattedMinDuration }}
                       (<template
-                        v-for="(worker, index) in scheduleDurationDict.minWorkers || []"
+                        v-for="(worker, index) in recipeDurationDict.minWorkers || []"
                         :key="worker.worker_name"
                       >
                         <router-link
@@ -326,13 +326,13 @@
                           }"
                         >
                           {{ worker.worker_name }} </router-link
-                        ><span v-if="index < (scheduleDurationDict.minWorkers?.length || 0) - 1"
+                        ><span v-if="index < (recipeDurationDict.minWorkers?.length || 0) - 1"
                           >,
                         </span> </template
                       >) and
-                      {{ scheduleDurationDict.formattedMaxDuration }}
+                      {{ recipeDurationDict.formattedMaxDuration }}
                       (<template
-                        v-for="(worker, index) in scheduleDurationDict.maxWorkers || []"
+                        v-for="(worker, index) in recipeDurationDict.maxWorkers || []"
                         :key="worker.worker_name"
                       >
                         <router-link
@@ -342,14 +342,14 @@
                           }"
                         >
                           {{ worker.worker_name }} </router-link
-                        ><span v-if="index < (scheduleDurationDict.maxWorkers?.length || 0) - 1"
+                        ><span v-if="index < (recipeDurationDict.maxWorkers?.length || 0) - 1"
                           >,
                         </span> </template
                       >)
                     </span>
                   </v-col>
                 </v-row>
-                <v-divider v-if="scheduleDurationDict" class="my-2"></v-divider>
+                <v-divider v-if="recipeDurationDict" class="my-2"></v-divider>
 
                 <v-row v-if="totalDurationDict" no-gutters class="py-2">
                   <v-col cols="12" md="4">
@@ -508,13 +508,13 @@
 
         <!-- History Tab -->
         <v-window-item value="history">
-          <ScheduleHistory
-            v-if="canUpdateSchedules"
-            :history="scheduleHistoryStore.history"
+          <RecipeHistory
+            v-if="canUpdateRecipes"
+            :history="recipeHistoryStore.history"
             :has-more="canLoadMoreHistory"
             :loading="loadingHistory"
-            :paginator="scheduleHistoryStore.paginator"
-            :schedule-name="scheduleName"
+            :paginator="recipeHistoryStore.paginator"
+            :recipe-name="recipeName"
             @load="loadHistory"
             @revert="handleRevert"
           />
@@ -540,7 +540,7 @@
                     <div class="text-subtitle-2">Offliner Definition</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <code>{{ schedule.version }}</code>
+                    <code>{{ recipe.version }}</code>
                   </v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
@@ -606,15 +606,15 @@
                 </v-row>
                 <v-divider class="my-2"></v-divider>
 
-                <v-row v-if="schedule?.config?.artifacts_globs" no-gutters class="py-2">
+                <v-row v-if="recipe?.config?.artifacts_globs" no-gutters class="py-2">
                   <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Artifacts</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <code class="text-pink-accent-2">{{ schedule?.config?.artifacts_globs }}</code>
+                    <code class="text-pink-accent-2">{{ recipe?.config?.artifacts_globs }}</code>
                   </v-col>
                 </v-row>
-                <v-divider v-if="schedule?.config?.artifacts_globs" class="my-2"></v-divider>
+                <v-divider v-if="recipe?.config?.artifacts_globs" class="my-2"></v-divider>
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
@@ -673,28 +673,28 @@
 
         <!-- Edit Tab -->
         <v-window-item value="edit">
-          <div v-if="canUpdateSchedules" class="pa-4">
+          <div v-if="canUpdateRecipes" class="pa-4">
             <!-- Validation Status -->
             <v-alert
-              v-if="schedule"
-              :type="schedule.is_valid ? 'success' : 'error'"
+              v-if="recipe"
+              :type="recipe.is_valid ? 'success' : 'error'"
               variant="tonal"
               class="mb-4"
               closable
             >
               <template #prepend>
-                <v-icon :icon="schedule.is_valid ? 'mdi-check-circle' : 'mdi-alert-circle'" />
+                <v-icon :icon="recipe.is_valid ? 'mdi-check-circle' : 'mdi-alert-circle'" />
               </template>
               <strong>{{
-                schedule.is_valid ? 'Recipe is valid' : 'Recipe has validation errors'
+                recipe.is_valid ? 'Recipe is valid' : 'Recipe has validation errors'
               }}</strong>
-              <div v-if="!schedule.is_valid" class="mt-2">
+              <div v-if="!recipe.is_valid" class="mt-2">
                 Please fix the configuration issues below.
               </div>
             </v-alert>
 
-            <ScheduleEditor
-              :schedule="schedule"
+            <RecipeEditor
+              :recipe="recipe"
               :offliners="offliners"
               :platforms="platforms"
               :languages="languages"
@@ -704,8 +704,8 @@
               :help-url="helpUrl"
               :offliner-versions="offlinerVersions"
               :image-tags="imageTags"
-              @submit="updateSchedule"
-              @image-name-change="fetchScheduleImageTags"
+              @submit="updateRecipe"
+              @image-name-change="fetchRecipeImageTags"
               @offliner-change="handleOfflinerChange"
               @offliner-version-change="handleOfflinerVersionChange"
             />
@@ -714,31 +714,31 @@
 
         <!-- Clone Tab -->
         <v-window-item value="clone">
-          <div v-if="canCreateSchedules" class="pa-4">
-            <CloneSchedule :from="scheduleName" @clone="cloneSchedule" />
+          <div v-if="canCreateRecipes" class="pa-4">
+            <CloneRecipe :from="recipeName" @clone="cloneRecipe" />
           </div>
         </v-window-item>
 
         <!-- Archive Tab -->
         <v-window-item value="archive">
-          <div v-if="canArchiveSchedules" class="pa-4">
+          <div v-if="canArchiveRecipes" class="pa-4">
             <ArchiveItem
-              :name="scheduleName"
-              :is-archived="schedule?.archived || false"
-              @archive-item="archiveSchedule"
-              @restore-item="restoreSchedule"
+              :name="recipeName"
+              :is-archived="recipe?.archived || false"
+              @archive-item="archiveRecipe"
+              @restore-item="restoreRecipe"
             />
           </div>
         </v-window-item>
 
         <!-- Delete Tab -->
         <v-window-item value="delete">
-          <div v-if="canDeleteSchedules" class="pa-4">
+          <div v-if="canDeleteRecipes" class="pa-4">
             <DeleteItem
-              :name="scheduleName"
+              :name="recipeName"
               description="recipe"
               property="name"
-              @delete-item="deleteSchedule"
+              @delete-item="deleteRecipe"
             />
           </div>
         </v-window-item>
@@ -748,14 +748,14 @@
           <v-card flat>
             <v-card-text>
               <div class="mb-4 text-body-1">
-                Recipes similar to <code>{{ scheduleName }}</code>
+                Recipes similar to <code>{{ recipeName }}</code>
               </div>
-              <SchedulesTable
+              <RecipesTable
                 :headers="similarHeaders"
-                :schedules="schedules"
-                :paginator="scheduleStore.paginator"
+                :recipes="recipes"
+                :paginator="recipeStore.paginator"
                 :loading="loadingSimilar"
-                :errors="scheduleStore.errors"
+                :errors="recipeStore.errors"
                 :loading-text="'Fetching similar recipes...'"
                 :show-selection="false"
                 :show-filters="false"
@@ -777,15 +777,15 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import ArchiveItem from '@/components/ArchiveItem.vue'
-import CloneSchedule from '@/components/CloneSchedule.vue'
+import CloneRecipe from '@/components/CloneRecipe.vue'
 import DeleteItem from '@/components/DeleteItem.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import FlagsList from '@/components/FlagsList.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
-import ScheduleActionButton from '@/components/ScheduleActionButton.vue'
-import ScheduleEditor from '@/components/ScheduleEditor.vue'
-import ScheduleHistory from '@/components/ScheduleHistory.vue'
-import SchedulesTable from '@/components/SchedulesTable.vue'
+import RecipeActionButton from '@/components/RecipeActionButton.vue'
+import RecipeEditor from '@/components/RecipeEditor.vue'
+import RecipeHistory from '@/components/RecipeHistory.vue'
+import RecipesTable from '@/components/RecipesTable.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
@@ -796,27 +796,22 @@ import { useNotificationStore } from '@/stores/notification'
 import { useOfflinerStore } from '@/stores/offliner'
 import { usePlatformStore } from '@/stores/platform'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
-import { useScheduleStore } from '@/stores/schedule'
-import { useScheduleHistoryStore } from '@/stores/scheduleHistory'
+import { useRecipeStore } from '@/stores/recipe'
+import { useRecipeHistoryStore } from '@/stores/recipeHistory'
 import { useTagStore } from '@/stores/tag'
 import { useTasksStore } from '@/stores/tasks'
 import { useWorkersStore } from '@/stores/workers'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
-import type {
-  ExpandedScheduleConfig,
-  Schedule,
-  ScheduleLight,
-  ScheduleUpdateSchema,
-} from '@/types/schedule'
+import type { ExpandedRecipeConfig, Recipe, RecipeLight, RecipeUpdateSchema } from '@/types/recipe'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import {
   buildCommandWithout,
   buildDockerCommand,
-  buildScheduleDuration,
+  buildRecipeDuration,
   buildTotalDurationDict,
   imageHuman as imageHumanFn,
   imageUrl as imageUrlFn,
@@ -827,7 +822,7 @@ import { useDisplay } from 'vuetify'
 
 // Props
 interface Props {
-  scheduleName: string
+  recipeName: string
   selectedTab?: string
 }
 
@@ -840,8 +835,8 @@ const router = useRouter()
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
-const scheduleStore = useScheduleStore()
-const scheduleHistoryStore = useScheduleHistoryStore()
+const recipeStore = useRecipeStore()
+const recipeHistoryStore = useRecipeHistoryStore()
 const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const workersStore = useWorkersStore()
@@ -874,22 +869,22 @@ const flagsDefinition = ref<OfflinerDefinition[]>([])
 const helpUrl = ref<string>('')
 
 const ready = ref<boolean>(false)
-const schedule = ref<Schedule | null>(null)
+const recipe = ref<Recipe | null>(null)
 const loadingHistory = ref<boolean>(false)
 const loadingRequestedTask = ref<boolean>(false)
-// existing requested task for this schedule
+// existing requested task for this recipe
 const requestedTask = ref<RequestedTaskLight | null>(null)
-// existing running task for this schedule
+// existing running task for this recipe
 const task = ref<TaskLight | null>(null)
-// history of runs for this schedule
+// history of runs for this recipe
 const historyRuns = ref<TaskLight[]>([])
 // current tab
 const currentTab = ref(props.selectedTab)
 // active workers
 const workers = ref<Worker[]>([])
 
-// Similar schedules state
-const schedules = ref<ScheduleLight[]>([])
+// Similar recipes state
+const recipes = ref<RecipeLight[]>([])
 const loadingSimilar = ref(false)
 const similarHeaders = [
   { title: 'Name', value: 'name' },
@@ -900,17 +895,17 @@ const similarHeaders = [
 
 // Computed properties
 const webApiUrl = computed(() => appConfig.ZIMFARM_WEBAPI)
-const lastRun = computed(() => schedule.value?.most_recent_task || null)
-const config = computed(() => schedule.value?.config || ({} as ExpandedScheduleConfig))
+const lastRun = computed(() => recipe.value?.most_recent_task || null)
+const config = computed(() => recipe.value?.config || ({} as ExpandedRecipeConfig))
 const offliner = computed(() => config.value?.offliner?.offliner_id || '')
 const platform = computed(() => config.value?.platform || '')
 const warehousePath = computed(() => config.value?.warehouse_path || '')
 const imageHuman = computed(() => imageHumanFn(config.value))
 const imageUrl = computed(() => imageUrlFn(config.value))
-const command = computed(() => buildDockerCommand(schedule.value?.name || '', config.value))
+const command = computed(() => buildDockerCommand(recipe.value?.name || '', config.value))
 const offlinerCommand = computed(() => buildCommandWithout(config.value))
-const scheduleDurationDict = computed(() => {
-  return buildScheduleDuration(schedule.value?.duration || null)
+const recipeDurationDict = computed(() => {
+  return buildRecipeDuration(recipe.value?.duration || null)
 })
 const totalDurationDict = computed(() => {
   return buildTotalDurationDict(historyRuns.value)
@@ -918,31 +913,31 @@ const totalDurationDict = computed(() => {
 
 // Permission computed properties
 const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
-const canUpdateSchedules = computed(() => authStore.hasPermission('schedules', 'update'))
-const canCreateSchedules = computed(() => authStore.hasPermission('schedules', 'create'))
-const canArchiveSchedules = computed(() => authStore.hasPermission('schedules', 'archive'))
-const canDeleteSchedules = computed(() => authStore.hasPermission('schedules', 'delete'))
+const canUpdateRecipes = computed(() => authStore.hasPermission('recipes', 'update'))
+const canCreateRecipes = computed(() => authStore.hasPermission('recipes', 'create'))
+const canArchiveRecipes = computed(() => authStore.hasPermission('recipes', 'archive'))
+const canDeleteRecipes = computed(() => authStore.hasPermission('recipes', 'delete'))
 
 // History-related computed properties
 const canLoadMoreHistory = computed(() => {
-  const { skip, limit, count } = scheduleHistoryStore.paginator
+  const { skip, limit, count } = recipeHistoryStore.paginator
   return skip + limit < count
 })
 
 const loadSimilar = async (limit: number, skip: number) => {
-  if (!schedule.value) return
+  if (!recipe.value) return
   loadingSimilar.value = true
-  const response = await scheduleStore.fetchSimilarSchedules(schedule.value.name, {
+  const response = await recipeStore.fetchSimilarRecipes(recipe.value.name, {
     limit,
     skip,
     archived: false,
   })
   if (response) {
-    schedules.value = response.items
-    scheduleStore.paginator = response.meta
+    recipes.value = response.items
+    recipeStore.paginator = response.meta
   } else {
-    schedules.value = []
-    for (const error of scheduleStore.errors) {
+    recipes.value = []
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
@@ -950,7 +945,7 @@ const loadSimilar = async (limit: number, skip: number) => {
 }
 
 async function handleLimitChange(newLimit: number) {
-  scheduleStore.savePaginatorLimit(newLimit)
+  recipeStore.savePaginatorLimit(newLimit)
 }
 
 // Methods
@@ -966,7 +961,7 @@ const fetchWorkers = async () => {
   }
 }
 
-const fetchScheduleTasks = async (onSuccess?: () => void) => {
+const fetchRecipeTasks = async (onSuccess?: () => void) => {
   // Reset state
   loadingRequestedTask.value = true
   requestedTask.value = null
@@ -974,7 +969,7 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
 
   // Fetch requested tasks
   const response = await requestedTasksStore.fetchRequestedTasks({
-    scheduleName: [props.scheduleName],
+    recipeName: [props.recipeName],
   })
   if (response) {
     loadingRequestedTask.value = false
@@ -983,7 +978,7 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
     }
     // fetch history runs
     const historyRunsResponse = await tasksStore.fetchTasks({
-      scheduleName: props.scheduleName,
+      recipeName: props.recipeName,
     })
     if (historyRunsResponse) {
       historyRuns.value = historyRunsResponse
@@ -995,7 +990,7 @@ const fetchScheduleTasks = async (onSuccess?: () => void) => {
 
     // fetch running tasks
     const tasksResponse = await tasksStore.fetchTasks({
-      scheduleName: props.scheduleName,
+      recipeName: props.recipeName,
       status: constants.CANCELABLE_STATUSES,
     })
     if (tasksResponse) {
@@ -1036,18 +1031,18 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
   workingText.value = 'Requesting task…'
 
   const body: {
-    scheduleNames: string[]
+    recipeNames: string[]
     worker: string | null
     priority: number | null
   } = {
-    scheduleNames: [props.scheduleName],
+    recipeNames: [props.recipeName],
     worker: workerName,
     priority: priority ? constants.DEFAULT_FIRE_PRIORITY : null,
   }
 
   const response = await requestedTasksStore.requestTasks(body)
   if (response) {
-    const msg = `Recipe <em>${props.scheduleName}</em> has been requested as <code>${shortId(
+    const msg = `Recipe <em>${props.recipeName}</em> has been requested as <code>${shortId(
       response.requested[0],
     )}</code>.`
     notificationStore.showSuccess(msg)
@@ -1057,7 +1052,7 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
       requestedTask.value.id = response.requested[0]
       requestedTask.value.priority = priority ? constants.DEFAULT_FIRE_PRIORITY : 0
     }
-    await fetchScheduleTasks()
+    await fetchRecipeTasks()
   } else {
     for (const error of requestedTasksStore.errors) {
       notificationStore.showError(error)
@@ -1095,7 +1090,7 @@ const cancelTask = async () => {
     const msg = `Requested Task <code>${shortId(task.value.id)}</code> has been marked for cancellation.`
     notificationStore.showSuccess(msg)
     task.value = null
-    await fetchScheduleTasks()
+    await fetchRecipeTasks()
   } else {
     for (const error of tasksStore.errors) {
       notificationStore.showError(error)
@@ -1114,7 +1109,7 @@ const unrequestTask = async () => {
     const msg = `Requested Task <code>${shortId(requestedTask.value.id)}</code> has been deleted.`
     notificationStore.showSuccess(msg)
     requestedTask.value = null
-    await fetchScheduleTasks()
+    await fetchRecipeTasks()
   } else {
     for (const error of requestedTasksStore.errors) {
       notificationStore.showError(error)
@@ -1123,59 +1118,56 @@ const unrequestTask = async () => {
   workingText.value = null
 }
 
-const cloneSchedule = async (newName: string) => {
-  const response = await scheduleStore.cloneSchedule(props.scheduleName, newName)
+const cloneRecipe = async (newName: string) => {
+  const response = await recipeStore.cloneRecipe(props.recipeName, newName)
   if (response) {
     notificationStore.showSuccess(
-      `Recipe <code>${newName}</code> has been created off <code>${props.scheduleName}</code>.`,
+      `Recipe <code>${newName}</code> has been created off <code>${props.recipeName}</code>.`,
     )
-    router.push({ name: 'schedule-detail', params: { scheduleName: newName } })
+    router.push({ name: 'recipe-detail', params: { recipeName: newName } })
   } else {
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
 }
 
-const fetchScheduleImageTags = async (imageName: string) => {
+const fetchRecipeImageTags = async (imageName: string) => {
   const parts = imageName.split('/')
   if (parts.length < 2) {
     return // invalid image_name
   }
   const hubName = parts.splice(parts.length - 2, parts.length).join('/')
 
-  const response = await scheduleStore.fetchScheduleImageTags(props.scheduleName, {
+  const response = await recipeStore.fetchRecipeImageTags(props.recipeName, {
     hubName: hubName,
   })
   if (response) {
     imageTags.value = response
   } else {
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
 }
 
-const updateSchedule = async (update: ScheduleUpdateSchema) => {
-  const response = await scheduleStore.updateSchedule(props.scheduleName, update)
+const updateRecipe = async (update: RecipeUpdateSchema) => {
+  const response = await recipeStore.updateRecipe(props.recipeName, update)
   if (response) {
     notificationStore.showSuccess('Recipe updated successfully')
-    // if name changed, redirect to the new schedule
+    // if name changed, redirect to the new recipe
     if (update.name) {
       router.push({
-        name: 'schedule-detail-tab',
-        params: { scheduleName: update.name, selectedTab: 'edit' },
+        name: 'recipe-detail-tab',
+        params: { recipeName: update.name, selectedTab: 'edit' },
       })
     }
-    // update the schedule in the current view
-    const updatedSchedule = await scheduleStore.fetchSchedule(
-      update.name || props.scheduleName,
-      true,
-    )
-    if (updatedSchedule) {
-      schedule.value = updatedSchedule
+    // update the recipe in the current view
+    const updatedRecipe = await recipeStore.fetchRecipe(update.name || props.recipeName, true)
+    if (updatedRecipe) {
+      recipe.value = updatedRecipe
     } else {
-      for (const error of scheduleStore.errors) {
+      for (const error of recipeStore.errors) {
         notificationStore.showError(error)
       }
     }
@@ -1192,16 +1184,16 @@ const updateSchedule = async (update: ScheduleUpdateSchema) => {
       }
     }
   } else {
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
 }
 
-const validateSchedule = async () => {
-  await scheduleStore.validateSchedule(props.scheduleName)
-  if (scheduleStore.errors.length > 0) {
-    for (const error of scheduleStore.errors) {
+const validateRecipe = async () => {
+  await recipeStore.validateRecipe(props.recipeName)
+  if (recipeStore.errors.length > 0) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
@@ -1213,7 +1205,7 @@ const loadHistory = async ({ limit, skip }: { limit: number; skip: number }) => 
 
   loadingHistory.value = true
   try {
-    await scheduleHistoryStore.fetchHistory(props.scheduleName, limit, skip)
+    await recipeHistoryStore.fetchHistory(props.recipeName, limit, skip)
   } catch (error) {
     console.error('Failed to load history items', error)
     notificationStore.showError(`Failed to ${skip > 0 ? 'load more' : 'load'} history items`)
@@ -1222,83 +1214,83 @@ const loadHistory = async ({ limit, skip }: { limit: number; skip: number }) => 
   }
 }
 
-const deleteSchedule = async () => {
-  const response = await scheduleStore.deleteSchedule(props.scheduleName)
+const deleteRecipe = async () => {
+  const response = await recipeStore.deleteRecipe(props.recipeName)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${props.scheduleName}</code> has been deleted.`)
-    router.push({ name: 'schedules-list' })
+    notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been deleted.`)
+    router.push({ name: 'recipes-list' })
   } else {
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
 }
 
-const archiveSchedule = async (comment?: string) => {
-  const response = await scheduleStore.archiveSchedule(props.scheduleName, comment)
+const archiveRecipe = async (comment?: string) => {
+  const response = await recipeStore.archiveRecipe(props.recipeName, comment)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${props.scheduleName}</code> has been archived.`)
-    // Refresh the schedule data to update the archive status
+    notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been archived.`)
+    // Refresh the recipe data to update the archive status
     await refreshData(true)
     // Switch to info tab after archiving
     currentTab.value = 'details'
   } else {
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
 }
 
-const restoreSchedule = async (comment?: string) => {
-  const response = await scheduleStore.restoreSchedule(props.scheduleName, comment)
+const restoreRecipe = async (comment?: string) => {
+  const response = await recipeStore.restoreRecipe(props.recipeName, comment)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${props.scheduleName}</code> has been restored.`)
-    // Refresh the schedule data to update the archive status
+    notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been restored.`)
+    // Refresh the recipe data to update the archive status
     await refreshData(true)
     // Switch to info tab after restoring
     currentTab.value = 'details'
   } else {
-    for (const error of scheduleStore.errors) {
+    for (const error of recipeStore.errors) {
       notificationStore.showError(error)
     }
   }
 }
 
 const handleRevert = async () => {
-  // Reload schedule data after revert
+  // Reload recipe data after revert
   await refreshData(true, true)
 }
 
 const refreshData = async (forceReload: boolean = false, fetchHistory: boolean = false) => {
   // Only set ready to false if we don't have any data yet
-  if (!schedule.value) {
+  if (!recipe.value) {
     ready.value = false
   }
 
-  // Load schedule data (force reload on edit tab or explicitly requested)
-  const response = await scheduleStore.fetchSchedule(
-    props.scheduleName,
+  // Load recipe data (force reload on edit tab or explicitly requested)
+  const response = await recipeStore.fetchRecipe(
+    props.recipeName,
     currentTab.value === 'edit' || forceReload,
   )
   if (response) {
-    schedule.value = response
+    recipe.value = response
   } else {
-    error.value = 'Failed to load schedule data'
+    error.value = 'Failed to load recipe data'
   }
 
-  if (schedule.value) {
-    if (schedule.value.enabled) {
+  if (recipe.value) {
+    if (recipe.value.enabled) {
       await fetchWorkers()
     }
-    await fetchScheduleTasks()
+    await fetchRecipeTasks()
 
     if (fetchHistory) {
-      scheduleHistoryStore.clearHistory()
-      await loadHistory({ limit: scheduleHistoryStore.paginator.limit, skip: 0 })
+      recipeHistoryStore.clearHistory()
+      await loadHistory({ limit: recipeHistoryStore.paginator.limit, skip: 0 })
     }
     if (forceReload) {
       offlinerVersions.value =
-        (await offlinerStore.fetchOfflinerVersions(schedule.value.offliner)) || []
+        (await offlinerStore.fetchOfflinerVersions(recipe.value.offliner)) || []
     }
     ready.value = true
   }
@@ -1370,9 +1362,9 @@ onMounted(async () => {
   // Redirect to details if trying to access restricted tabs without permission
   if (
     (props.selectedTab === 'edit' || props.selectedTab === 'history') &&
-    !canUpdateSchedules.value
+    !canUpdateRecipes.value
   ) {
-    router.push({ name: 'schedule-detail', params: { scheduleName: props.scheduleName } })
+    router.push({ name: 'recipe-detail', params: { recipeName: props.recipeName } })
   }
 
   // just in case the data is not loaded yet rather than using
@@ -1387,26 +1379,26 @@ onMounted(async () => {
   platforms.value = (await platformStore.fetchPlatforms()) || []
   // after fectching the all the data, we can fetch the offliner definition
   await refreshData(true, props.selectedTab === 'history')
-  if (schedule.value) {
+  if (recipe.value) {
     const offlinerDefinition = await offlinerStore.fetchOfflinerDefinitionByVersion(
-      schedule.value.offliner,
-      schedule.value.version,
+      recipe.value.offliner,
+      recipe.value.version,
     )
     if (offlinerDefinition) {
       helpUrl.value = offlinerDefinition.help
       flagsDefinition.value = offlinerDefinition.flags
     }
-    await fetchScheduleImageTags(schedule.value.config.image.name)
-    // Get validation errors about the schedule on mount
-    if (!schedule.value.is_valid) {
-      await validateSchedule()
+    await fetchRecipeImageTags(recipe.value.config.image.name)
+    // Get validation errors about the recipe on mount
+    if (!recipe.value.is_valid) {
+      await validateRecipe()
     }
   }
 })
 
 onUnmounted(() => {
-  // Clear schedule history to prevent accumulation of history items
-  scheduleHistoryStore.clearHistory()
+  // Clear recipe history to prevent accumulation of history items
+  recipeHistoryStore.clearHistory()
 })
 
 // Watch for tab changes
@@ -1415,22 +1407,22 @@ watch(
   async (newTab) => {
     currentTab.value = newTab
     // Only refresh data if we don't have any data yet, or if not cloning or archiving
-    if (!schedule.value || !['clone', 'archive', 'delete'].includes(newTab)) {
+    if (!recipe.value || !['clone', 'archive', 'delete'].includes(newTab)) {
       await refreshData(newTab === 'edit', newTab === 'history')
     }
-    if (newTab === 'similar' && schedule.value) {
-      await loadSimilar(scheduleStore.paginator.limit, scheduleStore.paginator.skip)
+    if (newTab === 'similar' && recipe.value) {
+      await loadSimilar(recipeStore.paginator.limit, recipeStore.paginator.skip)
     }
   },
 )
 
-// Watch for schedule name changes (when navigating to a different schedule)
+// Watch for recipe name changes (when navigating to a different recipe)
 watch(
-  () => props.scheduleName,
+  () => props.recipeName,
   async () => {
-    // Reset the current tab to details when switching schedules
-    // Clear current data and reload the new schedule
-    schedule.value = null
+    // Reset the current tab to details when switching recipes
+    // Clear current data and reload the new recipe
+    recipe.value = null
     currentTab.value = 'details'
   },
 )

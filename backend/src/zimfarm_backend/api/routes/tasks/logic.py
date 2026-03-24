@@ -24,7 +24,7 @@ from zimfarm_backend.api.routes.tasks.models import (
 from zimfarm_backend.common.constants import ENABLED_SCHEDULER, INFORM_CMS
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.models import (
-    ScheduleConfigSchema,
+    RecipeConfigSchema,
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.orms import TaskFullSchema, TaskLightSchema
@@ -62,7 +62,7 @@ def get_tasks(
         skip=params.skip,
         limit=params.limit,
         status=params.status,
-        schedule_name=params.schedule_name,
+        recipe_name=params.recipe_name or params.schedule_name,
         sort_criteria=params.sort_criteria,
         offliner=params.offliner,
         fetch_most_recent_tasks=params.fetch_most_recent_tasks,
@@ -103,7 +103,7 @@ def get_task(
 
     # Rebuild the config as the one that was retrieved from the DB has secrets saved
     task.config = expanded_config(
-        cast(ScheduleConfigSchema, task.config),
+        cast(RecipeConfigSchema, task.config),
         offliner=offliner,
         offliner_definition=offliner_definition,
         show_secrets=show_secrets,

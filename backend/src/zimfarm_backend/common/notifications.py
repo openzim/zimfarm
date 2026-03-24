@@ -27,7 +27,7 @@ from zimfarm_backend.common.emailing import send_email_via_mailgun
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas.models import (
     EventNotificationSchema,
-    ScheduleNotificationSchema,
+    RecipeNotificationSchema,
 )
 from zimfarm_backend.db.requested_task import (
     get_requested_task_by_id_or_none,
@@ -50,7 +50,7 @@ jinja_env.filters["format_size"] = (
 
 class GlobalNotifications:
     methods = EventNotificationSchema.model_fields.keys()
-    events = ScheduleNotificationSchema.model_fields.keys()
+    events = RecipeNotificationSchema.model_fields.keys()
     entries: ClassVar[dict[str, Any]] = {}
 
 

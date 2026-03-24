@@ -49,14 +49,14 @@ def get_clean_ted_topic_name(ted_topic_name: str) -> str:
 
 def create_recipe(ted_topic_name: str, access_token: str):
     clean_ted_topic_name = get_clean_ted_topic_name(ted_topic_name)
-    schedule_name = f"ted_topic_{clean_ted_topic_name}"
+    recipe_name = f"ted_topic_{clean_ted_topic_name}"
     response = requests.get(
-        get_url(f"/schedules/{schedule_name}"),
+        get_url(f"/recipes/{recipe_name}"),
         headers=get_token_headers(access_token),
         timeout=REQUESTS_TIMEOUT,
     )
     if response.status_code == HTTPStatus.OK:
-        logger.warning(f"Recipe {schedule_name} already exists, ignoring.")
+        logger.warning(f"Recipe {recipe_name} already exists, ignoring.")
         return
 
     if response.status_code != HTTPStatus.NOT_FOUND:
@@ -99,14 +99,14 @@ def create_recipe(ted_topic_name: str, access_token: str):
         },
         "enabled": True,
         "language": "mul",
-        "name": schedule_name,
+        "name": recipe_name,
         "periodicity": "quarterly",
         "tags": [
             "ted-by-topic",
         ],
     }
     response = requests.post(
-        get_url("/schedules/"),
+        get_url("/recipes/"),
         headers=get_token_headers(access_token),
         json=data,
         timeout=REQUESTS_TIMEOUT,
@@ -123,18 +123,18 @@ def get_existing_recipes_topics(access_token: str) -> set[str]:
     topics: set[str] = set()
     while True:
         response = requests.get(
-            get_url(f"/schedules/?limit={per_page}&skip={skip}&tag=ted-by-topic"),
+            get_url(f"/recipes/?limit={per_page}&skip={skip}&tag=ted-by-topic"),
             headers=get_token_headers(access_token),
             timeout=REQUESTS_TIMEOUT,
         )
         response.raise_for_status()
 
-        schedules = response.json()
-        topics.update({schedule["name"][10:] for schedule in schedules["items"]})
+        recipes = response.json()
+        topics.update({recipe["name"][10:] for recipe in recipes["items"]})
 
         if (
-            schedules["meta"]["limit"] + schedules["meta"]["skip"]
-            < schedules["meta"]["count"]
+            recipes["meta"]["limit"] + recipes["meta"]["skip"]
+            < recipes["meta"]["count"]
         ):
             skip += per_page
         else:

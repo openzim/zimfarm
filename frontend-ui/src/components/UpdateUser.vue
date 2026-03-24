@@ -64,8 +64,8 @@
               <v-textarea
                 v-model="form.customScope"
                 label="Custom Scope (JSON)"
-                placeholder='{"tasks": {"read": true, "create": false}, "schedules": {"read": true}}'
-                hint="Enter the custom scope as JSON. Include all namespaces (tasks, schedules, users, workers, zim, requested_tasks, offliners) with their permissions."
+                placeholder='{"tasks": {"read": true, "create": false}, "recipes": {"read": true}}'
+                hint="Enter the custom scope as JSON. Include all namespaces (tasks, recipes, users, workers, zim, requested_tasks, offliners) with their permissions."
                 persistent-hint
                 :error-messages="customScopeError ? [customScopeError] : []"
                 variant="outlined"

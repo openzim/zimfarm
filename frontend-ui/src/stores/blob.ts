@@ -18,10 +18,10 @@ export const useBlobStore = defineStore('blob', () => {
   const errors = ref<string[]>([])
   const authStore = useAuthStore()
 
-  const createBlob = async (scheduleName: string, request: CreateBlob) => {
+  const createBlob = async (recipeName: string, request: CreateBlob) => {
     try {
       const service = await authStore.getApiService('blobs')
-      const response = await service.post<CreateBlob, Blob>(`/${scheduleName}`, request)
+      const response = await service.post<CreateBlob, Blob>(`/${recipeName}`, request)
       return response
     } catch (_error) {
       console.error('Failed to create blob', _error)
@@ -53,10 +53,10 @@ export const useBlobStore = defineStore('blob', () => {
     }
   }
 
-  const fetchBlobs = async (scheduleName: string, skip: number = 0, limit: number = 100) => {
+  const fetchBlobs = async (recipeName: string, skip: number = 0, limit: number = 100) => {
     try {
       const service = await authStore.getApiService('blobs')
-      const response = await service.get<null, ListResponse<Blob>>(`/${scheduleName}`, {
+      const response = await service.get<null, ListResponse<Blob>>(`/${recipeName}`, {
         params: { limit, skip },
       })
       blobs.value = response.items
@@ -70,10 +70,10 @@ export const useBlobStore = defineStore('blob', () => {
     }
   }
 
-  const fetchBlob = async (scheduleName: string, checksum: string, flagName: string) => {
+  const fetchBlob = async (recipeName: string, checksum: string, flagName: string) => {
     try {
       const service = await authStore.getApiService('blobs')
-      const response = await service.get<null, Blob>(`/${scheduleName}/${flagName}/${checksum}`)
+      const response = await service.get<null, Blob>(`/${recipeName}/${flagName}/${checksum}`)
       return response
     } catch (_error) {
       errors.value = translateErrors(_error as ErrorResponse)

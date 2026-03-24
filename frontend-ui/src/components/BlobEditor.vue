@@ -132,7 +132,7 @@ interface Props {
   kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
   required?: boolean
   description?: string | null
-  scheduleName: string
+  recipeName: string
   flagKey: string
 }
 
@@ -538,7 +538,7 @@ const uploadBlob = async (base64Data: string) => {
       if (blobComment.value !== originalBlobComment.value) {
         if (!currentBlobId.value) {
           // No existing blob, create new one
-          const newBlob = await blobStore.createBlob(props.scheduleName, {
+          const newBlob = await blobStore.createBlob(props.recipeName, {
             flag_name: props.flagKey,
             kind: props.kind,
             data: base64Data,
@@ -577,7 +577,7 @@ const uploadBlob = async (base64Data: string) => {
       }
     } else {
       // Data changed, create new blob backend will handle duplicate detection
-      const blob = await blobStore.createBlob(props.scheduleName, {
+      const blob = await blobStore.createBlob(props.recipeName, {
         flag_name: props.flagKey,
         kind: props.kind,
         data: base64Data,
@@ -667,7 +667,7 @@ const fetchBlobByUrl = async (url: string) => {
     const localChecksum = await computeChecksumFromFile(file)
 
     // Then fetch blob metadata from backend to see if it exists
-    const backendBlob = await blobStore.fetchBlob(props.scheduleName, localChecksum, props.flagKey)
+    const backendBlob = await blobStore.fetchBlob(props.recipeName, localChecksum, props.flagKey)
 
     if (backendBlob) {
       // Blob exists in backend, use its ID and comments but keep local checksum

@@ -296,16 +296,16 @@
                     <div class="text-center pa-4 text-medium-emphasis">No running tasks</div>
                   </template>
 
-                  <template #[`item.schedule_name`]="{ item }">
-                    <span v-if="item.schedule_name === null">N/A</span>
+                  <template #[`item.recipe_name`]="{ item }">
+                    <span v-if="item.recipe_name === null">N/A</span>
                     <router-link
                       v-else
                       :to="{
-                        name: 'schedule-detail',
-                        params: { scheduleName: item.schedule_name },
+                        name: 'recipe-detail',
+                        params: { recipeName: item.recipe_name },
                       }"
                     >
-                      {{ item.schedule_name }}
+                      {{ item.recipe_name }}
                     </router-link>
                   </template>
 
@@ -563,7 +563,7 @@ const imageAge = computed(() => {
 })
 
 const runningTasksHeaders = [
-  { title: 'Schedule', value: 'schedule_name' },
+  { title: 'Recipe', value: 'recipe_name' },
   { title: 'Resources', value: 'resources' },
   { title: 'Task', value: 'task' },
 ]

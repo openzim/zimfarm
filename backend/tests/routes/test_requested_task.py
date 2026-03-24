@@ -11,8 +11,8 @@ from zimfarm_backend.api.routes.requested_tasks import logic
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.common.schemas.models import ResourcesSchema, ScheduleConfigSchema
-from zimfarm_backend.db.models import RequestedTask, Schedule, User, Worker
+from zimfarm_backend.common.schemas.models import RecipeConfigSchema, ResourcesSchema
+from zimfarm_backend.db.models import Recipe, RequestedTask, User, Worker
 from zimfarm_backend.db.worker import get_worker
 
 
@@ -20,7 +20,7 @@ def test_create_request_task_no_permission(
     client: TestClient,
     create_user: Callable[..., User],
 ):
-    """Test that create_request_task raises ForbiddenError without permission"""
+    """Test that create_request_task raises UnauthorizedError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -30,30 +30,30 @@ def test_create_request_task_no_permission(
     response = client.post(
         "/v2/requested-tasks",
         json={
-            "schedule_names": ["test-schedule"],
+            "recipe_names": ["test-recipe"],
             "worker": "test-worker",
             "priority": 1,
         },
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
-def test_create_request_task_no_enabled_schedules(
+def test_create_request_task_no_enabled_recipes(
     client: TestClient,
     dbsession: OrmSession,
     access_token: str,
-    schedule: Schedule,
+    recipe: Recipe,
     worker: Worker,
 ):
-    """Test that create_request_task raises NotFoundError with no enabled schedules"""
-    schedule.enabled = False
-    dbsession.add(schedule)
+    """Test that create_request_task raises NotFoundError with no enabled recipes"""
+    recipe.enabled = False
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.post(
         "/v2/requested-tasks",
-        json={"schedule_names": [schedule.name], "worker": worker.name, "priority": 1},
+        json={"recipe_names": [recipe.name], "worker": worker.name, "priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -66,12 +66,12 @@ def test_create_request_task_no_enabled_schedules(
         "worker_offliners",
         "worker_contexts",
         "worker_resource",
-        "schedule_resource",
-        "schedule_context",
+        "recipe_resource",
+        "recipe_context",
         "expected_status_code",
     ],
     [
-        # our schedule is always going to be an mwoffliner
+        # our recipe is always going to be an mwoffliner
         pytest.param(
             False,
             False,
@@ -79,9 +79,9 @@ def test_create_request_task_no_enabled_schedules(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "",  # schedule_context
+            "",  # recipe_context
             HTTPStatus.OK,
-            id="worker-matches-schedule",
+            id="worker-matches-recipe",
         ),
         pytest.param(
             False,
@@ -92,7 +92,7 @@ def test_create_request_task_no_enabled_schedules(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
             HTTPStatus.OK,
-            id="worker-exceeds-schedule",
+            id="worker-exceeds-recipe",
         ),
         pytest.param(
             False,
@@ -114,7 +114,7 @@ def test_create_request_task_no_enabled_schedules(
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
             HTTPStatus.BAD_REQUEST,
-            id="worker-does-not-match-schedule-cpu",
+            id="worker-does-not-match-recipe-cpu",
         ),
         pytest.param(
             False,
@@ -125,7 +125,7 @@ def test_create_request_task_no_enabled_schedules(
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
             HTTPStatus.BAD_REQUEST,
-            id="worker-does-not-match-schedule-memory",
+            id="worker-does-not-match-recipe-memory",
         ),
         pytest.param(
             False,
@@ -136,7 +136,7 @@ def test_create_request_task_no_enabled_schedules(
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
             HTTPStatus.BAD_REQUEST,
-            id="worker-does-not-match-schedule-disk",
+            id="worker-does-not-match-recipe-disk",
         ),
         pytest.param(
             False,
@@ -145,9 +145,9 @@ def test_create_request_task_no_enabled_schedules(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "priority",  # schedule_context
+            "priority",  # recipe_context
             HTTPStatus.BAD_REQUEST,
-            id="worker-context-does-not-match-schedule",
+            id="worker-context-does-not-match-recipe",
         ),
         pytest.param(
             False,
@@ -156,7 +156,7 @@ def test_create_request_task_no_enabled_schedules(
             {"general": IPv4Address("192.168.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             HTTPStatus.BAD_REQUEST,
             id="worker-whitelisted-context-ip-does-not-match-last-seen",
         ),
@@ -167,7 +167,7 @@ def test_create_request_task_no_enabled_schedules(
             {"general": IPv4Address("127.0.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             HTTPStatus.OK,
             id="worker-whitelisted-context-ip-matches-last-seen",
         ),
@@ -178,7 +178,7 @@ def test_create_request_task_no_enabled_schedules(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             HTTPStatus.OK,
             id="context-has-no-ip",
         ),
@@ -189,7 +189,7 @@ def test_create_request_task_no_enabled_schedules(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             HTTPStatus.BAD_REQUEST,
             id="worker-cordoned",
         ),
@@ -200,7 +200,7 @@ def test_create_request_task_no_enabled_schedules(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             HTTPStatus.BAD_REQUEST,
             id="admin-disabled",
         ),
@@ -215,11 +215,11 @@ def test_create_request_task_success(
     worker_offliners: list[str],
     worker_contexts: list[str],
     worker_resource: ResourcesSchema,
-    schedule_resource: ResourcesSchema,
+    recipe_resource: ResourcesSchema,
     create_worker: Callable[..., Worker],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
-    schedule_context: str,
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
+    recipe_context: str,
     expected_status_code: int,
 ):
     worker = create_worker(
@@ -232,18 +232,18 @@ def test_create_request_task_success(
         offliners=worker_offliners,
         contexts=worker_contexts,
     )
-    schedule = create_schedule(
-        schedule_config=create_schedule_config(
-            cpu=schedule_resource.cpu,
-            memory=schedule_resource.memory,
-            disk=schedule_resource.disk,
+    recipe = create_recipe(
+        recipe_config=create_recipe_config(
+            cpu=recipe_resource.cpu,
+            memory=recipe_resource.memory,
+            disk=recipe_resource.disk,
         ),
-        context=schedule_context,
+        context=recipe_context,
     )
     """Test successful creation of requested task"""
     response = client.post(
         "/v2/requested-tasks",
-        json={"schedule_names": [schedule.name], "worker": worker.name, "priority": 1},
+        json={"recipe_names": [recipe.name], "worker": worker.name, "priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
@@ -258,7 +258,7 @@ def test_get_requested_tasks_success(
     """Test successful retrieval of requested tasks"""
     # Create some requested tasks
     for i in range(30):
-        create_requested_task(worker=worker, schedule_name=f"test_schedule_{i}")
+        create_requested_task(worker=worker, recipe_name=f"test_recipe_{i}")
 
     response = client.get(
         "/v2/requested-tasks?limit=5&worker_name=test-worker",
@@ -489,7 +489,7 @@ def test_update_requested_task_no_permission(
     requested_task: RequestedTask,
     create_user: Callable[..., User],
 ):
-    """Test that update_requested_task raises ForbiddenError without permission"""
+    """Test that update_requested_task raises UnauthorizedError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -501,7 +501,7 @@ def test_update_requested_task_no_permission(
         json={"priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_update_requested_task_success(
@@ -532,7 +532,7 @@ def test_delete_requested_task_no_permission(
     requested_task: RequestedTask,
     create_user: Callable[..., User],
 ):
-    """Test that delete_requested_task raises ForbiddenError without permission"""
+    """Test that delete_requested_task raises UnauthorizedError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -543,7 +543,7 @@ def test_delete_requested_task_no_permission(
         f"/v2/requested-tasks/{requested_task.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_delete_requested_task_success(

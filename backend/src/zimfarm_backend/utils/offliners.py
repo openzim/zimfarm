@@ -5,9 +5,9 @@ from typing import Any
 
 from zimfarm_backend.common import constants
 from zimfarm_backend.common.schemas.models import (
-    ExpandedScheduleConfigSchema,
+    ExpandedRecipeConfigSchema,
+    RecipeConfigSchema,
     ResourcesSchema,
-    ScheduleConfigSchema,
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 
@@ -72,7 +72,7 @@ def compute_flags(
 def command_for(
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema,
-    config: ScheduleConfigSchema,
+    config: RecipeConfigSchema,
     mount_point: pathlib.Path,
     *,
     show_secrets: bool = True,
@@ -151,12 +151,12 @@ def get_image_name(offliner: str) -> str:
 
 
 def expanded_config(
-    config: ScheduleConfigSchema,
+    config: RecipeConfigSchema,
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema,
     *,
     show_secrets: bool = True,
-) -> ExpandedScheduleConfigSchema:
+) -> ExpandedRecipeConfigSchema:
     def get_shm(
         offliner_shm: int | None, config_resources: ResourcesSchema
     ) -> int | None:
@@ -188,7 +188,7 @@ def expanded_config(
         offliner, offliner_definition, config, mount_point, show_secrets=show_secrets
     )
 
-    return ExpandedScheduleConfigSchema.model_validate(
+    return ExpandedRecipeConfigSchema.model_validate(
         {
             "warehouse_path": config.warehouse_path,
             "resources": new_resources,

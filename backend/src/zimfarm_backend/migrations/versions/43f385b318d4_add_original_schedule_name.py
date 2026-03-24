@@ -8,9 +8,6 @@ Create Date: 2023-09-26 07:56:45.008277
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.orm import Session
-
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task
 
 # revision identifiers, used by Alembic.
 revision = "43f385b318d4"
@@ -20,31 +17,24 @@ depends_on = None
 
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    session = Session(bind=bind)
-
     # add original_schedule_name as nullable
     op.add_column(
         "requested_task",
         sa.Column("original_schedule_name", sa.String(), nullable=True),
     )
 
-    # set original_schedule_name for requested tasks with existing schedule
-    session.execute(
-        sa.update(RequestedTask)
-        .where(RequestedTask.schedule_id != None)  # noqa: E711
-        .values(
-            original_schedule_name=sa.select(Schedule.name)
-            .where(Schedule.id == RequestedTask.schedule_id)
-            .scalar_subquery()
-        )
-    )
-
-    # set original_schedule_name for requested tasks without existing schedule
-    session.execute(
-        sa.update(RequestedTask)
-        .where(RequestedTask.schedule_id == None)  # noqa: E711
-        .values(original_schedule_name="<unknown>")
+    # populate original_schedule_name from the related schedule (or '<unknown>')
+    op.execute(
+        """
+            UPDATE requested_task
+            SET original_schedule_name = COALESCE(
+                (SELECT name
+                 FROM schedule WHERE
+                 schedule.id = requested_task.schedule_id
+                ),
+                '<unknown>'
+            )
+        """
     )
 
     # set original_schedule_name as not nullable
@@ -55,22 +45,15 @@ def upgrade() -> None:
         "task", sa.Column("original_schedule_name", sa.String(), nullable=True)
     )
 
-    # set original_schedule_name for requested tasks with existing schedule
-    session.execute(
-        sa.update(Task)
-        .where(Task.schedule_id != None)  # noqa: E711
-        .values(
-            original_schedule_name=sa.select(Schedule.name)
-            .where(Schedule.id == Task.schedule_id)
-            .scalar_subquery()
+    # populate original_schedule_name from the related schedule (or '<unknown>')
+    op.execute(
+        """
+        UPDATE task
+        SET original_schedule_name = COALESCE(
+            (SELECT name FROM schedule WHERE schedule.id = task.schedule_id),
+            '<unknown>'
         )
-    )
-
-    # set original_schedule_name for requested tasks without existing schedule
-    session.execute(
-        sa.update(Task)
-        .where(Task.schedule_id == None)  # noqa: E711
-        .values(original_schedule_name="<unknown>")
+        """
     )
 
     # set original_schedule_name as not nullable

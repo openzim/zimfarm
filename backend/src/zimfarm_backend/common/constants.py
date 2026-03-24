@@ -5,7 +5,7 @@ from typing import Any
 
 from humanfriendly import parse_size, parse_timespan
 
-from zimfarm_backend.common.enums import SchedulePeriodicity
+from zimfarm_backend.common.enums import RecipePeriodicity
 
 
 def parse_bool(value: Any) -> bool:
@@ -36,15 +36,15 @@ MESSAGE_VALIDITY_DURATION = parse_timespan(
 )
 
 ENABLED_SCHEDULER = not getenv("DISABLE_SCHEDULER", default="")
-DEFAULT_SCHEDULE_DURATION = parse_timespan(
-    getenv("DEFAULT_SCHEDULE_DURATION", default="31d")
+DEFAULT_RECIPE_DURATION = parse_timespan(
+    getenv("DEFAULT_RECIPE_DURATION", default="31d")
 )
 
 PERIODICITIES = {
-    SchedulePeriodicity.monthly: {"days": 31},
-    SchedulePeriodicity.quarterly: {"days": 90},
-    SchedulePeriodicity.biannualy: {"days": 180},
-    SchedulePeriodicity.annually: {"days": 365},
+    RecipePeriodicity.monthly: {"days": 31},
+    RecipePeriodicity.quarterly: {"days": 90},
+    RecipePeriodicity.biannualy: {"days": 180},
+    RecipePeriodicity.annually: {"days": 365},
 }
 
 ZIM_UPLOAD_URI = getenv(

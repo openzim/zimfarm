@@ -1,6 +1,6 @@
 <!-- Task Detail View
   - listing all info
-  - fire schedule button -->
+  - fire recipe button -->
 
 <template>
   <v-container>
@@ -25,16 +25,16 @@
       <v-col cols="12" sm="4" md="3" lg="2">
         <code class="text-h6">#{{ shortId }}</code>
       </v-col>
-      <v-col cols="12" sm="8" md="9" lg="10" v-if="scheduleName">
+      <v-col cols="12" sm="8" md="9" lg="10" v-if="recipeName">
         <router-link
           :to="{
-            name: 'schedule-detail',
-            params: { scheduleName: scheduleName },
+            name: 'recipe-detail',
+            params: { recipeName: recipeName },
           }"
           class="text-decoration-none"
         >
           <code class="text-h6 text-primary">
-            {{ scheduleName }}
+            {{ recipeName }}
           </code>
         </router-link>
       </v-col>
@@ -88,17 +88,17 @@
                     <div class="text-subtitle-2">Recipe</div>
                   </v-col>
                   <v-col cols="12" md="9">
-                    <span v-if="task.schedule_name === null || task.schedule_name === 'none'">
-                      {{ task.original_schedule_name }}
+                    <span v-if="task.recipe_name === null || task.recipe_name === 'none'">
+                      {{ task.original_recipe_name }}
                     </span>
                     <router-link
                       v-else
                       :to="{
-                        name: 'schedule-detail',
-                        params: { scheduleName: task.schedule_name },
+                        name: 'recipe-detail',
+                        params: { recipeName: task.recipe_name },
                       }"
                     >
-                      {{ task.schedule_name }}
+                      {{ task.recipe_name }}
                     </router-link>
                   </v-col>
                 </v-row>
@@ -605,8 +605,8 @@ const isRunning = computed(() => {
   return !['failed', 'canceled', 'succeeded', 'cancel_requested'].includes(task.value?.status || '')
 })
 
-const scheduleName = computed(() => {
-  return task.value?.schedule_name || null
+const recipeName = computed(() => {
+  return task.value?.recipe_name || null
 })
 
 const taskContainer = computed(() => {
@@ -710,7 +710,7 @@ const hasStats = computed(() => {
 })
 
 const monitoringUrl = computed(() => {
-  return `${config.MONITORING_URL}/host/${scheduleName.value}_${shortId.value}.${
+  return `${config.MONITORING_URL}/host/${recipeName.value}_${shortId.value}.${
     task.value?.worker_name
   }#after=${new Date(
     getTimestampStringForStatus(task.value?.timestamp, 'scraper_started', '') || 0,

@@ -204,7 +204,7 @@ def cancel_stale_tasks(session: OrmSession):
 
 
 def remove_old_tasks(session: OrmSession):
-    """removes old tasks excluding most recent tasks for schedules"""
+    """removes old tasks excluding most recent tasks for recipes"""
 
     threshold = getnow() - OLD_TASK_DELETION_THRESHOLD
 

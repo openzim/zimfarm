@@ -1,7 +1,7 @@
 import constants from '@/constants'
-import type { ScheduleDuration, WorkerScheduleDuration } from '@/types/base'
+import type { RecipeDuration, WorkerRecipeDuration } from '@/types/base'
 import type { OfflinerDefinition } from '@/types/offliner'
-import type { ExpandedScheduleConfig, ScheduleConfig } from '@/types/schedule'
+import type { ExpandedRecipeConfig, RecipeConfig } from '@/types/recipe'
 import type { Task, TaskLight } from '@/types/tasks'
 import { formatDuration, formatDurationBetween } from '@/utils/format'
 import { DateTime } from 'luxon'
@@ -18,17 +18,17 @@ export function getSecretFields(offlinerDefinition: OfflinerDefinition[] | null)
     })
 }
 
-export function imageHuman(config: ScheduleConfig | ExpandedScheduleConfig) {
+export function imageHuman(config: RecipeConfig | ExpandedRecipeConfig) {
   return config.image.name + ':' + config.image.tag
 }
 
-export function imageUrl(config: ScheduleConfig | ExpandedScheduleConfig) {
+export function imageUrl(config: RecipeConfig | ExpandedRecipeConfig) {
   const prefix =
     config.image.name.indexOf('ghcr.io') != -1 ? 'https://' : 'https://hub.docker.com/r/'
   return prefix + config.image.name
 }
 
-export function buildDockerCommand(name: string, config: ExpandedScheduleConfig) {
+export function buildDockerCommand(name: string, config: ExpandedRecipeConfig) {
   const mounts = ['-v', '/my-path:' + config.mount_point + ':rw']
   const mem_params = ['--memory-swappiness', '0', '--memory', config.resources.memory.toString()]
   const capadd_params: string[] = []
@@ -64,11 +64,11 @@ export function buildDockerCommand(name: string, config: ExpandedScheduleConfig)
   return args.join(' ')
 }
 
-export function buildCommandWithout(config: ExpandedScheduleConfig) {
+export function buildCommandWithout(config: ExpandedRecipeConfig) {
   return config.str_command
 }
 
-interface SingleScheduleDuration {
+interface SingleRecipeDuration {
   single: true
   value: number
   formattedDuration: string
@@ -76,20 +76,20 @@ interface SingleScheduleDuration {
   on: string
 }
 
-interface MultipleScheduleDuration {
+interface MultipleRecipeDuration {
   single: false
   formattedMinDuration: string
   formattedMaxDuration: string
-  minWorkers: WorkerScheduleDuration[]
-  maxWorkers: WorkerScheduleDuration[]
+  minWorkers: WorkerRecipeDuration[]
+  maxWorkers: WorkerRecipeDuration[]
 }
 
-export function buildScheduleDuration(
-  duration: ScheduleDuration | null,
-): SingleScheduleDuration | MultipleScheduleDuration | null {
+export function buildRecipeDuration(
+  duration: RecipeDuration | null,
+): SingleRecipeDuration | MultipleRecipeDuration | null {
   if (!duration) return null
 
-  function single_duration(value: number, worker: string, on: string): SingleScheduleDuration {
+  function single_duration(value: number, worker: string, on: string): SingleRecipeDuration {
     return {
       single: true,
       value: value,
@@ -168,7 +168,7 @@ export function buildScheduleDuration(
 
 export function buildTotalDurationDict(
   historyRuns: TaskLight[],
-): SingleScheduleDuration | MultipleScheduleDuration | null {
+): SingleRecipeDuration | MultipleRecipeDuration | null {
   // compute the total duration of each task from started to completed
   if (!historyRuns || historyRuns.length === 0) return null
 
