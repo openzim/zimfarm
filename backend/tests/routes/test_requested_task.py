@@ -20,7 +20,7 @@ def test_create_request_task_no_permission(
     client: TestClient,
     create_user: Callable[..., User],
 ):
-    """Test that create_request_task raises ForbiddenError without permission"""
+    """Test that create_request_task raises UnauthorizedError without permission"""
     user = create_user(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -36,7 +36,7 @@ def test_create_request_task_no_permission(
         },
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_create_request_task_no_enabled_recipes(
@@ -489,7 +489,7 @@ def test_update_requested_task_no_permission(
     requested_task: RequestedTask,
     create_user: Callable[..., User],
 ):
-    """Test that update_requested_task raises ForbiddenError without permission"""
+    """Test that update_requested_task raises UnauthorizedError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -501,7 +501,7 @@ def test_update_requested_task_no_permission(
         json={"priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_update_requested_task_success(
@@ -532,7 +532,7 @@ def test_delete_requested_task_no_permission(
     requested_task: RequestedTask,
     create_user: Callable[..., User],
 ):
-    """Test that delete_requested_task raises ForbiddenError without permission"""
+    """Test that delete_requested_task raises UnauthorizedError without permission"""
     user = create_user(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -543,7 +543,7 @@ def test_delete_requested_task_no_permission(
         f"/v2/requested-tasks/{requested_task.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_delete_requested_task_success(

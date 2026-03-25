@@ -21,7 +21,7 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     OfflinerSchema,
 )
-from zimfarm_backend.db.models import RequestedTask, Recipe, Task, User
+from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 from zimfarm_backend.db.recipe import get_recipe, update_recipe
 
