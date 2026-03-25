@@ -62,7 +62,7 @@ from zimfarm_backend.common.schemas.models import (
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import RequestedTask, Recipe
+from zimfarm_backend.db.models import Recipe, RequestedTask
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
@@ -70,8 +70,8 @@ from zimfarm_backend.db.offliner_definition import (
     get_offliner_definition_by_id,
     update_offliner_flags,
 )
-from zimfarm_backend.db.requested_task import create_requested_task_full_schema
 from zimfarm_backend.db.recipe import create_recipe_full_schema, update_recipe
+from zimfarm_backend.db.requested_task import create_requested_task_full_schema
 from zimfarm_backend.db.user import get_user_by_username
 
 

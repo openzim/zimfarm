@@ -6,8 +6,8 @@ from typing import Any
 from zimfarm_backend.common import constants
 from zimfarm_backend.common.schemas.models import (
     ExpandedRecipeConfigSchema,
-    ResourcesSchema,
     RecipeConfigSchema,
+    ResourcesSchema,
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 

@@ -24,8 +24,8 @@ from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     LanguageSchema,
-    ResourcesSchema,
     RecipeConfigSchema,
+    ResourcesSchema,
 )
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.models import (
@@ -36,10 +36,10 @@ from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import (
     Base,
     OfflinerDefinition,
-    RequestedTask,
     Recipe,
     RecipeDuration,
     RecipeHistory,
+    RequestedTask,
     Sshkey,
     Task,
     User,
