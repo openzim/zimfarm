@@ -207,7 +207,9 @@ class BaseRequestedTaskSchema(BaseModel):
     requester_id: UUID = Field(exclude=True)
     priority: int
     recipe_name: str | None
+    schedule_name: str | None
     original_recipe_name: str
+    original_schedule_name: str
     worker_name: str | None
     updated_at: datetime.datetime
     context: str

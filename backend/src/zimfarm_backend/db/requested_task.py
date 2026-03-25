@@ -417,9 +417,11 @@ def get_requested_tasks(
                 requester_id=requester_id,
                 priority=_priority,
                 original_recipe_name=original_recipe_name,
+                original_schedule_name=original_recipe_name,
                 updated_at=updated_at,
                 worker_name=_worker_name,
                 recipe_name=_recipe_name,
+                schedule_name=_recipe_name,
                 context=context,
             )
         )
@@ -749,7 +751,9 @@ def create_requested_task_full_schema(
         requester_id=requested_task.requested_by.id,
         priority=requested_task.priority,
         recipe_name=(requested_task.recipe.name if requested_task.recipe else None),
+        schedule_name=(requested_task.recipe.name if requested_task.recipe else None),
         original_recipe_name=requested_task.original_recipe_name,
+        original_schedule_name=requested_task.original_recipe_name,
         worker_name=requested_task.worker.name if requested_task.worker else None,
         context=requested_task.context,
         events=requested_task.events,

@@ -30,6 +30,7 @@ export interface TaskFile {
   size: number
   created_timestamp: string
   uploaded_timestamp?: string
+  failed_timestamp?: string
   check_timestamp?: string
   status: string
   check_result?: number
