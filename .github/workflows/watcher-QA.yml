@@ -1,0 +1,42 @@
+name: Watcher QA
+
+on:
+  pull_request:
+    paths:
+      - "watcher/**"
+  push:
+    paths:
+      - "watcher/**"
+    branches:
+      - main
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        working-directory: watcher
+        run: |
+          pip install -U pip
+          pip install -r requirements.txt
+          pip install black ruff pyright
+
+      - name: Check black formatting
+        working-directory: watcher
+        run: black --check --diff .
+
+      - name: Check ruff
+        working-directory: watcher
+        run: ruff check .
+
+      - name: Check pyright
+        working-directory: watcher
+        run: pyright

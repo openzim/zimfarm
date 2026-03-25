@@ -4,7 +4,7 @@ MINIO_ALIAS="dev_minio"
 MINIO_URL="http://minio:9000"
 MINIO_USER="minio_key"
 MINIO_PASSWORD="minio_secret"
-BUCKETS=("zimfarm-artifacts" "zimfarm-logs" "zimfarm-zimchecks" "zimfarm-zims")
+BUCKETS=("zimfarm-artifacts" "zimfarm-logs" "zimfarm-zimchecks" "zimfarm-zims" "zimfarm-stackexchange")
 
 # Wait for MinIO
 echo "Waiting for MinIO to be ready..."

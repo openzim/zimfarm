@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim: ai ts=4 sts=4 et sw=4 nu
 
 """Watch StackExchange dump files repository for updates to download/upload all
 
@@ -32,6 +30,7 @@ import argparse
 import concurrent.futures as cf
 import datetime
 import json
+from typing import cast
 import logging
 import os
 import pathlib
@@ -41,7 +40,9 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib.parse
 from http import HTTPStatus
+from typing import Any
 
 import humanfriendly
 import jwt
@@ -60,7 +61,7 @@ QUERY_URL = os.getenv(
     "&client_url=https://archive.org/search?query=subject%3A%22"
     "Stack+Exchange+Data+Dump%22+creator%3A%22Stack+Exchange%2C+Inc.%22",
 )
-ZIMFARM_API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v1")
+ZIMFARM_API_URL = os.getenv("ZIMFARM_API_URL", "https://api.farm.openzim.org/v2")
 ASCII_LOGO = r"""
   __                                         _       _
  / _| __ _ _ __ _ __ ___      __      ____ _| |_ ___| |__   ___ _ __
@@ -82,7 +83,7 @@ HTTP_REQUEST_TIMEOUT = 30
 SUMMARY_FILENAME = "summary.json"
 
 
-def get_last_modified_for(url):
+def get_last_modified_for(url: str) -> str | None:
     """the Last-Modified header for an URL"""
     with requests.head(url, allow_redirects=True, timeout=HTTP_REQUEST_TIMEOUT) as resp:
         if resp.status_code == 404:
@@ -90,7 +91,7 @@ def get_last_modified_for(url):
         return resp.headers.get("last-modified")
 
 
-def get_token(api_url, username, password):
+def get_token(api_url: str, username: str, password: str) -> tuple[str, str]:
     """Access-token, Refresh-token for a pair of Zimfarm credentials"""
     req = requests.post(
         url=f"{api_url}/auth/authorize",
@@ -107,13 +108,29 @@ def get_token(api_url, username, password):
     return req.json().get("access_token"), req.json().get("refresh_token")
 
 
-def query_api(token, method, url, payload=None, params=None, headers=None, attempt=0):
-    """success, status_code, payload from a query to Zimfamr API"""
+def query_api(
+    token: str,
+    method: str,
+    url: str,
+    payload: dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
+    headers: dict[str, Any] | None = None,
+    attempt: int = 0,
+) -> tuple[bool, int, dict[str, Any]]:
+    """success, status_code, payload from a query to Zimfarm API"""
+    func = {
+        "GET": requests.get,
+        "POST": requests.post,
+        "PATCH": requests.patch,
+        "DELETE": requests.delete,
+        "PUT": requests.put,
+    }.get(method.upper(), requests.get)
+
     req_headers = {}
     req_headers.update(headers or {})
     try:
         req_headers.update({"Authorization": f"Bearer {token}"})
-        req = getattr(requests, method.lower(), "get")(
+        req = func(
             url=url,
             headers=req_headers,
             json=payload,
@@ -122,28 +139,28 @@ def query_api(token, method, url, payload=None, params=None, headers=None, attem
         )
     except Exception as exc:
         attempt += 1
-        logger.error(f"ConnectionError (attempt {attempt}) for {method} {url} -- {exc}")
+        logger.exception(
+            f"ConnectionError (attempt {attempt}) for {method} {url} -- {exc}"
+        )
         if attempt <= 3:
             time.sleep(attempt * 60 * 2)
             return query_api(token, method, url, payload, params, headers, attempt)
-        return (False, 599, f"ConnectionError -- {exc}")
+        return (False, 599, {})
 
     if req.status_code == requests.codes.NO_CONTENT:
-        return True, req.status_code, ""
+        return True, req.status_code, {}
 
     try:
         resp = req.json() if req.text else {}
     except json.JSONDecodeError:
-        return (
-            False,
-            req.status_code,
-            f"ResponseError (not JSON): -- {req.text}",
-        )
+        logger.exception(f"ResponseError (not JSON): -- {req.text}")
+        return (False, req.status_code, {})
     except Exception as exc:
+        logger.exception(f"ResponseError -- {exc} -- {req.text}")
         return (
             False,
             req.status_code,
-            f"ResponseError -- {exc} -- {req.text}",
+            {},
         )
 
     if req.status_code in (
@@ -161,27 +178,56 @@ def query_api(token, method, url, payload=None, params=None, headers=None, attem
     else:
         content = str(resp)
 
-    return (False, req.status_code, content)
+    logger.error(content)
+
+    return (False, req.status_code, {})
 
 
 class WatcherRunner:
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        *,
+        s3_url_with_credentials: str,
+        s3_summary_file_url: str | None,
+        zimfarm_username: str,
+        zimfarm_password: str,
+        schedule_on_update: bool,
+        nb_threads: int,
+        duration: str,
+        work_dir: str,
+        only: list[str] | None,
+        runonce: bool,
+        debug: bool = False,
+    ):
         self.running = True
+        self.s3_url_with_credentials = s3_url_with_credentials
+        self.s3_summary_file_url = s3_summary_file_url
+        self.zimfarm_username = zimfarm_username
+        self.zimfarm_password = zimfarm_password
+        self.schedule_on_update = schedule_on_update
+        self.nb_threads = nb_threads
+        self.duration = duration
+        self.work_dir = work_dir
+        self.only = only
+        self.runonce = runonce
+        self.debug = debug
+
+        self.access_token = self.refresh_token = ""
+        self.token_payload = {}
+        self.authenticated_on = datetime.datetime.fromtimestamp(0)
+        self.authentication_expires_on = datetime.datetime.fromtimestamp(0)
 
         # registering exit signals
         signal.signal(signal.SIGTERM, self.exit_gracefully)
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGQUIT, self.exit_gracefully)
 
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
     @property
     def work_dir(self):
         return self._work_dir
 
     @work_dir.setter
-    def work_dir(self, value):
+    def work_dir(self, value: str):
         self._work_dir = pathlib.Path(value).expanduser()
         self._work_dir.mkdir(parents=True, exist_ok=True)
 
@@ -190,10 +236,10 @@ class WatcherRunner:
         return datetime.timedelta(seconds=self._duration)
 
     @duration.setter
-    def duration(self, value, *args):
+    def duration(self, value: str):
         self._duration = humanfriendly.parse_timespan(value)
 
-    def s3_credentials_ok(self):
+    def s3_credentials_ok(self) -> bool:
         logger.info("Testing S3 credentials")
         self.s3_storage = KiwixStorage(self.s3_url_with_credentials)
         if not self.s3_storage.check_credentials(
@@ -207,7 +253,7 @@ class WatcherRunner:
             return False
         return True
 
-    def authenticate(self, force=False):
+    def authenticate(self, *, force: bool = False):
         """authenticate to the Zimfarm API"""
         # our access token should grant us access for 60mn
         if force or self.authentication_expires_on <= datetime.datetime.now():
@@ -225,16 +271,24 @@ class WatcherRunner:
                     self.token_payload["exp"]
                 )
                 return True
-            except Exception as exc:
-                logger.error(f"authenticate() failure: {exc}")
-                logger.exception(exc)
+            except Exception:
+                logger.exception("authenticate() failure")
                 return False
         return True
 
-    def query_api(self, method, path, payload=None, params=None, headers=None):
+    def query_api(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> tuple[bool, int, dict[str, Any]]:
         """success, status_code, response for a query to Zimfarm API"""
+        success, status_code, response = False, 0, {}
+
         if not self.authenticate():
-            return (False, 0, "")
+            return (success, status_code, response)
 
         attempts = 0
         while attempts <= 1:
@@ -254,19 +308,14 @@ class WatcherRunner:
                 continue
             else:
                 break
-
         return success, status_code, response
 
-    def zimfarm_credentials_ok(self):
+    def zimfarm_credentials_ok(self) -> bool:
         logger.info(f"Testing Zimfarm credentials with {ZIMFARM_API_URL}…")
-        self.access_token = self.refresh_token = self.token_payload = None
-        self.authenticated_on = datetime.datetime(2019, 1, 1)
-        self.authentication_expires_on = datetime.datetime(2019, 1, 1)
-
         success, _, _ = self.query_api("GET", "/auth/test")
         return success
 
-    def retrieve_most_recent_dump_identifier(self):
+    def retrieve_most_recent_dump_identifier(self) -> str:
         """retrieve the identifier of most recent Archive.org dump available"""
         resp = requests.get(QUERY_URL, timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
@@ -307,7 +356,7 @@ class WatcherRunner:
             raise SystemExit(1)
         return identifier
 
-    def retrieve_archives(self, identifier):
+    def retrieve_archives(self, identifier: str) -> list[str]:
         resp = requests.get(
             f"https://archive.org/download/{identifier}/{identifier}_files.xml",
             timeout=HTTP_REQUEST_TIMEOUT,
@@ -315,7 +364,11 @@ class WatcherRunner:
         resp.raise_for_status()
 
         parser = XMLtoDict()
-        files = parser.parse(resp.text).get("files", {}).get("file", [])
+        files = (
+            parser.parse(resp.text)
+            .get("files", {})
+            .get("file", [])  # pyright: ignore[reportOptionalMemberAccess]
+        )
 
         return [
             file["@name"]
@@ -325,16 +378,16 @@ class WatcherRunner:
             and "meta." not in file["@name"]
         ]
 
-    def get_recipes_for(self, domain):
+    def get_recipes_for(self, domain: str) -> list[str]:
         """list of Zimfarm recipes names for a StackExchange domain"""
         success, status, payload = self.query_api(
             "GET",
-            "/schedules/",
+            "/recipes",
             params={"category": ["stack_exchange"], "name": f"{domain}_"},
         )
         if not success:
-            logger.error(f"Can't get `{domain}` schedules from zimfarm")
-            return True
+            logger.error(f"Can't get `{domain}` recipes from zimfarm")
+            return []
 
         # filter by recipe name exactly starting with domain name, since API call
         # search for the domain "anywhere" in the recipe name
@@ -344,19 +397,20 @@ class WatcherRunner:
             if recipe["enabled"] and recipe["name"].startswith(f"{domain}_")
         ]
 
-    def blocked_by_zimfarm(self, domain):
+    def blocked_by_zimfarm(self, domain: str) -> bool:
         """Whether a Zimfarm task is using its file now, preventing removal"""
         prefix = f" [{domain}]"
         logger.info(f"{prefix} Getting recipes depending on it")
 
         recipes = self.get_recipes_for(domain)
         if not recipes:
+            logger.info(f"No recipes found for {domain}")
             return False
 
         success, status, payload = self.query_api(
             "GET",
-            "/tasks/",
-            params={"schedule_name": recipes, "status": ["started", "scraper_started"]},
+            "/tasks",
+            params={"recipe_name": recipes, "status": ["started", "scraper_started"]},
         )
         if not success:
             logger.error(f"{prefix} Can't get tasks from zimfarm")
@@ -376,17 +430,18 @@ class WatcherRunner:
 
         return False
 
-    def unscheduled_in_zimfarm(self, domain):
+    def unscheduled_in_zimfarm(self, domain: str):
         """Whether there was a pending task on Zimfarm that would have used this file
 
-        Should there as been, this would unrequest it."""
+        Should there as been, this would unrequest it.
+        """
         prefix = f" [{domain}]"
         recipes = self.get_recipes_for(domain)
         if not recipes:
             return False
 
         success, status, payload = self.query_api(
-            "GET", "/requested-tasks", params={"schedule_name": recipes}
+            "GET", "/requested-tasks", params={"recipe_name": recipes}
         )
         if not success:
             logger.error(f"{prefix} Can't get requested-tasks from zimfarm")
@@ -402,22 +457,25 @@ class WatcherRunner:
 
         return True
 
-    def schedule_in_zimfarm(self, domain):
+    def schedule_in_zimfarm(self, domain: str) -> list[str]:
         """Schedule matching recipes in Zimfarm as a new dump was uploaded"""
         recipes = self.get_recipes_for(domain)
         if not recipes:
-            return False
-
-        success, status, payload = self.query_api(
-            "POST", "/requested-tasks", payload={"schedule_names": recipes}
-        )
-        if not success:
-            logger.error(f"Failed to schedule {recipes} with HTTP {status}: {payload}")
+            logger.info(f"No matching recipes for {domain} on zimfarm")
             return []
 
-        return payload.get("requested")
+        success, status, payload = self.query_api(
+            "POST", "/requested-tasks", payload={"recipe_names": recipes}
+        )
+        if not success:
+            logger.error(
+                f"Failed to create tasks for {recipes} with HTTP {status}: {payload}"
+            )
+            return []
 
-    def update_file(self, url, key, last_modified):
+        return payload.get("requested", [])
+
+    def update_file(self, url: str, key: str, last_modified: str | None):
         """Do an all-steps update of that file as we know there's a new one avail."""
         domain = re.sub(r".7z$", "", key)
         prefix = f" [{domain}]"
@@ -431,7 +489,11 @@ class WatcherRunner:
 
         if self.s3_storage.has_object(key):
             logger.info(f"{prefix} Removing object in S3")
-            obsolete = self.s3_storage.get_object_stat(key).meta.get("lastmodified")
+            obsolete = self.s3_storage.get_object_stat(
+                key
+            ).meta.get(  # pyright: ignore[reportOptionalMemberAccess]
+                "lastmodified"
+            )
             self.s3_storage.delete_object(key)
             logger.info(f"{prefix} Removed object (was from {obsolete})")
 
@@ -459,7 +521,7 @@ class WatcherRunner:
         fpath.unlink()
         logger.info(f"{prefix} Local file removed")
 
-        if self.schedule_in_zimfarm:
+        if self.schedule_on_update:
             logger.info(f"{prefix} Scheduling recipe on Zimfarm")
             scheduled = self.schedule_in_zimfarm(domain)
             if scheduled:
@@ -469,12 +531,15 @@ class WatcherRunner:
             else:
                 logger.warning(f"{prefix} couldn't schedule recipe(s)")
 
-    def retrieve_cached_summary(self):
+    def retrieve_cached_summary(self) -> dict[str, Any] | None:
+        if not self.s3_summary_file_url:
+            return None
         resp = requests.get(self.s3_summary_file_url, timeout=HTTP_REQUEST_TIMEOUT)
         if resp.status_code == HTTPStatus.NOT_FOUND:
             return None
         resp.raise_for_status()
         summary = json.loads(resp.text)
+        logger.info("Retrieved summary file...")
         return summary
 
     def check_and_go(self):
@@ -527,7 +592,10 @@ class WatcherRunner:
             logger.error(
                 "Got some not_done files: \n - "
                 + "\n - ".join(
-                    [self.archives_futures.get(future) for future in result.not_done]
+                    [
+                        self.archives_futures.get(future, "Unknown")
+                        for future in result.not_done
+                    ]
                 )
             )
 
@@ -554,10 +622,11 @@ class WatcherRunner:
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
             raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
 
-        self.s3_summary_file_url = (
-            f"https://{self.s3_storage.bucket_name}.{self.s3_storage.url.netloc}/"
-            f"{SUMMARY_FILENAME}"
-        )
+        if not self.s3_summary_file_url:
+            self.s3_summary_file_url = (
+                f"http://{self.s3_storage.bucket_name}.{self.s3_storage.url.netloc}/"
+                f"{SUMMARY_FILENAME}"
+            )
 
         if not self.zimfarm_credentials_ok():
             raise ValueError("Unable to connect to Zimfarm. Check credentials.")
@@ -567,7 +636,11 @@ class WatcherRunner:
             f"  with zimfarm username: {self.zimfarm_username}\n"
             f"  using cache: {self.s3_storage.url.netloc}\n"
             f"  with bucket: {self.s3_storage.bucket_name}"
-            + ("\n  only for:\n   - " + "\n   - ".join(self.only) if self.only else "")
+            + (
+                ("\n  only for:\n   - " + "\n   - ".join(self.only))
+                if self.only
+                else ""
+            )
         )
 
         checked_on = datetime.datetime.now()
@@ -585,6 +658,47 @@ class WatcherRunner:
         sys.exit(1)
 
 
+def rebuild_s3_url(uri: str):
+    upload_uri = cast(urllib.parse.ParseResult, urllib.parse.urlparse(uri))
+
+    def get_url_scheme(url: urllib.parse.ParseResult) -> str:
+        if url.scheme.startswith("s3+http"):
+            return "http"
+        # covers both "s3" and "s3+https"
+        elif url.scheme.startswith("s3") or url.scheme.startswith("s3+https"):
+            return "https"
+        else:
+            raise ValueError(f"Unsupported URL scheme in: {url}")
+
+    netloc = ""
+    if upload_uri.username:
+        netloc += upload_uri.username
+    if upload_uri.password:
+        netloc += f":{upload_uri.password}"
+
+    if upload_uri.username or upload_uri.password:
+        netloc += "@"
+
+    if upload_uri.hostname:
+        netloc += upload_uri.hostname
+
+    if upload_uri.port:
+        netloc += f":{upload_uri.port}"
+
+    return urllib.parse.urlparse(
+        urllib.parse.urlunparse(
+            [
+                get_url_scheme(upload_uri),
+                netloc,
+                upload_uri.path,
+                upload_uri.fragment,
+                upload_uri.query,
+                upload_uri.fragment,
+            ]
+        )
+    ).geturl()
+
+
 def entrypoint():
     parser = argparse.ArgumentParser(
         prog="watcher",
@@ -596,6 +710,13 @@ def entrypoint():
         dest="s3_url_with_credentials",
         default=os.getenv("S3_URL"),
         required=not os.getenv("S3_URL"),
+        type=rebuild_s3_url,
+    )
+
+    parser.add_argument(
+        "--s3-summary-file-url",
+        help="S3 URL of caching dumps.",
+        default=os.getenv("S3_SUMMARY_FILE_URL"),
     )
 
     parser.add_argument(
@@ -661,7 +782,20 @@ def entrypoint():
         version=VERSION,
     )
 
-    runner = WatcherRunner(**dict(parser.parse_args()._get_kwargs()))
+    args = parser.parse_args()
+    runner = WatcherRunner(
+        s3_url_with_credentials=args.s3_url_with_credentials,
+        s3_summary_file_url=args.s3_summary_file_url,
+        zimfarm_username=args.zimfarm_username,
+        zimfarm_password=args.zimfarm_password,
+        schedule_on_update=args.schedule_on_update,
+        nb_threads=args.nb_threads,
+        duration=args.duration,
+        work_dir=args.work_dir,
+        only=args.only,
+        runonce=args.runonce,
+        debug=args.debug,
+    )
 
     try:
         sys.exit(runner.run())

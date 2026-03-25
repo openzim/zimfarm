@@ -201,12 +201,16 @@ services:
     container_name: zf_watcher
     command: watcher --only beer.stackexchange.com --debug
     environment:
-      - ZIMFARM_API_URL=http://backend:8000/v1
+      - ZIMFARM_API_URL=http://backend:80/v2
       - ZIMFARM_USERNAME=admin
       - ZIMFARM_PASSWORD=admin
-      - S3_URL=https://s3.us-west-1.wasabisys.com/?keyId=<your_key_id>&secretAccessKey=<your_secret_access_key>&bucketName=org-kiwix-dev-stackexchange
+      - S3_URL=s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-stackexchange
+      - S3_SUMMARY_FILE_URL=http://minio:9000/zimfarm-stackexchange/summary.json
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     profiles:
       - watcher
 
@@ -279,6 +283,7 @@ services:
       retries: 5
     profiles:
       - worker
+      - watcher
 
   createbuckets:
     image: minio/mc
@@ -291,6 +296,7 @@ services:
     entrypoint: ["/bin/sh", "/setup-buckets.sh"]
     profiles:
       - worker
+      - watcher
 
   blob-storage:
     image: ghcr.io/kiwix/nginx-webdav:latest
