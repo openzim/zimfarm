@@ -9,6 +9,7 @@ from zimfarm_backend.common.constants import BASE_DIR, getenv
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import User
 from zimfarm_backend.db.offliner import get_all_offliners
+from zimfarm_backend.db.user import get_user_by_username_or_none
 
 
 def check_if_schema_is_up_to_date() -> bool:
@@ -34,10 +35,9 @@ def check_if_schema_is_up_to_date() -> bool:
 def create_initial_user():
     with Session.begin() as session:
         username = getenv("INIT_USERNAME", default="admin")
-        password = getenv("INIT_PASSWORD", default="admin_pass")
-
-        count = session.query(User).count()
-        if count == 0:
+        password = getenv("INIT_PASSWORD", default="admin")
+        user = get_user_by_username_or_none(session, username=username)
+        if user is None:
             logger.info(f"creating initial user `{username}`")
             orm_user = User(
                 username=username,

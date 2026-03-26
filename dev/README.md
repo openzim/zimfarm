@@ -46,7 +46,7 @@ First start the Docker-Compose stack:
 
 ```sh
 cd dev
-docker compose -p zimfarm up -d
+docker compose -p zimfarm up --build -d
 ```
 
 This sets up the containers, runs the migrations and creates an admin user with usernameset to `INIT_USERNAME` and password `INIT_PASSWORD`. See the backend environment variables
@@ -84,19 +84,19 @@ docker exec -it zf_postgresdb psql -e -d zimtest -U zimfarm -c 'CREATE EXTENSION
 Start a shell in the backend-tests container.
 
 ```sh
-docker exec -it zf_backend-tests python -m pytest
+docker exec -it zf_backend-tests pytest -v
 ```
 
 You can select one specific set of tests by path
 
 ```sh
-python -m pytest tests/routes/test_user.py
+docker exec -it zf_backend-tests pytest -v tests/routes/test_user.py
 ```
 
 Or just one specific test function
 
 ```sh
-python -m pytest tests/routes/test_user.py -k test_list_users_no_auth
+docker exec -it zf_backend-tests pytest -v tests/routes/test_user.py -k test_list_users_no_auth
 ```
 
 ### Creating offliners and offliner definitions
@@ -106,6 +106,12 @@ In order to create recipes and request tasks, you need to seed the database with
 A helper script to pull the latest offliner definitions from their respective repositories is at `contrib/create-offliners.sh`; call it once to authorize with the backend,
 fetch the latest offliner defintions, create the offliners and their respective definitions accordingly. Once this is done, you can start creating recipes either via the API based on the offliner definition.
 
+```sh
+cd dev/contrib
+
+./create-offliners.sh
+```
+
 ### create a test worker
 
 In order to test worker manager and task worker, but also to test some other stuff, you will need to have a test worker.
@@ -114,9 +120,44 @@ It is not mandatory to have the worker manager running in most situation, but yo
 
 A useful script to perform all the test worker creation is at `contrib/create_worker.sh`: call it once to create a `test_worker` user, the associated worker object, and upload a test public key. You will then be able to assign tasks to this worker in the UI, and use this test worker for running the worker manager and the task worker.
 
-Once this is is done, you can start the worker manager simply by uncommenting the `worker_mgr` container in `docker-compose.yml`.
+```sh
+cd dev/contrib
+
+./create_worker.sh
+```
+
+Once this is is done, you can start the worker manager simply by running:
+
+```sh
+docker compose -p zimfarm --profile worker up --build -d
+```
 
 **Important:** Beware that once you start the worker manager, any pending task will be automatically started by the worker manager. You might want to clear the pending tasks list before starting the worker manager.
+
+### import recipes backup
+
+It is possible to download and import a backup of production recipes, so that you have
+some data locally to test the UI for instance.
+
+- Exec into the backend container
+
+```sh
+docker exec -it zf-backend bash
+```
+
+- Download the production recipes and store in `/tmp/all_recipes.json`. This might take
+  a couple of minutes. Note, all passwords and secrets are greyed out, so you will likely
+  need to go the editor UI to modify recipes that need passwords (perhaps set them to empty)
+
+```sh
+curl -fsSL https://api.farm.openzim.org/v2/recipes/backup -o /tmp/all_recipes.json
+```
+
+- Import the recipes into your local database
+
+```sh
+python3 /app/import_recipes.py /tmp/all_recipes.json
+```
 
 ### mark a task as started
 
@@ -133,7 +174,9 @@ In order to use it with a task manager, you have to create one directory per war
 A usefull script has been added to the dev stack to create these directories:
 
 ```
+
 docker exec -it zf_receiver /contrib/create-warehouse-paths.sh
+
 ```
 
 ### test a task manager
