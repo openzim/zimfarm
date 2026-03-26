@@ -26,6 +26,8 @@ services:
     volumes:
       - ../backend/maint-scripts:/app/maint-scripts
       - ../backend/src/zimfarm_backend:/usr/local/lib/python3.13/site-packages/zimfarm_backend
+      - ./import_recipes.py:/app/import_recipes.py:ro
+
     ports:
       - 127.0.0.1:8000:80
     environment:
