@@ -6,11 +6,11 @@ This script helps you import a backup of recipes defined in the production syste
 
 Usage:
     1. First, download the backup from production:
-       curl https://api.farm.openzim.org/v1/recipes/backup/ > /tmp/all_recipes.json
+       curl https://api.farm.openzim.org/v2/recipes/backup/ > /tmp/all_recipes.json
 
-    2. Set the POSTGRES_URI and ZIMFARM_USERNAME environment variables:
+    2. Set the POSTGRES_URI and INIT_USERNAME environment variables:
        export POSTGRES_URI=postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimfarm
-       export ZIMFARM_USERNAME=admin
+       export INIT_USERNAME=admin
 
     3. Run this script:
        python import_recipes.py /tmp/all_recipes.json
