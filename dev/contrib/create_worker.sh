@@ -116,11 +116,12 @@ response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/v2/users/te
   -H 'Content-Type: application/json; charset=utf-8' \
   -d "$payload")
 
-echo "Move/Copy the worker keys to where the worker manager can access it (typically a docker volume mount if you are running in a container)"
-
 http_code=$(echo "$response" | tail -n1)
 response=$(echo "$response" | head -n -1)
 
 check_http_code "$http_code" "$response"
+
+echo "Moving the worker keys to the ../test_worker-identity directory"
+mv id_ed25519* ../test_worker-identity/
 
 echo "DONE"
