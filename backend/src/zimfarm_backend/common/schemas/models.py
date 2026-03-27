@@ -56,7 +56,7 @@ class DockerImageSchema(BaseModel):
         return re.sub(r"^ghcr.io/", "", v)
 
 
-class BaseScheduleConfigSchema(BaseModel):
+class BaseRecipeConfigSchema(BaseModel):
     warehouse_path: WarehousePathField
     resources: ResourcesSchema
     offliner: SerializeAsAny[BaseModel]
@@ -65,17 +65,17 @@ class BaseScheduleConfigSchema(BaseModel):
     monitor: bool
 
 
-class ScheduleConfigSchema(BaseScheduleConfigSchema):
+class RecipeConfigSchema(BaseRecipeConfigSchema):
     image: DockerImageSchema
 
 
-class ExpandedScheduleDockerImageSchema(BaseModel):
+class ExpandedRecipeDockerImageSchema(BaseModel):
     name: str
     tag: str
 
 
-class ExpandedScheduleConfigSchema(BaseScheduleConfigSchema):
-    image: ExpandedScheduleDockerImageSchema
+class ExpandedRecipeConfigSchema(BaseRecipeConfigSchema):
+    image: ExpandedRecipeDockerImageSchema
     mount_point: pathlib.Path
     command: list[NotEmptyString]
     str_command: str
@@ -89,7 +89,7 @@ class EventNotificationSchema(BaseModel):
     slack: list[SlackTarget] | None = Field(default_factory=list)
 
 
-class ScheduleNotificationSchema(BaseModel):
+class RecipeNotificationSchema(BaseModel):
     requested: EventNotificationSchema | None = Field(
         default_factory=EventNotificationSchema
     )

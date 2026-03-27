@@ -14,13 +14,13 @@ from zimfarm_backend.db.blob import (
     get_blobs,
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Blob, Schedule
+from zimfarm_backend.db.models import Blob, Recipe
 
 
-def test_create_schedule_blob(dbsession: OrmSession, schedule: Schedule):
+def test_create_recipe_blob(dbsession: OrmSession, recipe: Recipe):
     create_or_update_blob(
         dbsession,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         request=CreateBlobSchema(
             kind="css",
             url=AnyUrl("https://www.example.com/style.css"),
@@ -28,12 +28,12 @@ def test_create_schedule_blob(dbsession: OrmSession, schedule: Schedule):
             checksum="1",
         ),
     )
-    dbsession.refresh(schedule)
-    assert len(schedule.blobs) == 1
+    dbsession.refresh(recipe)
+    assert len(recipe.blobs) == 1
 
 
-def test_update_schedule_blob(dbsession: OrmSession, schedule: Schedule):
-    schedule.blobs.append(
+def test_update_recipe_blob(dbsession: OrmSession, recipe: Recipe):
+    recipe.blobs.append(
         Blob(
             kind="css",
             flag_name="custom-css",
@@ -41,12 +41,12 @@ def test_update_schedule_blob(dbsession: OrmSession, schedule: Schedule):
             checksum="1",
         )
     )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
 
     create_or_update_blob(
         dbsession,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         request=CreateBlobSchema(
             kind="css",
             url=AnyUrl("https://www.example.com/style2.css"),
@@ -54,13 +54,13 @@ def test_update_schedule_blob(dbsession: OrmSession, schedule: Schedule):
             checksum="1",
         ),
     )
-    dbsession.refresh(schedule)
-    assert len(schedule.blobs) == 1
-    assert schedule.blobs[0].url == "https://www.example.com/style2.css"
+    dbsession.refresh(recipe)
+    assert len(recipe.blobs) == 1
+    assert recipe.blobs[0].url == "https://www.example.com/style2.css"
 
 
-def test_get_blob_or_none_found(dbsession: OrmSession, schedule: Schedule):
-    schedule.blobs.append(
+def test_get_blob_or_none_found(dbsession: OrmSession, recipe: Recipe):
+    recipe.blobs.append(
         Blob(
             kind="css",
             flag_name="custom-css",
@@ -68,12 +68,12 @@ def test_get_blob_or_none_found(dbsession: OrmSession, schedule: Schedule):
             checksum="1",
         )
     )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
 
     blob = get_blob_or_none(
         dbsession,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         flag_name="custom-css",
         checksum="1",
     )
@@ -83,27 +83,27 @@ def test_get_blob_or_none_found(dbsession: OrmSession, schedule: Schedule):
     assert str(blob.url) == "https://www.example.com/style.css"
 
 
-def test_get_blob_or_none_not_found(dbsession: OrmSession, schedule: Schedule):
+def test_get_blob_or_none_not_found(dbsession: OrmSession, recipe: Recipe):
     blob = get_blob_or_none(
         dbsession,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         flag_name="nonexistent",
         checksum="999",
     )
     assert blob is None
 
 
-def test_get_blob_not_found(dbsession: OrmSession, schedule: Schedule):
+def test_get_blob_not_found(dbsession: OrmSession, recipe: Recipe):
     with pytest.raises(RecordDoesNotExistError):
         get_blob(
             dbsession,
-            schedule_id=schedule.id,
+            recipe_id=recipe.id,
             flag_name="nonexistent",
             checksum="999",
         )
 
 
-def test_delete_blob_success(dbsession: OrmSession, schedule: Schedule):
+def test_delete_blob_success(dbsession: OrmSession, recipe: Recipe):
     """Test successfully deleting a blob"""
     blob = Blob(
         kind="css",
@@ -111,8 +111,8 @@ def test_delete_blob_success(dbsession: OrmSession, schedule: Schedule):
         url="https://www.example.com/style.css",
         checksum="1",
     )
-    schedule.blobs.append(blob)
-    dbsession.add(schedule)
+    recipe.blobs.append(blob)
+    dbsession.add(recipe)
     dbsession.flush()
 
     blob_id = blob.id
@@ -146,13 +146,13 @@ def test_delete_blob_nonexistent(dbsession: OrmSession):
 )
 def test_get_blobs(
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
     skip: int,
     limit: int,
     expected_nb_records: int,
 ):
     for i in range(10):
-        schedule.blobs.append(
+        recipe.blobs.append(
             Blob(
                 kind="css",
                 flag_name="custom-css",
@@ -160,18 +160,18 @@ def test_get_blobs(
                 checksum=f"{i}",
             )
         )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
-    results = get_blobs(dbsession, skip=skip, limit=limit, schedule_name=schedule.name)
+    results = get_blobs(dbsession, skip=skip, limit=limit, recipe_name=recipe.name)
     assert len(results.blobs) == expected_nb_records
     assert len(results.blobs) <= limit
 
 
-def test_get_blobs_wrong_schedule_name(
+def test_get_blobs_wrong_recipe_name(
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
 ):
-    schedule.blobs.append(
+    recipe.blobs.append(
         Blob(
             kind="css",
             flag_name="custom-css",
@@ -179,9 +179,7 @@ def test_get_blobs_wrong_schedule_name(
             checksum="1",
         )
     )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
-    results = get_blobs(
-        dbsession, skip=0, limit=10, schedule_name=schedule.name + "wrong"
-    )
+    results = get_blobs(dbsession, skip=0, limit=10, recipe_name=recipe.name + "wrong")
     assert len(results.blobs) == 0

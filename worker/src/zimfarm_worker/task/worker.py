@@ -396,24 +396,30 @@ class TaskWorker(BaseWorker):
 
         self.patch_task({"event": status, "payload": event_payload})
 
-    def mark_file_created(self, filename: str, filesize: int):
+    def mark_file_created(self, filename: str, filesize: int, zim_info: dict[str, Any]):
         human_fsize = format_size(filesize)
         logger.info(f"ZIM file created: {filename}, {human_fsize}")
         self.patch_task(
             {
                 "event": "created_file",
-                "payload": {"file": {"name": filename, "size": filesize}},
+                "payload": {
+                    "file": {"name": filename, "size": filesize, "info": zim_info}
+                },
             }
         )
 
     def mark_file_completed(self, filename: str, status: str):
         logger.info(f"Updating file-status={status} for {filename}")
-        self.patch_task({"event": f"{status}_file", "payload": {"filename": filename}})
+        self.patch_task(
+            {
+                "event": f"{status}_file",
+                "payload": {"filename": filename},
+            }
+        )
 
     def mark_file_checked(
         self,
         filename: str,
-        info: dict[str, Any],
         zimcheck_retcode: int,
     ):
         logger.info(f"Updating file check-result={zimcheck_retcode} for {filename}")
@@ -423,7 +429,6 @@ class TaskWorker(BaseWorker):
                 "payload": {
                     "filename": filename,
                     "result": zimcheck_retcode,
-                    "info": info,
                 },
             }
         )
@@ -1082,7 +1087,9 @@ class TaskWorker(BaseWorker):
                     }
                 )
                 # inform API about new file
-                self.mark_file_created(target.name, target.stat().st_size)
+                logger.info(f"Gathering ZIM metadata for {target}")
+                zim_info = get_zim_info(target)
+                self.mark_file_created(target.name, target.stat().st_size, zim_info)
 
     def pending_zim_files(self, kind: str) -> list[tuple[str, dict[str, str]]]:
         """shortcut list of watched file in PENDING status for upload or check"""
@@ -1162,7 +1169,6 @@ class TaskWorker(BaseWorker):
                 self.checker.name,  # pyright: ignore[reportArgumentType]
             ).strip()
 
-            logger.info(f"Gathering ZIM metadata for {zim_file}")
             zim_info = get_zim_info(
                 self.task_workdir
                 / zim_file  # pyright: ignore[reportUnknownArgumentType]
@@ -1187,7 +1193,6 @@ class TaskWorker(BaseWorker):
             self.mark_file_checked(
                 filename=zim_file,  # pyright: ignore[reportArgumentType, reportUnknownArgumentType]
                 zimcheck_retcode=zimcheck_file_content["retcode"],
-                info=zim_info,
             )
             # zimcheck results could be too big, so, we write them to a file
             # https://github.com/openzim/zimfarm/issues/1456
@@ -1228,6 +1233,7 @@ class TaskWorker(BaseWorker):
 
         - list files in folder to upload list
         - upload files one by one using dedicated uploader containers"""
+
         # check files in workdir and update our list of files to upload
         self.refresh_files_list()
 

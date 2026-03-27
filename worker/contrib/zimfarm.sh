@@ -129,7 +129,7 @@ function config() {
 
 # display a list of running containers with some zimfarm labels
 function ps() {
-    run docker ps --filter label=zimfarm --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "schedule_name"}}\t{{.Label "task_id"}}\t{{.RunningFor}}\t{{.Names}}' $1
+    run docker ps --filter label=zimfarm --format 'table {{.ID}}\t{{.Label "tid"}}\t{{.Label "recipe_name"}}\t{{.Label "task_id"}}\t{{.RunningFor}}\t{{.Names}}' $1
 }
 
 # cleanup disk usage (to be run in cron)

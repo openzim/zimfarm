@@ -11,14 +11,14 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.schemas.models import ResourcesSchema, ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import RecipeConfigSchema, ResourcesSchema
 from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     OfflinerSchema,
-    ScheduleDurationSchema,
+    RecipeDurationSchema,
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
+from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User, Worker
 from zimfarm_backend.db.requested_task import (
     RequestedTaskWithDuration,
     RunningTask,
@@ -46,56 +46,56 @@ def set_worker_platform_limit(monkeypatch: MonkeyPatch, worker: Worker) -> None:
         monkeypatch.setenv(f"PLATFORM_{platform}_MAX_TASKS_TOTAL", "100")
 
 
-def test_request_task_nonexistent_schedule(dbsession: OrmSession, worker: Worker):
-    """Test that request_task returns None for non-existent schedule"""
+def test_request_task_nonexistent_recipe(dbsession: OrmSession, worker: Worker):
+    """Test that request_task returns None for non-existent recipe"""
     result = request_task(
         session=dbsession,
-        schedule_name="nonexistent",
+        recipe_name="nonexistent",
         requested_by=uuid4(),
         worker_name=worker.name,
     )
     assert result.requested_task is None
 
 
-def test_request_task_nonexistent_worker(dbsession: OrmSession, schedule: Schedule):
+def test_request_task_nonexistent_worker(dbsession: OrmSession, recipe: Recipe):
     """Test that request_task returns None for non-existent worker"""
     result = request_task(
         session=dbsession,
-        schedule_name=schedule.name,
+        recipe_name=recipe.name,
         requested_by=uuid4(),
         worker_name="nonexistent",
     )
     assert result.requested_task is None
 
 
-def test_request_task_disabled_schedule(
-    dbsession: OrmSession, schedule: Schedule, worker: Worker
+def test_request_task_disabled_recipe(
+    dbsession: OrmSession, recipe: Recipe, worker: Worker
 ):
-    """Test that request_task returns None for disabled schedule"""
-    schedule.enabled = False
-    dbsession.add(schedule)
+    """Test that request_task returns None for disabled recipe"""
+    recipe.enabled = False
+    dbsession.add(recipe)
     dbsession.flush()
 
     result = request_task(
         session=dbsession,
-        schedule_name=schedule.name,
+        recipe_name=recipe.name,
         requested_by=uuid4(),
         worker_name=worker.name,
     )
     assert result.requested_task is None
 
 
-def test_request_task_archived_schedule(
-    dbsession: OrmSession, schedule: Schedule, worker: Worker
+def test_request_task_archived_recipe(
+    dbsession: OrmSession, recipe: Recipe, worker: Worker
 ):
-    """Test that request_task returns None for archived schedule"""
-    schedule.archived = True
-    dbsession.add(schedule)
+    """Test that request_task returns None for archived recipe"""
+    recipe.archived = True
+    dbsession.add(recipe)
     dbsession.flush()
 
     result = request_task(
         session=dbsession,
-        schedule_name=schedule.name,
+        recipe_name=recipe.name,
         requested_by=uuid4(),
         worker_name=worker.name,
     )
@@ -106,17 +106,17 @@ def test_request_task_already_requested(
     dbsession: OrmSession,
     create_requested_task: Callable[..., RequestedTask],
     worker: Worker,
-    schedule: Schedule,
+    recipe: Recipe,
 ):
     """Test that request_task returns None for already requested task"""
     # Create a requested task
     create_requested_task(
         worker=worker,
-        schedule_name=schedule.name,
+        recipe_name=recipe.name,
     )
     result = request_task(
         session=dbsession,
-        schedule_name=schedule.name,
+        recipe_name=recipe.name,
         requested_by=uuid4(),
         worker_name=worker.name,
     )
@@ -130,13 +130,13 @@ def test_request_task_already_requested(
         "worker_offliners",
         "worker_contexts",
         "worker_resource",
-        "schedule_resource",
-        "schedule_context",
+        "recipe_resource",
+        "recipe_context",
         "result_bool",
         "error_regex",
     ],
     [
-        # our schedule is always going to be an mwoffliner
+        # our recipe is always going to be an mwoffliner
         pytest.param(
             False,
             False,
@@ -144,10 +144,10 @@ def test_request_task_already_requested(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "",  # schedule_context
+            "",  # recipe_context
             True,
             None,
-            id="worker-matches-schedule",
+            id="worker-matches-recipe",
         ),
         pytest.param(
             False,
@@ -159,7 +159,7 @@ def test_request_task_already_requested(
             "",
             True,
             None,
-            id="worker-exceeds-schedule",
+            id="worker-exceeds-recipe",
         ),
         pytest.param(
             False,
@@ -170,7 +170,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
             False,
-            "Worker's offliners do not match the offliner for schedule .*",
+            "Worker's offliners do not match the offliner for recipe .*",
             id="worker-with-different-offliner",
         ),
         pytest.param(
@@ -182,8 +182,8 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
             False,
-            "Worker does not have enough resources to run schedule .*",
-            id="worker-does-not-match-schedule-cpu",
+            "Worker does not have enough resources to run recipe .*",
+            id="worker-does-not-match-recipe-cpu",
         ),
         pytest.param(
             False,
@@ -194,8 +194,8 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
             False,
-            "Worker does not have enough resources to run schedule .*",
-            id="worker-does-not-match-schedule-memory",
+            "Worker does not have enough resources to run recipe .*",
+            id="worker-does-not-match-recipe-memory",
         ),
         pytest.param(
             False,
@@ -206,8 +206,8 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
             False,
-            "Worker does not have enough resources to run schedule .*",
-            id="worker-does-not-match-schedule-disk",
+            "Worker does not have enough resources to run recipe .*",
+            id="worker-does-not-match-recipe-disk",
         ),
         pytest.param(
             False,
@@ -216,10 +216,10 @@ def test_request_task_already_requested(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "priority",  # schedule_context
+            "priority",  # recipe_context
             False,
-            "Worker does not have required context to run schedule .*",
-            id="worker-context-does-not-match-schedule",
+            "Worker does not have required context to run recipe .*",
+            id="worker-context-does-not-match-recipe",
         ),
         pytest.param(
             False,
@@ -228,7 +228,7 @@ def test_request_task_already_requested(
             {"general": IPv4Address("192.168.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             False,
             "Worker has required context but IP is not whitelisted to run",
             id="worker-whitelisted-context-ip-does-not-match-last-seen",
@@ -240,7 +240,7 @@ def test_request_task_already_requested(
             {"general": IPv4Address("127.0.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             True,
             None,
             id="worker-whitelisted-context-ip-matches-last-seen",
@@ -252,7 +252,7 @@ def test_request_task_already_requested(
             {"general": IPv4Address("127.0.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             False,
             "is disabled from requesting new tasks",
             id="worker-cordoned",
@@ -264,7 +264,7 @@ def test_request_task_already_requested(
             {"general": IPv4Address("127.0.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             False,
             "is disabled from requesting new tasks",
             id="worker-admin-disabled",
@@ -276,7 +276,7 @@ def test_request_task_already_requested(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             True,
             None,
             id="context-has-no-ip",
@@ -286,8 +286,8 @@ def test_request_task_already_requested(
 def test_request_task_for_worker(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
-    create_schedule: Callable[..., Schedule],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe: Callable[..., Recipe],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     create_user: Callable[..., User],
     *,
     worker_cordoned: bool,
@@ -295,8 +295,8 @@ def test_request_task_for_worker(
     worker_offliners: list[str],
     worker_contexts: list[str],
     worker_resource: ResourcesSchema,
-    schedule_resource: ResourcesSchema,
-    schedule_context: str,
+    recipe_resource: ResourcesSchema,
+    recipe_context: str,
     result_bool: bool,
     error_regex: str | None,
 ):
@@ -312,18 +312,18 @@ def test_request_task_for_worker(
         contexts=worker_contexts,
         last_ip=IPv4Address("127.0.0.1"),
     )
-    schedule = create_schedule(
-        schedule_config=create_schedule_config(
-            cpu=schedule_resource.cpu,
-            memory=schedule_resource.memory,
-            disk=schedule_resource.disk,
+    recipe = create_recipe(
+        recipe_config=create_recipe_config(
+            cpu=recipe_resource.cpu,
+            memory=recipe_resource.memory,
+            disk=recipe_resource.disk,
         ),
-        context=schedule_context,
+        context=recipe_context,
     )
     requested_by = create_user(username="testuser")
     result = request_task(
         session=dbsession,
-        schedule_name=schedule.name,
+        recipe_name=recipe.name,
         requested_by=requested_by.id,
         worker_name=worker.name,
     )
@@ -337,7 +337,7 @@ def test_request_task_for_worker(
     [
         "worker_name",
         "matching_offliners",
-        "schedule_name",
+        "recipe_name",
         "priority",
         "cpu",
         "memory",
@@ -349,7 +349,7 @@ def test_request_task_for_worker(
         pytest.param(
             None,  # worker_name
             None,  # matching_offliners
-            None,  # schedule_name
+            None,  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
@@ -361,7 +361,7 @@ def test_request_task_for_worker(
         pytest.param(
             "nonexistent",  # worker_name
             None,  # matching_offliners
-            None,  # schedule_name
+            None,  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
@@ -373,7 +373,7 @@ def test_request_task_for_worker(
         pytest.param(
             None,
             ["mwoffliner"],
-            None,  # schedule_name
+            None,  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
@@ -384,7 +384,7 @@ def test_request_task_for_worker(
         pytest.param(
             None,  # worker_name
             ["youtube"],
-            None,  # schedule_name
+            None,  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
@@ -395,7 +395,7 @@ def test_request_task_for_worker(
         pytest.param(
             None,  # worker_name
             ["youtube", "mwoffliner"],
-            None,  # schedule_name
+            None,  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
@@ -403,39 +403,39 @@ def test_request_task_for_worker(
             3,  # expected nb records
             id="filter_matching_offliner_youtube_mwoffliner",
         ),
-        # Filter by schedule name
+        # Filter by recipe name
         pytest.param(
             None,  # worker_name
             ["mwoffliner"],  # matching_offliners
-            ["schedule_1"],  # schedule_name
+            ["recipe_1"],  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
             None,  # disk
             1,  # expected nb records
-            id="filter_schedule_name_schedule_1_mw_offliner",
+            id="filter_recipe_name_recipe_1_mw_offliner",
         ),
         pytest.param(
             None,  # worker_name
             ["mwoffliner"],  # matching_offliners
-            ["schedule_2", "schedule_3"],  # schedule_name
+            ["recipe_2", "recipe_3"],  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
             None,  # disk
             2,
-            id="filter_schedule_name_schedule_2_3_mw_offliner",
+            id="filter_recipe_name_recipe_2_3_mw_offliner",
         ),
         pytest.param(
             None,  # worker_name
             ["mwoffliner"],  # matching_offliners
-            ["schedule_5"],  # schedule_name
+            ["recipe_5"],  # recipe_name
             None,  # priority
             None,  # cpu
             None,  # memory
             None,  # disk
             0,  # expected nb records
-            id="filter_schedule_name_schedule_5_mw_offliner",
+            id="filter_recipe_name_recipe_5_mw_offliner",
         ),
         # Filter by
         pytest.param(
@@ -475,7 +475,7 @@ def test_request_task_for_worker(
         pytest.param(
             None,
             ["mwoffliner"],
-            ["schedule_3"],
+            ["recipe_3"],
             1,
             1,
             1024,
@@ -488,10 +488,10 @@ def test_request_task_for_worker(
 def test_get_requested_tasks(
     dbsession: OrmSession,
     create_requested_task: Callable[..., RequestedTask],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     worker_name: str | None,
     matching_offliners: list[str] | None,
-    schedule_name: list[str] | None,
+    recipe_name: list[str] | None,
     priority: int | None,
     cpu: int | None,
     memory: int | None,
@@ -500,27 +500,27 @@ def test_get_requested_tasks(
 ):
     """Test that get_requested_tasks returns the correct list of tasks"""
 
-    # Create 20 requested tasks with cpu 2, memory 2GB, disk 2GB with schedule
-    # name of "schedule_1"
+    # Create 20 requested tasks with cpu 2, memory 2GB, disk 2GB with recipe
+    # name of "recipe_1"
     requested_tasks: list[RequestedTask] = []
-    schedule_config = create_schedule_config(cpu=2, memory=2 * 1024, disk=2 * 1024)
+    recipe_config = create_recipe_config(cpu=2, memory=2 * 1024, disk=2 * 1024)
     requested_tasks.append(
         create_requested_task(
-            schedule_config=schedule_config, schedule_name="schedule_1", priority=0
+            recipe_config=recipe_config, recipe_name="recipe_1", priority=0
         )
     )
 
-    schedule_config = create_schedule_config(cpu=1, memory=1 * 1024, disk=1 * 1024)
+    recipe_config = create_recipe_config(cpu=1, memory=1 * 1024, disk=1 * 1024)
     requested_tasks.append(
         create_requested_task(
-            schedule_config=schedule_config, schedule_name="schedule_2", priority=0
+            recipe_config=recipe_config, recipe_name="recipe_2", priority=0
         )
     )
 
-    schedule_config = create_schedule_config(cpu=1, memory=1 * 1024, disk=1 * 1024)
+    recipe_config = create_recipe_config(cpu=1, memory=1 * 1024, disk=1 * 1024)
     requested_tasks.append(
         create_requested_task(
-            schedule_config=schedule_config, schedule_name="schedule_3", priority=1
+            recipe_config=recipe_config, recipe_name="recipe_3", priority=1
         )
     )
 
@@ -531,7 +531,7 @@ def test_get_requested_tasks(
         limit=limit,
         worker_name=worker_name,
         matching_offliners=matching_offliners,
-        schedule_name=schedule_name,
+        recipe_name=recipe_name,
         priority=priority,
         cpu=cpu,
         memory=memory,
@@ -555,12 +555,12 @@ def test_get_requested_tasks(
             for task in requested_tasks
             if task.config["offliner"]["offliner_id"] in matching_offliners
         ]
-    if schedule_name is not None:
+    if recipe_name is not None:
         requested_tasks = [
             task
             for task in requested_tasks
-            if task.schedule.name  # pyright: ignore[reportOptionalMemberAccess]
-            in schedule_name
+            if task.recipe.name  # pyright: ignore[reportOptionalMemberAccess]
+            in recipe_name
         ]
     if priority is not None:
         requested_tasks = [
@@ -656,16 +656,16 @@ def test_delete_requested_task(dbsession: OrmSession, requested_task: RequestedT
 def test_compute_requested_task_rank_with_multiple_tasks(
     dbsession: OrmSession,
     create_requested_task: Callable[..., RequestedTask],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
     """Test that compute_requested_task_rank works with multiple tasks"""
     # Create two tasks with different priorities
-    schedule_config = create_schedule_config(cpu=2, memory=2 * 1024, disk=2 * 1024)
+    recipe_config = create_recipe_config(cpu=2, memory=2 * 1024, disk=2 * 1024)
     old_task = create_requested_task(
-        schedule_config=schedule_config, schedule_name="schedule_1", priority=1
+        recipe_config=recipe_config, recipe_name="recipe_1", priority=1
     )
     new_task = create_requested_task(
-        schedule_config=schedule_config, schedule_name="schedule_2", priority=2
+        recipe_config=recipe_config, recipe_name="recipe_2", priority=2
     )
 
     assert compute_requested_task_rank(dbsession, old_task.id) == 1
@@ -691,12 +691,12 @@ def test_get_currently_running_tasks(
         "worker_offliners",
         "worker_contexts",
         "worker_resource",
-        "schedule_resource",
-        "schedule_context",
+        "recipe_resource",
+        "recipe_context",
         "found",
     ],
     [
-        # our schedule is always going to be an mwoffliner
+        # our recipe is always going to be an mwoffliner
         pytest.param(
             False,
             False,
@@ -704,9 +704,9 @@ def test_get_currently_running_tasks(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "",  # schedule_context
+            "",  # recipe_context
             True,
-            id="worker-matches-schedule",
+            id="worker-matches-recipe",
         ),
         pytest.param(
             False,
@@ -717,7 +717,7 @@ def test_get_currently_running_tasks(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
             True,
-            id="worker-exceeds-schedule",
+            id="worker-exceeds-recipe",
         ),
         pytest.param(
             False,
@@ -739,7 +739,7 @@ def test_get_currently_running_tasks(
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
             False,
-            id="worker-does-not-match-schedule-cpu",
+            id="worker-does-not-match-recipe-cpu",
         ),
         pytest.param(
             False,
@@ -750,7 +750,7 @@ def test_get_currently_running_tasks(
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
             False,
-            id="worker-does-not-match-schedule-memory",
+            id="worker-does-not-match-recipe-memory",
         ),
         pytest.param(
             False,
@@ -761,7 +761,7 @@ def test_get_currently_running_tasks(
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
             False,
-            id="worker-does-not-match-schedule-disk",
+            id="worker-does-not-match-recipe-disk",
         ),
         pytest.param(
             False,
@@ -770,9 +770,9 @@ def test_get_currently_running_tasks(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "priority",  # schedule_context
+            "priority",  # recipe_context
             False,
-            id="worker-context-does-not-match-schedule",
+            id="worker-context-does-not-match-recipe",
         ),
         pytest.param(
             False,
@@ -781,7 +781,7 @@ def test_get_currently_running_tasks(
             {"general": IPv4Address("192.168.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             False,
             id="worker-whitelisted-context-ip-does-not-match-last-seen",
         ),
@@ -792,7 +792,7 @@ def test_get_currently_running_tasks(
             {"general": IPv4Address("127.0.0.1")},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             True,
             id="worker-whitelisted-context-ip-matches-last-seen",
         ),
@@ -803,7 +803,7 @@ def test_get_currently_running_tasks(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             True,
             id="context-has-no-ip",
         ),
@@ -814,7 +814,7 @@ def test_get_currently_running_tasks(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             False,
             id="worker-cordoned",
         ),
@@ -825,7 +825,7 @@ def test_get_currently_running_tasks(
             {"general": None},  # worker context
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
-            "general",  # schedule_context
+            "general",  # recipe_context
             False,
             id="admin-disabled",
         ),
@@ -834,7 +834,7 @@ def test_get_currently_running_tasks(
 def test_get_tasks_doable_by_worker(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     *,
@@ -843,8 +843,8 @@ def test_get_tasks_doable_by_worker(
     worker_offliners: list[str],
     worker_contexts: list[str],
     worker_resource: ResourcesSchema,
-    schedule_resource: ResourcesSchema,
-    schedule_context: str,
+    recipe_resource: ResourcesSchema,
+    recipe_context: str,
     found: bool,
 ):
     worker = create_worker(
@@ -859,10 +859,10 @@ def test_get_tasks_doable_by_worker(
         admin_disabled=worker_admin_disabled,
     )
 
-    schedule_config = create_schedule_config(
-        cpu=schedule_resource.cpu,
-        memory=schedule_resource.memory,
-        disk=schedule_resource.disk,
+    recipe_config = create_recipe_config(
+        cpu=recipe_resource.cpu,
+        memory=recipe_resource.memory,
+        disk=recipe_resource.disk,
     )
 
     task = RequestedTask(
@@ -871,13 +871,13 @@ def test_get_tasks_doable_by_worker(
         events=[{"code": TaskStatus.requested, "timestamp": getnow()}],
         priority=0,
         config=expanded_config(
-            schedule_config, mwoffliner, mwoffliner_definition
+            recipe_config, mwoffliner, mwoffliner_definition
         ).model_dump(mode="json", context={"show_secrets": True}),
         upload={},
         notification={},
         updated_at=getnow(),
-        original_schedule_name="test_schedule",
-        context=schedule_context,
+        original_recipe_name="test_recipe",
+        context=recipe_context,
     )
     task.requested_by = worker.user
     task.offliner_definition_id = mwoffliner_definition.id
@@ -897,7 +897,7 @@ def test_get_tasks_doable_by_worker(
 )
 def test_does_platform_allow_worker_to_run(
     worker: Worker,
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     *,
@@ -905,22 +905,22 @@ def test_does_platform_allow_worker_to_run(
     expected_result: bool,
 ):
     """Test that the platform validates platform constraints correctly."""
-    schedule_config = create_schedule_config(
+    recipe_config = create_recipe_config(
         cpu=worker.cpu, memory=worker.memory, disk=worker.disk
     )
     task = RequestedTaskWithDuration(
         id=uuid4(),
         status=TaskStatus.requested,
-        config=expanded_config(schedule_config, mwoffliner, mwoffliner_definition),
+        config=expanded_config(recipe_config, mwoffliner, mwoffliner_definition),
         timestamp=[("requested", getnow()), ("reserved", getnow())],
         requested_by=worker.user.display_name,
         requester_id=worker.user.id,
         priority=0,
-        schedule_name="test_schedule",
-        original_schedule_name="test_schedule",
+        recipe_name="test_recipe",
+        original_recipe_name="test_recipe",
         worker_name=worker.name,
         context="",
-        duration=ScheduleDurationSchema(
+        duration=RecipeDurationSchema(
             value=3600,
             on=getnow(),
             default=True,
@@ -932,12 +932,12 @@ def test_does_platform_allow_worker_to_run(
     running_task = RunningTask(
         id=task.id,
         updated_at=task.updated_at,
-        config=expanded_config(schedule_config, mwoffliner, mwoffliner_definition),
-        schedule_name="test_schedule",
+        config=expanded_config(recipe_config, mwoffliner, mwoffliner_definition),
+        recipe_name="test_recipe",
         timestamp=[("started", getnow()), ("reserved", getnow())],
         status="started",
         worker_name=worker.name,
-        duration=ScheduleDurationSchema(
+        duration=RecipeDurationSchema(
             value=3600,
             on=getnow(),
             default=True,
@@ -1032,7 +1032,7 @@ def test_does_platform_allow_worker_to_run(
 def test_find_requested_task_for_worker(
     dbsession: OrmSession,
     worker: Worker,
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     *,
@@ -1045,7 +1045,7 @@ def test_find_requested_task_for_worker(
     expect_exception: RaisesContext[Exception],
     expect_found: bool,
 ):
-    schedule_config = create_schedule_config(
+    recipe_config = create_recipe_config(
         cpu=worker.cpu, memory=worker.memory, disk=worker.disk
     )
     worker.cordoned = worker_cordoned
@@ -1059,12 +1059,12 @@ def test_find_requested_task_for_worker(
         events=[{"code": "requested", "timestamp": getnow()}],
         priority=0,
         config=expanded_config(
-            schedule_config, mwoffliner, mwoffliner_definition
+            recipe_config, mwoffliner, mwoffliner_definition
         ).model_dump(mode="json", context={"show_secrets": True}),
         upload={},
         notification={},
         updated_at=getnow(),
-        original_schedule_name="test_schedule",
+        original_recipe_name="test_recipe",
     )
     task.requested_by = worker.user
     task.offliner_definition_id = mwoffliner_definition.id
@@ -1090,67 +1090,67 @@ def test_find_requested_task_for_worker(
 
 @pytest.mark.parametrize(
     [
-        "schedule_context",
+        "recipe_context",
         "worker_contexts",
         "found",
     ],
     [
-        # worker has priority context, schedule has priority context
+        # worker has priority context, recipe has priority context
         # so the task should be assigned to worker
         pytest.param(
             "priority",
             {"priority": None, "general": None},
             True,
-            id="schedule-priority-worker-priority-general",
+            id="recipe-priority-worker-priority-general",
         ),
-        # schedule has priority context, worker has general context
+        # recipe has priority context, worker has general context
         # so the task should not be assigned to worker
         pytest.param(
             "priority",
             {"general": None},
             False,
-            id="schedule-priority-worker-general",
+            id="recipe-priority-worker-general",
         ),
-        # schedule has no context but worker has contexts, worker should still
+        # recipe has no context but worker has contexts, worker should still
         # be assigned to the task
         pytest.param(
             "",
             {"priority": None, "general": None},
             True,
-            id="schedule-no-context-worker-priority-general",
+            id="recipe-no-context-worker-priority-general",
         ),
-        # schedule has context while worker does not have context, so worker should
+        # recipe has context while worker does not have context, so worker should
         # not be assigned to the task
         pytest.param(
             "priority",
             {},
             False,
-            id="schedule-priority-worker-no-context",
+            id="recipe-priority-worker-no-context",
         ),
-        # both schedule and worker have no context, so the task should be assigned
+        # both recipe and worker have no context, so the task should be assigned
         # to worker
         pytest.param(
             "",
             {},
             True,
-            id="schedule-no-context-worker-no-context",
+            id="recipe-no-context-worker-no-context",
         ),
     ],
 )
-def test_find_requested_task_for_worker_with_schedule(
+def test_find_requested_task_for_worker_with_recipe(
     dbsession: OrmSession,
     worker: Worker,
     user: User,
-    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
-    schedule_context: str,
+    recipe_context: str,
     worker_contexts: dict[str, IPv4Address | IPv6Address | None],
     *,
     found: bool,
 ):
     # Create a task that matches worker's capabilities
-    schedule_config = create_schedule_config(
+    recipe_config = create_recipe_config(
         cpu=worker.cpu, memory=worker.memory, disk=worker.disk
     )
     # Create a requested tag with specific tags
@@ -1160,13 +1160,13 @@ def test_find_requested_task_for_worker_with_schedule(
         events=[{"code": "requested", "timestamp": getnow()}],
         priority=0,
         config=expanded_config(
-            schedule_config, mwoffliner, mwoffliner_definition
+            recipe_config, mwoffliner, mwoffliner_definition
         ).model_dump(mode="json", context={"show_secrets": True}),
         upload={},
         notification={},
         updated_at=getnow(),
-        original_schedule_name="test_schedule",
-        context=schedule_context,
+        original_recipe_name="test_recipe",
+        context=recipe_context,
     )
     task.requested_by = worker.user
     task.offliner_definition_id = mwoffliner_definition.id

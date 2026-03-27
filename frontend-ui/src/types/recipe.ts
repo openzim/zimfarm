@@ -3,7 +3,7 @@ import type {
   DockerImage,
   MostRecentTask,
   Resources,
-  ScheduleDuration,
+  RecipeDuration,
 } from '@/types/base'
 import type { Language } from '@/types/language'
 
@@ -12,7 +12,7 @@ export interface OfflinerFlags {
   [key: string]: unknown
 }
 
-export interface ScheduleConfig {
+export interface RecipeConfig {
   platform?: string
   warehouse_path: string
   artifacts_globs?: string[]
@@ -23,7 +23,7 @@ export interface ScheduleConfig {
   offliner: OfflinerFlags
 }
 
-export interface BaseScheduleHistorySchema {
+export interface BaseRecipeHistorySchema {
   config: Record<string, unknown>
   name: string
   category: string
@@ -34,26 +34,26 @@ export interface BaseScheduleHistorySchema {
   context: string
   archived: boolean
   offliner_definition_version?: string
-  notification: ScheduleNotification | null
+  notification: RecipeNotification | null
 }
 
-export interface ScheduleHistorySchema extends BaseScheduleHistorySchema {
+export interface RecipeHistorySchema extends BaseRecipeHistorySchema {
   id: string
   author: string
   created_at: string
   comment: string | null
 }
 
-export interface Schedule {
+export interface Recipe {
   language: Language
-  duration: ScheduleDuration
+  duration: RecipeDuration
   name: string
   category: string
-  config: ExpandedScheduleConfig
+  config: ExpandedRecipeConfig
   enabled: boolean
   tags: string[]
   periodicity: string
-  notification: ScheduleNotification | null
+  notification: RecipeNotification | null
   most_recent_task: MostRecentTask | null
   is_requested: boolean
   archived: boolean
@@ -63,7 +63,7 @@ export interface Schedule {
   offliner: string
 }
 
-export interface ScheduleLight {
+export interface RecipeLight {
   name: string
   category: string
   most_recent_task: MostRecentTask | null
@@ -75,7 +75,7 @@ export interface ScheduleLight {
   context: string
 }
 
-export interface ScheduleUpdateSchema {
+export interface RecipeUpdateSchema {
   name: string | null
   language: string | null
   category: string | null
@@ -92,7 +92,7 @@ export interface ScheduleUpdateSchema {
   artifacts_globs: string[] | null
   context: string | null
   comment: string | null
-  notification: ScheduleNotification | null
+  notification: RecipeNotification | null
   version: string
 }
 
@@ -102,19 +102,19 @@ export interface EventNotification {
   slack: string[] | null
 }
 
-export interface ScheduleNotification {
+export interface RecipeNotification {
   requested: EventNotification | null
   started: EventNotification | null
   ended: EventNotification | null
 }
 
-export interface ExpandedScheduleDockerImage {
+export interface ExpandedRecipeDockerImage {
   name: string
   tag: string
 }
 
-export interface ExpandedScheduleConfig extends ScheduleConfig {
-  image: ExpandedScheduleDockerImage
+export interface ExpandedRecipeConfig extends RecipeConfig {
+  image: ExpandedRecipeDockerImage
   mount_point: string
   command: string[]
   str_command: string

@@ -34,21 +34,21 @@ from zimfarm_backend.db.blob import get_blob_by_id as db_get_blob_by_id
 from zimfarm_backend.db.blob import get_blob_or_none as db_get_blob_or_none
 from zimfarm_backend.db.blob import get_blobs as db_get_blobs
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.schedule import get_schedule
+from zimfarm_backend.db.recipe import get_recipe
 
 router = APIRouter(prefix="/blobs", tags=["blobs"])
 
 
 @router.post(
-    "/{schedule_name}",
-    dependencies=[Depends(require_permission(namespace="schedules", name="create"))],
+    "/{recipe_name}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
 )
 def create_blob(
-    schedule_name: Annotated[NotEmptyString, Path()],
+    recipe_name: Annotated[NotEmptyString, Path()],
     request: CreateBlobRequest,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> BlobSchema:
-    "Create a blob for schedule"
+    "Create a blob for recipe"
 
     if request.data.startswith("data:"):
         _, encoded_data = request.data.split(",", 1)
@@ -66,11 +66,11 @@ def create_blob(
     prepared_blob = prepare_blob(
         blob_data=blob_data, flag_name=request.flag_name, kind=request.kind
     )
-    schedule = get_schedule(session, schedule_name=schedule_name)
+    recipe = get_recipe(session, recipe_name=recipe_name)
 
     if existing_blob := db_get_blob_or_none(
         session,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         flag_name=request.flag_name,
         checksum=prepared_blob.checksum,
     ):
@@ -80,7 +80,7 @@ def create_blob(
 
     db_create_or_update_blob(
         session,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         request=CreateBlobSchema(
             flag_name=request.flag_name,
             kind=request.kind,
@@ -91,27 +91,27 @@ def create_blob(
     )
     return db_get_blob(
         session,
-        schedule_id=schedule.id,
+        recipe_id=recipe.id,
         flag_name=request.flag_name,
         checksum=prepared_blob.checksum,
     )
 
 
 @router.get(
-    "/{schedule_name}",
-    dependencies=[Depends(require_permission(namespace="schedules", name="read"))],
+    "/{recipe_name}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="read"))],
 )
 def get_blobs(
-    schedule_name: Annotated[NotEmptyString, Path()],
+    recipe_name: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     params: Annotated[BlobsGetSchema, Query()],
 ):
-    """Get a list of all available blobs for schedule"""
+    """Get a list of all available blobs for recipe"""
     result = db_get_blobs(
         session,
         skip=params.skip,
         limit=params.limit,
-        schedule_name=schedule_name,
+        recipe_name=recipe_name,
     )
     return ListResponse(
         items=result.blobs,
@@ -126,7 +126,7 @@ def get_blobs(
 
 @router.patch(
     "/{blob_id}",
-    dependencies=[Depends(require_permission(namespace="schedules", name="create"))],
+    dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
 )
 def update_blob(
     blob_id: Annotated[UUID, Path()],
@@ -139,12 +139,12 @@ def update_blob(
             "No changes were made to the blob because no fields being set"
         )
     blob = db_get_blob_by_id(session, blob_id=blob_id)
-    if blob.schedule_id is None:
-        raise RecordDoesNotExistError("Blob does not belong to any schedule.")
+    if blob.recipe_id is None:
+        raise RecordDoesNotExistError("Blob does not belong to any recipe.")
 
     db_create_or_update_blob(
         session,
-        schedule_id=blob.schedule_id,
+        recipe_id=blob.recipe_id,
         request=CreateBlobSchema(
             flag_name=blob.flag_name,
             kind=blob.kind,
@@ -155,7 +155,7 @@ def update_blob(
     )
     return db_get_blob(
         session,
-        schedule_id=blob.schedule_id,
+        recipe_id=blob.recipe_id,
         flag_name=blob.flag_name,
         checksum=blob.checksum,
     )
@@ -163,7 +163,7 @@ def update_blob(
 
 @router.delete(
     "/{blob_id}",
-    dependencies=[Depends(require_permission(namespace="schedules", name="create"))],
+    dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
 )
 def delete_blob(
     blob_id: Annotated[UUID, Path()],
@@ -177,16 +177,16 @@ def delete_blob(
 
 
 @router.get(
-    "/{schedule_name}/{flag_name}/{checksum}",
-    dependencies=[Depends(require_permission(namespace="schedules", name="read"))],
+    "/{recipe_name}/{flag_name}/{checksum}",
+    dependencies=[Depends(require_permission(namespace="recipes", name="read"))],
 )
 def get_blob(
-    schedule_name: Annotated[NotEmptyString, Path()],
+    recipe_name: Annotated[NotEmptyString, Path()],
     flag_name: Annotated[NotEmptyString, Path()],
     checksum: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> BlobSchema:
-    schedule = get_schedule(session, schedule_name=schedule_name)
+    recipe = get_recipe(session, recipe_name=recipe_name)
     return db_get_blob(
-        session, schedule_id=schedule.id, flag_name=flag_name, checksum=checksum
+        session, recipe_id=recipe.id, flag_name=flag_name, checksum=checksum
     )

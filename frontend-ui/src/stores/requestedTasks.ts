@@ -34,16 +34,16 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     params: {
       limit?: number
       skip?: number
-      scheduleName?: string[] | null
+      recipeName?: string[] | null
     } = {},
   ) => {
-    const { limit = 100, skip = 0, scheduleName = null } = params
+    const { limit = 100, skip = 0, recipeName = null } = params
     const service = await authStore.getApiService('requested-tasks')
     const cleanedParams = Object.fromEntries(
       Object.entries({
         limit,
         skip,
-        schedule_name: scheduleName,
+        recipe_name: recipeName,
       }).filter(([, value]) => !!value),
     )
 
@@ -82,13 +82,13 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
   }
 
   const requestTasks = async (body: {
-    scheduleNames: string[]
+    recipeNames: string[]
     worker?: string | null
     priority?: number | null
   }) => {
     const cleanedBody = Object.fromEntries(
       Object.entries({
-        schedule_names: body.scheduleNames,
+        recipe_names: body.recipeNames,
         worker: body.worker,
         priority: body.priority,
       }).filter(([, value]) => value !== null),

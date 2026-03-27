@@ -1,13 +1,13 @@
 import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
-import type { ScheduleHistorySchema } from '@/types/schedule'
+import type { RecipeHistorySchema } from '@/types/recipe'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export const useScheduleHistoryStore = defineStore('scheduleHistory', () => {
-  const history = ref<ScheduleHistorySchema[]>([])
+export const useRecipeHistoryStore = defineStore('recipeHistory', () => {
+  const history = ref<RecipeHistorySchema[]>([])
   const errors = ref<string[]>([])
   const paginator = ref<Paginator>({
     page: 1,
@@ -19,11 +19,11 @@ export const useScheduleHistoryStore = defineStore('scheduleHistory', () => {
 
   const authStore = useAuthStore()
 
-  const fetchHistory = async (scheduleName: string, limit: number, skip: number) => {
-    const service = await authStore.getApiService('schedules')
+  const fetchHistory = async (recipeName: string, limit: number, skip: number) => {
+    const service = await authStore.getApiService('recipes')
     try {
-      const response = await service.get<null, ListResponse<ScheduleHistorySchema>>(
-        `/${scheduleName}/history`,
+      const response = await service.get<null, ListResponse<RecipeHistorySchema>>(
+        `/${recipeName}/history`,
         { params: { limit, skip } },
       )
       // Add the items to the history if they are not already in it
@@ -36,17 +36,17 @@ export const useScheduleHistoryStore = defineStore('scheduleHistory', () => {
       errors.value = []
       return history.value
     } catch (_error) {
-      console.error('Failed to fetch schedule history', _error)
+      console.error('Failed to fetch recipe history', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return null
     }
   }
 
-  const fetchHistoryEntry = async (scheduleName: string, historyId: string) => {
-    const service = await authStore.getApiService('schedules')
+  const fetchHistoryEntry = async (recipeName: string, historyId: string) => {
+    const service = await authStore.getApiService('recipes')
     try {
-      const response = await service.get<null, ScheduleHistorySchema>(
-        `/${scheduleName}/history/${historyId}`,
+      const response = await service.get<null, RecipeHistorySchema>(
+        `/${recipeName}/history/${historyId}`,
       )
       // Add the item to the history if it's not already in it
       const existingIds = new Set(history.value.map((h) => h.id))
@@ -58,24 +58,24 @@ export const useScheduleHistoryStore = defineStore('scheduleHistory', () => {
       errors.value = []
       return response
     } catch (_error) {
-      console.error('Failed to fetch schedule history entry', _error)
+      console.error('Failed to fetch recipe history entry', _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return null
     }
   }
 
-  const revertToHistory = async (scheduleName: string, historyId: string, comment?: string) => {
-    const service = await authStore.getApiService('schedules')
+  const revertToHistory = async (recipeName: string, historyId: string, comment?: string) => {
+    const service = await authStore.getApiService('recipes')
     try {
       const data = { comment: comment ? comment : null }
       await service.patch<{ comment?: string } | null, { message: string }>(
-        `/${scheduleName}/revert/${historyId}`,
+        `/${recipeName}/revert/${historyId}`,
         data,
       )
       errors.value = []
       return true
     } catch (_error) {
-      console.error(`Failed to revert to schedule history entry ${historyId}`, _error)
+      console.error(`Failed to revert to recipe history entry ${historyId}`, _error)
       errors.value = translateErrors(_error as ErrorResponse)
       return false
     }

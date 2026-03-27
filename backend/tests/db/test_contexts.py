@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.db.contexts import get_contexts
-from zimfarm_backend.db.models import Schedule, Worker
+from zimfarm_backend.db.models import Recipe, Worker
 
 
 def test_get_contexts_empty(dbsession: OrmSession):
@@ -14,15 +14,15 @@ def test_get_contexts_empty(dbsession: OrmSession):
     assert len(result.contexts) == 0
 
 
-def test_get_contexts_from_schedules(
-    dbsession: OrmSession, create_schedule: Callable[..., Schedule]
+def test_get_contexts_from_recipes(
+    dbsession: OrmSession, create_recipe: Callable[..., Recipe]
 ):
-    """Test that get_contexts returns contexts from schedules"""
-    # Create schedules with different contexts
-    create_schedule(name="schedule1", context="priority")
-    create_schedule(name="schedule2", context="general")
-    create_schedule(name="schedule3", context="priority")  # duplicate
-    create_schedule(name="schedule4", context="")  # empty context should be ignored
+    """Test that get_contexts returns contexts from recipes"""
+    # Create recipes with different contexts
+    create_recipe(name="recipe1", context="priority")
+    create_recipe(name="recipe2", context="general")
+    create_recipe(name="recipe3", context="priority")  # duplicate
+    create_recipe(name="recipe4", context="")  # empty context should be ignored
 
     result = get_contexts(dbsession, skip=0, limit=10)
     assert result.nb_records == 2
@@ -46,13 +46,13 @@ def test_get_contexts_from_workers(
 
 def test_get_contexts_combined(
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_worker: Callable[..., Worker],
 ):
-    """Test that get_contexts returns unique contexts from both schedules and workers"""
-    # Create schedules with contexts
-    create_schedule(name="schedule1", context="priority")
-    create_schedule(name="schedule2", context="general")
+    """Test that get_contexts returns unique contexts from both recipes and workers"""
+    # Create recipes with contexts
+    create_recipe(name="recipe1", context="priority")
+    create_recipe(name="recipe2", context="general")
 
     # Create workers with contexts (some overlapping)
     create_worker(name="worker1", contexts={"priority": None, "fast": None})
@@ -75,16 +75,16 @@ def test_get_contexts_combined(
 )
 def test_get_contexts_pagination(
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_worker: Callable[..., Worker],
     skip: int,
     limit: int,
     expected_results: int,
 ):
     """Test that get_contexts pagination works correctly"""
-    # Create schedules and workers with contexts
-    create_schedule(name="schedule1", context="context1")
-    create_schedule(name="schedule2", context="context2")
+    # Create recipes and workers with contexts
+    create_recipe(name="recipe1", context="context1")
+    create_recipe(name="recipe2", context="context2")
     create_worker(name="worker1", contexts={"context3": None, "context4": None})
     create_worker(name="worker2", contexts={"context5": None, "context6": None})
 

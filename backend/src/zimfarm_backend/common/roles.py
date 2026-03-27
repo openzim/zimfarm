@@ -25,7 +25,7 @@ class TaskPermissions(Permissions):
     ]
 
 
-class SchedulePermissions(Permissions):
+class RecipePermissions(Permissions):
     names: ClassVar[list[str]] = [
         "read",
         "secrets",
@@ -88,7 +88,7 @@ class RoleEnum(StrEnum):
 ROLES: dict[str, dict[str, dict[str, bool]]] = {
     RoleEnum.ADMIN: {
         "tasks": TaskPermissions.get_all(),
-        "schedules": SchedulePermissions.get_all(),
+        "recipes": RecipePermissions.get_all(),
         "users": UserPermissions.get_all(),
         "zim": ZimPermissions.get_all(),
         "workers": WorkerPermissions.get_all(),
@@ -97,7 +97,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
     },
     RoleEnum.MANAGER: {
         "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
-        "schedules": SchedulePermissions.get(
+        "recipes": RecipePermissions.get(
             read=True,
             create=True,
             update=True,
@@ -119,13 +119,13 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
         ),
     },
     RoleEnum.EDITOR: {
-        "schedules": SchedulePermissions.get(
+        "recipes": RecipePermissions.get(
             read=True, create=True, update=True, secrets=True, archive=True
         ),
     },
     RoleEnum.EDITOR_REQUESTER.value: {
         "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
-        "schedules": SchedulePermissions.get(
+        "recipes": RecipePermissions.get(
             read=True, create=True, update=True, secrets=True, archive=True
         ),
         "requested_tasks": RequestedTaskPermissions.get(

@@ -25,7 +25,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import REQUESTS_TIMEOUT
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import Schedule
+from zimfarm_backend.db.models import Recipe
 
 
 def report_youtube_api_keys(
@@ -38,36 +38,36 @@ def report_youtube_api_keys(
     known_api_keys = json.loads(
         pathlib.Path("report_youtube_api_keys.conf.json").read_text()
     )
-    logger.info("Listing schedules")
+    logger.info("Listing recipes")
     stmt = (
-        sa.select(Schedule)
-        .where(Schedule.config["offliner"]["offliner_id"].astext == "youtube")
-        .where(Schedule.config["offliner"]["api-key"].astext.is_not(None))
-        .order_by(Schedule.config["offliner"]["api-key"].astext)
+        sa.select(Recipe)
+        .where(Recipe.config["offliner"]["offliner_id"].astext == "youtube")
+        .where(Recipe.config["offliner"]["api-key"].astext.is_not(None))
+        .order_by(Recipe.config["offliner"]["api-key"].astext)
     )
 
-    schedules = list(session.execute(stmt).scalars())
+    recipes = list(session.execute(stmt).scalars())
 
-    schedules_by_api_key: dict[str, dict[str, Any]] = {}
-    for schedule in schedules:
-        api_key = schedule.config["offliner"]["api-key"]
+    recipes_by_api_key: dict[str, dict[str, Any]] = {}
+    for recipe in recipes:
+        api_key = recipe.config["offliner"]["api-key"]
         hashed_api_key = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
-        if hashed_api_key not in schedules_by_api_key.keys():
-            schedules_by_api_key[hashed_api_key] = {
+        if hashed_api_key not in recipes_by_api_key.keys():
+            recipes_by_api_key[hashed_api_key] = {
                 "api_key": api_key,
                 "key_name": (
                     known_api_keys[hashed_api_key]
                     if hashed_api_key in known_api_keys
                     else "unknown"
                 ),
-                "schedules": [],
+                "recipes": [],
             }
 
-        schedule_data = {"name": schedule.name, "media_count": 0}
+        recipe_data = {"name": recipe.name, "media_count": 0}
 
-        if schedule.most_recent_task_id is not None:
+        if recipe.most_recent_task_id is not None:
             for task in sorted(
-                schedule.tasks, key=lambda task: task.updated_at, reverse=True
+                recipe.tasks, key=lambda task: task.updated_at, reverse=True
             ):
                 if task.status != TaskStatus.succeeded:
                     continue
@@ -75,20 +75,20 @@ def report_youtube_api_keys(
                 for file in task.files:
                     if "media_count" not in file.info:
                         logger.warning(
-                            f"Task {task.id} of {schedule.name} schedule is missing "
+                            f"Task {task.id} of {recipe.name} recipe is missing "
                             "media_count info, ignoring, key usage stats will be "
                             "impacted"
                         )
                     media_count += file.info["media_count"]
-                schedule_data["media_count"] = media_count
+                recipe_data["media_count"] = media_count
                 break
-        schedules_by_api_key[hashed_api_key]["schedules"].append(schedule_data)
+        recipes_by_api_key[hashed_api_key]["recipes"].append(recipe_data)
 
     report_data: dict[str, list[dict[str, Any]] | int | str] = {}
-    report_data["nb_schedules"] = len(schedules)
+    report_data["nb_recipes"] = len(recipes)
     report_data["keys"] = []
 
-    for hashed_api_key, data in schedules_by_api_key.items():
+    for hashed_api_key, data in recipes_by_api_key.items():
         report_data["keys"].append(
             {
                 "name": (
@@ -97,11 +97,9 @@ def report_youtube_api_keys(
                     else "unknown"
                 ),
                 "total_media": sum(
-                    [schedule["media_count"] for schedule in data["schedules"]]
+                    [recipe["media_count"] for recipe in data["recipes"]]
                 ),
-                "schedules": sorted(
-                    data["schedules"], key=lambda schedule: schedule["name"]
-                ),
+                "recipes": sorted(data["recipes"], key=lambda recipe: recipe["name"]),
             }
         )
         if display_unknown_secrets and hashed_api_key not in known_api_keys.keys():
@@ -109,12 +107,12 @@ def report_youtube_api_keys(
             logger.info(f"API key: {data['api_key']}")
 
     for hashed_key, key_name in known_api_keys.items():
-        if hashed_key not in schedules_by_api_key.keys():
+        if hashed_key not in recipes_by_api_key.keys():
             report_data["keys"].append(
                 {
                     "name": key_name,
                     "total_media": 0,
-                    "schedules": [],
+                    "recipes": [],
                 }
             )
 

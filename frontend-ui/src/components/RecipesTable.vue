@@ -11,7 +11,7 @@
           size="small"
           variant="elevated"
           color="warning"
-          :disabled="selectedSchedules.length === 0"
+          :disabled="selectedRecipes.length === 0"
           @click="clearSelections"
         >
           <v-icon size="small" class="mr-1">mdi-checkbox-multiple-blank-outline</v-icon>
@@ -21,7 +21,7 @@
 
       <v-data-table-server
         :headers="headers"
-        :items="schedules"
+        :items="recipes"
         :loading="loading"
         :page="paginator.page"
         :items-per-page="paginator.limit"
@@ -30,7 +30,7 @@
         class="elevation-1"
         item-value="name"
         :show-select="showSelection"
-        :model-value="selectedSchedules"
+        :model-value="selectedRecipes"
         @update:model-value="handleSelectionChange"
         @update:options="onUpdateOptions"
         :hide-default-footer="props.paginator.count === 0"
@@ -46,7 +46,7 @@
         </template>
 
         <template #[`item.name`]="{ item }">
-          <router-link :to="{ name: 'schedule-detail', params: { scheduleName: item.name } }">
+          <router-link :to="{ name: 'recipe-detail', params: { recipeName: item.name } }">
             <span class="['d-flex' 'align-center', { 'justify-end': smAndDown">
               {{ item.name }}
               <v-icon v-if="!item.enabled" size="small" color="orange" class="ml-1">
@@ -111,7 +111,7 @@
 <script setup lang="ts">
 import TaskLink from '@/components/TaskLink.vue'
 import type { Paginator } from '@/types/base'
-import type { ScheduleLight } from '@/types/schedule'
+import type { RecipeLight } from '@/types/recipe'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -119,7 +119,7 @@ import { useDisplay } from 'vuetify'
 // Props
 interface Props {
   headers: { title: string; value: string }[]
-  schedules: ScheduleLight[]
+  recipes: RecipeLight[]
   paginator: Paginator
   loading: boolean
   errors: string[]
@@ -130,13 +130,13 @@ interface Props {
     languages: string[]
     tags: string[]
   }
-  selectedSchedules?: string[]
+  selectedRecipes?: string[]
   showSelection?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   filters: () => ({ name: '', categories: [], languages: [], tags: [] }),
-  selectedSchedules: () => [],
+  selectedRecipes: () => [],
   showSelection: true,
 })
 
@@ -148,12 +148,12 @@ const { smAndDown } = useDisplay()
 const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
-  selectionChanged: [selectedSchedules: string[]]
+  selectionChanged: [selectedRecipes: string[]]
 }>()
 
 const limits = [10, 20, 50, 100]
 
-const selectedSchedules = computed(() => props.selectedSchedules)
+const selectedRecipes = computed(() => props.selectedRecipes)
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
@@ -181,22 +181,22 @@ function clearSelections() {
 }
 
 function statusClass(status: string) {
-  if (status === 'succeeded') return 'schedule-succeeded'
-  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'schedule-failed'
-  else return 'schedule-running'
+  if (status === 'succeeded') return 'recipe-succeeded'
+  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'recipe-failed'
+  else return 'recipe-running'
 }
 </script>
 
 <style scoped>
-.schedule-succeeded {
+.recipe-succeeded {
   color: #4caf50;
 }
 
-.schedule-failed {
+.recipe-failed {
   color: #f44336;
 }
 
-.schedule-running {
+.recipe-running {
   color: #ff9800;
 }
 

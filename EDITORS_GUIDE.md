@@ -6,7 +6,7 @@ This guide is intended for **editors** who manage recipes and monitor tasks on t
 
 - [What is Zimfarm?](#what-is-zimfarm)
 - [Core Concepts](#core-concepts)
-  - [Recipes (Schedules)](#recipes-schedules)
+  - [Recipes](#recipes)
   - [Tasks](#tasks)
   - [Workers](#workers)
   - [Offliners (Scrapers)](#offliners-scrapers)
@@ -18,8 +18,8 @@ This guide is intended for **editors** who manage recipes and monitor tasks on t
 
 Zimfarm is a distributed platform that automates the creation of [ZIM files](http://www.openzim.org/). The platform:
 
-- allows the creation/modification of recipes/schedules
-- creates tasks from a recipes/schedules
+- allows the creation/modification of recipes
+- creates tasks from a recipes
 - assigns tasks to workers
 - monitors task execution
 - uploads ZIM files, logs, artifacts to the warehouse
@@ -29,9 +29,9 @@ The Zimfarm web interface is available at [farm.openzim.org](https://farm.openzi
 
 ## Core Concepts
 
-### Recipes (Schedules)
+### Recipes
 
-A **recipe** (technically called a "schedule" in the API) is a template for creating tasks which would be executed. It contains:
+A **recipe** is a template for creating tasks which would be executed. It contains:
 
 - **Name**: Unique identifier for the recipe (e.g., `wikipedia_en_all_maxi`)
 - **Category**: Content type (e.g., `wikipedia`, `stack_exchange`, `ted`)

@@ -389,7 +389,7 @@ def start_dnscache(client: DockerClient, task: dict[str, Any]) -> Container:
             "zimfarm": "",
             "task_id": task["id"],
             "tid": short_id(task["id"]),
-            "schedule_name": task["schedule_name"],
+            "recipe_name": task["recipe_name"],
         },
         sysctls=get_sysctl(),
     )
@@ -426,7 +426,7 @@ def start_monitor(
             else get_ip_address(client, scraper_container_name)
         ),
         "NETDATA_HOSTNAME": "{task_ident}.{worker}".format(
-            task_ident=get_container_name(task["schedule_name"], task["id"]),
+            task_ident=get_container_name(task["recipe_name"], task["id"]),
             worker=task["worker_name"],
         ),
     }
@@ -446,7 +446,7 @@ def start_monitor(
             "zimfarm": "",
             "task_id": task["id"],
             "tid": short_id(task["id"]),
-            "schedule_name": task["schedule_name"],
+            "recipe_name": task["recipe_name"],
         },
         environment=environment,
         cap_add=["SYS_PTRACE"],
@@ -496,7 +496,7 @@ def start_checker(
             "zimfarm": "",
             "task_id": task["id"],
             "tid": short_id(task["id"]),
-            "schedule_name": task["schedule_name"],
+            "recipe_name": task["recipe_name"],
             "filename": filename,
         },
         remove=False,
@@ -562,7 +562,7 @@ def start_scraper(
             "zimscraper": "yes",
             "task_id": task["id"],
             "tid": short_id(task["id"]),
-            "schedule_name": task["schedule_name"],
+            "recipe_name": task["recipe_name"],
             "human.cpu": str(config["resources"]["cpu"]),
             "human.memory": format_size(mem_limit),
             "human.disk": format_size(disk_limit),
@@ -661,7 +661,7 @@ def start_task_worker(
             "task_id": task["id"],
             "tid": short_id(task["id"]),
             "webapi_uri": webapi_uri,
-            "schedule_name": task["schedule_name"],
+            "recipe_name": task["recipe_name"],
             # disk usage is accounted for on this container
             RESOURCES_DISK_LABEL: str(task["config"]["resources"]["disk"]),
             # display-only human-readable values
@@ -773,7 +773,7 @@ def start_uploader(
             "zimfarm": "",
             "task_id": task["id"],
             "tid": short_id(task["id"]),
-            "schedule_name": task["schedule_name"],
+            "recipe_name": task["recipe_name"],
             "filename": filename,
         },
         "mem_swappiness": 0,

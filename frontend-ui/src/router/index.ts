@@ -1,10 +1,10 @@
-import ArchivedSchedulesView from '@/views/ArchivedSchedulesView.vue'
+import ArchivedRecipesView from '@/views/ArchivedRecipesView.vue'
 import ChangePasswordView from '@/views/ChangePasswordView.vue'
 import NotFoundView from '@/views/NotFound.vue'
 import OAuthCallbackView from '@/views/OAuthCallbackView.vue'
 import PipelineView from '@/views/PipelineView.vue'
-import ScheduleDetailView from '@/views/ScheduleDetailView.vue'
-import SchedulesView from '@/views/SchedulesView.vue'
+import RecipeDetailView from '@/views/RecipeDetailView.vue'
+import RecipesView from '@/views/RecipesView.vue'
 import SignInView from '@/views/SignInView.vue'
 import SupportUsView from '@/views/SupportUs.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
@@ -91,33 +91,33 @@ const routes = [
   },
 
   {
-    path: '/recipes/:scheduleName',
-    name: 'schedule-detail',
-    component: ScheduleDetailView,
+    path: '/recipes/:recipeName',
+    name: 'recipe-detail',
+    component: RecipeDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.scheduleName}`,
+      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.recipeName}`,
     },
   },
   {
-    path: '/recipes/:scheduleName/:selectedTab',
-    name: 'schedule-detail-tab',
-    component: ScheduleDetailView,
+    path: '/recipes/:recipeName/:selectedTab',
+    name: 'recipe-detail-tab',
+    component: RecipeDetailView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.scheduleName}`,
+      title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.recipeName}`,
     },
   },
   {
     path: '/recipes',
-    name: 'schedules-list',
-    component: SchedulesView,
+    name: 'recipes-list',
+    component: RecipesView,
     meta: { title: 'Zimfarm | Recipes' },
   },
   {
     path: '/recipes/archives',
-    name: 'archived-schedules',
-    component: ArchivedSchedulesView,
+    name: 'archived-recipes',
+    component: ArchivedRecipesView,
     meta: { title: 'Zimfarm | Archived Recipes' },
   },
   {

@@ -21,14 +21,14 @@ from zimfarm_backend.common.constants import (
     REQUESTS_TIMEOUT,
 )
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import RecipeConfigSchema
 from zimfarm_backend.common.schemas.offliners.transformers import (
     generate_blob_name_uuid,
 )
 from zimfarm_backend.common.schemas.orms import CreateBlobSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.blob import create_or_update_blob
-from zimfarm_backend.db.models import Blob, Schedule
+from zimfarm_backend.db.models import Blob, Recipe
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_definition_schema,
@@ -42,23 +42,23 @@ class BlobFlag(BaseModel):
 
 
 class UnavailableAsset(BaseModel):
-    schedule: str
+    recipe: str
     flag: str
     url: str
     error: str
 
 
 class FilterRule(BaseModel):
-    """Filter rule to exclude certain schedule/flag combinations from migration"""
+    """Filter rule to exclude certain recipe/flag combinations from migration"""
 
-    schedule_pattern: str
+    recipe_pattern: str
     flag_name: str
 
-    def matches(self, schedule_name: str, flag_name: str) -> bool:
-        """Check if this rule matches the given schedule and flag"""
-        schedule_match = bool(re.search(self.schedule_pattern, schedule_name))
+    def matches(self, recipe_name: str, flag_name: str) -> bool:
+        """Check if this rule matches the given recipe and flag"""
+        recipe_match = bool(re.search(self.recipe_pattern, recipe_name))
         flag_match = flag_name == self.flag_name
-        return schedule_match and flag_match
+        return recipe_match and flag_match
 
 
 FLAG_MAPPINGS: dict[str, list[BlobFlag]] = {
@@ -220,17 +220,17 @@ def generate_markdown_report(unavailable_assets: list[UnavailableAsset]) -> str:
         "",
         "The following assets could not be migrated and require manual fixing:",
         "",
-        "| Schedule | Flag | URL | Error |",
+        "| Recipe | Flag | URL | Error |",
         "|----------|------|-----|-------|",
     ]
 
     for asset in unavailable_assets:
         # Escape pipe characters in fields for markdown table
-        schedule = asset.schedule.replace("|", "\\|")
+        recipe = asset.recipe.replace("|", "\\|")
         flag = asset.flag.replace("|", "\\|")
         url = asset.url.replace("|", "\\|")
         error = asset.error.replace("|", "\\|")
-        report_lines.append(f"| {schedule} | {flag} | {url} | {error} |")
+        report_lines.append(f"| {recipe} | {flag} | {url} | {error} |")
 
     report_lines.extend(
         ["", f"**Total unavailable assets:** {len(unavailable_assets)}"]
@@ -250,9 +250,9 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
     if filter_rules is None:
         filter_rules = []
 
-    def should_filter(schedule_name: str, flag_name: str) -> bool:
-        """Check if schedule/flag combination should be filtered out"""
-        return any(rule.matches(schedule_name, flag_name) for rule in filter_rules)
+    def should_filter(recipe_name: str, flag_name: str) -> bool:
+        """Check if recipe/flag combination should be filtered out"""
+        return any(rule.matches(recipe_name, flag_name) for rule in filter_rules)
 
     for offliner_id, flag_mappings in FLAG_MAPPINGS.items():
         logger.info(f"Processing offliner: {offliner_id}")
@@ -260,26 +260,26 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
         with Session.begin() as session:
             offliner = get_offliner(session, offliner_id)
 
-            schedules = session.execute(
-                select(Schedule)
+            recipes = session.execute(
+                select(Recipe)
                 .where(
-                    Schedule.config["offliner"]["offliner_id"].astext == offliner_id,
+                    Recipe.config["offliner"]["offliner_id"].astext == offliner_id,
                 )
-                .options(selectinload(Schedule.offliner_definition))
+                .options(selectinload(Recipe.offliner_definition))
             ).scalars()
 
-            for schedule in schedules:
-                logger.info(f"Processing schedule {schedule.name}...")
+            for recipe in recipes:
+                logger.info(f"Processing recipe {recipe.name}...")
                 offliner_definition = create_offliner_definition_schema(
-                    schedule.offliner_definition
+                    recipe.offliner_definition
                 )
-                schedule_config = ScheduleConfigSchema.model_validate(
+                recipe_config = RecipeConfigSchema.model_validate(
                     {
-                        **schedule.config,
+                        **recipe.config,
                         "offliner": create_offliner_instance(
                             offliner=offliner,
                             offliner_definition=offliner_definition,
-                            data=schedule.config["offliner"],
+                            data=recipe.config["offliner"],
                             skip_validation=True,
                         ),
                     },
@@ -287,36 +287,36 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
                 )
 
                 for flag in flag_mappings:
-                    old_url = getattr(schedule_config.offliner, flag.flag_name)
+                    old_url = getattr(recipe_config.offliner, flag.flag_name)
                     if not old_url:
                         continue
 
                     if not old_url.startswith("http"):
                         logger.warning(
-                            f"Schedule '{schedule.name}' flag "
+                            f"Recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}' is not a valid URL, skipping"
                         )
                         continue
 
-                    # Check if this schedule/flag combination should be filtered
-                    if should_filter(schedule.name, flag.flag_name):
+                    # Check if this recipe/flag combination should be filtered
+                    if should_filter(recipe.name, flag.flag_name):
                         logger.info(
-                            f"🚫 Filtered schedule '{schedule.name}' flag "
+                            f"🚫 Filtered recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}' (matches filter rule)"
                         )
                         total_assets_filtered += 1
                         continue
 
-                    # Check if blob with URL for this schedule already exists
+                    # Check if blob with URL for this recipe already exists
                     existing_blob = session.scalars(
                         select(Blob)
-                        .where(Blob.url == old_url, Blob.schedule_id == schedule.id)
+                        .where(Blob.url == old_url, Blob.recipe_id == recipe.id)
                         .limit(1)
                     ).all()
 
                     if existing_blob:
                         logger.info(
-                            f"Schedule '{schedule.name}' flag '{flag.flag_name}' "
+                            f"Recipe '{recipe.name}' flag '{flag.flag_name}' "
                             "already has blob entry, skipping"
                         )
                         total_assets_skipped += 1
@@ -325,7 +325,7 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
                     if dry_run:
                         total_assets_migrated += 1
                         logger.info(
-                            f"✅ Migrated schedule '{schedule.name}' flag "
+                            f"✅ Migrated recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}' to "
                             f"'{BLOB_PUBLIC_STORAGE_URL}/{generate_blob_name_uuid(flag.kind)}'"
                         )
@@ -358,32 +358,32 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
 
                     if blob_schema:
                         create_or_update_blob(
-                            session, schedule_id=schedule.id, request=blob_schema
+                            session, recipe_id=recipe.id, request=blob_schema
                         )
                         setattr(
-                            schedule_config.offliner,
+                            recipe_config.offliner,
                             flag.flag_name,
                             str(blob_schema.url),
                         )
-                        schedule.config = schedule_config.model_dump(
+                        recipe.config = recipe_config.model_dump(
                             mode="json", context={"show_secrets": True}
                         )
                         total_assets_migrated += 1
                         logger.info(
-                            f"✅ Migrated schedule '{schedule.name}' flag "
+                            f"✅ Migrated recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}' to '{blob_schema.url!s}'"
                         )
                     else:
                         unavailable_assets.append(
                             UnavailableAsset(
-                                schedule=schedule.name,
+                                recipe=recipe.name,
                                 flag=flag.flag_name,
                                 url=old_url,
                                 error=error_message or "Unknown error",
                             )
                         )
                         logger.error(
-                            f"❌ Could not migrate schedule '{schedule.name}' flag "
+                            f"❌ Could not migrate recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}': {error_message}"
                         )
 
@@ -413,8 +413,7 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "Update schedule flags thats are blob URLs by moving them to "
-            "unified storage."
+            "Update recipe flags thats are blob URLs by moving them to unified storage."
         ),
     )
 
@@ -426,10 +425,10 @@ if __name__ == "__main__":
         "--filter",
         action="append",
         dest="filters",
-        metavar="SCHEDULE_PATTERN:FLAG_NAME",
+        metavar="RECIPE_PATTERN:FLAG_NAME",
         help=(
             "Filter out URLs from migration using format "
-            "'schedule_pattern:flag_name'. Use '.*' as wildcard. Can be used "
+            "'recipe_pattern:flag_name'. Use '.*' as wildcard. Can be used "
             "multiple times. Examples: --filter 'test.*:favicon' "
             "--filter '.*:banner'"
         ),
@@ -444,11 +443,11 @@ if __name__ == "__main__":
             if ":" not in filter_str:
                 raise ValueError(
                     f"Warning: Invalid filter format '{filter_str}', "
-                    "expected 'schedule_pattern:flag_name'"
+                    "expected 'recipe_pattern:flag_name'"
                 )
-            schedule_pattern, flag_name = filter_str.split(":", 1)
+            recipe_pattern, flag_name = filter_str.split(":", 1)
             filter_rules.append(
-                FilterRule(schedule_pattern=schedule_pattern, flag_name=flag_name)
+                FilterRule(recipe_pattern=recipe_pattern, flag_name=flag_name)
             )
 
     main(dry_run=args.dry_run, filter_rules=filter_rules)

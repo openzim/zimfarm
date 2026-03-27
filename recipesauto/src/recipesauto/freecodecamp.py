@@ -660,11 +660,11 @@ def _get_all_long_description(language: SpokenLanguage) -> str:
     return long_description
 
 
-def _get_image_version(language: SpokenLanguage) -> str:
+def _get_image_version(_: SpokenLanguage) -> str:
     return "2.0.3"
 
 
-def _get_warehouse_path(language: SpokenLanguage) -> str:
+def _get_warehouse_path(_: SpokenLanguage) -> str:
     return "/freecodecamp"
 
 

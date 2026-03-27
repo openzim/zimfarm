@@ -1,5 +1,5 @@
-import type { Resources, ScheduleDuration } from '@/types/base'
-import type { ExpandedScheduleConfig } from '@/types/schedule'
+import type { Resources, RecipeDuration } from '@/types/base'
+import type { ExpandedRecipeConfig } from '@/types/recipe'
 import type { TaskLight } from '@/types/tasks'
 
 export interface DockerImageVersion {
@@ -30,13 +30,13 @@ export interface Worker extends BaseWorker {
 
 export interface RunningTask {
   id: string
-  config: ExpandedScheduleConfig
-  schedule_name: string | null
+  config: ExpandedRecipeConfig
+  recipe_name: string | null
   updated_at: string
   status: string
   timestamp: [string, string][]
   worker_name: string
-  duration: ScheduleDuration
+  duration: RecipeDuration
   remaining: number
   eta: string
 }
