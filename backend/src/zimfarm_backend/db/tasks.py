@@ -322,14 +322,17 @@ def get_oldest_task_timestamp(
 
 def get_currently_running_tasks(
     session: OrmSession,
-    worker: Worker,
+    worker_name: str | None = None,
 ) -> list[RunningTask]:
-    """list of tasks being run by worker at this moment, including ETA"""
+    """list of tasks being run at this moment, including ETA"""
 
     stmt = (
         select(Task)
         .join(Worker)
-        .where(Task.status.notin_(TaskStatus.complete()), Worker.name == worker.name)
+        .where(
+            Task.status.notin_(TaskStatus.complete()),
+            (Worker.name == worker_name) | (worker_name is None),
+        )
     )
     return [
         RunningTask(

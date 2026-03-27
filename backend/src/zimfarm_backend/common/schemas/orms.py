@@ -367,6 +367,7 @@ class ScheduleFullSchema(BaseModel):
 
 
 class BaseWorkerSchema(BaseModel):
+    id: UUID = Field(exclude=True)
     show_secrets: bool = Field(default=True, exclude=True)
     name: str
     offliners: list[str]
@@ -377,6 +378,7 @@ class BaseWorkerSchema(BaseModel):
     last_ip: IPv4Address | None = Field(exclude=True)
     selfish: bool
     docker_image: DockerImageVersionSchema | None
+    platforms: dict[str, Any]
 
     @computed_field
     @property
