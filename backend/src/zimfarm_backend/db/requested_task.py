@@ -2,7 +2,7 @@ import datetime
 from typing import cast
 from uuid import UUID
 
-from humanfriendly import format_size
+from humanfriendly import format_size, format_timespan
 from sqlalchemy import BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
@@ -669,16 +669,19 @@ def _check_worker_unavailable_reason(
     running_task_timestamps = [t.updated_at for t in running_tasks]
     last_seen_reason = ""
     if worker.last_seen:
-        last_seen_reason = f" and was last seen on {worker.last_seen}"
+        last_seen_reason = (
+            " and was last seen "
+            f"{format_timespan((getnow() - worker.last_seen).total_seconds())} ago"
+        )
 
     if running_task_timestamps:
-        elapsed_minutes = int(
-            (getnow() - to_naive_utc(max(running_task_timestamps))).total_seconds() / 60
+        elapsed_seconds = int(
+            (getnow() - to_naive_utc(max(running_task_timestamps))).total_seconds()
         )
         reason = (
-            f"We have no reason for this task to not start on worker '{worker.name} "
+            f"We have no reason for this task to not start on worker '{worker.name}' "
             "but workers do start only one task at a time and last task started "
-            f"{elapsed_minutes} minutes ago. Worker is {worker.status}"
+            f"{format_timespan(elapsed_seconds)} ago. Worker is {worker.status}"
         ) + last_seen_reason
         return reason
 
