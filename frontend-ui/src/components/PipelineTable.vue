@@ -159,7 +159,6 @@
             size="small"
             color="primary"
             variant="tonal"
-            :loading="diagnosingTasks[item.id]"
             @click="diagnoseTask(item as RequestedTaskLight)"
           >
             Diagnose
@@ -253,12 +252,24 @@
         </template>
       </v-data-table-server>
       <ErrorMessage v-for="error in errors" :key="error" :message="error" />
+      <DiagnoseTaskDialog v-model="isDiagnoseDialogOpen" :task="selectedTaskToDiagnose" />
+      <ConfirmDialog
+        v-model="isConfirmDiagnoseOpen"
+        title="Confirm Diagnostics"
+        message="Running diagnostics will consume significant resources and should be run only when something is really unexplained or seems abnormal. Do you want to continue?"
+        confirm-text="Run Diagnostics"
+        confirm-color="primary"
+        icon="mdi-alert"
+        @confirm="startDiagnostics"
+      />
     </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import CancelTaskButton from '@/components/CancelTaskButton.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DiagnoseTaskDialog from '@/components/DiagnoseTaskDialog.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
@@ -271,17 +282,11 @@ import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
-import { useRequestedTasksStore } from '@/stores/requestedTasks'
-import { useWorkersStore } from '@/stores/workers'
-import { useNotificationStore } from '@/stores/notification'
 
 const router = useRouter()
 const route = useRoute()
 
 const { smAndDown } = useDisplay()
-const requestedTasksStore = useRequestedTasksStore()
-const workersStore = useWorkersStore()
-const notificationStore = useNotificationStore()
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
@@ -306,7 +311,11 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 const loadingSchedules = ref<Record<string, boolean>>({})
 const loadingAllSchedules = ref(false)
-const diagnosingTasks = ref<Record<string, boolean>>({})
+
+const isDiagnoseDialogOpen = ref(false)
+const isConfirmDiagnoseOpen = ref(false)
+const selectedTaskToDiagnose = ref<RequestedTaskLight | null>(null)
+const taskToConfirmDiagnose = ref<RequestedTaskLight | null>(null)
 
 // Check if we should show the "Load All Last Runs" button (only in failed tab)
 const showLoadAllButton = computed(() => {
@@ -354,40 +363,15 @@ async function handleLoadAllLastRuns() {
   }
 }
 
-async function diagnoseTask(task: RequestedTaskLight) {
-  diagnosingTasks.value[task.id] = true
-  try {
-    let workersToDiagnose: string[] = []
-    if (task.worker_name) {
-      workersToDiagnose = [task.worker_name]
-    } else {
-      const workersList = await workersStore.fetchWorkers({ limit: 20 })
-      if (workersList) {
-        workersToDiagnose = workersList.map((w) => w.name)
-      }
-    }
+function diagnoseTask(task: RequestedTaskLight) {
+  taskToConfirmDiagnose.value = task
+  isConfirmDiagnoseOpen.value = true
+}
 
-    if (workersToDiagnose.length === 0) {
-      notificationStore.showError('No workers available to diagnose against')
-      return
-    }
-
-    const promises = workersToDiagnose.map((workerName) =>
-      requestedTasksStore.diagnoseRequestedTask(task.id, workerName),
-    )
-
-    const results = await Promise.all(promises)
-    const errorsList = results.filter((res) => res !== null) as string[][]
-
-    if (errorsList.length > 0) {
-      errorsList.forEach((errs) => {
-        errs.forEach((e) => notificationStore.showError(e))
-      })
-    } else {
-      notificationStore.showSuccess('Diagnosis complete: No errors found.')
-    }
-  } finally {
-    diagnosingTasks.value[task.id] = false
+function startDiagnostics() {
+  if (taskToConfirmDiagnose.value) {
+    selectedTaskToDiagnose.value = taskToConfirmDiagnose.value
+    isDiagnoseDialogOpen.value = true
   }
 }
 </script>

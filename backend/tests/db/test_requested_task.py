@@ -20,6 +20,7 @@ from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worke
 from zimfarm_backend.db.requested_task import (
     RequestedTaskWithDuration,
     RunningTask,
+    _check_worker_unavailable_reason,  # pyright: ignore[reportPrivateUsage]
     compute_requested_task_rank,
     delete_requested_task,
     diagnose_requested_task,
@@ -1465,3 +1466,20 @@ def test_find_requested_task_first_cannot_run_alternative_by_duration(
         assert found_task.id == alternative_task.id
     else:
         assert found_task is None
+
+
+def test_check_worker_unavailable_reason_with_running_tasks(
+    dbsession: OrmSession, worker: Worker, create_task: Callable[..., Task]
+):
+    create_task(worker=worker)
+    running_tasks = get_currently_running_tasks(dbsession, worker.name)
+    worker_schema = create_worker_schema(worker, show_secrets=False)
+
+    reason = _check_worker_unavailable_reason(worker_schema, running_tasks)
+    assert reason is not None
+
+
+def test_check_worker_unavailable_reason_without_running_tasks(worker: Worker):
+    worker_schema = create_worker_schema(worker, show_secrets=False)
+    reason = _check_worker_unavailable_reason(worker_schema, [])
+    assert reason is None

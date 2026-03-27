@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import getnow
+from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import (
     ARTIFACTS_EXPIRATION,
     ARTIFACTS_UPLOAD_URI,
@@ -663,6 +663,26 @@ def _can_run(task: RequestedTaskWithDuration, resource: ResourcesSchema) -> bool
     return True
 
 
+def _check_worker_unavailable_reason(
+    worker: WorkerLightSchema, running_tasks: list[RunningTask]
+) -> str | None:
+    running_task_timestamps = [t.updated_at for t in running_tasks]
+    if running_task_timestamps:
+        elapsed_minutes = int(
+            (getnow() - to_naive_utc(max(running_task_timestamps))).total_seconds() / 60
+        )
+        reason = (
+            f"We have no reason for this task to not start on worker '{worker.name} "
+            "but workers do start only one task at a time and last task started task"
+            f"{elapsed_minutes} minutes ago. Worker is {worker.status}"
+        )
+        if worker.last_seen:
+            reason += f" and was last seen on {worker.last_seen}"
+        return reason
+
+    return None
+
+
 def diagnose_requested_task(
     session: OrmSession,
     *,
@@ -723,6 +743,8 @@ def diagnose_requested_task(
     )
 
     if _can_run(task, available_resources):
+        if reason := _check_worker_unavailable_reason(worker, running_tasks):
+            return reason
         return None
 
     # Calculate when resources will become available
@@ -739,7 +761,10 @@ def diagnose_requested_task(
     ).error:
         return reason
 
-    # we shouldn't get here if task can run
+    if reason := _check_worker_unavailable_reason(worker, running_tasks=running_tasks):
+        return reason
+
+    # we shouldn't get here if task can run as
     return None
 
 
@@ -864,7 +889,7 @@ def find_requested_task_for_worker(
     )
 
     if _can_run(candidate, available_resources):
-        logger.info("first candidate can be run!")
+        logger.debug("first candidate can be run!")
         return RequestedTaskWithDurationResult(requested_task=candidate, error=None)
 
     return _find_task_that_can_run_with_available_resources(
