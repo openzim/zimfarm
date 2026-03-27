@@ -245,7 +245,7 @@ function inspect() {
 function update() {
     echo "updating $1..."
     dest="${parentdir}/${scriptname}"
-    update_cmd="sudo curl -fsSL ${SOURCE_URL} -o ${dest} && sudo chmod +x ${dest}"
+    update_cmd="curl -fsSL ${SOURCE_URL} -o ${dest} && chmod +x ${dest}"
     if [[ "$2" == "do" ]]; then
         bash -c "${update_cmd}"
     else
