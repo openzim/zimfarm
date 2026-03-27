@@ -337,7 +337,7 @@
                       v-if="item.id && item.updated_at"
                       :id="item.id"
                       :updatedAt="item.updated_at"
-                      :status="item.status"
+                      :status="'started'"
                       :timestamp="item.timestamp"
                     />
                     <span v-else class="text-caption">-</span>
@@ -565,7 +565,7 @@ const imageAge = computed(() => {
 const runningTasksHeaders = [
   { title: 'Schedule', value: 'schedule_name' },
   { title: 'Resources', value: 'resources' },
-  { title: 'Task', value: 'task' },
+  { title: 'Duration', value: 'task' },
 ]
 
 const hasChanges = computed(() => {
