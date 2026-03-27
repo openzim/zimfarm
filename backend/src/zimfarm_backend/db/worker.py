@@ -67,11 +67,13 @@ def create_worker_schema(
     worker: Worker, *, show_secrets: bool = True
 ) -> WorkerLightSchema:
     return WorkerLightSchema(
+        id=worker.id,
         show_secrets=show_secrets,
         last_ip=worker.last_ip,
         last_seen=worker.last_seen,
         selfish=worker.selfish,
         name=worker.name,
+        platforms=worker.platforms,
         offliners=worker.offliners,
         resources=ConfigResourcesSchema(
             cpu=worker.cpu,
@@ -175,11 +177,13 @@ def get_worker_metrics(
     ).one()
 
     return WorkerMetricsSchema(
+        id=worker.id,
         name=worker.name,
         last_ip=worker.last_ip,
         selfish=worker.selfish,
         last_seen=worker.last_seen,
         username=worker.user.display_name,
+        platforms=worker.platforms,
         resources=ConfigResourcesSchema(
             cpu=worker.cpu,
             disk=worker.disk,
@@ -187,7 +191,7 @@ def get_worker_metrics(
         ),
         offliners=worker.offliners,
         contexts=_deserialize_worker_context(worker.contexts),
-        running_tasks=get_currently_running_tasks(session, worker),
+        running_tasks=get_currently_running_tasks(session, worker.name),
         nb_tasks_total=nb_total or 0,
         nb_tasks_completed=nb_completed or 0,
         nb_tasks_succeeded=nb_succeeded or 0,

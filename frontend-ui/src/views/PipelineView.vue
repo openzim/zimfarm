@@ -13,6 +13,7 @@
     :loading="loadingStore.isLoading"
     :loading-text="loadingStore.loadingText"
     :errors="errors"
+    :canRequestTasks="canRequestTasks"
     :canUnRequestTasks="canUnRequestTasks"
     :canCancelTasks="canCancelTasks"
     :schedulesLastRuns="schedulesLastRuns"
@@ -65,6 +66,7 @@ const headers = computed(() => {
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
+        canRequestTasks.value ? { title: 'Diagnose', value: 'diagnose', sortable: false } : null,
         canUnRequestTasks.value ? { title: 'Remove', value: 'remove', sortable: false } : null,
       ].filter(Boolean) as { title: string; value: string }[]
     case 'doing':
@@ -118,6 +120,7 @@ const paginator = ref<Paginator>({
 const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
 
+const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
 const canUnRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'delete'))
 const canCancelTasks = computed(() => authStore.hasPermission('tasks', 'cancel'))
 
