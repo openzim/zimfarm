@@ -667,17 +667,23 @@ def _check_worker_unavailable_reason(
     worker: WorkerLightSchema, running_tasks: list[RunningTask]
 ) -> str | None:
     running_task_timestamps = [t.updated_at for t in running_tasks]
+    last_seen_reason = ""
+    if worker.last_seen:
+        last_seen_reason = f" and was last seen on {worker.last_seen}"
+
     if running_task_timestamps:
         elapsed_minutes = int(
             (getnow() - to_naive_utc(max(running_task_timestamps))).total_seconds() / 60
         )
         reason = (
             f"We have no reason for this task to not start on worker '{worker.name} "
-            "but workers do start only one task at a time and last task started task"
+            "but workers do start only one task at a time and last task started "
             f"{elapsed_minutes} minutes ago. Worker is {worker.status}"
-        )
-        if worker.last_seen:
-            reason += f" and was last seen on {worker.last_seen}"
+        ) + last_seen_reason
+        return reason
+
+    if worker.status == "offline":
+        reason = f"Worker '{worker.name}' appears to be offline " + last_seen_reason
         return reason
 
     return None
