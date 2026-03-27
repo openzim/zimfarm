@@ -272,6 +272,8 @@ def test_worker_ip_changed(
     ip_changed: bool,
 ):
     worker = BaseWorkerSchema(
+        id=uuid4(),
+        platforms={},
         name="test_worker",
         offliners=["mwoffliner"],
         cordoned=False,

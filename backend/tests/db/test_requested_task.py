@@ -1,11 +1,9 @@
 import re
 from collections.abc import Callable
-from contextlib import nullcontext as does_not_raise
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address
 from uuid import UUID, uuid4
 
 import pytest
-from _pytest.python_api import RaisesContext
 from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
@@ -24,6 +22,7 @@ from zimfarm_backend.db.requested_task import (
     RunningTask,
     compute_requested_task_rank,
     delete_requested_task,
+    diagnose_requested_task,
     does_platform_allow_worker_to_run,
     find_requested_task_for_worker,
     get_currently_running_tasks,
@@ -34,6 +33,7 @@ from zimfarm_backend.db.requested_task import (
     request_task,
     update_requested_task_priority,
 )
+from zimfarm_backend.db.worker import create_worker_schema
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
@@ -170,7 +170,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
             False,
-            "Worker's offliners do not match the offliner for schedule .*",
+            "Worker .* offliners do not match the offliner for schedule .*",
             id="worker-with-different-offliner",
         ),
         pytest.param(
@@ -182,7 +182,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
             False,
-            "Worker does not have enough resources to run schedule .*",
+            "Worker .* does not have enough resources to run schedule .*",
             id="worker-does-not-match-schedule-cpu",
         ),
         pytest.param(
@@ -194,7 +194,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
             False,
-            "Worker does not have enough resources to run schedule .*",
+            "Worker .* does not have enough resources to run schedule .*",
             id="worker-does-not-match-schedule-memory",
         ),
         pytest.param(
@@ -206,7 +206,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
             False,
-            "Worker does not have enough resources to run schedule .*",
+            "Worker .* does not have enough resources to run schedule .*",
             id="worker-does-not-match-schedule-disk",
         ),
         pytest.param(
@@ -218,7 +218,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "priority",  # schedule_context
             False,
-            "Worker does not have required context to run schedule .*",
+            "Worker .* does not have required context to run schedule .*",
             id="worker-context-does-not-match-schedule",
         ),
         pytest.param(
@@ -230,7 +230,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # schedule_context
             False,
-            "Worker has required context but IP is not whitelisted to run",
+            "Worker .* has required context but IP is not whitelisted to run",
             id="worker-whitelisted-context-ip-does-not-match-last-seen",
         ),
         pytest.param(
@@ -254,7 +254,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # schedule_context
             False,
-            "is disabled from requesting new tasks",
+            "is cordoned/disabled",
             id="worker-cordoned",
         ),
         pytest.param(
@@ -266,7 +266,7 @@ def test_request_task_already_requested(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # schedule_context
             False,
-            "is disabled from requesting new tasks",
+            "is cordoned/disabled",
             id="worker-admin-disabled",
         ),
         pytest.param(
@@ -679,7 +679,7 @@ def test_get_currently_running_tasks(
     """Test that get_currently_running_tasks returns correct list of tasks"""
     # Create a running task
     create_task(worker=worker)
-    running_tasks = get_currently_running_tasks(dbsession, worker)
+    running_tasks = get_currently_running_tasks(dbsession, worker.name)
     assert len(running_tasks) == 1
     assert running_tasks[0].worker_name == worker.name
 
@@ -884,7 +884,7 @@ def test_get_tasks_doable_by_worker(
     dbsession.add(task)
     dbsession.flush()
 
-    doable_tasks = get_tasks_doable_by_worker(dbsession, worker)
+    doable_tasks = get_tasks_doable_by_worker(dbsession, create_worker_schema(worker))
     assert bool(doable_tasks) == found
 
 
@@ -951,11 +951,11 @@ def test_does_platform_allow_worker_to_run(
 
     assert (
         does_platform_allow_worker_to_run(
-            worker=worker,
+            worker=create_worker_schema(worker),
             all_running_tasks=running_tasks,
             running_tasks=running_tasks,
             task=task,
-        )
+        )[0]
         == expected_result
     )
 
@@ -965,10 +965,8 @@ def test_does_platform_allow_worker_to_run(
         "avail_cpu",
         "avail_memory",
         "avail_disk",
-        "worker_name",
         "worker_cordoned",
         "worker_admin_disabled",
-        "expect_exception",
         "expect_found",
     ],
     [
@@ -976,10 +974,8 @@ def test_does_platform_allow_worker_to_run(
             2,
             2048,
             10240,
-            "testworker",
             False,
             False,
-            does_not_raise(),
             True,
             id="sufficient-resources",
         ),
@@ -987,10 +983,8 @@ def test_does_platform_allow_worker_to_run(
             2,
             2048,
             10240,
-            "testworker",
             True,
             False,
-            does_not_raise(),
             False,
             id="sufficient-resources-but-cordoned",
         ),
@@ -998,10 +992,8 @@ def test_does_platform_allow_worker_to_run(
             2,
             2048,
             10240,
-            "testworker",
             False,
             True,
-            does_not_raise(),
             False,
             id="sufficient-resources-but-admin-disabled",
         ),
@@ -1009,23 +1001,10 @@ def test_does_platform_allow_worker_to_run(
             0,
             0,
             0,
-            "testworker",
             False,
             False,
-            does_not_raise(),
             False,
             id="insufficient-resources",
-        ),
-        pytest.param(
-            2,
-            2048,
-            10240,
-            "nonexistent",
-            False,
-            False,
-            pytest.raises(RecordDoesNotExistError),
-            None,
-            id="nonexistent-worker",
         ),
     ],
 )
@@ -1039,10 +1018,8 @@ def test_find_requested_task_for_worker(
     avail_cpu: int,
     avail_memory: int,
     avail_disk: int,
-    worker_name: str,
     worker_cordoned: bool,
     worker_admin_disabled: bool,
-    expect_exception: RaisesContext[Exception],
     expect_found: bool,
 ):
     schedule_config = create_schedule_config(
@@ -1072,88 +1049,197 @@ def test_find_requested_task_for_worker(
     dbsession.add(task)
     dbsession.flush()
 
-    with expect_exception:
-        found = find_requested_task_for_worker(
-            session=dbsession,
-            user_id=worker.user.id,
-            worker_name=worker_name,
-            avail_cpu=avail_cpu,
-            avail_memory=avail_memory,
-            avail_disk=avail_disk,
-        )
-        if expect_found:
-            assert found is not None
-            assert found.id == task.id
-        else:
-            assert found is None
+    found = find_requested_task_for_worker(
+        session=dbsession,
+        worker=create_worker_schema(worker),
+        avail_cpu=avail_cpu,
+        avail_memory=avail_memory,
+        avail_disk=avail_disk,
+    ).requested_task
+    if expect_found:
+        assert found is not None
+        assert found.id == task.id
+    else:
+        assert found is None
 
 
 @pytest.mark.parametrize(
     [
-        "schedule_context",
+        "worker_cordoned",
+        "worker_admin_disabled",
+        "worker_offliners",
         "worker_contexts",
-        "found",
+        "worker_resource",
+        "schedule_resource",
+        "schedule_context",
+        "result_bool",
+        "error_regex",
     ],
     [
-        # worker has priority context, schedule has priority context
-        # so the task should be assigned to worker
         pytest.param(
-            "priority",
-            {"priority": None, "general": None},
-            True,
-            id="schedule-priority-worker-priority-general",
-        ),
-        # schedule has priority context, worker has general context
-        # so the task should not be assigned to worker
-        pytest.param(
-            "priority",
-            {"general": None},
             False,
-            id="schedule-priority-worker-general",
-        ),
-        # schedule has no context but worker has contexts, worker should still
-        # be assigned to the task
-        pytest.param(
-            "",
-            {"priority": None, "general": None},
-            True,
-            id="schedule-no-context-worker-priority-general",
-        ),
-        # schedule has context while worker does not have context, so worker should
-        # not be assigned to the task
-        pytest.param(
-            "priority",
-            {},
             False,
-            id="schedule-priority-worker-no-context",
-        ),
-        # both schedule and worker have no context, so the task should be assigned
-        # to worker
-        pytest.param(
-            "",
+            ["mwoffliner"],
             {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "",
             True,
-            id="schedule-no-context-worker-no-context",
+            None,
+            id="worker-matches-schedule",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=2, memory=1, disk=1),
+            "",
+            False,
+            "Worker .* does not have enough resources to run",
+            id="worker-does-not-match-schedule-cpu",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=2, disk=1),
+            "",
+            False,
+            "Worker .* does not have enough resources to run",
+            id="worker-does-not-match-schedule-memory",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {},
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=2),
+            "",
+            False,
+            "Worker .* does not have enough resources to run",
+            id="worker-does-not-match-schedule-disk",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {"general": None},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "priority",  # schedule_context
+            False,
+            "Worker .* does not have required context to run",
+            id="worker-context-does-not-match-schedule",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {"general": IPv4Address("192.168.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            False,
+            "Worker .* has required context but IP is not whitelisted to run",
+            id="worker-whitelisted-context-ip-does-not-match-last-seen",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {"general": IPv4Address("127.0.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            True,
+            None,
+            id="worker-whitelisted-context-ip-matches-last-seen",
+        ),
+        pytest.param(
+            True,
+            False,
+            ["mwoffliner"],
+            {"general": IPv4Address("127.0.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            False,
+            "is cordoned/disabled",
+            id="worker-cordoned",
+        ),
+        pytest.param(
+            False,
+            True,
+            ["mwoffliner"],
+            {"general": IPv4Address("127.0.0.1")},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            False,
+            "is cordoned/disabled",
+            id="worker-admin-disabled",
+        ),
+        pytest.param(
+            False,
+            False,
+            ["mwoffliner"],
+            {"general": None},  # worker context
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            ResourcesSchema(cpu=1, memory=1, disk=1),
+            "general",  # schedule_context
+            True,
+            None,
+            id="context-has-no-ip",
         ),
     ],
 )
-def test_find_requested_task_for_worker_with_schedule(
+def test_diagnose_requested_task(
     dbsession: OrmSession,
-    worker: Worker,
-    user: User,
+    create_worker: Callable[..., Worker],
+    create_schedule: Callable[..., Schedule],
     create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_user: Callable[..., User],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
-    schedule_context: str,
-    worker_contexts: dict[str, IPv4Address | IPv6Address | None],
     *,
-    found: bool,
+    worker_cordoned: bool,
+    worker_admin_disabled: bool,
+    worker_offliners: list[str],
+    worker_contexts: list[str],
+    worker_resource: ResourcesSchema,
+    schedule_resource: ResourcesSchema,
+    schedule_context: str,
+    result_bool: bool,
+    error_regex: str | None,
 ):
-    # Create a task that matches worker's capabilities
-    schedule_config = create_schedule_config(
-        cpu=worker.cpu, memory=worker.memory, disk=worker.disk
+    """Test that diagnose_requested_task accurately reports why a task can't run"""
+    worker = create_worker(
+        cordoned=worker_cordoned,
+        admin_disabled=worker_admin_disabled,
+        cpu=worker_resource.cpu,
+        memory=worker_resource.memory,
+        disk=worker_resource.disk,
+        name="random-worker",
+        offliners=worker_offliners,
+        contexts=worker_contexts,
+        last_ip=IPv4Address("127.0.0.1"),
     )
-    # Create a requested tag with specific tags
+    schedule_config = create_schedule_config(
+        cpu=schedule_resource.cpu,
+        memory=schedule_resource.memory,
+        disk=schedule_resource.disk,
+    )
+    schedule = create_schedule(
+        schedule_config=schedule_config,
+        context=schedule_context,
+    )
+    requested_by = create_user(username="testuser")
+
     task = RequestedTask(
         status="requested",
         timestamp=[("requested", getnow()), ("reserved", getnow())],
@@ -1165,23 +1251,217 @@ def test_find_requested_task_for_worker_with_schedule(
         upload={},
         notification={},
         updated_at=getnow(),
-        original_schedule_name="test_schedule",
+        original_schedule_name=schedule.name,
         context=schedule_context,
     )
-    task.requested_by = worker.user
+    task.requested_by = requested_by
     task.offliner_definition_id = mwoffliner_definition.id
-    worker.contexts = worker_contexts
     task.worker = worker
     dbsession.add(task)
     dbsession.flush()
 
-    # Test finding task with sufficient resources
+    reason = diagnose_requested_task(
+        session=dbsession,
+        worker=create_worker_schema(worker),
+        requested_task=task,
+    )
+
+    if result_bool:
+        assert reason is None
+    else:
+        assert reason is not None
+        if error_regex:
+            assert re.search(error_regex, reason) is not None
+
+
+def test_find_requested_task_first_cannot_run_but_alternative_can(
+    dbsession: OrmSession,
+    create_worker: Callable[..., Worker],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_task: Callable[..., Task],
+    create_requested_task: Callable[..., RequestedTask],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+):
+    """Test when first candidate cannot run but alternative smaller task can"""
+    # Create worker with specific resources
+    worker = create_worker(
+        name="test_worker",
+        cpu=2,
+        memory=2000,
+        disk=10000,
+        offliners=["mwoffliner"],
+    )
+
+    # Create a running task consuming most resources
+    create_task(
+        worker=worker,
+        schedule_name="testschedule_1",
+        status=TaskStatus.started,
+        requested_task=create_requested_task(
+            schedule_name="testschedule_1",
+            schedule_config=create_schedule_config(cpu=1, memory=1500, disk=8000),
+        ),
+    )
+
+    # Create high-priority task that needs more resources than available
+    high_priority_task = RequestedTask(
+        status="requested",
+        timestamp=[("requested", getnow())],
+        events=[{"code": "requested", "timestamp": getnow()}],
+        priority=10,
+        config=expanded_config(
+            create_schedule_config(cpu=2, memory=1000, disk=4000),
+            mwoffliner,
+            mwoffliner_definition,
+        ).model_dump(mode="json", context={"show_secrets": True}),
+        upload={},
+        notification={},
+        updated_at=getnow(),
+        original_schedule_name="high_priority_schedule",
+    )
+    high_priority_task.requested_by = worker.user
+    high_priority_task.offliner_definition_id = mwoffliner_definition.id
+    high_priority_task.worker = worker
+    dbsession.add(high_priority_task)
+
+    # Create lower priority task that fits in available resources
+    low_priority_task = RequestedTask(
+        status="requested",
+        timestamp=[("requested", getnow())],
+        events=[{"code": "requested", "timestamp": getnow()}],
+        priority=5,
+        config=expanded_config(
+            create_schedule_config(cpu=1, memory=250, disk=1000),
+            mwoffliner,
+            mwoffliner_definition,
+        ).model_dump(mode="json", context={"show_secrets": True}),
+        upload={},
+        notification={},
+        updated_at=getnow(),
+        original_schedule_name="low_priority_schedule",
+    )
+    low_priority_task.requested_by = worker.user
+    low_priority_task.offliner_definition_id = mwoffliner_definition.id
+    low_priority_task.worker = worker
+    dbsession.add(low_priority_task)
+    dbsession.flush()
+
     found_task = find_requested_task_for_worker(
         session=dbsession,
-        user_id=user.id,
-        worker_name=worker.name,
-        avail_cpu=worker.cpu,
-        avail_memory=worker.memory,
-        avail_disk=worker.disk,
+        worker=create_worker_schema(worker),
+        avail_cpu=1,
+        avail_memory=500,
+        avail_disk=2000,
+    ).requested_task
+
+    assert found_task is not None
+    assert found_task.id == low_priority_task.id
+
+
+@pytest.mark.parametrize(
+    ["alternative_task_duration", "expected_found"],
+    [
+        pytest.param(
+            300,  # 5 minutes - fast enough to complete before resources free
+            True,
+            id="alternative-task-fast-enough",
+        ),
+        pytest.param(
+            3600,  # 60 minutes - too slow, exceeds available time window
+            False,
+            id="alternative-task-too-slow",
+        ),
+    ],
+)
+def test_find_requested_task_first_cannot_run_alternative_by_duration(
+    dbsession: OrmSession,
+    create_worker: Callable[..., Worker],
+    create_schedule_config: Callable[..., ScheduleConfigSchema],
+    create_schedule: Callable[..., Schedule],
+    create_requested_task: Callable[..., RequestedTask],
+    create_task: Callable[..., Task],
+    mwoffliner: OfflinerSchema,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    *,
+    alternative_task_duration: int,
+    expected_found: bool,
+):
+    """Test when alternative task fits resources but duration determines selection"""
+    worker = create_worker(
+        name="test_worker",
+        cpu=2,
+        memory=2000,
+        disk=10000,
+        offliners=["mwoffliner"],
     )
-    assert bool(found_task) == found
+
+    schedule = create_schedule(
+        schedule_config=create_schedule_config(cpu=1, memory=1500, disk=8000),
+        name="testschedule",
+    )
+
+    schedule.durations[0].value = 1800  # 30 minutes
+    dbsession.add(schedule)
+    dbsession.flush()
+
+    create_task(
+        worker=worker,
+        status=TaskStatus.started,
+        requested_task=create_requested_task(
+            worker=worker,
+            schedule_name=schedule.name,
+        ),
+    )
+
+    high_priority_task = RequestedTask(
+        status="requested",
+        timestamp=[("requested", getnow())],
+        events=[{"code": "requested", "timestamp": getnow()}],
+        priority=10,
+        config=expanded_config(
+            create_schedule_config(cpu=2, memory=1000, disk=4000),
+            mwoffliner,
+            mwoffliner_definition,
+        ).model_dump(mode="json", context={"show_secrets": True}),
+        upload={},
+        notification={},
+        updated_at=getnow(),
+        original_schedule_name="high_priority_schedule",
+    )
+    high_priority_task.requested_by = worker.user
+    high_priority_task.offliner_definition_id = mwoffliner_definition.id
+    high_priority_task.worker = worker
+    dbsession.add(high_priority_task)
+
+    # Create schedule with specific duration for alternative task
+    alternative_schedule = create_schedule(
+        worker=worker,
+        schedule_config=create_schedule_config(cpu=1, memory=250, disk=1000),
+        name="alternative_schedule",
+    )
+    alternative_schedule.durations[0].value = alternative_task_duration
+    dbsession.add(alternative_schedule)
+    dbsession.flush()
+
+    alternative_task = create_requested_task(
+        worker=worker,
+        schedule_name=alternative_schedule.name,
+        priority=5,
+        schedule_config=create_schedule_config(cpu=1, memory=250, disk=1000),
+    )
+    dbsession.flush()
+
+    found_task = find_requested_task_for_worker(
+        session=dbsession,
+        worker=create_worker_schema(worker),
+        avail_cpu=1,
+        avail_memory=500,
+        avail_disk=2000,
+    ).requested_task
+
+    if expected_found:
+        assert found_task is not None
+        assert found_task.id == alternative_task.id
+    else:
+        assert found_task is None

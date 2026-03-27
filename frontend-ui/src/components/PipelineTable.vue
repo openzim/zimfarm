@@ -153,6 +153,19 @@
           <span v-else>n/a</span>
         </template>
 
+        <template #[`item.diagnose`]="{ item }">
+          <v-btn
+            v-if="props.canRequestTasks"
+            size="small"
+            color="primary"
+            variant="tonal"
+            :loading="diagnosingTasks[item.id]"
+            @click="diagnoseTask(item as RequestedTaskLight)"
+          >
+            Diagnose
+          </v-btn>
+        </template>
+
         <template #[`item.remove`]="{ item }">
           <RemoveRequestedTaskButton
             v-if="canUnRequestTasks"
@@ -258,14 +271,21 @@ import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
+import { useRequestedTasksStore } from '@/stores/requestedTasks'
+import { useWorkersStore } from '@/stores/workers'
+import { useNotificationStore } from '@/stores/notification'
 
 const router = useRouter()
 const route = useRoute()
 
 const { smAndDown } = useDisplay()
+const requestedTasksStore = useRequestedTasksStore()
+const workersStore = useWorkersStore()
+const notificationStore = useNotificationStore()
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
+  canRequestTasks?: boolean // whether the user can request tasks
   canUnRequestTasks: boolean // whether the user can unrequest tasks
   canCancelTasks: boolean // whether the user can cancel tasks
   loading: boolean // whether the table is loading
@@ -286,6 +306,7 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 const loadingSchedules = ref<Record<string, boolean>>({})
 const loadingAllSchedules = ref(false)
+const diagnosingTasks = ref<Record<string, boolean>>({})
 
 // Check if we should show the "Load All Last Runs" button (only in failed tab)
 const showLoadAllButton = computed(() => {
@@ -330,6 +351,43 @@ async function handleLoadAllLastRuns() {
     emit('loadAllLastRuns')
   } finally {
     loadingAllSchedules.value = false
+  }
+}
+
+async function diagnoseTask(task: RequestedTaskLight) {
+  diagnosingTasks.value[task.id] = true
+  try {
+    let workersToDiagnose: string[] = []
+    if (task.worker_name) {
+      workersToDiagnose = [task.worker_name]
+    } else {
+      const workersList = await workersStore.fetchWorkers({ limit: 20 })
+      if (workersList) {
+        workersToDiagnose = workersList.map((w) => w.name)
+      }
+    }
+
+    if (workersToDiagnose.length === 0) {
+      notificationStore.showError('No workers available to diagnose against')
+      return
+    }
+
+    const promises = workersToDiagnose.map((workerName) =>
+      requestedTasksStore.diagnoseRequestedTask(task.id, workerName),
+    )
+
+    const results = await Promise.all(promises)
+    const errorsList = results.filter((res) => res !== null) as string[][]
+
+    if (errorsList.length > 0) {
+      errorsList.forEach((errs) => {
+        errs.forEach((e) => notificationStore.showError(e))
+      })
+    } else {
+      notificationStore.showSuccess('Diagnosis complete: No errors found.')
+    }
+  } finally {
+    diagnosingTasks.value[task.id] = false
   }
 }
 </script>

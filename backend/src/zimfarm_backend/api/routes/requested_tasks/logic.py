@@ -1,9 +1,10 @@
+from http import HTTPStatus
 from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
@@ -11,6 +12,7 @@ from zimfarm_backend.api.routes.dependencies import (
     get_current_user,
     get_current_user_or_none,
     get_current_user_with_session,
+    require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
@@ -34,6 +36,7 @@ from zimfarm_backend.common.constants import (
 from zimfarm_backend.common.external import update_workers_whitelist
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
+    NotEmptyString,
     WorkerField,
     ZIMDisk,
     ZIMMemory,
@@ -51,11 +54,15 @@ from zimfarm_backend.db.models import User
 from zimfarm_backend.db.requested_task import (
     compute_requested_task_rank,
     find_requested_task_for_worker,
+    get_raw_requested_task,
     get_requested_task_by_id,
     request_task,
 )
 from zimfarm_backend.db.requested_task import (
     delete_requested_task as db_delete_requested_task,
+)
+from zimfarm_backend.db.requested_task import (
+    diagnose_requested_task as db_diagnose_requested_task,
 )
 from zimfarm_backend.db.requested_task import (
     get_requested_tasks as db_get_requested_tasks,
@@ -65,7 +72,11 @@ from zimfarm_backend.db.requested_task import (
 )
 from zimfarm_backend.db.schedule import count_enabled_schedules
 from zimfarm_backend.db.user import check_user_permission
-from zimfarm_backend.db.worker import get_worker, update_worker
+from zimfarm_backend.db.worker import (
+    create_worker_schema,
+    get_worker,
+    update_worker,
+)
 
 router = APIRouter(prefix="/requested-tasks", tags=["requested-tasks"])
 
@@ -229,12 +240,11 @@ def get_requested_tasks_for_worker(
 
     task = find_requested_task_for_worker(
         session=session,
-        worker_name=worker_name,
-        user_id=current_user.id,
+        worker=create_worker_schema(worker),
         avail_cpu=avail_cpu,
         avail_memory=avail_memory,
         avail_disk=avail_disk,
-    )
+    ).requested_task
 
     return ListResponse(
         meta=calculate_pagination_metadata(
@@ -357,3 +367,27 @@ def delete_requested_task(
     db_delete_requested_task(session, requested_task_id)
 
     return JSONResponse(content={"deleted": 1})
+
+
+@router.get(
+    "/{requested_task_id}/diagnose/{worker}",
+    dependencies=[
+        Depends(require_permission(namespace="requested_tasks", name="create"))
+    ],
+)
+def diagnose_requested_task(
+    requested_task_id: Annotated[UUID, Path()],
+    worker: Annotated[NotEmptyString, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+):
+    """Diagnose why a requested task is not running on worker."""
+    reason = db_diagnose_requested_task(
+        session,
+        worker=create_worker_schema(get_worker(session, worker_name=worker)),
+        requested_task=get_raw_requested_task(
+            session, requested_task_id=requested_task_id
+        ),
+    )
+    if reason:
+        raise BadRequestError(reason)
+    return Response(status_code=HTTPStatus.NO_CONTENT)
