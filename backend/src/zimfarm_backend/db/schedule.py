@@ -32,6 +32,7 @@ from zimfarm_backend.common.schemas.orms import (
     ScheduleFullSchema,
     ScheduleHistorySchema,
     ScheduleLightSchema,
+    WorkerLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import (
@@ -118,7 +119,7 @@ def map_duration(duration: ScheduleDuration) -> ScheduleDurationSchema:
 
 
 def _get_duration_for_schedule(
-    schedule: Schedule, worker: Worker
+    schedule: Schedule, worker: WorkerLightSchema | Worker
 ) -> ScheduleDurationSchema:
     """get duration"""
     for duration in schedule.durations:
@@ -133,7 +134,10 @@ def _get_duration_for_schedule(
 
 
 def get_schedule_duration(
-    session: OrmSession, *, schedule_name: str | None, worker: Worker
+    session: OrmSession,
+    *,
+    schedule_name: str | None,
+    worker: WorkerLightSchema | Worker,
 ) -> ScheduleDurationSchema:
     """get duration for a schedule and worker (or default one)"""
     if schedule_name is None:

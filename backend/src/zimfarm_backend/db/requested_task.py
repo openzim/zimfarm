@@ -2,14 +2,13 @@ import datetime
 from typing import cast
 from uuid import UUID
 
-from humanfriendly import format_size
-from pydantic import Field
+from humanfriendly import format_size, format_timespan
 from sqlalchemy import BigInteger, delete, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import getnow
+from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import (
     ARTIFACTS_EXPIRATION,
     ARTIFACTS_UPLOAD_URI,
@@ -31,6 +30,7 @@ from zimfarm_backend.common.schemas.models import (
     ScheduleNotificationSchema,
 )
 from zimfarm_backend.common.schemas.orms import (
+    BaseRequestedTaskSchema,
     ConfigResourcesSchema,
     ConfigWithOnlyOfflinerAndResourcesSchema,
     OfflinerDefinitionSchema,
@@ -39,6 +39,7 @@ from zimfarm_backend.common.schemas.orms import (
     RequestedTaskLightSchema,
     ScheduleDurationSchema,
     TaskUploadSchema,
+    WorkerLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
@@ -50,7 +51,7 @@ from zimfarm_backend.db.offliner_definition import (
 )
 from zimfarm_backend.db.schedule import get_schedule_duration, get_schedule_or_none
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
-from zimfarm_backend.db.worker import get_worker_or_none
+from zimfarm_backend.db.worker import create_worker_schema, get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
@@ -59,10 +60,23 @@ from zimfarm_backend.utils.timestamp import (
 # Maximum positive integer value for PostgreSQL BigInteger
 MAX_BIG_INT_VAL = 2**63 - 1
 
+ScheduleOrTask = Schedule | RequestedTask
+
 
 class RequestedTaskListResult(BaseModel):
     nb_records: int
     requested_tasks: list[RequestedTaskLightSchema]
+
+
+class RequestedTaskWithDuration(BaseRequestedTaskSchema):
+    duration: ScheduleDurationSchema
+    updated_at: datetime.datetime
+    config: ExpandedScheduleConfigSchema
+
+
+class RequestedTaskWithDurationResult(BaseModel):
+    requested_task: RequestedTaskWithDuration | None
+    error: str | None
 
 
 class RequestTaskResult(BaseModel):
@@ -70,26 +84,34 @@ class RequestTaskResult(BaseModel):
     error: str | None
 
 
+def _schedule_or_task_identifier_message(entity: ScheduleOrTask):
+    match entity:
+        case Schedule():
+            return f"schedule '{entity.name}'"
+        case RequestedTask():
+            return f"requested task '{entity.id}'"
+
+
 def _resource_mismatch_message(
-    worker: Worker, schedule_resource: ResourcesSchema
+    worker: WorkerLightSchema, resource: ResourcesSchema
 ) -> list[str]:
     mismatched_message: list[str] = []
-    if worker.cpu < schedule_resource.cpu:
+    if worker.resources.cpu < resource.cpu:
         mismatched_message.append(
-            f"cpu: required={format_size(schedule_resource.cpu, binary=True)}, "
-            f"available={format_size(worker.cpu, binary=True)}"
+            f"cpu: required={format_size(resource.cpu, binary=True)}, "
+            f"available={format_size(worker.resources.cpu, binary=True)}"
         )
 
-    if worker.disk < schedule_resource.disk:
+    if worker.resources.disk < resource.disk:
         mismatched_message.append(
-            f"disk: required={format_size(schedule_resource.disk, binary=True)}, "
-            f"available={format_size(worker.disk, binary=True)}"
+            f"disk: required={format_size(resource.disk, binary=True)}, "
+            f"available={format_size(worker.resources.disk, binary=True)}"
         )
 
-    if worker.memory < schedule_resource.memory:
+    if worker.resources.memory < resource.memory:
         mismatched_message.append(
-            f"memory: required={format_size(schedule_resource.memory, binary=True)}, "
-            f"available={format_size(worker.memory, binary=True)}"
+            f"memory: required={format_size(resource.memory, binary=True)}, "
+            f"available={format_size(worker.resources.memory, binary=True)}"
         )
     return mismatched_message
 
@@ -101,7 +123,7 @@ def _create_new_requested_task(
     schedule: Schedule,
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema,
-    worker: Worker | None,
+    worker: WorkerLightSchema | None,
     priority: int = 0,
 ):
     """Create a new requested task."""
@@ -161,7 +183,7 @@ def _create_new_requested_task(
     requested_task.requested_by_id = requested_by
     requested_task.schedule = schedule
     if worker:
-        requested_task.worker = worker
+        requested_task.worker_id = worker.id
     requested_task.offliner_definition = schedule.offliner_definition
 
     session.add(requested_task)
@@ -198,43 +220,59 @@ def _validate_schedule_state(
     return schedule, None
 
 
-def _validate_worker_context(worker: Worker, schedule: Schedule) -> str | None:
-    if not schedule.context:
+def _validate_worker_context(
+    worker: WorkerLightSchema, entity: ScheduleOrTask
+) -> str | None:
+    if not entity.context:
         return None
-    if schedule.context not in worker.contexts:
+    identifier = _schedule_or_task_identifier_message(entity)
+    if entity.context not in worker.contexts:
         return (
-            f"Worker does not have required context to run schedule '{schedule.name}'."
+            f"Worker '{worker.name}' does not have required context to run "
+            f"{identifier}."
         )
 
-    allowed_ip = worker.contexts[schedule.context]
-    if allowed_ip is not None and allowed_ip != str(worker.last_ip):
+    allowed_ip = worker.contexts[entity.context]
+    if allowed_ip is not None and str(allowed_ip) != str(worker.last_ip):
         return (
-            "Worker has required context but IP is not whitelisted to run "
-            f"schedule '{schedule.name}'."
-        )
-    return None
-
-
-def _validate_worker_offliner(worker: Worker, schedule: Schedule) -> str | None:
-    if schedule.config["offliner"]["offliner_id"] not in worker.offliners:
-        return (
-            f"Worker's offliners do not match the offliner for schedule "
-            f"'{schedule.name}'."
+            f"Worker '{worker.name}' has required context but IP is not whitelisted "
+            "to run {identifier}."
         )
     return None
 
 
-def _validate_worker_resources(worker: Worker, schedule: Schedule) -> str | None:
-    schedule_resource = ResourcesSchema.model_validate(schedule.config["resources"])
+def _validate_worker_offliner(
+    worker: WorkerLightSchema, entity: ScheduleOrTask
+) -> str | None:
+    identifier = _schedule_or_task_identifier_message(entity)
+    if entity.config["offliner"]["offliner_id"] not in worker.offliners:
+        return (
+            f"Worker '{worker.name}' offliners do not match the offliner for "
+            f"{identifier} "
+        )
+    return None
+
+
+def _validate_worker_availability(worker: WorkerLightSchema) -> str | None:
+    if worker.cordoned or worker.admin_disabled:
+        return f"Worker '{worker.name}' is cordoned/disabled."
+    return None
+
+
+def _validate_worker_resources(
+    worker: WorkerLightSchema, entity: ScheduleOrTask
+) -> str | None:
+    identifier = _schedule_or_task_identifier_message(entity)
+    resource = ResourcesSchema.model_validate(entity.config["resources"])
     if (
-        worker.cpu < schedule_resource.cpu
-        or worker.memory < schedule_resource.memory
-        or worker.disk < schedule_resource.disk
+        worker.resources.cpu < resource.cpu
+        or worker.resources.memory < resource.memory
+        or worker.resources.disk < resource.disk
     ):
-        mismatched_message = _resource_mismatch_message(worker, schedule_resource)
+        mismatched_message = _resource_mismatch_message(worker, resource)
         return (
-            "Worker does not have enough resources to run schedule "
-            f"'{schedule.name}'. Insufficient: {'; '.join(mismatched_message)}"
+            f"Worker '{worker.name}' does not have enough resources to run "
+            f"{identifier}. Insufficient: {'; '.join(mismatched_message)}"
         )
     return None
 
@@ -263,18 +301,17 @@ def request_task(
     if schedule is None:
         return RequestTaskResult(requested_task=None, error=error)
 
-    worker = None
+    worker: WorkerLightSchema | None = None
     if worker_name is not None:
-        worker = get_worker_or_none(session, worker_name=worker_name)
-        if worker is None:
+        db_worker = get_worker_or_none(session, worker_name=worker_name)
+        if db_worker is None:
             return RequestTaskResult(
                 requested_task=None, error=f"Worker '{worker_name}' not found"
             )
-        if worker.cordoned or worker.admin_disabled:
-            return RequestTaskResult(
-                requested_task=None,
-                error=f"Worker '{worker_name}' is disabled from requesting new tasks",
-            )
+        worker = create_worker_schema(db_worker)
+        if error := _validate_worker_availability(worker):
+            return RequestTaskResult(requested_task=None, error=error)
+
         for validator in (
             _validate_worker_context,
             _validate_worker_offliner,
@@ -430,24 +467,45 @@ def get_requested_tasks(
     return results
 
 
-class RequestedTaskWithDuration(BaseModel):
-    id: UUID
-    status: str
-    config: ExpandedScheduleConfigSchema
-    timestamp: list[tuple[str, datetime.datetime]]
-    requested_by: str
-    requester_id: UUID = Field(exclude=True)
-    priority: int
-    schedule_name: str | None
-    original_schedule_name: str
-    worker_name: str
-    context: str = Field(exclude=True)
-    duration: ScheduleDurationSchema
-    updated_at: datetime.datetime
+def create_requested_task_with_duration(
+    session: OrmSession, *, task: RequestedTask, worker: WorkerLightSchema | Worker
+) -> RequestedTaskWithDuration:
+    return RequestedTaskWithDuration(
+        id=task.id,
+        status=task.status,
+        schedule_name=task.schedule.name if task.schedule else None,
+        original_schedule_name=task.original_schedule_name,
+        config=ExpandedScheduleConfigSchema.model_validate(
+            {
+                **task.config,
+                "offliner": create_offliner_instance(
+                    offliner=get_offliner(session, task.offliner_definition.offliner),
+                    offliner_definition=task.offliner_definition,
+                    data=task.config["offliner"],
+                    skip_validation=True,
+                ),
+            },
+            context={"skip_validation": True},
+        ),
+        timestamp=task.timestamp,
+        requested_by=task.requested_by.display_name,
+        requester_id=task.requested_by.id,
+        priority=task.priority,
+        worker_name=task.worker.name if task.worker else worker.name,
+        context=task.context,
+        duration=get_schedule_duration(
+            session,
+            schedule_name=task.schedule.name if task.schedule else None,
+            worker=worker,
+        ),
+        updated_at=task.updated_at,
+    )
 
 
 def get_tasks_doable_by_worker(
-    session: OrmSession, worker: Worker
+    session: OrmSession,
+    worker: WorkerLightSchema,
+    requested_task_id: UUID | None = None,
 ) -> list[RequestedTaskWithDuration]:
     """list of tasks that a worker can do with its total resources.
 
@@ -468,7 +526,7 @@ def get_tasks_doable_by_worker(
             # context is not requiring a specific worker IP
             or worker.contexts.get(task.context) is None
             # worker IP is still matching the IP whitelisted for this context
-            or worker.contexts[task.context] == str(worker.last_ip)
+            or worker.contexts[task.context] == worker.last_ip
         )
 
     query = (
@@ -479,14 +537,15 @@ def get_tasks_doable_by_worker(
         )
         .where(
             RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger)
-            <= worker.cpu,
+            <= worker.resources.cpu,
             RequestedTask.config["resources"]["memory"].astext.cast(BigInteger)
-            <= worker.memory,
+            <= worker.resources.memory,
             RequestedTask.config["resources"]["disk"].astext.cast(BigInteger)
-            <= worker.disk,
+            <= worker.resources.disk,
             RequestedTask.config["offliner"]["offliner_id"].astext.in_(
                 worker.offliners
             ),
+            (RequestedTask.id == requested_task_id) | (requested_task_id is None),
             # if requested task has a context, worker must have that context
             or_(
                 # if a task has a context set to empty string, it should be
@@ -508,38 +567,7 @@ def get_tasks_doable_by_worker(
 
     return sorted(
         [
-            RequestedTaskWithDuration(
-                id=task.id,
-                status=task.status,
-                schedule_name=task.schedule.name if task.schedule else None,
-                original_schedule_name=task.original_schedule_name,
-                config=ExpandedScheduleConfigSchema.model_validate(
-                    {
-                        **task.config,
-                        "offliner": create_offliner_instance(
-                            offliner=get_offliner(
-                                session, task.offliner_definition.offliner
-                            ),
-                            offliner_definition=task.offliner_definition,
-                            data=task.config["offliner"],
-                            skip_validation=True,
-                        ),
-                    },
-                    context={"skip_validation": True},
-                ),
-                timestamp=task.timestamp,
-                requested_by=task.requested_by.display_name,
-                requester_id=task.requested_by.id,
-                priority=task.priority,
-                worker_name=task.worker.name if task.worker else worker.name,
-                context=task.context,
-                duration=get_schedule_duration(
-                    session,
-                    schedule_name=task.schedule.name if task.schedule else None,
-                    worker=worker,
-                ),
-                updated_at=task.updated_at,
-            )
+            create_requested_task_with_duration(session, task=task, worker=worker)
             for task in filter(filter_req_task_for_ip_issues, session.scalars(query))
         ],
         key=lambda x: (-x.priority, -x.duration.value, x.updated_at),
@@ -548,18 +576,18 @@ def get_tasks_doable_by_worker(
 
 def does_platform_allow_worker_to_run(
     *,
-    worker: Worker,
+    worker: WorkerLightSchema,
     all_running_tasks: list[RunningTask],
     running_tasks: list[RunningTask],
     task: RequestedTaskWithDuration,
-) -> bool:
+) -> tuple[bool, str | None]:
     """check if a worker can run a task based on its platform limitations"""
     platform = cast(
         str,
         task.config.offliner.offliner_id,  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
     )
     if not platform:
-        return True
+        return True, None
 
     # check whether we have an overall per-platform limit
     platform_overall_limit = Platform.get_max_overall_tasks_for(platform)
@@ -573,14 +601,18 @@ def does_platform_allow_worker_to_run(
             ]
         )
         if nb_platform_running >= platform_overall_limit:
-            return False
+            return False, (
+                f"Platform '{platform}' overall limits exceeded; "
+                f"currently running {nb_platform_running} out "
+                f"of {platform_overall_limit} tasks."
+            )
 
     # check whether we have a per-worker limit for this platform
     worker_limit = worker.platforms.get(
         platform, Platform.get_max_per_worker_tasks_for(platform)
     )
     if worker_limit is None:
-        return True
+        return True, None
 
     nb_worker_running = sum(
         [
@@ -590,13 +622,19 @@ def does_platform_allow_worker_to_run(
             == platform
         ]
     )
-    return nb_worker_running < worker_limit
+    if nb_worker_running < worker_limit:
+        return True, None
+    return False, (
+        f"Worker '{worker.name} limit for platform '{platform}' exceeded; "
+        f"currently running {nb_worker_running} out "
+        f"of {worker_limit} tasks."
+    )
 
 
 def get_possible_task_with_resources(
     *,
     tasks_worker_could_do: list[RequestedTaskWithDuration],
-    available_resources: dict[str, int],
+    available_resources: ResourcesSchema,
     available_time: float,
 ) -> RequestedTaskWithDuration | None:
     """first of possible tasks runnable with availresources within avail_time"""
@@ -614,23 +652,206 @@ def get_possible_task_with_resources(
     return None
 
 
-def _can_run(task: RequestedTaskWithDuration, resources: dict[str, int]) -> bool:
+def _can_run(task: RequestedTaskWithDuration, resource: ResourcesSchema) -> bool:
     """whether resources are suffiscient to run this task"""
-    for key in ["cpu", "memory", "disk"]:
-        if getattr(task.config.resources, key) > resources[key]:
-            return False
+    if (
+        task.config.resources.cpu > resource.cpu
+        or task.config.resources.memory > resource.memory
+        or task.config.resources.disk > resource.disk
+    ):
+        return False
     return True
+
+
+def _check_worker_unavailable_reason(
+    worker: WorkerLightSchema, running_tasks: list[RunningTask]
+) -> str | None:
+    running_task_timestamps = [t.updated_at for t in running_tasks]
+    last_seen_reason = ""
+    if worker.last_seen:
+        last_seen_reason = (
+            " and was last seen "
+            f"{format_timespan((getnow() - worker.last_seen).total_seconds())} ago"
+        )
+
+    if running_task_timestamps:
+        elapsed_seconds = int(
+            (getnow() - to_naive_utc(max(running_task_timestamps))).total_seconds()
+        )
+        reason = (
+            f"We have no reason for this task to not start on worker '{worker.name}' "
+            "but workers do start only one task at a time and last task started "
+            f"{format_timespan(elapsed_seconds)} ago. Worker is {worker.status}"
+        ) + last_seen_reason
+        return reason
+
+    if worker.status == "offline":
+        reason = f"Worker '{worker.name}' appears to be offline " + last_seen_reason
+        return reason
+
+    return None
+
+
+def diagnose_requested_task(
+    session: OrmSession,
+    *,
+    worker: WorkerLightSchema,
+    requested_task: RequestedTask,
+) -> str | None:
+    """Diagnose why a requested task isn't running on worker"""
+    if reason := _validate_worker_availability(worker):
+        return reason
+
+    for validator in (
+        _validate_worker_context,
+        _validate_worker_offliner,
+        _validate_worker_resources,
+    ):
+        if reason := validator(worker, requested_task):
+            return reason
+
+    if worker.selfish:
+        if requested_task.worker_id != worker.id:
+            return f"Worker '{worker.name}' is selfish and cannot run task."
+    elif requested_task.worker_id and requested_task.worker_id != worker.id:
+        return f"Task is assigned to a different worker '{requested_task.worker.name}'."  # pyright: ignore[reportOptionalMemberAccess]
+
+    # retrieve list of all running tasks with associated resources
+    all_running_tasks = get_currently_running_tasks(session)
+    # retrieve list of tasks we are currently running on worker
+    running_tasks = [
+        task for task in all_running_tasks if task.worker_name == worker.name
+    ]
+
+    task = create_requested_task_with_duration(
+        session, task=requested_task, worker=worker
+    )
+
+    if reason := does_platform_allow_worker_to_run(
+        worker=worker,
+        all_running_tasks=all_running_tasks,
+        running_tasks=running_tasks,
+        task=task,
+    )[1]:
+        return reason
+
+    avail_memory = worker.resources.memory - sum(
+        t.config.resources.memory for t in running_tasks
+    )
+    avail_disk = worker.resources.disk - sum(
+        t.config.resources.disk for t in running_tasks
+    )
+    avail_cpu = worker.resources.cpu - sum(
+        t.config.resources.cpu for t in running_tasks
+    )
+
+    available_resources = ResourcesSchema(
+        cpu=avail_cpu,
+        memory=avail_memory,
+        disk=avail_disk,
+    )
+
+    if _can_run(task, available_resources):
+        if reason := _check_worker_unavailable_reason(worker, running_tasks):
+            return reason
+        return None
+
+    # Calculate when resources will become available
+    if reason := _find_task_that_can_run_with_available_resources(
+        worker=worker,
+        candidates=[task],
+        available_resources=available_resources,
+        missing_resources=ResourcesSchema(
+            cpu=max([task.config.resources.cpu - avail_cpu, 0]),
+            memory=max([task.config.resources.memory - avail_memory, 0]),
+            disk=max([task.config.resources.disk - avail_disk, 0]),
+        ),
+        running_tasks=running_tasks,
+    ).error:
+        return reason
+
+    if reason := _check_worker_unavailable_reason(worker, running_tasks=running_tasks):
+        return reason
+
+    # we shouldn't get here if task can run as
+    return None
+
+
+def _find_task_that_can_run_with_available_resources(
+    *,
+    worker: WorkerLightSchema,
+    candidates: list[RequestedTaskWithDuration],
+    available_resources: ResourcesSchema,
+    missing_resources: ResourcesSchema,
+    running_tasks: list[RunningTask],
+) -> RequestedTaskWithDurationResult:
+    logger.debug(
+        f"missing cpu:{missing_resources.cpu}, mem:{missing_resources.memory}, "
+        f"disk:{missing_resources.disk}"
+    )
+    # pile-up all of those which we need to complete to have enough resources
+    preventing_tasks: list[RunningTask] = []
+    for task in sorted(running_tasks, key=lambda x: x.eta):
+        preventing_tasks.append(task)
+        if (
+            sum([t.config.resources.cpu for t in preventing_tasks])
+            >= missing_resources.cpu
+            and sum([t.config.resources.memory for t in preventing_tasks])
+            >= missing_resources.memory
+            and sum([t.config.resources.disk for t in preventing_tasks])
+            >= missing_resources.disk
+        ):
+            # stop when we'd have reclaimed our missing resources
+            break
+
+    if not preventing_tasks:
+        # we should not get there: no preventing task yet we don't have our total
+        return RequestedTaskWithDurationResult(
+            requested_task=None,
+            error=(
+                f"We have no preventing tasks. Perhaps worker '{worker.name}' isn't "
+                "online or hasn't polled for task."
+            ),
+        )
+
+    logger.debug(f"we have {len(preventing_tasks)} tasks blocking out way")
+    opening_eta = preventing_tasks[-1].eta
+    logger.debug(f"opening_eta:{opening_eta}")
+
+    # get the number of available seconds from now to that ETA
+    available_time = (opening_eta - getnow()).total_seconds()
+    logger.debug(f"we have approx. {available_time / 60} minutes to reclaim resources")
+
+    # loop on task[1+] to find the first task which can fit
+    temp_candidate = get_possible_task_with_resources(
+        tasks_worker_could_do=candidates,
+        available_resources=available_resources,
+        available_time=available_time,
+    )
+    if temp_candidate:
+        return RequestedTaskWithDurationResult(
+            requested_task=temp_candidate, error=None
+        )
+
+    # if none in the loop are possible, return None (worker will wait)
+    return RequestedTaskWithDurationResult(
+        requested_task=None,
+        error=(
+            f"Worker '{worker.name}' has too many tasks running. We have approx. "
+            f"{available_time / 60} minutes to reclaim resources. Unable to fit "
+            "anything, you'll have to wait for task(s) to complete."
+        ),
+    )
 
 
 def find_requested_task_for_worker(
     session: OrmSession,
     *,
-    user_id: UUID,
-    worker_name: str,
+    worker: WorkerLightSchema,
     avail_cpu: int,
     avail_memory: int,
     avail_disk: int,
-) -> RequestedTaskWithDuration | None:
+) -> RequestedTaskWithDurationResult:
     """Find optimal task to run for a given worker with given resources.
 
     The optimal task is the one that will finish the soonest.
@@ -640,26 +861,17 @@ def find_requested_task_for_worker(
     is chosen.
     """
 
-    worker = session.scalars(
-        select(Worker).join(User).where(Worker.name == worker_name, User.id == user_id)
-    ).one_or_none()
-
-    if worker is None:
-        raise RecordDoesNotExistError(f"Worker {worker_name} not found")
-
-    if worker.cordoned or worker.admin_disabled:
-        return None
+    if error := _validate_worker_availability(worker):
+        return RequestedTaskWithDurationResult(requested_task=None, error=error)
 
     # retrieve list of all running tasks with associated resources
-    all_running_tasks = get_currently_running_tasks(session, worker)
-
-    # retrieve list of tasks we are currently running with associated resources
+    all_running_tasks = get_currently_running_tasks(session)
+    # retrieve list of tasks we are currently running on worker
     running_tasks = [
-        task for task in all_running_tasks if task.worker_name == worker_name
+        task for task in all_running_tasks if task.worker_name == worker.name
     ]
 
     # filter-out requested tasks that are not doable now due to platform limitations
-
     tasks_worker_could_do = (
         task
         for task in get_tasks_doable_by_worker(session=session, worker=worker)
@@ -668,66 +880,38 @@ def find_requested_task_for_worker(
             all_running_tasks=all_running_tasks,
             running_tasks=running_tasks,
             task=task,
-        )
+        )[0]
     )
-
-    available_resources = {
-        "cpu": avail_cpu,
-        "memory": avail_memory,
-        "disk": avail_disk,
-    }
 
     candidate = next(tasks_worker_could_do, None)
     if candidate is None:
+        return RequestedTaskWithDurationResult(
+            requested_task=None,
+            error="Worker has exceeded platform limits for offliner",
+        )
         return None
+
+    available_resources = ResourcesSchema(
+        cpu=avail_cpu,
+        memory=avail_memory,
+        disk=avail_disk,
+    )
 
     if _can_run(candidate, available_resources):
         logger.debug("first candidate can be run!")
-        return candidate
+        return RequestedTaskWithDurationResult(requested_task=candidate, error=None)
 
-    missing_cpu = max([candidate.config.resources.cpu - avail_cpu, 0])
-    missing_memory = max([candidate.config.resources.memory - avail_memory, 0])
-    missing_disk = max([candidate.config.resources.disk - avail_disk, 0])
-    logger.debug(f"missing cpu:{missing_cpu}, mem:{missing_memory}, dsk:{missing_disk}")
-
-    # pile-up all of those which we need to complete to have enough resources
-    preventing_tasks: list[RunningTask] = []
-    for task in sorted(running_tasks, key=lambda x: x.eta):
-        preventing_tasks.append(task)
-        if (
-            sum([t.config.resources.cpu for t in preventing_tasks]) >= missing_cpu
-            and sum([t.config.resources.memory for t in preventing_tasks])
-            >= missing_memory
-            and sum([t.config.resources.disk for t in preventing_tasks]) >= missing_disk
-        ):
-            # stop when we'd have reclaimed our missing resources
-            break
-
-    if not preventing_tasks:
-        # we should not get there: no preventing task yet we don't have our total
-        logger.error("we have no preventing tasks. oops")
-        return None
-
-    logger.debug(f"we have {len(preventing_tasks)} tasks blocking out way")
-    opening_eta = preventing_tasks[-1].eta
-    logger.debug(f"opening_eta:{opening_eta}")
-
-    # get the number of available seconds from now to that ETA
-    available_time = (opening_eta - getnow()).total_seconds()
-    logger.debug(f"we have approx. {available_time / 60}mn to reclaim resources")
-
-    # loop on task[1+] to find the first task which can fit
-    temp_candidate = get_possible_task_with_resources(
-        tasks_worker_could_do=list(tasks_worker_could_do),
+    return _find_task_that_can_run_with_available_resources(
+        worker=worker,
+        candidates=list(tasks_worker_could_do),
         available_resources=available_resources,
-        available_time=available_time,
+        missing_resources=ResourcesSchema(
+            cpu=max([candidate.config.resources.cpu - avail_cpu, 0]),
+            memory=max([candidate.config.resources.memory - avail_memory, 0]),
+            disk=max([candidate.config.resources.disk - avail_disk, 0]),
+        ),
+        running_tasks=running_tasks,
     )
-    if temp_candidate:
-        return temp_candidate
-
-    # if none in the loop are possible, return None (worker will wait)
-    logger.debug("unable to fit anything, you'll have to wait for task to complete")
-    return None
 
 
 def create_requested_task_full_schema(
@@ -776,10 +960,10 @@ def create_requested_task_full_schema(
     )
 
 
-def get_requested_task_by_id_or_none(
+def get_raw_requested_task_or_none(
     session: OrmSession, requested_task_id: UUID
-) -> RequestedTaskFullSchema | None:
-    requested_task = session.scalars(
+) -> RequestedTask | None:
+    return session.scalars(
         select(RequestedTask)
         .options(
             selectinload(RequestedTask.offliner_definition),
@@ -787,18 +971,31 @@ def get_requested_task_by_id_or_none(
         )
         .where(RequestedTask.id == requested_task_id)
     ).one_or_none()
+
+
+def get_requested_task_by_id_or_none(
+    session: OrmSession, requested_task_id: UUID
+) -> RequestedTaskFullSchema | None:
+    if requested_task := get_raw_requested_task_or_none(session, requested_task_id):
+        return create_requested_task_full_schema(session, requested_task)
+    return None
+
+
+def get_raw_requested_task(
+    session: OrmSession, requested_task_id: UUID
+) -> RequestedTask:
+    requested_task = get_raw_requested_task_or_none(session, requested_task_id)
     if requested_task is None:
-        return None
-    return create_requested_task_full_schema(session, requested_task)
+        raise RecordDoesNotExistError(f"Requested task {requested_task_id} not found")
+    return requested_task
 
 
 def get_requested_task_by_id(
     session: OrmSession, requested_task_id: UUID
 ) -> RequestedTaskFullSchema:
-    requested_task = get_requested_task_by_id_or_none(session, requested_task_id)
-    if requested_task is None:
-        raise RecordDoesNotExistError(f"Requested task {requested_task_id} not found")
-    return requested_task
+    return create_requested_task_full_schema(
+        session, get_raw_requested_task(session, requested_task_id)
+    )
 
 
 def compute_requested_task_rank(session: OrmSession, requested_task_id: UUID) -> int:

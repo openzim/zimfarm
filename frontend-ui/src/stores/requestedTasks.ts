@@ -131,6 +131,18 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     }
   }
 
+  const diagnoseRequestedTask = async (id: string, worker: string) => {
+    try {
+      const service = await authStore.getApiService('requested-tasks')
+      await service.get<null, null>(`/${id}/diagnose/${worker}`)
+      return null
+    } catch (_error) {
+      let _errors = translateErrors(_error as ErrorResponse)
+      errors.value = _errors
+      return _errors
+    }
+  }
+
   return {
     // State
     requestedTasks,
@@ -144,5 +156,6 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     updateRequestedTask,
     deleteRequestedTask,
     savePaginatorLimit,
+    diagnoseRequestedTask,
   }
 })

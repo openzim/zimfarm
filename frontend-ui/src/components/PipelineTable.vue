@@ -153,6 +153,18 @@
           <span v-else>n/a</span>
         </template>
 
+        <template #[`item.diagnose`]="{ item }">
+          <v-btn
+            v-if="props.canRequestTasks"
+            size="small"
+            color="primary"
+            variant="tonal"
+            @click="diagnoseTask(item as RequestedTaskLight)"
+          >
+            Diagnose
+          </v-btn>
+        </template>
+
         <template #[`item.remove`]="{ item }">
           <RemoveRequestedTaskButton
             v-if="canUnRequestTasks"
@@ -240,12 +252,24 @@
         </template>
       </v-data-table-server>
       <ErrorMessage v-for="error in errors" :key="error" :message="error" />
+      <DiagnoseTaskDialog v-model="isDiagnoseDialogOpen" :task="selectedTaskToDiagnose" />
+      <ConfirmDialog
+        v-model="isConfirmDiagnoseOpen"
+        title="Confirm Diagnostics"
+        message="Running diagnostics will consume significant resources and should be run only when something is really unexplained or seems abnormal. Do you want to continue?"
+        confirm-text="Run Diagnostics"
+        confirm-color="primary"
+        icon="mdi-alert"
+        @confirm="startDiagnostics"
+      />
     </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import CancelTaskButton from '@/components/CancelTaskButton.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DiagnoseTaskDialog from '@/components/DiagnoseTaskDialog.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
@@ -266,6 +290,7 @@ const { smAndDown } = useDisplay()
 
 const props = defineProps<{
   headers: { title: string; value: string }[] // the headers to display
+  canRequestTasks?: boolean // whether the user can request tasks
   canUnRequestTasks: boolean // whether the user can unrequest tasks
   canCancelTasks: boolean // whether the user can cancel tasks
   loading: boolean // whether the table is loading
@@ -286,6 +311,11 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 const loadingSchedules = ref<Record<string, boolean>>({})
 const loadingAllSchedules = ref(false)
+
+const isDiagnoseDialogOpen = ref(false)
+const isConfirmDiagnoseOpen = ref(false)
+const selectedTaskToDiagnose = ref<RequestedTaskLight | null>(null)
+const taskToConfirmDiagnose = ref<RequestedTaskLight | null>(null)
 
 // Check if we should show the "Load All Last Runs" button (only in failed tab)
 const showLoadAllButton = computed(() => {
@@ -330,6 +360,18 @@ async function handleLoadAllLastRuns() {
     emit('loadAllLastRuns')
   } finally {
     loadingAllSchedules.value = false
+  }
+}
+
+function diagnoseTask(task: RequestedTaskLight) {
+  taskToConfirmDiagnose.value = task
+  isConfirmDiagnoseOpen.value = true
+}
+
+function startDiagnostics() {
+  if (taskToConfirmDiagnose.value) {
+    selectedTaskToDiagnose.value = taskToConfirmDiagnose.value
+    isDiagnoseDialogOpen.value = true
   }
 }
 </script>
