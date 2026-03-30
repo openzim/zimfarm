@@ -137,7 +137,7 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
       await service.get<null, null>(`/${id}/diagnose/${worker}`)
       return null
     } catch (_error) {
-      let _errors = translateErrors(_error as ErrorResponse)
+      const _errors = translateErrors(_error as ErrorResponse)
       errors.value = _errors
       return _errors
     }

@@ -65,6 +65,7 @@ def get_tasks(
         schedule_name=params.schedule_name,
         sort_criteria=params.sort_criteria,
         offliner=params.offliner,
+        fetch_most_recent_tasks=params.fetch_most_recent_tasks,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(

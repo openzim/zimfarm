@@ -31,6 +31,7 @@ export const useTasksStore = defineStore('tasks', () => {
       skip?: number
       status?: string[]
       scheduleName?: string
+      fetchMostRecentTasks?: boolean
       sort_criteria?: string
     } = {},
   ) => {
@@ -39,6 +40,7 @@ export const useTasksStore = defineStore('tasks', () => {
       skip = 0,
       status = [],
       scheduleName = null,
+      fetchMostRecentTasks,
       sort_criteria = 'updated_at',
     } = params
     const cleanedParams = Object.fromEntries(
@@ -47,6 +49,7 @@ export const useTasksStore = defineStore('tasks', () => {
         skip,
         status,
         sort_criteria,
+        fetch_most_recent_tasks: fetchMostRecentTasks,
         schedule_name: scheduleName,
       }).filter(([, value]) => !!value),
     )
