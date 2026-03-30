@@ -1,8 +1,9 @@
-import type { BaseTask, ConfigWithOnlyResources, TaskStatus } from '@/types/base'
+import type { BaseTask, ConfigWithOnlyResources, TaskStatus, MostRecentTask } from '@/types/base'
 import type { ExpandedScheduleConfig, ScheduleNotification } from '@/types/schedule'
 
 export interface TaskLight extends BaseTask {
   config: ConfigWithOnlyResources
+  schedule_most_recent_task?: MostRecentTask | null
 }
 
 export interface TaskEvent {

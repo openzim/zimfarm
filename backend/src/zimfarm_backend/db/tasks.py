@@ -18,6 +18,7 @@ from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
     ExpandedScheduleConfigSchema,
+    MostRecentTaskSchema,
     OfflinerDefinitionSchema,
     RequestedTaskFullSchema,
     RunningTask,
@@ -172,7 +173,8 @@ def get_tasks(
     schedule_name: str | None = None,
     sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
     offliner: str | None = None,
-):
+    fetch_most_recent_tasks: bool = False,
+) -> TaskListResult:
     # Determine the event/column to sort the results based on sort_criteria
     match sort_criteria:
         case "done":
@@ -205,6 +207,7 @@ def get_tasks(
             Task.updated_at,
             User.display_name.label("requested_by"),
             Schedule.name.label("schedule_name"),
+            Schedule.id.label("schedule_id"),
             Worker.name.label("worker_name"),
         )
         .join(User, Task.requested_by)
@@ -234,6 +237,7 @@ def get_tasks(
         updated_at,
         requested_by,
         _schedule_name,
+        _schedule_id,
         worker_name,
     ) in session.execute(
         stmt  # pyright: ignore[reportUnknownArgumentType]
@@ -257,9 +261,43 @@ def get_tasks(
                 updated_at=updated_at,
                 requested_by=requested_by,
                 schedule_name=_schedule_name,
+                schedule_id=_schedule_id,
                 worker_name=worker_name,
             )
         )
+
+    if fetch_most_recent_tasks:
+        schedule_ids: set[UUID] = {
+            task.schedule_id for task in results.tasks if task.schedule_id
+        }
+        if schedule_ids:
+            stmt = (
+                select(
+                    Task.schedule_id,
+                    Task.id,
+                    Task.status,
+                    Task.updated_at,
+                    Task.timestamp,
+                )
+                .join(Task, Schedule.most_recent_task, isouter=True)
+                .where(Task.schedule_id.in_(list(schedule_ids)))
+            )
+            for (
+                schedule_id,
+                task_id,
+                task_status,
+                task_updated_at,
+                task_timestamp,
+            ) in session.execute(stmt).all():
+                for task in results.tasks:
+                    if schedule_id == task.schedule_id:
+                        task.schedule_most_recent_task = MostRecentTaskSchema(
+                            id=task_id,
+                            status=task_status,
+                            updated_at=task_updated_at,
+                            timestamp=task_timestamp,
+                        )
+
     return results
 
 

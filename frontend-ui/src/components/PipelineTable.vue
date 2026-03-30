@@ -1,23 +1,6 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat color="transparent">
-      <!-- Load All Last Runs button - only show in failed tab -->
-      <div v-if="showLoadAllButton" class="d-flex justify-end mb-2">
-        <v-btn
-          :loading="loadingAllSchedules"
-          :disabled="loadingAllSchedules || tasks.length === 0"
-          color="primary"
-          variant="tonal"
-          prepend-icon="mdi-refresh"
-          @click="handleLoadAllLastRuns"
-        >
-          Load All Last Runs
-          <v-tooltip activator="parent" location="bottom">
-            Load last run status for all schedules on this page
-          </v-tooltip>
-        </v-btn>
-      </div>
-
       <v-data-table-server
         :headers="headers"
         :items="tasks"
@@ -208,42 +191,20 @@
 
         <template #[`item.last_run`]="{ item }">
           <div
-            v-if="item.schedule_name"
-            :class="['d-flex', 'align-center', { 'justify-end': smAndDown }]"
+            v-if="(item as TaskLight).schedule_most_recent_task"
+            :class="['ga-1', 'd-flex', 'align-center', 'flex-wrap', { 'justify-end': smAndDown }]"
           >
-            <span v-if="schedulesLastRuns[item.schedule_name]">
-              <code :class="statusClass(schedulesLastRuns[item.schedule_name].status)">
-                {{ schedulesLastRuns[item.schedule_name].status }} </code
+            <span>
+              <code :class="statusClass((item as TaskLight).schedule_most_recent_task!.status)">
+                {{ (item as TaskLight).schedule_most_recent_task!.status }} </code
               >,
-              <TaskLink
-                :id="schedulesLastRuns[item.schedule_name].id"
-                :updatedAt="schedulesLastRuns[item.schedule_name].updated_at"
-                :status="schedulesLastRuns[item.schedule_name].status"
-                :timestamp="schedulesLastRuns[item.schedule_name].timestamp"
-              />
             </span>
-            <v-btn
-              :icon="loadingSchedules[item.schedule_name] ? 'mdi-loading' : 'mdi-refresh'"
-              :loading="loadingSchedules[item.schedule_name]"
-              :disabled="loadingSchedules[item.schedule_name]"
-              size="small"
-              variant="text"
-              color="primary"
-              @click="handleLoadLastRun(item.schedule_name)"
-              density="comfortable"
-              class="ml-2"
-            >
-              <v-icon :class="{ 'mdi-spin': loadingSchedules[item.schedule_name] }">
-                {{ loadingSchedules[item.schedule_name] ? 'mdi-loading' : 'mdi-refresh' }}
-              </v-icon>
-              <v-tooltip activator="parent" location="bottom">
-                {{
-                  loadingSchedules[item.schedule_name]
-                    ? 'Loading...'
-                    : 'Load/refresh last run status'
-                }}
-              </v-tooltip>
-            </v-btn>
+            <TaskLink
+              :id="(item as TaskLight).schedule_most_recent_task!.id"
+              :updatedAt="(item as TaskLight).schedule_most_recent_task!.updated_at"
+              :status="(item as TaskLight).schedule_most_recent_task!.status"
+              :timestamp="(item as TaskLight).schedule_most_recent_task!.timestamp"
+            />
           </div>
         </template>
 
@@ -274,12 +235,12 @@ import ErrorMessage from '@/components/ErrorMessage.vue'
 import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import TaskLink from '@/components/TaskLink.vue'
-import type { MostRecentTask, Paginator } from '@/types/base'
+import type { Paginator } from '@/types/base'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
@@ -297,30 +258,20 @@ const props = defineProps<{
   loadingText: string // the text to display when the table is loading
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
   paginator: Paginator // the paginator
-  schedulesLastRuns: Record<string, MostRecentTask> // the last runs for each schedule
   errors: string[] // the errors to display
 }>()
 
 const emit = defineEmits<{
   limitChanged: [limit: number]
   loadData: [limit: number, skip: number]
-  loadLastRun: [scheduleName: string]
-  loadAllLastRuns: []
 }>()
 
 const limits = [10, 20, 50, 100]
-const loadingSchedules = ref<Record<string, boolean>>({})
-const loadingAllSchedules = ref(false)
 
 const isDiagnoseDialogOpen = ref(false)
 const isConfirmDiagnoseOpen = ref(false)
 const selectedTaskToDiagnose = ref<RequestedTaskLight | null>(null)
 const taskToConfirmDiagnose = ref<RequestedTaskLight | null>(null)
-
-// Check if we should show the "Load All Last Runs" button (only in failed tab)
-const showLoadAllButton = computed(() => {
-  return props.headers.some((header) => header.value === 'last_run')
-})
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
@@ -342,25 +293,6 @@ function statusClass(status: string) {
   if (status === 'succeeded') return 'schedule-succeeded'
   else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'schedule-failed'
   else return 'schedule-running'
-}
-
-async function handleLoadLastRun(scheduleName: string) {
-  if (!scheduleName) return
-  loadingSchedules.value[scheduleName] = true
-  try {
-    emit('loadLastRun', scheduleName)
-  } finally {
-    loadingSchedules.value[scheduleName] = false
-  }
-}
-
-async function handleLoadAllLastRuns() {
-  loadingAllSchedules.value = true
-  try {
-    emit('loadAllLastRuns')
-  } finally {
-    loadingAllSchedules.value = false
-  }
 }
 
 function diagnoseTask(task: RequestedTaskLight) {

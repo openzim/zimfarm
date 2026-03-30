@@ -13,25 +13,37 @@ from sqlalchemy.orm.attributes import flag_modified
 from zimfarm_backend.api.routes.tasks import logic as tasks_module
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.common.enums import ScheduleCategory, TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
-from zimfarm_backend.db.models import RequestedTask, Task, User, Worker
+from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema, LanguageSchema
+from zimfarm_backend.db.models import RequestedTask, Schedule, Task, User, Worker
 from zimfarm_backend.db.tasks import create_or_update_task_file
 
 
+@pytest.mark.parametrize("fetch_most_recent_tasks", ["true", "false"])
 def test_get_tasks(
+    dbsession: OrmSession,
     client: TestClient,
     access_token: str,
     create_task: Callable[..., Task],
+    create_schedule: Callable[..., Schedule],
+    fetch_most_recent_tasks: str,
 ):
     """Test successful retrieval of tasks"""
     # Create some tasks
-    for _ in range(30):
-        create_task()
+    for i in range(30):
+        schedule = create_schedule(
+            name=f"wiki_eng_{i}",
+            category=ScheduleCategory.wikipedia,
+            language=LanguageSchema(code="eng", name="English"),
+            tags=["important"],
+        )
+        schedule.most_recent_task = create_task()
+        dbsession.add(schedule)
+        dbsession.flush()
 
     response = client.get(
-        "/v2/tasks?limit=5&skip=0",
+        f"/v2/tasks?limit=5&skip=0&fetch_most_recent_tasks={fetch_most_recent_tasks}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -41,6 +53,17 @@ def test_get_tasks(
     assert "count" in data["meta"]
     assert data["meta"]["count"] == 30
     assert len(data["items"]) == 5
+
+    for item in data["items"]:
+        most_recent_task = item["schedule_most_recent_task"]
+        if fetch_most_recent_tasks == "true":
+            assert most_recent_task is not None
+            assert "id" in most_recent_task
+            assert "status" in most_recent_task
+            assert "timestamp" in most_recent_task
+            assert "updated_at" in most_recent_task
+        else:
+            assert most_recent_task is None
 
 
 @pytest.mark.parametrize("hide_secrets", ["true", "false"])

@@ -16,11 +16,8 @@
     :canRequestTasks="canRequestTasks"
     :canUnRequestTasks="canUnRequestTasks"
     :canCancelTasks="canCancelTasks"
-    :schedulesLastRuns="schedulesLastRuns"
     @limit-changed="handleLimitChange"
     @load-data="loadData"
-    @load-last-run="handleLoadLastRun"
-    @load-all-last-runs="handleLoadAllLastRuns"
   />
 </template>
 
@@ -29,11 +26,9 @@ import PipelineTable from '@/components/PipelineTable.vue'
 import TasksListTab from '@/components/TasksListTab.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
-import { useNotificationStore } from '@/stores/notification'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
-import { useScheduleStore } from '@/stores/schedule'
 import { useTasksStore } from '@/stores/tasks'
-import type { Paginator, MostRecentTask } from '@/types/base'
+import type { Paginator } from '@/types/base'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -46,8 +41,6 @@ const requestedTasksStore = useRequestedTasksStore()
 const tasksStore = useTasksStore()
 const authStore = useAuthStore()
 const loadingStore = useLoadingStore()
-const scheduleStore = useScheduleStore()
-const notificationStore = useNotificationStore()
 
 // Filter options
 const filterOptions = [
@@ -104,8 +97,6 @@ const currentFilter = computed(() => {
   return (Array.isArray(filter) ? filter[0] : filter) || 'todo'
 })
 
-const schedulesLastRuns = ref<Record<string, MostRecentTask>>({})
-
 const tasks = ref<TaskLight[] | RequestedTaskLight[]>([])
 const defaultLimit = computed(() =>
   currentFilter.value == 'todo' ? requestedTasksStore.defaultLimit : tasksStore.defaultLimit,
@@ -132,11 +123,6 @@ const handleFilterChange = (newFilter: string) => {
     },
   })
 }
-
-// Clear last runs when switching filters
-watch(currentFilter, () => {
-  schedulesLastRuns.value = {}
-})
 
 async function loadData(
   limit: number,
@@ -192,6 +178,7 @@ async function loadData(
         skip,
         status: ['scraper_killed', 'failed', 'canceled'],
         sort_criteria: 'failed',
+        fetchMostRecentTasks: true,
       })
       tasks.value = tasksStore.tasks
       errors.value = tasksStore.errors
@@ -204,33 +191,6 @@ async function loadData(
   if (loadingStore.isLoading) {
     loadingStore.stopLoading()
   }
-}
-
-async function handleLoadLastRun(scheduleName: string) {
-  if (!scheduleName) return
-
-  const result = await scheduleStore.fetchSchedule(scheduleName)
-  if (result && result.most_recent_task) {
-    schedulesLastRuns.value[scheduleName] = result.most_recent_task
-  }
-  if (scheduleStore.errors.length > 0) {
-    for (const error of scheduleStore.errors) {
-      notificationStore.showError(`Failed to load last run for schedule ${scheduleName}: ${error}`)
-    }
-  }
-}
-
-async function handleLoadAllLastRuns() {
-  const scheduleNames = new Set<string>()
-  tasks.value.forEach((task) => {
-    if (task.schedule_name) {
-      scheduleNames.add(task.schedule_name)
-    }
-  })
-
-  const promises = Array.from(scheduleNames).map((scheduleName) => handleLoadLastRun(scheduleName))
-
-  await Promise.all(promises)
 }
 
 async function handleLimitChange(newLimit: number) {

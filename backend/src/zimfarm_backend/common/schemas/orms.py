@@ -58,6 +58,17 @@ class ConfigWithOnlyOfflinerAndResourcesSchema(ConfigWithOnlyResourcesSchema):
     offliner: str
 
 
+class MostRecentTaskSchema(BaseModel):
+    """
+    Schema for reading a most recent task model with some fields
+    """
+
+    id: UUID
+    status: str
+    updated_at: MadeAwareDateTime
+    timestamp: list[tuple[str, datetime.datetime]]
+
+
 class BaseTaskSchema(BaseModel):
     """
     Schema for reading a task model with some fields
@@ -81,6 +92,8 @@ class TaskLightSchema(BaseTaskSchema):
     """
 
     config: ConfigWithOnlyResourcesSchema
+    schedule_id: UUID | None = Field(exclude=True)
+    schedule_most_recent_task: MostRecentTaskSchema | None = None
 
 
 class ZimUrlSchema(BaseModel):
@@ -234,17 +247,6 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     offliner_definition_id: UUID = Field(exclude=True)
     offliner: str
     version: str
-
-
-class MostRecentTaskSchema(BaseModel):
-    """
-    Schema for reading a most recent task model with some fields
-    """
-
-    id: UUID
-    status: str
-    updated_at: MadeAwareDateTime
-    timestamp: list[tuple[str, datetime.datetime]]
 
 
 class ConfigOfflinerOnlySchema(BaseModel):
