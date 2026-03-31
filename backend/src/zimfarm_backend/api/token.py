@@ -121,7 +121,7 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
             raise ValueError(
                 "2FA authentication is mandatory on Zimfarm but it looks like you only "
                 "have one setup on Ory. Please, configure a second one on Ory at "
-                "https://login.kiwix.org/settings"
+                f"{OAUTH_ISSUER}/settings"
             )
         return JWTClaims.model_validate(decoded_token)
 
@@ -165,7 +165,7 @@ class OAuthSessionTokenDecoder(TokenDecoder):
             raise ValueError(
                 "2FA authentication is mandatory on Zimfarm but it looks like you only "
                 "have one setup on Ory. Please, configure a second one on Ory at "
-                "https://login.kiwix.org/settings"
+                f"{OAUTH_ISSUER}/settings"
             )
         return JWTClaims.model_validate(decoded_token)
 

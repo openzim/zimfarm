@@ -20,9 +20,9 @@ AUTH_MODES: list[str] = getenv(
 # OAuth/OIDC configuration
 OAUTH_JWKS_URI = getenv(
     "OAUTH_JWKS_URI",
-    default="https://login.kiwix.org/.well-known/jwks.json",
+    default="https://ory.login.kiwix.org/.well-known/jwks.json",
 )
-OAUTH_ISSUER = getenv("OAUTH_ISSUER", default="https://login.kiwix.org")
+OAUTH_ISSUER = getenv("OAUTH_ISSUER", default="https://ory.login.kiwix.org")
 OAUTH_OIDC_CLIENT_ID = getenv(
     "OAUTH_OIDC_CLIENT_ID", default="38302485-7f3d-4e88-b1b3-ec02fb92ec8c"
 )
