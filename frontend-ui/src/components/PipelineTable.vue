@@ -191,7 +191,10 @@
 
         <template #[`item.last_run`]="{ item }">
           <div
-            v-if="(item as TaskLight).recipe_most_recent_task"
+            v-if="
+              (item as TaskLight).recipe_most_recent_task &&
+              (item as TaskLight).recipe_most_recent_task?.id != item.id
+            "
             :class="['ga-1', 'd-flex', 'align-center', 'flex-wrap', { 'justify-end': smAndDown }]"
           >
             <span>
