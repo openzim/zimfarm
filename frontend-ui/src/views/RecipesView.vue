@@ -1,24 +1,24 @@
-<!-- Filterable list of schedules with filtered-fire button -->
+<!-- Filterable list of recipes with filtered-fire button -->
 
 <template>
   <div>
-    <SchedulesBaseView
+    <RecipesBaseView
       :archived="false"
-      :route-name="'schedules-list'"
+      :route-name="'recipes-list'"
       :can-request-tasks="canRequestTasks"
       @filters-updated="handleFiltersUpdated"
     >
-      <template #actions="{ selectedSchedules, requestingText, workers, handleRequestTasks }">
+      <template #actions="{ selectedRecipes, requestingText, workers, handleRequestTasks }">
         <RequestSelectionButton
           v-if="canRequestTasks"
           :can-request-tasks="canRequestTasks"
           :requesting-text="requestingText"
-          :count="selectedSchedules.length"
+          :count="selectedRecipes.length"
           :workers="workers"
           @request-tasks="handleRequestTasks"
         />
       </template>
-    </SchedulesBaseView>
+    </RecipesBaseView>
 
     <div v-if="canAccessArchives" class="pa-0 mt-4">
       <v-tooltip location="top">
@@ -42,15 +42,15 @@
 
 <script setup lang="ts">
 import RequestSelectionButton from '@/components/RequestSelectionButton.vue'
-import SchedulesBaseView from '@/components/SchedulesBaseView.vue'
+import RecipesBaseView from '@/components/RecipesBaseView.vue'
 import { useAuthStore } from '@/stores/auth'
-import { useScheduleStore } from '@/stores/schedule'
+import { useRecipeStore } from '@/stores/recipe'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 // Stores
 const authStore = useAuthStore()
-const scheduleStore = useScheduleStore()
+const recipeStore = useRecipeStore()
 const router = useRouter()
 
 // State
@@ -66,7 +66,7 @@ const loadingArchivedCount = ref(false)
 
 // Computed properties
 const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
-const canAccessArchives = computed(() => authStore.hasPermission('schedules', 'archive'))
+const canAccessArchives = computed(() => authStore.hasPermission('recipes', 'archive'))
 
 const archivedCountText = computed(() => {
   if (loadingArchivedCount.value) {
@@ -87,7 +87,7 @@ async function fetchArchivedCount(filters: typeof currentFilters.value) {
 
   loadingArchivedCount.value = true
   try {
-    await scheduleStore.fetchSchedules(
+    await recipeStore.fetchRecipes(
       1, // limit - we only need the count
       0, // skip
       filters.categories.length > 0 ? filters.categories : undefined,
@@ -97,7 +97,7 @@ async function fetchArchivedCount(filters: typeof currentFilters.value) {
       true, // archived
       filters.offliners.length > 0 ? filters.offliners : undefined,
     )
-    archivedCount.value = scheduleStore.paginator.count
+    archivedCount.value = recipeStore.paginator.count
   } catch (error) {
     console.error('Failed to fetch archived count', error)
     archivedCount.value = 0
@@ -139,7 +139,7 @@ function navigateToArchives() {
   }
 
   router.push({
-    name: 'archived-schedules',
+    name: 'archived-recipes',
     query: Object.keys(query).length > 0 ? query : undefined,
   })
 }

@@ -5,7 +5,7 @@ from http import HTTPStatus
 import pytest
 from fastapi.testclient import TestClient
 
-from zimfarm_backend.db.models import Schedule, Worker
+from zimfarm_backend.db.models import Recipe, Worker
 
 
 def test_get_contexts_empty(client: TestClient):
@@ -24,13 +24,13 @@ def test_get_contexts_empty(client: TestClient):
 
 def test_get_contexts(
     client: TestClient,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_worker: Callable[..., Worker],
 ):
-    """Test that get_contexts returns unique contexts from both schedules and workers"""
-    # Create schedules with contexts
-    create_schedule(name="schedule1", context="priority")
-    create_schedule(name="schedule2", context="general")
+    """Test that get_contexts returns unique contexts from both recipes and workers"""
+    # Create recipes with contexts
+    create_recipe(name="recipe1", context="priority")
+    create_recipe(name="recipe2", context="general")
 
     # Create workers with contexts (some overlapping)
     create_worker(
@@ -58,16 +58,16 @@ def test_get_contexts(
 )
 def test_get_contexts_pagination(
     client: TestClient,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_worker: Callable[..., Worker],
     skip: int,
     limit: int,
     expected_results: int,
 ):
     """Test that get_contexts pagination works correctly"""
-    # Create schedules and workers with contexts
-    create_schedule(name="schedule1", context="context1")
-    create_schedule(name="schedule2", context="context2")
+    # Create recipes and workers with contexts
+    create_recipe(name="recipe1", context="context1")
+    create_recipe(name="recipe2", context="context2")
     create_worker(name="worker1", contexts={"context3": None, "context4": None})
     create_worker(name="worker2", contexts={"context5": None, "context6": None})
 

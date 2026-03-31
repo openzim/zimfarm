@@ -15,7 +15,7 @@ from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.offliners import transformers
 from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
 from zimfarm_backend.common.schemas.offliners.transformers import prepare_blob
-from zimfarm_backend.db.models import Blob, Schedule, User
+from zimfarm_backend.db.models import Blob, Recipe, User
 
 
 @pytest.fixture(autouse=True)
@@ -62,14 +62,14 @@ def test_get_blobs_empty(client: TestClient):
 def test_get_blobs_pagination(
     dbsession: OrmSession,
     client: TestClient,
-    schedule: Schedule,
+    recipe: Recipe,
     access_token: str,
     skip: int,
     limit: int,
     expected_results: int,
 ):
     for i in range(6):
-        schedule.blobs.append(
+        recipe.blobs.append(
             Blob(
                 kind="css",
                 flag_name="custom-css",
@@ -77,11 +77,11 @@ def test_get_blobs_pagination(
                 checksum=f"{i}",
             )
         )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
 
     response = client.get(
-        f"/v2/blobs/{schedule.name}?skip={skip}&limit={limit}",
+        f"/v2/blobs/{recipe.name}?skip={skip}&limit={limit}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.OK
@@ -106,7 +106,7 @@ def encode_test_data(content: str) -> str:
 )
 def test_create_blob(
     client: TestClient,
-    schedule: Schedule,
+    recipe: Recipe,
     create_user: Callable[..., User],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
@@ -125,7 +125,7 @@ def test_create_blob(
         "comments": "this is test data",
     }
     response = client.post(
-        f"/v2/blobs/{schedule.name}",
+        f"/v2/blobs/{recipe.name}",
         json=payload,
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -136,7 +136,7 @@ def test_create_blob(
 def test_create_blob_returns_existing_if_already_uploaded(
     client: TestClient,
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
     access_token: str,
 ):
     test_data = encode_test_data("test content")
@@ -149,8 +149,8 @@ def test_create_blob_returns_existing_if_already_uploaded(
         checksum=prepared_blob.checksum,
         url=str(prepared_blob.public_url),
     )
-    schedule.blobs.append(blob)
-    dbsession.add(schedule)
+    recipe.blobs.append(blob)
+    dbsession.add(recipe)
     dbsession.flush()
 
     payload = {
@@ -160,7 +160,7 @@ def test_create_blob_returns_existing_if_already_uploaded(
     }
 
     response = client.post(
-        f"/v2/blobs/{schedule.name}",
+        f"/v2/blobs/{recipe.name}",
         json=payload,
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -176,7 +176,7 @@ def test_create_blob_returns_existing_if_already_uploaded(
 def test_update_blob_with_empty_payload(
     client: TestClient,
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
     access_token: str,
 ):
     blob = Blob(
@@ -185,8 +185,8 @@ def test_update_blob_with_empty_payload(
         url="https://www.example.com/style.css",
         checksum="checksum",
     )
-    schedule.blobs.append(blob)
-    dbsession.add(schedule)
+    recipe.blobs.append(blob)
+    dbsession.add(recipe)
     dbsession.flush()
 
     payload = {}
@@ -203,7 +203,7 @@ def test_update_blob_with_empty_payload(
 def test_delete_blob_success(
     client: TestClient,
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
     access_token: str,
 ):
     blob = Blob(
@@ -212,8 +212,8 @@ def test_delete_blob_success(
         url="https://www.example.com/style.css",
         checksum="checksum",
     )
-    schedule.blobs.append(blob)
-    dbsession.add(schedule)
+    recipe.blobs.append(blob)
+    dbsession.add(recipe)
     dbsession.flush()
 
     blob_id = blob.id

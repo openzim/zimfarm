@@ -160,7 +160,7 @@ class Processor:
         patched_recipe["config"]["warehouse_path"] = "/.hidden/dev"
         patched_recipe["periodicity"] = "manually"
         response = requests.post(
-            self.get_zf_url("/schedules"),
+            self.get_zf_url("/recipes"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
             json=recipe,
@@ -315,7 +315,7 @@ class Processor:
     def _patch_recipe_on_zf(self, recipe_name: str, changes: dict[str, Any]):
         """Really patch a recipe on the Zimfarm"""
         response = requests.patch(
-            self.get_zf_url(f"/schedules/{recipe_name}"),
+            self.get_zf_url(f"/recipes/{recipe_name}"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
             json=changes,
@@ -365,7 +365,7 @@ class Processor:
     def _delete_recipe_on_zf(self, recipe_name: str):
         """Really delete a recipe from Zimfarm"""
         response = requests.delete(
-            self.get_zf_url(f"/schedules/{recipe_name}"),
+            self.get_zf_url(f"/recipes/{recipe_name}"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
         )
@@ -379,11 +379,11 @@ class Processor:
         skip = 0
         per_page = 200
 
-        schedule_names: list[str] = []
+        recipe_names: list[str] = []
         while True:
             response = requests.get(
                 self.get_zf_url(
-                    f"/schedules/?limit={per_page}&skip={skip}&tag={self.recipe_tag}"
+                    f"/recipes/?limit={per_page}&skip={skip}&tag={self.recipe_tag}"
                 ),
                 headers=self.get_zf_headers(),
                 timeout=context.http_timeout,
@@ -393,24 +393,24 @@ class Processor:
                 logger.error(response.text)
             response.raise_for_status()
 
-            schedules = response.json()
-            schedule_names.extend(schedule["name"] for schedule in schedules["items"])
+            recipes = response.json()
+            recipe_names.extend(recipe["name"] for recipe in recipes["items"])
 
             if (
-                schedules["meta"]["limit"] + schedules["meta"]["skip"]
-                < schedules["meta"]["count"]
+                recipes["meta"]["limit"] + recipes["meta"]["skip"]
+                < recipes["meta"]["count"]
             ):
                 skip += per_page
             else:
                 break
 
-        return sorted(schedule_names)
+        return sorted(recipe_names)
 
     def _get_recipe_definition_on_zf(self, recipe_name: str) -> dict[str, Any]:
         """Get the recipe details on zimfarm"""
 
         response = requests.get(
-            self.get_zf_url(f"/schedules/{recipe_name}?hide_secrets=False"),
+            self.get_zf_url(f"/recipes/{recipe_name}?hide_secrets=False"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
         )

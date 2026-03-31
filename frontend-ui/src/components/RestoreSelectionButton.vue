@@ -6,13 +6,13 @@
     size="small"
     :loading="isRestoring"
     :disabled="isDisabled"
-    @click="emit('restore-schedules')"
+    @click="emit('restore-recipes')"
   >
     <v-icon size="small" class="mr-1">mdi-archive-arrow-up</v-icon>
     {{
       isRestoring
         ? restoringText
-        : `Restore ${nbSchedules} selected recipe${nbSchedules !== 1 ? 's' : ''}`
+        : `Restore ${nbRecipes} selected recipe${nbRecipes !== 1 ? 's' : ''}`
     }}
   </v-btn>
 </template>
@@ -31,11 +31,11 @@ const props = defineProps<Props>()
 
 // Define emits
 const emit = defineEmits<{
-  'restore-schedules': string[]
+  'restore-recipes': string[]
 }>()
 
 // Computed properties
-const nbSchedules = computed(() => props.count)
-const isDisabled = computed(() => nbSchedules.value < 1)
+const nbRecipes = computed(() => props.count)
+const isDisabled = computed(() => nbRecipes.value < 1)
 const isRestoring = computed(() => Boolean(props.restoringText))
 </script>

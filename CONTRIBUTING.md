@@ -58,12 +58,12 @@ curl -I -X GET "http://localhost:8000/v2/auth/test" -H  "accept: */*" -H  "Beare
 
 you now have a working backend with an admin user at http://127.0.0.1:8000/v2
 
-### import schedules backup
+### import recipes backup
 
-It is possible to download and import a backup of production schedules, so that you have some data
+It is possible to download and import a backup of production recipes, so that you have some data
 locally to test the UI for instance.
 
-Detailed instructions are provided in the [Jupyter notebook](dev/import_schedules.ipynb), which must be ran from the same folder `backend/src`, with all dependencies installed.
+Detailed instructions are provided in the [Jupyter notebook](dev/import_recipes.ipynb), which must be ran from the same folder `backend/src`, with all dependencies installed.
 
 ## frontend-ui
 

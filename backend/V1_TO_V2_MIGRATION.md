@@ -65,7 +65,7 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 
 - API prefix: `/v2`
 - Accepts json for authentication payload with support for SSH authentication via headers
-- Changed schema to create a schedule (see openAPI docs for change in payload shape)
+- Changed schema to create a recipe (see openAPI docs for change in payload shape)
 
 **NOTE**: See the API docs for the updated endpoints and schema changes
 

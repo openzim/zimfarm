@@ -68,7 +68,7 @@ const selectedWorker = ref<string | null>(null)
 
 // Computed properties
 const isDisabled = computed(
-  () => props.count < 1 || props.count > constants.MAX_SCHEDULES_IN_SELECTION_REQUEST,
+  () => props.count < 1 || props.count > constants.MAX_RECIPES_IN_SELECTION_REQUEST,
 )
 const isRequesting = computed(() => Boolean(props.requestingText))
 

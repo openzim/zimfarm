@@ -54,7 +54,7 @@ const headers = computed(() => {
   switch (currentFilter.value) {
     case 'todo':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Requested', value: 'requested', sortable: false },
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
@@ -64,7 +64,7 @@ const headers = computed(() => {
       ].filter(Boolean) as { title: string; value: string }[]
     case 'doing':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Started', value: 'started', sortable: false },
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
@@ -73,14 +73,14 @@ const headers = computed(() => {
       ].filter(Boolean) as { title: string; value: string }[]
     case 'done':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Completed', value: 'completed', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
         { title: 'Duration', value: 'duration', sortable: false },
       ]
     case 'failed':
       return [
-        { title: 'Schedule', value: 'schedule_name', sortable: false },
+        { title: 'Recipe', value: 'recipe_name', sortable: false },
         { title: 'Stopped', value: 'stopped', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
         { title: 'Duration', value: 'duration', sortable: false },

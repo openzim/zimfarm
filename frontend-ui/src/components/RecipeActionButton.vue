@@ -1,4 +1,4 @@
-<!-- Full-featured button to execute schedule/task action by its name
+<!-- Full-featured button to execute recipe/task action by its name
 
   - request a task
   - unrequest a task
@@ -147,16 +147,16 @@ const visible = computed(
 )
 const working = computed(() => Boolean(props.workingText))
 const isRunning = computed(() => (taskId.value !== null ? Boolean(taskId.value) : null))
-const isScheduled = computed(() =>
+const isRequested = computed(() =>
   requestedTaskId.value === null ? null : Boolean(requestedTaskId.value),
 )
 const canRequest = computed(
-  () => props.enabled && !working.value && !isRunning.value && !isScheduled.value,
+  () => props.enabled && !working.value && !isRunning.value && !isRequested.value,
 )
 const canFire = computed(() => !working.value && canRequest.value)
-const canFireExisting = computed(() => !working.value && isScheduled.value)
+const canFireExisting = computed(() => !working.value && isRequested.value)
 const canCancel = computed(() => !working.value && isRunning.value && taskId.value)
-const canUnRequest = computed(() => !working.value && isScheduled.value)
+const canUnRequest = computed(() => !working.value && isRequested.value)
 const canSelectWorker = computed(() => canRequest.value || canFire.value)
 const requestedTaskId = computed(() => props.requestedTask?.id || null)
 

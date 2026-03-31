@@ -5,21 +5,17 @@
 
     <!-- Content only shown if user has permission -->
     <div v-show="canRestore">
-      <SchedulesBaseView
-        :archived="true"
-        :route-name="'archived-schedules'"
-        :can-request-tasks="false"
-      >
-        <template #actions="{ selectedSchedules, restoringText, handleRestoreSchedules }">
+      <RecipesBaseView :archived="true" :route-name="'archived-recipes'" :can-request-tasks="false">
+        <template #actions="{ selectedRecipes, restoringText, handleRestoreRecipes }">
           <RestoreSelectionButton
             v-if="canRestore"
             :can-restore="canRestore"
             :restoring-text="restoringText"
-            :count="selectedSchedules.length"
-            @restore-schedules="handleRestoreSchedules"
+            :count="selectedRecipes.length"
+            @restore-recipes="handleRestoreRecipes"
           />
         </template>
-      </SchedulesBaseView>
+      </RecipesBaseView>
     </div>
   </div>
 </template>
@@ -27,7 +23,7 @@
 <script setup lang="ts">
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import RestoreSelectionButton from '@/components/RestoreSelectionButton.vue'
-import SchedulesBaseView from '@/components/SchedulesBaseView.vue'
+import RecipesBaseView from '@/components/RecipesBaseView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { computed, onMounted, ref } from 'vue'
 
@@ -38,7 +34,7 @@ const authStore = useAuthStore()
 const error = ref<string | null>(null)
 
 // Computed properties
-const canRestore = computed(() => authStore.hasPermission('schedules', 'archive'))
+const canRestore = computed(() => authStore.hasPermission('recipes', 'archive'))
 
 // Lifecycle
 onMounted(() => {

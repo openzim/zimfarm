@@ -1,9 +1,9 @@
 import type { BaseTask, ConfigWithOnlyResources, TaskStatus, MostRecentTask } from '@/types/base'
-import type { ExpandedScheduleConfig, ScheduleNotification } from '@/types/schedule'
+import type { ExpandedRecipeConfig, RecipeNotification } from '@/types/recipe'
 
 export interface TaskLight extends BaseTask {
   config: ConfigWithOnlyResources
-  schedule_most_recent_task?: MostRecentTask | null
+  recipe_most_recent_task?: MostRecentTask | null
 }
 
 export interface TaskEvent {
@@ -31,6 +31,7 @@ export interface TaskFile {
   size: number
   created_timestamp: string
   uploaded_timestamp?: string
+  failed_timestamp?: string
   check_timestamp?: string
   status: string
   check_result?: number
@@ -92,12 +93,12 @@ export interface TaskUpload {
 }
 
 export interface Task extends BaseTask {
-  config: ExpandedScheduleConfig
+  config: ExpandedRecipeConfig
   events: TaskEvent[]
   debug: TaskDebug
   canceled_by: string | null
   container: TaskContainer
-  notification: ScheduleNotification | null
+  notification: RecipeNotification | null
   files: Record<string, TaskFile>
   upload: TaskUpload
   version: string

@@ -37,17 +37,17 @@ export interface DockerImage {
   tag: string
 }
 
-export interface WorkerScheduleDuration {
+export interface WorkerRecipeDuration {
   value: number
   on: string
   worker_name: string | undefined
   default: boolean
 }
 
-export interface ScheduleDuration {
+export interface RecipeDuration {
   available: boolean
-  default: WorkerScheduleDuration | null
-  workers: Record<string, WorkerScheduleDuration> | null
+  default: WorkerRecipeDuration | null
+  workers: Record<string, WorkerRecipeDuration> | null
 }
 
 export interface EventNotification {
@@ -56,7 +56,7 @@ export interface EventNotification {
   slack: string[] | null
 }
 
-export interface ScheduleNotification {
+export interface RecipeNotification {
   requested: EventNotification | null
   started: EventNotification | null
   ended: EventNotification | null
@@ -91,11 +91,11 @@ export interface BaseTask {
   id: string
   status: string
   timestamp: [string, string][] // [status, datetime] tuples
-  schedule_name: string | null
+  recipe_name: string | null
   worker_name: string
   updated_at: string
   requested_by: string
-  original_schedule_name: string
+  original_recipe_name: string
   context: string
   priority: number
 }

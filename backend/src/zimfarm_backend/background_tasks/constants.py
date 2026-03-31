@@ -5,7 +5,7 @@ from humanfriendly import parse_timespan
 from zimfarm_backend.common.constants import getenv, parse_bool
 
 # History cleanup
-HISTORY_TASK_PER_SCHEDULE = int(getenv("HISTORY_TASK_PER_SCHEDULE", default=10))
+HISTORY_TASK_PER_RECIPE = int(getenv("HISTORY_TASK_PER_RECIPE", default=10))
 
 # Stalled task timeouts
 STALLED_GONE_TIMEOUT = parse_timespan(getenv("STALLED_GONE_IMEOUT", default="1h"))

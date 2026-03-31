@@ -7,91 +7,85 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.background_tasks import history_cleanup as history_cleanup_module
 from zimfarm_backend.background_tasks.history_cleanup import history_cleanup
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.models import Schedule, Task
+from zimfarm_backend.db.models import Recipe, Task
 
 
-def test_history_cleanup_schedule_with_few_tasks(
+def test_history_cleanup_recipe_with_few_tasks(
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_task: Callable[..., Task],
     monkeypatch: MonkeyPatch,
 ):
     """Test that history_cleanup doesn't delete tasks when count is below threshold"""
-    schedule = create_schedule()
+    recipe = create_recipe()
 
-    monkeypatch.setattr(history_cleanup_module, "HISTORY_TASK_PER_SCHEDULE", 10)
+    monkeypatch.setattr(history_cleanup_module, "HISTORY_TASK_PER_RECIPE", 10)
     # Create 5 tasks (below the default threshold of 10)
     for _ in range(5):
-        create_task(schedule_name=schedule.name)
+        create_task(recipe_name=recipe.name)
     history_cleanup(dbsession)
 
     # No tasks should be deleted
     assert count_from_stmt(dbsession, select(Task.id)) == 5
 
 
-def test_history_cleanup_schedule_with_many_tasks(
+def test_history_cleanup_recipe_with_many_tasks(
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_task: Callable[..., Task],
     monkeypatch: MonkeyPatch,
 ):
     """Test that history_cleanup deletes old tasks when count exceeds threshold"""
-    monkeypatch.setattr(history_cleanup_module, "HISTORY_TASK_PER_SCHEDULE", 10)
-    schedule = create_schedule()
+    monkeypatch.setattr(history_cleanup_module, "HISTORY_TASK_PER_RECIPE", 10)
+    recipe = create_recipe()
 
     # Create 15 tasks (above the default threshold of 10)
     for _ in range(15):
-        create_task(schedule_name=schedule.name)
+        create_task(recipe_name=recipe.name)
 
     history_cleanup(dbsession)
 
     assert count_from_stmt(dbsession, select(Task.id)) == 10
 
 
-def test_history_cleanup_multiple_schedules(
+def test_history_cleanup_multiple_recipes(
     dbsession: OrmSession,
-    create_schedule: Callable[..., Schedule],
+    create_recipe: Callable[..., Recipe],
     create_task: Callable[..., Task],
     monkeypatch: MonkeyPatch,
 ):
-    """Test that history_cleanup handles multiple schedules correctly"""
-    monkeypatch.setattr(history_cleanup_module, "HISTORY_TASK_PER_SCHEDULE", 10)
-    schedule1 = create_schedule(name="schedule_1")
-    schedule2 = create_schedule(name="schedule_2")
-    schedule3 = create_schedule(name="schedule_3")
+    """Test that history_cleanup handles multiple recipes correctly"""
+    monkeypatch.setattr(history_cleanup_module, "HISTORY_TASK_PER_RECIPE", 10)
+    recipe1 = create_recipe(name="recipe_1")
+    recipe2 = create_recipe(name="recipe_2")
+    recipe3 = create_recipe(name="recipe_3")
 
-    # Schedule 1: 15 tasks (should be cleaned)
+    # Recipe 1: 15 tasks (should be cleaned)
     for _ in range(15):
-        create_task(schedule_name=schedule1.name)
+        create_task(recipe_name=recipe1.name)
 
-    # Schedule 2: 5 tasks (should not be cleaned)
+    # Recipe 2: 5 tasks (should not be cleaned)
     for _ in range(5):
-        create_task(schedule_name=schedule2.name)
+        create_task(recipe_name=recipe2.name)
 
-    # Schedule 3: 12 tasks (should be cleaned)
+    # Recipe 3: 12 tasks (should be cleaned)
     for _ in range(12):
-        create_task(schedule_name=schedule3.name)
+        create_task(recipe_name=recipe3.name)
 
     history_cleanup(dbsession)
 
-    # Check each schedule
+    # Check each recipe
     assert (
-        count_from_stmt(
-            dbsession, select(Task.id).where(Task.schedule_id == schedule1.id)
-        )
+        count_from_stmt(dbsession, select(Task.id).where(Task.recipe_id == recipe1.id))
         == 10
     )
 
     assert (
-        count_from_stmt(
-            dbsession, select(Task.id).where(Task.schedule_id == schedule2.id)
-        )
+        count_from_stmt(dbsession, select(Task.id).where(Task.recipe_id == recipe2.id))
         == 5
     )
 
     assert (
-        count_from_stmt(
-            dbsession, select(Task.id).where(Task.schedule_id == schedule3.id)
-        )
+        count_from_stmt(dbsession, select(Task.id).where(Task.recipe_id == recipe3.id))
         == 10
     )

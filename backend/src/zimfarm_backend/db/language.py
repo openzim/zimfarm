@@ -6,7 +6,7 @@ from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import LanguageSchema
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Schedule
+from zimfarm_backend.db.models import Recipe
 
 
 class LanguageListResult(BaseModel):
@@ -36,11 +36,11 @@ def get_languages(
     skip: int,
     limit: int,
 ) -> LanguageListResult:
-    """Get a paginated list of languages from schedules."""
+    """Get a paginated list of languages from recipes."""
     query = (
-        select(Schedule.language_code)
-        .distinct(Schedule.language_code)  # distinct on language_code
-        .order_by(Schedule.language_code, Schedule.id)
+        select(Recipe.language_code)
+        .distinct(Recipe.language_code)  # distinct on language_code
+        .order_by(Recipe.language_code, Recipe.id)
     )
 
     languages: list[LanguageSchema] = []

@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from pytest import MonkeyPatch
 
-from zimfarm_backend.common.schemas.models import ScheduleConfigSchema
+from zimfarm_backend.common.schemas.models import RecipeConfigSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.utils.offliners import (
     command_for,
@@ -188,17 +188,17 @@ def test_compute_flags_filters_offliner_id(
 def test_command_for_is_publisher(
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
     monkeypatch: MonkeyPatch,
     publisher: str | None,
     expected: str,
 ) -> None:
-    schedule_config.offliner.publisher = (  # pyright: ignore[reportAttributeAccessIssue]
+    recipe_config.offliner.publisher = (  # pyright: ignore[reportAttributeAccessIssue]
         publisher
     )
     monkeypatch.setattr(constants, "DEFAULT_PUBLISHER", "Default Publisher")
     result = command_for(
-        mwoffliner, mwoffliner_definition, schedule_config, mount_point=Path("test")
+        mwoffliner, mwoffliner_definition, recipe_config, mount_point=Path("test")
     )
     assert expected in result
 
@@ -206,15 +206,15 @@ def test_command_for_is_publisher(
 def test_command_for_is_publisher_unset(
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    schedule_config.offliner.publisher = (  # pyright: ignore[reportAttributeAccessIssue]
+    recipe_config.offliner.publisher = (  # pyright: ignore[reportAttributeAccessIssue]
         None
     )
     monkeypatch.setattr(constants, "DEFAULT_PUBLISHER", "")
     result = command_for(
-        mwoffliner, mwoffliner_definition, schedule_config, mount_point=Path("test")
+        mwoffliner, mwoffliner_definition, recipe_config, mount_point=Path("test")
     )
     assert "--publisher=" not in result
 
@@ -229,7 +229,7 @@ def test_command_for_is_publisher_unset(
 def test_command_for_std_output(
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
     std_output: str | bool,
     expected: str,
 ) -> None:
@@ -238,7 +238,7 @@ def test_command_for_std_output(
     result = command_for(
         mwoffliner,
         mwoffliner_definition,
-        schedule_config,
+        recipe_config,
         mount_point=Path("test"),
     )
     assert expected in result
@@ -247,14 +247,14 @@ def test_command_for_std_output(
 def test_command_for_std_output_unset(
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
 ) -> None:
     """Test that command_for sets the std_output flag if it is not set."""
     mwoffliner_definition.schema_.std_output = False
     result = command_for(
         mwoffliner,
         mwoffliner_definition,
-        schedule_config,
+        recipe_config,
         mount_point=Path("test"),
     )
     assert "--output=" not in result
@@ -270,7 +270,7 @@ def test_command_for_std_output_unset(
 def test_command_for_std_stats(
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
     std_stats: str | bool,
     expected: str,
 ) -> None:
@@ -279,7 +279,7 @@ def test_command_for_std_stats(
     result = command_for(
         mwoffliner,
         mwoffliner_definition,
-        schedule_config,
+        recipe_config,
         mount_point=Path("test"),
     )
     assert expected in result
@@ -288,14 +288,14 @@ def test_command_for_std_stats(
 def test_command_for_std_stats_unset(
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    schedule_config: ScheduleConfigSchema,
+    recipe_config: RecipeConfigSchema,
 ) -> None:
     """Test that command_for sets the std_stats flag if it is not set."""
     mwoffliner_definition.schema_.std_stats = False
     result = command_for(
         mwoffliner,
         mwoffliner_definition,
-        schedule_config,
+        recipe_config,
         mount_point=Path("test"),
     )
     assert "--stats-filename=" not in result

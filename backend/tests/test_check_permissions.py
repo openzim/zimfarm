@@ -17,8 +17,8 @@ def test_check_permission_from_role(dbsession: OrmSession, data_gen: Faker):
         role=RoleEnum.EDITOR,
     )
     dbsession.add(user)
-    # editors can create schedules but can't create tasks
-    assert check_user_permission(user, namespace="schedules", name="create") is True
+    # editors can create recipes but can't create tasks
+    assert check_user_permission(user, namespace="recipes", name="create") is True
     assert check_user_permission(user, namespace="tasks", name="create") is False
 
 
@@ -40,5 +40,5 @@ def test_check_permission_from_custom_scope(dbsession: OrmSession, data_gen: Fak
         role="custom",
     )
     dbsession.add(user)
-    assert check_user_permission(user, namespace="schedules", name="read") is False
+    assert check_user_permission(user, namespace="recipes", name="read") is False
     assert check_user_permission(user, namespace="zim", name="upload") is True

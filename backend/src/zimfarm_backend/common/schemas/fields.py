@@ -314,7 +314,7 @@ WorkerField = Annotated[
 OptionalWorkerField = WorkerField | None
 
 
-def validate_schedule_name(name: str, info: ValidationInfo) -> str:
+def validate_recipe_name(name: str, info: ValidationInfo) -> str:
     """
     Validate name is not empty and does not contain leading and/or trailing space(s)
     """
@@ -332,9 +332,9 @@ def validate_schedule_name(name: str, info: ValidationInfo) -> str:
     return name
 
 
-ScheduleNameField = Annotated[NotEmptyString, AfterValidator(validate_schedule_name)]
+RecipeNameField = Annotated[NotEmptyString, AfterValidator(validate_recipe_name)]
 
-OptionalScheduleNameField = ScheduleNameField | None
+OptionalRecipeNameField = RecipeNameField | None
 
 
 def validate_warehouse_path(warehouse_path: str, info: ValidationInfo) -> str:

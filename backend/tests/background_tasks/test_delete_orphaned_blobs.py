@@ -8,7 +8,7 @@ from zimfarm_backend.background_tasks.delete_orphaned_blobs import (
     delete_orphaned_blobs,
 )
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.models import Blob, Schedule
+from zimfarm_backend.db.models import Blob, Recipe
 
 
 def test_delete_blob_from_storage_success():
@@ -44,10 +44,10 @@ def test_delete_blob_from_storage_failure():
 
 def test_delete_orphaned_blobs_no_orphans(
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
 ):
     """Test delete_orphaned_blobs when there are no orphaned blobs"""
-    schedule.blobs.append(
+    recipe.blobs.append(
         Blob(
             kind="css",
             flag_name="custom-css",
@@ -55,7 +55,7 @@ def test_delete_orphaned_blobs_no_orphans(
             checksum="1",
         )
     )
-    schedule.blobs.append(
+    recipe.blobs.append(
         Blob(
             kind="js",
             flag_name="custom-js",
@@ -63,7 +63,7 @@ def test_delete_orphaned_blobs_no_orphans(
             checksum="2",
         )
     )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
 
     with patch(
@@ -78,7 +78,7 @@ def test_delete_orphaned_blobs_no_orphans(
 
 def test_delete_orphaned_blobs_deletes_orphans(
     dbsession: OrmSession,
-    schedule: Schedule,
+    recipe: Recipe,
 ):
     """Test delete_orphaned_blobs successfully deletes orphaned blobs"""
     orphaned_blob1 = Blob(
@@ -97,7 +97,7 @@ def test_delete_orphaned_blobs_deletes_orphans(
     dbsession.flush()
 
     # Create a non-orphaned blob
-    schedule.blobs.append(
+    recipe.blobs.append(
         Blob(
             kind="css",
             flag_name="active-css",
@@ -105,7 +105,7 @@ def test_delete_orphaned_blobs_deletes_orphans(
             checksum="3",
         )
     )
-    dbsession.add(schedule)
+    dbsession.add(recipe)
     dbsession.flush()
 
     with patch(

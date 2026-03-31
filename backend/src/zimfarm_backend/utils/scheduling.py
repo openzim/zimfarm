@@ -13,7 +13,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import (
     PERIODICITIES,
 )
-from zimfarm_backend.common.enums import SchedulePeriodicity, TaskStatus
+from zimfarm_backend.common.enums import RecipePeriodicity, TaskStatus
 from zimfarm_backend.db.requested_task import request_task
 from zimfarm_backend.db.user import get_user_by_identifier
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
@@ -21,10 +21,10 @@ from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 logger = logging.getLogger(__name__)
 
 
-def request_tasks_using_schedule(session: OrmSession):
-    """create requested_tasks based on schedule's periodicity field
+def request_tasks_using_recipe(session: OrmSession):
+    """create requested_tasks based on recipe's periodicity field
 
-    Expected to be ran periodically to compute what needs to be scheduled
+    Expected to be ran periodically to compute what needs to be reciped
     """
 
     requester = "period-scheduler"
@@ -32,24 +32,24 @@ def request_tasks_using_schedule(session: OrmSession):
     worker = None
 
     for period, period_data in {
-        p: PERIODICITIES.get(p) for p in SchedulePeriodicity.all()
+        p: PERIODICITIES.get(p) for p in RecipePeriodicity.all()
     }.items():
         if not period_data:
             continue  # manually has no data
 
         period_start = getnow() - datetime.timedelta(days=period_data["days"])
-        logger.debug(f"requesting for `{period}` schedules (before {period_start})")
+        logger.debug(f"requesting for `{period}` recipes (before {period_start})")
 
-        # find non-requested schedules which last run started before our period start
-        for schedule in session.execute(
-            sa.select(dbm.Schedule).where(
-                dbm.Schedule.enabled,
-                dbm.Schedule.periodicity == period,
-                ~sa.exists().where(dbm.RequestedTask.schedule_id == dbm.Schedule.id),
+        # find non-requested recipes which last run started before our period start
+        for recipe in session.execute(
+            sa.select(dbm.Recipe).where(
+                dbm.Recipe.enabled,
+                dbm.Recipe.periodicity == period,
+                ~sa.exists().where(dbm.RequestedTask.recipe_id == dbm.Recipe.id),
             )
         ).scalars():
-            if schedule.most_recent_task_id is not None:
-                last_run = schedule.most_recent_task
+            if recipe.most_recent_task_id is not None:
+                last_run = recipe.most_recent_task
                 # don't bother if it started after this rolling period's start
                 if (
                     last_run
@@ -62,7 +62,7 @@ def request_tasks_using_schedule(session: OrmSession):
                 # don't request a task if the most_recent_task is still running
                 if last_run and last_run.status not in TaskStatus.complete():
                     logger.debug(
-                        f"{schedule.name} not requested because most_recent_task "
+                        f"{recipe.name} not requested because most_recent_task "
                         f"{last_run.id} did not complete"
                     )
                     continue
@@ -72,7 +72,7 @@ def request_tasks_using_schedule(session: OrmSession):
                     try:
                         result = request_task(
                             session=session,
-                            schedule_name=schedule.name,
+                            recipe_name=recipe.name,
                             requested_by=get_user_by_identifier(
                                 session, user_identifier=requester
                             ).id,
@@ -80,7 +80,7 @@ def request_tasks_using_schedule(session: OrmSession):
                             priority=priority,
                         )
                         if result.requested_task:
-                            logger.debug(f"Successfully requested {schedule.name}")
+                            logger.debug(f"Successfully requested {recipe.name}")
 
                         if result.error:
                             logger.warning(
@@ -89,9 +89,9 @@ def request_tasks_using_schedule(session: OrmSession):
                             )
                     except ValidationError:
                         logger.exception(
-                            f"Validation error requesting {schedule.name}",
+                            f"Validation error requesting {recipe.name}",
                         )
                     except Exception:
                         logger.exception(
-                            f"Unexpected error requesting {schedule.name}",
+                            f"Unexpected error requesting {recipe.name}",
                         )

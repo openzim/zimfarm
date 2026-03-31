@@ -1,4 +1,4 @@
-"""Add unique constraint on schedule duration
+"""Add unique constraint on recipe duration
 
 Revision ID: 0055fc77f5d8
 Revises: 76a074cc939b

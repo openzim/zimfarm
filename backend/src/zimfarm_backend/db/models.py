@@ -176,16 +176,14 @@ class Task(Base):
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     notification: Mapped[dict[str, Any]]
     upload: Mapped[dict[str, Any]]
-    original_schedule_name: Mapped[str]
+    original_recipe_name: Mapped[str]
     context: Mapped[str] = mapped_column(default="", server_default="")
     timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
 
-    schedule_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("schedule.id"), init=False
-    )
+    recipe_id: Mapped[UUID | None] = mapped_column(ForeignKey("recipe.id"), init=False)
 
-    schedule: Mapped["Schedule | None"] = relationship(
-        back_populates="tasks", init=False, foreign_keys=[schedule_id]
+    recipe: Mapped["Recipe | None"] = relationship(
+        back_populates="tasks", init=False, foreign_keys=[recipe_id]
     )
 
     worker_id: Mapped[UUID] = mapped_column(ForeignKey("worker.id"), init=False)
@@ -242,8 +240,8 @@ class File(Base):
     __table_args__ = (UniqueConstraint("task_id", "name"),)
 
 
-class Schedule(Base):
-    __tablename__ = "schedule"
+class Recipe(Base):
+    __tablename__ = "recipe"
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
@@ -257,7 +255,7 @@ class Schedule(Base):
     periodicity: Mapped[str]
     notification: Mapped[dict[str, Any] | None]
     is_valid: Mapped[bool] = mapped_column(default=True, server_default=true())
-    # context that a worker must have to run this schedule
+    # context that a worker must have to run this recipe
     context: Mapped[str] = mapped_column(default="", server_default="", index=True)
     archived: Mapped[bool] = mapped_column(default=False, server_default=false())
     similarity_data: Mapped[list[str]] = mapped_column(
@@ -280,46 +278,46 @@ class Schedule(Base):
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
 
     tasks: Mapped[list["Task"]] = relationship(
-        back_populates="schedule",
+        back_populates="recipe",
         cascade="save-update, merge, refresh-expire",
         init=False,
-        foreign_keys=[Task.schedule_id],
+        foreign_keys=[Task.recipe_id],
     )
 
     requested_tasks: Mapped[list["RequestedTask"]] = relationship(
-        back_populates="schedule",
+        back_populates="recipe",
         cascade="save-update, merge, refresh-expire",
         init=False,
     )
 
-    durations: Mapped[list["ScheduleDuration"]] = relationship(
-        back_populates="schedule", cascade="all", init=False
+    durations: Mapped[list["RecipeDuration"]] = relationship(
+        back_populates="recipe", cascade="all", init=False
     )
 
-    history_entries: Mapped[list["ScheduleHistory"]] = relationship(
-        back_populates="schedule",
+    history_entries: Mapped[list["RecipeHistory"]] = relationship(
+        back_populates="recipe",
         cascade="all, delete",
         passive_deletes=True,
         init=False,
         default_factory=list,
         # return the history entries in descending order of created_at
-        order_by="ScheduleHistory.created_at.desc()",
+        order_by="RecipeHistory.created_at.desc()",
     )
 
     blobs: Mapped[list["Blob"]] = relationship(
-        back_populates="schedule",
+        back_populates="recipe",
         init=False,
         default_factory=list,
     )
 
 
-class ScheduleHistory(Base):
-    __tablename__ = "schedule_history"
+class RecipeHistory(Base):
+    __tablename__ = "recipe_history"
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    schedule_id: Mapped[UUID] = mapped_column(
-        ForeignKey("schedule.id", ondelete="CASCADE"), init=False
+    recipe_id: Mapped[UUID] = mapped_column(
+        ForeignKey("recipe.id", ondelete="CASCADE"), init=False
     )
     author_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
     created_at: Mapped[datetime]
@@ -338,14 +336,14 @@ class ScheduleHistory(Base):
         default_factory=dict, server_default="{}"
     )
 
-    schedule: Mapped["Schedule"] = relationship(
+    recipe: Mapped["Recipe"] = relationship(
         back_populates="history_entries", init=False
     )
     author: Mapped["User"] = relationship(init=False)
 
 
-class ScheduleDuration(Base):
-    __tablename__ = "schedule_duration"
+class RecipeDuration(Base):
+    __tablename__ = "recipe_duration"
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
@@ -353,15 +351,15 @@ class ScheduleDuration(Base):
     value: Mapped[int]
     on: Mapped[datetime]
 
-    schedule_id: Mapped[UUID] = mapped_column(ForeignKey("schedule.id"), init=False)
+    recipe_id: Mapped[UUID] = mapped_column(ForeignKey("recipe.id"), init=False)
 
-    schedule: Mapped["Schedule"] = relationship(init=False)
+    recipe: Mapped["Recipe"] = relationship(init=False)
 
     worker_id: Mapped[UUID | None] = mapped_column(ForeignKey("worker.id"), init=False)
 
     worker: Mapped[Optional["Worker"]] = relationship(init=False)
 
-    __table_args__ = (UniqueConstraint("schedule_id", "worker_id"),)
+    __table_args__ = (UniqueConstraint("recipe_id", "worker_id"),)
 
 
 class RequestedTask(Base):
@@ -378,17 +376,15 @@ class RequestedTask(Base):
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     upload: Mapped[dict[str, Any]]
     notification: Mapped[dict[str, Any]]
-    original_schedule_name: Mapped[str]
-    # context requirement from the schedule when the recipe was created
+    original_recipe_name: Mapped[str]
+    # context requirement from the recipe when the recipe was created
     context: Mapped[str] = mapped_column(default="", server_default="")
 
     timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
 
-    schedule_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("schedule.id"), init=False
-    )
+    recipe_id: Mapped[UUID | None] = mapped_column(ForeignKey("recipe.id"), init=False)
 
-    schedule: Mapped["Schedule | None"] = relationship(
+    recipe: Mapped["Recipe | None"] = relationship(
         back_populates="requested_tasks", init=False
     )
 
@@ -404,7 +400,7 @@ class RequestedTask(Base):
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
     requested_by: Mapped["User"] = relationship(init=False)
 
-    __table_args__ = (UniqueConstraint("schedule_id"),)
+    __table_args__ = (UniqueConstraint("recipe_id"),)
 
 
 class OfflinerDefinition(Base):
@@ -435,8 +431,8 @@ class Blob(Base):
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    schedule_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("schedule.id", ondelete="SET NULL"), init=False
+    recipe_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("recipe.id", ondelete="SET NULL"), init=False
     )
     flag_name: Mapped[str]
     kind: Mapped[str]
@@ -448,8 +444,6 @@ class Blob(Base):
 
     comments: Mapped[str | None] = mapped_column(default=None)
 
-    schedule: Mapped["Schedule | None"] = relationship(
-        init=False, back_populates="blobs"
-    )
+    recipe: Mapped["Recipe | None"] = relationship(init=False, back_populates="blobs")
 
-    __table_args__ = (UniqueConstraint("schedule_id", "flag_name", "checksum"),)
+    __table_args__ = (UniqueConstraint("recipe_id", "flag_name", "checksum"),)

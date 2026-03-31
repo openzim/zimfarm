@@ -30,7 +30,7 @@ export const useTasksStore = defineStore('tasks', () => {
       limit?: number
       skip?: number
       status?: string[]
-      scheduleName?: string
+      recipeName?: string
       fetchMostRecentTasks?: boolean
       sort_criteria?: string
     } = {},
@@ -39,7 +39,7 @@ export const useTasksStore = defineStore('tasks', () => {
       limit = 100,
       skip = 0,
       status = [],
-      scheduleName = null,
+      recipeName = null,
       fetchMostRecentTasks,
       sort_criteria = 'updated_at',
     } = params
@@ -50,7 +50,7 @@ export const useTasksStore = defineStore('tasks', () => {
         status,
         sort_criteria,
         fetch_most_recent_tasks: fetchMostRecentTasks,
-        schedule_name: scheduleName,
+        recipe_name: recipeName,
       }).filter(([, value]) => !!value),
     )
     try {

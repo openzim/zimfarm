@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.models import Schedule, Worker
+from zimfarm_backend.db.models import Recipe, Worker
 
 
 class ContextListResult(BaseModel):
@@ -12,10 +12,10 @@ class ContextListResult(BaseModel):
 
 
 def get_contexts(session: OrmSession, skip: int, limit: int) -> ContextListResult:
-    """Get a list of all unique contexts from schedules and workers"""
-    # Get contexts from schedules (non-empty contexts)
-    schedule_contexts = select(Schedule.context.label("context")).where(
-        Schedule.context != ""
+    """Get a list of all unique contexts from recipes and workers"""
+    # Get contexts from recipes (non-empty contexts)
+    recipe_contexts = select(Recipe.context.label("context")).where(
+        Recipe.context != ""
     )
 
     # Get contexts from workers (unnest the contexts array)
@@ -25,7 +25,7 @@ def get_contexts(session: OrmSession, skip: int, limit: int) -> ContextListResul
 
     # Union both queries to get all unique contexts.
     # UNION filters out duplicates in PostgreSQL.
-    union_stmt = union(schedule_contexts, worker_contexts).order_by("context")
+    union_stmt = union(recipe_contexts, worker_contexts).order_by("context")
 
     return ContextListResult(
         nb_records=count_from_stmt(session, union_stmt),
