@@ -624,7 +624,7 @@ class WatcherRunner:
 
         if not self.s3_summary_file_url:
             self.s3_summary_file_url = (
-                f"http://{self.s3_storage.bucket_name}.{self.s3_storage.url.netloc}/"
+                f"https://{self.s3_storage.bucket_name}.{self.s3_storage.url.netloc}/"
                 f"{SUMMARY_FILENAME}"
             )
 
@@ -668,7 +668,7 @@ def rebuild_s3_url(uri: str):
         elif url.scheme.startswith("s3") or url.scheme.startswith("s3+https"):
             return "https"
         else:
-            raise ValueError(f"Unsupported URL scheme in: {url}")
+            return "https"
 
     netloc = ""
     if upload_uri.username:
