@@ -139,3 +139,4 @@ Pipfile
 *.vim
 
 *.old
+id_ed25519*

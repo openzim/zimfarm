@@ -13,6 +13,8 @@ ZIM files repository.
 ## Documentation
 
 - **[Editors Guide](EDITORS_GUIDE.md)**: For recipe managers - learn about recipes, tasks, workers, and how to manage content creation
+- **[Integrators Guide](INTEGRATORS_GUIDE.md)**: For integrators who are looking to install
+  configure, deploy and maintain Zimfarm platform infrastructure.
 - **[Contributing Guide](CONTRIBUTING.md)**: How to contribute to Zimfarm development
 
 ## How does it work?
@@ -86,6 +88,8 @@ If there's already a scraper for the website you want to convert to ZIM, someone
 ## Getting Started
 
 - **Recipe Managers/Editors**: Start with the [Editors Guide](EDITORS_GUIDE.md) to learn how to create and manage recipes
+- **[Integrators Guide](INTEGRATORS_GUIDE.md)**: For integrators who are looking to install
+  configure, deploy and maintain Zimfarm platform infrastructure.
 - **Workers**: Follow the [Worker README](worker/README.md) to set up a worker node
 - **Contributors**: Check [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines
 
