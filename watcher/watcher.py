@@ -30,7 +30,6 @@ import argparse
 import concurrent.futures as cf
 import datetime
 import json
-from typing import cast
 import logging
 import os
 import pathlib
@@ -42,13 +41,14 @@ import time
 import traceback
 import urllib.parse
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 
 import humanfriendly
-import jwt
 import requests
+from humanfriendly import parse_timespan
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
+from requests.auth import HTTPBasicAuth
 from xml_to_dict import XMLtoDict
 
 VERSION = "1.0"
@@ -82,6 +82,100 @@ for logger_name in set(["urllib3", "boto3", "botocore", "s3transfer"]):
 HTTP_REQUEST_TIMEOUT = 30
 SUMMARY_FILENAME = "summary.json"
 
+# Authentication mode: can be either "local" or "oauth"
+AUTH_MODE = os.getenv("AUTH_MODE", default="local")
+ZIMFARM_USERNAME = os.getenv("ZIMFARM_USERNAME", default="")
+ZIMFARM_PASSWORD = os.getenv("ZIMFARM_PASSWORD", default="")
+ZIMFARM_OAUTH_ISSUER = os.getenv(
+    "ZIMFARM_OAUTH_ISSUER", default="https://ory.login.kiwix.org"
+)
+ZIMFARM_OAUTH_CLIENT_ID = os.getenv("ZIMFARM_OAUTH_CLIENT_ID", default="")
+ZIMFARM_OAUTH_CLIENT_SECRET = os.getenv("ZIMFARM_OAUTH_CLIENT_SECRET", default="")
+ZIMFARM_OAUTH_AUDIENCE_ID = os.getenv("ZIMFARM_OAUTH_AUDIENCE_ID", default="")
+ZIMFARM_TOKEN_RENEWAL_WINDOW = datetime.timedelta(
+    seconds=parse_timespan(os.getenv("ZIMFARM_TOKEN_RENEWAL_WINDOW", default="5m"))
+)
+
+
+def getnow():
+    """naive UTC now"""
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+
+
+class ClientTokenProvider:
+    """Client to generate access tokens to authenticate with Zimfarm"""
+
+    def __init__(self):
+        self._access_token: str | None = None
+        self._refresh_token: str | None = None
+        self._expires_at: datetime.datetime = datetime.datetime.fromtimestamp(
+            0
+        ).replace(tzinfo=None)
+
+    def _generate_oauth_access_token(self) -> None:
+        """Generate oauth access token and update expires_at."""
+        response = requests.post(
+            f"{ZIMFARM_OAUTH_ISSUER}/oauth2/token",
+            data={
+                "grant_type": "client_credentials",
+                "audience": ZIMFARM_OAUTH_AUDIENCE_ID,
+            },
+            auth=HTTPBasicAuth(ZIMFARM_OAUTH_CLIENT_ID, ZIMFARM_OAUTH_CLIENT_SECRET),
+            timeout=HTTP_REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        self._access_token = cast(str, payload["access_token"])
+        self._expires_at = getnow() + datetime.timedelta(seconds=payload["expires_in"])
+
+    def _generate_local_access_token(self) -> None:
+        if self._refresh_token:
+            response = requests.post(
+                f"{ZIMFARM_API_URL}/auth/refresh",
+                json={
+                    "refresh_token": self._refresh_token,
+                },
+                timeout=HTTP_REQUEST_TIMEOUT,
+            )
+        else:
+            response = requests.post(
+                f"{ZIMFARM_API_URL}/auth/authorize",
+                json={
+                    "username": ZIMFARM_USERNAME,
+                    "password": ZIMFARM_PASSWORD,
+                },
+                timeout=HTTP_REQUEST_TIMEOUT,
+            )
+
+        response.raise_for_status()
+        payload = response.json()
+        self._access_token = cast(str, payload["access_token"])
+        self._refresh_token = cast(str, payload["refresh_token"])
+        self._expires_at = datetime.datetime.fromisoformat(
+            payload["expires_time"]
+        ).replace(tzinfo=None)
+
+    def get_access_token(self, force_refresh: bool = False) -> str:
+        """Retrieve or generate access token depending on if token has expired."""
+        now = getnow()
+        if (
+            force_refresh
+            or self._access_token is None
+            or now >= (self._expires_at - ZIMFARM_TOKEN_RENEWAL_WINDOW)
+        ):
+            if AUTH_MODE == "oauth":
+                self._generate_oauth_access_token()
+            elif AUTH_MODE == "local":
+                self._generate_local_access_token()
+            else:
+                raise ValueError(
+                    f"Unknown cms authentication mode: {AUTH_MODE}. "
+                    "Allowed values are: 'local', 'oauth'"
+                )
+        if self._access_token is None:
+            raise ValueError("Failed to generate access token.")
+        return self._access_token
+
 
 def get_last_modified_for(url: str) -> str | None:
     """the Last-Modified header for an URL"""
@@ -89,23 +183,6 @@ def get_last_modified_for(url: str) -> str | None:
         if resp.status_code == 404:
             raise FileNotFoundError(url)
         return resp.headers.get("last-modified")
-
-
-def get_token(api_url: str, username: str, password: str) -> tuple[str, str]:
-    """Access-token, Refresh-token for a pair of Zimfarm credentials"""
-    req = requests.post(
-        url=f"{api_url}/auth/authorize",
-        headers={
-            "Content-type": "application/json",
-        },
-        json={
-            "username": username,
-            "password": password,
-        },
-        timeout=HTTP_REQUEST_TIMEOUT,
-    )
-    req.raise_for_status()
-    return req.json().get("access_token"), req.json().get("refresh_token")
 
 
 def query_api(
@@ -189,8 +266,6 @@ class WatcherRunner:
         *,
         s3_url_with_credentials: str,
         s3_summary_file_url: str | None,
-        zimfarm_username: str,
-        zimfarm_password: str,
         schedule_on_update: bool,
         nb_threads: int,
         duration: str,
@@ -202,8 +277,6 @@ class WatcherRunner:
         self.running = True
         self.s3_url_with_credentials = s3_url_with_credentials
         self.s3_summary_file_url = s3_summary_file_url
-        self.zimfarm_username = zimfarm_username
-        self.zimfarm_password = zimfarm_password
         self.schedule_on_update = schedule_on_update
         self.nb_threads = nb_threads
         self.duration = duration
@@ -211,11 +284,7 @@ class WatcherRunner:
         self.only = only
         self.runonce = runonce
         self.debug = debug
-
-        self.access_token = self.refresh_token = ""
-        self.token_payload = {}
-        self.authenticated_on = datetime.datetime.fromtimestamp(0)
-        self.authentication_expires_on = datetime.datetime.fromtimestamp(0)
+        self._token_provider = ClientTokenProvider()
 
         # registering exit signals
         signal.signal(signal.SIGTERM, self.exit_gracefully)
@@ -253,29 +322,6 @@ class WatcherRunner:
             return False
         return True
 
-    def authenticate(self, *, force: bool = False):
-        """authenticate to the Zimfarm API"""
-        # our access token should grant us access for 60mn
-        if force or self.authentication_expires_on <= datetime.datetime.now():
-            try:
-                self.access_token, self.refresh_token = get_token(
-                    ZIMFARM_API_URL, self.zimfarm_username, self.zimfarm_password
-                )
-                self.token_payload = jwt.decode(
-                    self.access_token,
-                    algorithms=["HS256"],
-                    options={"verify_signature": False},
-                )
-                self.authenticated_on = datetime.datetime.now()
-                self.authentication_expires_on = datetime.datetime.fromtimestamp(
-                    self.token_payload["exp"]
-                )
-                return True
-            except Exception:
-                logger.exception("authenticate() failure")
-                return False
-        return True
-
     def query_api(
         self,
         method: str,
@@ -287,13 +333,16 @@ class WatcherRunner:
         """success, status_code, response for a query to Zimfarm API"""
         success, status_code, response = False, 0, {}
 
-        if not self.authenticate():
-            return (success, status_code, response)
+        try:
+            access_token = self._token_provider.get_access_token()
+        except Exception:
+            logger.exception("Failed to get access token")
+            return success, status_code, response
 
         attempts = 0
         while attempts <= 1:
             success, status_code, response = query_api(
-                self.access_token,
+                access_token,
                 method,
                 f"{ZIMFARM_API_URL}{path}",
                 payload,
@@ -304,7 +353,12 @@ class WatcherRunner:
 
             # Unauthorised error: attempt to re-auth as scheduler might have restarted?
             if status_code == requests.codes.UNAUTHORIZED:
-                self.authenticate(force=True)
+                try:
+                    access_token = self._token_provider.get_access_token(
+                        force_refresh=True
+                    )
+                except Exception:
+                    logger.exception("Failed to get access token")
                 continue
             else:
                 break
@@ -633,7 +687,6 @@ class WatcherRunner:
 
         logger.info(
             f"Starting watcher:\n"
-            f"  with zimfarm username: {self.zimfarm_username}\n"
             f"  using cache: {self.s3_storage.url.netloc}\n"
             f"  with bucket: {self.s3_storage.bucket_name}"
             + (
@@ -718,21 +771,6 @@ def entrypoint():
         help="S3 URL of caching dumps.",
         default=os.getenv("S3_SUMMARY_FILE_URL"),
     )
-
-    parser.add_argument(
-        "--zimfarm-username",
-        help="Zimfarm API username. Defaults to ZIMFARM_USERNAME environ",
-        dest="zimfarm_username",
-        default=os.getenv("ZIMFARM_USERNAME"),
-        required=not os.getenv("ZIMFARM_USERNAME"),
-    )
-    parser.add_argument(
-        "--zimfarm-password",
-        help="Zimfarm API. Defaults to ZIMFARM_PASSWORD environ",
-        dest="zimfarm_password",
-        default=os.getenv("ZIMFARM_PASSWORD"),
-        required=not os.getenv("ZIMFARM_PASSWORD"),
-    )
     parser.add_argument(
         "--dont-schedule-on-update",
         help="Whether to schedule matching Zimfarm recipes on successful dump update",
@@ -783,11 +821,30 @@ def entrypoint():
     )
 
     args = parser.parse_args()
+
+    if AUTH_MODE == "local":
+        if not (ZIMFARM_USERNAME and ZIMFARM_PASSWORD):
+            raise OSError(
+                "ZIMFARM_USERNAME and ZIMFARM_PASSWORD must be set when AUTH_MODE is 'local'"
+            )
+    elif AUTH_MODE == "oauth":
+        if not (
+            ZIMFARM_OAUTH_CLIENT_ID,
+            ZIMFARM_OAUTH_CLIENT_SECRET,
+            ZIMFARM_OAUTH_AUDIENCE_ID,
+        ):
+            raise OSError(
+                "ZIMFARM_OAUTH_CLIENT_ID, ZIMFARM_OAUTH_CLIENT_SECRET and "
+                "ZIMFARM_OAUTH_AUDIENCE_ID must be set when AUTH_MODE is 'oauth'."
+            )
+    else:
+        raise ValueError(
+            f"Unsupported value '{AUTH_MODE}' for AUTH_MODE. Only 'local' and 'oauth' "
+            "are supported."
+        )
     runner = WatcherRunner(
         s3_url_with_credentials=args.s3_url_with_credentials,
         s3_summary_file_url=args.s3_summary_file_url,
-        zimfarm_username=args.zimfarm_username,
-        zimfarm_password=args.zimfarm_password,
         schedule_on_update=args.schedule_on_update,
         nb_threads=args.nb_threads,
         duration=args.duration,

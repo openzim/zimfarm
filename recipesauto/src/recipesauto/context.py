@@ -25,8 +25,7 @@ class Context:
     zimfarm_api_url: str = "https://api.farm.openzim.org/v2"
 
     # Credentials to Zimfarm
-    zimfarm_username: str
-    zimfarm_password: str
+    zimfarm_access_token: str
 
     # timeout of HTTP calls
     http_timeout: int = 10

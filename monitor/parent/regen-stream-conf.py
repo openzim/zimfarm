@@ -2,18 +2,28 @@
 
 import json
 import os
-import uuid
 import sys
 import time
 import urllib.error
 import urllib.parse
+import base64
 import urllib.request
+import uuid
 from http import HTTPStatus
 from typing import Any, Tuple, Union
 
 API_URL = os.getenv("ZIMFARM_API_URL")
 if not API_URL:
     raise OSError("Please set the ZIMFARM_API_URL environment variable")
+
+# Authentication mode: can be either "local" or "oauth"
+AUTH_MODE = os.getenv("AUTH_MODE", "local")
+ZIMFARM_USERNAME = os.getenv("ZIMFARM_USERNAME", "")
+ZIMFARM_PASSWORD = os.getenv("ZIMFARM_PASSWORD", "")
+ZIMFARM_OAUTH_ISSUER = os.getenv("ZIMFARM_OAUTH_ISSUER", "https://ory.login.kiwix.org")
+ZIMFARM_OAUTH_CLIENT_ID = os.getenv("ZIMFARM_OAUTH_CLIENT_ID", "")
+ZIMFARM_OAUTH_CLIENT_SECRET = os.getenv("ZIMFARM_OAUTH_CLIENT_SECRET", "")
+ZIMFARM_OAUTH_AUDIENCE_ID = os.getenv("ZIMFARM_OAUTH_AUDIENCE_ID", "")
 
 TEMPLATE = """[__KEY__]
  enabled = yes
@@ -35,27 +45,96 @@ def format_key(fingerprint: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, fingerprint)).upper()
 
 
-def get_token() -> str:
-    url = f"{API_URL}/auth/authorize"
-    headers = {
-        "Content-type": "application/json",
-    }
+class ClientTokenProvider:
+    """Client to generate access tokens to authenticate with Zimfarm"""
 
-    payload = {
-        "username": os.getenv("ZIMFARM_USERNAME", "n/a"),
-        "password": os.getenv("ZIMFARM_PASSWORD", "n/a"),
-    }
+    def __init__(self):
+        self._access_token: str | None = None
+        self._refresh_token: str | None = None
 
-    data = json.dumps(payload).encode("utf-8")
+    def _generate_oauth_access_token(self) -> None:
+        """Generate oauth access token."""
 
-    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        credentials = f"{ZIMFARM_OAUTH_CLIENT_ID}:{ZIMFARM_OAUTH_CLIENT_SECRET}"
+        encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode(
+            "utf-8"
+        )
 
-    try:
-        with urllib.request.urlopen(req) as response:  # nosec B310
-            data = json.loads(response.read().decode("utf-8"))
-            return data.get("access_token")
-    except urllib.error.HTTPError as e:
-        raise IOError(f"HTTP Error {e.code}: {e.reason}")
+        headers = {
+            "Authorization": f"Basic {encoded_credentials}",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "python-urllib/3.11",
+            "Accept": "application/json",
+        }
+
+        payload = {
+            "grant_type": "client_credentials",
+            "audience": ZIMFARM_OAUTH_AUDIENCE_ID,
+        }
+
+        req = urllib.request.Request(
+            f"{ZIMFARM_OAUTH_ISSUER}/oauth2/token",
+            data=urllib.parse.urlencode(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(req) as response:  # nosec B310
+                response_data = json.loads(response.read().decode("utf-8"))
+                self._access_token = response_data["access_token"]
+        except urllib.error.HTTPError as e:
+            raise IOError(
+                f"OAuth token generation failed - HTTP Error {e.code}: {e.reason}"
+            )
+
+    def _generate_local_access_token(self) -> None:
+        """Generate local access token."""
+        if self._refresh_token:
+            url = f"{API_URL}/auth/refresh"
+            payload = {
+                "refresh_token": self._refresh_token,
+            }
+        else:
+            url = f"{API_URL}/auth/authorize"
+            payload = {
+                "username": ZIMFARM_USERNAME,
+                "password": ZIMFARM_PASSWORD,
+            }
+
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data, headers={"Content-type": "application/json"}, method="POST"
+        )
+
+        try:
+            with urllib.request.urlopen(req) as response:  # nosec B310
+                response_data = json.loads(response.read().decode("utf-8"))
+                self._access_token = response_data.get("access_token")
+                self._refresh_token = response_data.get("refresh_token")
+        except urllib.error.HTTPError as e:
+            raise IOError(
+                f"Local authentication failed - HTTP Error {e.code}: {e.reason}"
+            )
+
+    def get_access_token(self) -> str:
+        """Retrieve or generate access token."""
+        if self._access_token is None:
+            if AUTH_MODE == "oauth":
+                self._generate_oauth_access_token()
+            elif AUTH_MODE == "local":
+                self._generate_local_access_token()
+            else:
+                raise ValueError(
+                    f"Unknown authentication mode: {AUTH_MODE}. "
+                    "Allowed values are: 'local', 'oauth'"
+                )
+        if self._access_token is None:
+            raise ValueError("Failed to generate access token.")
+        return self._access_token
+
+
+token_provider = ClientTokenProvider()
 
 
 def query_api(
@@ -142,7 +221,7 @@ def query_api(
 
 def main() -> None:
     fingerprints = []
-    token = get_token()
+    token = token_provider.get_access_token()
 
     def get_from_api(
         path: str,
@@ -163,7 +242,7 @@ def main() -> None:
 
             # Unauthorised error: attempt to re-auth as scheduler might have restarted?
             if status_code == HTTPStatus.UNAUTHORIZED:
-                token = get_token()
+                token = token_provider.get_access_token()
                 continue
             else:
                 break

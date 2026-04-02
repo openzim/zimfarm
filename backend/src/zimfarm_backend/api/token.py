@@ -105,18 +105,29 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
             issuer=OAUTH_ISSUER,
             audience=OAUTH_OIDC_CLIENT_ID,
             options={
-                "require": ["exp", "iat", "iss", "sub", "name", "amr", "aud"],
+                "require": ["exp", "iat", "iss", "sub", "aud"],
             },
         )
 
+        if (
+            client_id := decoded_token.get("client_id")
+        ) and client_id != decoded_token.get("sub"):
+            raise ValueError("Oauth client ID does not match.")
+
+        # Check for 2FA requirement only if client_id is not present in the token
+        # as those come from oauth2 clients and not real users.
         # Ensure the user logged in with two authentication factors. As per Ory docs,
         # "password", "code"  and "oidc" are categorized as first methods of login while
         # "totp", "webauthn" and "lookup_secret" are second authentication methods
         # https://www.ory.com/docs/kratos/mfa/overview#authenticator-assurance-level-aal
         amr = set(decoded_token.get("amr", []))
-        if OAUTH_OIDC_LOGIN_REQUIRE_2FA and not (
-            {"password", "oidc", "code"} & amr
-            and {"webauthn", "lookup_secrets", "totp"} & amr
+        if (
+            not decoded_token.get("client_id")
+            and OAUTH_OIDC_LOGIN_REQUIRE_2FA
+            and not (
+                {"password", "oidc", "code"} & amr
+                and {"webauthn", "lookup_secrets", "totp"} & amr
+            )
         ):
             raise ValueError(
                 "2FA authentication is mandatory on Zimfarm but it looks like you only "
@@ -150,6 +161,7 @@ class OAuthSessionTokenDecoder(TokenDecoder):
         Decode and validate an OAuth OIDC token.
         """
         signing_key = self._jwks_client.get_signing_key_from_jwt(token)
+
         decoded_token = jwt.decode(
             token,
             signing_key.key,
@@ -157,11 +169,22 @@ class OAuthSessionTokenDecoder(TokenDecoder):
             issuer=OAUTH_ISSUER,
             audience=OAUTH_SESSION_AUDIENCE_ID,
             options={
-                "require": ["exp", "iat", "iss", "sub", "name", "aud", "aal"],
+                "require": ["exp", "iat", "iss", "sub", "aud"],
             },
         )
 
-        if OAUTH_SESSION_LOGIN_REQUIRE_2FA and decoded_token.get("aal") != "aal2":
+        if (
+            client_id := decoded_token.get("client_id")
+        ) and client_id != decoded_token.get("sub"):
+            raise ValueError("Oauth client ID does not match.")
+
+        # Check for 2FA requirement only if client_id is not present in the token
+        # as those come from oauth2 clients and not real users
+        if (
+            not decoded_token.get("client_id")
+            and OAUTH_SESSION_LOGIN_REQUIRE_2FA
+            and decoded_token.get("aal") != "aal2"
+        ):
             raise ValueError(
                 "2FA authentication is mandatory on Zimfarm but it looks like you only "
                 "have one setup on Ory. Please, configure a second one on Ory at "

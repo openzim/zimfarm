@@ -1,5 +1,34 @@
 #!/bin/bash
 
+die() {
+    printf 'error: %s\n' "$1" >&2
+    exit 1
+}
+
+AUTH_MODE="${AUTH_MODE:-local}"
+
+case "$AUTH_MODE" in
+    local)
+        if [[ -z "$ZIMFARM_USERNAME" || -z "$ZIMFARM_PASSWORD" ]]; then
+            die "ZIMFARM_USERNAME and ZIMFARM_PASSWORD must be set when AUTH_MODE is 'local'"
+        fi
+        ;;
+
+    oauth)
+        if [[ -z "$ZIMFARM_OAUTH_CLIENT_ID" ||
+              -z "$ZIMFARM_OAUTH_CLIENT_SECRET" ||
+              -z "$ZIMFARM_OAUTH_ISSUER" ||
+              -z "$ZIMFARM_OAUTH_AUDIENCE_ID" ]]; then
+            die "ZIMFARM_OAUTH_CLIENT_ID, ZIMFARM_OAUTH_CLIENT_SECRET and ZIMFARM_OAUTH_AUDIENCE_ID must be set when AUTH_MODE is 'oauth'."
+        fi
+        ;;
+
+    *)
+        die "Unsupported value '$AUTH_MODE' for AUTH_MODE. Only 'local' and 'oauth' are supported."
+        ;;
+esac
+
+
 # setup custom hostname for node in netdata
 if [ ! -z "${NETDATA_HOSTNAME}" ]
 then
@@ -50,6 +79,10 @@ NETDATA_LISTENER_PORT=${NETDATA_LISTENER_PORT}
 ZIMFARM_API_URL=${ZIMFARM_API_URL}
 ZIMFARM_USERNAME=${ZIMFARM_USERNAME}
 ZIMFARM_PASSWORD=${ZIMFARM_PASSWORD}
+AUTH_MODE=${AUTH_MODE}
+ZIMFARM_OAUTH_ISSUERk=${ZIMFARM_OAUTH_ISSUER}
+ZIMFARM_OAUTH_CLIENT_ID=${ZIMFARM_OAUTH_CLIENT_ID}
+ZIMFARM_OAUTH_AUDIENCE_ID=${ZIMFARM_OAUTH_AUDIENCE_ID}
 
 */15 * * * * root /usr/local/bin/update-stream-whitelist.sh >> /var/log/cron.log 2>&1
 EOF

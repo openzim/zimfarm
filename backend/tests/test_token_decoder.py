@@ -44,7 +44,7 @@ def create_test_session_jwt_token(
     audience_id: str = TEST_CLIENT_ID,
     subject: str | None = None,
     exp_delta: datetime.timedelta = datetime.timedelta(hours=1),
-    aal: str = "aal2",
+    aal: str | None = "aal2",
 ) -> str:
     """Create a test JWT token for session authentication."""
     if subject is None:
@@ -57,9 +57,10 @@ def create_test_session_jwt_token(
         "iat": int(now.timestamp()),
         "exp": int((now + exp_delta).timestamp()),
         "aud": audience_id,
-        "aal": aal,
         "name": "Test User",
     }
+    if aal:
+        payload["aal"] = aal
 
     # Create a test token (unsigned for testing purposes)
     return jwt.encode(payload, "test-secret", algorithm="HS256")
@@ -407,3 +408,99 @@ def test_verify_session_access_token_with_2fa_disabled_only_aal1(
         assert result.iss == decoded_payload["iss"]
         assert str(result.sub) == decoded_payload["sub"]
         assert result.name == decoded_payload["name"]
+
+
+def test_verify_session_access_token_with_client_id_requires_no_2fa(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """
+    Test that verification succeeds when 2FA is enabled but token contains client_id
+    """
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_AUDIENCE_ID",
+        TEST_CLIENT_ID,
+    )
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_LOGIN_REQUIRE_2FA", True
+    )
+
+    test_token = create_test_session_jwt_token(aal=None)
+
+    mock_signing_key = MagicMock()
+    mock_signing_key.key = "test-key"
+    sub = str(UUID(int=0))
+
+    decoded_payload = {
+        "iss": TEST_ISSUER,
+        "aud": TEST_CLIENT_ID,
+        "sub": sub,
+        "client_id": sub,
+        "name": "Test User",
+        "iat": int(getnow().timestamp()),
+        "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
+    }
+
+    decoder = OAuthSessionTokenDecoder()
+
+    with (
+        patch.object(
+            decoder._jwks_client,
+            "get_signing_key_from_jwt",
+        ) as mock_get_key,
+        patch("zimfarm_backend.api.token.jwt.decode") as mock_decode,
+    ):
+        mock_get_key.return_value = mock_signing_key
+        mock_decode.return_value = decoded_payload
+
+        result = decoder.decode(test_token)
+
+        # The decoder returns a JWTClaims object, not the raw payload
+        assert result.iss == decoded_payload["iss"]
+        assert str(result.sub) == decoded_payload["sub"]
+
+
+def test_verify_session_access_token_verify_client_id_matches_sub(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """
+    Test that verification succeeds when 2FA is enabled but token contains client_id
+    """
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_AUDIENCE_ID",
+        TEST_CLIENT_ID,
+    )
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_LOGIN_REQUIRE_2FA", True
+    )
+
+    test_token = create_test_session_jwt_token(aal=None)
+
+    mock_signing_key = MagicMock()
+    mock_signing_key.key = "test-key"
+
+    decoded_payload = {
+        "iss": TEST_ISSUER,
+        "aud": TEST_CLIENT_ID,
+        "sub": str(UUID(int=0)),
+        "client_id": str(UUID(int=1)),
+        "name": "Test User",
+        "iat": int(getnow().timestamp()),
+        "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
+    }
+
+    decoder = OAuthSessionTokenDecoder()
+
+    with (
+        patch.object(
+            decoder._jwks_client,
+            "get_signing_key_from_jwt",
+        ) as mock_get_key,
+        patch("zimfarm_backend.api.token.jwt.decode") as mock_decode,
+    ):
+        mock_get_key.return_value = mock_signing_key
+        mock_decode.return_value = decoded_payload
+
+        with pytest.raises(ValueError, match="Oauth client ID does not match"):
+            decoder.decode(test_token)
