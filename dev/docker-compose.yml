@@ -336,7 +336,7 @@ services:
     environment:
       DEBUG: true
       ZIMFARM_API_URL: http://backend:80/v2
-      ZIMFARM_FRONTEND_URL: http://frontend-ui-dev:80
+      ZIMFARM_FRONTEND_URL: http://frontend-ui:80
       ZIMFARM_USERNAME: admin
       ZIMFARM_PASSWORD: admin
       ZIMFARM_DATABASE_URL: postgresql+psycopg://zimfarm:zimpass@postgresdb:5432/zimfarm
@@ -344,6 +344,12 @@ services:
 
     ports:
       - 127.0.0.1:8005:80
+
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend-ui-dev:
+        condition: service_started
 
     profiles:
       - healthcheck

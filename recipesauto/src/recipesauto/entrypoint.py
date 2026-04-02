@@ -36,11 +36,9 @@ def prepare_context(raw_args: list[str]) -> None:
     )
 
     parser.add_argument(
-        "--zimfarm-username", help="Username to connect to the Zimfarm", required=True
-    )
-
-    parser.add_argument(
-        "--zimfarm-password", help="Password to connect to the Zimfarm", required=True
+        "--zimfarm-access-token",
+        help="Access token to connect to the Zimfarm",
+        required=True,
     )
 
     parser.add_argument(

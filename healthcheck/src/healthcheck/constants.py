@@ -27,8 +27,19 @@ ZIMFARM_API_URL = getenv("ZIMFARM_API_URL", default="https://api.farm.openzim.or
 ZIMFARM_FRONTEND_URL = getenv(
     "ZIMFARM_FRONTEND_URL", default="https://farm.openzim.org"
 )
-ZIMFARM_USERNAME = getenv("ZIMFARM_USERNAME", mandatory=True)
-ZIMFARM_PASSWORD = getenv("ZIMFARM_PASSWORD", mandatory=True)
+# Authentication mode: can be either "local" or "oauth"
+AUTH_MODE = getenv("AUTH_MODE", default="local")
+ZIMFARM_USERNAME = getenv("ZIMFARM_USERNAME", default="")
+ZIMFARM_PASSWORD = getenv("ZIMFARM_PASSWORD", default="")
+ZIMFARM_OAUTH_ISSUER = getenv(
+    "ZIMFARM_OAUTH_ISSUER", default="https://ory.login.kiwix.org"
+)
+ZIMFARM_OAUTH_CLIENT_ID = getenv("ZIMFARM_OAUTH_CLIENT_ID", default="")
+ZIMFARM_OAUTH_CLIENT_SECRET = getenv("ZIMFARM_OAUTH_CLIENT_SECRET", default="")
+ZIMFARM_OAUTH_AUDIENCE_ID = getenv("ZIMFARM_OAUTH_AUDIENCE_ID", default="")
+ZIMFARM_TOKEN_RENEWAL_WINDOW = datetime.timedelta(
+    seconds=parse_timespan(getenv("ZIMFARM_TOKEN_RENEWAL_WINDOW", default="5m"))
+)
 ZIMFARM_DATABASE_URL = getenv("ZIMFARM_DATABASE_URL", mandatory=True)
 
 CMS_API_URL = getenv("CMS_API_URL", default="https://api.cms.openzim.org/v1")

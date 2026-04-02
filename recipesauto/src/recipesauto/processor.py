@@ -42,8 +42,9 @@ class Processor:
                 "do_not_delete": [],
             }
 
-        logger.info("Getting Zimfarm authorization")
-        self.get_zf_token()
+        logger.info("Authenticating with zimfarm")
+        self.authenticate()
+        logger.info("Authenticaed with zimfarm")
 
         if context.kind == "ted":
             import recipesauto.ted as setmodule
@@ -426,23 +427,14 @@ class Processor:
     def get_zf_headers(self):
         """Build zimfarm headers"""
         return {
-            "Authorization": f"Bearer {self.zf_access_token}",
+            "Authorization": f"Bearer {context.zimfarm_access_token}",
             "Content-type": "application/json",
         }
 
-    def get_zf_token(self):
-        """Authenticate and get zimfarm tokens"""
-        req = requests.post(
-            url=self.get_zf_url("/auth/authorize"),
-            headers={
-                "Content-type": "application/json",
-            },
+    def authenticate(self):
+        response = requests.get(
+            self.get_zf_url("/auth/me"),
+            headers=self.get_zf_headers(),
             timeout=context.http_timeout,
-            json={
-                "username": context.zimfarm_username,
-                "password": context.zimfarm_password,
-            },
         )
-        req.raise_for_status()
-        self.zf_access_token = req.json().get("access_token")
-        self.zf_refresh_token = req.json().get("refresh_token")
+        response.raise_for_status()

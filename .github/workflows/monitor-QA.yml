@@ -1,0 +1,41 @@
+name: Monitor Parent QA
+
+on:
+  pull_request:
+    paths:
+      - "monitor/parent**"
+  push:
+    paths:
+      - "monitor/parent**"
+    branches:
+      - main
+
+jobs:
+  check-qa:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          architecture: x64
+
+      - name: Install dependencies (and project)
+        working-directory: monitor/parent
+        run: |
+          pip install -U pip
+          pip install black ruff pyright
+
+      - name: Check black formatting
+        working-directory: monitor/parent
+        run: black --check --diff .
+
+      - name: Check ruff
+        working-directory: monitor/parent
+        run: ruff check .
+
+      - name: Check pyright
+        working-directory: monitor/parent
+        run: pyright
