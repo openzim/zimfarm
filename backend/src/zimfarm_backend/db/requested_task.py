@@ -55,6 +55,7 @@ from zimfarm_backend.db.worker import create_worker_schema, get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
+    get_timestamp_for_status,
 )
 
 # Maximum positive integer value for PostgreSQL BigInteger
@@ -664,10 +665,17 @@ def _can_run(task: RequestedTaskWithDuration, resource: ResourcesSchema) -> bool
     return True
 
 
-def _check_worker_unavailable_reason(
+def _get_worker_unavailable_reason(
     worker: WorkerLightSchema, running_tasks: list[RunningTask]
-) -> str | None:
-    running_task_timestamps = [t.updated_at for t in running_tasks]
+) -> str:
+    running_task_timestamps = [
+        get_timestamp_for_status(
+            t.timestamp,
+            status=TaskStatus.reserved,
+        )
+        for t in running_tasks
+    ]
+
     last_seen_reason = ""
     if worker.last_seen:
         last_seen_reason = (
@@ -690,7 +698,10 @@ def _check_worker_unavailable_reason(
         reason = f"Worker '{worker.name}' appears to be offline " + last_seen_reason
         return reason
 
-    return None
+    return (
+        f"We have no reason for this task to not start on worker '{worker.name}' as"
+        f"worker has no running tasks. Worker is {worker.status}"
+    ) + last_seen_reason
 
 
 def diagnose_requested_task(
@@ -698,7 +709,7 @@ def diagnose_requested_task(
     *,
     worker: WorkerLightSchema,
     requested_task: RequestedTask,
-) -> str | None:
+) -> str:
     """Diagnose why a requested task isn't running on worker"""
     if reason := _validate_worker_availability(worker):
         return reason
@@ -753,9 +764,7 @@ def diagnose_requested_task(
     )
 
     if _can_run(task, available_resources):
-        if reason := _check_worker_unavailable_reason(worker, running_tasks):
-            return reason
-        return None
+        return _get_worker_unavailable_reason(worker, running_tasks)
 
     # Calculate when resources will become available
     if reason := _find_task_that_can_run_with_available_resources(
@@ -771,11 +780,7 @@ def diagnose_requested_task(
     ).error:
         return reason
 
-    if reason := _check_worker_unavailable_reason(worker, running_tasks=running_tasks):
-        return reason
-
-    # we shouldn't get here if task can run as
-    return None
+    return _get_worker_unavailable_reason(worker, running_tasks=running_tasks)
 
 
 def _find_task_that_can_run_with_available_resources(

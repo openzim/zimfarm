@@ -1,10 +1,9 @@
-from http import HTTPStatus
 from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
@@ -386,6 +385,4 @@ def diagnose_requested_task(
             session, requested_task_id=requested_task_id
         ),
     )
-    if reason:
-        raise BadRequestError(reason)
-    return Response(status_code=HTTPStatus.NO_CONTENT)
+    raise BadRequestError(reason)

@@ -20,7 +20,7 @@ from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User, Worker
 from zimfarm_backend.db.requested_task import (
     RequestedTaskWithDuration,
     RunningTask,
-    _check_worker_unavailable_reason,  # pyright: ignore[reportPrivateUsage]
+    _get_worker_unavailable_reason,  # pyright: ignore[reportPrivateUsage]
     compute_requested_task_rank,
     delete_requested_task,
     diagnose_requested_task,
@@ -1075,7 +1075,6 @@ def test_find_requested_task_for_worker(
         "worker_resource",
         "recipe_resource",
         "recipe_context",
-        "result_bool",
         "error_regex",
     ],
     [
@@ -1087,8 +1086,7 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "",
-            True,
-            None,
+            "We have no reason for this task to not start on worker.*",
             id="worker-matches-recipe",
         ),
         pytest.param(
@@ -1099,7 +1097,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=2, memory=1, disk=1),
             "",
-            False,
             "Worker .* does not have enough resources to run",
             id="worker-does-not-match-recipe-cpu",
         ),
@@ -1111,7 +1108,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=2, disk=1),
             "",
-            False,
             "Worker .* does not have enough resources to run",
             id="worker-does-not-match-recipe-memory",
         ),
@@ -1123,7 +1119,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=2),
             "",
-            False,
             "Worker .* does not have enough resources to run",
             id="worker-does-not-match-recipe-disk",
         ),
@@ -1135,7 +1130,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "priority",  # recipe_context
-            False,
             "Worker .* does not have required context to run",
             id="worker-context-does-not-match-recipe",
         ),
@@ -1147,7 +1141,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # recipe_context
-            False,
             "Worker .* has required context but IP is not whitelisted to run",
             id="worker-whitelisted-context-ip-does-not-match-last-seen",
         ),
@@ -1159,8 +1152,7 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # recipe_context
-            True,
-            None,
+            "We have no reason for this task to not start on worker.*",
             id="worker-whitelisted-context-ip-matches-last-seen",
         ),
         pytest.param(
@@ -1171,7 +1163,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # recipe_context
-            False,
             "is cordoned/disabled",
             id="worker-cordoned",
         ),
@@ -1183,7 +1174,6 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # recipe_context
-            False,
             "is cordoned/disabled",
             id="worker-admin-disabled",
         ),
@@ -1195,8 +1185,7 @@ def test_find_requested_task_for_worker(
             ResourcesSchema(cpu=1, memory=1, disk=1),
             ResourcesSchema(cpu=1, memory=1, disk=1),
             "general",  # recipe_context
-            True,
-            None,
+            "We have no reason for this task to not start on worker.*",
             id="context-has-no-ip",
         ),
     ],
@@ -1217,8 +1206,7 @@ def test_diagnose_requested_task(
     worker_resource: ResourcesSchema,
     recipe_resource: ResourcesSchema,
     recipe_context: str,
-    result_bool: bool,
-    error_regex: str | None,
+    error_regex: str,
 ):
     """Test that diagnose_requested_task accurately reports why a task can't run"""
     worker = create_worker(
@@ -1269,12 +1257,8 @@ def test_diagnose_requested_task(
         requested_task=task,
     )
 
-    if result_bool:
-        assert reason is None
-    else:
-        assert reason is not None
-        if error_regex:
-            assert re.search(error_regex, reason) is not None
+    assert reason is not None
+    assert re.search(error_regex, reason) is not None
 
 
 def test_find_requested_task_first_cannot_run_but_alternative_can(
@@ -1477,11 +1461,11 @@ def test_check_worker_unavailable_reason_with_running_tasks(
     running_tasks = get_currently_running_tasks(dbsession, worker.name)
     worker_schema = create_worker_schema(worker, show_secrets=False)
 
-    reason = _check_worker_unavailable_reason(worker_schema, running_tasks)
+    reason = _get_worker_unavailable_reason(worker_schema, running_tasks)
     assert reason is not None
 
 
 def test_check_worker_unavailable_reason_without_running_tasks(worker: Worker):
     worker_schema = create_worker_schema(worker, show_secrets=False)
-    reason = _check_worker_unavailable_reason(worker_schema, [])
-    assert reason is None
+    reason = _get_worker_unavailable_reason(worker_schema, [])
+    assert reason is not None
