@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
 from zimfarm_backend.api.routes.dependencies import (
-    get_current_user,
-    get_current_user_or_none,
-    get_current_user_with_session,
+    get_current_account,
+    get_current_account_or_none,
+    get_current_account_with_session,
     require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
@@ -48,7 +48,8 @@ from zimfarm_backend.common.schemas.orms import (
 )
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.account import check_account_permission
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.recipe import count_enabled_recipes
 from zimfarm_backend.db.requested_task import (
     compute_requested_task_rank,
@@ -69,7 +70,6 @@ from zimfarm_backend.db.requested_task import (
 from zimfarm_backend.db.requested_task import (
     update_requested_task_priority as db_update_requested_task_priority,
 )
-from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import (
     create_worker_schema,
     get_worker,
@@ -103,7 +103,7 @@ def record_ip_change(session: OrmSession, worker_name: str):
 def create_request_task(
     new_requested_task: NewRequestedTaskSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ):
     """Create requested task from a list of recipe_names"""
     if count_enabled_recipes(session, new_requested_task.recipe_names) == 0:
@@ -117,7 +117,7 @@ def create_request_task(
         result = request_task(
             session,
             recipe_name=recipe_name,
-            requested_by=current_user.id,
+            requested_by=current_account.id,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
         )
@@ -143,10 +143,10 @@ def create_request_task(
 def get_requested_tasks(
     requested_task_schema: Annotated[RequestedTaskSchema, Query()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
 ) -> ListResponse[RequestedTaskLightSchema]:
-    """Get list of requested tasks for user."""
-    if current_user and requested_task_schema.worker:
+    """Get list of requested tasks for account."""
+    if current_account and requested_task_schema.worker:
         update_worker(session, worker_name=requested_task_schema.worker)
 
     skip = requested_task_schema.skip or 0
@@ -188,8 +188,8 @@ def get_requested_tasks_for_worker(
     avail_memory: Annotated[ZIMMemory, Query()],
     avail_disk: Annotated[ZIMDisk, Query()],
     session: Annotated[OrmSession, Depends(gen_manual_dbsession)],
-    current_user: Annotated[
-        User, Depends(get_current_user_with_session(session_type="manual"))
+    current_account: Annotated[
+        Account, Depends(get_current_account_with_session(session_type="manual"))
     ],
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
@@ -198,7 +198,7 @@ def get_requested_tasks_for_worker(
 
     fallback_ip = request.client.host if request.client else None
     x_forwarded_for = request.headers.get("X-Forwarded-For", fallback_ip)
-    if worker.user.id == current_user.id:
+    if worker.account.id == current_account.id:
         ip_changed = str(worker.last_ip) != x_forwarded_for
 
         if ip_changed:
@@ -291,7 +291,7 @@ def get_requested_tasks_for_worker(
 def get_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
@@ -305,21 +305,21 @@ def get_requested_task(
     requested_task.rank = compute_requested_task_rank(session, requested_task_id)
 
     # exclude notification to not expose private information (privacy)
-    # on anonymous requests and requests for users without recipes_update
+    # on anonymous requests and requests for accounts without recipes_update
     if not (
-        current_user
-        and check_user_permission(
-            current_user, namespace="requested_tasks", name="secrets"
+        current_account
+        and check_account_permission(
+            current_account, namespace="requested_tasks", name="secrets"
         )
     ):
         requested_task.notification = None
 
-    # if the user doesn't have permission, then their flag to hide secret
+    # if the account doesn't have permission, then their flag to hide secret
     # does not matter
     if not (
-        current_user
-        and check_user_permission(
-            current_user, namespace="requested_tasks", name="secrets"
+        current_account
+        and check_account_permission(
+            current_account, namespace="requested_tasks", name="secrets"
         )
     ):
         show_secrets = False

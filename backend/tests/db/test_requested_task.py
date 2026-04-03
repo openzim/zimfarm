@@ -16,7 +16,7 @@ from zimfarm_backend.common.schemas.orms import (
     RecipeDurationSchema,
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User, Worker
+from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task, Worker
 from zimfarm_backend.db.requested_task import (
     RequestedTaskWithDuration,
     RunningTask,
@@ -289,7 +289,7 @@ def test_request_task_for_worker(
     create_worker: Callable[..., Worker],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     *,
     worker_cordoned: bool,
     worker_admin_disabled: bool,
@@ -321,7 +321,7 @@ def test_request_task_for_worker(
         ),
         context=recipe_context,
     )
-    requested_by = create_user(username="testuser")
+    requested_by = create_account(username="testuser")
     result = request_task(
         session=dbsession,
         recipe_name=recipe.name,
@@ -880,7 +880,7 @@ def test_get_tasks_doable_by_worker(
         original_recipe_name="test_recipe",
         context=recipe_context,
     )
-    task.requested_by = worker.user
+    task.requested_by = worker.account
     task.offliner_definition_id = mwoffliner_definition.id
     dbsession.add(task)
     dbsession.flush()
@@ -914,8 +914,8 @@ def test_does_platform_allow_worker_to_run(
         status=TaskStatus.requested,
         config=expanded_config(recipe_config, mwoffliner, mwoffliner_definition),
         timestamp=[("requested", getnow()), ("reserved", getnow())],
-        requested_by=worker.user.display_name,
-        requester_id=worker.user.id,
+        requested_by=worker.account.display_name,
+        requester_id=worker.account.id,
         priority=0,
         recipe_name="test_recipe",
         original_recipe_name="test_recipe",
@@ -1046,7 +1046,7 @@ def test_find_requested_task_for_worker(
         updated_at=getnow(),
         original_recipe_name="test_recipe",
     )
-    task.requested_by = worker.user
+    task.requested_by = worker.account
     task.offliner_definition_id = mwoffliner_definition.id
     task.worker = worker
     dbsession.add(task)
@@ -1195,7 +1195,7 @@ def test_diagnose_requested_task(
     create_worker: Callable[..., Worker],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     *,
@@ -1229,7 +1229,7 @@ def test_diagnose_requested_task(
         recipe_config=recipe_config,
         context=recipe_context,
     )
-    requested_by = create_user(username="testuser")
+    requested_by = create_account(username="testuser")
 
     task = RequestedTask(
         status="requested",
@@ -1307,7 +1307,7 @@ def test_find_requested_task_first_cannot_run_but_alternative_can(
         updated_at=getnow(),
         original_recipe_name="high_priority_recipe",
     )
-    high_priority_task.requested_by = worker.user
+    high_priority_task.requested_by = worker.account
     high_priority_task.offliner_definition_id = mwoffliner_definition.id
     high_priority_task.worker = worker
     dbsession.add(high_priority_task)
@@ -1328,7 +1328,7 @@ def test_find_requested_task_first_cannot_run_but_alternative_can(
         updated_at=getnow(),
         original_recipe_name="low_priority_recipe",
     )
-    low_priority_task.requested_by = worker.user
+    low_priority_task.requested_by = worker.account
     low_priority_task.offliner_definition_id = mwoffliner_definition.id
     low_priority_task.worker = worker
     dbsession.add(low_priority_task)
@@ -1416,7 +1416,7 @@ def test_find_requested_task_first_cannot_run_alternative_by_duration(
         updated_at=getnow(),
         original_recipe_name="high_priority_recipe",
     )
-    high_priority_task.requested_by = worker.user
+    high_priority_task.requested_by = worker.account
     high_priority_task.offliner_definition_id = mwoffliner_definition.id
     high_priority_task.worker = worker
     dbsession.add(high_priority_task)

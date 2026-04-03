@@ -60,15 +60,15 @@ class Base(MappedAsDataclass, DeclarativeBase):
     pass
 
 
-class User(Base):
-    __tablename__ = "user"
+class Account(Base):
+    __tablename__ = "account"
     id: Mapped[UUID] = mapped_column(
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
-    # Due to user registration coming from both Kiwix SSO and local registration,
+    # Due to account registration coming from both Kiwix SSO and local registration,
     # there is a possibility of having usernames from the SSO conflicting with
-    # a local user, thus, username field isn't distinct. While username will mostly
-    # be set for locally registered users, display_name will set for all users
+    # a local account, thus, username field isn't distinct. While username will mostly
+    # be set for locally registered accounts, display_name will set for all accounts
     username: Mapped[str | None] = mapped_column(unique=True, index=True)
     display_name: Mapped[str]
     password_hash: Mapped[str | None]
@@ -78,15 +78,15 @@ class User(Base):
     idp_sub: Mapped[UUID | None] = mapped_column(unique=True, index=True, default=None)
 
     ssh_keys: Mapped[list["Sshkey"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", init=False
+        back_populates="account", cascade="all, delete-orphan", init=False
     )
 
     refresh_tokens: Mapped[list["Refreshtoken"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", init=False
+        back_populates="account", cascade="all, delete-orphan", init=False
     )
 
     workers: Mapped[list["Worker"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", init=False
+        back_populates="account", cascade="all, delete-orphan", init=False
     )
 
 
@@ -100,9 +100,9 @@ class Sshkey(Base):
     type: Mapped[str]
     key: Mapped[str]
     added: Mapped[datetime]
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
 
-    user: Mapped["User"] = relationship(back_populates="ssh_keys", init=False)
+    account: Mapped["Account"] = relationship(back_populates="ssh_keys", init=False)
 
 
 class Refreshtoken(Base):
@@ -112,11 +112,13 @@ class Refreshtoken(Base):
     )
     token: Mapped[UUID] = mapped_column(server_default=text("uuid_generate_v4()"))
     expire_time: Mapped[datetime]
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
 
-    user: Mapped["User"] = relationship(back_populates="refresh_tokens", init=False)
+    account: Mapped["Account"] = relationship(
+        back_populates="refresh_tokens", init=False
+    )
 
-    __table__args = (Index("user_id", "token", unique=True),)
+    __table_args__ = (Index("account_id", "token", unique=True),)
 
 
 class Worker(Base):
@@ -144,9 +146,9 @@ class Worker(Base):
     docker_image_hash: Mapped[str | None] = mapped_column(default=None)
     docker_image_created_at: Mapped[datetime | None] = mapped_column(default=None)
 
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
 
-    user: Mapped["User"] = relationship(back_populates="workers", init=False)
+    account: Mapped["Account"] = relationship(back_populates="workers", init=False)
 
     tasks: Mapped[list["Task"]] = relationship(
         back_populates="worker", cascade="all", init=False
@@ -166,9 +168,9 @@ class Task(Base):
     events: Mapped[list[dict[str, Any]]]
     debug: Mapped[dict[str, Any]]
     status: Mapped[str] = mapped_column(index=True)
-    requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
     canceled_by_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("user.id"), init=False
+        ForeignKey("account.id"), init=False
     )
     container: Mapped[dict[str, Any]]
     priority: Mapped[int]
@@ -199,10 +201,10 @@ class Task(Base):
     files: Mapped[list["File"]] = relationship(
         back_populates="task", cascade="all, delete-orphan", init=False
     )
-    requested_by: Mapped["User"] = relationship(
+    requested_by: Mapped["Account"] = relationship(
         init=False, foreign_keys=[requested_by_id]
     )
-    canceled_by: Mapped["User | None"] = relationship(
+    canceled_by: Mapped["Account | None"] = relationship(
         init=False, foreign_keys=[canceled_by_id]
     )
 
@@ -319,7 +321,7 @@ class RecipeHistory(Base):
     recipe_id: Mapped[UUID] = mapped_column(
         ForeignKey("recipe.id", ondelete="CASCADE"), init=False
     )
-    author_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
     created_at: Mapped[datetime]
     comment: Mapped[str | None]
     name: Mapped[str]
@@ -339,7 +341,7 @@ class RecipeHistory(Base):
     recipe: Mapped["Recipe"] = relationship(
         back_populates="history_entries", init=False
     )
-    author: Mapped["User"] = relationship(init=False)
+    author: Mapped["Account"] = relationship(init=False)
 
 
 class RecipeDuration(Base):
@@ -370,7 +372,7 @@ class RequestedTask(Base):
     status: Mapped[str]
     updated_at: Mapped[datetime] = mapped_column(index=True)
     events: Mapped[list[dict[str, Any]]]
-    requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), init=False)
+    requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
     priority: Mapped[int]
     # config must be JSON instead of JSONB so that we can query on dict item value
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
@@ -398,7 +400,7 @@ class RequestedTask(Base):
         ForeignKey("offliner_definition.id"), init=False
     )
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
-    requested_by: Mapped["User"] = relationship(init=False)
+    requested_by: Mapped["Account"] = relationship(init=False)
 
     __table_args__ = (UniqueConstraint("recipe_id"),)
 

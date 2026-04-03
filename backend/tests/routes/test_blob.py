@@ -15,7 +15,7 @@ from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.offliners import transformers
 from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
 from zimfarm_backend.common.schemas.offliners.transformers import prepare_blob
-from zimfarm_backend.db.models import Blob, Recipe, User
+from zimfarm_backend.db.models import Account, Blob, Recipe
 
 
 @pytest.fixture(autouse=True)
@@ -107,14 +107,14 @@ def encode_test_data(content: str) -> str:
 def test_create_blob(
     client: TestClient,
     recipe: Recipe,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     test_data = encode_test_data("test css content")

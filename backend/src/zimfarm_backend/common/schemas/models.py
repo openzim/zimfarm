@@ -151,9 +151,9 @@ class FileCreateUpdateSchema(BaseModel):
     info: dict[str, Any] = Field(default_factory=dict)
 
 
-class UserUpdateSchema(BaseModel):
+class AccountUpdateSchema(BaseModel):
     """
-    Schema for updating a user
+    Schema for updating an account
     """
 
     role: RoleEnum | None = None

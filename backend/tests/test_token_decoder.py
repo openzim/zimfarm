@@ -57,7 +57,7 @@ def create_test_session_jwt_token(
         "iat": int(now.timestamp()),
         "exp": int((now + exp_delta).timestamp()),
         "aud": audience_id,
-        "name": "Test User",
+        "name": "Test Account",
     }
     if aal:
         payload["aal"] = aal
@@ -100,7 +100,7 @@ def test_verify_oidc_access_token_expired_token(
 def test_verify_oidc_access_token_with_2fa_enabled_and_valid_amr(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Test successful verification when 2FA is enabled and user has both factors."""
+    """Test successful verification when 2FA is enabled and account has both factors."""
     monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
     monkeypatch.setattr(
         "zimfarm_backend.api.token.OAUTH_OIDC_CLIENT_ID",
@@ -118,7 +118,7 @@ def test_verify_oidc_access_token_with_2fa_enabled_and_valid_amr(
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
         "aud": TEST_CLIENT_ID,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
         "amr": ["password", "totp"],  # Both first and second factor
@@ -163,7 +163,7 @@ def test_verify_oidc_access_token_with_2fa_enabled_only_first_factor(
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
         "aud": TEST_CLIENT_ID,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
         "amr": ["password"],  # Only first factor
@@ -209,7 +209,7 @@ def test_verify_kiwix_access_token_with_2fa_disabled_only_first_factor(
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
         "aud": TEST_CLIENT_ID,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
         "amr": ["password"],  # Only first factor, but 2FA is disabled
@@ -269,7 +269,7 @@ def test_verify_session_access_token_expired_token(
 def test_verify_session_access_token_with_2fa_enabled_and_valid_aal(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Test successful verification when 2FA is enabled and user has aal2."""
+    """Test successful verification when 2FA is enabled and account has aal2."""
     monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
     monkeypatch.setattr(
         "zimfarm_backend.api.token.OAUTH_SESSION_AUDIENCE_ID",
@@ -289,7 +289,7 @@ def test_verify_session_access_token_with_2fa_enabled_and_valid_aal(
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
         "aud": TEST_CLIENT_ID,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
         "aal": "aal2",  # Authenticator Assurance Level 2 (2FA)
@@ -336,7 +336,7 @@ def test_verify_session_access_token_with_2fa_enabled_only_aal1(
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
         "aud": TEST_CLIENT_ID,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
         "aal": "aal1",  # Only first factor (aal1)
@@ -384,7 +384,7 @@ def test_verify_session_access_token_with_2fa_disabled_only_aal1(
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
         "aud": TEST_CLIENT_ID,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
         "aal": "aal1",  # Only first factor (aal1), but 2FA is disabled
@@ -436,7 +436,7 @@ def test_verify_session_access_token_with_client_id_requires_no_2fa(
         "aud": TEST_CLIENT_ID,
         "sub": sub,
         "client_id": sub,
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
     }
@@ -485,7 +485,7 @@ def test_verify_session_access_token_verify_client_id_matches_sub(
         "aud": TEST_CLIENT_ID,
         "sub": str(UUID(int=0)),
         "client_id": str(UUID(int=1)),
-        "name": "Test User",
+        "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
     }

@@ -11,7 +11,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.schemas.orms import BaseWorkerSchema, OfflinerSchema
 from zimfarm_backend.db import worker as worker_module
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import User, Worker
+from zimfarm_backend.db.models import Account, Worker
 from zimfarm_backend.db.worker import (
     check_in_worker,
     get_worker,
@@ -120,7 +120,7 @@ def test_get_workers_hide_offlines(
 
 
 def test_check_in_new_worker(
-    dbsession: OrmSession, user: User, mwoffliner: OfflinerSchema
+    dbsession: OrmSession, account: Account, mwoffliner: OfflinerSchema
 ):
     """Test that check_in_worker creates a new worker"""
     worker_name = "newworker"
@@ -132,7 +132,7 @@ def test_check_in_new_worker(
         disk=2048,
         selfish=True,
         offliners=[mwoffliner.id],
-        user_id=user.id,
+        account_id=account.id,
         cordoned=False,
         docker_image_hash=str(uuid4()),
         docker_image_created_at=getnow(),
@@ -146,7 +146,7 @@ def test_check_in_new_worker(
     assert worker.selfish is True
     assert worker.offliners == ["mwoffliner"]
     assert worker.platforms == {}
-    assert worker.user_id == user.id
+    assert worker.account_id == account.id
     assert worker.last_seen is not None
     assert worker.last_ip is None
     assert worker.cordoned is False
@@ -163,7 +163,7 @@ def test_check_in_worker_update(
 
     original_last_seen = worker.last_seen
     original_last_ip = worker.last_ip
-    original_user_id = worker.user_id
+    original_account_id = worker.account_id
     original_worker_name = worker.name
 
     check_in_worker(
@@ -175,7 +175,7 @@ def test_check_in_worker_update(
         selfish=True,
         offliners=[mwoffliner.id, ted_offliner.id],
         platforms=worker.platforms,
-        user_id=worker.user_id,
+        account_id=worker.account_id,
         cordoned=True,
         docker_image_hash=str(uuid4()),
         docker_image_created_at=getnow(),
@@ -192,7 +192,7 @@ def test_check_in_worker_update(
     assert updated_worker.selfish is True
     assert updated_worker.offliners == [mwoffliner.id, ted_offliner.id]
     assert updated_worker.platforms == worker.platforms
-    assert updated_worker.user_id == original_user_id
+    assert updated_worker.account_id == original_account_id
     assert updated_worker.last_seen is not None
     assert original_last_seen is not None
     assert updated_worker.last_seen > original_last_seen

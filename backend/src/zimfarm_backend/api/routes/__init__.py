@@ -1,4 +1,5 @@
 from zimfarm_backend.api.routes import (
+    accounts,
     auth,
     contexts,
     healthcheck,
@@ -9,11 +10,11 @@ from zimfarm_backend.api.routes import (
     status,
     tags,
     tasks,
-    users,
     workers,
 )
 
 __all__ = [
+    "accounts",
     "auth",
     "contexts",
     "healthcheck",
@@ -24,6 +25,5 @@ __all__ = [
     "status",
     "tags",
     "tasks",
-    "users",
     "workers",
 ]

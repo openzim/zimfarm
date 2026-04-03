@@ -29,12 +29,12 @@ def test_get_jwt_claims_or_none_with_valid_zimfarm_token(
     create_mock_authorization: Callable[..., HTTPAuthorizationCredentials],
 ):
     """Test successful JWT claims extraction from a valid Zimfarm token."""
-    user_id = str(uuid.uuid4())
+    account_id = str(uuid.uuid4())
     now = getnow()
-    access_token = generate_access_token(issue_time=now, user_id=user_id)
+    access_token = generate_access_token(issue_time=now, account_id=account_id)
 
     auth = create_mock_authorization(access_token)
     claims = get_jwt_claims_or_none(auth)
 
     assert claims is not None
-    assert claims.sub == uuid.UUID(user_id)
+    assert claims.sub == uuid.UUID(account_id)
