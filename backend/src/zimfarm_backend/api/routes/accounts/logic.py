@@ -60,7 +60,7 @@ from zimfarm_backend.utils.cryptography import (
 )
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
-users_router = APIRouter(prefix="/accounts", tags=["accounts"])
+users_router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get(
