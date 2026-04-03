@@ -14,8 +14,8 @@ from zimfarm_backend.common.constants import (
     PERIODICITIES,
 )
 from zimfarm_backend.common.enums import RecipePeriodicity, TaskStatus
+from zimfarm_backend.db.account import get_account_by_identifier
 from zimfarm_backend.db.requested_task import request_task
-from zimfarm_backend.db.user import get_user_by_identifier
 from zimfarm_backend.utils.timestamp import get_timestamp_for_status
 
 logger = logging.getLogger(__name__)
@@ -73,8 +73,8 @@ def request_tasks_using_recipe(session: OrmSession):
                         result = request_task(
                             session=session,
                             recipe_name=recipe.name,
-                            requested_by=get_user_by_identifier(
-                                session, user_identifier=requester
+                            requested_by=get_account_by_identifier(
+                                session, account_identifier=requester
                             ).id,
                             worker_name=worker,
                             priority=priority,

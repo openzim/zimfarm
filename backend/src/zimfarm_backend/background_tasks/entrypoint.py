@@ -33,7 +33,7 @@ from zimfarm_backend.common.constants import ALEMBIC_UPGRADE_HEAD_ON_START
 from zimfarm_backend.db import Session
 from zimfarm_backend.utils.database import (
     check_if_schema_is_up_to_date,
-    create_initial_user,
+    create_initial_account,
     upgrade_db_schema,
 )
 
@@ -92,7 +92,7 @@ def main():
     if ALEMBIC_UPGRADE_HEAD_ON_START:
         upgrade_db_schema()
     check_if_schema_is_up_to_date()
-    create_initial_user()
+    create_initial_account()
     while True:
         now = getnow()
         for task_config in tasks:

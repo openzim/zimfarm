@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
-    get_current_user,
-    get_current_user_or_none,
+    get_current_account,
+    get_current_account_or_none,
     require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import BadRequestError
@@ -25,8 +25,8 @@ from zimfarm_backend.common.schemas.models import (
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.orms import WorkerLightSchema, WorkerMetricsSchema
-from zimfarm_backend.db.models import User
-from zimfarm_backend.db.user import check_user_permission
+from zimfarm_backend.db.account import check_account_permission
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
 from zimfarm_backend.db.worker import (
     get_worker as db_get_worker,
@@ -48,7 +48,7 @@ router = APIRouter(prefix="/workers", tags=["workers"])
 @router.get("")
 def get_workers(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 20,
     *,
@@ -60,8 +60,10 @@ def get_workers(
         skip=skip,
         limit=limit,
         hide_offlines=hide_offlines,
-        show_secrets=current_user is not None
-        and check_user_permission(current_user, namespace="workers", name="secrets"),
+        show_secrets=current_account is not None
+        and check_account_permission(
+            current_account, namespace="workers", name="secrets"
+        ),
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
@@ -106,14 +108,16 @@ def update_worker(
 def get_worker(
     name: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
 ) -> WorkerMetricsSchema:
     """Get a single worker with full details and metrics."""
     return db_get_worker_metrics(
         session,
         worker_name=name,
-        show_secrets=current_user is not None
-        and check_user_permission(current_user, namespace="workers", name="secrets"),
+        show_secrets=current_account is not None
+        and check_account_permission(
+            current_account, namespace="workers", name="secrets"
+        ),
     )
 
 
@@ -125,7 +129,7 @@ def check_in_worker(
     name: Annotated[str, Path()],
     worker_checkin: WorkerCheckInSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_account: Annotated[Account, Depends(get_current_account)],
 ) -> WorkerCheckInResponse:
     """Check in a worker."""
 
@@ -135,8 +139,8 @@ def check_in_worker(
         if worker.deleted:
             raise BadRequestError("Worker has been marked as deleted")
 
-        if worker.user_id != current_user.id:
-            raise BadRequestError("Worker is not associated with the current user")
+        if worker.account_id != current_account.id:
+            raise BadRequestError("Worker is not associated with the current account")
 
     # set defaults for docker image in case worker cannot retrieve details as
     # Docker API might change
@@ -157,7 +161,7 @@ def check_in_worker(
         offliners=worker_checkin.offliners,
         platforms=worker_checkin.platforms,
         cordoned=worker_checkin.cordoned or False,
-        user_id=current_user.id,
+        account_id=current_account.id,
         docker_image_hash=(
             worker_checkin.docker_image.hash
             if worker_checkin.docker_image

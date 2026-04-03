@@ -21,7 +21,7 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     OfflinerSchema,
 )
-from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User
+from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 from zimfarm_backend.db.recipe import get_recipe, update_recipe
 
@@ -50,17 +50,17 @@ from zimfarm_backend.db.recipe import get_recipe, update_recipe
 def test_get_recipes(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_requested_task: Callable[..., RequestedTask],
     create_task: Callable[..., Task],
     query_string: str,
     expected_count: int,
 ):
-    user = create_user(permission=RoleEnum.PROCESSOR)
+    account = create_account(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     for i in range(10):
@@ -101,15 +101,15 @@ def test_get_recipes(
 )
 def test_get_archived_recipes(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     create_recipe(name="test_recipe", archived=True)
 
@@ -123,15 +123,15 @@ def test_get_archived_recipes(
 def test_get_similar_recipes(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_requested_task: Callable[..., RequestedTask],
     create_task: Callable[..., Task],
 ):
-    user = create_user(permission=RoleEnum.PROCESSOR)
+    account = create_account(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     for i in range(10):
@@ -305,16 +305,16 @@ def test_get_similar_recipes(
 )
 def test_create_recipe(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001
     payload: dict[str, Any],
     expected_status_code: HTTPStatus,
 ):
     """Test that create_recipe raises Unprocessable Entity with invalid config"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.post(
@@ -335,17 +335,17 @@ def test_create_recipe(
 def test_create_recipe_with_permssions(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
     """Test that create_recipe raises ForbiddenError without permission"""
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe_config = create_recipe_config()
@@ -396,17 +396,17 @@ def test_create_recipe_with_permssions(
 )
 def test_recipe_name(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
     recipe_name: str,
     expected_status_code: int,
 ):
     """Test that create_recipe raises Unprocessable entity with invalid name"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe_config = create_recipe_config()
@@ -440,16 +440,16 @@ def test_recipe_name(
 def test_get_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     *,
     hide_secrets: bool,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -476,16 +476,16 @@ def test_get_recipe(
 def test_get_obsolete_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe_config = create_recipe_config()
@@ -515,16 +515,16 @@ def test_get_obsolete_recipe(
 def test_patch_obsolete_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe_config = create_recipe_config()
@@ -556,13 +556,13 @@ def test_patch_obsolete_recipe(
 
 def test_update_recipe_unauthorized(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that update_recipe raises ForbiddenError without permission"""
-    user = create_user(permission=RoleEnum.PROCESSOR)
+    account = create_account(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.patch(
@@ -660,7 +660,7 @@ def test_update_recipe_unauthorized(
 def test_update_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     mwoffliner: OfflinerSchema,  # noqa: ARG001 needed for side effect
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
@@ -669,10 +669,10 @@ def test_update_recipe(
     payload: dict[str, Any],
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -697,15 +697,15 @@ def test_update_recipe(
 def test_delete_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -752,16 +752,16 @@ def test_get_recipe_image_names(
 def test_clone_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     new_language_code: str,
     *,
     expected_validity_status: bool,
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -810,17 +810,17 @@ def test_clone_recipe(
 def test_validate_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     new_language_code: str,
     *,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     recipe = create_recipe(name="test_recipe")
     # set the new language code in the db
@@ -838,7 +838,7 @@ def test_validate_recipe(
 def test_create_duplicate_recipe(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
@@ -847,10 +847,10 @@ def test_create_duplicate_recipe(
     dbsession.add(recipe)
     dbsession.flush()
 
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.post(
@@ -875,14 +875,14 @@ def test_create_duplicate_recipe(
 def test_clone_existing_recipe_with_name_unchanged(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe_config = create_recipe_config()
@@ -901,15 +901,15 @@ def test_clone_existing_recipe_with_name_unchanged(
 def test_update_existing_recipe_with_existing_name(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
 ):
     """Test that updating a recipe name with another existing recipe name fails"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe_config = create_recipe_config()
@@ -1024,16 +1024,16 @@ def test_update_existing_recipe_with_existing_name(
 def test_update_recipe_config_top_level_attributes(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     payload: dict[str, Any],
     check_attrs: set[str],
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -1070,15 +1070,15 @@ def test_update_recipe_config_top_level_attributes(
 def test_get_recipe_history(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -1104,15 +1104,15 @@ def test_get_recipe_history(
 def test_get_recipe_history_pagination(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     query_string: str,
     expected_count: int,
 ):
-    user = create_user(username="test", permission=RoleEnum.ADMIN)
+    account = create_account(username="test", permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     recipe = create_recipe(
         name="test_recipe",
@@ -1125,7 +1125,7 @@ def test_get_recipe_history_pagination(
     for i in range(9):
         update_recipe(
             session=dbsession,
-            author_id=user.id,
+            author_id=account.id,
             recipe_name=recipe.name,
             comment=f"test_comment_{i}",
             tags=[*recipe.tags, f"test_tag_{i}"],
@@ -1159,15 +1159,15 @@ def test_get_recipe_history_pagination(
 def test_get_recipe_history_entry(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -1183,15 +1183,15 @@ def test_get_recipe_history_entry(
 
 def test_get_recipe_backups(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,  # noqa: ARG001 needed for side effect
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     create_recipe(recipe_config=create_recipe_config())
@@ -1212,15 +1212,15 @@ def test_get_recipe_backups(
 )
 def test_restore_recipes(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe", archived=True)
@@ -1242,15 +1242,15 @@ def test_restore_recipes(
 )
 def test_archive_recipe(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe")
@@ -1272,15 +1272,15 @@ def test_archive_recipe(
 )
 def test_restore_recipe(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(name="test_recipe", archived=True)
@@ -1303,17 +1303,17 @@ def test_restore_recipe(
 def test_revert_recipe_history(
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_recipe: Callable[..., Recipe],
     recipe_config: RecipeConfigSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     permission: RoleEnum,
     expected_status_code: HTTPStatus,
 ):
-    user = create_user(permission=permission)
+    account = create_account(permission=permission)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     recipe = create_recipe(
@@ -1329,7 +1329,7 @@ def test_revert_recipe_history(
 
     update_recipe(
         dbsession,
-        author_id=user.id,
+        author_id=account.id,
         recipe_name="test_recipe",
         offliner_definition=mwoffliner_definition,
         tags=["tag3", "tag4"],

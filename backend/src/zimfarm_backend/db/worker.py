@@ -19,7 +19,7 @@ from zimfarm_backend.common.schemas.orms import (
     WorkerMetricsSchema,
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Task, User, Worker
+from zimfarm_backend.db.models import Account, Task, Worker
 from zimfarm_backend.db.tasks import get_currently_running_tasks
 
 
@@ -80,7 +80,7 @@ def create_worker_schema(
             disk=worker.disk,
             memory=worker.memory,
         ),
-        username=worker.user.display_name,
+        username=worker.account.display_name,
         contexts=_deserialize_worker_context(worker.contexts),
         cordoned=worker.cordoned,
         admin_disabled=worker.admin_disabled,
@@ -132,9 +132,9 @@ def get_workers(
             func.count().over().label("nb_records"),
             Worker,
         )
-        .join(User)
+        .join(Account)
         .where(
-            User.deleted.is_(False),
+            Account.deleted.is_(False),
             Worker.deleted.is_(False),
             # if hide_offlines is False, then, the second condition will always
             # translate to a SQL true and include all workers
@@ -182,7 +182,7 @@ def get_worker_metrics(
         last_ip=worker.last_ip,
         selfish=worker.selfish,
         last_seen=worker.last_seen,
-        username=worker.user.display_name,
+        username=worker.account.display_name,
         platforms=worker.platforms,
         resources=ConfigResourcesSchema(
             cpu=worker.cpu,
@@ -222,7 +222,7 @@ def check_in_worker(
     docker_image_hash: str | None = None,
     docker_image_created_at: datetime.datetime | None = None,
     platforms: dict[str, int] | None = None,
-    user_id: UUID,
+    account_id: UUID,
 ) -> None:
     """Check in a worker."""
     stmt = insert(Worker).values(
@@ -236,7 +236,7 @@ def check_in_worker(
         cordoned=cordoned,
         last_ip=None,
         last_seen=getnow(),
-        user_id=user_id,
+        account_id=account_id,
         docker_image_hash=docker_image_hash,
         docker_image_created_at=(
             to_naive_utc(docker_image_created_at) if docker_image_created_at else None

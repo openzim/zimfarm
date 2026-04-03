@@ -18,17 +18,17 @@ from zimfarm_backend.background_tasks.constants import PERIODIC_TASK_NAME
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.db import count_from_stmt
-from zimfarm_backend.db.models import Task, User
+from zimfarm_backend.db.models import Account, Task
 
 
 def test_cancel_stale_task_with_status(
     dbsession: OrmSession,
     create_task: Callable[..., Task],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that cancel_stale_tasks cancels tasks stuck in cancel_requested status"""
     now = getnow()
-    create_user(username=PERIODIC_TASK_NAME)
+    create_account(username=PERIODIC_TASK_NAME)
     delta = datetime.timedelta(hours=1)
     old_time = now - delta
     task = create_task(status=TaskStatus.started)
@@ -81,12 +81,12 @@ def test_close_stale_scraper_completed_tasks(
 
 def test_cancel_stale_tasks(
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_task: Callable[..., Task],
     monkeypatch: MonkeyPatch,
 ):
     """Test that cancel_stale_tasks cancels tasks with stale statuses"""
-    create_user(username=PERIODIC_TASK_NAME)
+    create_account(username=PERIODIC_TASK_NAME)
     now = getnow()
     monkeypatch.setattr(
         cancel_tasks_module,

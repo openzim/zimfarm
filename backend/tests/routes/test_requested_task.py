@@ -12,19 +12,19 @@ from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import RecipeConfigSchema, ResourcesSchema
-from zimfarm_backend.db.models import Recipe, RequestedTask, User, Worker
+from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Worker
 from zimfarm_backend.db.worker import get_worker
 
 
 def test_create_request_task_no_permission(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that create_request_task raises UnauthorizedError without permission"""
-    user = create_user(permission=RoleEnum.PROCESSOR)
+    account = create_account(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.post(
@@ -487,13 +487,13 @@ def test_update_requested_task_no_permission(
     client: TestClient,
     access_token: str,
     requested_task: RequestedTask,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that update_requested_task raises UnauthorizedError without permission"""
-    user = create_user(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.patch(
@@ -508,13 +508,13 @@ def test_update_requested_task_success(
     client: TestClient,
     access_token: str,
     requested_task: RequestedTask,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test successful update of requested task priority"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.patch(
@@ -530,13 +530,13 @@ def test_update_requested_task_success(
 def test_delete_requested_task_no_permission(
     client: TestClient,
     requested_task: RequestedTask,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that delete_requested_task raises UnauthorizedError without permission"""
-    user = create_user(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.delete(
@@ -549,13 +549,13 @@ def test_delete_requested_task_no_permission(
 def test_delete_requested_task_success(
     client: TestClient,
     requested_task: RequestedTask,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test successful deletion of requested task"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.delete(

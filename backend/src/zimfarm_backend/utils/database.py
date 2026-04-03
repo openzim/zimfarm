@@ -7,9 +7,9 @@ from werkzeug.security import generate_password_hash
 from zimfarm_backend import logger
 from zimfarm_backend.common.constants import BASE_DIR, getenv
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.account import get_account_by_username_or_none
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.offliner import get_all_offliners
-from zimfarm_backend.db.user import get_user_by_username_or_none
 
 
 def check_if_schema_is_up_to_date() -> bool:
@@ -32,14 +32,14 @@ def check_if_schema_is_up_to_date() -> bool:
         return True
 
 
-def create_initial_user():
+def create_initial_account():
     with Session.begin() as session:
         username = getenv("INIT_USERNAME", default="admin")
         password = getenv("INIT_PASSWORD", default="admin")
-        user = get_user_by_username_or_none(session, username=username)
-        if user is None:
-            logger.info(f"creating initial user `{username}`")
-            orm_user = User(
+        account = get_account_by_username_or_none(session, username=username)
+        if account is None:
+            logger.info(f"creating initial account `{username}`")
+            orm_user = Account(
                 username=username,
                 display_name=username,
                 password_hash=generate_password_hash(password),
@@ -49,7 +49,7 @@ def create_initial_user():
             )
             session.add(orm_user)
         else:
-            logger.info(f"user {username} already exists")
+            logger.info(f"account {username} already exists")
 
 
 def upgrade_db_schema():

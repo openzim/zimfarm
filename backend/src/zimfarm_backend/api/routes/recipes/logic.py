@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend import logger
 from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
-    get_current_user,
-    get_current_user_or_none,
+    get_current_account,
+    get_current_account_or_none,
     require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
@@ -56,11 +56,12 @@ from zimfarm_backend.common.schemas.orms import (
     RecipeHistorySchema,
     RecipeLightSchema,
 )
+from zimfarm_backend.db.account import check_account_permission
 from zimfarm_backend.db.exceptions import (
     RecordDoesNotExistError,
 )
 from zimfarm_backend.db.language import get_language_from_code
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_definition_schema,
@@ -89,7 +90,6 @@ from zimfarm_backend.db.recipe import (
     toggle_archive_status as db_toggle_archive_status,
 )
 from zimfarm_backend.db.recipe import update_recipe as db_update_recipe
-from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.utils.offliners import (
     expanded_config,
     get_image_name,
@@ -105,12 +105,14 @@ schedules_router = APIRouter(prefix="/schedules", tags=["schedules"])
 @schedules_router.get("")
 def get_recipes(
     params: Annotated[RecipesGetSchema, Query()],
-    current_user: User | None = Depends(get_current_user_or_none),
+    current_account: Account | None = Depends(get_current_account_or_none),
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[RecipeLightSchema]:
     if params.archived and not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="archive")
+        current_account
+        and check_account_permission(
+            current_account, namespace="recipes", name="archive"
+        )
     ):
         raise UnauthorizedError("You are not allowed to view archived recipes.")
 
@@ -145,7 +147,7 @@ def get_recipes(
 def create_recipe(
     request: RecipeCreateSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> JSONResponse:
     """Create a new recipe"""
     if offliner_id := request.config.get("offliner", {}).get("offliner_id"):
@@ -197,7 +199,7 @@ def create_recipe(
 
     db_recipe = db_create_recipe(
         session,
-        author_id=current_user.id,
+        author_id=current_account.id,
         name=request.name,
         offliner_definition=offliner_definition,
         category=RecipeCategory(request.category),
@@ -222,25 +224,29 @@ def create_recipe(
 @schedules_router.get("/backup")
 def get_recipes_backup(
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User | None = Depends(get_current_user_or_none),
+    current_account: Account | None = Depends(get_current_account_or_none),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
     archived: Annotated[bool, Query()] = False,
 ) -> JSONResponse:
     """Get a list of recipes"""
     if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="secrets")
+        current_account
+        and check_account_permission(
+            current_account, namespace="recipes", name="secrets"
+        )
     ):
         exclude_notifications = True
     else:
         exclude_notifications = False
 
-    # if the user doesn't have the appropriate permission, then their flag
+    # if the account doesn't have the appropriate permission, then their flag
     # does not matter
     if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="secrets")
+        current_account
+        and check_account_permission(
+            current_account, namespace="recipes", name="secrets"
+        )
     ):
         show_secrets = False
     else:
@@ -271,12 +277,12 @@ def get_recipes_backup(
 def restore_archived_recipes(
     request: RestoreRecipesSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> Response:
     db_restore_recipes(
         session,
         recipe_names=request.recipe_names,
-        actor_id=current_user.id,
+        actor_id=current_account.id,
         comment=request.comment,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
@@ -287,13 +293,13 @@ def restore_archived_recipes(
 def get_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User | None = Depends(get_current_user_or_none),
+    current_account: Account | None = Depends(get_current_account_or_none),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
     db_recipe = db_get_recipe(session, recipe_name=recipe_name)
 
-    if current_user is None and db_recipe.archived:
+    if current_account is None and db_recipe.archived:
         raise UnauthorizedError(
             "You do not have permissions to view an archived recipe."
         )
@@ -310,14 +316,18 @@ def get_recipe(
     )
 
     if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="secrets")
+        current_account
+        and check_account_permission(
+            current_account, namespace="recipes", name="secrets"
+        )
     ):
         recipe.notification = None
 
     if not (
-        current_user
-        and check_user_permission(current_user, namespace="recipes", name="secrets")
+        current_account
+        and check_account_permission(
+            current_account, namespace="recipes", name="secrets"
+        )
     ):
         show_secrets = False
     else:
@@ -384,7 +394,7 @@ def update_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: RecipeUpdateSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> JSONResponse:
     db_recipe = db_get_recipe(session, recipe_name=recipe_name)
     if db_recipe.archived:
@@ -567,7 +577,7 @@ def update_recipe(
     recipe = db_update_recipe(
         session,
         recipe_name=recipe_name,
-        author_id=current_user.id,
+        author_id=current_account.id,
         comment=request.comment,
         new_recipe_config=new_recipe_config,
         language=language,
@@ -654,7 +664,7 @@ def clone_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: CloneSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> RecipeCreateResponseSchema:
     recipe = db_get_recipe(session, recipe_name=recipe_name)
     if recipe.archived:
@@ -672,7 +682,7 @@ def clone_recipe(
 
     new_recipe = db_create_recipe(
         session,
-        author_id=current_user.id,
+        author_id=current_account.id,
         comment=request.comment,
         name=request.name,
         category=RecipeCategory(recipe.category),
@@ -705,7 +715,7 @@ def clone_recipe(
         ),
     )
 
-    # validate the new recipe as we skipped validation to allow users clone
+    # validate the new recipe as we skipped validation to allow accounts clone
     # an invalid recipe. If validation fails, mark as invalid
     try:
         create_recipe_full_schema(new_recipe, offliner, skip_validation=False)
@@ -713,7 +723,7 @@ def clone_recipe(
         db_update_recipe(
             session,
             recipe_name=new_recipe.name,
-            author_id=current_user.id,
+            author_id=current_account.id,
             is_valid=False,
             offliner_definition=create_offliner_definition_schema(
                 new_recipe.offliner_definition
@@ -737,14 +747,14 @@ def archive_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> JSONResponse:
     """Archive a recipe"""
     db_toggle_archive_status(
         session,
         recipe_name=recipe_name,
         archived=True,
-        actor_id=current_user.id,
+        actor_id=current_account.id,
         comment=request.comment,
     )
     return JSONResponse(
@@ -765,14 +775,14 @@ def restore_archived_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> JSONResponse:
     """Restore an archived recipe"""
     db_toggle_archive_status(
         session,
         recipe_name=recipe_name,
         archived=False,
-        actor_id=current_user.id,
+        actor_id=current_account.id,
         comment=request.comment,
     )
     return JSONResponse(
@@ -866,14 +876,14 @@ def revert_recipe(
     history_id: Annotated[UUID, Path()],
     request: RevertRecipeSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> JSONResponse:
     """Revert a recipe to a previous history."""
     db_revert_recipe(
         session,
         recipe_name=recipe_name,
         history_id=history_id,
-        author_id=current_user.id,
+        author_id=current_account.id,
         comment=request.comment,
     )
     return JSONResponse(

@@ -62,6 +62,7 @@ from zimfarm_backend.common.schemas.models import (
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
+from zimfarm_backend.db.account import get_account_by_username
 from zimfarm_backend.db.models import Recipe, RequestedTask
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
@@ -72,7 +73,6 @@ from zimfarm_backend.db.offliner_definition import (
 )
 from zimfarm_backend.db.recipe import create_recipe_full_schema, update_recipe
 from zimfarm_backend.db.requested_task import create_requested_task_full_schema
-from zimfarm_backend.db.user import get_user_by_username
 
 
 def parse_name_mappings(value: str) -> dict[str, str]:
@@ -161,7 +161,7 @@ def update_recipes(
         update_recipe(
             session,
             offliner_definition=offliner_definition,
-            author_id=get_user_by_username(session, username="maint-scripts").id,
+            author_id=get_account_by_username(session, username="maint-scripts").id,
             recipe_name=recipe.name,
             new_recipe_config=recipe_config,
             comment="updates made via update_scraper_version",
