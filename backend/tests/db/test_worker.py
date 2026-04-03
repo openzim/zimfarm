@@ -49,24 +49,6 @@ def test_update_worker_not_found(dbsession: OrmSession):
         update_worker(dbsession, worker_name="nonexistent")
 
 
-def test_update_worker(dbsession: OrmSession, worker: Worker):
-    """Test that update_worker updates the worker's last_seen and last_ip"""
-    original_last_seen = worker.last_seen
-    original_last_ip = worker.last_ip
-    new_ip = "192.168.1.1"
-
-    updated_worker = update_worker(
-        dbsession, worker_name=worker.name, ip_address=new_ip
-    )
-
-    assert updated_worker.name == worker.name
-    assert updated_worker.last_seen is not None
-    if original_last_seen is not None:
-        assert updated_worker.last_seen > original_last_seen
-    assert updated_worker.last_ip == IPv4Address(new_ip)
-    assert updated_worker.last_ip != original_last_ip
-
-
 def test_get_workers_empty(dbsession: OrmSession):
     """Test that get_workers returns empty list when no workers exist"""
     result = get_workers(dbsession, skip=0, limit=10)
@@ -162,9 +144,9 @@ def test_check_in_worker_update(
     updated_worker = get_worker(dbsession, worker_name=worker.name)
 
     assert updated_worker.name == original_worker_name
-    assert updated_worker.cpu == 8
-    assert updated_worker.memory == 4096
-    assert updated_worker.disk == 4096
+    assert updated_worker.total_cpu == 8
+    assert updated_worker.total_memory == 4096
+    assert updated_worker.total_disk == 4096
     assert updated_worker.selfish is True
     assert updated_worker.offliners == [mwoffliner.id, ted_offliner.id]
     assert updated_worker.platforms == worker.platforms
@@ -186,24 +168,137 @@ def test_update_worker_context(dbsession: OrmSession, worker: Worker):
 
 
 @pytest.mark.parametrize(
-    "admin_disabled, expected_admin_disabled",
+    "ip_address, contexts, update_last_seen, admin_disabled, "
+    "avail_disk, avail_memory, avail_cpu",
     [
-        pytest.param(True, True, id="True"),
-        pytest.param(False, False, id="False"),
-        pytest.param(None, False, id="None"),
+        pytest.param(None, None, True, None, None, None, None, id="all_none"),
+        pytest.param(
+            "192.168.1.100", None, True, None, None, None, None, id="ip_address_set"
+        ),
+        pytest.param(None, None, True, None, None, None, None, id="ip_address_none"),
+        pytest.param(
+            None,
+            {"priority": None, "general": None},
+            True,
+            None,
+            None,
+            None,
+            None,
+            id="contexts_set",
+        ),
+        pytest.param(
+            None,
+            {"priority": IPv4Address("10.0.0.1")},
+            True,
+            None,
+            None,
+            None,
+            None,
+            id="contexts_with_ip",
+        ),
+        pytest.param(None, None, True, None, None, None, None, id="contexts_none"),
+        pytest.param(
+            None, None, True, None, None, None, None, id="update_last_seen_true"
+        ),
+        pytest.param(
+            None, None, False, None, None, None, None, id="update_last_seen_false"
+        ),
+        pytest.param(
+            None, None, True, True, None, None, None, id="admin_disabled_true"
+        ),
+        pytest.param(
+            None, None, True, False, None, None, None, id="admin_disabled_false"
+        ),
+        pytest.param(
+            None, None, True, None, None, None, None, id="admin_disabled_none"
+        ),
+        pytest.param(None, None, True, None, 1024, None, None, id="avail_disk_set"),
+        pytest.param(None, None, True, None, None, None, None, id="avail_disk_none"),
+        pytest.param(None, None, True, None, None, 2048, None, id="avail_memory_set"),
+        pytest.param(None, None, True, None, None, None, None, id="avail_memory_none"),
+        pytest.param(None, None, True, None, None, None, 8, id="avail_cpu_set"),
+        pytest.param(None, None, True, None, None, None, None, id="avail_cpu_none"),
+        pytest.param(
+            "192.168.1.200",
+            {"test": None},
+            True,
+            True,
+            2048,
+            4096,
+            16,
+            id="multiple_params",
+        ),
     ],
 )
-def test_update_worker_scheduling_disabled(
+def test_update_worker(
     dbsession: OrmSession,
     worker: Worker,
     *,
+    ip_address: str | None,
+    contexts: dict[str, IPv4Address | IPv6Address | None] | None,
+    update_last_seen: bool,
     admin_disabled: bool | None,
-    expected_admin_disabled: bool,
+    avail_disk: int | None,
+    avail_memory: int | None,
+    avail_cpu: int | None,
 ):
+    # Store original values
+    original_last_seen = worker.last_seen
+    original_last_ip = worker.last_ip
+    original_contexts = worker.contexts.copy()
+    original_admin_disabled = worker.admin_disabled
+    original_disk = worker.total_disk
+    original_memory = worker.total_memory
+    original_cpu = worker.total_cpu
+
     updated_worker = update_worker(
-        dbsession, worker_name=worker.name, admin_disabled=admin_disabled
+        dbsession,
+        worker_name=worker.name,
+        ip_address=ip_address,
+        contexts=contexts,
+        update_last_seen=update_last_seen,
+        admin_disabled=admin_disabled,
+        avail_disk=avail_disk,
+        avail_memory=avail_memory,
+        avail_cpu=avail_cpu,
     )
-    assert updated_worker.admin_disabled is expected_admin_disabled
+
+    if update_last_seen:
+        assert updated_worker.last_seen is not None
+        if original_last_seen is not None:
+            assert updated_worker.last_seen >= original_last_seen
+    else:
+        assert updated_worker.last_seen == original_last_seen
+
+    if ip_address is not None:
+        assert updated_worker.last_ip == IPv4Address(ip_address)
+    else:
+        assert updated_worker.last_ip == original_last_ip
+
+    if contexts is not None:
+        assert list(updated_worker.contexts.keys()) == list(contexts.keys())
+    else:
+        assert updated_worker.contexts == original_contexts
+
+    if admin_disabled is not None:
+        assert updated_worker.admin_disabled == admin_disabled
+    else:
+        assert updated_worker.admin_disabled == original_admin_disabled
+
+    if avail_disk is not None:
+        assert updated_worker.available_disk == avail_disk
+    else:
+        assert updated_worker.available_disk == original_disk
+
+    if avail_memory is not None:
+        assert updated_worker.available_memory == avail_memory
+    else:
+        assert updated_worker.available_memory == original_memory
+
+    if avail_cpu is not None:
+        assert updated_worker.available_cpu == avail_cpu
+    else:
+        assert updated_worker.available_cpu == original_cpu
 
 
 @pytest.mark.parametrize(

@@ -87,17 +87,16 @@ class TaskWorker(BaseWorker):
         # ensure we have access to docker API
         self.check_docker()
 
-        host_stats = query_host_stats(self.docker, self.workdir)
+        host_stats = query_host_stats(self.docker)
         logger.info(
-            "Host hardware resources:"
+            "Hardware resources:"
             f"\n\tCPU : {host_stats.cpu.total} (total) ;  {host_stats.cpu.available} "
             "(avail)"
-            f"\n\tRAM : {format_size(host_stats.memory.total)} (total) ;"
-            f"  {format_size(host_stats.memory.available)} (avail)"
-            f"\n\tDisk: {format_size(host_stats.disk.total)} (configured) ;"
-            f"  {format_size(host_stats.disk.available)} (avail) ; "
-            f"{format_size(host_stats.disk.used)} (reserved) ;"
-            f"  {format_size(host_stats.disk.remaining)} (remaining)"
+            f"\n\tRAM : {format_size(host_stats.memory.total)} (total) ;  "
+            f"{format_size(host_stats.memory.available)} (avail)"
+            f"\n\tDisk: {format_size(host_stats.disk.total)} (configured) ; "
+            f"{format_size(host_stats.disk.available)} (avail) ; "
+            f"{format_size(host_stats.disk.used)} (reserved) ; "
         )
 
         self.task: dict[str, Any] | None = None

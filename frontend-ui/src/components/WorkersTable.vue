@@ -405,7 +405,7 @@ function getRowProps({
 }
 
 function getResources(item: CombinedRow) {
-  return item.kind === 'worker' ? item.resources : item.task.config.resources
+  return item.kind === 'worker' ? item.resources.total : item.task.config.resources
 }
 
 function isImageOutdated(workerImage: DockerImageVersion | null): boolean {

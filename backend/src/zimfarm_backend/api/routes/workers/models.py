@@ -6,6 +6,7 @@ from pydantic import Field
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
+    WorkerField,
     ZIMDisk,
     ZIMMemory,
 )
@@ -25,6 +26,16 @@ class WorkerCheckInSchema(BaseModel):
     offliners: list[str]
     platforms: dict[str, int] | None = None  # mapping of platforms to max tasks
     cordoned: bool | None = None
+
+
+class GetRequestedTaskSchema(BaseModel):
+    worker_name: WorkerField
+    avail_cpu: ZIMCPU
+    avail_disk: ZIMDisk
+    avail_memory: ZIMMemory
+    total_cpu: ZIMCPU | None = None
+    total_disk: ZIMDisk | None = None
+    total_memory: ZIMMemory | None = None
 
 
 class WorkerCheckInResponse(BaseModel):

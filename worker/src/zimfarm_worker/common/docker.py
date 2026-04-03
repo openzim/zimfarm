@@ -218,47 +218,34 @@ class ResourceStats:
 
 
 @dataclass(kw_only=True)
-class ResourceStatsWithRemaining(ResourceStats):
-    remaining: int = 0
-
-
-@dataclass(kw_only=True)
 class HostStats:
     cpu: ResourceStats
-    disk: ResourceStatsWithRemaining
-    memory: ResourceStatsWithRemaining
+    disk: ResourceStats
+    memory: ResourceStats
 
 
-def query_host_stats(client: DockerClient, workdir: Path):
+def query_host_stats(client: DockerClient):
     # query cpu and ram usage in our containers
     stats = query_containers_resources(client)
-
-    # disk space
-    workir_fs_stats = os.statvfs(workdir)
     disk_used = stats.disk
-    disk_free = workir_fs_stats.f_bavail * workir_fs_stats.f_frsize
-
-    # CPU cores
     cpu_used = stats.cpu_shares // DEFAULT_CPU_SHARE
-    cpu_avail = as_pos_int(ZIMFARM_CPUS - cpu_used)
-
-    # RAM
     mem_used = stats.memory
-    mem_avail = as_pos_int(ZIMFARM_MEMORY - mem_used)
 
     return HostStats(
-        cpu=ResourceStats(total=ZIMFARM_CPUS, used=cpu_used, available=cpu_avail),
-        disk=ResourceStatsWithRemaining(
+        cpu=ResourceStats(
+            total=ZIMFARM_CPUS,
+            used=cpu_used,
+            available=as_pos_int(ZIMFARM_CPUS - cpu_used),
+        ),
+        disk=ResourceStats(
             total=ZIMFARM_DISK_SPACE,
             used=disk_used,
-            available=disk_free,
-            remaining=ZIMFARM_DISK_SPACE - disk_used,
+            available=as_pos_int(ZIMFARM_DISK_SPACE - disk_used),
         ),
-        memory=ResourceStatsWithRemaining(
+        memory=ResourceStats(
             total=ZIMFARM_MEMORY,
             used=mem_used,
-            available=mem_avail,
-            remaining=ZIMFARM_MEMORY - mem_used,
+            available=ZIMFARM_MEMORY - mem_used,
         ),
     )
 

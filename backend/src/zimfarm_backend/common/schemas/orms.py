@@ -423,12 +423,17 @@ class Worker(BaseWorkerSchema):
     account_id: UUID
 
 
+class WorkerResourcesSchema(BaseModel):
+    available: ConfigResourcesSchema
+    total: ConfigResourcesSchema
+
+
 class WorkerLightSchema(BaseWorkerSchema):
     """
     Schema for reading a worker model with some fields
     """
 
-    resources: ConfigResourcesSchema
+    resources: WorkerResourcesSchema
     username: str
 
     @computed_field
@@ -559,15 +564,8 @@ class WorkerMetricsSchema(WorkerLightSchema):
     @computed_field
     @property
     def current_usage(self) -> ConfigResourcesSchema:
-        total_cpu = 0
-        total_memory = 0
-        total_disk = 0
-        for task in self.running_tasks:
-            total_cpu += task.config.resources.cpu
-            total_memory += task.config.resources.memory
-            total_disk += task.config.resources.disk
         return ConfigResourcesSchema(
-            cpu=total_cpu,
-            memory=total_memory,
-            disk=total_disk,
+            cpu=self.resources.total.cpu - self.resources.available.cpu,
+            memory=self.resources.total.memory - self.resources.available.memory,
+            disk=self.resources.total.disk - self.resources.available.disk,
         )

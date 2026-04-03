@@ -172,21 +172,22 @@ const filteredWorkers = computed(() => (showingAll.value ? workers.value : onlin
 const workerNames = computed(() => filteredWorkers.value.map((worker) => worker.name))
 
 const canCreateWorkers = computed(() => authStore.hasPermission('workers', 'create'))
+// Compute workers with total resources (remaining + used by running tasks)
 
 const tasks = computed(() => {
   return runningTasks.value.filter((task) => workerNames.value.indexOf(task.worker_name) !== -1)
 })
 
 const maxCpu = computed(() => {
-  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0)
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.total.cpu, 0)
 })
 
 const maxMemory = computed(() => {
-  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.memory, 0)
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.total.memory, 0)
 })
 
 const maxDisk = computed(() => {
-  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.disk, 0)
+  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.total.disk, 0)
 })
 
 const currentCpu = computed(() => {
@@ -263,8 +264,10 @@ async function loadRunningTasks(): Promise<void> {
       'started',
       'scraper_started',
       'scraper_completed',
+      'scraper_running',
       'scraper_killed',
       'cancel_requested',
+      'canceling',
     ],
   })
   if (tasks) {

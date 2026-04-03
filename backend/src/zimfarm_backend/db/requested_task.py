@@ -97,22 +97,22 @@ def _resource_mismatch_message(
     worker: WorkerLightSchema, resource: ResourcesSchema
 ) -> list[str]:
     mismatched_message: list[str] = []
-    if worker.resources.cpu < resource.cpu:
+    if worker.resources.available.cpu < resource.cpu:
         mismatched_message.append(
             f"cpu: required={format_size(resource.cpu, binary=True)}, "
-            f"available={format_size(worker.resources.cpu, binary=True)}"
+            f"available={format_size(worker.resources.available.cpu, binary=True)}"
         )
 
-    if worker.resources.disk < resource.disk:
+    if worker.resources.available.disk < resource.disk:
         mismatched_message.append(
             f"disk: required={format_size(resource.disk, binary=True)}, "
-            f"available={format_size(worker.resources.disk, binary=True)}"
+            f"available={format_size(worker.resources.available.disk, binary=True)}"
         )
 
-    if worker.resources.memory < resource.memory:
+    if worker.resources.available.memory < resource.memory:
         mismatched_message.append(
             f"memory: required={format_size(resource.memory, binary=True)}, "
-            f"available={format_size(worker.resources.memory, binary=True)}"
+            f"available={format_size(worker.resources.available.memory, binary=True)}"
         )
     return mismatched_message
 
@@ -266,9 +266,9 @@ def _validate_worker_resources(
     identifier = _recipe_or_task_identifier_message(entity)
     resource = ResourcesSchema.model_validate(entity.config["resources"])
     if (
-        worker.resources.cpu < resource.cpu
-        or worker.resources.memory < resource.memory
-        or worker.resources.disk < resource.disk
+        worker.resources.available.cpu < resource.cpu
+        or worker.resources.available.memory < resource.memory
+        or worker.resources.available.disk < resource.disk
     ):
         mismatched_message = _resource_mismatch_message(worker, resource)
         return (
@@ -542,11 +542,11 @@ def get_tasks_doable_by_worker(
         )
         .where(
             RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger)
-            <= worker.resources.cpu,
+            <= worker.resources.available.cpu,
             RequestedTask.config["resources"]["memory"].astext.cast(BigInteger)
-            <= worker.resources.memory,
+            <= worker.resources.available.memory,
             RequestedTask.config["resources"]["disk"].astext.cast(BigInteger)
-            <= worker.resources.disk,
+            <= worker.resources.available.disk,
             RequestedTask.config["offliner"]["offliner_id"].astext.in_(
                 worker.offliners
             ),
@@ -699,7 +699,7 @@ def _get_worker_unavailable_reason(
         return reason
 
     return (
-        f"We have no reason for this task to not start on worker '{worker.name}' as"
+        f"We have no reason for this task to not start on worker '{worker.name}' as "
         f"worker has no running tasks. Worker is {worker.status}"
     ) + last_seen_reason
 
@@ -747,20 +747,10 @@ def diagnose_requested_task(
     )[1]:
         return reason
 
-    avail_memory = worker.resources.memory - sum(
-        t.config.resources.memory for t in running_tasks
-    )
-    avail_disk = worker.resources.disk - sum(
-        t.config.resources.disk for t in running_tasks
-    )
-    avail_cpu = worker.resources.cpu - sum(
-        t.config.resources.cpu for t in running_tasks
-    )
-
     available_resources = ResourcesSchema(
-        cpu=avail_cpu,
-        memory=avail_memory,
-        disk=avail_disk,
+        cpu=worker.resources.available.cpu,
+        memory=worker.resources.available.memory,
+        disk=worker.resources.available.disk,
     )
 
     if _can_run(task, available_resources):
@@ -772,9 +762,9 @@ def diagnose_requested_task(
         candidates=[task],
         available_resources=available_resources,
         missing_resources=ResourcesSchema(
-            cpu=max([task.config.resources.cpu - avail_cpu, 0]),
-            memory=max([task.config.resources.memory - avail_memory, 0]),
-            disk=max([task.config.resources.disk - avail_disk, 0]),
+            cpu=max([task.config.resources.cpu - available_resources.cpu, 0]),
+            memory=max([task.config.resources.memory - available_resources.memory, 0]),
+            disk=max([task.config.resources.disk - available_resources.disk, 0]),
         ),
         running_tasks=running_tasks,
     ).error:
