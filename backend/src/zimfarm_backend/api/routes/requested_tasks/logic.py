@@ -206,11 +206,15 @@ def get_requested_tasks_for_worker(
                 f"Worker {worker_name} IP changed from {worker.last_ip} to "
                 f"{x_forwarded_for}"
             )
-            worker = update_worker(
-                session, worker_name=worker_name, ip_address=x_forwarded_for
-            )
-        else:
-            worker = update_worker(session, worker_name=worker_name)
+
+        worker = update_worker(
+            session,
+            worker_name=worker_name,
+            ip_address=x_forwarded_for if ip_changed else None,
+            avail_disk=avail_disk,
+            avail_memory=avail_memory,
+            avail_cpu=avail_cpu,
+        )
 
         # commit explicitly last_ip and last_seen changes, since we are not
         # using an explicit transaction, and do it before calling Wasabi so

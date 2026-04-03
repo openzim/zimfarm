@@ -40,7 +40,7 @@ from zimfarm_worker.common.docker import (
     stop_container,
     stop_task_worker,
 )
-from zimfarm_worker.common.utils import as_pos_int, format_size
+from zimfarm_worker.common.utils import format_size
 from zimfarm_worker.common.worker import BaseWorker
 
 
@@ -195,12 +195,12 @@ class WorkerManager(BaseWorker):
         self.last_poll = getnow()
 
         host_stats = query_host_stats(self.docker, self.workdir)
-        expected_disk_avail = as_pos_int(host_stats.disk.total - host_stats.disk.used)
-        if host_stats.disk.available < expected_disk_avail:
+        if host_stats.disk.available < host_stats.disk.remaining:
             self.should_stop = True
             logger.critical(
                 f"Available disk space ({format_size(host_stats.disk.available)})"
-                f" is lower than expected ({format_size(expected_disk_avail)}). Exiting"
+                f" is lower than expected ({format_size(host_stats.disk.remaining)}). "
+                "Exiting..."
             )
             return False
 
@@ -209,9 +209,9 @@ class WorkerManager(BaseWorker):
             path="/requested-tasks/worker",
             params={
                 "worker_name": self.worker_name,
-                "avail_cpu": host_stats.cpu.available,
-                "avail_memory": host_stats.memory.available,
-                "avail_disk": host_stats.disk.available,
+                "avail_cpu": host_stats.cpu.remaining,
+                "avail_memory": host_stats.memory.remaining,
+                "avail_disk": host_stats.disk.remaining,
             },
             webapi_uri=webapi_uri,
         )
