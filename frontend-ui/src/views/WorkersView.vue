@@ -89,7 +89,7 @@
 
     <WorkersTable
       :worker-headers="workerHeaders"
-      :workers="filteredWorkers"
+      :workers="workersWithTotalResources"
       :paginator="paginator"
       :loading="loadingStore.isLoading"
       :loading-text="loadingStore.loadingText"
@@ -155,20 +155,28 @@ const onlineWorkers = computed(() => workers.value.filter((worker) => worker.sta
 const filteredWorkers = computed(() => (showingAll.value ? workers.value : onlineWorkers.value))
 const workerNames = computed(() => filteredWorkers.value.map((worker) => worker.name))
 
+// Compute workers with total resources (remaining + used by running tasks)
+const workersWithTotalResources = computed(() => {
+  return filteredWorkers.value.map((worker) => {
+    const workerTasks = worker.tasks || []
+    const usedCpu = workerTasks.reduce((sum, task) => sum + task.config.resources.cpu, 0)
+    const usedMemory = workerTasks.reduce((sum, task) => sum + task.config.resources.memory, 0)
+    const usedDisk = workerTasks.reduce((sum, task) => sum + task.config.resources.disk, 0)
+
+    return {
+      ...worker,
+      resources: {
+        ...worker.resources,
+        cpu: worker.resources.cpu + usedCpu,
+        memory: worker.resources.memory + usedMemory,
+        disk: worker.resources.disk + usedDisk,
+      },
+    }
+  })
+})
+
 const tasks = computed(() => {
   return runningTasks.value.filter((task) => workerNames.value.indexOf(task.worker_name) !== -1)
-})
-
-const maxCpu = computed(() => {
-  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0)
-})
-
-const maxMemory = computed(() => {
-  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.memory, 0)
-})
-
-const maxDisk = computed(() => {
-  return onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.disk, 0)
 })
 
 const currentCpu = computed(() => {
@@ -181,6 +189,25 @@ const currentMemory = computed(() => {
 
 const currentDisk = computed(() => {
   return tasks.value.reduce((sum, task) => sum + task.config.resources.disk, 0)
+})
+
+const maxCpu = computed(() => {
+  return (
+    onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.cpu, 0) + currentCpu.value
+  )
+})
+
+const maxMemory = computed(() => {
+  return (
+    onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.memory, 0) +
+    currentMemory.value
+  )
+})
+
+const maxDisk = computed(() => {
+  return (
+    onlineWorkers.value.reduce((sum, worker) => sum + worker.resources.disk, 0) + currentDisk.value
+  )
 })
 
 const usageCpu = computed(() => `${currentCpu.value}/${maxCpu.value}`)
@@ -245,8 +272,10 @@ async function loadRunningTasks(): Promise<void> {
       'started',
       'scraper_started',
       'scraper_completed',
+      'scraper_running',
       'scraper_killed',
       'cancel_requested',
+      'canceling',
     ],
   })
   if (tasks) {

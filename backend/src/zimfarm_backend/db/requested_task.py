@@ -699,7 +699,7 @@ def _get_worker_unavailable_reason(
         return reason
 
     return (
-        f"We have no reason for this task to not start on worker '{worker.name}' as"
+        f"We have no reason for this task to not start on worker '{worker.name}' as "
         f"worker has no running tasks. Worker is {worker.status}"
     ) + last_seen_reason
 
@@ -747,20 +747,10 @@ def diagnose_requested_task(
     )[1]:
         return reason
 
-    avail_memory = worker.resources.memory - sum(
-        t.config.resources.memory for t in running_tasks
-    )
-    avail_disk = worker.resources.disk - sum(
-        t.config.resources.disk for t in running_tasks
-    )
-    avail_cpu = worker.resources.cpu - sum(
-        t.config.resources.cpu for t in running_tasks
-    )
-
     available_resources = ResourcesSchema(
-        cpu=avail_cpu,
-        memory=avail_memory,
-        disk=avail_disk,
+        cpu=worker.resources.cpu,
+        memory=worker.resources.memory,
+        disk=worker.resources.disk,
     )
 
     if _can_run(task, available_resources):
@@ -772,9 +762,9 @@ def diagnose_requested_task(
         candidates=[task],
         available_resources=available_resources,
         missing_resources=ResourcesSchema(
-            cpu=max([task.config.resources.cpu - avail_cpu, 0]),
-            memory=max([task.config.resources.memory - avail_memory, 0]),
-            disk=max([task.config.resources.disk - avail_disk, 0]),
+            cpu=max([task.config.resources.cpu - available_resources.cpu, 0]),
+            memory=max([task.config.resources.memory - available_resources.memory, 0]),
+            disk=max([task.config.resources.disk - available_resources.disk, 0]),
         ),
         running_tasks=running_tasks,
     ).error:
