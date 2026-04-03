@@ -7,7 +7,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
-  const defaultLimit = ref<number>(Number(localStorage.getItem('users-table-limit') || 20))
+  const defaultLimit = ref<number>(Number(localStorage.getItem('accounts-table-limit') || 20))
   const errors = ref<string[]>([])
   const users = ref<User[]>([])
   const paginator = ref<Paginator>({
@@ -21,11 +21,11 @@ export const useUserStore = defineStore('user', () => {
   const authStore = useAuthStore()
 
   const savePaginatorLimit = (limit: number) => {
-    localStorage.setItem('users-table-limit', limit.toString())
+    localStorage.setItem('accounts-table-limit', limit.toString())
   }
 
   const createUser = async (username: string, role: string, password: string) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     try {
       const response = await service.post<
         { username: string; role: string; password: string },
@@ -45,7 +45,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchUsers = async (skip: number = 0, limit: number = 20, username?: string) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     // filter out undefined values from params
     const cleanedParams = Object.fromEntries(
       Object.entries({
@@ -77,7 +77,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchUser = async (userId: string) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     try {
       const response = await service.get<null, UserWithSshKeys>(`/${userId}`)
       errors.value = []
@@ -90,7 +90,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const deleteSshKey = async (userId: string, fingerprint: string) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     try {
       await service.delete(`/${userId}/keys/${fingerprint}`)
       errors.value = []
@@ -103,7 +103,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const changePassword = async (userId: string, body: { current?: string; new: string | null }) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     try {
       await service.patch<{ current?: string; new: string | null }, null>(
         `/${userId}/password`,
@@ -128,7 +128,7 @@ export const useUserStore = defineStore('user', () => {
       idp_sub?: string | null
     },
   ) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     const cleanedPayload = Object.fromEntries(
       Object.entries(payload).filter(([, value]) => value !== undefined),
     )
@@ -153,7 +153,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const addSshKey = async (userId: string, payload: { key: string }) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     try {
       await service.post<{ key: string }, SshKeyRead>(`/${userId}/keys`, payload)
       errors.value = []
@@ -166,7 +166,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const deleteUser = async (userId: string) => {
-    const service = await authStore.getApiService('users')
+    const service = await authStore.getApiService('accounts')
     try {
       await service.delete(`/${userId}`)
       errors.value = []

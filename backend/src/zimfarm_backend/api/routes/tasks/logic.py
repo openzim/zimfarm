@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
-    get_current_user,
-    get_current_user_or_none,
+    get_current_account,
+    get_current_account_or_none,
 )
 from zimfarm_backend.api.routes.http_errors import (
     ForbiddenError,
@@ -30,7 +30,8 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.orms import TaskFullSchema, TaskLightSchema
 from zimfarm_backend.common.upload import build_task_upload_uris, populate_zim_urls
 from zimfarm_backend.common.utils import task_event_handler
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.account import check_account_permission
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
 from zimfarm_backend.db.offliner_definition import (
     get_offliner_definition_by_id as db_get_offliner_definition_by_id,
@@ -44,7 +45,6 @@ from zimfarm_backend.db.requested_task import (
 from zimfarm_backend.db.tasks import create_task as db_create_task
 from zimfarm_backend.db.tasks import get_task_by_id as db_get_task
 from zimfarm_backend.db.tasks import get_tasks as db_get_tasks
-from zimfarm_backend.db.user import check_user_permission
 from zimfarm_backend.db.worker import get_worker as db_get_worker
 from zimfarm_backend.utils.offliners import expanded_config
 
@@ -82,15 +82,15 @@ def get_tasks(
 def get_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User | None, Depends(get_current_user_or_none)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
     *,
     hide_secrets: Annotated[bool, Query()] = False,
 ) -> JSONResponse:
     """Get a task by ID"""
     task = db_get_task(db_session, task_id)
     if not (
-        current_user
-        and check_user_permission(current_user, namespace="tasks", name="secrets")
+        current_account
+        and check_account_permission(current_account, namespace="tasks", name="secrets")
     ):
         task.notification = None
         show_secrets = False
@@ -124,7 +124,7 @@ def create_task(
     requested_task_id: Annotated[UUID, Path()],
     task_create_schema: TaskCreateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_account: Annotated[Account, Depends(get_current_account)],
 ):
     """Create a task from a requested task"""
     if not ENABLED_SCHEDULER:
@@ -133,7 +133,7 @@ def create_task(
             status_code=HTTPStatus.NO_CONTENT,
         )
 
-    if not check_user_permission(current_user, namespace="tasks", name="create"):
+    if not check_account_permission(current_account, namespace="tasks", name="create"):
         raise ForbiddenError("You are not allowed to create tasks")
 
     requested_task = db_get_requested_task(db_session, requested_task_id)
@@ -164,10 +164,10 @@ def update_task(
     task_id: Annotated[UUID, Path()],
     task_update_schema: TaskUpdateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_account: Annotated[Account, Depends(get_current_account)],
 ):
     """Update a task"""
-    if not check_user_permission(current_user, namespace="tasks", name="update"):
+    if not check_account_permission(current_account, namespace="tasks", name="update"):
         raise ForbiddenError("You are not allowed to update this task")
 
     task = db_get_task(db_session, task_id)
@@ -183,10 +183,10 @@ def update_task(
 def cancel_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_account: Annotated[Account, Depends(get_current_account)],
 ):
     """Cancel a task"""
-    if not check_user_permission(current_user, namespace="tasks", name="cancel"):
+    if not check_account_permission(current_account, namespace="tasks", name="cancel"):
         raise ForbiddenError("You are not allowed to cancel this task")
 
     task = db_get_task(db_session, task_id)
@@ -198,7 +198,7 @@ def cancel_task(
         db_session,
         task.id,
         TaskStatus.cancel_requested,
-        {"canceled_by": str(current_user.id)},
+        {"canceled_by": str(current_account.id)},
     )
 
     return Response(status_code=HTTPStatus.NO_CONTENT)

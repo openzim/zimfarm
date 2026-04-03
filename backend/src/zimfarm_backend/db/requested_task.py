@@ -43,7 +43,7 @@ from zimfarm_backend.common.schemas.orms import (
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Recipe, RequestedTask, User, Worker
+from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Worker
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
@@ -374,8 +374,8 @@ def get_requested_tasks(
             RequestedTask.status,
             RequestedTask.config,
             RequestedTask.timestamp,
-            User.display_name.label("requested_by"),
-            User.id.label("requester_id"),
+            Account.display_name.label("requested_by"),
+            Account.id.label("requester_id"),
             RequestedTask.priority,
             RequestedTask.original_recipe_name,
             RequestedTask.updated_at,
@@ -383,7 +383,7 @@ def get_requested_tasks(
             Recipe.name.label("recipe_name"),
             Worker.name.label("worker_name"),
         )
-        .join(User, RequestedTask.requested_by)
+        .join(Account, RequestedTask.requested_by)
         .join(Worker, RequestedTask.worker, isouter=True)
         .join(Recipe, RequestedTask.recipe, isouter=True)
         .where(

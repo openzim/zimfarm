@@ -9,23 +9,23 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.models import Account
 
 
-def test_list_users_no_auth(client: TestClient):
-    response = client.get("/v2/users")
+def test_list_accounts_no_auth(client: TestClient):
+    response = client.get("/v2/accounts")
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.num_users(5)
-def test_list_users_no_param(client: TestClient, users: list[User]):
-    user = users[0]
+@pytest.mark.num_accounts(5)
+def test_list_accounts_no_param(client: TestClient, accounts: list[Account]):
+    account = accounts[0]
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.get(
-        "/v2/users", headers={"Authorization": f"Bearer {access_token}"}
+        "/v2/accounts", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == HTTPStatus.OK
 
@@ -33,7 +33,7 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
     assert "items" in response_json
     assert "meta" in response_json
     assert response_json["meta"]["count"] == 5
-    assert len(response_json["items"]) == len(users)
+    assert len(response_json["items"]) == len(accounts)
     for item in response_json["items"]:
         item_keys = item.keys()
         assert "username" in item_keys
@@ -45,20 +45,20 @@ def test_list_users_no_param(client: TestClient, users: list[User]):
 
 
 @pytest.mark.parametrize("skip, limit, expected", [(0, 1, 1), (1, 10, 4), (0, 100, 5)])
-@pytest.mark.num_users(5)
-def test_list_users_with_param(
+@pytest.mark.num_accounts(5)
+def test_list_accounts_with_param(
     client: TestClient,
-    users: list[User],
+    accounts: list[Account],
     skip: int,
     limit: int,
     expected: int,
 ):
-    user = users[0]
+    account = accounts[0]
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users?skip={skip}&limit={limit}"
+    url = f"/v2/accounts?skip={skip}&limit={limit}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -69,64 +69,64 @@ def test_list_users_with_param(
     assert len(response_json["items"]) == expected
 
 
-@pytest.mark.num_users(10)
-def test_skip_deleted_users(
+@pytest.mark.num_accounts(10)
+def test_skip_deleted_accounts(
     dbsession: OrmSession,
     client: TestClient,
-    users: list[User],
+    accounts: list[Account],
 ):
-    user = users[0]
+    account = accounts[0]
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    for i in range(1, len(users)):
-        users[i].deleted = True
-        dbsession.add(users[i])
+    for i in range(1, len(accounts)):
+        accounts[i].deleted = True
+        dbsession.add(accounts[i])
         dbsession.flush()
 
-    url = f"/v2/users?skip={0}&limit={100}"
+    url = f"/v2/accounts?skip={0}&limit={100}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
     assert "items" in response_json
     assert "meta" in response_json
-    assert response_json["meta"]["count"] == 1  # skip deleted users
+    assert response_json["meta"]["count"] == 1  # skip deleted accounts
     assert len(response_json["items"]) == 1
 
 
-def test_get_user_by_username(client: TestClient, user: User):
-    url = f"/v2/users/{user.username}"
+def test_get_account_by_username(client: TestClient, account: Account):
+    url = f"/v2/accounts/{account.username}"
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
-    assert response_json["username"] == user.username
+    assert response_json["username"] == account.username
 
 
-def test_get_user_by_username_not_found(
+def test_get_account_by_username_not_found(
     client: TestClient,
-    user: User,
+    account: Account,
 ):
-    url = f"/v2/users/{user.username}1"
+    url = f"/v2/accounts/{account.username}1"
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_create_user(client: TestClient, user: User):
-    url = "/v2/users/"
+def test_create_account(client: TestClient, account: Account):
+    url = "/v2/accounts/"
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.post(
         url,
@@ -140,17 +140,17 @@ def test_create_user(client: TestClient, user: User):
     assert response.status_code == HTTPStatus.OK
 
 
-def test_create_user_duplicate(client: TestClient, user: User):
-    url = "/v2/users/"
+def test_create_account_duplicate(client: TestClient, account: Account):
+    url = "/v2/accounts/"
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.post(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "username": user.username,
+            "username": account.username,
             "password": "test",
             "role": "admin",
         },
@@ -158,13 +158,13 @@ def test_create_user_duplicate(client: TestClient, user: User):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_list_user_keys(client: TestClient, user: User):
-    """Test listing a user's SSH keys"""
+def test_list_account_keys(client: TestClient, account: Account):
+    """Test listing an account's SSH keys"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}/keys"
+    url = f"/v2/accounts/{account.username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
@@ -181,24 +181,24 @@ def test_list_user_keys(client: TestClient, user: User):
     }
 
 
-@pytest.mark.num_users(2, permission="editor")
-def test_list_user_keys_forbidden(client: TestClient, users: list[User]):
-    """Test listing another user's SSH keys without permission"""
-    user = users[0]
+@pytest.mark.num_accounts(2, permission="editor")
+def test_list_account_keys_forbidden(client: TestClient, accounts: list[Account]):
+    """Test listing another account's SSH keys without permission"""
+    account = accounts[0]
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{users[1].username}/keys"
+    url = f"/v2/accounts/{accounts[1].username}/keys"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.FORBIDDEN
 
 
-def test_create_user_key(client: TestClient, user: User):
-    """Test creating a new SSH key for a user"""
+def test_create_account_key(client: TestClient, account: Account):
+    """Test creating a new SSH key for an account"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = new_key.public_key()
@@ -206,7 +206,7 @@ def test_create_user_key(client: TestClient, user: User):
         encoding=serialization.Encoding.OpenSSH,
         format=serialization.PublicFormat.OpenSSH,
     )
-    url = f"/v2/users/{user.username}/keys"
+    url = f"/v2/accounts/{account.username}/keys"
     # generated keys don't come with hostname but backend requires it
     key_data = {"key": rsa_public_key_data.decode(encoding="ascii") + " test@localhost"}
     response = client.post(
@@ -222,13 +222,13 @@ def test_create_user_key(client: TestClient, user: User):
     assert "added" in response_json
 
 
-def test_create_user_key_invalid(client: TestClient, user: User):
+def test_create_account_key_invalid(client: TestClient, account: Account):
     """Test creating an invalid SSH key"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}/keys"
+    url = f"/v2/accounts/{account.username}/keys"
     key_data = {"key": "invalid-key xxxxxxx test@localhost"}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
@@ -236,57 +236,57 @@ def test_create_user_key_invalid(client: TestClient, user: User):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_create_user_key_duplicate(client: TestClient, user: User):
+def test_create_account_key_duplicate(client: TestClient, account: Account):
     """Test creating a duplicate SSH key"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}/keys"
-    key_data = {"key": user.ssh_keys[0].key}
+    url = f"/v2/accounts/{account.username}/keys"
+    key_data = {"key": account.ssh_keys[0].key}
     response = client.post(
         url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_get_user_key(client: TestClient, user: User):
+def test_get_account_key(client: TestClient, account: Account):
     """Test getting a specific SSH key"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    fingerprint = user.ssh_keys[0].fingerprint
-    url = f"/v2/users/{user.username}/keys/{fingerprint}"
+    fingerprint = account.ssh_keys[0].fingerprint
+    url = f"/v2/accounts/{account.username}/keys/{fingerprint}"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
-    assert response_json["username"] == user.username
-    assert response_json["key"] == user.ssh_keys[0].key
-    assert response_json["name"] == user.ssh_keys[0].name
-    assert response_json["type"] == user.ssh_keys[0].type
+    assert response_json["username"] == account.username
+    assert response_json["key"] == account.ssh_keys[0].key
+    assert response_json["name"] == account.ssh_keys[0].name
+    assert response_json["type"] == account.ssh_keys[0].type
 
 
-def test_get_user_key_not_found(client: TestClient, user: User):
+def test_get_account_key_not_found(client: TestClient, account: Account):
     """Test getting a non-existent SSH key"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}/keys/non-existent-fingerprint"
+    url = f"/v2/accounts/{account.username}/keys/non-existent-fingerprint"
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_delete_user_key(client: TestClient, user: User):
-    """Test deleting a user's SSH key"""
+def test_delete_account_key(client: TestClient, account: Account):
+    """Test deleting an account's SSH key"""
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    fingerprint = user.ssh_keys[0].fingerprint
-    url = f"/v2/users/{user.username}/keys/{fingerprint}"
+    fingerprint = account.ssh_keys[0].fingerprint
+    url = f"/v2/accounts/{account.username}/keys/{fingerprint}"
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.NO_CONTENT
 
@@ -295,25 +295,25 @@ def test_delete_user_key(client: TestClient, user: User):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.num_users(2, permission="editor")
-def test_delete_user_key_forbidden(client: TestClient, users: list[User]):
-    """Test deleting another user's SSH key without permission"""
-    user = users[0]
-    url = f"/v2/users/{users[1].username}/keys/some-fingerprint"
+@pytest.mark.num_accounts(2, permission="editor")
+def test_delete_account_key_forbidden(client: TestClient, accounts: list[Account]):
+    """Test deleting another account's SSH key without permission"""
+    account = accounts[0]
+    url = f"/v2/accounts/{accounts[1].username}/keys/some-fingerprint"
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.FORBIDDEN
 
 
-def test_update_user_role(client: TestClient, user: User):
+def test_update_account_role(client: TestClient, account: Account):
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}"
+    url = f"/v2/accounts/{account.username}"
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -325,16 +325,16 @@ def test_update_user_role(client: TestClient, user: User):
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
     data = response.json()
-    assert data["username"] == user.username
+    assert data["username"] == account.username
     assert data["role"] == "editor"
 
 
-def test_update_user_scope(client: TestClient, user: User):
+def test_update_account_scope(client: TestClient, account: Account):
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}"
+    url = f"/v2/accounts/{account.username}"
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -346,15 +346,15 @@ def test_update_user_scope(client: TestClient, user: User):
     response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.OK
     data = response.json()
-    assert data["username"] == user.username
+    assert data["username"] == account.username
 
 
-def test_update_user_role_and_scope(client: TestClient, user: User):
+def test_update_account_role_and_scope(client: TestClient, account: Account):
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
-    url = f"/v2/users/{user.username}"
+    url = f"/v2/accounts/{account.username}"
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
@@ -363,16 +363,18 @@ def test_update_user_role_and_scope(client: TestClient, user: User):
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.num_users(2, permission="editor")
-def test_update_user_password_wrong_permission(client: TestClient, users: list[User]):
-    """Test updating a user's password without permission"""
-    user = users[0]
+@pytest.mark.num_accounts(2, permission="editor")
+def test_update_account_password_wrong_permission(
+    client: TestClient, accounts: list[Account]
+):
+    """Test updating an account's password without permission"""
+    account = accounts[0]
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.patch(
-        f"/v2/users/{users[1].username}/password",
+        f"/v2/accounts/{accounts[1].username}/password",
         headers={"Authorization": f"Bearer {access_token}"},
         json={"current": "test", "new": "test2"},
     )
@@ -394,21 +396,21 @@ def test_update_user_password_wrong_permission(client: TestClient, users: list[U
         ),
     ],
 )
-def test_update_user_own_password(
+def test_update_account_own_password(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     current: str,
     new: str,
     expected: HTTPStatus,
 ):
-    """Test updating a user's own password"""
-    user = create_user(permission="editor")
+    """Test updating an account's own password"""
+    account = create_account(permission="editor")
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     response = client.patch(
-        f"/v2/users/{user.username}/password",
+        f"/v2/accounts/{account.username}/password",
         headers={"Authorization": f"Bearer {access_token}"},
         json={"current": current, "new": new},
     )

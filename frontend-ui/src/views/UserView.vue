@@ -26,13 +26,13 @@
           <div v-if="!error && user">
             <!-- Tabs -->
             <v-tabs v-model="selectedTab" color="primary" class="mb-4">
-              <v-tab value="details" :to="{ name: 'user-detail', params: { userId: userId } }">
+              <v-tab value="details" :to="{ name: 'account-detail', params: { userId: userId } }">
                 Profile
               </v-tab>
               <v-tab
                 value="edit"
                 :to="{
-                  name: 'user-detail-tab',
+                  name: 'account-detail-tab',
                   params: { userId: userId, selectedTab: 'edit' },
                 }"
               >
@@ -42,7 +42,7 @@
                 v-if="canDeleteUser"
                 value="delete"
                 :to="{
-                  name: 'user-detail-tab',
+                  name: 'account-detail-tab',
                   params: { userId: userId, selectedTab: 'delete' },
                 }"
                 color="error"
@@ -266,9 +266,9 @@ const dataLoaded = ref(false)
 // Computed properties
 const scope = computed(() => user.value?.scope || {})
 
-const canDeleteUser = computed(() => authStore.hasPermission('users', 'delete'))
+const canDeleteUser = computed(() => authStore.hasPermission('accounts', 'delete'))
 
-const canSSHKeyUsers = computed(() => authStore.hasPermission('users', 'ssh_keys'))
+const canSSHKeyUsers = computed(() => authStore.hasPermission('accounts', 'ssh_keys'))
 
 const getNamespaceIcon = (namespace: string): string => {
   const iconMap: Record<string, string> = {
@@ -287,7 +287,7 @@ const formatNamespaceName = (namespace: string): string => {
     tasks: 'Tasks',
     recipes: 'Recipes',
     requested_tasks: 'Requested Tasks',
-    users: 'Users',
+    accounts: 'Accounts',
     workers: 'Workers',
     zim: 'ZIM Files',
   }
@@ -427,7 +427,7 @@ const deleteUser = async () => {
   const success = await userStore.deleteUser(props.userId)
   if (success) {
     notificationStore.showSuccess(`User account ${user.value?.display_name} has been deleted.`)
-    router.push({ name: 'users-list' })
+    router.push({ name: 'accounts-list' })
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)

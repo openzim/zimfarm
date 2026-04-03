@@ -14,11 +14,11 @@ from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.notifications import handle_notification
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
+from zimfarm_backend.db.account import get_account_by_identifier
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Task
 from zimfarm_backend.db.recipe import update_recipe_duration
 from zimfarm_backend.db.tasks import create_or_update_task_file
-from zimfarm_backend.db.user import get_user_by_identifier
 from zimfarm_backend.db.worker import get_worker
 
 logger = logging.getLogger(__name__)
@@ -159,8 +159,8 @@ def save_event(
         task.worker = worker
 
     if "canceled_by" in kwargs:
-        task.canceled_by = get_user_by_identifier(
-            session, user_identifier=kwargs["canceled_by"]
+        task.canceled_by = get_account_by_identifier(
+            session, account_identifier=kwargs["canceled_by"]
         )
 
     add_to_container_if_present(

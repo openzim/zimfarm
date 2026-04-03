@@ -11,7 +11,7 @@ from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.db.models import Task, User, Worker
+from zimfarm_backend.db.models import Account, Task, Worker
 from zimfarm_backend.utils.github_registry import WorkerManagerVersion
 
 
@@ -101,16 +101,16 @@ def test_check_in_worker_deleted(
 
 
 @patch("zimfarm_backend.api.routes.workers.logic.get_latest_worker_manager_version")
-def test_check_in_worker_impersonate_user(
+def test_check_in_worker_impersonate_account(
     mock_get_version: MagicMock,
     client: TestClient,
     access_token: str,
     create_worker: Callable[..., Worker],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that check_in_worker raises BadRequestError for deleted worker"""
     mock_get_version.return_value = None
-    worker = create_worker(user=create_user())
+    worker = create_worker(account=create_account())
 
     response = client.put(
         f"/v2/workers/{worker.name}/check-in",
@@ -243,7 +243,7 @@ def test_get_worker_metrics_with_tasks(
 def test_update_worker_context(
     client: TestClient,
     create_worker: Callable[..., Worker],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     *,
     permission: RoleEnum,
     contexts: dict[str, IPv4Address | IPv6Address | None],
@@ -251,12 +251,12 @@ def test_update_worker_context(
     deleted: bool,
 ):
     """Test successful update of a worker's context"""
-    user = create_user(permission=permission)
-    worker = create_worker(user=user, deleted=deleted)
+    account = create_account(permission=permission)
+    worker = create_worker(account=account, deleted=deleted)
 
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.put(
@@ -270,14 +270,14 @@ def test_update_worker_context(
 def test_update_worker_context_not_found(
     client: TestClient,
     create_worker: Callable[..., Worker],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
-    create_worker(user=user, deleted=False)
+    account = create_account(permission=RoleEnum.ADMIN)
+    create_worker(account=account, deleted=False)
 
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.put(
@@ -291,14 +291,14 @@ def test_update_worker_context_not_found(
 def test_update_worker_context_no_payload(
     client: TestClient,
     create_worker: Callable[..., Worker],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
-    user = create_user(permission=RoleEnum.ADMIN)
-    worker = create_worker(user=user, deleted=False)
+    account = create_account(permission=RoleEnum.ADMIN)
+    worker = create_worker(account=account, deleted=False)
 
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.put(

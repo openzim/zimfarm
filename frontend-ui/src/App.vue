@@ -40,7 +40,7 @@ onMounted(async () => {
 
 // Navigation items logic
 const canReadUsers = computed(() => {
-  return authStore.hasPermission('users', 'read')
+  return authStore.hasPermission('accounts', 'read')
 })
 
 const navigationItems = computed<NavigationItem[]>(() => [
@@ -69,9 +69,9 @@ const navigationItems = computed<NavigationItem[]>(() => [
     show: true,
   },
   {
-    name: 'users-list',
-    label: 'Users',
-    route: 'users',
+    name: 'accounts-list',
+    label: 'Accounts',
+    route: 'accounts',
     icon: 'mdi-account-group',
     disabled: false,
     show: canReadUsers.value,
