@@ -26,7 +26,7 @@
 
         <template #[`item.display_name`]="{ item }">
           <router-link
-            :to="{ name: 'user-detail', params: { userId: item.id } }"
+            :to="{ name: 'account-detail', params: { userId: item.id } }"
             class="text-decoration-none text-primary"
           >
             {{ item.display_name }}

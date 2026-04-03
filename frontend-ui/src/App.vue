@@ -69,7 +69,7 @@ const navigationItems = computed<NavigationItem[]>(() => [
     show: true,
   },
   {
-    name: 'users-list',
+    name: 'accounts-list',
     label: 'Accounts',
     route: 'accounts',
     icon: 'mdi-account-group',
