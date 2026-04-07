@@ -49,6 +49,7 @@ export const useUserStore = defineStore('user', () => {
     limit: number = 20,
     username?: string,
     show_viewers: boolean = false,
+    show_workers: boolean = false,
   ) => {
     const service = await authStore.getApiService('accounts')
     // filter out undefined/falsy string values but keep booleans separate
@@ -61,7 +62,7 @@ export const useUserStore = defineStore('user', () => {
     )
     try {
       const response = await service.get<null, ListResponse<User>>('', {
-        params: { ...cleanedParams, show_viewers },
+        params: { ...cleanedParams, show_viewers, show_workers },
       })
       errors.value = []
       users.value = response.items

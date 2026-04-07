@@ -123,8 +123,8 @@ def get_accounts(
     skip: int,
     limit: int,
     username: str | None = None,
-    show_workers: bool = False,
-    show_viewers: bool = False,
+    show_workers: bool = True,
+    show_viewers: bool = True,
 ) -> AccountList:
     """Get a list of accounts"""
     query = (

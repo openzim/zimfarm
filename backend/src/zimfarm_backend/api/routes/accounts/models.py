@@ -31,5 +31,5 @@ class AccountsGetSchema(BaseModel):
     skip: SkipField = 0
     limit: LimitFieldMax200 = 20
     username: NotEmptyString | None = None
-    show_workers: bool = False  # show accounts which have "worker" role
-    show_viewers: bool = False  # show accounts which have "viewer" role
+    show_workers: bool = True  # show accounts which have "worker" role
+    show_viewers: bool = True  # show accounts which have "viewer" role
