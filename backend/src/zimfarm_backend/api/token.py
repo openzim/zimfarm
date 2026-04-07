@@ -115,8 +115,8 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
             raise ValueError("Oauth client ID does not match.")
 
         # Check for 2FA requirement only if client_id is not present in the token
-        # as those come from oauth2 clients and not real users.
-        # Ensure the user logged in with two authentication factors. As per Ory docs,
+        # as those come from oauth2 clients and not real accounts.
+        # Ensure the account logged in with two authentication factors. As per Ory docs,
         # "password", "code"  and "oidc" are categorized as first methods of login while
         # "totp", "webauthn" and "lookup_secret" are second authentication methods
         # https://www.ory.com/docs/kratos/mfa/overview#authenticator-assurance-level-aal
@@ -179,7 +179,7 @@ class OAuthSessionTokenDecoder(TokenDecoder):
             raise ValueError("Oauth client ID does not match.")
 
         # Check for 2FA requirement only if client_id is not present in the token
-        # as those come from oauth2 clients and not real users
+        # as those come from oauth2 clients and not real accounts
         if (
             not decoded_token.get("client_id")
             and OAUTH_SESSION_LOGIN_REQUIRE_2FA
@@ -245,16 +245,16 @@ token_decoder = TokenDecoderChain(
 
 def generate_access_token(
     *,
-    user_id: str,
+    account_id: str,
     issue_time: datetime.datetime,
 ) -> str:
-    """Generate a JWT access token for the given user ID with configured expiry."""
+    """Generate a JWT access token for the given account ID with configured expiry."""
 
     expire_time = issue_time + datetime.timedelta(seconds=JWT_TOKEN_EXPIRY_DURATION)
     payload = {
         "iss": JWT_TOKEN_ISSUER,  # issuer
         "exp": expire_time.timestamp(),  # expiration time
         "iat": issue_time.timestamp(),  # issued at
-        "subject": user_id,
+        "subject": account_id,
     }
     return jwt.encode(payload, key=JWT_SECRET, algorithm="HS256")

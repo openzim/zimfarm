@@ -34,6 +34,7 @@ from zimfarm_backend.common.schemas.offliners.models import (
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.models import (
+    Account,
     Base,
     OfflinerDefinition,
     Recipe,
@@ -42,7 +43,6 @@ from zimfarm_backend.db.models import (
     RequestedTask,
     Sshkey,
     Task,
-    User,
     Worker,
 )
 from zimfarm_backend.db.offliner import create_offliner
@@ -112,8 +112,8 @@ def rsa_public_key_data(rsa_private_key: RSAPrivateKey) -> bytes:
 
 
 @pytest.fixture
-def auth_message(user: User) -> str:
-    return f"{user.username}:{getnow().isoformat()}"
+def auth_message(account: Account) -> str:
+    return f"{account.username}:{getnow().isoformat()}"
 
 
 @pytest.fixture
@@ -126,10 +126,10 @@ def rsa_x_sshauth_signature(rsa_private_key: RSAPrivateKey, auth_message: str) -
 
 
 @pytest.fixture
-def access_token(user: User) -> str:
+def access_token(account: Account) -> str:
     return generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
 
@@ -151,7 +151,7 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "type": "email",
       "required": true,
       "title": "Admin Email",
-      "description": "Email of the mwoffliner user which will be put in the HTTP user-agent string"
+      "description": "Email of the mwoffliner account which will be put in the HTTP user-agent string"
     },
     "articleList": {
       "type": "string",
@@ -321,8 +321,8 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
     "mwDomain": {
       "type": "string",
       "required": false,
-      "title": "User Domain",
-      "description": "Mediawiki user domain (for private wikis)"
+      "title": "Account Domain",
+      "description": "Mediawiki account domain (for private wikis)"
     },
     "mwUsername": {
       "type": "string",
@@ -334,7 +334,7 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "type": "string",
       "required": false,
       "title": "Password",
-      "description": "Mediawiki user password (for private wikis)",
+      "description": "Mediawiki account password (for private wikis)",
       "secret": true
     },
     "osTmpDir": {
@@ -681,20 +681,20 @@ def tedoffliner_definition(
 
 
 @pytest.fixture
-def create_user(
+def create_account(
     dbsession: OrmSession,
     rsa_public_key: RSAPublicKey,
     rsa_public_key_data: bytes,
     data_gen: Faker,
-) -> Callable[..., User]:
-    def _create_user(
+) -> Callable[..., Account]:
+    def _create_account(
         *,
         username: str | None = None,
         permission: RoleEnum = RoleEnum.ADMIN,
         idp_sub: UUID | None = None,
     ):
         username = username or data_gen.first_name()
-        user = User(
+        account = Account(
             username=username,
             display_name=username,
             password_hash=generate_password_hash("testpassword"),
@@ -702,7 +702,7 @@ def create_user(
             role=permission,
             idp_sub=idp_sub,
         )
-        dbsession.add(user)
+        dbsession.add(account)
 
         key = Sshkey(
             name=data_gen.word(),
@@ -711,55 +711,55 @@ def create_user(
             type="RSA",
             added=getnow(),
         )
-        key.user = user
+        key.account = account
 
         dbsession.add(key)
         dbsession.flush()
 
-        return user
+        return account
 
-    return _create_user
+    return _create_account
 
 
 @pytest.fixture
-def users(
-    create_user: Callable[..., User],
+def accounts(
+    create_account: Callable[..., Account],
     request: FixtureRequest,
-) -> list[User]:
-    """Adds users to the database using the num_users mark."""
+) -> list[Account]:
+    """Adds accounts to the database using the num_accounts mark."""
     mark = cast(
         Mark,
         request.node.get_closest_marker(  # pyright: ignore[reportUnknownMemberType]
-            "num_users"
+            "num_accounts"
         ),
     )
     if mark and len(mark.args) > 0:
-        num_users = int(mark.args[0])
+        num_accounts = int(mark.args[0])
     else:
-        num_users = 10
+        num_accounts = 10
 
     if mark:
         permission = mark.kwargs.get("permission", RoleEnum.ADMIN)
     else:
         permission = RoleEnum.ADMIN
 
-    users: list[User] = []
+    accounts: list[Account] = []
 
-    for _ in range(num_users):
-        user = create_user(permission=permission)
-        users.append(user)
+    for _ in range(num_accounts):
+        account = create_account(permission=permission)
+        accounts.append(account)
 
-    return users
-
-
-@pytest.fixture
-def user(create_user: Callable[..., User]):
-    return create_user()
+    return accounts
 
 
 @pytest.fixture
-def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
-    _user = user
+def account(create_account: Callable[..., Account]):
+    return create_account()
+
+
+@pytest.fixture
+def create_worker(dbsession: OrmSession, account: Account) -> Callable[..., Worker]:
+    _account = account
 
     def _create_worker(
         *,
@@ -772,12 +772,12 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
         contexts: dict[str, IPv4Address | IPv6Address | None] | None = None,
         last_seen: datetime.datetime | None = None,
         last_ip: IPv4Address | None = None,
-        user: User | None = None,
+        account: Account | None = None,
         deleted: bool = False,
         cordoned: bool = False,
         admin_disabled: bool = False,
     ) -> Worker:
-        user = _user if user is None else user
+        account = _account if account is None else account
 
         _platforms = platforms or {
             Platform.wikimedia: 100,
@@ -805,7 +805,7 @@ def create_worker(dbsession: OrmSession, user: User) -> Callable[..., Worker]:
             cordoned=cordoned,
             admin_disabled=admin_disabled,
         )
-        worker.user_id = user.id
+        worker.account_id = account.id
         dbsession.add(worker)
         dbsession.flush()
         return worker
@@ -903,12 +903,12 @@ def create_recipe(
     recipe_config: RecipeConfigSchema,
     language: LanguageSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
-    user: User,
+    account: Account,
 ):
     _language = language
     _recipe_config = recipe_config
     _offliner_definition = mwoffliner_definition
-    _user = user
+    _account = account
 
     def _create_recipe(
         *,
@@ -924,7 +924,7 @@ def create_recipe(
         raw_recipe_config: dict[str, Any] | None = None,
         enabled: bool = True,
         worker: Worker | None = None,
-        user: User | None = None,
+        account: Account | None = None,
         archived: bool = False,
     ) -> Recipe:
         offliner_definition = offliner_definition or _offliner_definition
@@ -972,7 +972,7 @@ def create_recipe(
             notification=notification,
             offliner_definition_version=offliner_definition.version,
         )
-        history_entry.author_id = user.id if user else _user.id
+        history_entry.author_id = account.id if account else _account.id
         recipe.history_entries.append(history_entry)
 
         dbsession.add(recipe)
@@ -1008,16 +1008,16 @@ def create_requested_task(
     mwoffliner_definition: OfflinerDefinitionSchema,
     ted_offliner: OfflinerSchema,
     tedoffliner_definition: OfflinerDefinitionSchema,
-    user: User,
+    account: Account,
 ):
     _worker = worker
-    _user = user
+    _account = account
 
     def _create_requested_task(
         *,
         recipe_name: str = "testrecipe",
         status: TaskStatus = TaskStatus.requested,
-        requested_by: User = _user,
+        requested_by: Account = _account,
         priority: int = 0,
         worker: Worker | None = None,
         request_date: datetime.datetime | None = None,
@@ -1110,7 +1110,7 @@ def requested_tasks(
 def create_task(
     create_requested_task: Callable[..., RequestedTask],
     worker: Worker,
-    user: User,
+    account: Account,
     dbsession: OrmSession,
 ) -> Callable[..., Task]:
     _worker = worker
@@ -1144,7 +1144,7 @@ def create_task(
             context=requested_task.context,
         )
         task.id = requested_task.id
-        task.requested_by_id = user.id
+        task.requested_by_id = account.id
         task.offliner_definition_id = requested_task.offliner_definition_id
         task.recipe_id = requested_task.recipe_id
         task.worker_id = _worker.id if worker is None else worker.id

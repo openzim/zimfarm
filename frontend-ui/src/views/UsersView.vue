@@ -200,9 +200,9 @@ const form = ref({
 const showPassword = ref(false)
 
 // Computed properties
-const canReadUsers = computed(() => authStore.hasPermission('users', 'read'))
+const canReadUsers = computed(() => authStore.hasPermission('accounts', 'read'))
 
-const canCreateUsers = computed(() => authStore.hasPermission('users', 'create'))
+const canCreateUsers = computed(() => authStore.hasPermission('accounts', 'create'))
 
 const isFormValid = computed(() => {
   return form.value.username && form.value.role && form.value.password

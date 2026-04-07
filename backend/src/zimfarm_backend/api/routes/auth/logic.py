@@ -18,7 +18,7 @@ from zimfarm_backend.api.routes.auth.models import (
     RefreshTokenIn,
     Token,
 )
-from zimfarm_backend.api.routes.dependencies import get_current_user
+from zimfarm_backend.api.routes.dependencies import get_current_account
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
     ForbiddenError,
@@ -26,34 +26,36 @@ from zimfarm_backend.api.routes.http_errors import (
 )
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import constants, getnow
-from zimfarm_backend.common.schemas.orms import UserSchema
+from zimfarm_backend.common.schemas.orms import AccountSchema
 from zimfarm_backend.db import gen_dbsession
+from zimfarm_backend.db.account import create_account_schema, get_account_by_username
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.refresh_token import (
     create_refresh_token,
     delete_refresh_token,
     expire_refresh_tokens,
     get_refresh_token,
 )
-from zimfarm_backend.db.user import create_user_schema, get_user_by_username
 from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.utils.cryptography import verify_signed_message
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _access_token_response(db_session: OrmSession, db_user: User, response: Response):
+def _access_token_response(
+    db_session: OrmSession, db_account: Account, response: Response
+):
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     issue_time = getnow()
     return Token(
         access_token=generate_access_token(
-            user_id=str(db_user.id),
+            account_id=str(db_account.id),
             issue_time=issue_time,
         ),
         refresh_token=str(
-            create_refresh_token(session=db_session, user_id=db_user.id).token
+            create_refresh_token(session=db_session, account_id=db_account.id).token
         ),
         expires_time=issue_time + datetime.timedelta(seconds=JWT_TOKEN_EXPIRY_DURATION),
     )
@@ -62,19 +64,19 @@ def _access_token_response(db_session: OrmSession, db_user: User, response: Resp
 def _auth_with_credentials(
     db_session: OrmSession, credentials: CredentialsIn, response: Response
 ):
-    """Authorize a user with username and password."""
+    """Authorize an account with username and password."""
     try:
-        db_user = get_user_by_username(db_session, username=credentials.username)
+        db_account = get_account_by_username(db_session, username=credentials.username)
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
     if not (
-        db_user.password_hash
-        and check_password_hash(db_user.password_hash, credentials.password)
+        db_account.password_hash
+        and check_password_hash(db_account.password_hash, credentials.password)
     ):
         raise UnauthorizedError("Invalid credentials")
 
-    return _access_token_response(db_session, db_user, response)
+    return _access_token_response(db_session, db_account, response)
 
 
 def _refresh_access_token(
@@ -93,7 +95,7 @@ def _refresh_access_token(
     delete_refresh_token(db_session, token=refresh_token)
     expire_refresh_tokens(db_session, expire_time=now)
 
-    return _access_token_response(db_session, db_refresh_token.user, response)
+    return _access_token_response(db_session, db_refresh_token.account, response)
 
 
 @router.post("/authorize")
@@ -102,7 +104,7 @@ def auth_with_credentials(
     response: Response,
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> Token:
-    """Authorize a user with username and password."""
+    """Authorize an account with username and password."""
     return _auth_with_credentials(db_session, credentials, response)
 
 
@@ -116,7 +118,7 @@ def refresh_access_token(
 
 
 @router.post("/ssh-authorize")
-def authenticate_user_with_ssh_keys(
+def authenticate_account_with_ssh_keys(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
     x_sshauth_message: Annotated[
         str,
@@ -147,9 +149,9 @@ def authenticate_user_with_ssh_keys(
             f"greater than {constants.MESSAGE_VALIDITY_DURATION}s"
         )
 
-    # verify user with username exists in database
+    # verify account with username exists in database
     try:
-        db_user = get_user_by_username(
+        db_account = get_account_by_username(
             db_session,
             username=username,
             fetch_ssh_keys=True,
@@ -157,9 +159,9 @@ def authenticate_user_with_ssh_keys(
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
-    # verify signature of message with user's public keys
+    # verify signature of message with account's public keys
     authenticated = False
-    for ssh_key in db_user.ssh_keys:
+    for ssh_key in db_account.ssh_keys:
         try:
             if verify_signed_message(
                 bytes(ssh_key.key, encoding="ascii"),
@@ -175,7 +177,7 @@ def authenticate_user_with_ssh_keys(
     if not authenticated:
         raise UnauthorizedError("Could not find matching key for signature.")
 
-    return _access_token_response(db_session, db_user, response)
+    return _access_token_response(db_session, db_account, response)
 
 
 @router.post("/oauth2")
@@ -184,7 +186,7 @@ def oauth2(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
     response: Response,
 ) -> Token:
-    """Authorize a user with username and password."""
+    """Authorize an account with username and password."""
     if credentials.grant_type == "password":
         return _auth_with_credentials(db_session, credentials, response)
     elif credentials.grant_type == "refresh_token":
@@ -195,15 +197,15 @@ def oauth2(
 
 @router.get("/test")
 def test(
-    _: User = Depends(get_current_user),
+    _: Account = Depends(get_current_account),
 ):
-    """Test if user's authentication tokens are still valid."""
+    """Test if account's authentication tokens are still valid."""
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
 @router.get("/me")
-def get_current_user_info(
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> UserSchema:
-    """Get the current authenticated user's information including scopes."""
-    return create_user_schema(current_user)
+def get_current_account_info(
+    current_account: Annotated[Account, Depends(get_current_account)],
+) -> AccountSchema:
+    """Get the current authenticated account's information including scopes."""
+    return create_account_schema(current_account)

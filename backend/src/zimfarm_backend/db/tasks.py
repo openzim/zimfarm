@@ -34,11 +34,11 @@ from zimfarm_backend.db.exceptions import (
     RecordDoesNotExistError,
 )
 from zimfarm_backend.db.models import (
+    Account,
     File,
     OfflinerDefinition,
     Recipe,
     Task,
-    User,
     Worker,
 )
 from zimfarm_backend.db.offliner import get_offliner
@@ -207,12 +207,12 @@ def get_tasks(
                 Task.config["resources"].label("resources"),
             ),
             Task.updated_at,
-            User.display_name.label("requested_by"),
+            Account.display_name.label("requested_by"),
             Recipe.name.label("recipe_name"),
             Recipe.id.label("recipe_id"),
             Worker.name.label("worker_name"),
         )
-        .join(User, Task.requested_by)
+        .join(Account, Task.requested_by)
         .join(Worker, Task.worker, isouter=True)
         .join(Recipe, Task.recipe, isouter=True)
         .where(

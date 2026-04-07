@@ -16,7 +16,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import RecipeCategory, TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema, LanguageSchema
-from zimfarm_backend.db.models import Recipe, RequestedTask, Task, User, Worker
+from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task, Worker
 from zimfarm_backend.db.tasks import create_or_update_task_file
 
 
@@ -134,7 +134,7 @@ def test_get_obsolete_task(
     mock_requests_get: Mock,
     client: TestClient,
     dbsession: OrmSession,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     create_task: Callable[..., Task],
 ):
     mock_response = Mock()
@@ -142,10 +142,10 @@ def test_get_obsolete_task(
     mock_response.raise_for_status = Mock()
     mock_requests_get.return_value = mock_response
 
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
     task = create_task()
     task.config["offliner"]["mwUrl"] = None  # Unset mandatory field
@@ -170,15 +170,15 @@ def test_get_obsolete_task(
 
 def test_create_task_no_permission(
     client: TestClient,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     requested_task: RequestedTask,
     worker: Worker,
 ):
     """Test that create_task raises ForbiddenError without permission"""
-    user = create_user(permission=RoleEnum.PROCESSOR)
+    account = create_account(permission=RoleEnum.PROCESSOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.post(
@@ -239,13 +239,13 @@ def test_update_task_no_permission(
     client: TestClient,
     access_token: str,
     task: Task,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that update_task raises ForbiddenError without permission"""
-    user = create_user(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.patch(
@@ -274,13 +274,13 @@ def test_update_task_success(
     access_token: str,
     task: Task,
     worker: Worker,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test successful update of task"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.patch(
@@ -295,13 +295,13 @@ def test_cancel_task_no_permission(
     client: TestClient,
     access_token: str,
     task: Task,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test that cancel_task raises ForbiddenError without permission"""
-    user = create_user(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.post(
@@ -344,13 +344,13 @@ def test_cancel_task_success(
     client: TestClient,
     access_token: str,
     task: Task,
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
 ):
     """Test successful cancellation of task"""
-    user = create_user(permission=RoleEnum.ADMIN)
+    account = create_account(permission=RoleEnum.ADMIN)
     access_token = generate_access_token(
         issue_time=getnow(),
-        user_id=str(user.id),
+        account_id=str(account.id),
     )
 
     response = client.post(

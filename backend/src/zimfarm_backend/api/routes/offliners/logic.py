@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session as OrmSession
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from zimfarm_backend.api.routes.dependencies import gen_dbsession, get_current_user
+from zimfarm_backend.api.routes.dependencies import gen_dbsession, get_current_account
 from zimfarm_backend.api.routes.http_errors import UnauthorizedError
 from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.api.routes.offliners.models import (
@@ -23,7 +23,8 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.account import check_account_permission
+from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.offliner import create_offliner as db_create_offliner
 from zimfarm_backend.db.offliner import get_all_offliners
 from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
@@ -36,7 +37,6 @@ from zimfarm_backend.db.offliner_definition import (
 from zimfarm_backend.db.offliner_definition import (
     get_offliner_versions as db_get_offliner_versions,
 )
-from zimfarm_backend.db.user import check_user_permission
 
 router = APIRouter(prefix="/offliners", tags=["offliners"])
 
@@ -62,10 +62,12 @@ def get_offliners(
 def create_offliner(
     request: OfflinerCreateSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_user: User = Depends(get_current_user),
+    current_account: Account = Depends(get_current_account),
 ) -> Response:
     """Create an offliner"""
-    if not check_user_permission(current_user, namespace="offliners", name="create"):
+    if not check_account_permission(
+        current_account, namespace="offliners", name="create"
+    ):
         raise UnauthorizedError("You do not have permissions to create an offliner.")
 
     db_create_offliner(

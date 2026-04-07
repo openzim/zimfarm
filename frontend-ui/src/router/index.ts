@@ -144,6 +144,7 @@ const routes = [
     component: UsersView,
     meta: { title: 'Zimfarm | Users' },
   },
+
   {
     path: '/workers',
     name: 'workers',

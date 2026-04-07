@@ -15,7 +15,7 @@ def get_ssh_key_by_fingerprint_or_none(
     """Get a ssh key by fingerprint or return None if it does not exist"""
     return session.scalars(
         select(Sshkey)
-        .options(selectinload(Sshkey.user))
+        .options(selectinload(Sshkey.account))
         .where(Sshkey.fingerprint == fingerprint)
     ).first()
 
@@ -24,7 +24,7 @@ def create_ssh_key(
     session: OrmSession,
     *,
     fingerprint: str,
-    user_id: UUID,
+    account_id: UUID,
     key: str,
     name: str,
     type_: str,
@@ -38,7 +38,7 @@ def create_ssh_key(
         added=getnow(),
     )
 
-    ssh_key.user_id = user_id
+    ssh_key.account_id = account_id
     session.add(ssh_key)
     session.flush()
 
@@ -52,10 +52,10 @@ def get_ssh_key_by_fingerprint(session: OrmSession, *, fingerprint: str) -> Sshk
     raise RecordDoesNotExistError("SSH key not found")
 
 
-def delete_ssh_key(session: OrmSession, *, fingerprint: str, user_id: UUID) -> None:
+def delete_ssh_key(session: OrmSession, *, fingerprint: str, account_id: UUID) -> None:
     """Delete a ssh key"""
     session.execute(
         delete(Sshkey).where(
-            Sshkey.fingerprint == fingerprint, Sshkey.user_id == user_id
+            Sshkey.fingerprint == fingerprint, Sshkey.account_id == account_id
         )
     )

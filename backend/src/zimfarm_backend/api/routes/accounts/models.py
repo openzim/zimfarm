@@ -32,17 +32,17 @@ class KeySchema(BaseModel):
 
 class PasswordUpdateSchema(BaseModel):
     """
-    Schema for updating a user's password
+    Schema for updating an account's password
     """
 
-    # users with elevated permissions can omit the current password
+    # accounts with elevated permissions can omit the current password
     current: NotEmptyString | None = None
     new: NotEmptyString | None
 
 
-class UserCreateSchema(BaseModel):
+class AccountCreateSchema(BaseModel):
     """
-    Schema for creating a user
+    Schema for creating an account
     """
 
     username: NotEmptyString
@@ -50,7 +50,7 @@ class UserCreateSchema(BaseModel):
     role: RoleEnum
 
 
-class UsersGetSchema(BaseModel):
+class AccountsGetSchema(BaseModel):
     skip: SkipField = 0
     limit: LimitFieldMax200 = 20
     username: NotEmptyString | None = None
