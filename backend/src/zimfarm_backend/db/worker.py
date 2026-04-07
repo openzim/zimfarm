@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import asc, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
+from sqlalchemy.orm.strategy_options import selectinload
 
 from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
@@ -20,6 +21,7 @@ from zimfarm_backend.common.schemas.orms import (
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Account, Task, Worker
+from zimfarm_backend.db.ssh_key import create_ssh_key_read_schema
 from zimfarm_backend.db.tasks import get_currently_running_tasks
 
 
@@ -31,7 +33,9 @@ class WorkersListResult(BaseModel):
 def get_worker_or_none(session: OrmSession, *, worker_name: str) -> Worker | None:
     """Get a worker for the given worker name if possible else None"""
     return session.scalars(
-        select(Worker).where(Worker.name == worker_name)
+        select(Worker)
+        .where(Worker.name == worker_name)
+        .options(selectinload(Worker.account), selectinload(Worker.ssh_keys))
     ).one_or_none()
 
 
@@ -206,6 +210,7 @@ def get_worker_metrics(
             if worker.docker_image_hash and worker.docker_image_created_at
             else None
         ),
+        ssh_keys=[create_ssh_key_read_schema(ssh_key) for ssh_key in worker.ssh_keys],
     )
 
 

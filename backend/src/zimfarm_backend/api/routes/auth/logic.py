@@ -161,7 +161,8 @@ def authenticate_account_with_ssh_keys(
 
     # verify signature of message with account's public keys
     authenticated = False
-    for ssh_key in db_account.ssh_keys:
+    ssh_keys = [ssh_key for worker in db_account.workers for ssh_key in worker.ssh_keys]
+    for ssh_key in ssh_keys:
         try:
             if verify_signed_message(
                 bytes(ssh_key.key, encoding="ascii"),

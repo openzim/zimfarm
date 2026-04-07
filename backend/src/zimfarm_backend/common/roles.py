@@ -53,7 +53,6 @@ class AccountPermissions(Permissions):
         "update",
         "delete",
         "change_password",
-        "ssh_keys",
         "secrets",
     ]
 
@@ -64,6 +63,7 @@ class WorkerPermissions(Permissions):
         "update",
         "create",
         "secrets",
+        "ssh_keys",
     ]
 
 
@@ -110,10 +110,9 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
             update=True,
             delete=True,
             change_password=True,
-            ssh_keys=True,
             secrets=True,
         ),
-        "workers": WorkerPermissions.get(read=True),
+        "workers": WorkerPermissions.get(read=True, ssh_keys=True),
         "requested_tasks": RequestedTaskPermissions.get(
             read=True, create=True, delete=True, secrets=True
         ),

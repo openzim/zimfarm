@@ -2,7 +2,13 @@ import { useAuthStore } from '@/stores/auth'
 import type { ListResponse, Paginator } from '@/types/base'
 import type { ErrorResponse } from '@/types/errors'
 import type { TaskLight } from '@/types/tasks'
-import type { DockerImageVersion, Worker, WorkerMetrics, WorkerUpdateSchema } from '@/types/workers'
+import type {
+  DockerImageVersion,
+  Worker,
+  WorkerMetrics,
+  WorkerUpdateSchema,
+  SshKeyRead,
+} from '@/types/workers'
 import { translateErrors } from '@/utils/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -102,6 +108,32 @@ export const useWorkersStore = defineStore('workers', () => {
     }
   }
 
+  const deleteSshKey = async (workerName: string, fingerprint: string) => {
+    const service = await authStore.getApiService('workers')
+    try {
+      await service.delete(`/${workerName}/keys/${fingerprint}`)
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to delete SSH key', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
+  const addSshKey = async (workerName: string, payload: { key: string }) => {
+    const service = await authStore.getApiService('workers')
+    try {
+      await service.post<{ key: string }, SshKeyRead>(`/${workerName}/keys`, payload)
+      errors.value = []
+      return true
+    } catch (error) {
+      console.error('Failed to add SSH key', error)
+      errors.value = translateErrors(error as ErrorResponse)
+      return false
+    }
+  }
+
   return {
     // State
     workers,
@@ -116,5 +148,7 @@ export const useWorkersStore = defineStore('workers', () => {
     fetchWorkerMetrics,
     updateWorker,
     fetchLatestWorkerImage,
+    deleteSshKey,
+    addSshKey,
   }
 })

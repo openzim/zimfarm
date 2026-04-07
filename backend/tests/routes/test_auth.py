@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.db.models import Account
+from zimfarm_backend.db.models import Account, Worker
 from zimfarm_backend.db.refresh_token import create_refresh_token, expire_refresh_tokens
 from zimfarm_backend.utils.cryptography import (
     sign_message_with_rsa_key,
@@ -96,37 +96,36 @@ def test_refresh_access_token_expired_token(
 @pytest.mark.parametrize(
     ["datetime_str", "expected_status", "expected_response_contents"],
     [
-        (
+        pytest.param(
             datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
             .replace(tzinfo=None)
             .isoformat(),
             HTTPStatus.UNAUTHORIZED,
             [],
+            id="outdated-timestamp",
         ),
-        (
-            "hello",
-            HTTPStatus.BAD_REQUEST,
-            [],
-        ),
-        (
+        pytest.param("hello", HTTPStatus.BAD_REQUEST, [], id="invalid-message"),
+        pytest.param(
             # Before CI fully sets up, default timer has expired, so, add
             # additional 5 minutes
             (getnow() + datetime.timedelta(minutes=5)).isoformat(),
             HTTPStatus.OK,
             ["access_token", "token_type", "expires_time"],
+            id="valid-message",
         ),
     ],
 )
-@pytest.mark.num_accounts(1)
 def test_authenticate_account(
     client: TestClient,
-    accounts: list[Account],
+    account: Account,
     rsa_private_key: RSAPrivateKey,
     datetime_str: str,
     expected_status: int,
     expected_response_contents: list[str],
+    create_worker: Callable[..., Worker],
 ):
-    message = f"{accounts[0].username}:{datetime_str}"
+    create_worker(account=account)
+    message = f"{account.username}:{datetime_str}"
     signature = sign_message_with_rsa_key(
         rsa_private_key, bytes(message, encoding="ascii")
     )

@@ -101,7 +101,7 @@ def encode_test_data(content: str) -> str:
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_create_blob(

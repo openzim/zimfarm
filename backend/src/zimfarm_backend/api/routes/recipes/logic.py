@@ -18,6 +18,7 @@ from zimfarm_backend.api.routes.dependencies import (
 )
 from zimfarm_backend.api.routes.http_errors import (
     BadRequestError,
+    ForbiddenError,
     NotFoundError,
     ServerError,
     UnauthorizedError,
@@ -114,7 +115,7 @@ def get_recipes(
             current_account, namespace="recipes", name="archive"
         )
     ):
-        raise UnauthorizedError("You are not allowed to view archived recipes.")
+        raise ForbiddenError("You are not allowed to view archived recipes.")
 
     results = db_get_recipes(
         session,
