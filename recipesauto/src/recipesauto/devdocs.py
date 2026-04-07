@@ -46,7 +46,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/devdocs",
-                    "tag": "0.2.0",
+                    "tag": "0.2.1",
                 },
                 "monitor": False,
                 "platform": "devdocs",
@@ -65,10 +65,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "devdocs",
             ],
-            "version": "initial",
             "archived": False,
             "context": "",
             "offliner": "devdocs",
+            "version": "0.2.1",
         }
         for item in group_items_by_type(items)
     ]
@@ -95,6 +95,7 @@ def _get_icon_url_for_slug(slug: str) -> str:
         "enzyme",
         "graphite",
         "mongoose",
+        "es_toolkit",
     ]:
         filename = "zzz-generic"
     else:

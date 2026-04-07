@@ -78,7 +78,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
-                    "tag": "3.1.0",
+                    "tag": "3.1.1",
                 },
                 "monitor": False,
                 "resources": {
@@ -96,7 +96,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "phet",
             ],
-            "version": "initial",
+            "version": "3.1.1",
             "archived": False,
             "context": "",
             "offliner": "phet",
@@ -114,7 +114,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
-                    "tag": "3.1.0",
+                    "tag": "3.1.1",
                 },
                 "monitor": False,
                 "resources": {
@@ -134,7 +134,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "customapp",
                 "phet",
             ],
-            "version": "initial",
+            "version": "3.1.1",
             "archived": False,
             "context": "",
             "offliner": "phet",

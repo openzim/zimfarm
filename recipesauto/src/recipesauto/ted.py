@@ -3,6 +3,7 @@ from typing import Any
 
 import requests
 
+from recipesauto.constants import logger
 from recipesauto.context import Context
 from recipesauto.utils import check_zim_name
 
@@ -52,6 +53,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         ].items()
         if count >= MINIMUM_VIDEOS_NUMBER  # do not consider too small topics
     ]
+    logger.info(f"mul recipe => {','.join(sorted(topics))}")
     return [
         {
             "category": "ted",

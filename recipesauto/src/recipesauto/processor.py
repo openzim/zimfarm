@@ -44,7 +44,7 @@ class Processor:
 
         logger.info("Authenticating with zimfarm")
         self.authenticate()
-        logger.info("Authenticaed with zimfarm")
+        logger.info("Authenticated with zimfarm")
 
         if context.kind == "ted":
             import recipesauto.ted as setmodule
@@ -253,7 +253,7 @@ class Processor:
                 expected_value = expected_recipe["language"]
                 if current_recipe_value != expected_value:
                     logger.info(f"language: {current_recipe_value} => {expected_value}")
-                    changes[current_recipe_key] = expected_value
+                    changes["language"] = expected_value
 
                 # handle special case of config
                 for current_recipe_key, current_recipe_value in current_recipe[
