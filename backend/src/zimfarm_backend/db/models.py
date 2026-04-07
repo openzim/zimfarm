@@ -201,7 +201,10 @@ class Task(Base):
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
 
     files: Mapped[list["File"]] = relationship(
-        back_populates="task", cascade="all, delete-orphan", init=False
+        back_populates="task",
+        cascade="all, delete-orphan",
+        init=False,
+        passive_deletes=True,
     )
     requested_by: Mapped["Account"] = relationship(
         init=False, foreign_keys=[requested_by_id]
@@ -237,7 +240,9 @@ class File(Base):
         default_factory=dict, server_default="{}"
     )
 
-    task_id: Mapped[UUID] = mapped_column(ForeignKey("task.id"), init=False)
+    task_id: Mapped[UUID] = mapped_column(
+        ForeignKey("task.id", ondelete="CASCADE"), init=False
+    )
 
     task: Mapped["Task"] = relationship(back_populates="files", init=False)
 
