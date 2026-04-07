@@ -57,7 +57,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_account_idp_sub"), "account", ["idp_sub"], unique=True)
     op.create_index(op.f("ix_account_username"), "account", ["username"], unique=True)
     op.create_index(
-        "ix_refresh_token_account_id",
+        "ix_refresh_token_account_id_token",
         table_name="refresh_token",
         columns=["account_id", "token"],
         unique=True,
@@ -147,7 +147,7 @@ def downgrade() -> None:
         type_="foreignkey",
     )
 
-    op.drop_index("ix_refresh_token_account_id", table_name="refresh_token")
+    op.drop_index("ix_refresh_token_account_id_token", table_name="refresh_token")
     op.drop_index(op.f("ix_account_username"), table_name="account")
     op.drop_index(op.f("ix_account_idp_sub"), table_name="account")
 

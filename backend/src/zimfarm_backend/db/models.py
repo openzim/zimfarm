@@ -118,7 +118,9 @@ class Refreshtoken(Base):
         back_populates="refresh_tokens", init=False
     )
 
-    __table_args__ = (Index("account_id", "token", unique=True),)
+    __table_args__ = (
+        Index("ix_refresh_token_account_id_token", "account_id", "token", unique=True),
+    )
 
 
 class Worker(Base):
