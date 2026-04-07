@@ -13,8 +13,6 @@ from zimfarm_backend import logger
 from zimfarm_backend.api.constants import JWT_TOKEN_EXPIRY_DURATION
 from zimfarm_backend.api.routes.auth.models import (
     CredentialsIn,
-    OAuth2CredentialsWithPassword,
-    OAuth2CredentialsWithRefreshToken,
     RefreshTokenIn,
     Token,
 )
@@ -174,21 +172,6 @@ def authenticate_worker_with_ssh_keys(
         raise UnauthorizedError("Could not find matching key for signature.")
 
     return _access_token_response(db_session, db_worker.account, response)
-
-
-@router.post("/oauth2")
-def oauth2(
-    credentials: OAuth2CredentialsWithPassword | OAuth2CredentialsWithRefreshToken,
-    db_session: Annotated[OrmSession, Depends(gen_dbsession)],
-    response: Response,
-) -> Token:
-    """Authorize an account with username and password."""
-    if credentials.grant_type == "password":
-        return _auth_with_credentials(db_session, credentials, response)
-    elif credentials.grant_type == "refresh_token":
-        return _refresh_access_token(db_session, credentials.refresh_token, response)
-    else:
-        raise BadRequestError("Invalid grant type")
 
 
 @router.get("/test")
