@@ -80,7 +80,12 @@ def get_accounts(
 ) -> ListResponse[AccountSchema]:
     """Get a list of accounts"""
     results = db_get_accounts(
-        db_session, skip=params.skip, limit=params.limit, username=params.username
+        db_session,
+        skip=params.skip,
+        limit=params.limit,
+        username=params.username,
+        show_workers=params.show_workers,
+        show_viewers=params.show_viewers,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(

@@ -44,9 +44,14 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const fetchUsers = async (skip: number = 0, limit: number = 20, username?: string) => {
+  const fetchUsers = async (
+    skip: number = 0,
+    limit: number = 20,
+    username?: string,
+    show_viewers: boolean = false,
+  ) => {
     const service = await authStore.getApiService('accounts')
-    // filter out undefined values from params
+    // filter out undefined/falsy string values but keep booleans separate
     const cleanedParams = Object.fromEntries(
       Object.entries({
         limit,
@@ -56,7 +61,7 @@ export const useUserStore = defineStore('user', () => {
     )
     try {
       const response = await service.get<null, ListResponse<User>>('', {
-        params: cleanedParams,
+        params: { ...cleanedParams, show_viewers },
       })
       errors.value = []
       users.value = response.items
