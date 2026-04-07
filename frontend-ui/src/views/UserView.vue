@@ -26,13 +26,13 @@
           <div v-if="!error && user">
             <!-- Tabs -->
             <v-tabs v-model="selectedTab" color="primary" class="mb-4">
-              <v-tab value="details" :to="{ name: 'account-detail', params: { userId: userId } }">
+              <v-tab value="details" :to="{ name: 'user-detail', params: { userId: userId } }">
                 Profile
               </v-tab>
               <v-tab
                 value="edit"
                 :to="{
-                  name: 'account-detail-tab',
+                  name: 'user-detail-tab',
                   params: { userId: userId, selectedTab: 'edit' },
                 }"
               >
@@ -42,7 +42,7 @@
                 v-if="canDeleteUser"
                 value="delete"
                 :to="{
-                  name: 'account-detail-tab',
+                  name: 'user-detail-tab',
                   params: { userId: userId, selectedTab: 'delete' },
                 }"
                 color="error"
@@ -427,7 +427,7 @@ const deleteUser = async () => {
   const success = await userStore.deleteUser(props.userId)
   if (success) {
     notificationStore.showSuccess(`User account ${user.value?.display_name} has been deleted.`)
-    router.push({ name: 'accounts-list' })
+    router.push({ name: 'users-list' })
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)

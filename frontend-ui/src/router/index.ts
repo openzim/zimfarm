@@ -121,21 +121,12 @@ const routes = [
     meta: { title: 'Zimfarm | Archived Recipes' },
   },
   {
-    path: '/accounts/:userId',
-    name: 'account-detail',
-    component: UserView,
-    props: true,
-    meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Account • ${to.params.userId}`,
-    },
-  },
-  {
     path: '/users/:userId',
     name: 'user-detail',
     component: UserView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Account • ${to.params.userId}`,
+      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.userId}`,
     },
   },
   {
@@ -144,38 +135,16 @@ const routes = [
     component: UserView,
     props: true,
     meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Account • ${to.params.userId}`,
-    },
-  },
-  {
-    path: '/accounts/:userId/:selectedTab',
-    name: 'account-detail-tab',
-    component: UserView,
-    props: true,
-    meta: {
-      title: (to: RouteLocationNormalized) => `Zimfarm | Account • ${to.params.userId}`,
+      title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.userId}`,
     },
   },
   {
     path: '/users',
-    name: 'accounts-list',
+    name: 'users-list',
     component: UsersView,
-    meta: { title: 'Zimfarm | Accounts' },
+    meta: { title: 'Zimfarm | Users' },
   },
 
-  {
-    path: '/accounts',
-    name: 'accounts-list',
-    component: UsersView,
-    meta: { title: 'Zimfarm | Accounts' },
-  },
-
-  {
-    path: '/accounts',
-    name: 'accounts-list',
-    component: UsersView,
-    meta: { title: 'Zimfarm | Accounts' },
-  },
   {
     path: '/workers',
     name: 'workers',

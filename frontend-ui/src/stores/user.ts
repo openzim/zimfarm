@@ -7,7 +7,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
-  const defaultLimit = ref<number>(Number(localStorage.getItem('accounts-table-limit') || 20))
+  const defaultLimit = ref<number>(Number(localStorage.getItem('users-table-limit') || 20))
   const errors = ref<string[]>([])
   const users = ref<User[]>([])
   const paginator = ref<Paginator>({
@@ -21,7 +21,7 @@ export const useUserStore = defineStore('user', () => {
   const authStore = useAuthStore()
 
   const savePaginatorLimit = (limit: number) => {
-    localStorage.setItem('accounts-table-limit', limit.toString())
+    localStorage.setItem('users-table-limit', limit.toString())
   }
 
   const createUser = async (username: string, role: string, password: string) => {
