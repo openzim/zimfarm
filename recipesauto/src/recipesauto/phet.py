@@ -3,7 +3,7 @@ from typing import Any
 import requests
 
 from recipesauto.context import Context
-from recipesauto.utils import check_zim_name
+from recipesauto.utils import check_zim_name, get_iso_639_3_code
 
 context = Context.get()
 
@@ -17,6 +17,25 @@ def _ignore_locale(locale: str) -> bool:
         "ba",
         "fu",
     ]  # both do not contain any translated simulation for now
+
+
+# non iso language mappings
+PHET_LANG_MAPPINGS = {
+    "ef": "efi",
+    "in": "ind",
+    "iw": "heb",
+    "mo": "ron",
+    "sp": "nso",
+    "zh_CN": "zho",
+    # for Purépecha (pr), there are two iso639-3 codes: tsz and pua, we don't know
+    # which one we should choose
+    "pr": "mul",
+    "ua": "nhe",
+}
+
+
+def phet_get_iso_639_3_code(locale: str) -> str | None:
+    return PHET_LANG_MAPPINGS.get(locale, get_iso_639_3_code(locale))
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
@@ -53,12 +72,13 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "category": "phet",
             "config": {
                 "offliner": {
+                    "offliner_id": "phet",
                     "includeLanguages": locale,
                     "withoutLanguageVariants": True,
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
-                    "tag": "3.1.0",
+                    "tag": "3.1.1",
                 },
                 "monitor": False,
                 "resources": {
@@ -66,17 +86,20 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 10737418240,
                     "memory": 7516192768,
                 },
-                "offliner_id": "phet",
                 "platform": "phet",
                 "warehouse_path": "/phet",
             },
             "enabled": True,
-            "language": "mul",
+            "language": phet_get_iso_639_3_code(locale),
             "name": check_zim_name(_get_name(locale)),
             "periodicity": "quarterly",
             "tags": [
                 "phet",
             ],
+            "version": "3.1.1",
+            "archived": False,
+            "context": "",
+            "offliner": "phet",
         }
         for locale in locales
         if not _ignore_locale(locale)
@@ -85,12 +108,13 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "category": "phet",
             "config": {
                 "offliner": {
+                    "offliner_id": "phet",
                     "mulOnly": True,
                     "withoutLanguageVariants": True,
                 },
                 "image": {
                     "name": "ghcr.io/openzim/phet",
-                    "tag": "3.1.0",
+                    "tag": "3.1.1",
                 },
                 "monitor": False,
                 "resources": {
@@ -98,7 +122,6 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "disk": 10737418240,
                     "memory": 7516192768,
                 },
-                "offliner_id": "phet",
                 "platform": "phet",
                 "warehouse_path": "/phet",
             },
@@ -111,6 +134,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 "customapp",
                 "phet",
             ],
+            "version": "3.1.1",
+            "archived": False,
+            "context": "",
+            "offliner": "phet",
         }
     ]
 

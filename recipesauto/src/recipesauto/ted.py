@@ -3,6 +3,7 @@ from typing import Any
 
 import requests
 
+from recipesauto.constants import logger
 from recipesauto.context import Context
 from recipesauto.utils import check_zim_name
 
@@ -15,6 +16,9 @@ MINIMUM_VIDEOS_NUMBER = 5
 
 def get_recipe_tag() -> str:
     return "ted-by-topic"
+
+
+TED_TAGS = {"gaming": "gaming", "conducting": "Music"}
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
@@ -49,6 +53,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         ].items()
         if count >= MINIMUM_VIDEOS_NUMBER  # do not consider too small topics
     ]
+    logger.info(f"mul recipe => {','.join(sorted(topics))}")
     return [
         {
             "category": "ted",
@@ -66,10 +71,11 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "subtitles": "all",
                     "publisher": "openZIM",
                     "offliner_id": "ted",
+                    "tags": TED_TAGS.get(topic),
                 },
                 "image": {
                     "name": "ghcr.io/openzim/ted",
-                    "tag": "3.0.3",
+                    "tag": "3.1.0",
                 },
                 "monitor": False,
                 "platform": "ted",
@@ -87,6 +93,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "ted-by-topic",
             ],
+            "version": "initial",
+            "archived": False,
+            "context": "",
+            "offliner": "ted",
         }
         for topic in topics
     ]
@@ -98,4 +108,6 @@ def _get_clean_topic_name(ted_topic_name: str) -> str:
         clean_topic = clean_topic.replace("lgbtqia+", "lgbtqia")
     if "español" in clean_topic:
         clean_topic = clean_topic.replace("español", "espanol")
+    if "audacious-project" in clean_topic:
+        clean_topic = "audacious-project"
     return clean_topic

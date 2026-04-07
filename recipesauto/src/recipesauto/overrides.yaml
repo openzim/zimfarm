@@ -2,8 +2,24 @@ overrides:
   - name: ted_topic_conducting
     overrides:
       config:
-        flags:
+        offliner:
           tags: Music
+  - name: ted_topic_the-audacious-project
+    overrides:
+      config:
+        offliner:
+          name: ted_mul_audacious-project
+  - name: ted_topic_gaming
+    overrides:
+      config:
+        offliner:
+          tags: gaming
+  - name: ted_topic_nasa
+    overrides:
+      config:
+        offliner:
+          title: TED NASA
+          description: A collection of TED videos about NASA
 do_not_create:
   - ted_topic_artificial-intelligence # too few videos after removing the ones we fail to download
 do_not_delete:

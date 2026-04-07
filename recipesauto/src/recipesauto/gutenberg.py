@@ -38,7 +38,6 @@ def get_en_shelves() -> list[Shelve]:
 
 
 def get_all_lang_codes() -> list[str]:
-
     resp = requests.get(
         "https://www.gutenberg.org/ebooks/",
         allow_redirects=True,
@@ -105,7 +104,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "monitor": False,
                 "platform": "gutenberg",
-                "image": {"name": "ghcr.io/openzim/gutenberg", "tag": "3.0.0"},
+                "image": {"name": "ghcr.io/openzim/gutenberg", "tag": "3.0.1"},
                 "resources": {"cpu": 3, "disk": 322122547200, "memory": 16106127360},
                 "warehouse_path": "/gutenberg",
             },
@@ -125,7 +124,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "archived": False,
             "context": "",
             "offliner": "gutenberg",
-            "version": "3.0.0",
+            "version": "3.0.1",
         }
         for lang_code in lang_codes
     ] + [
@@ -151,11 +150,11 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "monitor": False,
                 "platform": "gutenberg",
-                "image": {"name": "ghcr.io/openzim/gutenberg", "tag": "dev"},
+                "image": {"name": "ghcr.io/openzim/gutenberg", "tag": "3.0.1"},
                 "resources": {"cpu": 3, "disk": 322122547200, "memory": 16106127360},
-                "warehouse_path": "/.hidden/dev",
+                "warehouse_path": "/gutenberg",
             },
-            "enabled": False,
+            "enabled": True,
             "language": "eng",
             "name": check_zim_name(f"gutenberg_en_lcc-{shelve.letter.lower()}"),
             "periodicity": "quarterly",
@@ -163,7 +162,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "archived": False,
             "context": "",
             "offliner": "gutenberg",
-            "version": "dev",
+            "version": "3.0.1",
         }
         for shelve in en_shelves
     ]
