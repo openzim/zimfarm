@@ -1,5 +1,3 @@
-from pydantic import computed_field, field_validator
-
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
@@ -7,27 +5,6 @@ from zimfarm_backend.common.schemas.fields import (
     NotEmptyString,
     SkipField,
 )
-
-
-class KeySchema(BaseModel):
-    """
-    Schema for creating a ssh key
-    """
-
-    key: NotEmptyString
-
-    @field_validator("key", mode="after")
-    @classmethod
-    def validate_key(cls, value: str) -> str:
-        value = value.strip()
-        if len(value.split(" ")) != 3:  # noqa: PLR2004
-            raise ValueError("Key does not appear to be an SSH public file.")
-        return value
-
-    @computed_field
-    @property
-    def name(self) -> str:
-        return self.key.split(" ")[2]
 
 
 class PasswordUpdateSchema(BaseModel):

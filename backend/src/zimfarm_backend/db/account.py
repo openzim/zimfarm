@@ -15,7 +15,7 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
-from zimfarm_backend.db.models import Account
+from zimfarm_backend.db.models import Account, Worker
 
 
 def get_account_by_username_or_none(
@@ -24,7 +24,7 @@ def get_account_by_username_or_none(
     """Get an account by username or return None if the account does not exist"""
     stmt = select(Account).where(Account.username == username)
     if fetch_ssh_keys:
-        stmt = stmt.options(selectinload(Account.ssh_keys))
+        stmt = stmt.options(selectinload(Account.workers).selectinload(Worker.ssh_keys))
     return session.scalars(stmt).one_or_none()
 
 
@@ -51,7 +51,9 @@ def get_account_by_id_or_none(
         (Account.id == account_id) | (Account.idp_sub == account_id)
     )
     if fetch_ssh_keys:
-        stmt = stmt.options(selectinload(Account.ssh_keys))
+        stmt = stmt.options(
+            selectinload(Account.workers), selectinload(Worker.ssh_keys)
+        )
     return session.scalars(stmt).one_or_none()
 
 
@@ -111,7 +113,6 @@ def create_account_schema(account: Account) -> AccountSchema:
             ROLES.get(account.role, account.scope or {}), ROLES[RoleEnum.ADMIN]
         ),
         idp_sub=account.idp_sub,
-        has_ssh_keys=len(account.ssh_keys) > 0,
         has_password=account.password_hash is not None,
     )
 
@@ -134,7 +135,6 @@ def get_accounts(
             )
             | (username is None),
         )
-        .options(selectinload(Account.ssh_keys))
         .offset(skip)
         .limit(limit)
         .order_by(Account.display_name.asc(), Account.id.asc())
@@ -181,9 +181,7 @@ def update_account(
     session: OrmSession, *, account_id: str | UUID, request: AccountUpdateSchema
 ) -> None:
     """Update an account"""
-    account = get_account_by_identifier(
-        session, account_identifier=str(account_id), fetch_ssh_keys=True
-    )
+    account = get_account_by_identifier(session, account_identifier=str(account_id))
 
     if request.role is not None and request.scope is not None:
         raise ValueError("Only one of role/scope must be set.")
@@ -193,11 +191,11 @@ def update_account(
     if "display_name" in values and not values["display_name"]:
         raise ValueError("Account must have a display name.")
 
-    # Allow blank username only if an account does not have ssh key or password set.
-    if (len(account.ssh_keys) > 0 or account.password_hash is not None) and (
+    # Allow blank username only if an account does not have password set.
+    if account.password_hash is not None and (
         "username" in values and not values["username"]
     ):
-        raise ValueError("Account with password/ssh key must have a username.")
+        raise ValueError("Account with password must have a username.")
 
     if (role := values.get("role")) is not None:
         values["role"] = role
@@ -225,22 +223,16 @@ def delete_account(
 
 
 def get_account_by_identifier_or_none(
-    session: OrmSession, *, account_identifier: str, fetch_ssh_keys: bool = False
+    session: OrmSession, *, account_identifier: str
 ) -> Account | None:
     """Get an account or None by either username (str) or account_id (UUID)"""
     if is_valid_uuid(account_identifier):
-        return get_account_by_id_or_none(
-            session, account_id=UUID(account_identifier), fetch_ssh_keys=fetch_ssh_keys
-        )
+        return get_account_by_id_or_none(session, account_id=UUID(account_identifier))
 
-    return get_account_by_username_or_none(
-        session, username=account_identifier, fetch_ssh_keys=fetch_ssh_keys
-    )
+    return get_account_by_username_or_none(session, username=account_identifier)
 
 
-def get_account_by_identifier(
-    session: OrmSession, *, account_identifier: str, fetch_ssh_keys: bool = False
-):
+def get_account_by_identifier(session: OrmSession, *, account_identifier: str):
     """Get an account by either username(str) or account_id(UUID).
 
     Raises RecordDoestNotExistError if account not found.
@@ -249,7 +241,6 @@ def get_account_by_identifier(
         account := get_account_by_identifier_or_none(
             session,
             account_identifier=account_identifier,
-            fetch_ssh_keys=fetch_ssh_keys,
         )
     ) is None:
         raise RecordDoesNotExistError(

@@ -344,6 +344,60 @@
                   </template>
                 </v-data-table>
               </v-sheet>
+
+              <!-- SSH Keys Section -->
+              <v-sheet rounded border class="pa-3 mt-4">
+                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                  <v-icon size="small" class="mr-1">mdi-key</v-icon>
+                  SSH Keys
+                </div>
+                <div
+                  v-if="!worker.ssh_keys || !worker.ssh_keys.length"
+                  class="text-body-2 text-medium-emphasis"
+                >
+                  No SSH keys added
+                </div>
+                <template v-else>
+                  <!-- Header (visible on md and up) -->
+                  <div class="d-none d-md-flex font-weight-medium text-body-2 pb-2 mb-2 border-b">
+                    <div class="flex-grow-1" style="flex-basis: 30%">SSH Key</div>
+                    <div class="flex-grow-1" style="flex-basis: 50%">Fingerprint</div>
+                    <div v-if="canManageSshKeys" style="flex-basis: 20%; min-width: 120px">
+                      Actions
+                    </div>
+                  </div>
+                  <!-- SSH Key Items -->
+                  <div
+                    v-for="sshKey in worker.ssh_keys"
+                    :key="sshKey.name"
+                    class="d-flex flex-column flex-md-row align-start align-md-center py-3 border-b"
+                  >
+                    <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 30%">
+                      <div class="text-caption text-medium-emphasis d-md-none">SSH Key</div>
+                      <div class="text-body-2">{{ sshKey.name }}</div>
+                    </div>
+                    <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 50%">
+                      <div class="text-caption text-medium-emphasis d-md-none">Fingerprint</div>
+                      <code class="text-body-2">{{ sshKey.fingerprint }}</code>
+                    </div>
+                    <div
+                      v-if="canManageSshKeys"
+                      class="mt-2 mt-md-0"
+                      style="flex-basis: 20%; min-width: 120px"
+                    >
+                      <v-btn
+                        color="error"
+                        size="small"
+                        variant="outlined"
+                        @click="confirmDeleteSshKey(sshKey)"
+                      >
+                        <v-icon size="small" class="mr-1">mdi-delete</v-icon>
+                        Delete
+                      </v-btn>
+                    </div>
+                  </div>
+                </template>
+              </v-sheet>
             </v-col>
           </v-row>
         </v-window-item>
@@ -459,6 +513,71 @@
               </p>
             </v-card-text>
           </v-card>
+
+          <!-- Add SSH Key -->
+          <v-card v-if="canManageSshKeys" class="mt-4">
+            <v-card-title class="text-subtitle-1">
+              <v-icon class="mr-2">mdi-key-plus</v-icon>
+              Add SSH Key
+            </v-card-title>
+            <v-card-text>
+              <v-form @submit.prevent="addSshKey">
+                <v-row>
+                  <v-col cols="12">
+                    <v-tabs v-model="keyInputMode" color="primary" align-tabs="start">
+                      <v-tab value="file">Upload File</v-tab>
+                      <v-tab value="text">Enter Text</v-tab>
+                    </v-tabs>
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col cols="12" sm="8" md="6">
+                    <!-- File Upload Mode -->
+                    <v-file-input
+                      v-if="keyInputMode === 'file'"
+                      v-model="keyFile"
+                      label="RSA Public Key"
+                      placeholder="Select an RSA public key file (.pub)"
+                      hint="Choose an RSA public key file (usually ends with .pub)"
+                      accept=".pub,text/plain"
+                      variant="outlined"
+                      density="compact"
+                      @update:model-value="keyFileSelected"
+                    />
+                    <!-- Text Input Mode -->
+                    <v-textarea
+                      v-else
+                      v-model="keyFormData.key"
+                      label="SSH Public Key"
+                      placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... user@hostname"
+                      :hint="
+                        keyFormData.key && !validateSSHKey(keyFormData.key)
+                          ? 'Invalid SSH key format'
+                          : 'Paste your complete SSH public key here (including the name at the end)'
+                      "
+                      :error="!!(keyFormData.key && !validateSSHKey(keyFormData.key))"
+                      variant="outlined"
+                      density="compact"
+                      rows="3"
+                      auto-grow
+                      @update:model-value="keyTextChanged"
+                    />
+                  </v-col>
+                  <v-col>
+                    <v-btn
+                      type="submit"
+                      color="primary"
+                      variant="elevated"
+                      :disabled="!keyPayload.name || !keyPayload.key"
+                      block
+                    >
+                      Add SSH Key
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-form>
+            </v-card-text>
+          </v-card>
         </v-window-item>
       </v-window>
     </div>
@@ -493,6 +612,20 @@
         </div>
       </template>
     </ConfirmDialog>
+
+    <!-- SSH Key Delete Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showSshKeyConfirmDialog"
+      :title="sshKeyConfirmDialogTitle"
+      :message="sshKeyConfirmDialogMessage"
+      confirm-text="DELETE"
+      cancel-text="CANCEL"
+      confirm-color="error"
+      icon="mdi-delete"
+      icon-color="error"
+      @confirm="handleConfirmDeleteSshKey"
+      @cancel="handleCancelDeleteSshKey"
+    />
   </v-container>
 </template>
 
@@ -510,7 +643,7 @@ import { useContextStore } from '@/stores/context'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useWorkersStore } from '@/stores/workers'
-import type { DockerImageVersion, WorkerMetrics } from '@/types/workers'
+import type { DockerImageVersion, WorkerMetrics, SshKeyRead } from '@/types/workers'
 import { fuzzyFilter } from '@/utils/cmp'
 import { formattedBytesSize, formatDurationBetween, fromNow } from '@/utils/format'
 import diff from 'deep-diff'
@@ -783,4 +916,138 @@ watch(
   },
   { immediate: true },
 )
+
+const canManageSshKeys = computed(() => authStore.hasPermission('workers', 'ssh_keys'))
+
+const showSshKeyConfirmDialog = ref(false)
+const sshKeyConfirmDialogTitle = ref('')
+const sshKeyConfirmDialogMessage = ref('')
+let pendingSshKey: SshKeyRead | null = null
+
+// Add-key form state
+const keyFormData = ref({ name: '', key: '' })
+const keyFile = ref<File | null>(null)
+const keyInputMode = ref<'file' | 'text'>('file')
+
+const keyPayload = computed(() => {
+  if (!keyFormData.value.name.length || !keyFormData.value.key.length) {
+    return { name: '', key: '' }
+  }
+  return { name: keyFormData.value.name, key: keyFormData.value.key }
+})
+
+const validateSSHKey = (key: string): boolean => {
+  if (!key.trim()) return false
+  const parts = key.trim().split(/\s/)
+  return parts.length === 3
+}
+
+const keyTextChanged = () => {
+  if (!keyFormData.value.key) {
+    keyFormData.value.name = ''
+    return
+  }
+  const parts = keyFormData.value.key.trim().split(/\s/)
+  keyFormData.value.name = parts.length >= 3 ? parts[2].trim() : ''
+}
+
+const keyFileSelected = () => {
+  keyFormData.value.key = ''
+  keyFormData.value.name = ''
+  const file = keyFile.value as File
+  if (!file) return
+  if (file.size > 1024) {
+    notificationStore.showError(
+      `File ${file.name} doesn't appear to be an RSA public file (too large). ${file.size}`,
+    )
+    keyFile.value = null
+    return
+  }
+  const reader = new FileReader()
+  reader.onerror = (evt) => {
+    notificationStore.showError(`File ${file.name} failed to read: ${evt}`)
+    keyFile.value = null
+  }
+  reader.onload = (evt) => {
+    const result = evt.target?.result as string
+    const parts = result.trim().split(/\s/)
+    if (parts.length !== 3) {
+      notificationStore.showError(`File ${file.name} doesn't appear to be an SSH public file.`)
+      keyFile.value = null
+      return
+    }
+    keyFormData.value.key = result.trim()
+    keyFormData.value.name = parts[2].trim()
+  }
+  reader.readAsText(file, 'UTF-8')
+}
+
+watch(keyInputMode, (newMode) => {
+  if (newMode === 'file') {
+    keyFormData.value = { name: '', key: '' }
+  } else {
+    keyFile.value = null
+  }
+})
+
+const confirmDeleteSshKey = (sshKey: SshKeyRead) => {
+  pendingSshKey = sshKey
+  sshKeyConfirmDialogTitle.value = 'Delete SSH Key'
+  sshKeyConfirmDialogMessage.value = `Are you sure you want to delete SSH Key "${sshKey.name}"?`
+  showSshKeyConfirmDialog.value = true
+}
+
+const handleConfirmDeleteSshKey = async () => {
+  if (pendingSshKey) {
+    await deleteSshKeyAction(pendingSshKey)
+    pendingSshKey = null
+  }
+}
+
+const handleCancelDeleteSshKey = () => {
+  pendingSshKey = null
+}
+
+const deleteSshKeyAction = async (sshKey: SshKeyRead) => {
+  loadingStore.startLoading('Deleting key...')
+  try {
+    const ok = await workersStore.deleteSshKey(workerName.value, sshKey.fingerprint)
+    if (ok) {
+      notificationStore.showSuccess(`Key Removed! SSH Key "${sshKey.name}" has been removed.`)
+      await refreshData()
+    } else {
+      for (const err of workersStore.errors) {
+        notificationStore.showError(err)
+      }
+    }
+  } catch (err) {
+    console.error('Error deleting SSH key:', err)
+    notificationStore.showError('Failed to delete SSH key')
+  } finally {
+    loadingStore.stopLoading()
+  }
+}
+
+const addSshKey = async () => {
+  if (!keyPayload.value.name || !keyPayload.value.key) return
+  if (keyInputMode.value === 'text' && !validateSSHKey(keyFormData.value.key)) {
+    notificationStore.showError(
+      'Invalid SSH key format. Please ensure it starts with a valid key type (ssh-rsa, ssh-ed25519, etc.)',
+    )
+    return
+  }
+  loadingStore.startLoading('Adding key...')
+  const ok = await workersStore.addSshKey(workerName.value, keyPayload.value)
+  if (ok) {
+    notificationStore.showSuccess(`Key added! SSH Key "${keyPayload.value.name}" has been added.`)
+    keyFormData.value = { name: '', key: '' }
+    keyFile.value = null
+    await refreshData()
+  } else {
+    for (const err of workersStore.errors) {
+      notificationStore.showError(err)
+    }
+  }
+  loadingStore.stopLoading()
+}
 </script>

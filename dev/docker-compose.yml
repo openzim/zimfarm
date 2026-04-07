@@ -231,7 +231,7 @@ services:
       monitor_parent:
         condition: service_started
 
-    command: worker-manager --webapi-uri 'http://backend:80/v2' --username test_worker --name test_worker
+    command: worker-manager --webapi-uri 'http://backend:80/v2' --name test_worker
     environment:
       - DEBUG=true
       - TASK_WORKER_IMAGE=zf_task_worker

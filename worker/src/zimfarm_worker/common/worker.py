@@ -48,11 +48,11 @@ class WebApiConnection:
 class BaseWorker:
     def __init__(
         self,
-        username: str,
+        worker_name: str,
         webapi_uris: list[str],
         workdir: Path | str,
     ):
-        self.username = username
+        self.worker_name = worker_name
         self.webapi_uris = webapi_uris
         self.workdir = Path(workdir).resolve()
 
@@ -158,7 +158,7 @@ class BaseWorker:
         if force or self.connections[uri].authentication_expires_on <= getnow():
             try:
                 private_key = load_private_key_from_path(PRIVATE_KEY)
-                auth_message = generate_auth_message(self.username, private_key)
+                auth_message = generate_auth_message(self.worker_name, private_key)
                 token_response = query_api(
                     f"{uri}/auth/ssh-authorize",
                     method="POST",

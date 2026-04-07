@@ -112,64 +112,6 @@
                         </v-list>
                       </v-card-text>
                     </v-card>
-
-                    <!-- SSH Keys List -->
-                    <v-card v-if="user.ssh_keys && user.ssh_keys.length" variant="outlined">
-                      <v-card-title class="text-subtitle-1">
-                        <v-icon class="mr-2">mdi-key</v-icon>
-                        SSH Keys
-                      </v-card-title>
-                      <v-card-text>
-                        <!-- Header (visible on md and up) -->
-                        <div
-                          class="d-none d-md-flex font-weight-medium text-body-2 pb-2 mb-2 border-b"
-                        >
-                          <div class="flex-grow-1" style="flex-basis: 30%">SSH Key</div>
-                          <div class="flex-grow-1" style="flex-basis: 50%">Fingerprint</div>
-                          <div v-if="canSSHKeyUsers" style="flex-basis: 20%; min-width: 120px">
-                            Actions
-                          </div>
-                        </div>
-
-                        <!-- SSH Keys Items -->
-                        <div
-                          v-for="sshKey in user.ssh_keys"
-                          :key="sshKey.name"
-                          class="d-flex flex-column flex-md-row align-start align-md-center py-3 border-b"
-                        >
-                          <!-- SSH Key Name -->
-                          <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 30%">
-                            <div class="text-caption text-medium-emphasis d-md-none">SSH Key</div>
-                            <div class="text-body-2">{{ sshKey.name }}</div>
-                          </div>
-
-                          <!-- Fingerprint -->
-                          <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 50%">
-                            <div class="text-caption text-medium-emphasis d-md-none">
-                              Fingerprint
-                            </div>
-                            <code class="text-body-2">{{ sshKey.fingerprint }}</code>
-                          </div>
-
-                          <!-- Actions -->
-                          <div
-                            v-if="canSSHKeyUsers"
-                            class="mt-2 mt-md-0"
-                            style="flex-basis: 20%; min-width: 120px"
-                          >
-                            <v-btn
-                              color="error"
-                              size="small"
-                              variant="outlined"
-                              @click="confirmDelete(sshKey)"
-                            >
-                              <v-icon size="small" class="mr-1">mdi-delete</v-icon>
-                              Delete
-                            </v-btn>
-                          </div>
-                        </div>
-                      </v-card-text>
-                    </v-card>
                   </v-card-text>
                 </v-card>
               </v-window-item>
@@ -181,7 +123,6 @@
                   v-if="user"
                   @update-user="updateUser"
                   @change-password="changePassword"
-                  @add-key="addKey"
                 />
               </v-window-item>
 
@@ -201,20 +142,6 @@
           <ErrorMessage :message="error" v-if="error" />
         </v-col>
       </v-row>
-
-      <!-- Confirmation Dialog -->
-      <ConfirmDialog
-        v-model="showConfirmDialog"
-        :title="confirmDialogTitle"
-        :message="confirmDialogMessage"
-        confirm-text="DELETE"
-        cancel-text="CANCEL"
-        confirm-color="error"
-        icon="mdi-delete"
-        icon-color="error"
-        @confirm="handleConfirmDelete"
-        @cancel="handleCancelDelete"
-      />
     </div>
   </v-container>
 </template>
@@ -223,7 +150,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DeleteItem from '@/components/DeleteItem.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import UpdateUser from '@/components/UpdateUser.vue'
@@ -231,7 +157,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useUserStore } from '@/stores/user'
-import type { UserWithSshKeys } from '@/types/user'
+import type { User } from '@/types/user'
 
 // Props
 interface Props {
@@ -251,15 +177,9 @@ const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
 const userStore = useUserStore()
 
-// Confirmation dialog state
-const showConfirmDialog = ref(false)
-const confirmDialogTitle = ref('')
-const confirmDialogMessage = ref('')
-let pendingSshKey: { name: string; fingerprint: string } | null = null
-
 // Reactive data
 const error = ref<string | null>(null)
-const user = ref<UserWithSshKeys | null>(null)
+const user = ref<User | null>(null)
 const selectedTab = ref(props.selectedTab)
 const dataLoaded = ref(false)
 
@@ -267,8 +187,6 @@ const dataLoaded = ref(false)
 const scope = computed(() => user.value?.scope || {})
 
 const canDeleteUser = computed(() => authStore.hasPermission('accounts', 'delete'))
-
-const canSSHKeyUsers = computed(() => authStore.hasPermission('accounts', 'ssh_keys'))
 
 const getNamespaceIcon = (namespace: string): string => {
   const iconMap: Record<string, string> = {
@@ -321,45 +239,6 @@ const getAllPermissionsForNamespace = (namespace: string): string[] => {
 }
 
 // Methods
-const confirmDelete = (sshKey: { name: string; fingerprint: string }) => {
-  pendingSshKey = sshKey
-  confirmDialogTitle.value = 'Delete SSH Key'
-  confirmDialogMessage.value = `Are you sure you want to delete SSH Key "${sshKey.name}"?`
-  showConfirmDialog.value = true
-}
-
-const handleConfirmDelete = async () => {
-  if (pendingSshKey) {
-    await deleteKey(pendingSshKey)
-    pendingSshKey = null
-  }
-}
-
-const handleCancelDelete = () => {
-  pendingSshKey = null
-}
-
-const deleteKey = async (sshKey: { name: string; fingerprint: string }) => {
-  loadingStore.startLoading('Deleting key...')
-
-  try {
-    const success = await userStore.deleteSshKey(props.userId, sshKey.fingerprint)
-    if (success) {
-      notificationStore.showSuccess(`Key Removed! SSH Key "${sshKey.name}" has been removed.`)
-      await loadUser()
-    } else {
-      for (const error of userStore.errors) {
-        notificationStore.showError(error)
-      }
-    }
-  } catch (err) {
-    console.error('Error deleting SSH key:', err)
-    notificationStore.showError('Failed to delete SSH key')
-  } finally {
-    loadingStore.stopLoading()
-  }
-}
-
 const changePassword = async (password: string | null) => {
   loadingStore.startLoading('Changing password...')
 
@@ -399,20 +278,6 @@ const updateUser = async (payload: {
   const success = await userStore.updateUser(props.userId, payload)
   if (success) {
     notificationStore.showSuccess(`User account ${user.value?.display_name} has been updated.`)
-    await refreshData()
-  } else {
-    for (const error of userStore.errors) {
-      notificationStore.showError(error)
-    }
-  }
-  loadingStore.stopLoading()
-}
-
-const addKey = async (payload: { name: string; key: string }) => {
-  loadingStore.startLoading('Adding key...')
-  const success = await userStore.addSshKey(props.userId, payload)
-  if (success) {
-    notificationStore.showSuccess(`Key added! SSH Key "${payload.name}" has been added.`)
     await refreshData()
   } else {
     for (const error of userStore.errors) {

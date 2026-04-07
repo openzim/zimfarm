@@ -10,7 +10,6 @@
 ######## DEFAULT VALUES #
 # change them in your zimfarm.config file
 SUDO_DOCKER=
-ZIMFARM_USERNAME="unknown"
 ZIMFARM_WORKER_NAME="unknown"
 ZIMFARM_DEBUG=
 ZIMFARM_MAX_RAM="2G"
@@ -185,7 +184,6 @@ function restart() {
         --env ZIMFARM_TASK_CPUS=$ZIMFARM_TASK_CPUS \
         --env ZIMFARM_TASK_CPUSET=$ZIMFARM_TASK_CPUSET \
         --env SELFISH=$ZIMFARM_SELFISH \
-        --env USERNAME=$ZIMFARM_USERNAME \
         --env DEBUG=$ZIMFARM_DEBUG \
         --env WORKER_NAME=$ZIMFARM_WORKER_NAME \
         --env WEB_API_URIS=$WEB_API_URIS \

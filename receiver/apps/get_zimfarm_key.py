@@ -57,7 +57,7 @@ def print_keys_for(username, fingerprint):
 
 def fetch_public_keys_for(username, fingerprint):
     req = requests.get(
-        url=f"{environ['ZIMFARM_WEBAPI']}/users/-/keys/{fingerprint}",
+        url=f"{environ['ZIMFARM_WEBAPI']}/workers/-/keys/{fingerprint}",
         params={"with_permission": ["zim.upload"]},
         timeout=REQUESTS_TIMEOUT,
     )
@@ -74,7 +74,7 @@ def fetch_public_keys_for(username, fingerprint):
         return
 
     logger.info(
-        f"granted login for {response['username']} via {response['type']} key "
+        f"granted login for {response['worker_name']} via {response['type']} key "
         f"{response['name']}"
     )
     return [f"{response['key']}"]

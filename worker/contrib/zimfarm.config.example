@@ -2,9 +2,6 @@
 
 ### MANDATORY
 
-# Zimfarm username
-ZIMFARM_USERNAME="myusername"
-
 # Zimfarm folder. You have to create it. Put your `id_ed25519` private key
 # directly at its root. Will be used as well for other Zimfarm
 # temporary data.
@@ -12,8 +9,8 @@ ZIMFARM_ROOT=~/zimfarm
 
 ### OPTIONAL
 
-# Worker name (your choice, can be different from the username)
-ZIMFARM_WORKER_NAME="$ZIMFARM_USERNAME"
+# Worker name
+ZIMFARM_WORKER_NAME="myworkername"
 
 # Set to `"y"` if you need `sudo` for `docker` command (`""` otherwise)
 SUDO_DOCKER=""

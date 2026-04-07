@@ -112,11 +112,11 @@ def get_signature(
 
 
 def generate_auth_message(
-    worker_id: str,
+    worker_name: str,
     private_key: RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey,
 ) -> AuthMessage:
     """Generate an authentication message for a worker"""
-    body = f"{worker_id}:{getnow().isoformat()}"
+    body = f"{worker_name}:{getnow().isoformat()}"
     return AuthMessage(
         body=body, signature=get_signature(bytes(body, encoding="ascii"), private_key)
     )

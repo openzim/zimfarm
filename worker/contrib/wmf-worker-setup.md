@@ -80,9 +80,6 @@ sudo vim /etc/zimfarm.config
 
 ### MANDATORY
 
-# Zimfarm username
-ZIMFARM_USERNAME="wmf-worker"
-
 # Zimfarm folder. You have to create it. Put your `id_ed25519` private key
 # directly at its root. Will be used as well for other Zimfarm
 # temporary data.
@@ -90,7 +87,7 @@ ZIMFARM_ROOT=/srv/zimfarm
 
 ### OPTIONAL
 
-# Worker name (your choice, can be different from the username)
+# Worker name (Name worker was registered with)
 ZIMFARM_WORKER_NAME="mwoffliner1"
 
 # Set to `"y"` if you need `sudo` for `docker` command (`""` otherwise)

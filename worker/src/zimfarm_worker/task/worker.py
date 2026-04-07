@@ -62,18 +62,14 @@ ARTIFACTS_UPLOAD = "artifacts_upload"
 
 class TaskWorker(BaseWorker):
     def __init__(
-        self,
-        username: str,
-        webapi_uris: list[str],
-        workdir: Path,
-        task_id: str,
+        self, webapi_uris: list[str], workdir: Path, task_id: str, worker_name: str
     ) -> None:
-        super().__init__(username, webapi_uris, workdir)
+        super().__init__(worker_name, webapi_uris, workdir)
 
         self.task_id = task_id
 
         self.print_config(
-            username=username,
+            wokrker_name=worker_name,
             webapi_uris=webapi_uris,
             workdir=workdir,
             task_id=task_id,
@@ -675,7 +671,7 @@ class TaskWorker(BaseWorker):
             self.docker,
             task=self.task,
             kind="zim",
-            username=self.username,
+            username=self.worker_name,
             host_workdir=self.host_task_workdir,
             upload_dir=upload_dir,
             filename=filename,
@@ -708,7 +704,7 @@ class TaskWorker(BaseWorker):
             self.docker,
             task=self.task,
             kind="check",
-            username=self.username,
+            username=self.worker_name,
             host_workdir=self.host_task_workdir,
             upload_dir="",
             filename=filename,
@@ -857,7 +853,7 @@ class TaskWorker(BaseWorker):
             self.docker,
             task=self.task,
             kind="logs",
-            username=self.username,
+            username=self.worker_name,
             host_workdir=self.host_task_workdir,
             upload_dir="",
             filename=filename,
@@ -993,7 +989,7 @@ class TaskWorker(BaseWorker):
             self.docker,
             task=self.task,
             kind="artifacts",
-            username=self.username,
+            username=self.worker_name,
             host_workdir=self.host_task_workdir,
             upload_dir="",
             filename=filename,

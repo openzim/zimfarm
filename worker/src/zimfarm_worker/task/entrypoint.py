@@ -26,10 +26,11 @@ def main():
     )
 
     parser.add_argument(
-        "--username",
-        help="username to authenticate to zimfarm",
-        required=not bool(os.getenv("USERNAME")),
-        default=os.getenv("USERNAME"),
+        "--name",
+        help="name of worker executing task",
+        required=not bool(os.getenv("WORKER_NAME")),
+        default=os.getenv("WORKER_NAME"),
+        dest="worker_name",
     )
 
     parser.add_argument(
@@ -45,10 +46,10 @@ def main():
     logger.info(f"starting zimfarm {TASK_WORKER} for {args.task_id}.")
     try:
         worker = TaskWorker(
-            username=args.username,
             webapi_uris=[args.webapi_uri],
             workdir=args.workdir,
             task_id=args.task_id,
+            worker_name=args.worker_name,
         )
     except Exception as exc:
         logger.critical(f"Unhandled exception during init: {exc}")

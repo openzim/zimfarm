@@ -595,7 +595,6 @@ def start_task_worker(
     *,
     task: dict[str, Any],
     webapi_uri: str,
-    username: str,
     workdir: Path,
     worker_name: str,
 ):
@@ -634,7 +633,6 @@ def start_task_worker(
         command=command,
         detach=True,
         environment={
-            "USERNAME": username,
             "WORKDIR": str(workdir),
             "WEB_API_URI": webapi_uri,
             "WORKER_NAME": worker_name,
