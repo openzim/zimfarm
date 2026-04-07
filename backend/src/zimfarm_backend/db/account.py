@@ -123,7 +123,8 @@ def get_accounts(
     skip: int,
     limit: int,
     username: str | None = None,
-    show_workers: bool = False,
+    show_workers: bool = True,
+    show_viewers: bool = True,
 ) -> AccountList:
     """Get a list of accounts"""
     query = (
@@ -133,7 +134,8 @@ def get_accounts(
         )
         .where(
             Account.deleted.is_(False),
-            (Account.role != "worker") | (show_workers is True),
+            (Account.role != RoleEnum.WORKER) | (show_workers is True),
+            (Account.role != RoleEnum.VIEWER) | (show_viewers is True),
             (
                 Account.display_name.ilike(
                     f"%{username if username is not None else ''}%"

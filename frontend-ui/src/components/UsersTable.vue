@@ -1,6 +1,18 @@
 <template>
   <div>
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
+      <v-card-title class="d-flex align-center justify-end">
+        <v-btn
+          size="small"
+          variant="outlined"
+          color="secondary"
+          class="text-none"
+          @click="$emit('toggleUsersList')"
+        >
+          {{ toggleText }}
+        </v-btn>
+      </v-card-title>
+
       <v-data-table-server
         :headers="headers"
         :items="users"
@@ -65,10 +77,12 @@ const props = defineProps<{
   loading: boolean
   errors: string[]
   loadingText: string
+  toggleText: string
 }>()
 
 const emit = defineEmits<{
   limitChanged: [limit: number]
+  toggleUsersList: []
 }>()
 
 const limits = [10, 20, 50, 100]
