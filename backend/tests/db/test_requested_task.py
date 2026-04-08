@@ -303,6 +303,7 @@ def test_request_task_for_worker(
 ):
     """Test that request_task returns the task if worker meets constraints"""
     worker = create_worker(
+        account=create_account(),
         cordoned=worker_cordoned,
         admin_disabled=worker_admin_disabled,
         cpu=worker_resource.cpu,
@@ -835,6 +836,7 @@ def test_get_currently_running_tasks(
 def test_get_tasks_doable_by_worker(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
@@ -849,6 +851,7 @@ def test_get_tasks_doable_by_worker(
     found: bool,
 ):
     worker = create_worker(
+        account=create_account(),
         cpu=worker_resource.cpu,
         memory=worker_resource.memory,
         disk=worker_resource.disk,
@@ -1210,6 +1213,7 @@ def test_diagnose_requested_task(
 ):
     """Test that diagnose_requested_task accurately reports why a task can't run"""
     worker = create_worker(
+        account=create_account(),
         cordoned=worker_cordoned,
         admin_disabled=worker_admin_disabled,
         cpu=worker_resource.cpu,
@@ -1264,6 +1268,7 @@ def test_diagnose_requested_task(
 def test_find_requested_task_first_cannot_run_but_alternative_can(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     create_task: Callable[..., Task],
     create_requested_task: Callable[..., RequestedTask],
@@ -1273,6 +1278,7 @@ def test_find_requested_task_first_cannot_run_but_alternative_can(
     """Test when first candidate cannot run but alternative smaller task can"""
     # Create worker with specific resources
     worker = create_worker(
+        account=create_account(),
         name="test_worker",
         cpu=2,
         memory=2000,
@@ -1364,6 +1370,7 @@ def test_find_requested_task_first_cannot_run_but_alternative_can(
 def test_find_requested_task_first_cannot_run_alternative_by_duration(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     create_recipe: Callable[..., Recipe],
     create_requested_task: Callable[..., RequestedTask],
@@ -1376,6 +1383,7 @@ def test_find_requested_task_first_cannot_run_alternative_by_duration(
 ):
     """Test when alternative task fits resources but duration determines selection"""
     worker = create_worker(
+        account=create_account(),
         name="test_worker",
         cpu=2,
         memory=2000,

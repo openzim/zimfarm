@@ -144,7 +144,9 @@ class Worker(Base):
     docker_image_hash: Mapped[str | None] = mapped_column(default=None)
     docker_image_created_at: Mapped[datetime | None] = mapped_column(default=None)
 
-    account_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
+    account_id: Mapped[UUID] = mapped_column(
+        ForeignKey("account.id"), init=False, unique=True
+    )
 
     account: Mapped["Account"] = relationship(back_populates="workers", init=False)
 
