@@ -115,7 +115,7 @@ def test_refresh_access_token_expired_token(
         ),
     ],
 )
-def test_authenticate_account(
+def test_authenticate_worker(
     client: TestClient,
     account: Account,
     rsa_private_key: RSAPrivateKey,
@@ -124,8 +124,8 @@ def test_authenticate_account(
     expected_response_contents: list[str],
     create_worker: Callable[..., Worker],
 ):
-    create_worker(account=account)
-    message = f"{account.username}:{datetime_str}"
+    worker = create_worker(account=account)
+    message = f"{worker.name}:{datetime_str}"
     signature = sign_message_with_rsa_key(
         rsa_private_key, bytes(message, encoding="ascii")
     )
