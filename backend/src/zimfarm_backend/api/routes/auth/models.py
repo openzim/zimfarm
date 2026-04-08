@@ -1,5 +1,4 @@
 import datetime
-from typing import Literal
 from uuid import UUID
 
 from zimfarm_backend.common.schemas import BaseModel
@@ -12,14 +11,6 @@ class CredentialsIn(BaseModel):
 
 class RefreshTokenIn(BaseModel):
     refresh_token: UUID
-
-
-class OAuth2CredentialsWithPassword(CredentialsIn):
-    grant_type: Literal["password"]
-
-
-class OAuth2CredentialsWithRefreshToken(RefreshTokenIn):
-    grant_type: Literal["refresh_token"]
 
 
 class Token(BaseModel):
