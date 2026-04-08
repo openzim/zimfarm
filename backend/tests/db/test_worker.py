@@ -10,7 +10,10 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.schemas.orms import BaseWorkerSchema, OfflinerSchema
 from zimfarm_backend.db import worker as worker_module
-from zimfarm_backend.db.exceptions import RecordDoesNotExistError
+from zimfarm_backend.db.exceptions import (
+    RecordAlreadyExistsError,
+    RecordDoesNotExistError,
+)
 from zimfarm_backend.db.models import Account, Worker
 from zimfarm_backend.db.worker import (
     check_in_worker,
@@ -72,10 +75,14 @@ def test_get_workers_empty(dbsession: OrmSession):
 
 
 def test_get_workers_pagination(
-    dbsession: OrmSession, create_worker: Callable[..., Worker]
+    dbsession: OrmSession,
+    create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
 ):
     # create 30 workers
-    workers = [create_worker(name=f"worker-{i}") for i in range(30)]
+    workers = [
+        create_worker(account=create_account(), name=f"worker-{i}") for i in range(30)
+    ]
     # disable 10 workers
     for worker in workers[:10]:
         worker.deleted = True
@@ -92,6 +99,7 @@ def test_get_workers_pagination(
 def test_get_workers_hide_offlines(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
     monkeypatch: MonkeyPatch,
     *,
     hide_offlines: bool,
@@ -99,7 +107,9 @@ def test_get_workers_hide_offlines(
 ):
     "Test that only online workers are returned."
     # create 30 workers that are currently active
-    workers = [create_worker(name=f"worker-{i}") for i in range(30)]
+    workers = [
+        create_worker(account=create_account(), name=f"worker-{i}") for i in range(30)
+    ]
     # change the last seen of the last 10 workers to 1 hour ago
     for worker in workers[:10]:
         worker.last_seen = getnow() - datetime.timedelta(hours=1)
@@ -198,6 +208,26 @@ def test_check_in_worker_update(
     assert updated_worker.last_seen > original_last_seen
     assert updated_worker.last_ip == original_last_ip
     assert updated_worker.cordoned is True
+
+
+def test_check_in_multiple_workers_to_one_account(
+    dbsession: OrmSession, mwoffliner: OfflinerSchema, worker: Worker
+):
+    """Test that check_in new worker to account with worker raises error"""
+    with pytest.raises(RecordAlreadyExistsError):
+        check_in_worker(
+            session=dbsession,
+            worker_name="newworker",
+            cpu=4,
+            memory=2048,
+            disk=2048,
+            selfish=True,
+            offliners=[mwoffliner.id],
+            account_id=worker.account_id,
+            cordoned=False,
+            docker_image_hash=str(uuid4()),
+            docker_image_created_at=getnow(),
+        )
 
 
 def test_update_worker_context(dbsession: OrmSession, worker: Worker):

@@ -5,7 +5,7 @@ from http import HTTPStatus
 import pytest
 from fastapi.testclient import TestClient
 
-from zimfarm_backend.db.models import Recipe, Worker
+from zimfarm_backend.db.models import Account, Recipe, Worker
 
 
 def test_get_contexts_empty(client: TestClient):
@@ -26,6 +26,7 @@ def test_get_contexts(
     client: TestClient,
     create_recipe: Callable[..., Recipe],
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
 ):
     """Test that get_contexts returns unique contexts from both recipes and workers"""
     # Create recipes with contexts
@@ -34,10 +35,15 @@ def test_get_contexts(
 
     # Create workers with contexts (some overlapping)
     create_worker(
+        account=create_account(),
         name="worker1",
         contexts={"priority": ipaddress.ip_address("127.0.0.1"), "fast": None},
     )
-    create_worker(name="worker2", contexts={"general": None, "slow": None})
+    create_worker(
+        account=create_account(),
+        name="worker2",
+        contexts={"general": None, "slow": None},
+    )
 
     response = client.get("/v2/contexts?skip=0&limit=10")
     assert response.status_code == HTTPStatus.OK
@@ -60,6 +66,7 @@ def test_get_contexts_pagination(
     client: TestClient,
     create_recipe: Callable[..., Recipe],
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
     skip: int,
     limit: int,
     expected_results: int,
@@ -68,8 +75,16 @@ def test_get_contexts_pagination(
     # Create recipes and workers with contexts
     create_recipe(name="recipe1", context="context1")
     create_recipe(name="recipe2", context="context2")
-    create_worker(name="worker1", contexts={"context3": None, "context4": None})
-    create_worker(name="worker2", contexts={"context5": None, "context6": None})
+    create_worker(
+        account=create_account(),
+        name="worker1",
+        contexts={"context3": None, "context4": None},
+    )
+    create_worker(
+        account=create_account(),
+        name="worker2",
+        contexts={"context5": None, "context6": None},
+    )
 
     # Test first page
     response = client.get(f"/v2/contexts?skip={skip}&limit={limit}")

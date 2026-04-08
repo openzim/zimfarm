@@ -462,11 +462,12 @@ def test_update_recipe_duration_multiple_workers(
     create_recipe: Callable[..., Recipe],
     create_task: Callable[..., Task],
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
 ):
     """Test that update_recipe_duration handles multiple workers correctly"""
     recipe = create_recipe(name="test_recipe")
-    worker1 = create_worker(name="worker1")
-    worker2 = create_worker(name="worker2")
+    worker1 = create_worker(account=create_account(), name="worker1")
+    worker2 = create_worker(account=create_account(), name="worker2")
 
     # Create tasks for both workers
     task1 = create_task(
