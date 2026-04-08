@@ -37,6 +37,7 @@ from zimfarm_backend.db.refresh_token import (
     expire_refresh_tokens,
     get_refresh_token,
 )
+from zimfarm_backend.db.worker import get_worker as db_get_worker
 from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.utils.cryptography import verify_signed_message
 
@@ -118,7 +119,7 @@ def refresh_access_token(
 
 
 @router.post("/ssh-authorize")
-def authenticate_account_with_ssh_keys(
+def authenticate_worker_with_ssh_keys(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
     x_sshauth_message: Annotated[
         str,
@@ -129,15 +130,15 @@ def authenticate_account_with_ssh_keys(
     ],
     response: Response,
 ) -> Token:
-    """Authenticate using signed message and generate tokens."""
+    """Authenticate workers using signed message and generate tokens."""
     try:
         signature = base64.standard_b64decode(x_sshauth_signature)
     except binascii.Error as exc:
         raise BadRequestError("Invalid signature format (not base64)") from exc
 
     try:
-        # decode message: username:timestamp(ISO)
-        username, timestamp_str = x_sshauth_message.split(":", 1)
+        # decode message: worker_name:timestamp(ISO)
+        worker_name, timestamp_str = x_sshauth_message.split(":", 1)
         timestamp = datetime.datetime.fromisoformat(timestamp_str)
     except ValueError as exc:
         raise BadRequestError("Invalid message format.") from exc
@@ -149,19 +150,14 @@ def authenticate_account_with_ssh_keys(
             f"greater than {constants.MESSAGE_VALIDITY_DURATION}s"
         )
 
-    # verify account with username exists in database
     try:
-        db_account = get_account_by_username(
-            db_session,
-            username=username,
-            fetch_ssh_keys=True,
-        )
+        db_worker = db_get_worker(db_session, worker_name=worker_name)
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
-    # verify signature of message with account's public keys
+    # verify signature of message with workers' public keys
     authenticated = False
-    for ssh_key in db_account.ssh_keys:
+    for ssh_key in db_worker.ssh_keys:
         try:
             if verify_signed_message(
                 bytes(ssh_key.key, encoding="ascii"),
@@ -177,7 +173,7 @@ def authenticate_account_with_ssh_keys(
     if not authenticated:
         raise UnauthorizedError("Could not find matching key for signature.")
 
-    return _access_token_response(db_session, db_account, response)
+    return _access_token_response(db_session, db_worker.account, response)
 
 
 @router.post("/oauth2")

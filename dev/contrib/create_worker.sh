@@ -110,7 +110,7 @@ payload="$(jq -n --arg key "$(< id_ed25519.pub)" '{key: $key}')"
 
 
 echo "Uploading worker keys to API"
-response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/v2/users/test_worker/keys \
+response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/v2/workers/test_worker/keys \
   -H 'accept: */*' \
   -H "Authorization: Bearer $ZF_USER_TOKEN" \
   -H 'Content-Type: application/json; charset=utf-8' \

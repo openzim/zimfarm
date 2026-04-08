@@ -5,6 +5,8 @@ from ipaddress import IPv4Address, IPv6Address
 from unittest.mock import MagicMock, patch
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 
 from zimfarm_backend.api.token import generate_access_token
@@ -231,7 +233,7 @@ def test_get_worker_metrics_with_tasks(
             False,
             HTTPStatus.NO_CONTENT,
         ],
-        [RoleEnum.PROCESSOR, {"general": None}, False, HTTPStatus.UNAUTHORIZED],
+        [RoleEnum.PROCESSOR, {"general": None}, False, HTTPStatus.FORBIDDEN],
         [
             RoleEnum.ADMIN,
             {"priority": "127.0.0.1", "general": None},
@@ -307,3 +309,189 @@ def test_update_worker_context_no_payload(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_list_worker_keys(client: TestClient, account: Account, worker: Worker):
+    """Test listing a workers' SSH keys"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    url = f"/v2/workers/{worker.name}/keys"
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.OK
+
+    response_json = response.json()
+    assert "meta" in response_json
+    assert "items" in response_json
+    assert len(response_json["items"]) == 1
+    key = response_json["items"][0]
+    assert set(key.keys()) == {
+        "name",
+        "fingerprint",
+        "key",
+        "type",
+        "added",
+    }
+
+
+def test_list_worker_keys_forbidden(
+    client: TestClient, create_account: Callable[..., Account], worker: Worker
+):
+    """Test listing a workers' SSH keys without permission"""
+    account = create_account(permission="editor")
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    url = f"/v2/workers/{worker.name}/keys"
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_create_worker_key(client: TestClient, account: Account, worker: Worker):
+    """Test creating a new SSH key for a worker"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_key = new_key.public_key()
+    rsa_public_key_data = public_key.public_bytes(
+        encoding=serialization.Encoding.OpenSSH,
+        format=serialization.PublicFormat.OpenSSH,
+    )
+    url = f"/v2/workers/{worker.name}/keys"
+    # generated keys don't come with hostname but backend requires it
+    key_data = {"key": rsa_public_key_data.decode(encoding="ascii") + " test@localhost"}
+    response = client.post(
+        url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    response_json = response.json()
+    assert response_json["key"] == key_data["key"]
+    assert "name" in response_json
+    assert "fingerprint" in response_json
+    assert "type" in response_json
+    assert "added" in response_json
+
+
+def test_create_worker_key_invalid(
+    client: TestClient, account: Account, worker: Worker
+):
+    """Test creating an invalid SSH key"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    url = f"/v2/workers/{worker.name}/keys"
+    key_data = {"key": "invalid-key xxxxxxx test@localhost"}
+    response = client.post(
+        url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_create_worker_key_duplicate(
+    client: TestClient, account: Account, worker: Worker
+):
+    """Test creating a duplicate SSH key"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    url = f"/v2/workers/{worker.name}/keys"
+    key_data = {"key": worker.ssh_keys[0].key}
+    response = client.post(
+        url, headers={"Authorization": f"Bearer {access_token}"}, json=key_data
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_get_worker_key(client: TestClient, account: Account, worker: Worker):
+    """Test getting a specific SSH key"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    fingerprint = worker.ssh_keys[0].fingerprint
+    url = f"/v2/workers/{worker.name}/keys/{fingerprint}"
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.OK
+
+    response_json = response.json()
+    assert response_json["worker_name"] == worker.name
+    assert response_json["key"] == worker.ssh_keys[0].key
+    assert response_json["name"] == worker.ssh_keys[0].name
+    assert response_json["type"] == worker.ssh_keys[0].type
+
+
+def test_get_worker_key_not_found(client: TestClient, account: Account, worker: Worker):
+    """Test getting a non-existent SSH key"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    url = f"/v2/workers/{worker.name}/keys/non-existent-fingerprint"
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_worker_key_different_owner(
+    client: TestClient,
+    account: Account,
+    create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
+):
+    """Test deleting an SSH key for a worker belonging to a different account"""
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    worker = create_worker(account=create_account(username="newuser"))
+    fingerprint = worker.ssh_keys[0].fingerprint
+    url = f"/v2/workers/{worker.name}/keys/{fingerprint}"
+    response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+    # Verify the key is deleted
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_worker_key(
+    client: TestClient,
+    create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
+):
+    """Test deleting an SSH key for a worker even though owner doesn't have
+    ssh permissions"""
+    account = create_account(permission=RoleEnum.PROCESSOR)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    worker = create_worker(account=account)
+    fingerprint = worker.ssh_keys[0].fingerprint
+    url = f"/v2/workers/{worker.name}/keys/{fingerprint}"
+    response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.NO_CONTENT
+
+    # Verify the key is deleted
+    response = client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_account_key_forbidden(
+    client: TestClient, create_account: Callable[..., Account], worker: Worker
+):
+    """Test deleting another account's SSH key without permission"""
+    account = create_account(permission="editor")
+    url = f"/v2/workers/{worker.name}/keys/some-fingerprint"
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == HTTPStatus.FORBIDDEN

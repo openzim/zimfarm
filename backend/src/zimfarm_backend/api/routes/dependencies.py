@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import Depends, Path
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import exceptions as jwt_exceptions
 from sqlalchemy.orm import Session as OrmSession
@@ -10,7 +10,6 @@ from zimfarm_backend.api.constants import (
 )
 from zimfarm_backend.api.routes.http_errors import ForbiddenError, UnauthorizedError
 from zimfarm_backend.api.token import JWTClaims, token_decoder
-from zimfarm_backend.common import is_valid_uuid
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import AccountUpdateSchema
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
@@ -64,9 +63,7 @@ def get_current_account_or_none_with_session(
     ) -> Account | None:
         if claims is None:
             return None
-        account = get_account_by_id_or_none(
-            session, account_id=claims.sub, fetch_ssh_keys=True
-        )
+        account = get_account_by_id_or_none(session, account_id=claims.sub)
         # If this is a kiwix token, we create a new account account
         if account is None and CREATE_NEW_OAUTH_ACCOUNT:
             if not claims.name:
@@ -77,9 +74,7 @@ def get_current_account_or_none_with_session(
                 role=RoleEnum.VIEWER,
                 idp_sub=claims.sub,
             )
-            account = get_account_by_id_or_none(
-                session, account_id=claims.sub, fetch_ssh_keys=True
-            )
+            account = get_account_by_id_or_none(session, account_id=claims.sub)
 
         # if token contains a "name" attribute and display_name is different, update it
         if account and claims.name and claims.name != account.display_name:
@@ -140,28 +135,7 @@ def require_permission(*, namespace: str, name: str):
         if not check_account_permission(
             current_account, namespace=namespace, name=name
         ):
-            raise UnauthorizedError(
-                "You do not have permission to perform this action. "
-            )
+            raise ForbiddenError("You do not have permission to perform this action. ")
         return current_account
 
     return _check_permission
-
-
-def require_permission_if_not_self(namespace: str, name: str):
-    """Ensure that an account has permission to access another account's resource."""
-
-    def _require_permission_if_not_self(
-        account_identifier: Annotated[str, Path()],
-        current_account: Annotated[Account, Depends(get_current_account)],
-    ):
-        if (
-            is_valid_uuid(account_identifier)
-            and account_identifier != str(current_account.id)
-        ) or (account_identifier != current_account.username):
-            if not check_account_permission(
-                current_account, namespace=namespace, name=name
-            ):
-                raise ForbiddenError("You are not allowed to access this resource")
-
-    return _require_permission_if_not_self

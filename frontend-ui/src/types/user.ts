@@ -3,7 +3,6 @@ export interface BaseUser {
   username: string | null
   display_name: string
   has_password?: boolean
-  has_ssh_keys?: boolean
 }
 
 export interface JWTUser extends BaseUser {
@@ -26,25 +25,4 @@ export interface Token {
   access_token: string
   refresh_token: string
   expires_time: string
-}
-
-export interface BaseSshKey {
-  key: string
-  name: string
-  type: string
-}
-
-export interface SshKeyRead extends BaseSshKey {
-  added: string
-  fingerprint: string
-}
-
-export interface BaseUserWithSshKeys extends BaseUser, BaseSshKey {}
-
-export interface SshKeyList {
-  ssh_keys: SshKeyRead[]
-}
-
-export interface UserWithSshKeys extends User, SshKeyList {
-  ssh_keys: SshKeyRead[]
 }

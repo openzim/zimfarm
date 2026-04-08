@@ -96,7 +96,7 @@ def test_get_recipes(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_get_archived_recipes(
@@ -329,7 +329,7 @@ def test_create_recipe(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_create_recipe_with_permssions(
@@ -554,7 +554,7 @@ def test_patch_obsolete_recipe(
     assert "oldFlag" not in recipe_data["config"]["offliner"]
 
 
-def test_update_recipe_unauthorized(
+def test_update_recipe_forbidden(
     client: TestClient,
     create_account: Callable[..., Account],
 ):
@@ -573,7 +573,7 @@ def test_update_recipe_unauthorized(
             "category": RecipeCategory.wikipedia.value,
         },
     )
-    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.parametrize(
@@ -691,7 +691,7 @@ def test_update_recipe(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.NO_CONTENT, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_delete_recipe(
@@ -802,7 +802,7 @@ def test_clone_recipe(
         pytest.param(
             RoleEnum.PROCESSOR,
             "eng",
-            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
             id="valid-language-code-processor",
         ),
     ],
@@ -1064,7 +1064,7 @@ def test_update_recipe_config_top_level_attributes(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_get_recipe_history(
@@ -1153,7 +1153,7 @@ def test_get_recipe_history_pagination(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_get_recipe_history_entry(
@@ -1207,7 +1207,7 @@ def test_get_recipe_backups(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.NO_CONTENT, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_restore_recipes(
@@ -1237,7 +1237,7 @@ def test_restore_recipes(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_archive_recipe(
@@ -1267,7 +1267,7 @@ def test_archive_recipe(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_restore_recipe(
@@ -1297,7 +1297,7 @@ def test_restore_recipe(
     "permission,expected_status_code",
     [
         pytest.param(RoleEnum.ADMIN, HTTPStatus.OK, id="admin"),
-        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.UNAUTHORIZED, id="processor"),
+        pytest.param(RoleEnum.PROCESSOR, HTTPStatus.FORBIDDEN, id="processor"),
     ],
 )
 def test_revert_recipe_history(

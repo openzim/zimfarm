@@ -209,9 +209,7 @@ def test_update_account_no_display_name(dbsession: OrmSession, account: Account)
 def test_update_account_with_password_set_blank_username(
     dbsession: OrmSession, account: Account
 ):
-    with pytest.raises(
-        ValueError, match="Account with password/ssh key must have a username"
-    ):
+    with pytest.raises(ValueError, match="Account with password must have a username"):
         update_account(
             dbsession, account_id=account.id, request=AccountUpdateSchema(username=None)
         )
@@ -221,9 +219,6 @@ def test_update_account_with_no_password_set_blank_username(
     dbsession: OrmSession, account: Account
 ):
     account.password_hash = None
-    for ssh_key in account.ssh_keys:
-        dbsession.delete(ssh_key)
-    account.ssh_keys = []
     dbsession.add(account)
 
     dbsession.flush()
