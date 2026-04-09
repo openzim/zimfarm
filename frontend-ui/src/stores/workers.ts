@@ -7,6 +7,7 @@ import type {
   Worker,
   WorkerMetrics,
   WorkerUpdateSchema,
+  WorkerCreateSchema,
   SshKeyRead,
 } from '@/types/workers'
 import { translateErrors } from '@/utils/errors'
@@ -78,6 +79,19 @@ export const useWorkersStore = defineStore('workers', () => {
     }
   }
 
+  const createWorker = async (payload: WorkerCreateSchema) => {
+    try {
+      const service = await authStore.getApiService('workers')
+      await service.post<WorkerCreateSchema, Worker>('', payload)
+      errors.value = []
+      return true
+    } catch (_error) {
+      console.error('Failed to create worker', _error)
+      errors.value = translateErrors(_error as ErrorResponse)
+      return false
+    }
+  }
+
   const updateWorker = async (name: string, payload: WorkerUpdateSchema) => {
     // Remove null values from the payload
     const cleanedPayload = Object.fromEntries(
@@ -146,6 +160,7 @@ export const useWorkersStore = defineStore('workers', () => {
     updateWorkerTasks,
     savePaginatorLimit,
     fetchWorkerMetrics,
+    createWorker,
     updateWorker,
     fetchLatestWorkerImage,
     deleteSshKey,

@@ -18,9 +18,9 @@ from zimfarm_backend.api.routes.http_errors import (
 )
 from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.api.routes.workers.models import (
-    KeySchema,
     WorkerCheckInResponse,
     WorkerCheckInSchema,
+    WorkerCreateSchema,
     WorkerUpdateSchema,
 )
 from zimfarm_backend.common.constants import GITHUB_TOKEN
@@ -31,6 +31,7 @@ from zimfarm_backend.common.schemas.fields import (
 )
 from zimfarm_backend.common.schemas.models import (
     DockerImageVersionSchema,
+    KeySchema,
     calculate_pagination_metadata,
 )
 from zimfarm_backend.common.schemas.orms import (
@@ -43,12 +44,15 @@ from zimfarm_backend.db.account import check_account_permission
 from zimfarm_backend.db.models import Account
 from zimfarm_backend.db.ssh_key import (
     create_ssh_key,
+    create_ssh_key_read_schema,
     delete_ssh_key,
     get_ssh_key_by_fingerprint,
-    get_ssh_key_by_fingerprint_or_none,
 )
 from zimfarm_backend.db.ssh_key import get_ssh_keys as db_get_ssh_keys
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
+from zimfarm_backend.db.worker import (
+    create_worker as db_create_worker,
+)
 from zimfarm_backend.db.worker import (
     get_worker as db_get_worker,
 )
@@ -58,12 +62,6 @@ from zimfarm_backend.db.worker import (
 )
 from zimfarm_backend.db.worker import get_workers as db_get_workers
 from zimfarm_backend.db.worker import update_worker as db_update_worker
-from zimfarm_backend.exceptions import PublicKeyLoadError
-from zimfarm_backend.utils.cryptography import (
-    get_public_key_fingerprint,
-    get_public_key_type,
-    load_public_key,
-)
 from zimfarm_backend.utils.github_registry import (
     WorkerManagerVersion,
     get_latest_worker_manager_version,
@@ -121,6 +119,22 @@ def get_workers(
         ),
         items=results.workers,
     )
+
+
+@router.post(
+    "",
+    dependencies=[Depends(require_permission(namespace="workers", name="create"))],
+)
+def create_worker(
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    request: WorkerCreateSchema,
+):
+    db_create_worker(
+        session,
+        worker_name=request.name,
+        ssh_key=request.ssh_key,
+    )
+    return Response(status_code=HTTPStatus.CREATED)
 
 
 @router.put(
@@ -253,26 +267,9 @@ def create_worker_key(
 ) -> SshKeyRead:
     """Create a new SSH key for a worker"""
     worker = db_get_worker(db_session, worker_name=worker_name)
-    try:
-        public_key = load_public_key(bytes(ssh_key.key, encoding="ascii"))
-    except PublicKeyLoadError as e:
-        raise BadRequestError("Invalid public key") from e
-
-    fingerprint = get_public_key_fingerprint(public_key)
-
-    db_ssh_key = get_ssh_key_by_fingerprint_or_none(db_session, fingerprint=fingerprint)
-    if db_ssh_key:
-        raise BadRequestError("SSH key already exists")
-
-    db_ssh_key = create_ssh_key(
-        db_session,
-        fingerprint=fingerprint,
-        worker_id=worker.id,
-        key=ssh_key.key,
-        name=ssh_key.name,
-        type_=get_public_key_type(public_key),
+    return create_ssh_key_read_schema(
+        create_ssh_key(db_session, worker_id=worker.id, ssh_key=ssh_key)
     )
-    return SshKeyRead.model_validate(db_ssh_key)
 
 
 @router.get(
