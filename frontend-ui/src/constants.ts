@@ -18,7 +18,6 @@ export default {
     'editor-requester',
     'manager',
     'processor',
-    'worker',
     'custom',
     'viewer',
   ] as const,

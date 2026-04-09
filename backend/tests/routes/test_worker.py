@@ -496,3 +496,85 @@ def test_delete_account_key_forbidden(
     )
     response = client.delete(url, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_create_worker_success(
+    client: TestClient,
+    access_token: str,
+):
+    """Test successful creation of a worker"""
+    new_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_key_bytes = new_key.public_key().public_bytes(
+        encoding=serialization.Encoding.OpenSSH,
+        format=serialization.PublicFormat.OpenSSH,
+    )
+    key_str = public_key_bytes.decode("ascii") + " test@localhost"
+    response = client.post(
+        "/v2/workers",
+        json={
+            "name": "myworker",
+            "offliners": ["mwoffliner"],
+            "ssh_key": {"key": key_str},
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.CREATED
+
+
+@pytest.mark.parametrize(
+    "permission",
+    [
+        pytest.param(RoleEnum.EDITOR, id="editor"),
+        pytest.param(RoleEnum.MANAGER, id="manager"),
+    ],
+)
+def test_create_worker_forbidden(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    *,
+    permission: RoleEnum,
+):
+    """Test that creating a worker without proper permission raises forbidden error"""
+    account = create_account(permission=permission)
+    token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    response = client.post(
+        "/v2/workers",
+        json={
+            "name": "myworker",
+            "offliners": ["mwoffliner"],
+            "ssh_key": {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAA test@localhost"},
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == HTTPStatus.FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "worker_name",
+    [
+        pytest.param("ab", id="too-short"),
+        pytest.param("MY-WORKER", id="uppercase-and-dash"),
+        pytest.param("my_worker", id="underscore"),
+        pytest.param("my worker", id="space"),
+    ],
+)
+def test_create_worker_invalid_name(
+    client: TestClient,
+    access_token: str,
+    *,
+    worker_name: str,
+):
+    """Test that creating a worker with an invalid name fails due to validation error"""
+    response = client.post(
+        "/v2/workers",
+        json={
+            "name": worker_name,
+            "offliners": ["mwoffliner"],
+            "ssh_key": {"key": "ssh-rsa AAAAB3NzaC1yc2EAAAA test@localhost"},
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
