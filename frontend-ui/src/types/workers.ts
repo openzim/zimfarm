@@ -60,6 +60,13 @@ export interface WorkerUpdateSchema {
   admin_disabled: boolean | null
 }
 
+export interface WorkerCreateSchema {
+  name: string
+  ssh_key: {
+    key: string
+  }
+}
+
 export interface BaseSshKey {
   key: string
   name: string

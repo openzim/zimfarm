@@ -1,15 +1,15 @@
 from ipaddress import IPv4Address, IPv6Address
+from typing import Annotated
 
-from pydantic import computed_field, field_validator
+from pydantic import Field
 
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import (
     ZIMCPU,
-    NotEmptyString,
     ZIMDisk,
     ZIMMemory,
 )
-from zimfarm_backend.common.schemas.models import DockerImageVersionSchema
+from zimfarm_backend.common.schemas.models import DockerImageVersionSchema, KeySchema
 
 
 class WorkerCheckInSchema(BaseModel):
@@ -44,22 +44,19 @@ class WorkerUpdateSchema(BaseModel):
     admin_disabled: bool | None = None
 
 
-class KeySchema(BaseModel):
+WorkerName = Annotated[
+    str,
+    Field(
+        pattern=r"^[a-z0-9-]+$",
+        min_length=3,
+    ),
+]
+
+
+class WorkerCreateSchema(BaseModel):
     """
-    Schema for creating a ssh key
+    Schema for creating a worker.
     """
 
-    key: NotEmptyString
-
-    @field_validator("key", mode="after")
-    @classmethod
-    def validate_key(cls, value: str) -> str:
-        value = value.strip()
-        if len(value.split(" ")) != 3:  # noqa: PLR2004
-            raise ValueError("Key does not appear to be an SSH public file.")
-        return value
-
-    @computed_field
-    @property
-    def name(self) -> str:
-        return self.key.split(" ")[2]
+    name: WorkerName
+    ssh_key: KeySchema
