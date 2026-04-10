@@ -1,119 +1,128 @@
 <template>
-  <div>
-    <!-- Update User Form -->
-    <v-card class="mb-4">
-      <v-card-text>
-        <v-form @submit.prevent="updateUser">
-          <v-row class="justify-end">
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="form.username"
-                label="Username"
-                hint="Username for authentication"
-                placeholder="username"
-                variant="outlined"
-                density="compact"
-                persistent-hint
-                :error-messages="usernameError ? [usernameError] : []"
-              />
-            </v-col>
+  <v-card class="mb-4">
+    <v-card-text>
+      <v-form @submit.prevent="submitForm">
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="form.display_name"
+              label="Display Name"
+              hint="User's display name"
+              placeholder="Display Name"
+              variant="outlined"
+              density="compact"
+              persistent-hint
+              :error-messages="displayNameError ? [displayNameError] : []"
+              required
+            />
+          </v-col>
 
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="form.display_name"
-                label="Display Name"
-                hint="User's display name"
-                placeholder="Display Name"
-                variant="outlined"
-                density="compact"
-                persistent-hint
-                :error-messages="displayNameError ? [displayNameError] : []"
-                required
-              />
-            </v-col>
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="form.role"
+              :items="roles"
+              label="Role"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
 
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="form.role"
-                :items="roles"
-                label="Role"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="form.idp_sub"
-                label="IDP Sub (UUID)"
-                hint="Identifier issued by external identity provider."
-                placeholder="00000000-0000-0000-0000-000000000000"
-                variant="outlined"
-                density="compact"
-                persistent-hint
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-btn type="submit" color="primary" variant="elevated" :disabled="!payload" block>
-                Update User Profile
-              </v-btn>
-            </v-col>
-          </v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="form.username"
+              label="Username"
+              hint="Username for local authentication"
+              placeholder="username"
+              variant="outlined"
+              density="compact"
+              persistent-hint
+              :error-messages="usernameError ? [usernameError] : []"
+            />
+          </v-col>
 
-          <v-row v-if="isCustomRole">
-            <v-col cols="12">
-              <v-textarea
-                v-model="form.customScope"
-                label="Custom Scope (JSON)"
-                placeholder='{"tasks": {"read": true, "create": false}, "recipes": {"read": true}}'
-                hint="Enter the custom scope as JSON. Include all namespaces (tasks, recipes, users, workers, zim, requested_tasks, offliners) with their permissions."
-                persistent-hint
-                :error-messages="customScopeError ? [customScopeError] : []"
-                variant="outlined"
-                density="compact"
-                rows="10"
-                auto-grow
-              />
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
-    </v-card>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="form.idp_sub"
+              label="IDP Sub (UUID)"
+              hint="Identifier issued by external identity provider."
+              placeholder="00000000-0000-0000-0000-000000000000"
+              variant="outlined"
+              density="compact"
+              persistent-hint
+            />
+          </v-col>
 
-    <!-- Change Password Form (only if user has username) -->
-    <v-card v-if="props.user.username" class="mb-4">
-      <v-card-text>
-        <v-form
-          @submit.prevent="
-            emit('change-password', form.password.trim() ? form.password.trim() : null)
-          "
-        >
-          <v-row>
-            <v-col cols="12" sm="8" md="6">
-              <v-text-field
-                v-model="form.password"
-                label="Password"
-                placeholder="Enter new password or leave empty to clear"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
-            </v-col>
-            <v-col>
-              <v-btn type="submit" color="primary" variant="elevated" block>
-                Change Password
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
-    </v-card>
-  </div>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="form.password"
+              label="New Password"
+              hint="Password for local authentication (leave empty to keep current)"
+              placeholder="Enter new password"
+              variant="outlined"
+              density="compact"
+              persistent-hint
+              append-inner-icon="mdi-refresh"
+              @click:append-inner="generateNewPassword"
+            />
+          </v-col>
+
+          <v-col cols="12" md="6" v-if="isCurrentUser && form.password !== ''">
+            <v-text-field
+              v-model="form.currentPassword"
+              label="Current Password"
+              hint="Current password is required to change your own password"
+              placeholder="Enter current password"
+              variant="outlined"
+              density="compact"
+              persistent-hint
+              :type="showCurrentPassword ? 'text' : 'password'"
+              :append-inner-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              @click:append-inner="showCurrentPassword = !showCurrentPassword"
+              :error-messages="currentPasswordError ? [currentPasswordError] : []"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row v-if="isCustomRole">
+          <v-col cols="12">
+            <v-textarea
+              v-model="form.customScope"
+              label="Custom Scope (JSON)"
+              placeholder='{"tasks": {"read": true, "create": false}, "recipes": {"read": true}}'
+              hint="Enter the custom scope as JSON. Include all namespaces (tasks, recipes, accounts, workers, zim, requested_tasks, offliners) with their permissions."
+              persistent-hint
+              :error-messages="customScopeError ? [customScopeError] : []"
+              variant="outlined"
+              density="compact"
+              rows="10"
+              auto-grow
+            />
+          </v-col>
+        </v-row>
+
+        <v-row class="mt-4">
+          <v-col cols="12">
+            <v-btn
+              type="submit"
+              color="primary"
+              variant="elevated"
+              :disabled="!hasChanges || !!currentPasswordError"
+              block
+            >
+              Update User Profile
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-form>
+    </v-card-text>
+  </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 
 import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 import { generatePassword } from '@/utils/browsers'
 import type { User } from '@/types/user'
 
@@ -135,22 +144,26 @@ const emit = defineEmits<{
       idp_sub?: string | null
     },
   ): void
-  (e: 'change-password', password: string | null): void
+  (e: 'change-password', password: string | null, currentPassword?: string): void
 }>()
 
 const roles = constants.ROLES
+const authStore = useAuthStore()
 
 // Reactive data
+const showCurrentPassword = ref(false)
 const form = ref({
   username: '',
   display_name: '',
   role: '' as (typeof constants.ROLES)[number],
   password: '',
+  currentPassword: '',
   customScope: '',
   idp_sub: '',
 })
 
 // Computed properties
+const isCurrentUser = computed(() => authStore.user?.id === props.user.id)
 const isCustomRole = computed(() => form.value.role === 'custom')
 
 const usernameError = computed(() => {
@@ -164,6 +177,13 @@ const usernameError = computed(() => {
 const displayNameError = computed(() => {
   if (!form.value.display_name.trim()) {
     return 'Display name is required'
+  }
+  return null
+})
+
+const currentPasswordError = computed(() => {
+  if (isCurrentUser.value && form.value.password !== '' && !form.value.currentPassword.trim()) {
+    return 'Current password is required'
   }
   return null
 })
@@ -234,8 +254,9 @@ const customScopeError = computed(() => {
   }
 })
 
-// Simple password generator
-const genPassword = () => generatePassword(8)
+const generateNewPassword = () => {
+  form.value.password = generatePassword(8)
+}
 
 // Watchers
 // Watch for role changes to help populate custom scope template
@@ -251,9 +272,21 @@ watch(
 )
 
 // Methods
-const updateUser = () => {
-  if (!payload.value) return
-  emit('update-user', payload.value)
+const hasChanges = computed(() => {
+  return payload.value !== null || form.value.password !== ''
+})
+
+const submitForm = () => {
+  if (payload.value) {
+    emit('update-user', payload.value)
+  }
+  if (form.value.password !== '') {
+    emit(
+      'change-password',
+      form.value.password.trim() ? form.value.password.trim() : null,
+      isCurrentUser.value ? form.value.currentPassword : undefined,
+    )
+  }
 }
 
 const initializeForm = () => {
@@ -272,7 +305,8 @@ const initializeForm = () => {
     username: props.user.username || '',
     display_name: props.user.display_name || '',
     role,
-    password: genPassword(),
+    password: '',
+    currentPassword: '',
     customScope,
     idp_sub: props.user.idp_sub || '',
   }
