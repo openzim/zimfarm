@@ -167,12 +167,11 @@ class WorkerManager(BaseWorker):
         Maintains an ordered iterator so each are called one after another"""
 
         def _get_iter():
-            uris = [conn.uri for conn in self.connections.values()]
             index = 0
             while True:
-                yield uris[index]
+                yield self.webapi_uris[index]
                 index += 1
-                if index >= len(uris):
+                if index >= len(self.webapi_uris):
                     index = 0
 
         if not hasattr(self, "uri_iter"):
@@ -184,7 +183,7 @@ class WorkerManager(BaseWorker):
         self.check_cancellation()  # update our tasks register
 
         # a *poll* is *n* calls to our backend APIs
-        for _ in range(len(self.connections)):
+        for _ in range(len(self.webapi_uris)):
             # dont poll other APIs if we received a task. this will ensure the received
             # task gets to start and assign its resources before requesting more
             if self.poll_api(self.get_next_webapi_uri()):
@@ -245,8 +244,8 @@ class WorkerManager(BaseWorker):
 
     def check_in(self):
         """check_in_at() to all connections"""
-        for connection in self.connections.values():
-            self.check_in_at(connection.uri)
+        for uri in self.webapi_uris:
+            self.check_in_at(uri)
 
     def check_in_at(self, webapi_uri: str):
         """inform backend that we started a manager, sending resources info"""

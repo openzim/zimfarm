@@ -1,4 +1,3 @@
-import datetime
 from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any
@@ -7,16 +6,6 @@ import requests
 
 from zimfarm_worker.common import logger
 from zimfarm_worker.common.constants import REQUESTS_TIMEOUT
-
-
-@dataclass
-class Token:
-    """Access token on successful authentication."""
-
-    access_token: str
-    expires_time: datetime.datetime
-    refresh_token: str
-    token_type: str = "Bearer"
 
 
 @dataclass

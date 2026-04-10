@@ -1,13 +1,25 @@
 # pyright: strict, reportPrivateUsage=false
+# ruff: noqa: ARG005
+import base64
 import datetime
+from collections.abc import Callable
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import jwt
 import pytest
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.token import OAuthOIDCTokenDecoder, OAuthSessionTokenDecoder
+from zimfarm_backend.api.token import (
+    JWTClaims,
+    OAuthOIDCTokenDecoder,
+    OAuthSessionTokenDecoder,
+    SshTokenDecoder,
+)
 from zimfarm_backend.common import getnow
+from zimfarm_backend.db.models import Account, Worker
+from zimfarm_backend.utils.cryptography import sign_message_with_rsa_key
 
 # Authentication method constants for testing
 FIRST_FACTOR_METHODS = ["password", "oidc"]
@@ -504,3 +516,101 @@ def test_verify_session_access_token_verify_client_id_matches_sub(
 
         with pytest.raises(ValueError, match="Oauth client ID does not match"):
             decoder.decode(test_token)
+
+
+@pytest.mark.parametrize(
+    ["datetime_str", "message_modifier", "expected_exception", "exception_msg"],
+    [
+        pytest.param(
+            datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
+            .replace(tzinfo=None)
+            .isoformat(timespec="seconds"),
+            lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Difference betweeen message time and server time is greater than",
+            id="outdated-timestamp",
+        ),
+        pytest.param(
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: "hello",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Invalid message format.",
+            id="invalid-message-format",
+        ),
+        pytest.param(
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: f"{w}.{t}.not-base64-!@#",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Invalid signature format.*",
+            id="invalid-signature-format",
+        ),
+        pytest.param(
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: f"unknownworker.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Worker unknownworker does not exist.",
+            id="worker-does-not-exist",
+        ),
+        pytest.param(
+            # Before CI fully sets up, default timer has expired, so, add
+            # additional 5 minutes
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            None,
+            "",
+            id="valid-message",
+        ),
+    ],
+)
+def test_ssh_token_decoder(
+    account: Account,
+    rsa_private_key: RSAPrivateKey,
+    datetime_str: str,
+    message_modifier: Callable[[str, str, str], str],
+    expected_exception: type[Exception] | None,
+    exception_msg: str,
+    create_worker: Callable[..., Worker],
+    dbsession: OrmSession,
+):
+    worker = create_worker(account=account)
+
+    # signature is created with f"{worker_name}.{timestamp_str}"
+    message_to_sign = f"{worker.name}.{datetime_str}"
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message_to_sign, encoding="ascii")
+    )
+    b64_signature = base64.b64encode(signature).decode()
+
+    token = message_modifier(worker.name, datetime_str, b64_signature)
+
+    decoder = SshTokenDecoder()
+
+    if expected_exception:
+        with pytest.raises(expected_exception, match=exception_msg):
+            decoder.decode(token, session=dbsession)
+    else:
+        claims = decoder.decode(token, session=dbsession)
+        assert isinstance(claims, JWTClaims)
+        assert claims.iss == "zimfarm-worker"
+        assert claims.sub == worker.account_id
+
+
+def test_ssh_token_decoder_no_session(
+    account: Account,
+    rsa_private_key: RSAPrivateKey,
+    create_worker: Callable[..., Worker],
+):
+    worker = create_worker(account=account)
+    datetime_str = (getnow() + datetime.timedelta(minutes=5)).isoformat()
+    message_to_sign = f"{worker.name}.{datetime_str}"
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message_to_sign, encoding="ascii")
+    )
+    b64_signature = base64.b64encode(signature).decode()
+    token = f"{worker.name}.{datetime_str}.{b64_signature}"
+
+    decoder = SshTokenDecoder()
+    with pytest.raises(
+        ValueError, match="OrmSession is required to decode SSH bearer tokens."
+    ):
+        decoder.decode(token)

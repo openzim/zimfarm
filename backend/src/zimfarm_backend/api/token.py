@@ -1,4 +1,6 @@
 import abc
+import base64
+import binascii
 import datetime
 import uuid
 
@@ -7,6 +9,7 @@ from jwt import PyJWKClient
 from jwt import exceptions as jwt_exceptions
 from pydantic import Field
 from pydantic import ValidationError as PydanticValidationError
+from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
 from zimfarm_backend.api.constants import (
@@ -21,7 +24,13 @@ from zimfarm_backend.api.constants import (
     OAUTH_SESSION_AUDIENCE_ID,
     OAUTH_SESSION_LOGIN_REQUIRE_2FA,
 )
+from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import MESSAGE_VALIDITY_DURATION
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
+from zimfarm_backend.db.worker import get_worker
+from zimfarm_backend.exceptions import PublicKeyLoadError
+from zimfarm_backend.utils.cryptography import verify_signed_message
 
 
 class JWTClaims(BaseModel):
@@ -36,7 +45,7 @@ class TokenDecoder(abc.ABC):
     """Abstract base class for token decoders."""
 
     @abc.abstractmethod
-    def decode(self, token: str) -> JWTClaims:
+    def decode(self, token: str, session: OrmSession | None = None) -> JWTClaims:
         """
         Decode and validate a token.
         """
@@ -59,6 +68,77 @@ class TokenDecoder(abc.ABC):
         pass
 
 
+class SshTokenDecoder(TokenDecoder):
+    """Decoder for SSH bearer tokens"""
+
+    def decode(self, token: str, session: OrmSession | None = None) -> JWTClaims:
+        """
+        Decode and validate an ssh authentication message.
+        """
+        # First few checks that don't require should fail early  if this is not
+        # an SSH bearer token.
+        try:
+            worker_name, timestamp_str, signature = token.split(".", 2)
+            timestamp = datetime.datetime.fromisoformat(timestamp_str)
+        except ValueError as exc:
+            raise ValueError("Invalid message format.") from exc
+
+        try:
+            signature = base64.standard_b64decode(signature)
+        except binascii.Error as exc:
+            raise ValueError("Invalid signature format (not base64)") from exc
+
+        exp = timestamp + datetime.timedelta(seconds=MESSAGE_VALIDITY_DURATION)
+        if getnow() > exp:
+            raise ValueError(
+                "Difference betweeen message time and server time is "
+                f"greater than {MESSAGE_VALIDITY_DURATION}s"
+            )
+
+        if session is None:
+            raise ValueError("OrmSession is required to decode SSH bearer tokens.")
+
+        try:
+            db_worker = get_worker(session, worker_name=worker_name)
+        except RecordDoesNotExistError as exc:
+            raise ValueError(f"Worker {worker_name} does not exist.") from exc
+
+        authenticated = False
+        # Verify signature with workers' public keys
+        for ssh_key in db_worker.ssh_keys:
+            try:
+                if verify_signed_message(
+                    bytes(ssh_key.key, encoding="ascii"),
+                    signature,
+                    bytes(f"{worker_name}.{timestamp_str}", encoding="ascii"),
+                ):
+                    authenticated = True
+                    break
+            except PublicKeyLoadError as exc:
+                logger.exception("error while verifying message using public key")
+                raise ValueError("Unable to load public_key") from exc
+
+        if not authenticated:
+            raise ValueError("Could not find matching key for signature.")
+
+        return JWTClaims(
+            iss="zimfarm-worker",
+            exp=exp,
+            iat=timestamp,
+            # use the account id so route permission checks are done against the worker
+            # account
+            subject=db_worker.account_id,
+        )
+
+    @property
+    def name(self) -> str:
+        return "ssh"
+
+    @property
+    def can_decode(self) -> bool:
+        return True
+
+
 class LocalTokenDecoder(TokenDecoder):
     """Decoder for local Zimfarm JWT tokens."""
 
@@ -66,7 +146,11 @@ class LocalTokenDecoder(TokenDecoder):
         self.secret = secret
         self.algorithm = algorithm
 
-    def decode(self, token: str) -> JWTClaims:
+    def decode(
+        self,
+        token: str,
+        session: OrmSession | None = None,  # noqa: ARG002
+    ) -> JWTClaims:
         """
         Decode and validate a local Zimfarm token.
         """
@@ -93,7 +177,11 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
             headers={"User-Agent": "PyJWT/2.11.0"},
         )
 
-    def decode(self, token: str) -> JWTClaims:
+    def decode(
+        self,
+        token: str,
+        session: OrmSession | None = None,  # noqa: ARG002
+    ) -> JWTClaims:
         """
         Decode and validate an OAuth OIDC token.
         """
@@ -156,7 +244,11 @@ class OAuthSessionTokenDecoder(TokenDecoder):
             headers={"User-Agent": "PyJWT/2.11.0"},
         )
 
-    def decode(self, token: str) -> JWTClaims:
+    def decode(
+        self,
+        token: str,
+        session: OrmSession | None = None,  # noqa: ARG002
+    ) -> JWTClaims:
         """
         Decode and validate an OAuth OIDC token.
         """
@@ -210,7 +302,7 @@ class TokenDecoderChain:
         """
         self.decoders = decoders
 
-    def decode(self, token: str) -> JWTClaims:
+    def decode(self, token: str, session: OrmSession) -> JWTClaims:
         """
         Try to decode token using each decoder in order.
         """
@@ -222,15 +314,21 @@ class TokenDecoderChain:
         for decoder in decoders:
             if decoder.can_decode:
                 try:
-                    return decoder.decode(token)
+                    logger.debug(f"{decoder.name}-decoder: attempting to decode token.")
+                    claims = decoder.decode(token, session)
                 except (
                     jwt_exceptions.PyJWTError,
                     PydanticValidationError,
                     Exception,
                 ) as exc:
-                    logger.debug(f"{decoder.name}: unable to decode token: {exc!s}")
+                    logger.debug(
+                        f"{decoder.name}-decoder: unable to decode token: {exc!s}"
+                    )
                     # keep track of the most recent exception class
                     exc_cls = exc
+                else:
+                    logger.debug(f"{decoder.name}-decoder: decoded token successfully.")
+                    return claims
 
         if exc_cls:
             raise exc_cls
@@ -239,7 +337,12 @@ class TokenDecoderChain:
 
 
 token_decoder = TokenDecoderChain(
-    decoders=[LocalTokenDecoder(), OAuthOIDCTokenDecoder(), OAuthSessionTokenDecoder()]
+    decoders=[
+        SshTokenDecoder(),
+        LocalTokenDecoder(),
+        OAuthOIDCTokenDecoder(),
+        OAuthSessionTokenDecoder(),
+    ]
 )
 
 

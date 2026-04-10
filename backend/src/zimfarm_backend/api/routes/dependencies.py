@@ -27,38 +27,48 @@ AuthorizationCredentials = Annotated[
 ]
 
 
-def get_jwt_claims_or_none(
-    authorization: AuthorizationCredentials,
-) -> JWTClaims | None:
-    """
-    Get the JWT claims or None if the account is not authenticated.
+def get_jwt_claims_or_none_with_session(
+    session_type: Literal["auto", "manual"] = "auto",
+):
+    def _get_jwt_claims_or_none(
+        authorization: AuthorizationCredentials,
+        session: Annotated[
+            OrmSession,
+            Depends(gen_dbsession if session_type == "auto" else gen_manual_dbsession),
+        ],
+    ) -> JWTClaims | None:
+        """
+        Get the JWT claims or None if the account is not authenticated.
+        """
 
-    Tries to decode as Zimfarm token first, then as Kiwix token.
-    """
-    if authorization is None:
-        return None
-    token = authorization.credentials
+        if authorization is None:
+            return None
+        token = authorization.credentials
 
-    try:
-        return token_decoder.decode(token)
-    except jwt_exceptions.ExpiredSignatureError as exc:
-        raise UnauthorizedError("Token has expired.") from exc
-    except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:
-        raise UnauthorizedError("Invalid token") from exc
-    except ValueError as exc:
-        raise UnauthorizedError(exc.args[0]) from exc
-    except Exception as exc:
-        raise UnauthorizedError("Unable to verify token") from exc
+        try:
+            return token_decoder.decode(token, session)
+        except jwt_exceptions.ExpiredSignatureError as exc:
+            raise UnauthorizedError("Token has expired.") from exc
+        except (jwt_exceptions.InvalidTokenError, jwt_exceptions.PyJWTError) as exc:
+            raise UnauthorizedError("Invalid token") from exc
+        except ValueError as exc:
+            raise UnauthorizedError(exc.args[0]) from exc
+        except Exception as exc:
+            raise UnauthorizedError("Unable to verify token") from exc
+
+    return _get_jwt_claims_or_none
 
 
 def get_current_account_or_none_with_session(
     session_type: Literal["auto", "manual"] = "auto",
 ):
     def _get_current_account_or_none(
-        claims: Annotated[JWTClaims | None, Depends(get_jwt_claims_or_none)],
         session: Annotated[
             OrmSession,
             Depends(gen_dbsession if session_type == "auto" else gen_manual_dbsession),
+        ],
+        claims: Annotated[
+            JWTClaims | None, Depends(get_jwt_claims_or_none_with_session(session_type))
         ],
     ) -> Account | None:
         if claims is None:
@@ -122,6 +132,8 @@ get_current_account_or_none = get_current_account_or_none_with_session(
     session_type="auto"
 )
 get_current_account = get_current_account_with_session(session_type="auto")
+
+get_jwt_claims_or_none = get_jwt_claims_or_none_with_session(session_type="auto")
 
 
 def require_permission(*, namespace: str, name: str):
