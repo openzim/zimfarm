@@ -24,17 +24,25 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('accounts-table-limit', limit.toString())
   }
 
-  const createUser = async (username: string, role: string, password: string) => {
+  const createUser = async (payload: {
+    display_name: string
+    role: string
+    username?: string
+    password?: string
+    idp_sub?: string
+  }) => {
     const service = await authStore.getApiService('accounts')
     try {
       const response = await service.post<
-        { username: string; role: string; password: string },
+        {
+          display_name: string
+          role: string
+          username?: string
+          password?: string
+          idp_sub?: string
+        },
         User
-      >('', {
-        username,
-        role,
-        password,
-      })
+      >('', payload)
       errors.value = []
       return response
     } catch (error) {

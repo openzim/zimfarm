@@ -1,13 +1,81 @@
 from collections.abc import Callable
+from contextlib import nullcontext as does_not_raise
 from http import HTTPStatus
 
 import pytest
+from _pytest.python_api import RaisesContext
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.api.routes.accounts.models import AccountCreateSchema
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.db.models import Account
+
+
+@pytest.mark.parametrize(
+    "username,display_name,password,role,expected",
+    [
+        pytest.param(
+            None,
+            None,
+            "testpassword",
+            RoleEnum.ADMIN,
+            pytest.raises(ValidationError),
+            id="no-username-and-displayname",
+        ),
+        pytest.param(
+            "testuser",
+            None,
+            "testpassword",
+            RoleEnum.WORKER,
+            pytest.raises(ValidationError),
+            id="worker-role",
+        ),
+        pytest.param(
+            None,
+            "Test User",
+            "testpassword",
+            RoleEnum.EDITOR,
+            pytest.raises(ValidationError),
+            id="no-username-with-password",
+        ),
+        pytest.param(
+            "testuser",
+            "Test User",
+            "testpassword",
+            RoleEnum.EDITOR,
+            does_not_raise(),
+            id="valid-inputs",
+        ),
+    ],
+)
+def test_account_creation_schema(
+    username: str | None,
+    display_name: str | None,
+    password: str | None,
+    role: RoleEnum,
+    expected: RaisesContext[Exception],
+):
+    with expected:
+        AccountCreateSchema(
+            username=username,
+            display_name=display_name,
+            password=password,
+            role=role,
+        )
+
+
+def test_display_username_set_from_username_if_no_display_name():
+    account = AccountCreateSchema(
+        username="testuser",
+        role=RoleEnum.ADMIN,
+        password="testpassword",
+    )
+
+    assert account.display_name is not None
 
 
 def test_list_accounts_no_auth(client: TestClient):
@@ -131,7 +199,7 @@ def test_create_account(client: TestClient, account: Account):
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "username": "test",
-            "password": "test",
+            "password": "testpassword",
             "role": "admin",
         },
     )
@@ -149,7 +217,7 @@ def test_create_account_duplicate(client: TestClient, account: Account):
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "username": account.username,
-            "password": "test",
+            "password": "testpassword",
             "role": "admin",
         },
     )
