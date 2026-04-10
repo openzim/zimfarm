@@ -27,7 +27,7 @@
             <!-- Tabs -->
             <v-tabs v-model="selectedTab" color="primary" class="mb-4">
               <v-tab value="details" :to="{ name: 'account-detail', params: { userId: userId } }">
-                Profile
+                View
               </v-tab>
               <v-tab
                 value="edit"
@@ -57,10 +57,73 @@
               <v-window-item value="details">
                 <v-card flat>
                   <v-card-text>
-                    <!-- IDP Sub -->
-                    <p v-if="user.idp_sub" class="mb-4">
-                      <strong>IDP Sub:</strong> <code>{{ user.idp_sub }}</code>
-                    </p>
+                    <v-row class="mb-4">
+                      <!-- Basic Info Card -->
+                      <v-col cols="12">
+                        <v-card variant="outlined" class="h-100">
+                          <v-card-title class="text-subtitle-1">
+                            <v-icon class="mr-2">mdi-card-account-details</v-icon>
+                            Basic Information
+                          </v-card-title>
+                          <v-list density="compact">
+                            <v-list-item>
+                              <v-list-item-title>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Display Name:</span>
+                                  <span class="font-weight-medium">{{ user.display_name }}</span>
+                                </div>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Role:</span>
+                                  <code>{{ user.role }}</code>
+                                </div>
+                              </v-list-item-title>
+                            </v-list-item>
+                          </v-list>
+                        </v-card>
+                      </v-col>
+
+                      <!-- Authentication Card -->
+                      <v-col cols="12">
+                        <v-card variant="outlined" class="h-100">
+                          <v-card-title class="text-subtitle-1">
+                            <v-icon class="mr-2">mdi-shield-key-outline</v-icon>
+                            Authentication
+                          </v-card-title>
+                          <v-list density="compact">
+                            <v-list-item>
+                              <v-list-item-subtitle>Local Authentication</v-list-item-subtitle>
+                              <v-list-item-title>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Username:</span>
+                                  <code v-if="user.username">{{ user.username }}</code>
+                                  <span v-else class="text-medium-emphasis text-body-2"
+                                    >Not set</span
+                                  >
+                                </div>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Password:</span>
+                                  <span class="text-body-2">{{
+                                    user.has_password ? 'Set' : 'Not set'
+                                  }}</span>
+                                </div>
+                              </v-list-item-title>
+                            </v-list-item>
+
+                            <v-divider class="my-2" v-if="user.idp_sub"></v-divider>
+
+                            <v-list-item v-if="user.idp_sub">
+                              <v-list-item-subtitle
+                                >External Identity Provider</v-list-item-subtitle
+                              >
+                              <v-list-item-title class="mt-1">
+                                <span class="mr-2">IDP Sub:</span>
+                                <code>{{ user.idp_sub }}</code>
+                              </v-list-item-title>
+                            </v-list-item>
+                          </v-list>
+                        </v-card>
+                      </v-col>
+                    </v-row>
 
                     <!-- Permissions List -->
                     <v-card class="mb-4" variant="outlined">
@@ -239,10 +302,13 @@ const getAllPermissionsForNamespace = (namespace: string): string[] => {
 }
 
 // Methods
-const changePassword = async (password: string | null) => {
+const changePassword = async (password: string | null, currentPassword?: string) => {
   loadingStore.startLoading('Changing password...')
 
-  const success = await userStore.changePassword(props.userId, { new: password })
+  const success = await userStore.changePassword(props.userId, {
+    new: password,
+    current: currentPassword,
+  })
   if (success) {
     if (password === null) {
       notificationStore.showSuccess(
