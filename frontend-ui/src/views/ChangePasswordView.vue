@@ -8,7 +8,7 @@
 <template>
   <v-container class="fill-height">
     <v-row justify="center" align="center">
-      <v-col cols="12" sm="8" md="6" lg="4">
+      <v-col cols="12" sm="8">
         <v-card class="elevation-12">
           <v-card-title class="text-center text-h5 py-4"> Change Password </v-card-title>
 
@@ -137,11 +137,7 @@ const changePassword = async () => {
 
   if (success) {
     notificationStore.showSuccess('Password changed successfully')
-    if (window.history.length > 1) {
-      router.back()
-    } else {
-      router.push({ name: 'home' })
-    }
+    router.push({ name: 'home' })
   } else {
     error.value = 'Failed to change password'
     for (const error of userStore.errors) {
