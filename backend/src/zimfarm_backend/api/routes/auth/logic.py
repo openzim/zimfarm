@@ -117,7 +117,7 @@ def refresh_access_token(
     return _refresh_access_token(db_session, request.refresh_token, response)
 
 
-@router.post("/ssh-authorize")
+@router.post("/ssh-authorize", deprecated=True)
 def authenticate_account_with_ssh_keys(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
     x_sshauth_message: Annotated[
