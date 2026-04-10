@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
@@ -112,10 +112,15 @@ def create_account(
         account = db_create_account(
             db_session,
             username=user_schema.username,
-            display_name=user_schema.username,
-            password_hash=generate_password_hash(user_schema.password),
+            display_name=cast(str, user_schema.display_name),
+            password_hash=(
+                generate_password_hash(user_schema.password)
+                if user_schema.password
+                else None
+            ),
             scope=None,
             role=user_schema.role,
+            idp_sub=user_schema.idp_sub,
         )
     except RecordAlreadyExistsError as exc:
         raise BadRequestError("Account already exists") from exc
