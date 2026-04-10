@@ -1,18 +1,15 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import datetime
 import os
 import signal
 import sys
-from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
 import docker
-import jwt
 
-from zimfarm_worker.common import getnow, logger
+from zimfarm_worker.common import logger
 from zimfarm_worker.common.constants import (
     DOCKER_CLIENT_TIMEOUT,
     DOCKER_SOCKET,
@@ -24,25 +21,7 @@ from zimfarm_worker.common.cryptography import (
     load_private_key_from_path,
 )
 from zimfarm_worker.common.docker import list_containers
-from zimfarm_worker.common.requests import Response, Token, query_api
-
-
-@dataclass(kw_only=True)
-class JwtPayload:
-    iss: str
-    exp: float
-    iat: float
-    subject: str
-
-
-@dataclass(kw_only=True)
-class WebApiConnection:
-    uri: str
-    access_token: str
-    refresh_token: str
-    jwt_payload: JwtPayload
-    authenticated_on: datetime.datetime
-    authentication_expires_on: datetime.datetime
+from zimfarm_worker.common.requests import Response, query_api
 
 
 class BaseWorker:
@@ -88,35 +67,20 @@ class BaseWorker:
             sys.exit(1)
 
         try:
-            private_key = load_private_key_from_path(PRIVATE_KEY)
+            self.private_key = load_private_key_from_path(PRIVATE_KEY)
         except Exception as exc:
             logger.critical("\tprivate key is not valid RSA")
             logger.exception(exc)
             sys.exit(1)
         else:
-            self.fingerprint: str = get_public_key_fingerprint(private_key.public_key())
+            self.fingerprint: str = get_public_key_fingerprint(
+                self.private_key.public_key()
+            )
 
             logger.info(f"\tprivate key is available and readable ({self.fingerprint})")
 
     def check_auth(self):
-        self.connections: dict[str, WebApiConnection] = {
-            uri: WebApiConnection(
-                uri=uri,
-                access_token="",
-                refresh_token="",
-                jwt_payload=JwtPayload(
-                    iss="",
-                    exp=0,
-                    iat=0,
-                    subject="",
-                ),
-                authenticated_on=datetime.datetime(2019, 1, 1),
-                authentication_expires_on=datetime.datetime(2019, 1, 1),
-            )
-            for uri in self.webapi_uris
-        }
-
-        for uri in self.connections.keys():
+        for uri in self.webapi_uris:
             logger.info(f"testing authentication with {uri}…")
             response = self.query_api(path="/auth/test", method="GET", webapi_uri=uri)
             if response.success:
@@ -153,64 +117,6 @@ class BaseWorker:
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGQUIT, self.exit_gracefully)
 
-    def authenticate(self, uri: str, *, force: bool = False):
-        # our access token should grant us access for 60mn
-        if force or self.connections[uri].authentication_expires_on <= getnow():
-            try:
-                private_key = load_private_key_from_path(PRIVATE_KEY)
-                auth_message = generate_auth_message(self.worker_name, private_key)
-                token_response = query_api(
-                    f"{uri}/auth/ssh-authorize",
-                    method="POST",
-                    headers={
-                        "X-SSHAuth-Message": auth_message.body,
-                        "X-SSHAuth-Signature": auth_message.signature,
-                    },
-                    timeout=30,
-                )
-                if not token_response.success:
-                    logger.error(
-                        "failed to authenticate with API: "
-                        f"status_code={token_response.status_code} "
-                        f"mesage={token_response.json.get('message')}"
-                    )
-                    return False
-
-                token = Token(
-                    access_token=token_response.json["access_token"],
-                    expires_time=datetime.datetime.fromisoformat(
-                        token_response.json["expires_time"]
-                    ),
-                    refresh_token=token_response.json["refresh_token"],
-                    token_type=token_response.json["token_type"],
-                )
-
-                self.connections[uri].access_token = token.access_token
-                self.connections[uri].refresh_token = token.refresh_token
-                jwt_payload = jwt.decode(
-                    self.connections[uri].access_token,
-                    algorithms=["HS256"],
-                    options={"verify_signature": False},
-                )
-                self.connections[uri].jwt_payload = JwtPayload(
-                    iss=jwt_payload["iss"],
-                    exp=jwt_payload["exp"],
-                    iat=jwt_payload["iat"],
-                    subject=jwt_payload["subject"],
-                )
-                self.connections[uri].authenticated_on = getnow()
-                self.connections[uri].authentication_expires_on = (
-                    datetime.datetime.fromtimestamp(
-                        self.connections[uri].jwt_payload.exp
-                    )
-                )
-                return True
-            except Exception as exc:
-                logger.error(f"authenticate() failure: {exc}")
-                logger.exception(exc)
-                return False
-        return True
-
     def query_api(
         self,
         *,
@@ -222,18 +128,16 @@ class BaseWorker:
         webapi_uri: str | None = None,
     ) -> Response:
         if not webapi_uri:
-            webapi_uri = next(iter(self.connections.keys()))
+            webapi_uri = next(iter(self.webapi_uris))
 
-        if not self.authenticate(uri=webapi_uri):
-            return Response(
-                status_code=HTTPStatus.UNAUTHORIZED,
-                success=False,
-                json={},
-            )
+        auth_message = generate_auth_message(self.worker_name, self.private_key)
 
         attempts = 0
         headers = headers or {}
-        headers["Authorization"] = f"Bearer {self.connections[webapi_uri].access_token}"
+        headers["Authorization"] = (
+            f"Bearer {auth_message.worker_name}.{auth_message.timestamp_str}."
+            f"{auth_message.signature}"
+        )
         while attempts <= 1:
             response = query_api(
                 url=f"{webapi_uri}{path}",
@@ -246,7 +150,6 @@ class BaseWorker:
 
             # Unauthorised error: attempt to re-auth as scheduler might have restarted?
             if response.status_code == HTTPStatus.UNAUTHORIZED:
-                self.authenticate(uri=webapi_uri, force=True)
                 continue
             else:
                 return response

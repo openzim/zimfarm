@@ -94,54 +94,47 @@ def test_refresh_access_token_expired_token(
 
 
 @pytest.mark.parametrize(
-    ["datetime_str", "expected_status", "expected_response_contents"],
+    ["datetime_str", "expected_status"],
     [
         pytest.param(
             datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
             .replace(tzinfo=None)
-            .isoformat(),
+            .isoformat(timespec="seconds"),
             HTTPStatus.UNAUTHORIZED,
-            [],
             id="outdated-timestamp",
         ),
-        pytest.param("hello", HTTPStatus.BAD_REQUEST, [], id="invalid-message"),
+        pytest.param("hello", HTTPStatus.UNAUTHORIZED, id="invalid-message"),
         pytest.param(
             # Before CI fully sets up, default timer has expired, so, add
             # additional 5 minutes
-            (getnow() + datetime.timedelta(minutes=5)).isoformat(),
-            HTTPStatus.OK,
-            ["access_token", "token_type", "expires_time"],
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            HTTPStatus.NO_CONTENT,
             id="valid-message",
         ),
     ],
 )
-def test_authenticate_worker(
+def test_ssh_authenticate_account(
     client: TestClient,
     account: Account,
     rsa_private_key: RSAPrivateKey,
     datetime_str: str,
     expected_status: int,
-    expected_response_contents: list[str],
     create_worker: Callable[..., Worker],
 ):
     worker = create_worker(account=account)
-    message = f"{worker.name}:{datetime_str}"
+    message = f"{worker.name}.{datetime_str}"
     signature = sign_message_with_rsa_key(
         rsa_private_key, bytes(message, encoding="ascii")
     )
     x_sshauth_signature = base64.b64encode(signature).decode()
-    response = client.post(
-        "/v2/auth/ssh-authorize",
+    response = client.get(
+        "/v2/auth/test",
         headers={
             "Content-type": "application/json",
-            "X-SSHAuth-Message": message,
-            "X-SSHAuth-Signature": x_sshauth_signature,
+            "Authorization": f"Bearer {message}.{x_sshauth_signature}",
         },
     )
     assert response.status_code == expected_status
-    data = response.text
-    for content in expected_response_contents:
-        assert content in data
 
 
 def test_authentication_token(
