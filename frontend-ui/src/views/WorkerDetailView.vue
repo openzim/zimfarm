@@ -655,19 +655,27 @@ const isDuplicateContextName = (name: string, currentIndex: number): boolean => 
 
 const workerName = computed(() => props.workerName)
 
-const usageCpu = computed(
-  () => `${worker.value?.current_usage.cpu ?? 0}/${worker.value?.resources.cpu ?? 0}`,
+const maxMemory = computed(
+  () => (worker.value?.current_usage.memory ?? 0) + (worker.value?.resources.memory ?? 0),
 )
+const maxCpu = computed(
+  () => (worker.value?.current_usage.cpu ?? 0) + (worker.value?.resources.cpu ?? 0),
+)
+const maxDisk = computed(
+  () => (worker.value?.current_usage.disk ?? 0) + (worker.value?.resources.disk ?? 0),
+)
+
+const usageCpu = computed(() => `${worker.value?.current_usage.cpu ?? 0}/${maxCpu.value}`)
 const usageMemory = computed(
   () =>
     `${formattedBytesSize(worker.value?.current_usage.memory ?? 0)}/${formattedBytesSize(
-      worker.value?.resources.memory ?? 0,
+      maxMemory.value,
     )}`,
 )
 const usageDisk = computed(
   () =>
     `${formattedBytesSize(worker.value?.current_usage.disk ?? 0)}/${formattedBytesSize(
-      worker.value?.resources.disk ?? 0,
+      maxDisk.value,
     )}`,
 )
 
@@ -678,19 +686,16 @@ function pctColor(pct: number): string {
 }
 
 const percentCpu = computed(() => {
-  const max = worker.value?.resources.cpu ?? 0
   const cur = worker.value?.current_usage.cpu ?? 0
-  return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
+  return maxCpu.value > 0 ? Math.min(100, Math.round((cur * 100) / maxCpu.value)) : 0
 })
 const percentMemory = computed(() => {
-  const max = worker.value?.resources.memory ?? 0
   const cur = worker.value?.current_usage.memory ?? 0
-  return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
+  return maxMemory.value > 0 ? Math.min(100, Math.round((cur * 100) / maxMemory.value)) : 0
 })
 const percentDisk = computed(() => {
-  const max = worker.value?.resources.disk ?? 0
   const cur = worker.value?.current_usage.disk ?? 0
-  return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
+  return maxDisk.value > 0 ? Math.min(100, Math.round((cur * 100) / maxDisk.value)) : 0
 })
 const colorCpu = computed(() => pctColor(percentCpu.value))
 const colorMemory = computed(() => pctColor(percentMemory.value))

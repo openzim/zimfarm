@@ -102,6 +102,9 @@ def update_worker(
     contexts: dict[str, IPv4Address | IPv6Address | None] | None = None,
     update_last_seen: bool = True,
     admin_disabled: bool | None = None,
+    avail_disk: int | None = None,
+    avail_memory: int | None = None,
+    avail_cpu: int | None = None,
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
     worker = get_worker(session, worker_name=worker_name)
@@ -113,6 +116,13 @@ def update_worker(
         worker.contexts = _serialize_worker_context(contexts)
     if admin_disabled is not None:
         worker.admin_disabled = admin_disabled
+    if avail_disk is not None:
+        worker.disk = avail_disk
+    if avail_memory is not None:
+        worker.memory = avail_memory
+    if avail_cpu is not None:
+        worker.cpu = avail_cpu
+
     session.add(worker)
     session.flush()
     return worker
