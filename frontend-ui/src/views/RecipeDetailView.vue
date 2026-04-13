@@ -108,7 +108,7 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canDeleteRecipes"
+          v-if="canArchiveRecipes"
           value="archive"
           :to="{
             name: 'recipe-detail-tab',
