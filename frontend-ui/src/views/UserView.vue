@@ -266,9 +266,9 @@ const dataLoaded = ref(false)
 // Computed properties
 const scope = computed(() => user.value?.scope || {})
 
-const canDeleteUser = computed(() => authStore.hasPermission('users', 'delete'))
+const canDeleteUser = computed(() => authStore.hasPermission('accounts', 'delete'))
 
-const canSSHKeyUsers = computed(() => authStore.hasPermission('users', 'ssh_keys'))
+const canSSHKeyUsers = computed(() => authStore.hasPermission('accounts', 'ssh_keys'))
 
 const getNamespaceIcon = (namespace: string): string => {
   const iconMap: Record<string, string> = {
@@ -287,7 +287,7 @@ const formatNamespaceName = (namespace: string): string => {
     tasks: 'Tasks',
     recipes: 'Recipes',
     requested_tasks: 'Requested Tasks',
-    users: 'Users',
+    accounts: 'Accounts',
     workers: 'Workers',
     zim: 'ZIM Files',
   }

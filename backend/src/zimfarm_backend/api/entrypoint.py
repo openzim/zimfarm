@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from zimfarm_backend.api.routes.accounts.logic import router as accounts_router
+from zimfarm_backend.api.routes.accounts.logic import users_router
 from zimfarm_backend.api.routes.auth.logic import router as auth_router
 from zimfarm_backend.api.routes.blobs.logic import router as blobs_router
 from zimfarm_backend.api.routes.contexts.logic import router as contexts_router
@@ -26,7 +28,6 @@ from zimfarm_backend.api.routes.requested_tasks.logic import (
 from zimfarm_backend.api.routes.status.logic import router as status_router
 from zimfarm_backend.api.routes.tags.logic import router as tags_router
 from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
-from zimfarm_backend.api.routes.users.logic import router as users_router
 from zimfarm_backend.api.routes.workers.logic import router as workers_router
 from zimfarm_backend.common.constants import (
     ALEMBIC_UPGRADE_HEAD_ON_START,
@@ -40,7 +41,7 @@ from zimfarm_backend.db.exceptions import (
 )
 from zimfarm_backend.utils.database import (
     check_if_schema_is_up_to_date,
-    create_initial_user,
+    create_initial_account,
     load_offliners,
     upgrade_db_schema,
 )
@@ -59,7 +60,7 @@ async def lifespan(_: FastAPI):
         upgrade_db_schema()
 
     check_if_schema_is_up_to_date()
-    create_initial_user()
+    create_initial_account()
     load_offliners()
     yield
 
@@ -91,6 +92,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=platforms_router)
     main_router.include_router(router=offliners_router)
     main_router.include_router(router=blobs_router)
+    main_router.include_router(router=accounts_router)
     main_router.include_router(router=users_router)
     main_router.include_router(router=requested_tasks_router)
     main_router.include_router(router=workers_router)

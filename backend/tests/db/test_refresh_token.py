@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Refreshtoken, User
+from zimfarm_backend.db.models import Account, Refreshtoken
 from zimfarm_backend.db.refresh_token import (
     create_refresh_token,
     delete_refresh_token,
@@ -17,14 +17,14 @@ from zimfarm_backend.db.refresh_token import (
 
 
 @pytest.fixture
-@pytest.mark.num_users(1)
-def refresh_token(dbsession: OrmSession, users: list[User]) -> Refreshtoken:
-    """Create a refresh token for a user"""
+@pytest.mark.num_accounts(1)
+def refresh_token(dbsession: OrmSession, accounts: list[Account]) -> Refreshtoken:
+    """Create a refresh token for an account"""
     token = Refreshtoken(
         token=uuid4(),
         expire_time=getnow() + datetime.timedelta(seconds=1_000),
     )
-    token.user = users[0]
+    token.account = accounts[0]
     dbsession.add(token)
     dbsession.flush()
     return token
@@ -36,13 +36,13 @@ def test_get_refresh_token_or_none(dbsession: OrmSession):
     assert refresh_token is None
 
 
-@pytest.mark.num_users(1)
-def test_create_refresh_token(dbsession: OrmSession, users: list[User]):
+@pytest.mark.num_accounts(1)
+def test_create_refresh_token(dbsession: OrmSession, accounts: list[Account]):
     """Test that create_refresh_token creates a refresh token"""
-    refresh_token = create_refresh_token(dbsession, users[0].id)
+    refresh_token = create_refresh_token(dbsession, accounts[0].id)
     assert refresh_token is not None
     assert refresh_token.token is not None
-    assert refresh_token.user_id == users[0].id
+    assert refresh_token.account_id == accounts[0].id
     assert refresh_token.expire_time is not None
 
 

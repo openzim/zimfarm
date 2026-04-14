@@ -32,11 +32,11 @@ from zimfarm_backend.db.exceptions import (
     RecordDoesNotExistError,
 )
 from zimfarm_backend.db.models import (
+    Account,
     Recipe,
     RecipeHistory,
     RequestedTask,
     Task,
-    User,
     Worker,
 )
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
@@ -123,7 +123,7 @@ def test_get_recipe_duration_with_worker(
 
 def test_create_recipe(
     dbsession: OrmSession,
-    user: User,
+    account: Account,
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
 ):
@@ -133,7 +133,7 @@ def test_create_recipe(
         session=dbsession,
         name="test_recipe",
         category=RecipeCategory.other,
-        author_id=user.id,
+        author_id=account.id,
         language=LanguageSchema(code="eng", name="English"),
         config=recipe_config,
         tags=["test"],
@@ -166,17 +166,17 @@ def test_create_recipe(
 def test_create_duplicate_recipe_with_existing_name(
     dbsession: OrmSession,
     create_recipe_config: Callable[..., RecipeConfigSchema],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     mwoffliner_definition: OfflinerDefinitionSchema,
 ):
     """Test that create_recipe creates a recipe with the correct duration"""
     recipe_config = create_recipe_config(cpu=1, memory=2**10, disk=2**10)
     recipe_name = "test_recipe"
-    user = create_user(username="author")
+    account = create_account(username="author")
     create_recipe(
         session=dbsession,
         name=recipe_name,
-        author_id=user.id,
+        author_id=account.id,
         category=RecipeCategory.other,
         language=LanguageSchema(code="eng", name="English"),
         config=recipe_config,
@@ -190,7 +190,7 @@ def test_create_duplicate_recipe_with_existing_name(
         create_recipe(
             session=dbsession,
             name=recipe_name,
-            author_id=user.id,
+            author_id=account.id,
             category=RecipeCategory.other,
             language=LanguageSchema(code="eng", name="English"),
             config=recipe_config,
@@ -212,7 +212,7 @@ def test_get_all_recipes(dbsession: OrmSession, create_recipe: Callable[..., Rec
 
 def test_update_recipe(
     dbsession: OrmSession,
-    user: User,
+    account: Account,
     create_recipe: Callable[..., Recipe],
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner: OfflinerSchema,
@@ -228,7 +228,7 @@ def test_update_recipe(
     updated_recipe = create_recipe_full_schema(
         update_recipe(
             dbsession,
-            author_id=user.id,
+            author_id=account.id,
             recipe_name=old_recipe.name,
             new_recipe_config=new_recipe_config,
             name=old_recipe.name + "_updated",
@@ -557,20 +557,20 @@ def test_get_recipe_history_entry(dbsession: OrmSession, recipe: Recipe):
 def test_toggle_recipe_archive_status(
     dbsession: OrmSession,
     create_recipe: Callable[..., Recipe],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     *,
     archived: bool,
     new_archive_status: bool,
     expected: RaisesContext[Exception],
 ):
-    user = create_user()
+    account = create_account()
     with expected:
         recipe = create_recipe(archived=archived)
         toggle_archive_status(
             dbsession,
             recipe_name=recipe.name,
             archived=new_archive_status,
-            actor_id=user.id,
+            actor_id=account.id,
         )
 
 
@@ -587,21 +587,21 @@ def test_toggle_recipe_archive_status(
 def test_restore_recipes(
     dbsession: OrmSession,
     create_recipe: Callable[..., Recipe],
-    create_user: Callable[..., User],
+    create_account: Callable[..., Account],
     recipe_names: list[str],
     expected: RaisesContext[Exception],
 ):
-    user = create_user()
+    account = create_account()
     create_recipe(name="testrecipe", archived=True)
 
     with expected:
-        restore_recipes(dbsession, recipe_names=recipe_names, actor_id=user.id)
+        restore_recipes(dbsession, recipe_names=recipe_names, actor_id=account.id)
 
 
 def test_revert_recipe_archived_recipe(
     dbsession: OrmSession,
     create_recipe: Callable[..., Recipe],
-    user: User,
+    account: Account,
 ):
     """Test that reverting an archived recipe raises an error"""
     recipe = create_recipe(name="archived_recipe", archived=True)
@@ -614,14 +614,14 @@ def test_revert_recipe_archived_recipe(
             dbsession,
             recipe_name="archived_recipe",
             history_id=history_id,
-            author_id=user.id,
+            author_id=account.id,
         )
 
 
 def test_revert_recipe_no_offliner_definition_version(
     dbsession: OrmSession,
     create_recipe: Callable[..., Recipe],
-    user: User,
+    account: Account,
 ):
     """Test that reverting to history with no offliner definition version
     raises error"""
@@ -638,7 +638,7 @@ def test_revert_recipe_no_offliner_definition_version(
             dbsession,
             recipe_name="test_recipe",
             history_id=history_entry.id,
-            author_id=user.id,
+            author_id=account.id,
         )
 
 
@@ -648,7 +648,7 @@ def test_revert_recipe_all_fields(
     recipe_config: RecipeConfigSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
-    user: User,
+    account: Account,
     data_gen: Faker,
 ):
     """Test that all recipe fields are properly reverted"""
@@ -701,7 +701,7 @@ def test_revert_recipe_all_fields(
     )
     update_recipe(
         dbsession,
-        author_id=user.id,
+        author_id=account.id,
         recipe_name="test_recipe",
         new_recipe_config=new_recipe_config,
         offliner_definition=mwoffliner_definition,
@@ -732,7 +732,7 @@ def test_revert_recipe_all_fields(
         dbsession,
         recipe_name="test_recipe",
         history_id=initial_history_id,
-        author_id=user.id,
+        author_id=account.id,
     )
 
     assert reverted_recipe.config == initial_config

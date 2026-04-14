@@ -75,7 +75,7 @@ Homepage = "https://github.com/openzim/zimfarm/backend"
 Donate = "https://www.kiwix.org/en/support-us/"
 
 [project.scripts]
-create-initial-user = "zimfarm_backend.utils.database:create_initial_user"
+create-initial-account = "zimfarm_backend.utils.database:create_initial_account"
 check-db-schema = "zimfarm_backend.utils.database:check_if_schema_is_up_to_date"
 background-tasks = "zimfarm_backend.background_tasks.entrypoint:main"
 
@@ -231,7 +231,7 @@ testpaths = ["tests"]
 pythonpath = [".", "src"]
 addopts = "--strict-markers"
 markers = [
-    "num_users(num=10, *, permission=...): create num users in the database with permission (default: ADMIN)",
+    "num_accounts(num=10, *, permission=...): create num accounts in the database with permission (default: ADMIN)",
 ]
 
 

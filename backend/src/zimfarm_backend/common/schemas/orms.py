@@ -420,7 +420,7 @@ class Worker(BaseWorkerSchema):
     memory: ZIMMemory
     disk: ZIMDisk
     deleted: bool
-    user_id: UUID
+    account_id: UUID
 
 
 class WorkerLightSchema(BaseWorkerSchema):
@@ -510,9 +510,9 @@ class OfflinerSchema(BaseModel):
     ci_secret_hash: str | None = Field(exclude=True)
 
 
-class BaseUserSchema(BaseModel):
+class BaseAccountSchema(BaseModel):
     """
-    Base schema for reading a user model
+    Base schema for reading an account model
     """
 
     id: UUID
@@ -522,9 +522,9 @@ class BaseUserSchema(BaseModel):
     has_password: bool
 
 
-class UserSchema(BaseUserSchema):
+class AccountSchema(BaseAccountSchema):
     """
-    Schema for reading a user model
+    Schema for reading an account model
     """
 
     role: str | None
@@ -551,9 +551,9 @@ class SshKeyRead(BaseSshKeySchema):
     fingerprint: str
 
 
-class BaseUserWithSshKeysSchema(BaseUserSchema, BaseSshKeySchema):
+class BaseAccountWithSshKeysSchema(BaseAccountSchema, BaseSshKeySchema):
     """
-    Base schema for reading a user model with its ssh keys
+    Base schema for reading an account model with its ssh keys
     """
 
 
@@ -565,9 +565,9 @@ class SshKeyList(BaseModel):
     ssh_keys: list[SshKeyRead]
 
 
-class UserSchemaWithSshKeys(UserSchema):
+class AccountSchemaWithSshKeys(AccountSchema):
     """
-    Schema for reading a user model with its ssh keys
+    Schema for reading an account model with its ssh keys
     """
 
     ssh_keys: list[SshKeyRead]

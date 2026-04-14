@@ -46,7 +46,7 @@ class RequestedTaskPermissions(Permissions):
     ]
 
 
-class UserPermissions(Permissions):
+class AccountPermissions(Permissions):
     names: ClassVar[list[str]] = [
         "read",
         "create",
@@ -89,7 +89,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
     RoleEnum.ADMIN: {
         "tasks": TaskPermissions.get_all(),
         "recipes": RecipePermissions.get_all(),
-        "users": UserPermissions.get_all(),
+        "accounts": AccountPermissions.get_all(),
         "zim": ZimPermissions.get_all(),
         "workers": WorkerPermissions.get_all(),
         "requested_tasks": RequestedTaskPermissions.get_all(),
@@ -104,7 +104,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
             archive=True,
             secrets=True,
         ),
-        "users": UserPermissions.get(
+        "accounts": AccountPermissions.get(
             read=True,
             create=True,
             update=True,
@@ -153,7 +153,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
 def merge_scopes(
     user_scope: dict[str, dict[str, bool]], all_scopes: dict[str, dict[str, bool]]
 ) -> dict[str, dict[str, bool]]:
-    """Combine user scope and all scopes populating missing user scopes with False."""
+    """Combine account scope and all scopes populating missing scopes with False."""
     merged: dict[str, dict[str, bool]] = {}
 
     for category, permissions in all_scopes.items():

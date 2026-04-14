@@ -47,9 +47,9 @@ def build_workers_whitelist(session: so.Session) -> list[str]:
 
     for row in session.execute(
         sa.select(dbm.Worker.last_ip)
-        .join(dbm.User)
+        .join(dbm.Account)
         .filter(dbm.Worker.last_ip.is_not(None))
-        .filter(dbm.User.deleted.is_(False))
+        .filter(dbm.Account.deleted.is_(False))
         .filter(dbm.Worker.deleted.is_(False))
     ).scalars():
         if row is None:

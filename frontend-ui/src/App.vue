@@ -40,7 +40,7 @@ onMounted(async () => {
 
 // Navigation items logic
 const canReadUsers = computed(() => {
-  return authStore.hasPermission('users', 'read')
+  return authStore.hasPermission('accounts', 'read')
 })
 
 const navigationItems = computed<NavigationItem[]>(() => [
