@@ -11,7 +11,7 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.schemas.orms import BaseWorkerSchema, OfflinerSchema
 from zimfarm_backend.db import worker as worker_module
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Worker
+from zimfarm_backend.db.models import Account, Worker
 from zimfarm_backend.db.worker import (
     check_in_worker,
     get_worker,
@@ -72,10 +72,14 @@ def test_get_workers_empty(dbsession: OrmSession):
 
 
 def test_get_workers_pagination(
-    dbsession: OrmSession, create_worker: Callable[..., Worker]
+    dbsession: OrmSession,
+    create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
 ):
     # create 30 workers
-    workers = [create_worker(name=f"worker-{i}") for i in range(30)]
+    workers = [
+        create_worker(account=create_account(), name=f"worker-{i}") for i in range(30)
+    ]
     # disable 10 workers
     for worker in workers[:10]:
         worker.deleted = True
@@ -92,6 +96,7 @@ def test_get_workers_pagination(
 def test_get_workers_hide_offlines(
     dbsession: OrmSession,
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
     monkeypatch: MonkeyPatch,
     *,
     hide_offlines: bool,
@@ -99,7 +104,9 @@ def test_get_workers_hide_offlines(
 ):
     "Test that only online workers are returned."
     # create 30 workers that are currently active
-    workers = [create_worker(name=f"worker-{i}") for i in range(30)]
+    workers = [
+        create_worker(account=create_account(), name=f"worker-{i}") for i in range(30)
+    ]
     # change the last seen of the last 10 workers to 1 hour ago
     for worker in workers[:10]:
         worker.last_seen = getnow() - datetime.timedelta(hours=1)

@@ -21,11 +21,12 @@ def test_get_active_workers_success(
     client: TestClient,
     access_token: str,
     create_worker: Callable[..., Worker],
+    create_account: Callable[..., Account],
 ):
     """Test successful retrieval of active workers"""
     # Create some workers
     for i in range(30):
-        create_worker(name=f"test-worker-{i}")
+        create_worker(account=create_account(), name=f"test-worker-{i}")
 
     response = client.get(
         "/v2/workers?limit=5&skip=0",
