@@ -8,12 +8,15 @@ from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.roles import RoleEnum
+from zimfarm_backend.common.schemas.models import KeySchema
 from zimfarm_backend.common.schemas.orms import BaseWorkerSchema, OfflinerSchema
 from zimfarm_backend.db import worker as worker_module
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Account, Worker
 from zimfarm_backend.db.worker import (
     check_in_worker,
+    create_worker,
     get_worker,
     get_worker_or_none,
     get_workers,
@@ -257,3 +260,50 @@ def test_worker_ip_changed(
         docker_image=None,
     )
     assert worker.ip_changed is ip_changed
+
+
+def test_create_worker_success(
+    dbsession: OrmSession,
+    rsa_public_key_data: bytes,
+):
+    """Test that create_worker creates a worker with an account and SSH key"""
+    worker_name = "newworker"
+    ssh_key = KeySchema(key=rsa_public_key_data.decode("ascii") + " test@localhost")
+    create_worker(
+        dbsession,
+        worker_name=worker_name,
+        ssh_key=ssh_key,
+    )
+    db_worker = get_worker(dbsession, worker_name=worker_name)
+    assert db_worker.name == worker_name
+    assert db_worker.account.role == RoleEnum.WORKER
+    assert db_worker.account.display_name == worker_name
+    assert len(db_worker.ssh_keys) == 1
+
+
+def test_create_worker_invalid_public_key(
+    dbsession: OrmSession,
+):
+    """Test that create_worker raises ValueError for invalid public keys"""
+    ssh_key = KeySchema(key="invalid-type AAAAINVALIDDATA test@localhost")
+    with pytest.raises(ValueError, match="Invalid public key"):
+        create_worker(
+            dbsession,
+            worker_name="newworker",
+            ssh_key=ssh_key,
+        )
+
+
+def test_create_worker_duplicate_ssh_key(
+    dbsession: OrmSession,
+    worker: Worker,  # noqa: ARG001 needed for side effect
+    rsa_public_key_data: bytes,
+):
+    """Test that create_worker raises ValueError when the SSH key already exists"""
+    ssh_key = KeySchema(key=rsa_public_key_data.decode("ascii") + " test@localhost")
+    with pytest.raises(ValueError, match="SSH key already exists"):
+        create_worker(
+            dbsession,
+            worker_name="anotherworker",
+            ssh_key=ssh_key,
+        )

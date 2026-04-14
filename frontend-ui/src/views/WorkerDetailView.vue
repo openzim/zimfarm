@@ -522,53 +522,16 @@
             </v-card-title>
             <v-card-text>
               <v-form @submit.prevent="addSshKey">
-                <v-row>
+                <v-row no-gutters>
                   <v-col cols="12">
-                    <v-tabs v-model="keyInputMode" color="primary" align-tabs="start">
-                      <v-tab value="file">Upload File</v-tab>
-                      <v-tab value="text">Enter Text</v-tab>
-                    </v-tabs>
+                    <SshKeyInput v-model="keyFormData" />
                   </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="12" sm="8" md="6">
-                    <!-- File Upload Mode -->
-                    <v-file-input
-                      v-if="keyInputMode === 'file'"
-                      v-model="keyFile"
-                      label="RSA Public Key"
-                      placeholder="Select an RSA public key file (.pub)"
-                      hint="Choose an RSA public key file (usually ends with .pub)"
-                      accept=".pub,text/plain"
-                      variant="outlined"
-                      density="compact"
-                      @update:model-value="keyFileSelected"
-                    />
-                    <!-- Text Input Mode -->
-                    <v-textarea
-                      v-else
-                      v-model="keyFormData.key"
-                      label="SSH Public Key"
-                      placeholder="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... user@hostname"
-                      :hint="
-                        keyFormData.key && !validateSSHKey(keyFormData.key)
-                          ? 'Invalid SSH key format'
-                          : 'Paste your complete SSH public key here (including the name at the end)'
-                      "
-                      :error="!!(keyFormData.key && !validateSSHKey(keyFormData.key))"
-                      variant="outlined"
-                      density="compact"
-                      rows="3"
-                      auto-grow
-                      @update:model-value="keyTextChanged"
-                    />
-                  </v-col>
-                  <v-col>
+                  <v-col cols="12" sm="4" class="ml-auto">
                     <v-btn
                       type="submit"
                       color="primary"
                       variant="elevated"
-                      :disabled="!keyPayload.name || !keyPayload.key"
+                      :disabled="!keyPayload.key"
                       block
                     >
                       Add SSH Key
@@ -634,6 +597,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
+import SshKeyInput from '@/components/SshKeyInput.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
@@ -926,68 +890,11 @@ let pendingSshKey: SshKeyRead | null = null
 
 // Add-key form state
 const keyFormData = ref({ name: '', key: '' })
-const keyFile = ref<File | null>(null)
-const keyInputMode = ref<'file' | 'text'>('file')
-
 const keyPayload = computed(() => {
   if (!keyFormData.value.name.length || !keyFormData.value.key.length) {
-    return { name: '', key: '' }
+    return { key: '' }
   }
-  return { name: keyFormData.value.name, key: keyFormData.value.key }
-})
-
-const validateSSHKey = (key: string): boolean => {
-  if (!key.trim()) return false
-  const parts = key.trim().split(/\s/)
-  return parts.length === 3
-}
-
-const keyTextChanged = () => {
-  if (!keyFormData.value.key) {
-    keyFormData.value.name = ''
-    return
-  }
-  const parts = keyFormData.value.key.trim().split(/\s/)
-  keyFormData.value.name = parts.length >= 3 ? parts[2].trim() : ''
-}
-
-const keyFileSelected = () => {
-  keyFormData.value.key = ''
-  keyFormData.value.name = ''
-  const file = keyFile.value as File
-  if (!file) return
-  if (file.size > 1024) {
-    notificationStore.showError(
-      `File ${file.name} doesn't appear to be an RSA public file (too large). ${file.size}`,
-    )
-    keyFile.value = null
-    return
-  }
-  const reader = new FileReader()
-  reader.onerror = (evt) => {
-    notificationStore.showError(`File ${file.name} failed to read: ${evt}`)
-    keyFile.value = null
-  }
-  reader.onload = (evt) => {
-    const result = evt.target?.result as string
-    const parts = result.trim().split(/\s/)
-    if (parts.length !== 3) {
-      notificationStore.showError(`File ${file.name} doesn't appear to be an SSH public file.`)
-      keyFile.value = null
-      return
-    }
-    keyFormData.value.key = result.trim()
-    keyFormData.value.name = parts[2].trim()
-  }
-  reader.readAsText(file, 'UTF-8')
-}
-
-watch(keyInputMode, (newMode) => {
-  if (newMode === 'file') {
-    keyFormData.value = { name: '', key: '' }
-  } else {
-    keyFile.value = null
-  }
+  return { key: keyFormData.value.key }
 })
 
 const confirmDeleteSshKey = (sshKey: SshKeyRead) => {
@@ -1029,19 +936,12 @@ const deleteSshKeyAction = async (sshKey: SshKeyRead) => {
 }
 
 const addSshKey = async () => {
-  if (!keyPayload.value.name || !keyPayload.value.key) return
-  if (keyInputMode.value === 'text' && !validateSSHKey(keyFormData.value.key)) {
-    notificationStore.showError(
-      'Invalid SSH key format. Please ensure it starts with a valid key type (ssh-rsa, ssh-ed25519, etc.)',
-    )
-    return
-  }
+  if (!keyPayload.value.key) return
   loadingStore.startLoading('Adding key...')
   const ok = await workersStore.addSshKey(workerName.value, keyPayload.value)
   if (ok) {
-    notificationStore.showSuccess(`Key added! SSH Key "${keyPayload.value.name}" has been added.`)
+    notificationStore.showSuccess(`Key added! SSH Key has been added.`)
     keyFormData.value = { name: '', key: '' }
-    keyFile.value = null
     await refreshData()
   } else {
     for (const err of workersStore.errors) {

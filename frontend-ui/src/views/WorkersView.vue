@@ -1,5 +1,12 @@
 <template>
   <div>
+    <div v-if="canCreateWorkers" class="d-flex justify-end mb-4">
+      <v-btn color="primary" @click="createWorkerDialog = true">
+        <v-icon class="mr-2">mdi-plus</v-icon>
+        Create Worker
+      </v-btn>
+    </div>
+
     <v-card v-if="!errors.length" class="mb-4" flat>
       <v-card-text>
         <v-row align="stretch">
@@ -100,14 +107,21 @@
       @toggle-workers-list="toggleWorkersList"
     />
 
+    <CreateWorkerDialog
+      v-model="createWorkerDialog"
+      @created="loadData(paginator.limit, paginator.skip, false)"
+    />
+
     <ErrorMessage v-for="error in errors" :key="error" :message="error" />
   </div>
 </template>
 
 <script setup lang="ts">
+import CreateWorkerDialog from '@/components/CreateWorkerDialog.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import WorkersTable from '@/components/WorkersTable.vue'
 
+import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useTasksStore } from '@/stores/tasks'
@@ -124,10 +138,12 @@ const workersStore = useWorkersStore()
 const tasksStore = useTasksStore()
 const notificationStore = useNotificationStore()
 const loadingStore = useLoadingStore()
+const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
 // Reactive state
+const createWorkerDialog = ref(false)
 const errors = ref<string[]>([])
 const intervalId = ref<number | null>(null)
 const runningTasks = ref<TaskLight[]>([])
@@ -154,6 +170,8 @@ const paginator = ref({
 const onlineWorkers = computed(() => workers.value.filter((worker) => worker.status === 'online'))
 const filteredWorkers = computed(() => (showingAll.value ? workers.value : onlineWorkers.value))
 const workerNames = computed(() => filteredWorkers.value.map((worker) => worker.name))
+
+const canCreateWorkers = computed(() => authStore.hasPermission('workers', 'create'))
 
 const tasks = computed(() => {
   return runningTasks.value.filter((task) => workerNames.value.indexOf(task.worker_name) !== -1)

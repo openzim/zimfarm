@@ -11,16 +11,21 @@ from sqlalchemy.orm.strategy_options import selectinload
 from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
 from zimfarm_backend.common.enums import TaskStatus
+from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.models import DockerImageVersionSchema
+from zimfarm_backend.common.schemas.models import DockerImageVersionSchema, KeySchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     WorkerLightSchema,
     WorkerMetricsSchema,
 )
+from zimfarm_backend.db.account import create_account
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Account, Task, Worker
-from zimfarm_backend.db.ssh_key import create_ssh_key_read_schema
+from zimfarm_backend.db.ssh_key import (
+    create_ssh_key,
+    create_ssh_key_read_schema,
+)
 from zimfarm_backend.db.tasks import get_currently_running_tasks
 
 
@@ -251,3 +256,36 @@ def check_in_worker(
         .where(Worker.name == worker_name)
     )
     session.execute(stmt)
+
+
+def create_worker(
+    session: OrmSession,
+    *,
+    worker_name: str,
+    ssh_key: KeySchema,
+):
+    """Create a new worker.
+
+    A new account bearing the same name as the worker will be created. This new
+    account will be created with the "worker" role.
+    """
+
+    account = create_account(session, display_name=worker_name, role=RoleEnum.WORKER)
+    worker = Worker(
+        name=worker_name,
+        cpu=0,
+        memory=0,
+        disk=0,
+        selfish=True,
+        offliners=[],
+        cordoned=False,
+        platforms={},
+        last_seen=None,
+        last_ip=None,
+    )
+
+    worker.account_id = account.id
+    session.add(worker)
+    session.flush()
+
+    create_ssh_key(session, worker_id=worker.id, ssh_key=ssh_key)
