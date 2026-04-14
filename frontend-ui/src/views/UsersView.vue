@@ -50,7 +50,9 @@
         :loading="loadingStore.isLoading"
         :loading-text="loadingStore.loadingText"
         :errors="userStore.errors"
+        :toggle-text="toggleText"
         @limit-changed="handleLimitChange"
+        @toggle-users-list="toggleViewersList"
       />
     </div>
 
@@ -181,6 +183,7 @@ const isCreating = ref(false)
 const error = ref<string | null>(null)
 const searchUsername = ref<string>('')
 const showCreateDialog = ref(false)
+const showingViewers = ref<boolean>(getViewersPreference())
 
 const paginator = ref({
   page: Number(route.query.page) || 1,
@@ -202,6 +205,8 @@ const showPassword = ref(false)
 // Computed properties
 const canReadUsers = computed(() => authStore.hasPermission('accounts', 'read'))
 
+const toggleText = computed(() => (showingViewers.value ? 'Hide Viewers' : 'Show Viewers'))
+
 const canCreateUsers = computed(() => authStore.hasPermission('accounts', 'create'))
 
 const isFormValid = computed(() => {
@@ -222,6 +227,21 @@ const rules = {
 }
 
 // Methods
+function getViewersPreference(): boolean {
+  const value = localStorage.getItem('users-show-viewers')
+  return value === null ? false : JSON.parse(value)
+}
+
+function saveViewersPreference(value: boolean): void {
+  localStorage.setItem('users-show-viewers', JSON.stringify(value))
+}
+
+function toggleViewersList(): void {
+  showingViewers.value = !showingViewers.value
+  saveViewersPreference(showingViewers.value)
+  loadData(paginator.value.limit, paginator.value.skip)
+}
+
 const createUser = async () => {
   const { valid } = await formRef.value?.validate()
   if (!valid) return
@@ -273,7 +293,12 @@ const loadData = async (limit: number, skip: number) => {
 
   loadingStore.startLoading('Fetching users...')
 
-  const response = await userStore.fetchUsers(skip, limit, searchUsername.value || undefined)
+  const response = await userStore.fetchUsers(
+    skip,
+    limit,
+    searchUsername.value || undefined,
+    showingViewers.value,
+  )
   if (response) {
     users.value = response
     paginator.value = { ...userStore.paginator }

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
@@ -66,6 +67,22 @@ def test_get_accounts_pagination(dbsession: OrmSession, accounts: list[Account])
     result = get_accounts(dbsession, skip=0, limit=1)
     assert result.nb_records == len(accounts)
     assert len(result.accounts) == 1
+
+
+@pytest.mark.parametrize("show_workers", [True, False])
+def test_get_accounts_filter_workers(
+    dbsession: OrmSession, create_account: Callable[..., Account], *, show_workers: bool
+):
+    """Test that get_accounts filters workers."""
+    create_account(permission=RoleEnum.WORKER)
+
+    results = get_accounts(dbsession, skip=0, limit=1, show_workers=show_workers)
+    if show_workers:
+        assert results.nb_records == 1
+        assert len(results.accounts) == 1
+    else:
+        assert results.nb_records == 0
+        assert len(results.accounts) == 0
 
 
 def test_create_account(dbsession: OrmSession):
