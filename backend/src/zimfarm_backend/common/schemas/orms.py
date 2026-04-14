@@ -456,35 +456,6 @@ class RunningTask(BaseModel):
     eta: datetime.datetime
 
 
-class WorkerMetricsSchema(WorkerLightSchema):
-    """
-    Schema for reading a worker model with full details and metrics
-    """
-
-    last_ip: IPv4Address | None
-    running_tasks: list[RunningTask]
-    nb_tasks_total: int
-    nb_tasks_completed: int
-    nb_tasks_succeeded: int
-    nb_tasks_failed: int
-
-    @computed_field
-    @property
-    def current_usage(self) -> ConfigResourcesSchema:
-        total_cpu = 0
-        total_memory = 0
-        total_disk = 0
-        for task in self.running_tasks:
-            total_cpu += task.config.resources.cpu
-            total_memory += task.config.resources.memory
-            total_disk += task.config.resources.disk
-        return ConfigResourcesSchema(
-            cpu=total_cpu,
-            memory=total_memory,
-            disk=total_disk,
-        )
-
-
 class OfflinerDefinitionSchema(BaseModel):
     """
     Schema for reading a offliner definition model
@@ -518,7 +489,6 @@ class BaseAccountSchema(BaseModel):
     id: UUID
     username: str | None
     display_name: str
-    has_ssh_keys: bool
     has_password: bool
 
 
@@ -551,26 +521,12 @@ class SshKeyRead(BaseSshKeySchema):
     fingerprint: str
 
 
-class BaseAccountWithSshKeysSchema(BaseAccountSchema, BaseSshKeySchema):
+class BaseWorkerWithSshKeysSchema(BaseSshKeySchema):
     """
     Base schema for reading an account model with its ssh keys
     """
 
-
-class SshKeyList(BaseModel):
-    """
-    Schema for reading a list of ssh keys
-    """
-
-    ssh_keys: list[SshKeyRead]
-
-
-class AccountSchemaWithSshKeys(AccountSchema):
-    """
-    Schema for reading an account model with its ssh keys
-    """
-
-    ssh_keys: list[SshKeyRead]
+    worker_name: str
 
 
 class CreateBlobSchema(BaseModel):
@@ -585,3 +541,33 @@ class BlobSchema(CreateBlobSchema):
     id: UUID
     recipe_id: UUID | None = Field(exclude=True, default=None)
     created_at: datetime.datetime
+
+
+class WorkerMetricsSchema(WorkerLightSchema):
+    """
+    Schema for reading a worker model with full details and metrics
+    """
+
+    last_ip: IPv4Address | None
+    running_tasks: list[RunningTask]
+    nb_tasks_total: int
+    nb_tasks_completed: int
+    nb_tasks_succeeded: int
+    nb_tasks_failed: int
+    ssh_keys: list[SshKeyRead]
+
+    @computed_field
+    @property
+    def current_usage(self) -> ConfigResourcesSchema:
+        total_cpu = 0
+        total_memory = 0
+        total_disk = 0
+        for task in self.running_tasks:
+            total_cpu += task.config.resources.cpu
+            total_memory += task.config.resources.memory
+            total_disk += task.config.resources.disk
+        return ConfigResourcesSchema(
+            cpu=total_cpu,
+            memory=total_memory,
+            disk=total_disk,
+        )

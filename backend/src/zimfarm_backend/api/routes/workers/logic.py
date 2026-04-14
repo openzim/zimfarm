@@ -11,38 +11,85 @@ from zimfarm_backend.api.routes.dependencies import (
     get_current_account_or_none,
     require_permission,
 )
-from zimfarm_backend.api.routes.http_errors import BadRequestError
+from zimfarm_backend.api.routes.http_errors import (
+    BadRequestError,
+    ForbiddenError,
+    UnauthorizedError,
+)
 from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.api.routes.workers.models import (
+    KeySchema,
     WorkerCheckInResponse,
     WorkerCheckInSchema,
     WorkerUpdateSchema,
 )
 from zimfarm_backend.common.constants import GITHUB_TOKEN
-from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
+from zimfarm_backend.common.schemas.fields import (
+    LimitFieldMax200,
+    NotEmptyString,
+    SkipField,
+)
 from zimfarm_backend.common.schemas.models import (
     DockerImageVersionSchema,
     calculate_pagination_metadata,
 )
-from zimfarm_backend.common.schemas.orms import WorkerLightSchema, WorkerMetricsSchema
+from zimfarm_backend.common.schemas.orms import (
+    BaseWorkerWithSshKeysSchema,
+    SshKeyRead,
+    WorkerLightSchema,
+    WorkerMetricsSchema,
+)
 from zimfarm_backend.db.account import check_account_permission
 from zimfarm_backend.db.models import Account
+from zimfarm_backend.db.ssh_key import (
+    create_ssh_key,
+    delete_ssh_key,
+    get_ssh_key_by_fingerprint,
+    get_ssh_key_by_fingerprint_or_none,
+)
+from zimfarm_backend.db.ssh_key import get_ssh_keys as db_get_ssh_keys
 from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
 from zimfarm_backend.db.worker import (
     get_worker as db_get_worker,
 )
 from zimfarm_backend.db.worker import get_worker_metrics as db_get_worker_metrics
-from zimfarm_backend.db.worker import (
-    get_worker_or_none as db_get_worker_or_none,
-)
 from zimfarm_backend.db.worker import get_workers as db_get_workers
 from zimfarm_backend.db.worker import update_worker as db_update_worker
+from zimfarm_backend.exceptions import PublicKeyLoadError
+from zimfarm_backend.utils.cryptography import (
+    get_public_key_fingerprint,
+    get_public_key_type,
+    load_public_key,
+)
 from zimfarm_backend.utils.github_registry import (
     WorkerManagerVersion,
     get_latest_worker_manager_version,
 )
 
 router = APIRouter(prefix="/workers", tags=["workers"])
+
+
+def require_permission_if_not_worker_itself(namespace: str, name: str):
+    """
+    Ensure an account has permission to perform action on a worker that isn't
+    the worker itself.
+    """
+
+    def _require_permission_if_not_worker_owner(
+        worker_name: Annotated[NotEmptyString, Path()],
+        db_session: Annotated[OrmSession, Depends(gen_dbsession)],
+        current_account: Annotated[Account, Depends(get_current_account)],
+    ):
+        worker = db_get_worker(db_session, worker_name=worker_name)
+        if worker.account_id == current_account.id:
+            return
+
+        if not check_account_permission(
+            current_account, namespace=namespace, name=name
+        ):
+            raise ForbiddenError("You are not allowed to access this resource")
+
+    return _require_permission_if_not_worker_owner
 
 
 @router.get("")
@@ -77,16 +124,16 @@ def get_workers(
 
 
 @router.put(
-    "/{name}",
+    "/{worker_name}",
     dependencies=[Depends(require_permission(namespace="workers", name="update"))],
 )
 def update_worker(
-    name: Annotated[str, Path()],
+    worker_name: Annotated[str, Path()],
     request: WorkerUpdateSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> Response:
     """Update a worker."""
-    worker = db_get_worker(session, worker_name=name)
+    worker = db_get_worker(session, worker_name=worker_name)
 
     if worker.deleted:
         raise BadRequestError("Worker has been marked as deleted")
@@ -96,7 +143,7 @@ def update_worker(
 
     db_update_worker(
         session,
-        worker_name=name,
+        worker_name=worker_name,
         contexts=request.contexts if request.contexts is not None else {},
         admin_disabled=request.admin_disabled,
         update_last_seen=False,
@@ -104,16 +151,16 @@ def update_worker(
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{name}")
+@router.get("/{worker_name}")
 def get_worker(
-    name: Annotated[str, Path()],
+    worker_name: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
 ) -> WorkerMetricsSchema:
     """Get a single worker with full details and metrics."""
     return db_get_worker_metrics(
         session,
-        worker_name=name,
+        worker_name=worker_name,
         show_secrets=current_account is not None
         and check_account_permission(
             current_account, namespace="workers", name="secrets"
@@ -121,26 +168,22 @@ def get_worker(
     )
 
 
-@router.put(
-    "/{name}/check-in",
-    dependencies=[Depends(require_permission(namespace="workers", name="create"))],
-)
+@router.put("/{worker_name}/check-in")
 def check_in_worker(
-    name: Annotated[str, Path()],
+    worker_name: Annotated[NotEmptyString, Path()],
     worker_checkin: WorkerCheckInSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_account: Annotated[Account, Depends(get_current_account)],
 ) -> WorkerCheckInResponse:
     """Check in a worker."""
 
-    worker = db_get_worker_or_none(session, worker_name=name)
+    worker = db_get_worker(session, worker_name=worker_name)
 
-    if worker is not None:
-        if worker.deleted:
-            raise BadRequestError("Worker has been marked as deleted")
+    if worker.deleted:
+        raise BadRequestError("Worker has been marked as deleted")
 
-        if worker.account_id != current_account.id:
-            raise BadRequestError("Worker is not associated with the current account")
+    if worker.account_id != current_account.id:
+        raise BadRequestError("Worker is not associated with the current user")
 
     # set defaults for docker image in case worker cannot retrieve details as
     # Docker API might change
@@ -153,7 +196,7 @@ def check_in_worker(
 
     db_check_in_worker(
         session,
-        worker_name=name,
+        worker_name=worker_name,
         cpu=worker_checkin.cpu,
         memory=worker_checkin.memory,
         disk=worker_checkin.disk,
@@ -191,6 +234,68 @@ def check_in_worker(
     )
 
 
+@router.post(
+    "/{worker_name}/keys",
+    dependencies=[
+        Depends(
+            require_permission_if_not_worker_itself(
+                namespace="workers", name="ssh_keys"
+            )
+        )
+    ],
+)
+def create_worker_key(
+    worker_name: Annotated[NotEmptyString, Path()],
+    ssh_key: KeySchema,
+    db_session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> SshKeyRead:
+    """Create a new SSH key for a worker"""
+    worker = db_get_worker(db_session, worker_name=worker_name)
+    try:
+        public_key = load_public_key(bytes(ssh_key.key, encoding="ascii"))
+    except PublicKeyLoadError as e:
+        raise BadRequestError("Invalid public key") from e
+
+    fingerprint = get_public_key_fingerprint(public_key)
+
+    db_ssh_key = get_ssh_key_by_fingerprint_or_none(db_session, fingerprint=fingerprint)
+    if db_ssh_key:
+        raise BadRequestError("SSH key already exists")
+
+    db_ssh_key = create_ssh_key(
+        db_session,
+        fingerprint=fingerprint,
+        worker_id=worker.id,
+        key=ssh_key.key,
+        name=ssh_key.name,
+        type_=get_public_key_type(public_key),
+    )
+    return SshKeyRead.model_validate(db_ssh_key)
+
+
+@router.get(
+    "/{worker_name}/keys",
+    dependencies=[Depends(require_permission(namespace="workers", name="ssh_keys"))],
+)
+def get_worker_keys(
+    worker_name: Annotated[NotEmptyString, Path()],
+    db_session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> ListResponse[SshKeyRead]:
+    """Get a list of SSH keys for a worker"""
+    worker = db_get_worker(db_session, worker_name=worker_name)
+    results = db_get_ssh_keys(db_session, worker_id=worker.id)
+    page_size = len(results.ssh_keys)
+    return ListResponse(
+        meta=calculate_pagination_metadata(
+            nb_records=results.nb_records,
+            skip=0,
+            limit=page_size,
+            page_size=page_size,
+        ),
+        items=results.ssh_keys,
+    )
+
+
 @router.get(
     "/image/latest",
 )
@@ -199,3 +304,54 @@ def get_latest_worker_image() -> DockerImageVersionSchema:
     if version is None:
         raise BadRequestError("Unable to fetch latest worker image details.")
     return DockerImageVersionSchema(hash=version.hash, created_at=version.created_at)
+
+
+@router.get("/{worker_name}/keys/{fingerprint:path}")
+def get_ssh_key(
+    worker_name: Annotated[str, Path()],
+    fingerprint: Annotated[str, Path()],
+    db_session: Annotated[OrmSession, Depends(gen_dbsession)],
+    with_permission: Annotated[list[str] | None, Query()] = None,
+) -> BaseWorkerWithSshKeysSchema:
+    """Get a specific SSH key for a worker"""
+    db_ssh_key = get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
+
+    if worker_name != "-":
+        db_get_worker(db_session, worker_name=worker_name)
+
+    requested_permissions = with_permission or []
+    for permission in requested_permissions:
+        namespace, perm_name = permission.split(".", 1)
+        if db_ssh_key.worker.account.scope and not db_ssh_key.worker.account.scope.get(
+            namespace, {}
+        ).get(perm_name):
+            raise UnauthorizedError(permission)
+
+    return BaseWorkerWithSshKeysSchema(
+        worker_name=db_ssh_key.worker.name,
+        key=db_ssh_key.key,
+        name=db_ssh_key.name,
+        type=db_ssh_key.type,
+    )
+
+
+@router.delete(
+    "/{worker_name}/keys/{fingerprint:path}",
+    dependencies=[
+        Depends(
+            require_permission_if_not_worker_itself(
+                namespace="workers", name="ssh_keys"
+            )
+        )
+    ],
+)
+def delete_account_key(
+    worker_name: Annotated[NotEmptyString, Path()],
+    fingerprint: Annotated[str, Path()],
+    db_session: Annotated[OrmSession, Depends(gen_dbsession)],
+) -> Response:
+    """Delete a specific SSH key for an account"""
+    worker = db_get_worker(db_session, worker_name=worker_name)
+    get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
+    delete_ssh_key(db_session, fingerprint=fingerprint, worker_id=worker.id)
+    return Response(status_code=HTTPStatus.NO_CONTENT)

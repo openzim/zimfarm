@@ -1,4 +1,4 @@
-import type { BaseTask, ConfigWithOnlyOfflinerAndResources } from '@/types/base'
+import type { ConfigWithOnlyOfflinerAndResources } from '@/types/base'
 import type { ExpandedRecipeConfig, RecipeNotification } from '@/types/recipe'
 
 export interface BaseRequestedTask {

@@ -254,11 +254,11 @@ def main() -> None:
         assert isinstance(response, dict)
         return response
 
-    for user in get_from_api("/users", params={"limit": 100}).get("items", []):
-        if user.get("role") != "worker":
-            continue
-        for ssh_key in get_from_api(f"/users/{user['username']}").get("ssh_keys", []):
-            fingerprints.append(ssh_key.get("fingerprint"))
+    for worker in get_from_api("/workers", params={"limit": 100}).get("items", []):
+        for ssh_key in get_from_api(f"/workers/{worker['name']}").get("ssh_keys", []):
+            fingerprint = ssh_key.get("fingerprint")
+            if fingerprint:
+                fingerprints.append(fingerprint)
 
     content = ""
     for fingerprint in fingerprints:

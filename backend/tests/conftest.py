@@ -683,8 +683,6 @@ def tedoffliner_definition(
 @pytest.fixture
 def create_account(
     dbsession: OrmSession,
-    rsa_public_key: RSAPublicKey,
-    rsa_public_key_data: bytes,
     data_gen: Faker,
 ) -> Callable[..., Account]:
     def _create_account(
@@ -704,16 +702,6 @@ def create_account(
         )
         dbsession.add(account)
 
-        key = Sshkey(
-            name=data_gen.word(),
-            key=rsa_public_key_data.decode("ascii") + " test@localhost",
-            fingerprint=get_public_key_fingerprint(rsa_public_key),
-            type="RSA",
-            added=getnow(),
-        )
-        key.account = account
-
-        dbsession.add(key)
         dbsession.flush()
 
         return account
@@ -758,7 +746,13 @@ def account(create_account: Callable[..., Account]):
 
 
 @pytest.fixture
-def create_worker(dbsession: OrmSession, account: Account) -> Callable[..., Worker]:
+def create_worker(
+    dbsession: OrmSession,
+    account: Account,
+    rsa_public_key: RSAPublicKey,
+    rsa_public_key_data: bytes,
+    data_gen: Faker,
+) -> Callable[..., Worker]:
     _account = account
 
     def _create_worker(
@@ -806,6 +800,15 @@ def create_worker(dbsession: OrmSession, account: Account) -> Callable[..., Work
             admin_disabled=admin_disabled,
         )
         worker.account_id = account.id
+        key = Sshkey(
+            name=data_gen.word(),
+            key=rsa_public_key_data.decode("ascii") + " test@localhost",
+            fingerprint=get_public_key_fingerprint(rsa_public_key),
+            type="RSA",
+            added=getnow(),
+        )
+        worker.ssh_keys.append(key)
+
         dbsession.add(worker)
         dbsession.flush()
         return worker

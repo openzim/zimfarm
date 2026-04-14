@@ -52,9 +52,21 @@ export interface WorkerMetrics extends BaseWorker {
   nb_tasks_succeeded: number
   nb_tasks_failed: number
   current_usage: Resources
+  ssh_keys: SshKeyRead[]
 }
 
 export interface WorkerUpdateSchema {
   contexts: Record<string, string | null>
   admin_disabled: boolean | null
+}
+
+export interface BaseSshKey {
+  key: string
+  name: string
+  type: string
+}
+
+export interface SshKeyRead extends BaseSshKey {
+  added: string
+  fingerprint: string
 }

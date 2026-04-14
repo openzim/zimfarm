@@ -33,13 +33,6 @@ def main():
     )
 
     parser.add_argument(
-        "--username",
-        help="username to authenticate to zimfarm",
-        required=not bool(os.getenv("USERNAME")),
-        default=os.getenv("USERNAME"),
-    )
-
-    parser.add_argument(
         "--workdir",
         help="directory in which workers create task-related files",
         required=not bool(DEFAULT_WORKDIR),
@@ -63,7 +56,6 @@ def main():
     logger.info(f"starting zimfarm {WORKER_MANAGER}.")
     try:
         manager = WorkerManager(
-            username=args.username,
             webapi_uris=args.webapi_uris,
             workdir=args.workdir,
             worker_name=args.worker_name,

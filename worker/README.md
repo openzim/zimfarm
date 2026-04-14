@@ -155,7 +155,7 @@ sudo wget -O /usr/local/bin/zimfarm \
 
 Now read and edit `/etc/zimfarm.config`. The **bare-minimal** is setting:
 
-- `ZIMFARM_USERNAME`: your worker account username
+- `ZIMFARM_WORKER_NAME`: your workers' username
 - `ZIMFARM_ROOT`: path of your Zimfarm folder
 
 Then, **make sure** you place your private key at `$ZIMFARM_ROOT/id_ed25519`. Permission should be `rw` for root (600).

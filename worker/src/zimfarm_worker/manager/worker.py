@@ -76,19 +76,16 @@ class WorkerManager(BaseWorker):
 
     def __init__(
         self,
-        username: str,
         webapi_uris: list[str],
         workdir: Path,
         worker_name: str,
     ):
-        super().__init__(username, webapi_uris, workdir)
-        self.worker_name = worker_name
+        super().__init__(worker_name, webapi_uris, workdir)
         # worker manager versions from API and the one we have locally
         self.api_worker_manager_version: WorkerManagerVersion | None = None
         self.local_worker_manager_version: WorkerManagerVersion | None = None
 
         self.print_config(
-            username=username,
             webapi_uris=webapi_uris,
             workdir=workdir,
             worker_name=worker_name,
@@ -279,7 +276,6 @@ class WorkerManager(BaseWorker):
             logger.exception("Failed to retrieve docker image information.")
 
         payload: dict[str, Any] = {
-            "username": self.username,
             "selfish": self.selfish,
             "cpu": host_stats.cpu.total,
             "memory": host_stats.memory.total,
@@ -531,7 +527,6 @@ class WorkerManager(BaseWorker):
             self.docker,
             task=requested_task,
             webapi_uri=webapi_uri,
-            username=self.username,
             workdir=self.workdir,
             worker_name=self.worker_name,
         )

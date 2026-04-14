@@ -77,10 +77,6 @@ class Account(Base):
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
     idp_sub: Mapped[UUID | None] = mapped_column(unique=True, index=True, default=None)
 
-    ssh_keys: Mapped[list["Sshkey"]] = relationship(
-        back_populates="account", cascade="all, delete-orphan", init=False
-    )
-
     refresh_tokens: Mapped[list["Refreshtoken"]] = relationship(
         back_populates="account", cascade="all, delete-orphan", init=False
     )
@@ -100,9 +96,9 @@ class Sshkey(Base):
     type: Mapped[str]
     key: Mapped[str]
     added: Mapped[datetime]
-    account_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
+    worker_id: Mapped[UUID] = mapped_column(ForeignKey("worker.id"), init=False)
 
-    account: Mapped["Account"] = relationship(back_populates="ssh_keys", init=False)
+    worker: Mapped["Worker"] = relationship(back_populates="ssh_keys", init=False)
 
 
 class Refreshtoken(Base):
@@ -158,6 +154,10 @@ class Worker(Base):
 
     requested_tasks: Mapped[list["RequestedTask"]] = relationship(
         back_populates="worker", cascade="all", init=False
+    )
+
+    ssh_keys: Mapped[list["Sshkey"]] = relationship(
+        back_populates="worker", cascade="all, delete-orphan", init=False
     )
 
 
