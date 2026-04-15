@@ -27,8 +27,8 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend import logger
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.user import get_user_by_username
 from zimfarm_backend.common.schemas.orms import RecipeConfigSchema
+from zimfarm_backend.db.account import get_account_by_username
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
     get_offliner_definition_or_none,
@@ -39,11 +39,11 @@ from zimfarm_backend.common.constants import getenv
 from zimfarm_backend.common.schemas.models import RecipeNotificationSchema
 from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.offliner import get_offliner
-from zimfarm_backend.db.models import User
+from zimfarm_backend.db.models import Account
 
 
 def import_recipes(
-    session: OrmSession, backup_data: list[dict[str, Any]], user: User
+    session: OrmSession, backup_data: list[dict[str, Any]], account: Account
 ) -> None:
     successful = failed = 0
     for data in backup_data:
@@ -74,7 +74,7 @@ def import_recipes(
 
         create_recipe(
             session,
-            author_id=user.id,
+            author_id=account.id,
             language=get_language_from_code(data["language"]["code"]),
             name=data["name"],
             offliner_definition=offliner_definition,
@@ -127,8 +127,8 @@ def main():
     logger.info(f"Found {len(backup_data)} recipes in backup file")
 
     with Session.begin() as session:
-        user = get_user_by_username(session, username=username)
-        import_recipes(session=session, backup_data=backup_data, user=user)
+        account = get_account_by_username(session, username=username)
+        import_recipes(session=session, backup_data=backup_data, account=account)
 
 
 if __name__ == "__main__":

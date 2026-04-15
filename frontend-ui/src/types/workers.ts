@@ -7,7 +7,7 @@ export interface DockerImageVersion {
   created_at: string
 }
 
-interface BaseWorker {
+export interface BaseWorker {
   name: string
   offliners: string[]
   last_seen: string
@@ -29,7 +29,7 @@ export interface Worker extends BaseWorker {
   status: 'online' | 'offline'
   resources: WorkerResourceSchema
   tasks: TaskLight[] // Will be populated with running tasks
-  user_id: string
+  account_id: string
   display_name: string
 }
 
