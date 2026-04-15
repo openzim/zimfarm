@@ -20,7 +20,6 @@ class TasksGetSchema(BaseModel):
     sort_criteria: Literal["done", "doing", "failed", "updated_at"] = "updated_at"
     offliner: NotEmptyString | None = None
     fetch_most_recent_tasks: bool = False
-    schedule_name: NotEmptyString | None = None  # Kept for backward compatibility
 
 
 class TaskCreateSchema(BaseModel):

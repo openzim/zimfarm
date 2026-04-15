@@ -62,7 +62,7 @@ def get_tasks(
         skip=params.skip,
         limit=params.limit,
         status=params.status,
-        recipe_name=params.recipe_name or params.schedule_name,
+        recipe_name=params.recipe_name,
         sort_criteria=params.sort_criteria,
         offliner=params.offliner,
         fetch_most_recent_tasks=params.fetch_most_recent_tasks,

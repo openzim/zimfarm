@@ -162,8 +162,7 @@ def get_requested_tasks(
             if requested_task_schema.matching_offliners is not None
             else None
         ),
-        recipe_name=requested_task_schema.recipe_name
-        or requested_task_schema.schedule_name,
+        recipe_name=requested_task_schema.recipe_name,
         priority=requested_task_schema.priority,
         cpu=requested_task_schema.matching_cpu,
         memory=requested_task_schema.matching_memory,
@@ -258,7 +257,6 @@ def get_requested_tasks_for_worker(
                     id=task.id,
                     status=task.status,
                     recipe_name=task.recipe_name,
-                    schedule_name=task.recipe_name,
                     config=ConfigWithOnlyOfflinerAndResourcesSchema(
                         offliner=cast(
                             str,
@@ -275,7 +273,6 @@ def get_requested_tasks_for_worker(
                     requester_id=task.requester_id,
                     priority=task.priority,
                     original_recipe_name=task.original_recipe_name,
-                    original_schedule_name=task.original_recipe_name,
                     worker_name=task.worker_name,
                     updated_at=task.updated_at,
                     context=task.context,

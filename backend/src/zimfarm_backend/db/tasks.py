@@ -148,9 +148,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             upload=TaskUploadSchema.model_validate(task.upload),
             updated_at=task.updated_at,
             original_recipe_name=task.original_recipe_name,
-            original_schedule_name=task.original_recipe_name,
             recipe_name=row.recipe_name,
-            schedule_name=row.recipe_name,
             worker_name=row.worker_name,
             context=task.context,
             offliner_definition_id=row.offliner_definition_id,
@@ -251,7 +249,6 @@ def get_tasks(
                 status=_status,
                 timestamp=timestamp,
                 original_recipe_name=original_recipe_name,
-                original_schedule_name=original_recipe_name,
                 context=context,
                 priority=priority,
                 config=ConfigWithOnlyResourcesSchema(
@@ -264,7 +261,6 @@ def get_tasks(
                 updated_at=updated_at,
                 requested_by=requested_by,
                 recipe_name=_recipe_name,
-                schedule_name=_recipe_name,
                 recipe_id=_recipe_id,
                 worker_name=worker_name,
             )

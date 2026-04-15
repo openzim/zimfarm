@@ -78,12 +78,10 @@ class BaseTaskSchema(BaseModel):
     status: str
     timestamp: list[tuple[str, datetime.datetime]]
     recipe_name: str | None
-    schedule_name: str | None  # Kept for compatibility purposes (used by worker)
     worker_name: str
     updated_at: datetime.datetime
     requested_by: str
     original_recipe_name: str
-    original_schedule_name: str  # Kept for compatibility purposes
     context: str
     priority: int
 
@@ -220,9 +218,7 @@ class BaseRequestedTaskSchema(BaseModel):
     requester_id: UUID = Field(exclude=True)
     priority: int
     recipe_name: str | None
-    schedule_name: str | None
     original_recipe_name: str
-    original_schedule_name: str
     worker_name: str | None
     updated_at: datetime.datetime
     context: str

@@ -922,8 +922,6 @@ def test_does_platform_allow_worker_to_run(
         priority=0,
         recipe_name="test_recipe",
         original_recipe_name="test_recipe",
-        schedule_name="test_recipe",
-        original_schedule_name="test_recipe",
         worker_name=worker.name,
         context="",
         duration=RecipeDurationSchema(
