@@ -1,8 +1,7 @@
-from typing import Any, Self
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field
-from pydantic.functional_validators import model_validator
 
 from zimfarm_backend.common.enums import (
     RecipeCategory,
@@ -82,22 +81,7 @@ class CloneSchema(BaseModel):
 
 class RestoreRecipesSchema(BaseModel):
     recipe_names: list[RecipeNameField] = Field(default_factory=list)
-    schedule_names: list[RecipeNameField] = Field(
-        default_factory=list
-    )  # Kept for compatibility purposes
     comment: str | None = None
-
-    @model_validator(mode="after")
-    def check_recipe_names(self) -> Self:
-        if self.recipe_names and self.schedule_names:
-            raise ValueError("Only one of schedule_names and recipe_names must be set")
-        if not (self.recipe_names or self.schedule_names):
-            raise ValueError("One of schedule_names and recipe_names must be set")
-
-        if self.schedule_names:
-            self.recipe_names = self.schedule_names
-
-        return self
 
 
 class ToggleArchiveStatusSchema(BaseModel):
