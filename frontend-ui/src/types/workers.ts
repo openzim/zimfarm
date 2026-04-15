@@ -7,7 +7,7 @@ export interface DockerImageVersion {
   created_at: string
 }
 
-interface BaseWorker {
+export interface Worker {
   name: string
   offliners: string[]
   last_seen: string
@@ -18,14 +18,11 @@ interface BaseWorker {
   ip_changed: boolean
   selfish: boolean
   docker_image: DockerImageVersion | null
-}
-
-export interface Worker extends BaseWorker {
-  status: 'online' | 'offline'
   resources: Resources
   tasks: TaskLight[] // Will be populated with running tasks
-  user_id: string
+  account_id: string
   display_name: string
+  status: 'online' | 'offline'
 }
 
 export interface RunningTask {
@@ -41,11 +38,7 @@ export interface RunningTask {
   eta: string
 }
 
-export interface WorkerMetrics extends BaseWorker {
-  status: 'online' | 'offline'
-  resources: Resources
-  user_id: string
-  display_name: string
+export interface WorkerMetrics extends Worker {
   running_tasks: RunningTask[]
   nb_tasks_total: number
   nb_tasks_completed: number
