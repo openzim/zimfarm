@@ -1,13 +1,26 @@
 # pyright: strict, reportPrivateUsage=false
+# ruff: noqa: ARG005
+import base64
 import datetime
+from collections.abc import Callable
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import jwt
 import pytest
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.token import OAuthOIDCTokenDecoder, OAuthSessionTokenDecoder
+from zimfarm_backend.api.token import (
+    JWTClaims,
+    LocalTokenDecoder,
+    OAuthOIDCTokenDecoder,
+    OAuthSessionTokenDecoder,
+    SshTokenDecoder,
+)
 from zimfarm_backend.common import getnow
+from zimfarm_backend.db.models import Account, Worker
+from zimfarm_backend.utils.cryptography import sign_message_with_rsa_key
 
 # Authentication method constants for testing
 FIRST_FACTOR_METHODS = ["password", "oidc"]
@@ -504,3 +517,320 @@ def test_verify_session_access_token_verify_client_id_matches_sub(
 
         with pytest.raises(ValueError, match="Oauth client ID does not match"):
             decoder.decode(test_token)
+
+
+def test_ssh_token_decoder_can_decode_valid_format(
+    account: Account,
+    rsa_private_key: RSAPrivateKey,
+    create_worker: Callable[..., Worker],
+):
+    """Test SSH token decoder can_decode with valid token format."""
+    worker = create_worker(account=account)
+    datetime_str = (getnow() + datetime.timedelta(minutes=5)).isoformat()
+    message_to_sign = f"{worker.name}.{datetime_str}"
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message_to_sign, encoding="ascii")
+    )
+    b64_signature = base64.b64encode(signature).decode()
+    token = f"{worker.name}.{datetime_str}.{b64_signature}"
+
+    decoder = SshTokenDecoder()
+    assert decoder.can_decode(token) is True
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        pytest.param("worker.timestamp", id="invalid-format"),
+        pytest.param("worker.not-a-timestamp.signature", id="invalid-timestamp"),
+        pytest.param(
+            "worker.2026-04-14T11:03:03:not-valid-base64-!@#", id="invalid-base64"
+        ),
+        pytest.param("random-string", id="random-string"),
+    ],
+)
+def test_ssh_token_decoder_can_decode_invalid_format(token: str):
+    """Test SSH token decoder can_decode with invalid token formats."""
+    decoder = SshTokenDecoder()
+    assert decoder.can_decode(token) is False
+
+
+def test_local_token_decoder_can_decode_with_auth_mode_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test local token decoder can_decode returns False when auth mode disabled."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-oidc"])
+
+    decoder = LocalTokenDecoder()
+    token = create_test_jwt_token(issuer="zimfarm_backend")
+    assert decoder.can_decode(token) is False
+
+
+def test_local_token_decoder_can_decode_with_correct_issuer(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test local token decoder can_decode with correct issuer."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["local"])
+    monkeypatch.setattr("zimfarm_backend.api.token.JWT_TOKEN_ISSUER", "zimfarm_backend")
+
+    decoder = LocalTokenDecoder()
+    token = create_test_jwt_token(issuer="zimfarm_backend")
+    assert decoder.can_decode(token) is True
+
+
+def test_local_token_decoder_can_decode_with_wrong_issuer(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test local token decoder can_decode with wrong issuer."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["local"])
+    monkeypatch.setattr("zimfarm_backend.api.token.JWT_TOKEN_ISSUER", "zimfarm_backend")
+
+    decoder = LocalTokenDecoder()
+    token = create_test_jwt_token(issuer="wrong-issuer")
+    assert decoder.can_decode(token) is False
+
+
+def test_oauth_oidc_token_decoder_can_decode_with_auth_mode_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth OIDC can_decode returns False when disabled."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["local"])
+
+    decoder = OAuthOIDCTokenDecoder()
+    token = create_test_jwt_token()
+    assert decoder.can_decode(token) is False
+
+
+def test_oauth_oidc_token_decoder_can_decode_with_correct_issuer_and_audience(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth OIDC token decoder can_decode with correct issuer and audience."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-oidc"])
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_OIDC_CLIENT_ID", TEST_CLIENT_ID
+    )
+
+    decoder = OAuthOIDCTokenDecoder()
+
+    now = getnow()
+    payload = {
+        "iss": TEST_ISSUER,
+        "sub": str(UUID(int=0)),
+        "iat": int(now.timestamp()),
+        "exp": int((now + datetime.timedelta(hours=1)).timestamp()),
+        "aud": TEST_CLIENT_ID,
+    }
+    token = jwt.encode(payload, "test-secret", algorithm="HS256")
+
+    assert decoder.can_decode(token) is True
+
+
+def test_oauth_oidc_token_decoder_can_decode_with_wrong_issuer(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth OIDC token decoder can_decode with wrong issuer."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-oidc"])
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_OIDC_CLIENT_ID", TEST_CLIENT_ID
+    )
+
+    decoder = OAuthOIDCTokenDecoder()
+
+    now = getnow()
+    payload = {
+        "iss": "wrong-issuer",
+        "sub": str(UUID(int=0)),
+        "iat": int(now.timestamp()),
+        "exp": int((now + datetime.timedelta(hours=1)).timestamp()),
+        "aud": TEST_CLIENT_ID,
+    }
+    token = jwt.encode(payload, "test-secret", algorithm="HS256")
+
+    assert decoder.can_decode(token) is False
+
+
+def test_oauth_oidc_token_decoder_can_decode_with_wrong_audience(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth OIDC token decoder can_decode with wrong audience."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-oidc"])
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_OIDC_CLIENT_ID", TEST_CLIENT_ID
+    )
+
+    decoder = OAuthOIDCTokenDecoder()
+
+    now = getnow()
+    payload = {
+        "iss": TEST_ISSUER,
+        "sub": str(UUID(int=0)),
+        "iat": int(now.timestamp()),
+        "exp": int((now + datetime.timedelta(hours=1)).timestamp()),
+        "aud": "wrong-audience",
+    }
+    token = jwt.encode(payload, "test-secret", algorithm="HS256")
+
+    assert decoder.can_decode(token) is False
+
+
+def test_oauth_session_token_decoder_can_decode_with_auth_mode_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth Session can_decode returns False when disabled."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["local"])
+
+    decoder = OAuthSessionTokenDecoder()
+    token = create_test_session_jwt_token()
+    assert decoder.can_decode(token) is False
+
+
+def test_oauth_session_token_decoder_can_decode_with_correct_issuer_and_audience(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth Session token decoder can_decode with correct issuer and audience."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-session"])
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_AUDIENCE_ID", TEST_CLIENT_ID
+    )
+
+    decoder = OAuthSessionTokenDecoder()
+    token = create_test_session_jwt_token(
+        issuer=TEST_ISSUER, audience_id=TEST_CLIENT_ID
+    )
+    assert decoder.can_decode(token) is True
+
+
+def test_oauth_session_token_decoder_can_decode_with_wrong_issuer(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth Session token decoder can_decode with wrong issuer."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-session"])
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_AUDIENCE_ID", TEST_CLIENT_ID
+    )
+
+    decoder = OAuthSessionTokenDecoder()
+    token = create_test_session_jwt_token(
+        issuer="wrong-issuer", audience_id=TEST_CLIENT_ID
+    )
+    assert decoder.can_decode(token) is False
+
+
+def test_oauth_session_token_decoder_can_decode_with_wrong_audience(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test OAuth Session token decoder can_decode with wrong audience."""
+    monkeypatch.setattr("zimfarm_backend.api.token.AUTH_MODES", ["oauth-session"])
+    monkeypatch.setattr("zimfarm_backend.api.token.OAUTH_ISSUER", TEST_ISSUER)
+    monkeypatch.setattr(
+        "zimfarm_backend.api.token.OAUTH_SESSION_AUDIENCE_ID", TEST_CLIENT_ID
+    )
+
+    decoder = OAuthSessionTokenDecoder()
+    token = create_test_session_jwt_token(
+        issuer=TEST_ISSUER, audience_id="wrong-audience"
+    )
+    assert decoder.can_decode(token) is False
+
+
+@pytest.mark.parametrize(
+    ["datetime_str", "message_modifier", "expected_exception", "exception_msg"],
+    [
+        pytest.param(
+            datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
+            .replace(tzinfo=None)
+            .isoformat(timespec="seconds"),
+            lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Difference betweeen message time and server time is greater than",
+            id="outdated-timestamp",
+        ),
+        pytest.param(
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: "hello",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Invalid message format.",
+            id="invalid-message-format",
+        ),
+        pytest.param(
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: f"{w}.{t}.not-base64-!@#",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Invalid signature format.*",
+            id="invalid-signature-format",
+        ),
+        pytest.param(
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: f"unknownworker.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            ValueError,
+            "Worker unknownworker does not exist.",
+            id="worker-does-not-exist",
+        ),
+        pytest.param(
+            # Before CI fully sets up, default timer has expired, so, add
+            # additional 5 minutes
+            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
+            None,
+            "",
+            id="valid-message",
+        ),
+    ],
+)
+def test_ssh_token_decoder(
+    account: Account,
+    rsa_private_key: RSAPrivateKey,
+    datetime_str: str,
+    message_modifier: Callable[[str, str, str], str],
+    expected_exception: type[Exception] | None,
+    exception_msg: str,
+    create_worker: Callable[..., Worker],
+    dbsession: OrmSession,
+):
+    worker = create_worker(account=account)
+
+    # signature is created with f"{worker_name}.{timestamp_str}"
+    message_to_sign = f"{worker.name}.{datetime_str}"
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message_to_sign, encoding="ascii")
+    )
+    b64_signature = base64.b64encode(signature).decode()
+
+    token = message_modifier(worker.name, datetime_str, b64_signature)
+
+    decoder = SshTokenDecoder()
+
+    if expected_exception:
+        with pytest.raises(expected_exception, match=exception_msg):
+            decoder.decode(token, session=dbsession)
+    else:
+        claims = decoder.decode(token, session=dbsession)
+        assert isinstance(claims, JWTClaims)
+        assert claims.iss == "zimfarm-worker"
+        assert claims.sub == worker.account_id
+
+
+def test_ssh_token_decoder_no_session(
+    account: Account,
+    rsa_private_key: RSAPrivateKey,
+    create_worker: Callable[..., Worker],
+):
+    worker = create_worker(account=account)
+    datetime_str = (getnow() + datetime.timedelta(minutes=5)).isoformat()
+    message_to_sign = f"{worker.name}.{datetime_str}"
+    signature = sign_message_with_rsa_key(
+        rsa_private_key, bytes(message_to_sign, encoding="ascii")
+    )
+    b64_signature = base64.b64encode(signature).decode()
+    token = f"{worker.name}.{datetime_str}.{b64_signature}"
+
+    decoder = SshTokenDecoder()
+    with pytest.raises(
+        ValueError, match="OrmSession is required to decode SSH bearer tokens."
+    ):
+        decoder.decode(token)

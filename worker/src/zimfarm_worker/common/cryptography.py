@@ -26,7 +26,8 @@ from zimfarm_worker.common import getnow
 class AuthMessage:
     """An authentication message for a worker"""
 
-    body: str
+    worker_name: str
+    timestamp_str: str
     signature: str
 
 
@@ -116,7 +117,11 @@ def generate_auth_message(
     private_key: RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey,
 ) -> AuthMessage:
     """Generate an authentication message for a worker"""
-    body = f"{worker_name}:{getnow().isoformat()}"
+    timestamp_str = getnow().isoformat(timespec="seconds")
     return AuthMessage(
-        body=body, signature=get_signature(bytes(body, encoding="ascii"), private_key)
+        worker_name=worker_name,
+        timestamp_str=timestamp_str,
+        signature=get_signature(
+            bytes(f"{worker_name}.{timestamp_str}", encoding="ascii"), private_key
+        ),
     )
