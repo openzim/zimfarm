@@ -5,14 +5,19 @@
 
 <template>
   <v-container>
+    <ErrorMessage
+      v-if="!canReadAccounts"
+      message="You don't have permission to view user accounts."
+    />
+
     <!-- Loading state when data hasn't been loaded yet -->
-    <div v-if="!dataLoaded && loadingStore.isLoading" class="text-center pa-8">
+    <div v-if="canReadAccounts && !dataLoaded && loadingStore.isLoading" class="text-center pa-8">
       <v-progress-circular indeterminate size="64" />
       <div class="mt-4 text-body-1">{{ loadingStore.loadingText }}</div>
     </div>
 
     <!-- Content only shown when data is loaded -->
-    <div v-if="dataLoaded">
+    <div v-if="canReadAccounts && dataLoaded">
       <v-row>
         <v-col cols="12">
           <h2 class="text-h4 mb-4">
@@ -27,9 +32,10 @@
             <!-- Tabs -->
             <v-tabs v-model="selectedTab" color="primary" class="mb-4">
               <v-tab value="details" :to="{ name: 'user-detail', params: { userId: userId } }">
-                Profile
+                View
               </v-tab>
               <v-tab
+                v-if="canUpdateAccounts"
                 value="edit"
                 :to="{
                   name: 'user-detail-tab',
@@ -57,10 +63,76 @@
               <v-window-item value="details">
                 <v-card flat>
                   <v-card-text>
-                    <!-- IDP Sub -->
-                    <p v-if="user.idp_sub" class="mb-4">
-                      <strong>IDP Sub:</strong> <code>{{ user.idp_sub }}</code>
-                    </p>
+                    <v-row class="mb-4">
+                      <!-- Basic Info Card -->
+                      <v-col cols="12">
+                        <v-card variant="outlined" class="h-100">
+                          <v-card-title class="text-subtitle-1">
+                            <v-icon class="mr-2">mdi-card-account-details</v-icon>
+                            Basic Information
+                          </v-card-title>
+                          <v-list density="compact">
+                            <v-list-item>
+                              <v-list-item-title>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Display Name:</span>
+                                  <span class="font-weight-medium">{{ user.display_name }}</span>
+                                </div>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Role:</span>
+                                  <code>{{ user.role }}</code>
+                                </div>
+                              </v-list-item-title>
+                            </v-list-item>
+                          </v-list>
+                        </v-card>
+                      </v-col>
+
+                      <!-- Authentication Card -->
+                      <v-col cols="12" v-if="user.username || user.idp_sub">
+                        <v-card variant="outlined" class="h-100">
+                          <v-card-title class="text-subtitle-1">
+                            <v-icon class="mr-2">mdi-shield-key-outline</v-icon>
+                            Authentication
+                          </v-card-title>
+                          <v-list density="compact">
+                            <v-list-item v-if="user.username">
+                              <v-list-item-subtitle>Local Authentication</v-list-item-subtitle>
+                              <v-list-item-title>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Username:</span>
+                                  <code v-if="user.username">{{ user.username }}</code>
+                                  <span v-else class="text-medium-emphasis text-body-2"
+                                    >Not set</span
+                                  >
+                                </div>
+                                <div class="d-flex align-center mt-1">
+                                  <span class="mr-2">Password:</span>
+                                  <span class="text-body-2">{{
+                                    user.has_password ? '**********' : 'Not set'
+                                  }}</span>
+                                </div>
+                              </v-list-item-title>
+                            </v-list-item>
+
+                            <v-divider
+                              class="my-2"
+                              v-if="user.idp_sub && user.username"
+                            ></v-divider>
+
+                            <v-list-item v-if="user.idp_sub">
+                              <v-list-item-subtitle
+                                >External Identity Provider</v-list-item-subtitle
+                              >
+                              <v-list-item-title class="mt-1">
+                                <span class="mr-2">IDP Sub:</span>
+                                <code>{{ user.idp_sub }}</code>
+                              </v-list-item-title>
+                            </v-list-item>
+                          </v-list>
+                        </v-card>
+                      </v-col>
+                    </v-row>
 
                     <!-- Permissions List -->
                     <v-card class="mb-4" variant="outlined">
@@ -186,6 +258,8 @@ const dataLoaded = ref(false)
 // Computed properties
 const scope = computed(() => user.value?.scope || {})
 
+const canReadAccounts = computed(() => authStore.hasPermission('accounts', 'read'))
+const canUpdateAccounts = computed(() => authStore.hasPermission('accounts', 'update'))
 const canDeleteUser = computed(() => authStore.hasPermission('accounts', 'delete'))
 
 const getNamespaceIcon = (namespace: string): string => {
@@ -242,7 +316,9 @@ const getAllPermissionsForNamespace = (namespace: string): string[] => {
 const changePassword = async (password: string | null) => {
   loadingStore.startLoading('Changing password...')
 
-  const success = await userStore.changePassword(props.userId, { new: password })
+  const success = await userStore.changePassword(props.userId, {
+    new: password,
+  })
   if (success) {
     if (password === null) {
       notificationStore.showSuccess(
@@ -302,6 +378,12 @@ const deleteUser = async () => {
 }
 
 const loadUser = async () => {
+  if (!canReadAccounts.value) {
+    notificationStore.showError('You do not have permission to read user accounts.')
+    router.push({ name: 'home' })
+    return
+  }
+
   loadingStore.startLoading('Fetching user...')
 
   try {
@@ -325,6 +407,10 @@ const loadUser = async () => {
 }
 
 const refreshData = async () => {
+  if (!canReadAccounts.value) {
+    return
+  }
+
   if (!user.value) {
     dataLoaded.value = false
   }
@@ -357,6 +443,9 @@ watch(
 watch(
   () => props.userId,
   async () => {
+    if (!canReadAccounts.value) {
+      return
+    }
     // Reset data and reload the new user
     user.value = null
     selectedTab.value = 'details'
@@ -366,6 +455,9 @@ watch(
 
 // Lifecycle
 onMounted(async () => {
+  if (!canReadAccounts.value) {
+    return
+  }
   loadingStore.startLoading('Fetching user...')
   await loadUser()
   loadingStore.stopLoading()

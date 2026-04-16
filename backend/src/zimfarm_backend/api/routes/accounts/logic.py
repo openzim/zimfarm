@@ -58,12 +58,14 @@ def require_permission_if_not_self(namespace: str, name: str):
     ):
         if (
             is_valid_uuid(account_identifier)
-            and account_identifier != str(current_account.id)
-        ) or (account_identifier != current_account.username):
-            if not check_account_permission(
-                current_account, namespace=namespace, name=name
-            ):
-                raise ForbiddenError("You are not allowed to access this resource")
+            and account_identifier == str(current_account.id)
+        ) or (account_identifier == current_account.username):
+            return
+
+        if not check_account_permission(
+            current_account, namespace=namespace, name=name
+        ):
+            raise ForbiddenError("You are not allowed to access this resource")
 
     return _require_permission_if_not_self
 
@@ -148,15 +150,11 @@ def get_account(
 
 @router.patch(
     "/{account_identifier}",
-    dependencies=[
-        Depends(require_permission_if_not_self(namespace="accounts", name="update"))
-    ],
+    dependencies=[Depends(require_permission(namespace="accounts", name="update"))],
 )
 @users_router.patch(
     "/{account_identifier}",
-    dependencies=[
-        Depends(require_permission_if_not_self(namespace="accounts", name="update"))
-    ],
+    dependencies=[Depends(require_permission(namespace="accounts", name="update"))],
 )
 def update_account(
     account_identifier: Annotated[str, Path()],
@@ -174,15 +172,11 @@ def update_account(
 
 @router.delete(
     "/{account_identifier}",
-    dependencies=[
-        Depends(require_permission_if_not_self(namespace="accounts", name="delete"))
-    ],
+    dependencies=[Depends(require_permission(namespace="accounts", name="delete"))],
 )
 @users_router.delete(
     "/{account_identifier}",
-    dependencies=[
-        Depends(require_permission_if_not_self(namespace="accounts", name="delete"))
-    ],
+    dependencies=[Depends(require_permission(namespace="accounts", name="delete"))],
 )
 def delete_account(
     account_identifier: Annotated[str, Path()],
@@ -225,9 +219,15 @@ def update_account_password(
     if not account.username:
         raise BadRequestError("Only accounts with username can have passwords.")
 
-    # Accounts changing their own password must provide their password if one exists and
-    # it must match the existing one
-    if current_account.id == account.id and account.password_hash is not None:
+    # Accounts without necessary permissions that are changing their own password must
+    #  provide their password if one exists and it must match the existing one
+    if (
+        current_account.id == account.id
+        and account.password_hash is not None
+        and not check_account_permission(
+            current_account, namespace="accounts", name="change_password"
+        )
+    ):
         if password_update.current is None:
             raise BadRequestError("You must enter your current password.")
 
