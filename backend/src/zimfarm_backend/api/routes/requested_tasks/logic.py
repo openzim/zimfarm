@@ -25,6 +25,7 @@ from zimfarm_backend.api.routes.requested_tasks.models import (
     RequestedTaskSchema,
     UpdateRequestedTaskSchema,
 )
+from zimfarm_backend.api.routes.workers.models import GetRequestedTaskSchema
 from zimfarm_backend.common import WorkersIpChangesCounts, getnow
 from zimfarm_backend.common.constants import (
     ENABLED_SCHEDULER,
@@ -32,13 +33,7 @@ from zimfarm_backend.common.constants import (
     USES_WORKERS_IPS_WHITELIST,
 )
 from zimfarm_backend.common.external import update_workers_whitelist
-from zimfarm_backend.common.schemas.fields import (
-    ZIMCPU,
-    NotEmptyString,
-    WorkerField,
-    ZIMDisk,
-    ZIMMemory,
-)
+from zimfarm_backend.common.schemas.fields import NotEmptyString
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
@@ -183,10 +178,7 @@ def get_requested_tasks(
 @router.get("/worker")
 def get_requested_tasks_for_worker(
     request: Request,
-    worker_name: Annotated[WorkerField, Query()],
-    avail_cpu: Annotated[ZIMCPU, Query()],
-    avail_memory: Annotated[ZIMMemory, Query()],
-    avail_disk: Annotated[ZIMDisk, Query()],
+    query: Annotated[GetRequestedTaskSchema, Query()],
     session: Annotated[OrmSession, Depends(gen_manual_dbsession)],
     current_account: Annotated[
         Account, Depends(get_current_account_with_session(session_type="manual"))
@@ -194,7 +186,7 @@ def get_requested_tasks_for_worker(
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
 
-    worker = get_worker(session, worker_name=worker_name)
+    worker = get_worker(session, worker_name=query.worker_name)
 
     fallback_ip = request.client.host if request.client else None
     x_forwarded_for = request.headers.get("X-Forwarded-For", fallback_ip)
@@ -203,23 +195,30 @@ def get_requested_tasks_for_worker(
 
         if ip_changed:
             logger.info(
-                f"Worker {worker_name} IP changed from {worker.last_ip} to "
+                f"Worker {query.worker_name} IP changed from {worker.last_ip} to "
                 f"{x_forwarded_for}"
             )
-            worker = update_worker(
-                session, worker_name=worker_name, ip_address=x_forwarded_for
-            )
-        else:
-            worker = update_worker(session, worker_name=worker_name)
 
-        # commit explicitly last_ip and last_seen changes, since we are not
-        # using an explicit transaction, and do it before calling Wasabi so
-        # that changes are propagated quickly and transaction is not blocking
+        worker = update_worker(
+            session,
+            worker_name=query.worker_name,
+            ip_address=x_forwarded_for if ip_changed else None,
+            avail_disk=query.avail_disk,
+            avail_memory=query.avail_memory,
+            avail_cpu=query.avail_cpu,
+            total_disk=query.total_disk,
+            total_memory=query.total_memory,
+            total_cpu=query.total_cpu,
+        )
+
+        # commit explicitly since we are not using an automatic transaction,
+        # and do it before calling Wasabi so that changes are propagated quickly
+        # and transaction is not blocking
         session.commit()
 
         if ip_changed and USES_WORKERS_IPS_WHITELIST:
             try:
-                record_ip_change(session, worker_name)
+                record_ip_change(session, query.worker_name)
             except Exception as exc:
                 logger.exception("Pushing IP changes to Wasabi failed")
                 raise ServiceUnavailableError(
@@ -240,9 +239,9 @@ def get_requested_tasks_for_worker(
     task = find_requested_task_for_worker(
         session=session,
         worker=create_worker_schema(worker),
-        avail_cpu=avail_cpu,
-        avail_memory=avail_memory,
-        avail_disk=avail_disk,
+        avail_cpu=query.avail_cpu,
+        avail_memory=query.avail_memory,
+        avail_disk=query.avail_disk,
     ).requested_task
 
     return ListResponse(

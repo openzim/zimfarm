@@ -20,9 +20,14 @@ interface BaseWorker {
   docker_image: DockerImageVersion | null
 }
 
+interface WorkerResourceSchema {
+  total: Resources
+  available: Resources
+}
+
 export interface Worker extends BaseWorker {
   status: 'online' | 'offline'
-  resources: Resources
+  resources: WorkerResourceSchema
   tasks: TaskLight[] // Will be populated with running tasks
   user_id: string
   display_name: string
@@ -43,7 +48,6 @@ export interface RunningTask {
 
 export interface WorkerMetrics extends BaseWorker {
   status: 'online' | 'offline'
-  resources: Resources
   user_id: string
   display_name: string
   running_tasks: RunningTask[]
@@ -52,6 +56,7 @@ export interface WorkerMetrics extends BaseWorker {
   nb_tasks_succeeded: number
   nb_tasks_failed: number
   current_usage: Resources
+  resources: WorkerResourceSchema
   ssh_keys: SshKeyRead[]
 }
 

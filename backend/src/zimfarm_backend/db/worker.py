@@ -18,6 +18,7 @@ from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     WorkerLightSchema,
     WorkerMetricsSchema,
+    WorkerResourcesSchema,
 )
 from zimfarm_backend.db.account import create_account
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
@@ -83,10 +84,17 @@ def create_worker_schema(
         name=worker.name,
         platforms=worker.platforms,
         offliners=worker.offliners,
-        resources=ConfigResourcesSchema(
-            cpu=worker.cpu,
-            disk=worker.disk,
-            memory=worker.memory,
+        resources=WorkerResourcesSchema(
+            total=ConfigResourcesSchema(
+                cpu=worker.total_cpu,
+                disk=worker.total_disk,
+                memory=worker.total_memory,
+            ),
+            available=ConfigResourcesSchema(
+                cpu=worker.available_cpu,
+                disk=worker.available_disk,
+                memory=worker.available_memory,
+            ),
         ),
         username=worker.account.display_name,
         contexts=_deserialize_worker_context(worker.contexts),
@@ -110,6 +118,12 @@ def update_worker(
     contexts: dict[str, IPv4Address | IPv6Address | None] | None = None,
     update_last_seen: bool = True,
     admin_disabled: bool | None = None,
+    avail_disk: int | None = None,
+    avail_memory: int | None = None,
+    avail_cpu: int | None = None,
+    total_disk: int | None = None,
+    total_memory: int | None = None,
+    total_cpu: int | None = None,
 ) -> Worker:
     """Update the last seen time and IP address for a worker."""
     worker = get_worker(session, worker_name=worker_name)
@@ -121,6 +135,19 @@ def update_worker(
         worker.contexts = _serialize_worker_context(contexts)
     if admin_disabled is not None:
         worker.admin_disabled = admin_disabled
+    if avail_disk is not None:
+        worker.available_disk = avail_disk
+    if avail_memory is not None:
+        worker.available_memory = avail_memory
+    if avail_cpu is not None:
+        worker.available_cpu = avail_cpu
+    if total_disk is not None:
+        worker.total_disk = total_disk
+    if total_memory is not None:
+        worker.total_memory = total_memory
+    if total_cpu is not None:
+        worker.total_cpu = total_cpu
+
     session.add(worker)
     session.flush()
     return worker
@@ -192,10 +219,17 @@ def get_worker_metrics(
         last_seen=worker.last_seen,
         username=worker.account.display_name,
         platforms=worker.platforms,
-        resources=ConfigResourcesSchema(
-            cpu=worker.cpu,
-            disk=worker.disk,
-            memory=worker.memory,
+        resources=WorkerResourcesSchema(
+            total=ConfigResourcesSchema(
+                cpu=worker.total_cpu,
+                disk=worker.total_disk,
+                memory=worker.total_memory,
+            ),
+            available=ConfigResourcesSchema(
+                cpu=worker.available_cpu,
+                disk=worker.available_disk,
+                memory=worker.available_memory,
+            ),
         ),
         offliners=worker.offliners,
         contexts=_deserialize_worker_context(worker.contexts),
@@ -238,9 +272,9 @@ def check_in_worker(
         update(Worker)
         .values(
             selfish=selfish,
-            cpu=cpu,
-            memory=memory,
-            disk=disk,
+            total_cpu=cpu,
+            total_memory=memory,
+            total_disk=disk,
             offliners=offliners,
             platforms=platforms if platforms is not None else {},
             cordoned=cordoned,
@@ -273,9 +307,12 @@ def create_worker(
     account = create_account(session, display_name=worker_name, role=RoleEnum.WORKER)
     worker = Worker(
         name=worker_name,
-        cpu=0,
-        memory=0,
-        disk=0,
+        total_cpu=0,
+        total_memory=0,
+        total_disk=0,
+        available_cpu=0,
+        available_memory=0,
+        available_disk=0,
         selfish=True,
         offliners=[],
         cordoned=False,

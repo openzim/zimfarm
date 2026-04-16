@@ -2,6 +2,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import datetime
+import os
 import shutil
 import signal
 import time
@@ -40,7 +41,7 @@ from zimfarm_worker.common.docker import (
     stop_container,
     stop_task_worker,
 )
-from zimfarm_worker.common.utils import as_pos_int, format_size
+from zimfarm_worker.common.utils import format_size
 from zimfarm_worker.common.worker import BaseWorker
 
 
@@ -124,11 +125,27 @@ class WorkerManager(BaseWorker):
         # ensure we have access to docker API
         self.check_docker()
 
-        # display resources
-        host_stats = query_host_stats(self.docker, self.workdir)
+        # display resources. These aren't the actual "host" statistics but an
+        # aggregation of the total stats used by our own containers.
+        host_stats = query_host_stats(self.docker)
+        disk_free = self.free_disk_space()
+        if host_stats.disk.available > disk_free:
+            self.should_stop = True
+            logger.critical(
+                "Configured disk space is not available. Only "
+                f"{format_size(disk_free)} currently available while we expect at "
+                f"least {format_size(host_stats.disk.available)} to be available. This "
+                "computation is based on running tasks expected disk consumption and a "
+                f"configured total of {format_size(host_stats.disk.total)} available "
+                "for Zimfarm on the machine. Potential causes might be a task which "
+                "consumes more disk than configured in its recipe, dangling objects "
+                "(containers, volumes, images) or something else on the host "
+                "consuming more disk than anticipated. Exiting..."
+            )
+            return
 
         logger.info(
-            "Host hardware resources:"
+            "Hardware resources:"
             f"\n\tCPU : {host_stats.cpu.total} (total) ;  {host_stats.cpu.available} "
             "(avail)"
             f"\n\tRAM : {format_size(host_stats.memory.total)} (total) ;  "
@@ -136,13 +153,7 @@ class WorkerManager(BaseWorker):
             f"\n\tDisk: {format_size(host_stats.disk.total)} (configured) ; "
             f"{format_size(host_stats.disk.available)} (avail) ; "
             f"{format_size(host_stats.disk.used)} (reserved) ; "
-            f"{format_size(host_stats.disk.remaining)} (remaining)"
         )
-
-        if host_stats.disk.available < host_stats.disk.remaining:
-            self.should_stop = True
-            logger.critical("Configured disk space is not available. Exiting.")
-            return
 
         self.check_in()
 
@@ -190,13 +201,15 @@ class WorkerManager(BaseWorker):
         logger.debug(f"polling {webapi_uri}…")
         self.last_poll = getnow()
 
-        host_stats = query_host_stats(self.docker, self.workdir)
-        expected_disk_avail = as_pos_int(host_stats.disk.total - host_stats.disk.used)
-        if host_stats.disk.available < expected_disk_avail:
+        host_stats = query_host_stats(self.docker)
+        disk_free = self.free_disk_space()
+        if host_stats.disk.available > disk_free:
             self.should_stop = True
             logger.critical(
-                f"Available disk space ({format_size(host_stats.disk.available)})"
-                f" is lower than expected ({format_size(expected_disk_avail)}). Exiting"
+                f"Available disk space ({format_size(disk_free)}) "
+                "is lower than expected "
+                f"({format_size(host_stats.disk.available)}). "
+                "Exiting..."
             )
             return False
 
@@ -205,6 +218,9 @@ class WorkerManager(BaseWorker):
             path="/requested-tasks/worker",
             params={
                 "worker_name": self.worker_name,
+                "total_cpu": host_stats.cpu.total,
+                "total_memory": host_stats.memory.total,
+                "total_disk": host_stats.disk.total,
                 "avail_cpu": host_stats.cpu.available,
                 "avail_memory": host_stats.memory.available,
                 "avail_disk": host_stats.disk.available,
@@ -249,7 +265,7 @@ class WorkerManager(BaseWorker):
         netloc = urllib.parse.urlparse(webapi_uri).netloc
         logger.info(f"checking-in with the API at {netloc}…")
 
-        host_stats = query_host_stats(self.docker, self.workdir)
+        host_stats = query_host_stats(self.docker)
         try:
             container_info = inspect_container(
                 self.docker, get_running_container_name()
@@ -529,6 +545,12 @@ class WorkerManager(BaseWorker):
             workdir=self.workdir,
             worker_name=self.worker_name,
         )
+
+    def free_disk_space(self):
+        """Get the available disk space on the host machine"""
+        workir_fs_stats = os.statvfs(self.workdir)
+        disk_free = workir_fs_stats.f_bavail * workir_fs_stats.f_frsize
+        return disk_free
 
     def exit_gracefully(self, signum: int, _: Any):
         signame = signal.strsignal(signum)

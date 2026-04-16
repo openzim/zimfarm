@@ -283,7 +283,7 @@ def test_get_requested_tasks_for_worker_scheduler_disabled(
     monkeypatch.setattr(logic, "ENABLED_SCHEDULER", False)
 
     response = client.get(
-        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
+        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.available_cpu}&avail_memory={worker.available_memory}&avail_disk={worker.available_disk}",
         headers={
             "Authorization": f"Bearer {access_token}",
             "X-Forwarded-For": "127.0.0.1",
@@ -338,7 +338,7 @@ def test_get_requested_tasks_for_worker_success_no_ip_change(
     dbsession.flush()
 
     response = client.get(
-        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
+        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.available_cpu}&avail_memory={worker.available_memory}&avail_disk={worker.available_disk}",
         headers={
             "Authorization": f"Bearer {access_token}",
             "X-Forwarded-For": str(worker.last_ip) if worker.last_ip else "127.0.0.1",
@@ -375,7 +375,7 @@ def test_get_requested_tasks_for_worker_success_with_ip_change(
 
     new_ip = "192.168.1.100"
     response = client.get(
-        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
+        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.available_cpu}&avail_memory={worker.available_memory}&avail_disk={worker.available_disk}",
         headers={
             "Authorization": f"Bearer {access_token}",
             "X-Forwarded-For": new_ip,
@@ -412,7 +412,7 @@ def test_get_requested_tasks_for_worker_ip_change_exception(
 
     new_ip = "192.168.1.100"
     response = client.get(
-        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
+        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.available_cpu}&avail_memory={worker.available_memory}&avail_disk={worker.available_disk}",
         headers={
             "Authorization": f"Bearer {access_token}",
             "X-Forwarded-For": new_ip,
@@ -442,7 +442,7 @@ def test_get_requested_tasks_for_worker_no_tasks_available(
     )
 
     response = client.get(
-        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.cpu}&avail_memory={worker.memory}&avail_disk={worker.disk}",
+        f"/v2/requested-tasks/worker?worker_name={worker.name}&avail_cpu={worker.available_cpu}&avail_memory={worker.available_memory}&avail_disk={worker.available_disk}",
         headers={
             "Authorization": f"Bearer {access_token}",
             "X-Forwarded-For": "127.0.0.1",

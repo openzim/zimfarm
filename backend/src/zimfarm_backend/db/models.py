@@ -126,13 +126,16 @@ class Worker(Base):
     )
     name: Mapped[str] = mapped_column(unique=True, index=True)
     selfish: Mapped[bool]
-    cpu: Mapped[int]
-    memory: Mapped[int] = mapped_column(type_=BigInteger)
-    disk: Mapped[int] = mapped_column(type_=BigInteger)
+    total_cpu: Mapped[int]
+    total_memory: Mapped[int] = mapped_column(type_=BigInteger)
+    total_disk: Mapped[int] = mapped_column(type_=BigInteger)
     offliners: Mapped[list[str]]
     platforms: Mapped[dict[str, Any]]
     last_seen: Mapped[datetime | None]
     last_ip: Mapped[IPv4Address | None]
+    available_cpu: Mapped[int]
+    available_memory: Mapped[int] = mapped_column(type_=BigInteger)
+    available_disk: Mapped[int] = mapped_column(type_=BigInteger)
     deleted: Mapped[bool] = mapped_column(default=False, server_default=false())
     contexts: Mapped[dict[str, Any]] = mapped_column(
         default_factory=dict, server_default="{}"

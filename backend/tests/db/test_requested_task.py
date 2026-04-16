@@ -910,7 +910,7 @@ def test_does_platform_allow_worker_to_run(
 ):
     """Test that the platform validates platform constraints correctly."""
     recipe_config = create_recipe_config(
-        cpu=worker.cpu, memory=worker.memory, disk=worker.disk
+        cpu=worker.total_cpu, memory=worker.total_memory, disk=worker.total_disk
     )
     task = RequestedTaskWithDuration(
         id=uuid4(),
@@ -1029,7 +1029,7 @@ def test_find_requested_task_for_worker(
     expect_found: bool,
 ):
     recipe_config = create_recipe_config(
-        cpu=worker.cpu, memory=worker.memory, disk=worker.disk
+        cpu=worker.total_cpu, memory=worker.total_memory, disk=worker.total_disk
     )
     worker.cordoned = worker_cordoned
     worker.admin_disabled = worker_admin_disabled

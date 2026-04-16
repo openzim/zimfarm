@@ -783,9 +783,12 @@ def create_worker(
         worker = Worker(
             name=name,
             selfish=False,
-            cpu=cpu,
-            memory=memory,
-            disk=disk,
+            total_cpu=cpu,
+            total_memory=memory,
+            total_disk=disk,
+            available_cpu=cpu,
+            available_memory=memory,
+            available_disk=disk,
             offliners=offliners or ["mwoffliner", "youtube"],
             platforms=_platforms,
             contexts=(

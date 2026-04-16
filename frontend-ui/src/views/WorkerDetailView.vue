@@ -753,18 +753,18 @@ const isDuplicateContextName = (name: string, currentIndex: number): boolean => 
 const workerName = computed(() => props.workerName)
 
 const usageCpu = computed(
-  () => `${worker.value?.current_usage.cpu ?? 0}/${worker.value?.resources.cpu ?? 0}`,
+  () => `${worker.value?.current_usage.cpu ?? 0}/${worker.value?.resources.total.cpu ?? 0}`,
 )
 const usageMemory = computed(
   () =>
     `${formattedBytesSize(worker.value?.current_usage.memory ?? 0)}/${formattedBytesSize(
-      worker.value?.resources.memory ?? 0,
+      worker.value?.resources.total.memory ?? 0,
     )}`,
 )
 const usageDisk = computed(
   () =>
     `${formattedBytesSize(worker.value?.current_usage.disk ?? 0)}/${formattedBytesSize(
-      worker.value?.resources.disk ?? 0,
+      worker.value?.resources.total.disk ?? 0,
     )}`,
 )
 
@@ -775,17 +775,17 @@ function pctColor(pct: number): string {
 }
 
 const percentCpu = computed(() => {
-  const max = worker.value?.resources.cpu ?? 0
+  const max = worker.value?.resources.total.cpu ?? 0
   const cur = worker.value?.current_usage.cpu ?? 0
   return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
 })
 const percentMemory = computed(() => {
-  const max = worker.value?.resources.memory ?? 0
+  const max = worker.value?.resources.total.memory ?? 0
   const cur = worker.value?.current_usage.memory ?? 0
   return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
 })
 const percentDisk = computed(() => {
-  const max = worker.value?.resources.disk ?? 0
+  const max = worker.value?.resources.total.disk ?? 0
   const cur = worker.value?.current_usage.disk ?? 0
   return max > 0 ? Math.min(100, Math.round((cur * 100) / max)) : 0
 })
