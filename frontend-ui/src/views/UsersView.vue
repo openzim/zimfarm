@@ -69,9 +69,9 @@
             <v-row>
               <v-col cols="12">
                 <v-text-field
-                  v-model="form.username"
-                  label="Username"
-                  placeholder="Enter username"
+                  v-model="form.display_name"
+                  label="Display Name"
+                  placeholder="Enter display name"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
@@ -93,18 +93,44 @@
                 />
               </v-col>
 
-              <v-col cols="12">
+              <v-col cols="12" v-if="showLocalLogin">
+                <v-text-field
+                  v-model="form.username"
+                  label="Username"
+                  placeholder="Enter username"
+                  hint="Used for local authentication"
+                  persistent-hint
+                  variant="outlined"
+                  density="compact"
+                  :validate-on="'blur'"
+                  :rules="
+                    !showOAuthLogin || form.password ? [rules.required, rules.minLength(3)] : []
+                  "
+                />
+              </v-col>
+
+              <v-col cols="12" v-if="showLocalLogin">
                 <v-text-field
                   v-model="form.password"
                   label="Password"
                   placeholder="Enter password or generate one"
+                  hint="Used for local authentication"
+                  persistent-hint
                   variant="outlined"
                   density="compact"
-                  hide-details="auto"
                   :type="showPassword ? 'text' : 'password'"
-                  :rules="[rules.required, rules.minLength(8)]"
+                  :rules="!showOAuthLogin ? [rules.required, rules.minLength(8)] : []"
                 >
                   <template #append-inner>
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      @click="generateNewPassword"
+                      tabindex="-1"
+                    >
+                      <v-icon>mdi-refresh</v-icon>
+                    </v-btn>
                     <v-btn
                       icon
                       size="small"
@@ -118,11 +144,18 @@
                 </v-text-field>
               </v-col>
 
-              <v-col cols="12">
-                <v-btn variant="outlined" color="primary" block @click="generateNewPassword">
-                  <v-icon class="mr-2">mdi-refresh</v-icon>
-                  Generate New Password
-                </v-btn>
+              <v-col cols="12" v-if="showOAuthLogin">
+                <v-text-field
+                  v-model="form.idp_sub"
+                  label="IDP Sub (UUID)"
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  hint="Identifier issued by external identity provider"
+                  persistent-hint
+                  variant="outlined"
+                  density="compact"
+                  :validate-on="'blur'"
+                  :rules="!showLocalLogin ? [rules.required] : []"
+                />
               </v-col>
             </v-row>
           </v-form>
@@ -148,9 +181,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
+import type { Config } from '@/config'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import UsersTable from '@/components/UsersTable.vue'
 import constants from '@/constants'
@@ -162,6 +196,12 @@ import type { User } from '@/types/user'
 import { generatePassword } from '@/utils/browsers'
 
 const roles = constants.ROLES.filter((role) => role !== 'custom')
+
+// Inject config
+const config = inject<Config>(constants.config)
+if (!config) {
+  throw new Error('Config is not defined')
+}
 
 // Simple password generator function
 const genPassword = () => generatePassword(8)
@@ -195,14 +235,19 @@ const paginator = ref({
 
 // Form data
 const form = ref({
+  display_name: '',
   username: '',
   role: 'editor' as const,
   password: '',
+  idp_sub: '',
 })
 
 const showPassword = ref(false)
 
 // Computed properties
+const showLocalLogin = computed(() => config.LOGIN_MODES.includes('local'))
+const showOAuthLogin = computed(() => config.LOGIN_MODES.includes('oauth'))
+
 const canReadUsers = computed(() => authStore.hasPermission('accounts', 'read'))
 
 const toggleText = computed(() => (showingViewers.value ? 'Hide Viewers' : 'Show Viewers'))
@@ -210,7 +255,20 @@ const toggleText = computed(() => (showingViewers.value ? 'Hide Viewers' : 'Show
 const canCreateUsers = computed(() => authStore.hasPermission('accounts', 'create'))
 
 const isFormValid = computed(() => {
-  return form.value.username && form.value.role && form.value.password
+  if (!form.value.display_name || !form.value.role) return false
+
+  if (showLocalLogin.value && !showOAuthLogin.value) {
+    if (!form.value.username || !form.value.password) return false
+  }
+
+  if (form.value.password && !form.value.username) {
+    return false
+  }
+
+  if (showOAuthLogin.value && !showLocalLogin.value) {
+    if (!form.value.idp_sub) return false
+  }
+  return true
 })
 
 // Table headers
@@ -249,24 +307,40 @@ const createUser = async () => {
   isCreating.value = true
   loadingStore.startLoading('Creating user...')
 
-  const response = await userStore.createUser(
-    form.value.username,
-    form.value.role,
-    form.value.password,
-  )
+  const payload: {
+    display_name: string
+    role: string
+    username?: string
+    password?: string
+    idp_sub?: string
+  } = {
+    display_name: form.value.display_name,
+    role: form.value.role,
+  }
+  if (showLocalLogin.value) {
+    payload.username = form.value.username
+    payload.password = form.value.password
+  }
+  if (showOAuthLogin.value && form.value.idp_sub) {
+    payload.idp_sub = form.value.idp_sub
+  }
+
+  const response = await userStore.createUser(payload)
 
   if (response) {
     // Show success notification
-    notificationStore.showSuccess(
-      `User "${response.display_name}" has been created with password "${form.value.password}".`,
-      8000,
-    )
+    const msg = showLocalLogin.value
+      ? `User "${response.display_name}" has been created with password "${form.value.password}".`
+      : `User "${response.display_name}" has been created.`
+    notificationStore.showSuccess(msg, 8000)
 
     // Reset form
     form.value = {
+      display_name: '',
       username: '',
       role: 'editor' as const,
       password: '',
+      idp_sub: '',
     }
     formRef.value?.reset()
     showPassword.value = false
@@ -324,9 +398,11 @@ const handleSearchChange = async () => {
 const closeCreateDialog = () => {
   showCreateDialog.value = false
   form.value = {
+    display_name: '',
     username: '',
     role: 'editor' as const,
     password: '',
+    idp_sub: '',
   }
   formRef.value?.reset()
   showPassword.value = false
@@ -361,10 +437,22 @@ onMounted(async () => {
 
 // Watch for dialog open to generate password
 watch(showCreateDialog, (newValue) => {
-  if (newValue) {
+  if (newValue && showLocalLogin.value) {
     generateNewPassword()
   }
 })
+
+// Auto-fill username from display name if it hasn't been manually edited
+watch(
+  () => form.value.display_name,
+  (newName, oldName) => {
+    if (showLocalLogin.value) {
+      if (!form.value.username || form.value.username === oldName) {
+        form.value.username = newName
+      }
+    }
+  },
+)
 
 watch(
   () => router.currentRoute.value.query,
