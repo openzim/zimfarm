@@ -109,7 +109,13 @@
                     <div class="text-subtitle-2">Status</div>
                   </v-col>
                   <v-col cols="12" md="9">
-                    <code class="text-pink-accent-2">{{ task.status }}</code>
+                    <StatusDisplay
+                      :status="task.status"
+                      :timestamp="task.timestamp"
+                      :updated-at="task.updated_at"
+                      :task-id="task.id"
+                      :justify-on-small="false"
+                    />
                   </v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
@@ -525,7 +531,7 @@ import ErrorMessage from '@/components/ErrorMessage.vue'
 
 import FlagsList from '@/components/FlagsList.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
-
+import StatusDisplay from '@/components/StatusDisplay.vue'
 import TaskFileCard from '@/components/TaskFileCard.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'

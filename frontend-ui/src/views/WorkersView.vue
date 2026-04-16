@@ -152,7 +152,6 @@ const showingAll = ref<boolean>(!getOnlinesOnlyPreference())
 const workerHeaders = [
   { title: 'Name', value: 'name' },
   { title: 'Status', value: 'status' },
-  { title: 'Last seen', value: 'last_seen' },
   { title: 'Resources', value: 'resources' },
   { title: 'Contexts', value: 'contexts' },
 ]
