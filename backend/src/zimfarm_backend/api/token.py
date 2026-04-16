@@ -279,10 +279,9 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
         except Exception:
             return False
 
-        if (
-            payload.get("iss") != OAUTH_ISSUER
-            or payload.get("aud") != OAUTH_OIDC_CLIENT_ID
-        ):
+        if payload.get(
+            "iss"
+        ) != OAUTH_ISSUER or OAUTH_OIDC_CLIENT_ID not in payload.get("aud", []):
             return False
 
         return True
@@ -359,10 +358,9 @@ class OAuthSessionTokenDecoder(TokenDecoder):
         except Exception:
             return False
 
-        if (
-            payload.get("iss") != OAUTH_ISSUER
-            or payload.get("aud") != OAUTH_SESSION_AUDIENCE_ID
-        ):
+        if payload.get(
+            "iss"
+        ) != OAUTH_ISSUER or OAUTH_SESSION_AUDIENCE_ID not in payload.get("aud", []):
             return False
         return True
 

@@ -69,7 +69,7 @@ def create_test_session_jwt_token(
         "sub": subject,
         "iat": int(now.timestamp()),
         "exp": int((now + exp_delta).timestamp()),
-        "aud": audience_id,
+        "aud": [audience_id],
         "name": "Test Account",
     }
     if aal:
@@ -130,7 +130,7 @@ def test_verify_oidc_access_token_with_2fa_enabled_and_valid_amr(
     decoded_payload = {
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
@@ -175,7 +175,7 @@ def test_verify_oidc_access_token_with_2fa_enabled_only_first_factor(
     decoded_payload = {
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
@@ -221,7 +221,7 @@ def test_verify_kiwix_access_token_with_2fa_disabled_only_first_factor(
     decoded_payload = {
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
@@ -301,7 +301,7 @@ def test_verify_session_access_token_with_2fa_enabled_and_valid_aal(
     decoded_payload = {
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
@@ -348,7 +348,7 @@ def test_verify_session_access_token_with_2fa_enabled_only_aal1(
     decoded_payload = {
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
@@ -396,7 +396,7 @@ def test_verify_session_access_token_with_2fa_disabled_only_aal1(
     decoded_payload = {
         "iss": TEST_ISSUER,
         "sub": str(UUID(int=0)),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "name": "Test Account",
         "iat": int(getnow().timestamp()),
         "exp": int((getnow() + datetime.timedelta(hours=1)).timestamp()),
@@ -446,7 +446,7 @@ def test_verify_session_access_token_with_client_id_requires_no_2fa(
 
     decoded_payload = {
         "iss": TEST_ISSUER,
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "sub": sub,
         "client_id": sub,
         "name": "Test Account",
@@ -495,7 +495,7 @@ def test_verify_session_access_token_verify_client_id_matches_sub(
 
     decoded_payload = {
         "iss": TEST_ISSUER,
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
         "sub": str(UUID(int=0)),
         "client_id": str(UUID(int=1)),
         "name": "Test Account",
@@ -619,7 +619,7 @@ def test_oauth_oidc_token_decoder_can_decode_with_correct_issuer_and_audience(
         "sub": str(UUID(int=0)),
         "iat": int(now.timestamp()),
         "exp": int((now + datetime.timedelta(hours=1)).timestamp()),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
     }
     token = jwt.encode(payload, "test-secret", algorithm="HS256")
 
@@ -644,7 +644,7 @@ def test_oauth_oidc_token_decoder_can_decode_with_wrong_issuer(
         "sub": str(UUID(int=0)),
         "iat": int(now.timestamp()),
         "exp": int((now + datetime.timedelta(hours=1)).timestamp()),
-        "aud": TEST_CLIENT_ID,
+        "aud": [TEST_CLIENT_ID],
     }
     token = jwt.encode(payload, "test-secret", algorithm="HS256")
 
@@ -669,7 +669,7 @@ def test_oauth_oidc_token_decoder_can_decode_with_wrong_audience(
         "sub": str(UUID(int=0)),
         "iat": int(now.timestamp()),
         "exp": int((now + datetime.timedelta(hours=1)).timestamp()),
-        "aud": "wrong-audience",
+        "aud": ["wrong-audience"],
     }
     token = jwt.encode(payload, "test-secret", algorithm="HS256")
 
