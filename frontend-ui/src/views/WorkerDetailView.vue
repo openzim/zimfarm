@@ -310,7 +310,12 @@
                   </template>
 
                   <template #[`item.resources`]="{ item }">
-                    <div :class="['d-flex', 'flex-row flex-wrap', { 'justify-end': smAndDown }]">
+                    <div
+                      :class="[
+                        'd-flex',
+                        smAndDown ? 'flex-row flex-wrap justify-end ga-1' : 'flex-column',
+                      ]"
+                    >
                       <ResourceBadge
                         kind="cpu"
                         :value="item.config.resources.cpu"
@@ -332,13 +337,13 @@
                     </div>
                   </template>
 
-                  <template #[`item.task`]="{ item }">
-                    <TaskLink
+                  <template #[`item.status`]="{ item }">
+                    <StatusDisplay
                       v-if="item.id && item.updated_at"
-                      :id="item.id"
-                      :updatedAt="item.updated_at"
                       :status="item.status"
                       :timestamp="item.timestamp"
+                      :updated-at="item.updated_at"
+                      :task-id="item.id"
                     />
                     <span v-else class="text-caption">-</span>
                   </template>
@@ -598,8 +603,8 @@ import DiffViewer from '@/components/DiffViewer.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
 import SshKeyInput from '@/components/SshKeyInput.vue'
+import StatusDisplay from '@/components/StatusDisplay.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
-import TaskLink from '@/components/TaskLink.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
@@ -662,7 +667,7 @@ const imageAge = computed(() => {
 const runningTasksHeaders = [
   { title: 'Recipe', value: 'recipe_name' },
   { title: 'Resources', value: 'resources' },
-  { title: 'Task', value: 'task' },
+  { title: 'Status', value: 'status' },
 ]
 
 const hasChanges = computed(() => {

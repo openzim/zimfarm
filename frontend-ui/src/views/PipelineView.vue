@@ -55,7 +55,7 @@ const headers = computed(() => {
     case 'todo':
       return [
         { title: 'Recipe', value: 'recipe_name', sortable: false },
-        { title: 'Requested', value: 'requested', sortable: false },
+        { title: 'Status', value: 'status', sortable: false },
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
@@ -65,26 +65,25 @@ const headers = computed(() => {
     case 'doing':
       return [
         { title: 'Recipe', value: 'recipe_name', sortable: false },
-        { title: 'Started', value: 'started', sortable: false },
+        { title: 'Status', value: 'status', sortable: false },
         { title: 'By', value: 'requested_by', sortable: false },
         { title: 'Resources', value: 'resources', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
-        canUnRequestTasks.value ? { title: 'Cancel', value: 'cancel', sortable: false } : null,
+        canCancelTasks.value ? { title: 'Cancel', value: 'cancel', sortable: false } : null,
       ].filter(Boolean) as { title: string; value: string }[]
     case 'done':
       return [
         { title: 'Recipe', value: 'recipe_name', sortable: false },
-        { title: 'Completed', value: 'completed', sortable: false },
+        { title: 'Status', value: 'status', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
         { title: 'Duration', value: 'duration', sortable: false },
       ]
     case 'failed':
       return [
         { title: 'Recipe', value: 'recipe_name', sortable: false },
-        { title: 'Stopped', value: 'stopped', sortable: false },
+        { title: 'Status', value: 'status', sortable: false },
         { title: 'Worker', value: 'worker', sortable: false },
         { title: 'Duration', value: 'duration', sortable: false },
-        { title: 'Status', value: 'status', sortable: false },
         { title: 'Last Run', value: 'last_run', sortable: false },
       ]
     default:

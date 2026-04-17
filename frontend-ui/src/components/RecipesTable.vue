@@ -73,27 +73,14 @@
         </template>
 
         <template #[`item.last_task`]="{ item }">
-          <div
+          <StatusDisplay
             v-if="item.most_recent_task"
-            :class="[
-              'd-flex',
-              'flex-row',
-              'flex wrap',
-              'flex-md-column',
-              'ga-1',
-              { 'justify-end': smAndDown },
-            ]"
-          >
-            <code :class="statusClass(item.most_recent_task.status)">
-              {{ item.most_recent_task.status }}
-            </code>
-            <TaskLink
-              :id="item.most_recent_task.id"
-              :updatedAt="item.most_recent_task.updated_at"
-              :status="item.most_recent_task.status"
-              :timestamp="item.most_recent_task.timestamp"
-            />
-          </div>
+            :status="item.most_recent_task.status"
+            :timestamp="item.most_recent_task.timestamp"
+            :updated-at="item.most_recent_task.updated_at"
+            :task-id="item.most_recent_task.id"
+            :layout="smAndDown ? 'column' : 'row'"
+          />
           <span v-else>-</span>
         </template>
 
@@ -109,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import TaskLink from '@/components/TaskLink.vue'
+import StatusDisplay from '@/components/StatusDisplay.vue'
 import type { Paginator } from '@/types/base'
 import type { RecipeLight } from '@/types/recipe'
 import { computed } from 'vue'
@@ -178,12 +165,6 @@ function handleSelectionChange(selection: string[]) {
 
 function clearSelections() {
   emit('selectionChanged', [])
-}
-
-function statusClass(status: string) {
-  if (status === 'succeeded') return 'recipe-succeeded'
-  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'recipe-failed'
-  else return 'recipe-running'
 }
 </script>
 

@@ -142,28 +142,23 @@
               >
                 Selfish
               </v-chip>
+
+              <!-- Last seen time -->
+              <span>,</span>
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <span v-bind="props" class="text-no-wrap">{{ fromNow(item.last_seen) }}</span>
+                </template>
+                <span>{{ formatDt(item.last_seen) }}</span>
+              </v-tooltip>
             </div>
           </template>
           <template v-else>
-            <!-- Empty cell for tasks -->
-          </template>
-        </template>
-
-        <template #[`item.last_seen`]="{ item }">
-          <template v-if="item.kind === 'worker'">
-            <v-tooltip location="bottom">
-              <template #activator="{ props }">
-                <span v-bind="props" class="text-no-wrap">{{ fromNow(item.last_seen) }}</span>
-              </template>
-              <span>{{ formatDt(item.last_seen) }}</span>
-            </v-tooltip>
-          </template>
-          <template v-else>
-            <TaskLink
-              :id="item.task.id"
-              :updatedAt="item.task.updated_at"
+            <StatusDisplay
               :status="item.task.status"
               :timestamp="item.task.timestamp"
+              :updated-at="item.task.updated_at"
+              :task-id="item.task.id"
             />
           </template>
         </template>
@@ -266,7 +261,7 @@
 <script setup lang="ts">
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
-import TaskLink from '@/components/TaskLink.vue'
+import StatusDisplay from '@/components/StatusDisplay.vue'
 import type { Paginator } from '@/types/base'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker, DockerImageVersion } from '@/types/workers'

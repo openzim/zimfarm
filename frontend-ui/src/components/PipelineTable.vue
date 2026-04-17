@@ -45,54 +45,13 @@
           </router-link>
         </template>
 
-        <template #[`item.requested`]="{ item }">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <span v-bind="props">
-                {{ fromNow(getTimestampStringForStatus(item.timestamp, 'requested')) }}
-              </span>
-            </template>
-            <span>{{ formatDt(getTimestampStringForStatus(item.timestamp, 'requested')) }}</span>
-          </v-tooltip>
-        </template>
-
-        <template #[`item.started`]="{ item }">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <span v-bind="props" class="text-no-wrap">
-                <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
-                  {{ fromNow(getTimestampStringForStatus(item.timestamp, 'reserved')) }}
-                </router-link>
-              </span>
-            </template>
-            <span>{{ formatDt(getTimestampStringForStatus(item.timestamp, 'reserved')) }}</span>
-          </v-tooltip>
-        </template>
-
-        <template #[`item.completed`]="{ item }">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <span v-bind="props" class="text-no-wrap">
-                <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
-                  {{ fromNow(getTimestampStringForStatus(item.timestamp, 'succeeded')) }}
-                </router-link>
-              </span>
-            </template>
-            <span>{{ formatDt(getTimestampStringForStatus(item.timestamp, 'succeeded')) }}</span>
-          </v-tooltip>
-        </template>
-
-        <template #[`item.stopped`]="{ item }">
-          <v-tooltip location="bottom">
-            <template #activator="{ props }">
-              <span v-bind="props" class="text-no-wrap">
-                <router-link :to="{ name: 'task-detail', params: { id: item.id } }">
-                  {{ fromNow(item.updated_at) }}
-                </router-link>
-              </span>
-            </template>
-            <span>{{ formatDt(item.updated_at) }}</span>
-          </v-tooltip>
+        <template #[`item.status`]="{ item }">
+          <StatusDisplay
+            :status="item.status"
+            :timestamp="item.timestamp"
+            :updated-at="item.updated_at"
+            :task-id="item.id"
+          />
         </template>
 
         <template #[`item.resources`]="{ item }">
@@ -158,14 +117,10 @@
         </template>
 
         <template #[`item.cancel`]="{ item }">
-          <code
-            v-if="item.status === 'canceling' || item.status === 'cancel_requested'"
-            class="text-pink-accent-2"
-          >
-            {{ item.status }}
-          </code>
           <CancelTaskButton
-            v-else-if="canCancelTasks"
+            v-if="
+              canCancelTasks && item.status !== 'canceling' && item.status !== 'cancel_requested'
+            "
             :id="item.id"
             :size="smAndDown ? 'x-small' : 'small'"
             @task-canceled="emit('loadData', props.paginator.limit, 0)"
@@ -185,30 +140,17 @@
           }}
         </template>
 
-        <template #[`item.status`]="{ item }">
-          <code class="text-pink-accent-2">{{ item.status }}</code>
-        </template>
-
         <template #[`item.last_run`]="{ item }">
-          <div
+          <StatusDisplay
             v-if="
               (item as TaskLight).recipe_most_recent_task &&
               (item as TaskLight).recipe_most_recent_task?.id != item.id
             "
-            :class="['ga-1', 'd-flex', 'align-center', 'flex-wrap', { 'justify-end': smAndDown }]"
-          >
-            <span>
-              <code :class="statusClass((item as TaskLight).recipe_most_recent_task!.status)">
-                {{ (item as TaskLight).recipe_most_recent_task!.status }} </code
-              >,
-            </span>
-            <TaskLink
-              :id="(item as TaskLight).recipe_most_recent_task!.id"
-              :updatedAt="(item as TaskLight).recipe_most_recent_task!.updated_at"
-              :status="(item as TaskLight).recipe_most_recent_task!.status"
-              :timestamp="(item as TaskLight).recipe_most_recent_task!.timestamp"
-            />
-          </div>
+            :status="(item as TaskLight).recipe_most_recent_task!.status"
+            :timestamp="(item as TaskLight).recipe_most_recent_task!.timestamp"
+            :updated-at="(item as TaskLight).recipe_most_recent_task!.updated_at"
+            :task-id="(item as TaskLight).recipe_most_recent_task!.id"
+          />
         </template>
 
         <template #[`item.requested_by`]="{ item }">
@@ -237,11 +179,12 @@ import DiagnoseTaskDialog from '@/components/DiagnoseTaskDialog.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import RemoveRequestedTaskButton from '@/components/RemoveRequestedTaskButton.vue'
 import ResourceBadge from '@/components/ResourceBadge.vue'
-import TaskLink from '@/components/TaskLink.vue'
+import StatusDisplay from '@/components/StatusDisplay.vue'
+
 import type { Paginator } from '@/types/base'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
-import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
+import { formatDurationBetween } from '@/utils/format'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -290,12 +233,6 @@ function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   if (options.itemsPerPage != props.paginator.limit) {
     emit('limitChanged', options.itemsPerPage)
   }
-}
-
-function statusClass(status: string) {
-  if (status === 'succeeded') return 'recipe-succeeded'
-  else if (['failed', 'canceled', 'cancel_requested'].includes(status)) return 'recipe-failed'
-  else return 'recipe-running'
 }
 
 function diagnoseTask(task: RequestedTaskLight) {

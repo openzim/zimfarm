@@ -271,22 +271,14 @@
                     <div class="text-subtitle-2">Last run</div>
                   </v-col>
                   <v-col cols="12" md="8">
-                    <div v-if="lastRun" class="d-flex align-center flex-wrap">
-                      <v-chip
-                        :color="getStatusColor(lastRun.status)"
-                        size="small"
-                        variant="tonal"
-                        class="mr-2"
-                      >
-                        {{ lastRun.status }}
-                      </v-chip>
-                      <TaskLink
-                        :id="lastRun.id"
-                        :updatedAt="lastRun.updated_at"
-                        :status="lastRun.status"
-                        :timestamp="lastRun.timestamp"
-                      />
-                    </div>
+                    <StatusDisplay
+                      v-if="lastRun"
+                      :status="lastRun.status"
+                      :timestamp="lastRun.timestamp"
+                      :updated-at="lastRun.updated_at"
+                      :task-id="lastRun.id"
+                      :justify-on-small="false"
+                    />
                     <div v-else>
                       <v-chip size="small" variant="outlined" color="grey"> None 🙁 </v-chip>
                     </div>
@@ -453,7 +445,6 @@
                       :headers="[
                         { title: 'Worker', value: 'worker' },
                         { title: 'Status', value: 'status' },
-                        { title: 'Task', value: 'task' },
                         { title: 'Total Duration', value: 'total_duration' },
                       ]"
                       :mobile="smAndDown"
@@ -479,20 +470,12 @@
                       </template>
 
                       <template #[`item.status`]="{ item }">
-                        <v-chip :color="getStatusColor(item.status)" size="small" variant="tonal">
-                          {{ item.status }}
-                        </v-chip>
-                      </template>
-
-                      <template #[`item.task`]="{ item }">
-                        <span class="text-no-wrap">
-                          <TaskLink
-                            :id="item.id"
-                            :updatedAt="item.updated_at"
-                            :status="item.status"
-                            :timestamp="item.timestamp"
-                          />
-                        </span>
+                        <StatusDisplay
+                          :status="item.status"
+                          :timestamp="item.timestamp"
+                          :updated-at="item.updated_at"
+                          :task-id="item.id"
+                        />
                       </template>
 
                       <template #[`item.total_duration`]="{ item }">
@@ -786,7 +769,7 @@ import RecipeActionButton from '@/components/RecipeActionButton.vue'
 import RecipeEditor from '@/components/RecipeEditor.vue'
 import RecipeHistory from '@/components/RecipeHistory.vue'
 import RecipesTable from '@/components/RecipesTable.vue'
-import TaskLink from '@/components/TaskLink.vue'
+import StatusDisplay from '@/components/StatusDisplay.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
 import { useAuthStore } from '@/stores/auth'
@@ -1293,21 +1276,6 @@ const refreshData = async (forceReload: boolean = false, fetchHistory: boolean =
         (await offlinerStore.fetchOfflinerVersions(recipe.value.offliner)) || []
     }
     ready.value = true
-  }
-}
-
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'succeeded':
-      return 'success'
-    case 'failed':
-      return 'error'
-    case 'running':
-      return 'info'
-    case 'pending':
-      return 'warning'
-    default:
-      return 'dark-grey'
   }
 }
 
