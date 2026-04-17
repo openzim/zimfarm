@@ -1,6 +1,5 @@
 <template>
   <!-- Worker Selection Dropdown -->
-
   <WorkerSelector
     v-model="selectedWorker"
     :workers="workers"
@@ -13,10 +12,9 @@
     color="primary"
     variant="elevated"
     size="small"
-    class="mr-2"
     :loading="isRequesting"
     :disabled="isDisabled"
-    @click="handleRequest(selectedWorker, false)"
+    @click="promptRequest(false)"
   >
     <v-tooltip activator="parent" location="top">Request with normal priority</v-tooltip>
     <v-icon size="small" class="mr-1">mdi-plus</v-icon>
@@ -32,7 +30,7 @@
     variant="elevated"
     size="small"
     :disabled="isDisabled"
-    @click="handleRequest(selectedWorker, true)"
+    @click="promptRequest(true)"
   >
     <v-tooltip activator="parent" location="top">Request with high priority</v-tooltip>
     <v-icon size="small" class="mr-1">mdi-priority-high</v-icon>
@@ -40,9 +38,23 @@
       isRequesting ? requestingText : `Request ${count} selected recipe${count !== 1 ? 's' : ''}`
     }}
   </v-btn>
+
+  <ConfirmDialog
+    v-model="showConfirm"
+    title="Confirm Request"
+    :message="confirmMessage"
+    confirm-text="Proceed"
+    cancel-text="Abort"
+    confirm-color="primary"
+    icon="mdi-help-circle"
+    icon-color="primary"
+    @confirm="handleConfirm"
+    @cancel="handleCancel"
+  />
 </template>
 
 <script setup lang="ts">
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import WorkerSelector from '@/components/WorkerSelector.vue'
 import constants from '@/constants'
 import type { Worker } from '@/types/workers'
@@ -65,6 +77,8 @@ const emit = defineEmits<{
 
 // Reactive state
 const selectedWorker = ref<string | null>(null)
+const showConfirm = ref(false)
+const pendingPriority = ref(false)
 
 // Computed properties
 const isDisabled = computed(
@@ -72,8 +86,24 @@ const isDisabled = computed(
 )
 const isRequesting = computed(() => Boolean(props.requestingText))
 
-const handleRequest = (workerName: string | null, highPriority: boolean) => {
-  emit('request-tasks', workerName, highPriority)
+const confirmMessage = computed(() => {
+  const priorityText = pendingPriority.value ? 'high priority' : 'normal priority'
+  const workerText = selectedWorker.value ? ` to worker ${selectedWorker.value}` : ''
+  return `Are you sure you want to request ${props.count} recipe${props.count !== 1 ? 's' : ''}${workerText} with ${priorityText}?`
+})
+
+const promptRequest = (highPriority: boolean) => {
+  pendingPriority.value = highPriority
+  showConfirm.value = true
+}
+
+const handleConfirm = () => {
+  emit('request-tasks', selectedWorker.value, pendingPriority.value)
   selectedWorker.value = null
+  showConfirm.value = false
+}
+
+const handleCancel = () => {
+  showConfirm.value = false
 }
 </script>

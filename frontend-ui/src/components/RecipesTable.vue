@@ -3,7 +3,7 @@
     <v-card v-if="!errors.length" :class="{ loading: loading }" flat>
       <v-card-title
         v-if="showSelection || $slots.actions"
-        class="d-flex flex-sm-wrap flex-grow-1 flex-column-reverse flex-sm-row align-sm-center justify-sm-end ga-2"
+        class="d-flex flex-sm-wrap flex-grow-1 flex-column-reverse flex-sm-row align-sm-center justify-sm-start ga-2"
       >
         <slot name="actions" />
         <v-btn
@@ -12,11 +12,24 @@
           variant="elevated"
           color="warning"
           :disabled="selectedRecipes.length === 0"
-          @click="clearSelections"
+          @click="promptClearSelections"
         >
           <v-icon size="small" class="mr-1">mdi-checkbox-multiple-blank-outline</v-icon>
           clear selections
         </v-btn>
+
+        <ConfirmDialog
+          v-model="showClearConfirm"
+          title="Confirm Clear Selections"
+          message="Are you sure you want to clear your current selection?"
+          confirm-text="Proceed"
+          cancel-text="Abort"
+          confirm-color="warning"
+          icon="mdi-help-circle"
+          icon-color="warning"
+          @confirm="clearSelections"
+          @cancel="showClearConfirm = false"
+        />
       </v-card-title>
 
       <v-data-table-server
@@ -96,10 +109,11 @@
 </template>
 
 <script setup lang="ts">
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StatusDisplay from '@/components/StatusDisplay.vue'
 import type { Paginator } from '@/types/base'
 import type { RecipeLight } from '@/types/recipe'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
@@ -141,6 +155,7 @@ const emit = defineEmits<{
 const limits = [10, 20, 50, 100]
 
 const selectedRecipes = computed(() => props.selectedRecipes)
+const showClearConfirm = ref(false)
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
@@ -163,8 +178,13 @@ function handleSelectionChange(selection: string[]) {
   emit('selectionChanged', selection)
 }
 
+function promptClearSelections() {
+  showClearConfirm.value = true
+}
+
 function clearSelections() {
   emit('selectionChanged', [])
+  showClearConfirm.value = false
 }
 </script>
 
